@@ -1,0 +1,55 @@
+// The Swift Programming Language
+// https://docs.swift.org/swift-book
+//
+// Swift Argument Parser
+// https://swiftpackageindex.com/apple/swift-argument-parser/documentation
+
+import ArgumentParser
+
+@main
+struct Swlox: ParsableCommand {
+	@Argument(help: "The file to run.")
+	var file: String?
+
+	static var hadError = false
+
+	static func error(_ message: String, line: Int) {
+		hadError = true
+		report(line, "", message)
+	}
+
+	static func report(_ line: Int, _ location: String, _ message: String) {
+		print("[line \(line)] Error\(location): \(message)")
+	}
+
+	mutating func run() throws {
+		if let file {
+			runFile(file: file)
+		} else {
+			runPrompt()
+		}
+	}
+
+	func runFile(file: String) {
+
+	}
+
+	func runPrompt() {
+		while true {
+			print("> ", terminator: "")
+			guard let line = readLine() else {
+				break
+			}
+
+			run(source: line)
+		}
+	}
+
+	func run(source: String) {
+		let scanner = Scanner(source: source)
+		let tokens = scanner.scanTokens()
+		for token in tokens {
+			print(token)
+		}
+	}
+}
