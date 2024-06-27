@@ -148,7 +148,7 @@ struct Scanner {
 			advance()
 		}
 
-		if peek() == "." && peekNext().isNumber {
+		if peek() == ".", peekNext().isNumber {
 			advance() // consume the "."
 
 			while peek().isNumber {
@@ -156,7 +156,7 @@ struct Scanner {
 			}
 		}
 
-		if let literal = Double(String(source[index(at: start) ... index(at: current-1)])) {
+		if let literal = Double(String(source[index(at: start) ... index(at: current - 1)])) {
 			addToken(.number(literal))
 		} else {
 			Swlox.error("Invalid number", line: line)

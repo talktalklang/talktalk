@@ -104,7 +104,7 @@ struct Parser {
 		}
 	}
 
-	mutating private func `consume`(_ kind: Token.Kind, _ message: String) throws {
+	private mutating func `consume`(_ kind: Token.Kind, _: String) throws {
 		if check(kind: kind) {
 			advance()
 			return
@@ -117,7 +117,7 @@ struct Parser {
 	}
 
 	// For error recovery
-	mutating private func synchronize() {
+	private mutating func synchronize() {
 		advance()
 
 		while !isAtEnd {
@@ -132,7 +132,7 @@ struct Parser {
 		}
 	}
 
-	mutating private func matching(kinds: Token.Kind...) -> Bool {
+	private mutating func matching(kinds: Token.Kind...) -> Bool {
 		for kind in kinds {
 			if check(kind: kind) {
 				advance()
@@ -148,7 +148,7 @@ struct Parser {
 		return peek().kind == kind
 	}
 
-	@discardableResult mutating private func advance() -> Token {
+	@discardableResult private mutating func advance() -> Token {
 		defer {
 			current += 1
 		}
@@ -164,6 +164,6 @@ struct Parser {
 	}
 
 	private func previous() -> Token {
-		tokens[current-1]
+		tokens[current - 1]
 	}
 }
