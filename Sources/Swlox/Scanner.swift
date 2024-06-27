@@ -1,5 +1,5 @@
 struct Token {
-	enum Kind {
+	enum Kind: Equatable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
 		     comma, dot, minus, plus, semicolon, slash, star
