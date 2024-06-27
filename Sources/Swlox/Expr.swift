@@ -1,28 +1,28 @@
 protocol ExprVisitor {
 	associatedtype Value
 
-	func visit<LHS: Expr, RHS: Expr>(_ expr: BinaryExpr<LHS, RHS>) -> Value
-	func visit<Expression: Expr>(_ expr: GroupingExpr<Expression>) -> Value
+	func visit(_ expr: BinaryExpr) -> Value
+	func visit(_ expr: GroupingExpr) -> Value
 	func visit(_ expr: LiteralExpr) -> Value
-	func visit<Expression: Expr>(_ expr: UnaryExpr<Expression>) -> Value
+	func visit(_ expr: UnaryExpr) -> Value
 }
 
 protocol Expr {
 	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value
 }
 
-struct BinaryExpr<LHS: Expr, RHS: Expr>: Expr {
-	let lhs: LHS
+struct BinaryExpr: Expr {
+	let lhs: any Expr
 	let op: Token
-	let rhs: RHS
+	let rhs: any Expr
 
 	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}
 }
 
-struct GroupingExpr<Expression: Expr>: Expr {
-	let expr: Expression
+struct GroupingExpr: Expr {
+	let expr: any Expr
 
 	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
 		visitor.visit(self)
@@ -37,9 +37,9 @@ struct LiteralExpr: Expr {
 	}
 }
 
-struct UnaryExpr<Expression: Expr>: Expr {
+struct UnaryExpr: Expr {
 	let op: Token
-	let expr: Expression
+	let expr: any Expr
 
 	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
 		visitor.visit(self)

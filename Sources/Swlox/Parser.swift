@@ -8,6 +8,10 @@
 // primary        → NUMBER | STRING | "true" | "false" | "nil"
 //                | "(" expression ")" ;”
 
+enum ParserError: Error {
+	case unexpectedToken(Token)
+}
+
 struct Parser {
 	var current = 0
 	var tokens: [Token]
@@ -16,24 +20,99 @@ struct Parser {
 		self.tokens = tokens
 	}
 
-	mutating func expression() -> some Expr {
-		return equality()
+	mutating func expression() throws -> any Expr {
+		return try equality()
 	}
 
-	mutating func equality() -> some Expr {
-		var expr = comparison()
+	mutating func equality() throws -> any Expr {
+		var expr = try comparison()
 
 		while matching(kinds: .bangEqual, .equalEqual) {
 			let op = previous()
-			let rhs = comparison()
+			let rhs = try comparison()
 			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
 	}
 
-	func comparison() -> some Expr {
+	mutating func comparison() throws -> any Expr {
+		var expr = try term()
 
+		while matching(kinds: .greater, .greaterEqual, .less, .lessEqual) {
+			let op = previous()
+			let rhs = try term()
+			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+		}
+
+		return expr
+	}
+
+	mutating func term() throws -> any Expr {
+		var expr = try factor()
+
+		while matching(kinds: .minus, .plus) {
+			let op = previous()
+			let rhs = try factor()
+			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+		}
+
+		return expr
+	}
+
+	mutating func factor() throws -> any Expr {
+		var expr = try unary()
+
+		while matching(kinds: .slash, .star) {
+			let op = previous()
+			let rhs = try unary()
+			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+		}
+
+		return expr
+	}
+
+	mutating func unary() throws -> any Expr {
+		var expr = try primary()
+
+		while matching(kinds: .bang, .minus) {
+			let op = previous()
+			expr = UnaryExpr(op: op, expr: expr)
+		}
+
+		return expr
+	}
+
+	mutating func primary() throws -> any Expr {
+		// primary        → NUMBER | STRING | "true" | "false" | "nil"
+		//                | "(" expression ")" ;”
+		let token = advance()
+
+		switch token.kind {
+		case .number(_), .string(_), .true, .false, .nil:
+			return LiteralExpr(literal: token)
+		case .leftParen:
+			let expr = try expression()
+			try consume(.rightParen, "Expected ')' after expression")
+
+			return GroupingExpr(expr: expr)
+		default:
+			// TODO: This is wrong
+			Swlox.error("Unexpected token: \(token)", line: token.line)
+
+			return LiteralExpr(literal: token)
+		}
+	}
+
+	mutating private func `consume`(_ kind: Token.Kind, _ message: String) throws {
+		if check(kind: kind) {
+			advance()
+			return
+		}
+
+		let token = peek()
+		Swlox.error("Unexpected token: \(token)", line: token.line)
+		throw ParserError.unexpectedToken(token)
 	}
 
 	mutating private func matching(kinds: Token.Kind...) -> Bool {
@@ -53,8 +132,10 @@ struct Parser {
 	}
 
 	@discardableResult mutating private func advance() -> Token {
-		if !isAtEnd { current += 1 }
-		return previous()
+		defer {
+			current += 1
+		}
+		return tokens[current]
 	}
 
 	private var isAtEnd: Bool {
@@ -68,5 +149,4 @@ struct Parser {
 	private func previous() -> Token {
 		tokens[current-1]
 	}
-
 }

@@ -1,6 +1,2 @@
 // this is a comment
-print "hello world"
-
-fun foo() {
-	print "foo"
-}
+(1 + 2) / 3

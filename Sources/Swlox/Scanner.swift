@@ -148,7 +148,7 @@ struct Scanner {
 			advance()
 		}
 
-		if peek() == ".", character(at: current + 1).isNumber {
+		if peek() == "." && peekNext().isNumber {
 			advance() // consume the "."
 
 			while peek().isNumber {
@@ -156,7 +156,7 @@ struct Scanner {
 			}
 		}
 
-		if let literal = Double(String(source[index(at: start) ... index(at: current)]).trimmingCharacters(in: .whitespacesAndNewlines)) {
+		if let literal = Double(String(source[index(at: start) ... index(at: current-1)])) {
 			addToken(.number(literal))
 		} else {
 			debugPrint(source[index(at: start) ... index(at: current)])
@@ -182,24 +182,27 @@ struct Scanner {
 			return "\0"
 		}
 
-		return character(at: current)
+		return source[index(at: current)]
+	}
+
+	func peekNext() -> Substring.Element {
+		if current + 1 >= source.count {
+			return "\0"
+		}
+
+		return source[index(at: current + 1)]
 	}
 
 	@discardableResult mutating func advance() -> Substring.Element {
 		defer {
 			current += 1
 		}
-		return character(at: current)
+		return source[index(at: current)]
 	}
 
 	mutating func addToken(_ kind: Token.Kind) {
 		let text = String(source[index(at: start) ... index(at: current)])
 		tokens.append(.init(kind: kind, lexeme: text, line: line))
-	}
-
-	func character(at: Int) -> Substring.Element {
-		if at > source.count { return "\0" }
-		return source[index(at: at)]
 	}
 
 	func index(at: Int) -> String.Index {

@@ -59,8 +59,8 @@ struct Swlox: ParsableCommand {
 	func run(source: String) {
 		var scanner = Scanner(source: source)
 		let tokens = scanner.scanTokens()
-		for token in tokens {
-			print(token)
-		}
+		var parser = Parser(tokens: tokens)
+
+		try! print(AstPrinter().print(expr: parser.expression()))
 	}
 }

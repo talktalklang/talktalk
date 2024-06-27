@@ -1,13 +1,14 @@
 struct AstPrinter: ExprVisitor {
-	func print(expr: some Expr) -> String {
+	func print(expr: any Expr) -> String {
 		expr.accept(visitor: self)
 	}
 
 	func parenthesize(_ name: String, _ exprs: (any Expr)...) -> String {
-		var parts = ["(", name, " "]
+		var parts = ["(", name]
 
 		for expr in exprs {
 			parts.append(expr.accept(visitor: self))
+			parts.append(" ")
 		}
 
 		parts.append(")")
@@ -15,19 +16,19 @@ struct AstPrinter: ExprVisitor {
 		return parts.joined(separator: "")
 	}
 
-	func visit<LHS, RHS>(_ expr: BinaryExpr<LHS, RHS>) -> String {
+	func visit(_ expr: BinaryExpr) -> String {
 		parenthesize(expr.op.description, expr.lhs, expr.rhs)
 	}
 
-	func visit<Expression>(_ expr: GroupingExpr<Expression>) -> String {
-		parenthesize("grouping", expr)
+	func visit(_ expr: GroupingExpr) -> String {
+		parenthesize("grouping", expr.expr)
 	}
 
 	func visit(_ expr: LiteralExpr) -> String {
-		expr.literal.lexeme
+		expr.literal.lexeme.trimmingCharacters(in: .whitespacesAndNewlines)
 	}
 
-	func visit<Expression: Expr>(_ expr: UnaryExpr<Expression>) -> String {
+	func visit(_ expr: UnaryExpr) -> String {
 		parenthesize(expr.op.lexeme, expr.expr)
 	}
 }
