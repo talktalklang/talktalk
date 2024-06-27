@@ -98,7 +98,7 @@ struct Parser {
 			return GroupingExpr(expr: expr)
 		default:
 			// TODO: This is wrong
-			Swlox.error("Unexpected token: \(token)", line: token.line)
+			Swlox.error("Unexpected token: \(token)", token: token)
 
 			return LiteralExpr(literal: token)
 		}
@@ -111,8 +111,25 @@ struct Parser {
 		}
 
 		let token = peek()
-		Swlox.error("Unexpected token: \(token)", line: token.line)
+		Swlox.error("Unexpected token: \(token)", token: token)
+
 		throw ParserError.unexpectedToken(token)
+	}
+
+	// For error recovery
+	mutating private func synchronize() {
+		advance()
+
+		while !isAtEnd {
+			if previous().kind == .semicolon { return }
+
+			switch peek().kind {
+			case .class, .fun, .var, .for, .if, .while, .print, .return:
+				return
+			default:
+				advance()
+			}
+		}
 	}
 
 	mutating private func matching(kinds: Token.Kind...) -> Bool {

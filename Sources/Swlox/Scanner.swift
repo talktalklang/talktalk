@@ -116,7 +116,7 @@ struct Scanner {
 			advance()
 		}
 
-		let text = String(source[index(at: start) ... index(at: current)]).trimmingCharacters(in: .whitespaces)
+		let text = String(source[index(at: start) ... index(at: current)])
 
 		if let keyword = Token.Kind.match(keyword: text) {
 			addToken(keyword)
@@ -159,7 +159,6 @@ struct Scanner {
 		if let literal = Double(String(source[index(at: start) ... index(at: current-1)])) {
 			addToken(.number(literal))
 		} else {
-			debugPrint(source[index(at: start) ... index(at: current)])
 			Swlox.error("Invalid number", line: line)
 		}
 	}
@@ -206,10 +205,14 @@ struct Scanner {
 	}
 
 	func index(at: Int) -> String.Index {
-		source.index(source.startIndex, offsetBy: at)
+		if at >= source.count {
+			return index(at: at - 1)
+		}
+
+		return source.index(source.startIndex, offsetBy: at)
 	}
 
 	var isAtEnd: Bool {
-		current >= source.count
+		return current >= source.count
 	}
 }
