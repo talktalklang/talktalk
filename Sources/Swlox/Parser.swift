@@ -224,7 +224,35 @@ struct Parser {
 			return UnaryExpr(op: op, expr: expr)
 		}
 
-		return try primary()
+		return try call()
+	}
+
+	mutating func call() throws -> any Expr {
+		var expr = try primary()
+
+		while true {
+			if matching(kinds: .leftParen) {
+				expr = try finishCall(expr)
+			} else {
+				break
+			}
+		}
+
+		return expr
+	}
+
+	mutating func finishCall(_ callee: any Expr) throws -> any Expr {
+		let arguments: [any Expr] = []
+
+		if !check(.rightParen) {
+			repeat {
+				try arguments.append(expression())
+			} while matching(kinds: .comma)
+		}
+
+		let closingParen = consume(.rightParen, "Expected ')' after arguments")
+
+		return CallExpr(callee: callee, closingParen: closingParen, arguments: arguments)
 	}
 
 	// It all comes down to this.

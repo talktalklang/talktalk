@@ -43,4 +43,8 @@ struct AstPrinter: ExprVisitor {
 	mutating func visit(_ expr: LogicExpr) throws -> String {
 		try parenthesize(expr.op.lexeme, expr.lhs, expr.rhs)
 	}
+
+	mutating func visit(_ expr: CallExpr) throws -> String {
+		try parenthesize(expr.callee, expr.arguments)
+	}
 }

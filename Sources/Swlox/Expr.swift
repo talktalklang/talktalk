@@ -9,6 +9,7 @@ protocol ExprVisitor {
 	mutating func visit(_ expr: VariableExpr) throws -> Value
 	mutating func visit(_ expr: AssignExpr) throws -> Value
 	mutating func visit(_ expr: LogicExpr) throws -> Value
+	mutating func visit(_ expr: CallExpr) throws -> Value
 }
 
 protocol Expr {
@@ -75,4 +76,10 @@ struct LogicExpr: Expr {
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
 		try visitor.visit(self)
 	}
+}
+
+struct CallExpr: Expr {
+	let callee: any Expr
+	let closingParen: Token // For error reporting
+	let arguments: [any Expr]
 }

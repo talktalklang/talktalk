@@ -111,7 +111,10 @@ module.exports = grammar({
       ';'
     ),
 
-    unary_operator: _ => choice('-', '!'),
+    call: $ => seq($.primary_expression, repeat1(seq('(', optional($.arguments), ')' ))),
+    arguments: $ => seq($.expression, repeat(seq(',', $.expression))),
+
+    unary_operator: $ => choice('-', '!', $.call),
 
     binary_operator: _ => choice('+', '-', '*', '/', '==', '!=', '<', '<=', '>', '>='),
 
