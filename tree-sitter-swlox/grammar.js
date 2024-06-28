@@ -9,10 +9,45 @@ module.exports = grammar({
       $.statement
     ),
 
+    block: $ => seq(
+      "{",
+      repeat($.declaration),
+      "}"
+    ),
+
     statement: $ => choice(
       $.print_statement,
       $.expression_statement,
-      $.assignment_statement
+      $.assignment_statement,
+      $.block,
+      $.if_statement
+    ),
+
+    if_statement: $ => seq(
+      'if',
+      $.expression,
+      $.block,
+      optional($.else_statement)
+    ),
+
+    else_statement: $ => seq(
+      'else',
+      $.block
+    ),
+
+    equality: $ => seq(
+      $.comparison,
+      repeat(seq('==', $.comparison))
+    ),
+
+    logic_or: $ => seq(
+      $.logic_and
+      repeat(seq('||', $.equality))
+    ),
+
+    logic_and: $ => seq(
+      $.equality,
+      repeat(seq('&&', $.equality))
     ),
 
     expression_statement: $ => seq(
@@ -74,6 +109,8 @@ module.exports = grammar({
     unary_operator: _ => choice('-', '!'),
 
     binary_operator: _ => choice('+', '-', '*', '/', '==', '!=', '<', '<=', '>', '>='),
+
+    boolean_literal: _ => choice('true', 'false'),
 
     number_literal: _ => /\d+(\.\d+)?/,
 

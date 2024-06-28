@@ -2,6 +2,8 @@ protocol StmtVisitor {
 	mutating func visit(_ stmt: PrintStmt) throws
 	mutating func visit(_ stmt: ExpressionStmt) throws
 	mutating func visit(_ stmt: VarStmt) throws
+	mutating func visit(_ stmt: BlockStmt) throws
+	mutating func visit(_ stmt: IfStmt) throws
 }
 
 protocol Stmt {
@@ -27,6 +29,24 @@ struct ExpressionStmt: Stmt {
 struct VarStmt: Stmt {
 	let name: String
 	let initializer: (any Expr)?
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct BlockStmt: Stmt {
+	let statements: [any Stmt]
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct IfStmt: Stmt {
+	let condition: any Expr
+	let thenStatement: any Stmt
+	let elseStatement: (any Stmt)?
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)

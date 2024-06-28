@@ -3,6 +3,7 @@ enum ParserError: Error {
 			 unexpectedAssignment(Token)
 }
 
+// The parser.... parses. It is where precedence and associtivity happens.
 struct Parser {
 	var current = 0
 	var tokens: [Token]
@@ -56,11 +57,31 @@ struct Parser {
 	}
 
 	mutating func statement() throws -> any Stmt {
+		if matching(kinds: .if) {
+			return try ifStmt()
+		}
+
 		if matching(kinds: .print) {
 			return try printStmt()
 		}
 
+		if matching(kinds: .leftBrace) {
+			return try BlockStmt(statements: block())
+		}
+
 		return try expressionStmt()
+	}
+
+	mutating func ifStmt() throws -> any Stmt {
+		let condition = try expression()
+		let thenStatement = try statement()
+
+		if matching(kinds: .else) {
+			let elseStatement = try statement()
+			return IfStmt(condition: condition, thenStatement: thenStatement, elseStatement: elseStatement)
+		}
+
+		return IfStmt(condition: condition, thenStatement: thenStatement, elseStatement: nil)
 	}
 
 	mutating func printStmt() throws -> any Stmt {
@@ -75,12 +96,26 @@ struct Parser {
 		return ExpressionStmt(expr: expr)
 	}
 
+	mutating func block() throws -> [any Stmt] {
+		var statements: [any Stmt] = []
+
+		while !check(kind: .rightBrace), !isAtEnd {
+			if let decl = try declaration() {
+				statements.append(decl)
+			}
+		}
+
+		try consume(.rightBrace, "Expected '}' after block")
+
+		return statements
+	}
+
 	mutating func expression() throws -> any Expr {
 		return try assignment()
 	}
 
 	mutating func assignment() throws -> any Expr {
-		let expr = try equality()
+		let expr = try or()
 
 		// Lets see if this is an assignment
 		if matching(kinds: .equal) {
@@ -93,6 +128,30 @@ struct Parser {
 			}
 
 			throw ParserError.unexpectedAssignment(equals)
+		}
+
+		return expr
+	}
+
+	mutating func or() throws -> any Expr {
+		var expr = try and()
+
+		while matching(kinds: .pipePipe) {
+			let op = previous()
+			let rhs = try and()
+			expr = LogicExpr(lhs: expr, op: op, rhs: rhs)
+		}
+
+		return expr
+	}
+
+	mutating func and() throws -> any Expr {
+		var expr = try equality()
+
+		while matching(kinds: .andAnd) {
+			let op = previous()
+			let rhs = try equality()
+			expr = LogicExpr(lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr

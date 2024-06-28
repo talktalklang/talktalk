@@ -1,7 +1,5 @@
-var a = 123;
-var b = 321;
-print a + b;
-
-var c = "sup";
-print c;
-
+if !false {
+	print "ok";
+} else {
+	print "nope";
+}

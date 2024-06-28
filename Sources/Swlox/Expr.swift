@@ -8,6 +8,7 @@ protocol ExprVisitor {
 	mutating func visit(_ expr: UnaryExpr) throws -> Value
 	mutating func visit(_ expr: VariableExpr) throws -> Value
 	mutating func visit(_ expr: AssignExpr) throws -> Value
+	mutating func visit(_ expr: LogicExpr) throws -> Value
 }
 
 protocol Expr {
@@ -60,6 +61,16 @@ struct VariableExpr: Expr {
 struct AssignExpr: Expr {
 	let name: Token
 	let value: any Expr
+
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
+	}
+}
+
+struct LogicExpr: Expr {
+	let lhs: any Expr
+	let op: Token
+	let rhs: any Expr
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
 		try visitor.visit(self)

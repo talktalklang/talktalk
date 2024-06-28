@@ -1,4 +1,4 @@
-enum Value {
+enum Value: Equatable {
 	case string(String),
 			 number(Double),
 			 bool(Bool),
@@ -6,15 +6,38 @@ enum Value {
 			 unknown
 }
 
-struct Environment {
-	var vars: [String: Value] = [:]
+class Environment {
+	enum AssignmentResult {
+		case handled, unhandled, uninitialized
+	}
 
-	mutating func assign(_ value: Value, to name: String) throws {
-		guard vars.index(forKey: name) != nil else {
+	private var vars: [String: Value] = [:]
+	private var parent: Environment?
+
+	init(parent: Environment? = nil) {
+		self.parent = parent
+	}
+
+	func lookup(name: String) -> Value? {
+		vars[name] ?? parent?.lookup(name: name)
+	}
+
+	func initialize(name: String, value: Value) {
+		vars[name] = value
+	}
+
+	func assign(name: String, value: Value) throws -> AssignmentResult {
+		if try parent?.assign(name: name, value: value) == .handled {
+			return .handled
+		}
+
+		guard lookup(name: name) != nil else {
 			throw RuntimeError.assignmentError("Cannot assign to uninitialized variable")
 		}
 
 		vars[name] = value
+
+		return .handled
 	}
 }
 
@@ -49,19 +72,19 @@ struct AstInterpreter {
 
 extension AstInterpreter: ExprVisitor {
 	mutating func visit(_ expr: VariableExpr) throws -> Value {
-		guard let value = environment.vars[expr.name.lexeme] else {
+		guard let value = environment.lookup(name: expr.name.lexeme) else {
 			throw RuntimeError.nameError("undefined variable", expr.name)
 		}
 
 		return value
 	}
-	
+
 	mutating func visit(_ expr: AssignExpr) throws -> Value {
 		let value = try evaluate(expr.value)
-		try environment.assign(value, to: expr.name.lexeme)
+		_ = try environment.assign(name: expr.name.lexeme, value: value)
 		return value
 	}
-	
+
 	mutating func visit(_ expr: LiteralExpr) throws -> Value {
 		switch expr.literal.kind {
 		case .number(let number):
@@ -77,6 +100,18 @@ extension AstInterpreter: ExprVisitor {
 		default:
 			return .unknown
 		}
+	}
+
+	mutating func visit(_ expr: LogicExpr) throws -> Value {
+		let lhs = try evaluate(expr.lhs)
+
+		if expr.op.kind == .pipePipe {
+			if isTruthy(lhs) { return lhs }
+		} else {
+			if !isTruthy(lhs) { return lhs }
+		}
+
+		return try evaluate(expr.rhs)
 	}
 
 	mutating func visit(_ expr: BinaryExpr) throws -> Value {
@@ -189,9 +224,36 @@ extension AstInterpreter: StmtVisitor {
 
 	mutating func visit(_ stmt: VarStmt) throws {
 		if let initializer = stmt.initializer {
-			environment.vars[stmt.name] = try evaluate(initializer)
+			environment.initialize(name: stmt.name, value: try evaluate(initializer))
 		} else {
-			environment.vars[stmt.name] = .unknown
+			environment.initialize(name: stmt.name, value: .nil)
+		}
+	}
+
+	mutating func visit(_ stmt: BlockStmt) throws {
+		try executeBlock(stmt.statements, environment: Environment(parent: environment))
+	}
+
+	mutating func visit(_ stmt: IfStmt) throws {
+		if try isTruthy(evaluate(stmt.condition)) {
+			try execute(statement: stmt.thenStatement)
+		} else if let elseStatement = stmt.elseStatement {
+			try execute(statement: elseStatement)
+		}
+	}
+
+	mutating func executeBlock(_ statements: [any Stmt], environment: Environment) throws {
+		// TODO: Don't mutate environment
+		let previous = self.environment
+
+		defer {
+			self.environment = previous
+		}
+
+		self.environment = environment
+
+		for statement in statements {
+			try	execute(statement: statement)
 		}
 	}
 }

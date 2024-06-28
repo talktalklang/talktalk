@@ -6,20 +6,20 @@ struct Token {
 
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,
-		     greater, greaterEqual, less, lessEqual
+		     greater, greaterEqual, less, lessEqual,
+				 and, andAnd, pipe, pipePipe
 
 		// Literals
 		case identifier(String), string(String), number(Double)
 
 		// Keywords
-		case and, `class`, `else`, `false`, fun, `for`, `if`, `nil`,
+		case `class`, `else`, `false`, fun, `for`, `if`, `nil`,
 		     or, print, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case eof
 
 		static func match(keyword: String) -> Kind? {
 			switch keyword.trimmingCharacters(in: .whitespacesAndNewlines) {
-			case "and": .and
 			case "class": .class
 			case "else": .else
 			case "false": .false
@@ -27,7 +27,6 @@ struct Token {
 			case "fun": .fun
 			case "if": .if
 			case "nil": .nil
-			case "or": .or
 			case "print": .print
 			case "return": .return
 			case "super": .super
@@ -85,6 +84,8 @@ struct Scanner {
 		case "+": addToken(.plus)
 		case ";": addToken(.semicolon)
 		case "*": addToken(.star)
+		case "&": addToken(matching(char: "&") ? .andAnd : .and)
+		case "|": addToken(matching(char: "|") ? .pipePipe : .pipe)
 		case "!": addToken(matching(char: "=") ? .bangEqual : .bang)
 		case "=": addToken(matching(char: "=") ? .equalEqual : .equal)
 		case "<": addToken(matching(char: "=") ? .lessEqual : .less)
