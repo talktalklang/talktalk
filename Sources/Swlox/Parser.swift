@@ -20,6 +20,36 @@ struct Parser {
 		self.tokens = tokens
 	}
 
+	mutating func parse() throws -> [any Stmt] {
+		var statements: [any Stmt] = []
+
+		while !isAtEnd {
+			try statements.append(statement())
+		}
+
+		return statements
+	}
+
+	mutating func statement() throws -> any Stmt {
+		if matching(kinds: .print) {
+			return try printStmt()
+		}
+
+		return try expressionStmt()
+	}
+
+	mutating func printStmt() throws -> any Stmt {
+		let expr = try expression()
+		try consume(.semicolon, "Expected ';' after expression.")
+		return PrintStmt(expr: expr)
+	}
+
+	mutating func expressionStmt() throws -> any Stmt {
+		let expr = try expression()
+		try consume(.semicolon, "Expected ';' after expression.")
+		return ExpressionStmt(expr: expr)
+	}
+
 	mutating func expression() throws -> any Expr {
 		return try equality()
 	}
@@ -111,7 +141,7 @@ struct Parser {
 		}
 
 		let token = peek()
-		Swlox.error("Unexpected token: \(token)", token: token)
+		Swlox.error("Unexpected token: \(token), expected: \(kind)", token: token)
 
 		throw ParserError.unexpectedToken(token)
 	}

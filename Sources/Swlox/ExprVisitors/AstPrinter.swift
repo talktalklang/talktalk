@@ -1,13 +1,13 @@
 struct AstPrinter: ExprVisitor {
-	func print(expr: any Expr) -> String {
-		expr.accept(visitor: self)
+	mutating func print(expr: any Expr) throws -> String {
+		try expr.accept(visitor: &self)
 	}
 
-	func parenthesize(_ name: String, _ exprs: (any Expr)...) -> String {
+	mutating func parenthesize(_ name: String, _ exprs: (any Expr)...) throws -> String {
 		var parts = ["(", name]
 
 		for expr in exprs {
-			parts.append(expr.accept(visitor: self))
+			try parts.append(expr.accept(visitor: &self))
 			parts.append(" ")
 		}
 
@@ -16,19 +16,19 @@ struct AstPrinter: ExprVisitor {
 		return parts.joined(separator: "")
 	}
 
-	func visit(_ expr: BinaryExpr) -> String {
-		parenthesize(expr.op.description, expr.lhs, expr.rhs)
+	mutating func visit(_ expr: BinaryExpr) throws -> String {
+		try parenthesize(expr.op.description, expr.lhs, expr.rhs)
 	}
 
-	func visit(_ expr: GroupingExpr) -> String {
-		parenthesize("grouping", expr.expr)
+	mutating func visit(_ expr: GroupingExpr) throws -> String {
+		try parenthesize("grouping", expr.expr)
 	}
 
-	func visit(_ expr: LiteralExpr) -> String {
+	mutating func visit(_ expr: LiteralExpr) throws -> String {
 		expr.literal.lexeme.trimmingCharacters(in: .whitespacesAndNewlines)
 	}
 
-	func visit(_ expr: UnaryExpr) -> String {
-		parenthesize(expr.op.lexeme, expr.expr)
+	mutating func visit(_ expr: UnaryExpr) throws -> String {
+		try parenthesize(expr.op.lexeme, expr.expr)
 	}
 }

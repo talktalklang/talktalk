@@ -18,7 +18,7 @@ struct Token {
 		case eof
 
 		static func match(keyword: String) -> Kind? {
-			switch keyword {
+			switch keyword.trimmingCharacters(in: .whitespacesAndNewlines) {
 			case "and": .and
 			case "class": .class
 			case "else": .else
@@ -116,7 +116,7 @@ struct Scanner {
 			advance()
 		}
 
-		let text = String(source[index(at: start) ... index(at: current)])
+		let text = String(source[index(at: start) ... index(at: current-1)])
 
 		if let keyword = Token.Kind.match(keyword: text) {
 			addToken(keyword)

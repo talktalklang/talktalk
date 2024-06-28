@@ -1,14 +1,15 @@
+// TODO: It'd be nice to not have all these existentials everywhere
 protocol ExprVisitor {
 	associatedtype Value
 
-	func visit(_ expr: BinaryExpr) -> Value
-	func visit(_ expr: GroupingExpr) -> Value
-	func visit(_ expr: LiteralExpr) -> Value
-	func visit(_ expr: UnaryExpr) -> Value
+	mutating func visit(_ expr: BinaryExpr) throws -> Value
+	mutating func visit(_ expr: GroupingExpr) throws -> Value
+	mutating func visit(_ expr: LiteralExpr) throws -> Value
+	mutating func visit(_ expr: UnaryExpr) throws -> Value
 }
 
 protocol Expr {
-	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value
 }
 
 struct BinaryExpr: Expr {
@@ -16,24 +17,24 @@ struct BinaryExpr: Expr {
 	let op: Token
 	let rhs: any Expr
 
-	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
 	}
 }
 
 struct GroupingExpr: Expr {
 	let expr: any Expr
 
-	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
 	}
 }
 
 struct LiteralExpr: Expr {
 	let literal: Token
 
-	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
 	}
 }
 
@@ -41,7 +42,7 @@ struct UnaryExpr: Expr {
 	let op: Token
 	let expr: any Expr
 
-	func accept<Visitor: ExprVisitor>(visitor: Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
 	}
 }

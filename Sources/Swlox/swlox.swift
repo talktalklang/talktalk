@@ -7,12 +7,17 @@
 import ArgumentParser
 import Foundation
 
+enum RuntimeError: Error {
+	case typeError(String, Token)
+}
+
 @main
 struct Swlox: ParsableCommand {
 	@Argument(help: "The file to run.")
 	var file: String?
 
 	static var hadError = false
+	static var hadRuntimeError = false
 
 	static func error(_ message: String, line: Int) {
 		report(line, "", message)
@@ -22,8 +27,13 @@ struct Swlox: ParsableCommand {
 		if token.kind == .eof {
 			report(token.line, " at end", message)
 		} else {
-			report(token.line, "at '" + token.lexeme + "'", message)
+			report(token.line, " at '" + token.lexeme + "'", message)
 		}
+	}
+
+	static func runtimeError(_ message: String, token: Token) {
+		hadRuntimeError = true
+		error(message, token: token)
 	}
 
 	static func report(_ line: Int, _ location: String, _ message: String) {
@@ -63,7 +73,8 @@ struct Swlox: ParsableCommand {
 		var scanner = Scanner(source: source)
 		let tokens = scanner.scanTokens()
 		var parser = Parser(tokens: tokens)
+		var interpreter = AstInterpreter()
 
-		try print(AstPrinter().print(expr: parser.expression()))
+		try interpreter.run(parser.parse())
 	}
 }
