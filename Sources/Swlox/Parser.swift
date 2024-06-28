@@ -24,7 +24,7 @@ struct Parser {
 		var statements: [any Stmt] = []
 
 		while !isAtEnd {
-			if let stmt = declaration() {
+			if let stmt = try declaration() {
 				statements.append(stmt)
 			}
 		}
@@ -32,7 +32,7 @@ struct Parser {
 		return statements
 	}
 
-	mutating func declaration() -> (any Stmt)? {
+	mutating func declaration() throws -> (any Stmt)? {
 		do {
 			if matching(kinds: .var) {
 				return try varDeclaration()
@@ -41,12 +41,13 @@ struct Parser {
 			return try statement()
 		} catch {
 			synchronize()
-			return nil
+			throw error
 		}
 	}
 
 	mutating func varDeclaration() throws -> any Stmt {
-		guard case let .identifier(name) = peek().kind else {
+		guard case let .identifier(name) = advance().kind else {
+			Swlox.error("Unexpected token. Expected identifier.", token: peek())
 			throw ParserError.unexpectedToken(peek())
 		}
 
@@ -146,7 +147,7 @@ struct Parser {
 		let token = advance()
 
 		switch token.kind {
-		case .number(_), .string(_), .true, .false, .nil:
+		case .number(_), .string(_), .identifier(_), .true, .false, .nil:
 			return LiteralExpr(literal: token)
 		case .leftParen:
 			let expr = try expression()
@@ -162,6 +163,11 @@ struct Parser {
 	}
 
 	private mutating func `consume`(_ kind: Token.Kind, _: String) throws {
+		if isAtEnd, kind != .eof {
+			Swlox.error("Unexpected end of input. Expected: \(kind)", token: previous())
+			throw ParserError.unexpectedToken(previous())
+		}
+
 		if check(kind: kind) {
 			advance()
 			return
@@ -169,7 +175,6 @@ struct Parser {
 
 		let token = peek()
 		Swlox.error("Unexpected token: \(token), expected: \(kind)", token: token)
-
 		throw ParserError.unexpectedToken(token)
 	}
 
@@ -213,7 +218,7 @@ struct Parser {
 	}
 
 	private var isAtEnd: Bool {
-		peek().kind == .eof
+		current >= tokens.count || peek().kind == .eof
 	}
 
 	private func peek() -> Token {

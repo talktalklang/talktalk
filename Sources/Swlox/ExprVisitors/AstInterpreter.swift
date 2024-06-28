@@ -14,19 +14,21 @@ struct AstInterpreter {
 	var lastExpressionValue: Value = .nil
 	var environment = Environment()
 
-	mutating func run(_ statements: [any Stmt], repl: Bool = false) {
+	mutating func run(_ statements: [any Stmt], onComplete: (() -> Void)? = nil) {
 		do {
 			for statement in statements {
 				try execute(statement: statement)
-
-				if repl {
-					print("=> \(lastExpressionValue)")
-				}
+				onComplete?()
 			}
-		} catch let RuntimeError.typeError(message, token) {
-			Swlox.runtimeError(message, token: token)
+		} catch let error as RuntimeError {
+			switch error {
+			case let .nameError(message, token):
+				Swlox.runtimeError(message, token: token)
+			case let .typeError(message, token):
+				Swlox.runtimeError(message, token: token)
+			}
 		} catch {
-			fatalError("Unhandled error: \(error)")
+			print("RuntimeError: \(error)")
 		}
 	}
 
@@ -39,17 +41,23 @@ extension AstInterpreter: ExprVisitor {
 	mutating func visit(_ expr: LiteralExpr) throws -> Value {
 		switch expr.literal.kind {
 		case .number(let number):
-			.number(number)
+			return .number(number)
 		case .string(let string):
-			.string(string)
+			return .string(string)
 		case .true:
-			.bool(true)
+			return .bool(true)
 		case .false:
-			.bool(false)
+			return .bool(false)
+		case let .identifier(name):
+			guard let value = environment.vars[name] else {
+				throw RuntimeError.nameError("not set", expr.literal)
+			}
+
+			return value
 		case .nil:
-			.nil
+			return .nil
 		default:
-			.unknown
+			return .unknown
 		}
 	}
 
@@ -162,6 +170,6 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func visit(_ stmt: VarStmt) throws {
-
+		environment.vars[stmt.name] = try evaluate(stmt.initializer)
 	}
 }

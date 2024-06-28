@@ -8,13 +8,14 @@ import ArgumentParser
 import Foundation
 
 enum RuntimeError: Error {
-	case typeError(String, Token)
+	case typeError(String, Token),
+	     nameError(String, Token)
 }
 
 @main
 struct Swlox: ParsableCommand {
-	@Argument(help: "The file to run.")
-	var file: String?
+	@Argument(help: "The input to run.")
+	var input: String?
 
 	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
@@ -44,8 +45,13 @@ struct Swlox: ParsableCommand {
 	}
 
 	mutating func run() throws {
-		if let file {
-			try runFile(file: file)
+		if let input {
+			if FileManager.default.fileExists(atPath: input) {
+				try runFile(file: input)
+			} else {
+				var interpreter = AstInterpreter()
+				try run(source: input, in: &interpreter)
+			}
 		} else {
 			runPrompt()
 		}
@@ -53,10 +59,13 @@ struct Swlox: ParsableCommand {
 
 	func runFile(file: String) throws {
 		let source = try! String(contentsOfFile: file)
-		try run(source: source)
+		var interpreter = AstInterpreter()
+		try run(source: source, in: &interpreter)
 	}
 
 	func runPrompt() {
+		var interpreter = AstInterpreter()
+
 		while true {
 			print("> ", terminator: "")
 			guard let line = readLine() else {
@@ -64,14 +73,14 @@ struct Swlox: ParsableCommand {
 			}
 
 			do {
-				try run(source: line, repl: true)
-			} catch {
-				print("Error: \(error.localizedDescription)")
-			}
+				try run(source: line, in: &interpreter) {
+					print("=> \(interpreter.lastExpressionValue)")
+				}
+			} catch {}
 		}
 	}
 
-	func run(source: String, repl: Bool = false) throws {
+	func run(source: String, in interpreter: inout AstInterpreter, onComplete: (() -> Void)? = nil) throws {
 		var scanner = Scanner(source: source)
 		let tokens = scanner.scanTokens()
 
@@ -84,8 +93,6 @@ struct Swlox: ParsableCommand {
 		}
 
 		var parser = Parser(tokens: tokens)
-		var interpreter = AstInterpreter()
-
-		try interpreter.run(parser.parse(), repl: repl)
+		try interpreter.run(parser.parse())
 	}
 }
