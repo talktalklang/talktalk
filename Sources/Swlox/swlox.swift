@@ -16,6 +16,8 @@ struct Swlox: ParsableCommand {
 	@Argument(help: "The file to run.")
 	var file: String?
 
+	@Flag(help: "Just print the tokens") var tokenize: Bool = false
+
 	static var hadError = false
 	static var hadRuntimeError = false
 
@@ -72,6 +74,15 @@ struct Swlox: ParsableCommand {
 	func run(source: String) throws {
 		var scanner = Scanner(source: source)
 		let tokens = scanner.scanTokens()
+
+		if tokenize {
+			for token in tokens {
+				print(token)
+			}
+
+			return
+		}
+
 		var parser = Parser(tokens: tokens)
 		var interpreter = AstInterpreter()
 

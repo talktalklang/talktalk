@@ -116,7 +116,7 @@ struct Scanner {
 			advance()
 		}
 
-		let text = String(source[index(at: start) ... index(at: current-1)])
+		let text = String(source[index(at: start) ..< index(at: current)])
 
 		if let keyword = Token.Kind.match(keyword: text) {
 			addToken(keyword)
@@ -156,7 +156,7 @@ struct Scanner {
 			}
 		}
 
-		if let literal = Double(String(source[index(at: start) ... index(at: current - 1)])) {
+		if let literal = Double(String(source[index(at: start) ..< index(at: current)])) {
 			addToken(.number(literal))
 		} else {
 			Swlox.error("Invalid number", line: line)
@@ -200,15 +200,11 @@ struct Scanner {
 	}
 
 	mutating func addToken(_ kind: Token.Kind) {
-		let text = String(source[index(at: start) ... index(at: current)])
+		let text = String(source[index(at: start) ..< index(at: current)])
 		tokens.append(.init(kind: kind, lexeme: text, line: line))
 	}
 
 	func index(at: Int) -> String.Index {
-		if at >= source.count {
-			return index(at: at - 1)
-		}
-
 		return source.index(source.startIndex, offsetBy: at)
 	}
 
