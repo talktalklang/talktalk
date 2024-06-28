@@ -1,4 +1,4 @@
-if !false {
+if !true {
 	print "ok";
 } else {
 	print "nope";

@@ -206,14 +206,13 @@ struct Parser {
 	}
 
 	mutating func unary() throws -> any Expr {
-		var expr = try primary()
-
 		while matching(kinds: .bang, .minus) {
 			let op = previous()
-			expr = UnaryExpr(op: op, expr: expr)
+			var expr = try unary()
+			return UnaryExpr(op: op, expr: expr)
 		}
 
-		return expr
+		return try primary()
 	}
 
 	// It all comes down to this.
