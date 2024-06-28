@@ -9,7 +9,8 @@ import Foundation
 
 enum RuntimeError: Error {
 	case typeError(String, Token),
-	     nameError(String, Token)
+	     nameError(String, Token),
+			 assignmentError(String)
 }
 
 @main
@@ -73,14 +74,14 @@ struct Swlox: ParsableCommand {
 			}
 
 			do {
-				try run(source: line, in: &interpreter) {
-					print("=> \(interpreter.lastExpressionValue)")
+				try run(source: line, in: &interpreter) { value in
+					print("=> \(value)")
 				}
 			} catch {}
 		}
 	}
 
-	func run(source: String, in interpreter: inout AstInterpreter, onComplete: (() -> Void)? = nil) throws {
+	func run(source: String, in interpreter: inout AstInterpreter, onComplete: ((Value) -> Void)? = nil) throws {
 		var scanner = Scanner(source: source)
 		let tokens = scanner.scanTokens()
 
@@ -93,6 +94,6 @@ struct Swlox: ParsableCommand {
 		}
 
 		var parser = Parser(tokens: tokens)
-		try interpreter.run(parser.parse())
+		try interpreter.run(parser.parse(), onComplete: onComplete)
 	}
 }

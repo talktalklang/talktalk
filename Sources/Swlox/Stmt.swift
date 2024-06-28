@@ -26,7 +26,7 @@ struct ExpressionStmt: Stmt {
 
 struct VarStmt: Stmt {
 	let name: String
-	let initializer: any Expr
+	let initializer: (any Expr)?
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)

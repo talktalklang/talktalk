@@ -9,7 +9,8 @@
 //                | "(" expression ")" ;”
 
 enum ParserError: Error {
-	case unexpectedToken(Token)
+	case unexpectedToken(Token),
+			 unexpectedAssignment(Token)
 }
 
 struct Parser {
@@ -51,8 +52,14 @@ struct Parser {
 			throw ParserError.unexpectedToken(peek())
 		}
 
-		try consume(.equal, "Expected var initializer")
-		let initializer = try expression()
+		let initializer: (any Expr)?
+		if peek().kind == .equal {
+			try consume(.equal, "Expected var initializer")
+			initializer = try expression()
+		} else {
+			initializer = nil
+		}
+
 		try consume(.semicolon, "Expected statement terminator")
 
 		return VarStmt(name: name, initializer: initializer)
@@ -79,7 +86,26 @@ struct Parser {
 	}
 
 	mutating func expression() throws -> any Expr {
-		return try equality()
+		return try assignment()
+	}
+
+	mutating func assignment() throws -> any Expr {
+		var expr = try equality()
+
+		// Lets see if this is an assignment
+		if matching(kinds: .equal) {
+			let equals = previous()
+			let value = try assignment()
+
+			if let expr = expr as? VariableExpr {
+				let name = expr.name
+				return AssignExpr(name: name, value: value)
+			}
+
+			throw ParserError.unexpectedAssignment(equals)
+		}
+
+		return expr
 	}
 
 	mutating func equality() throws -> any Expr {
@@ -141,14 +167,15 @@ struct Parser {
 		return expr
 	}
 
+	// It all comes down to this.
 	mutating func primary() throws -> any Expr {
-		// primary        → NUMBER | STRING | "true" | "false" | "nil"
-		//                | "(" expression ")" ;”
 		let token = advance()
 
 		switch token.kind {
-		case .number(_), .string(_), .identifier(_), .true, .false, .nil:
+		case .number(_), .string(_), .true, .false, .nil:
 			return LiteralExpr(literal: token)
+		case .identifier(_):
+			return VariableExpr(name: token)
 		case .leftParen:
 			let expr = try expression()
 			try consume(.rightParen, "Expected ')' after expression")

@@ -8,17 +8,25 @@ enum Value {
 
 struct Environment {
 	var vars: [String: Value] = [:]
+
+	mutating func assign(_ value: Value, to name: String) throws {
+		guard vars.index(forKey: name) != nil else {
+			throw RuntimeError.assignmentError("Cannot assign to uninitialized variable")
+		}
+
+		vars[name] = value
+	}
 }
 
 struct AstInterpreter {
 	var lastExpressionValue: Value = .nil
 	var environment = Environment()
 
-	mutating func run(_ statements: [any Stmt], onComplete: (() -> Void)? = nil) {
+	mutating func run(_ statements: [any Stmt], onComplete: ((Value) -> Void)? = nil) {
 		do {
 			for statement in statements {
 				try execute(statement: statement)
-				onComplete?()
+				onComplete?(lastExpressionValue)
 			}
 		} catch let error as RuntimeError {
 			switch error {
@@ -26,6 +34,8 @@ struct AstInterpreter {
 				Swlox.runtimeError(message, token: token)
 			case let .typeError(message, token):
 				Swlox.runtimeError(message, token: token)
+			case let .assignmentError(message):
+				Swlox.runtimeError(message, token: .init(kind: .equal, lexeme: "=", line: -1))
 			}
 		} catch {
 			print("RuntimeError: \(error)")
@@ -38,6 +48,20 @@ struct AstInterpreter {
 }
 
 extension AstInterpreter: ExprVisitor {
+	mutating func visit(_ expr: VariableExpr) throws -> Value {
+		guard let value = environment.vars[expr.name.lexeme] else {
+			throw RuntimeError.nameError("undefined variable", expr.name)
+		}
+
+		return value
+	}
+	
+	mutating func visit(_ expr: AssignExpr) throws -> Value {
+		let value = try evaluate(expr.value)
+		try environment.assign(value, to: expr.name.lexeme)
+		return value
+	}
+	
 	mutating func visit(_ expr: LiteralExpr) throws -> Value {
 		switch expr.literal.kind {
 		case .number(let number):
@@ -48,12 +72,6 @@ extension AstInterpreter: ExprVisitor {
 			return .bool(true)
 		case .false:
 			return .bool(false)
-		case let .identifier(name):
-			guard let value = environment.vars[name] else {
-				throw RuntimeError.nameError("not set", expr.literal)
-			}
-
-			return value
 		case .nil:
 			return .nil
 		default:
@@ -170,6 +188,10 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func visit(_ stmt: VarStmt) throws {
-		environment.vars[stmt.name] = try evaluate(stmt.initializer)
+		if let initializer = stmt.initializer {
+			environment.vars[stmt.name] = try evaluate(initializer)
+		} else {
+			environment.vars[stmt.name] = .unknown
+		}
 	}
 }
