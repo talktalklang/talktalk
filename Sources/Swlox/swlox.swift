@@ -64,14 +64,14 @@ struct Swlox: ParsableCommand {
 			}
 
 			do {
-				try run(source: line)
+				try run(source: line, repl: true)
 			} catch {
 				print("Error: \(error.localizedDescription)")
 			}
 		}
 	}
 
-	func run(source: String) throws {
+	func run(source: String, repl: Bool = false) throws {
 		var scanner = Scanner(source: source)
 		let tokens = scanner.scanTokens()
 
@@ -86,6 +86,6 @@ struct Swlox: ParsableCommand {
 		var parser = Parser(tokens: tokens)
 		var interpreter = AstInterpreter()
 
-		try interpreter.run(parser.parse())
+		try interpreter.run(parser.parse(), repl: repl)
 	}
 }

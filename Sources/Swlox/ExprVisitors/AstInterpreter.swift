@@ -1,19 +1,27 @@
+enum Value {
+	case string(String),
+			 number(Double),
+			 bool(Bool),
+			 `nil`,
+			 unknown
+}
+
+struct Environment {
+	var vars: [String: Value] = [:]
+}
+
 struct AstInterpreter {
-	enum Value {
-		case string(String),
-		     number(Double),
-		     bool(Bool),
-				 `nil`,
-		     unknown
-	}
-
 	var lastExpressionValue: Value = .nil
+	var environment = Environment()
 
-	mutating func run(_ statements: [any Stmt]) {
+	mutating func run(_ statements: [any Stmt], repl: Bool = false) {
 		do {
 			for statement in statements {
 				try execute(statement: statement)
-				print("=> \(lastExpressionValue)")
+
+				if repl {
+					print("=> \(lastExpressionValue)")
+				}
 			}
 		} catch let RuntimeError.typeError(message, token) {
 			Swlox.runtimeError(message, token: token)
@@ -151,5 +159,9 @@ extension AstInterpreter: StmtVisitor {
 
 	mutating func visit(_ stmt: ExpressionStmt) throws {
 		_ = try evaluate(stmt.expr)
+	}
+
+	mutating func visit(_ stmt: VarStmt) throws {
+
 	}
 }

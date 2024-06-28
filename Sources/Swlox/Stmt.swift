@@ -1,6 +1,7 @@
 protocol StmtVisitor {
 	mutating func visit(_ stmt: PrintStmt) throws
 	mutating func visit(_ stmt: ExpressionStmt) throws
+	mutating func visit(_ stmt: VarStmt) throws
 }
 
 protocol Stmt {
@@ -17,6 +18,15 @@ struct PrintStmt: Stmt {
 
 struct ExpressionStmt: Stmt {
 	let expr: any Expr
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct VarStmt: Stmt {
+	let name: String
+	let initializer: any Expr
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)
