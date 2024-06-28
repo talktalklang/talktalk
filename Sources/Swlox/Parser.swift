@@ -1,13 +1,3 @@
-// “expression     → equality ;
-// equality       → comparison ( ( "!=" | "==" ) comparison )* ;
-// comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-// term           → factor ( ( "-" | "+" ) factor )* ;
-// factor         → unary ( ( "/" | "*" ) unary )* ;
-// unary          → ( "!" | "-" ) unary
-//                | primary ;
-// primary        → NUMBER | STRING | "true" | "false" | "nil"
-//                | "(" expression ")" ;”
-
 enum ParserError: Error {
 	case unexpectedToken(Token),
 			 unexpectedAssignment(Token)
@@ -90,7 +80,7 @@ struct Parser {
 	}
 
 	mutating func assignment() throws -> any Expr {
-		var expr = try equality()
+		let expr = try equality()
 
 		// Lets see if this is an assignment
 		if matching(kinds: .equal) {
