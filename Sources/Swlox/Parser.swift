@@ -65,6 +65,10 @@ struct Parser {
 			return try printStmt()
 		}
 
+		if matching(kinds: .while) {
+			return try whileStmt()
+		}
+
 		if matching(kinds: .leftBrace) {
 			return try BlockStmt(statements: block())
 		}
@@ -82,6 +86,14 @@ struct Parser {
 		}
 
 		return IfStmt(condition: condition, thenStatement: thenStatement, elseStatement: nil)
+	}
+
+	mutating func whileStmt() throws -> any Stmt {
+		let condition = try expression()
+		try consume(.leftBrace, "Expected '{' to start while loop")
+		let statements = try block()
+
+		return WhileStmt(condition: condition, statements: statements)
 	}
 
 	mutating func printStmt() throws -> any Stmt {
@@ -208,7 +220,7 @@ struct Parser {
 	mutating func unary() throws -> any Expr {
 		while matching(kinds: .bang, .minus) {
 			let op = previous()
-			var expr = try unary()
+			let expr = try unary()
 			return UnaryExpr(op: op, expr: expr)
 		}
 

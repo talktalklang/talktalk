@@ -4,6 +4,7 @@ protocol StmtVisitor {
 	mutating func visit(_ stmt: VarStmt) throws
 	mutating func visit(_ stmt: BlockStmt) throws
 	mutating func visit(_ stmt: IfStmt) throws
+	mutating func visit(_ stmt: WhileStmt) throws
 }
 
 protocol Stmt {
@@ -47,6 +48,15 @@ struct IfStmt: Stmt {
 	let condition: any Expr
 	let thenStatement: any Stmt
 	let elseStatement: (any Stmt)?
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct WhileStmt: Stmt {
+	let condition: any Expr
+	let statements: [any Stmt]
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)

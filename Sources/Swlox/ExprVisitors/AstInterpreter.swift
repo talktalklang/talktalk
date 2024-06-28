@@ -242,6 +242,14 @@ extension AstInterpreter: StmtVisitor {
 		}
 	}
 
+	mutating func visit(_ stmt: WhileStmt) throws {
+		while try isTruthy(evaluate(stmt.condition)) {
+			for statement in stmt.statements {
+				try execute(statement: statement)
+			}
+		}
+	}
+
 	mutating func executeBlock(_ statements: [any Stmt], environment: Environment) throws {
 		// TODO: Don't mutate environment
 		let previous = self.environment

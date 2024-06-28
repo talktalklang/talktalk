@@ -50,6 +50,11 @@ module.exports = grammar({
       repeat(seq('&&', $.equality))
     ),
 
+    while_statement: $ => seq(
+      'while',
+      $.block
+    ),
+
     expression_statement: $ => seq(
       $.expression,
       ';'
