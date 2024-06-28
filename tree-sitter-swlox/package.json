@@ -40,7 +40,9 @@
   "tree-sitter": [
     {
       "scope": "source.swlox",
-      "injection-regex": "^swlox$"
+      "injection-regex": "^swlox$",
+      "file-types": ["swlox"],
+      "highlights": "queries/highlights.scm"
     }
   ]
 }
