@@ -24,10 +24,37 @@ struct Parser {
 		var statements: [any Stmt] = []
 
 		while !isAtEnd {
-			try statements.append(statement())
+			if let stmt = declaration() {
+				statements.append(stmt)
+			}
 		}
 
 		return statements
+	}
+
+	mutating func declaration() -> (any Stmt)? {
+		do {
+			if matching(kinds: .var) {
+				return try varDeclaration()
+			}
+
+			return try statement()
+		} catch {
+			synchronize()
+			return nil
+		}
+	}
+
+	mutating func varDeclaration() throws -> any Stmt {
+		guard case let .identifier(name) = peek().kind else {
+			throw ParserError.unexpectedToken(peek())
+		}
+
+		try consume(.equal, "Expected var initializer")
+		let initializer = try expression()
+		try consume(.semicolon, "Expected statement terminator")
+
+		return VarStmt(name: name, initializer: initializer)
 	}
 
 	mutating func statement() throws -> any Stmt {
