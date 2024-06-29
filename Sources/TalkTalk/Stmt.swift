@@ -76,6 +76,7 @@ struct FunctionStmt: Stmt {
 }
 
 struct ReturnStmt: Stmt {
+	let token: Token
 	let value: (any Expr)?
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {

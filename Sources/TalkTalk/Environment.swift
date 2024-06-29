@@ -14,26 +14,28 @@ class Environment {
 		vars[name] ?? parent?.lookup(name: name)
 	}
 
-	func lookup(name: String, depth: Int) -> Value? {
+	func lookup(name: Token, depth: Int) throws -> Value {
 		let environment = ancestor(depth: depth)
-		return environment?.lookup(name: name)
+		return try environment?.lookup(name: name.lexeme) ?? {
+			throw RuntimeError.nameError("Undefined variable: \(name)", name)
+		}()
 	}
 
-	func get(token: Token) throws -> Value {
-		if case let .identifier(name) = token.kind, let value = vars[name] {
-			return value
-		}
-
-		throw RuntimeError.nameError("Undefined variable: \(token.lexeme)", token)
-	}
-
-	func get(token: Token, depth: Int) throws -> Value {
-		guard let environment = ancestor(depth: depth) else {
-			throw RuntimeError.nameError("No environment found at depth \(depth)", token)
-		}
-
-		return try environment.get(token: token)
-	}
+//	func get(token: Token) throws -> Value {
+//		if case let .identifier(name) = token.kind, let value = vars[name] {
+//			return value
+//		}
+//
+//		throw RuntimeError.nameError("Undefined variable: \(token.lexeme)", token)
+//	}
+//
+//	func get(token: Token, depth: Int) throws -> Value {
+//		guard let environment = ancestor(depth: depth) else {
+//			throw RuntimeError.nameError("No environment found at depth \(depth)", token)
+//		}
+//
+//		return try environment.get(token: token)
+//	}
 
 	func initialize(name: String, value: Value) {
 		vars[name] = value

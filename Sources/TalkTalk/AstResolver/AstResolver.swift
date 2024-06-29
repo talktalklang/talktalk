@@ -5,8 +5,10 @@
 //  Created by Pat Nakajima on 6/29/24.
 //
 struct Scope {
-	enum Status {
-		case declared, defined
+	struct Status: OptionSet {
+		let rawValue: Int
+		static let declared = Status(rawValue: 1 << 0)
+		static let defined = Status(rawValue: 1 << 1)
 	}
 
 	var storage: [String: Status] = [:]
@@ -20,13 +22,18 @@ struct Scope {
 	}
 
 	mutating func mark(_ token: Token, as status: Scope.Status) {
-		storage[token.lexeme] = status
+		storage[token.lexeme, default: Status()].insert(status)
 	}
 }
 
 struct AstResolver {
+	enum FunctionType {
+		case none, function
+	}
+
 	var interpreter: AstInterpreter
 	var scopes: [Scope] = []
+	var currentFunction: FunctionType = .none
 
 	mutating func beginScope() {
 		scopes.append(Scope())
@@ -58,7 +65,10 @@ struct AstResolver {
 		}
 	}
 
-	mutating func resolveFunction(_ function: FunctionStmt) throws {
+	mutating func resolveFunction(_ function: FunctionStmt, _ type: FunctionType) throws {
+		let enclosingFunctionType = currentFunction
+		currentFunction = type
+
 		beginScope()
 
 		for param in function.params {
@@ -69,6 +79,7 @@ struct AstResolver {
 		try resolve(function.body)
 
 		endScope()
+		currentFunction = enclosingFunctionType
 	}
 
 	mutating func resolve(_ statement: any Stmt) throws {

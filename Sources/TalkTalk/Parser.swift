@@ -108,6 +108,7 @@ struct Parser {
 	}
 
 	mutating func returnStmt() throws -> any Stmt {
+		let token = previous()
 		var value: (any Expr)?
 
 		if !check(kind: .semicolon) {
@@ -116,7 +117,7 @@ struct Parser {
 
 		try consume(.semicolon, "Expected semicolon after return, got: \(previous())")
 
-		return ReturnStmt(value: value)
+		return ReturnStmt(token: token, value: value)
 	}
 
 	mutating func expressionStmt() throws -> any Stmt {

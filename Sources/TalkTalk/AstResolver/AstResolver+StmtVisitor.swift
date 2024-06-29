@@ -47,10 +47,16 @@ extension AstResolver: StmtVisitor {
 	mutating func visit(_ stmt: FunctionStmt) throws {
 		declare(stmt.name)
 		define(stmt.name)
-		try resolveFunction(stmt)
+
+		try resolveFunction(stmt, .function)
 	}
 
 	mutating func visit(_ stmt: ReturnStmt) throws {
+		if currentFunction == .none {
+			TalkTalk.error("Can't return from top level code.", token: stmt.token)
+			throw ResolverError.topLevelReturn
+		}
+
 		if let value = stmt.value {
 			try resolve(value)
 		}

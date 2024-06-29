@@ -5,6 +5,10 @@
 //  Created by Pat Nakajima on 6/29/24.
 //
 
+enum ResolverError: Error {
+	case topLevelReturn
+}
+
 extension AstResolver: ExprVisitor {
 	mutating func visit(_ expr: BinaryExpr) throws {
 		try resolve(expr.lhs)
@@ -37,10 +41,6 @@ extension AstResolver: ExprVisitor {
 	}
 
 	mutating func visit(_ expr: VariableExpr) throws {
-		if let scope = scopes.last, scope.get(expr.name.lexeme) == .declared {
-			TalkTalk.error("Can't read local variable in its own init", token: expr.name)
-		}
-
 		resolveLocal(expr: expr, name: expr.name)
 	}
 

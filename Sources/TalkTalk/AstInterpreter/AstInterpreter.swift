@@ -34,7 +34,7 @@ struct AstInterpreter {
 	func lookupVariable(_ name: Token, expr: any Expr) throws -> Value {
 		do {
 			if let distance = locals[expr.id] {
-				return try environment.get(token: name, depth: distance)
+				return try environment.lookup(name: name, depth: distance)
 			} else {
 				return globals.lookup(name: name.lexeme) ?? .unknown
 			}
