@@ -20,8 +20,8 @@ struct TalkTalk: ParsableCommand {
 
 	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
-	static var hadError = false
-	static var hadRuntimeError = false
+	nonisolated(unsafe) static var hadError = false
+	nonisolated(unsafe) static var hadRuntimeError = false
 
 	static func error(_ message: String, line: Int) {
 		report(line, "", message)
