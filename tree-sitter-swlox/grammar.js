@@ -20,7 +20,8 @@ module.exports = grammar({
       $.expression_statement,
       $.assignment_statement,
       $.block,
-      $.if_statement
+      $.if_statement,
+      $.while_statement
     ),
 
     if_statement: $ => seq(
@@ -37,11 +38,26 @@ module.exports = grammar({
 
     equality: $ => seq(
       $.comparison,
-      repeat(seq('==', $.comparison))
+      repeat(seq(choice('==', '!='), $.comparison))
+    ),
+
+    comparison: $ => seq(
+      $.term,
+      repeat(seq(choice('>', '>=', '<', '<='), $.term))
+    ),
+
+    term: $ => seq(
+      $.factor,
+      repeat(seq(choice('+', '-'), $.factor))
+    ),
+
+    factor: $ => seq(
+      $.unary_expression,
+      repeat(seq(choice('*', '/'), $.unary_expression))
     ),
 
     logic_or: $ => seq(
-      $.logic_and
+      $.logic_and,
       repeat(seq('||', $.equality))
     ),
 
@@ -52,6 +68,7 @@ module.exports = grammar({
 
     while_statement: $ => seq(
       'while',
+      $.expression,
       $.block
     ),
 
@@ -93,14 +110,16 @@ module.exports = grammar({
     ),
 
     unary_expression: $ => prec.left(2, seq(
-      $.unary_operator,
-      $.expression
+      choice('-', '!'),
+      $.call
     )),
 
     primary_expression: $ => choice(
       $.number_literal,
+      'nil',
       $.string_literal,
-      $.variable
+      $.boolean_literal,
+      $.variable,
     ),
 
     variable_declaration: $ => seq(
@@ -113,8 +132,6 @@ module.exports = grammar({
 
     call: $ => seq($.primary_expression, repeat1(seq('(', optional($.arguments), ')' ))),
     arguments: $ => seq($.expression, repeat(seq(',', $.expression))),
-
-    unary_operator: $ => choice('-', '!', $.call),
 
     binary_operator: _ => choice('+', '-', '*', '/', '==', '!=', '<', '<=', '>', '>='),
 
