@@ -177,7 +177,7 @@ struct Parser {
 
 			if let expr = expr as? VariableExpr {
 				let name = expr.name
-				return AssignExpr(id: "assign_\(current)", name: name, value: value)
+				return AssignExpr(id: nextID(), name: name, value: value)
 			}
 
 			throw ParserError.unexpectedAssignment(equals)
@@ -192,7 +192,7 @@ struct Parser {
 		while matching(kinds: .pipePipe) {
 			let op = previous()
 			let rhs = try and()
-			expr = LogicExpr(id: "or_\(current)", lhs: expr, op: op, rhs: rhs)
+			expr = LogicExpr(id: nextID(), lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -204,7 +204,7 @@ struct Parser {
 		while matching(kinds: .andAnd) {
 			let op = previous()
 			let rhs = try equality()
-			expr = LogicExpr(id: "and_\(current)", lhs: expr, op: op, rhs: rhs)
+			expr = LogicExpr(id: nextID(), lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -216,7 +216,7 @@ struct Parser {
 		while matching(kinds: .bangEqual, .equalEqual) {
 			let op = previous()
 			let rhs = try comparison()
-			expr = BinaryExpr(id: "eq_\(current)", lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: nextID(), lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -228,7 +228,7 @@ struct Parser {
 		while matching(kinds: .greater, .greaterEqual, .less, .lessEqual) {
 			let op = previous()
 			let rhs = try term()
-			expr = BinaryExpr(id: "comparison_\(current)", lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: nextID(), lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -240,7 +240,7 @@ struct Parser {
 		while matching(kinds: .minus, .plus) {
 			let op = previous()
 			let rhs = try factor()
-			expr = BinaryExpr(id: "term_\(current)", lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: nextID(), lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -252,7 +252,7 @@ struct Parser {
 		while matching(kinds: .slash, .star) {
 			let op = previous()
 			let rhs = try unary()
-			expr = BinaryExpr(id: "factor_\(current)", lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: nextID(), lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -262,7 +262,7 @@ struct Parser {
 		while matching(kinds: .bang, .minus) {
 			let op = previous()
 			let expr = try unary()
-			return UnaryExpr(id: "unary_\(current)", op: op, expr: expr)
+			return UnaryExpr(id: nextID(), op: op, expr: expr)
 		}
 
 		return try call()
@@ -293,7 +293,7 @@ struct Parser {
 
 		let closingParen = try consume(.rightParen, "Expected ')' after arguments")
 
-		return CallExpr(id: "call_\(current)", callee: callee, closingParen: closingParen, arguments: arguments)
+		return CallExpr(id: nextID(), callee: callee, closingParen: closingParen, arguments: arguments)
 	}
 
 	// It all comes down to this.
@@ -302,19 +302,19 @@ struct Parser {
 
 		switch token.kind {
 		case .number(_), .string(_), .true, .false, .nil:
-			return LiteralExpr(id: "literal_\(token.kind)_\(current)", literal: token)
+			return LiteralExpr(id: nextID(), literal: token)
 		case .identifier:
-			return VariableExpr(id: "var_\(current)", name: token)
+			return VariableExpr(id: nextID(), name: token)
 		case .leftParen:
 			let expr = try expression()
 			try consume(.rightParen, "Expected ')' after expression")
 
-			return GroupingExpr(id: "group_\(current)", expr: expr)
+			return GroupingExpr(id: nextID(), expr: expr)
 		default:
 			// TODO: This is wrong
 			TalkTalk.error("Unexpected token: \(token)", token: token)
 
-			return LiteralExpr(id: "literal_\(current)", literal: token)
+			return LiteralExpr(id: nextID(), literal: token)
 		}
 	}
 
@@ -401,5 +401,9 @@ struct Parser {
 
 	private func previous() -> Token {
 		tokens[current - 1]
+	}
+
+	private func nextID() -> String {
+		"\(previous().id)_\(current)"
 	}
 }

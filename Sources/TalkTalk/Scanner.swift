@@ -57,7 +57,7 @@ struct Token: Identifiable {
 	let line: Int
 
 	var id: String {
-		"_token_\(kind.id)_\(lexeme)_\(line)"
+		"_token_\(kind.id)_\(line)"
 	}
 
 	var description: String {
