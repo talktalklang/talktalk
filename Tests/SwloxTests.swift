@@ -1,7 +1,7 @@
-@testable import swlox
+@testable import TalkTalk
 import XCTest
 
-class SwloxTests: XCTestCase {
+class TalkTalkTests: XCTestCase {
 	func testEnvironment() throws {
 		let parent = Environment()
 		let environment = Environment(parent: parent)

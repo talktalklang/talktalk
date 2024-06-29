@@ -1,0 +1,76 @@
+{
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder:talktalk}",
+      "name": "Debug tlk",
+      "program": "${workspaceFolder:talktalk}/.build/debug/tlk",
+      "preLaunchTask": "swift: Build Debug tlk"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder:talktalk}",
+      "name": "Release tlk",
+      "program": "${workspaceFolder:talktalk}/.build/release/tlk",
+      "preLaunchTask": "swift: Build Release tlk"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder:talktalk}",
+      "name": "Debug talktalk",
+      "program": "${workspaceFolder:talktalk}/.build/debug/talktalk",
+      "preLaunchTask": "swift: Build Debug talktalk"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder:talktalk}",
+      "name": "Release talktalk",
+      "program": "${workspaceFolder:talktalk}/.build/release/talktalk",
+      "preLaunchTask": "swift: Build Release talktalk"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder:talktalk}",
+      "name": "Debug tlk",
+      "program": "${workspaceFolder:talktalk}/.build/debug/tlk",
+      "preLaunchTask": "swift: Build Debug tlk"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "sourceLanguages": [
+        "swift"
+      ],
+      "args": [],
+      "cwd": "${workspaceFolder:talktalk}",
+      "name": "Release tlk",
+      "program": "${workspaceFolder:talktalk}/.build/release/tlk",
+      "preLaunchTask": "swift: Build Release tlk"
+    }
+  ]
+}
