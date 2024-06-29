@@ -242,15 +242,15 @@ struct Parser {
 	}
 
 	mutating func finishCall(_ callee: any Expr) throws -> any Expr {
-		let arguments: [any Expr] = []
+		var arguments: [any Expr] = []
 
-		if !check(.rightParen) {
+		if !check(kind: .rightParen) {
 			repeat {
 				try arguments.append(expression())
 			} while matching(kinds: .comma)
 		}
 
-		let closingParen = consume(.rightParen, "Expected ')' after arguments")
+		let closingParen = try consume(.rightParen, "Expected ')' after arguments")
 
 		return CallExpr(callee: callee, closingParen: closingParen, arguments: arguments)
 	}
@@ -277,15 +277,16 @@ struct Parser {
 		}
 	}
 
-	private mutating func `consume`(_ kind: Token.Kind, _: String) throws {
+	@discardableResult private mutating func `consume`(_ kind: Token.Kind, _: String) throws -> Token {
 		if isAtEnd, kind != .eof {
 			Swlox.error("Unexpected end of input. Expected: \(kind)", token: previous())
 			throw ParserError.unexpectedToken(previous())
 		}
 
 		if check(kind: kind) {
+			let prev = previous()
 			advance()
-			return
+			return prev
 		}
 
 		let token = peek()

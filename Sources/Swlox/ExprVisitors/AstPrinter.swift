@@ -3,7 +3,7 @@ struct AstPrinter: ExprVisitor {
 		try expr.accept(visitor: &self)
 	}
 
-	mutating func parenthesize(_ name: String, _ exprs: (any Expr)...) throws -> String {
+	mutating func parenthesize(_ name: String, _ exprs: [any Expr]) throws -> String {
 		var parts = ["(", name]
 
 		for expr in exprs {
@@ -14,6 +14,11 @@ struct AstPrinter: ExprVisitor {
 		parts.append(")")
 
 		return parts.joined(separator: "")
+	}
+
+
+	mutating func parenthesize(_ name: String, _ exprs: (any Expr)...) throws -> String {
+		return try parenthesize(name, exprs)
 	}
 
 	mutating func visit(_ expr: BinaryExpr) throws -> String {
@@ -45,6 +50,6 @@ struct AstPrinter: ExprVisitor {
 	}
 
 	mutating func visit(_ expr: CallExpr) throws -> String {
-		try parenthesize(expr.callee, expr.arguments)
+		try parenthesize(self.print(expr: expr.callee), expr.arguments)
 	}
 }

@@ -1,9 +1,17 @@
 enum Value: Equatable {
+	enum CallError: Error {
+		case valueNotCallable(Value)
+	}
+
 	case string(String),
 			 number(Double),
 			 bool(Bool),
 			 `nil`,
 			 unknown
+
+	func call(_ interpreter: AstInterpreter, _ arguments: [Value]) throws -> Value {
+		throw CallError.valueNotCallable(self)
+	}
 }
 
 class Environment {
@@ -190,6 +198,17 @@ extension AstInterpreter: ExprVisitor {
 		}
 
 		return .unknown
+	}
+
+	mutating func visit(_ expr: CallExpr) throws -> Value {
+		let callee = try evaluate(expr.callee)
+		var arguments: [Value] = []
+
+		for argument in expr.arguments {
+			try arguments.append(evaluate(argument))
+		}
+
+		return try callee.call(self, arguments)
 	}
 
 	private func isTruthy(_ value: Value) -> Bool {

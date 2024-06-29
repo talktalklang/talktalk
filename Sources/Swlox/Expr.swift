@@ -82,4 +82,8 @@ struct CallExpr: Expr {
 	let callee: any Expr
 	let closingParen: Token // For error reporting
 	let arguments: [any Expr]
+
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
+	}
 }
