@@ -1,5 +1,5 @@
-@testable import tlk
 import Testing
+@testable import tlk
 
 @Suite("TalkTalk") struct TalkTalkTests {
 	@Test func environmentTests() throws {

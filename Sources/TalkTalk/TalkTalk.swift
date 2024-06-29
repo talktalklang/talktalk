@@ -10,7 +10,7 @@ import Foundation
 enum RuntimeError: Error {
 	case typeError(String, Token),
 	     nameError(String, Token),
-			 assignmentError(String)
+	     assignmentError(String)
 }
 
 @main
@@ -94,6 +94,11 @@ struct TalkTalk: ParsableCommand {
 		}
 
 		var parser = Parser(tokens: tokens)
-		try interpreter.run(parser.parse(), onComplete: onComplete)
+		let parsed = try parser.parse()
+
+		var resolver = AstResolver(interpreter: interpreter)
+		var interpreter = try resolver.resolve(parsed)
+
+		interpreter.run(parsed, onComplete: onComplete)
 	}
 }

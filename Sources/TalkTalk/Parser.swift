@@ -1,6 +1,6 @@
 enum ParserError: Error {
 	case unexpectedToken(Token),
-			 unexpectedAssignment(Token)
+	     unexpectedAssignment(Token)
 }
 
 // The parser.... parses. It is where precedence and associtivity happens.
@@ -42,10 +42,7 @@ struct Parser {
 	}
 
 	mutating func varDeclaration() throws -> any Stmt {
-		guard case let .identifier(name) = advance().kind else {
-			TalkTalk.error("Unexpected token. Expected identifier.", token: peek())
-			throw ParserError.unexpectedToken(peek())
-		}
+		let (token, _) = try consumeIdentifier()
 
 		let initializer: (any Expr)?
 		if peek().kind == .equal {
@@ -57,7 +54,7 @@ struct Parser {
 
 		try consume(.semicolon, "Expected statement terminator")
 
-		return VarStmt(name: name, initializer: initializer)
+		return VarStmt(name: token, initializer: initializer)
 	}
 
 	mutating func statement() throws -> any Stmt {
@@ -101,7 +98,7 @@ struct Parser {
 		try consume(.leftBrace, "Expected '{' to start while loop")
 		let statements = try block()
 
-		return WhileStmt(condition: condition, statements: statements)
+		return WhileStmt(condition: condition, body: statements)
 	}
 
 	mutating func printStmt() throws -> any Stmt {
@@ -180,7 +177,7 @@ struct Parser {
 
 			if let expr = expr as? VariableExpr {
 				let name = expr.name
-				return AssignExpr(name: name, value: value)
+				return AssignExpr(id: "assign_\(current)", name: name, value: value)
 			}
 
 			throw ParserError.unexpectedAssignment(equals)
@@ -195,7 +192,7 @@ struct Parser {
 		while matching(kinds: .pipePipe) {
 			let op = previous()
 			let rhs = try and()
-			expr = LogicExpr(lhs: expr, op: op, rhs: rhs)
+			expr = LogicExpr(id: "or_\(current)", lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -207,7 +204,7 @@ struct Parser {
 		while matching(kinds: .andAnd) {
 			let op = previous()
 			let rhs = try equality()
-			expr = LogicExpr(lhs: expr, op: op, rhs: rhs)
+			expr = LogicExpr(id: "and_\(current)", lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -219,7 +216,7 @@ struct Parser {
 		while matching(kinds: .bangEqual, .equalEqual) {
 			let op = previous()
 			let rhs = try comparison()
-			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: "eq_\(current)", lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -231,7 +228,7 @@ struct Parser {
 		while matching(kinds: .greater, .greaterEqual, .less, .lessEqual) {
 			let op = previous()
 			let rhs = try term()
-			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: "comparison_\(current)", lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -243,7 +240,7 @@ struct Parser {
 		while matching(kinds: .minus, .plus) {
 			let op = previous()
 			let rhs = try factor()
-			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: "term_\(current)", lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -255,7 +252,7 @@ struct Parser {
 		while matching(kinds: .slash, .star) {
 			let op = previous()
 			let rhs = try unary()
-			expr = BinaryExpr(lhs: expr, op: op, rhs: rhs)
+			expr = BinaryExpr(id: "factor_\(current)", lhs: expr, op: op, rhs: rhs)
 		}
 
 		return expr
@@ -265,7 +262,7 @@ struct Parser {
 		while matching(kinds: .bang, .minus) {
 			let op = previous()
 			let expr = try unary()
-			return UnaryExpr(op: op, expr: expr)
+			return UnaryExpr(id: "unary_\(current)", op: op, expr: expr)
 		}
 
 		return try call()
@@ -296,7 +293,7 @@ struct Parser {
 
 		let closingParen = try consume(.rightParen, "Expected ')' after arguments")
 
-		return CallExpr(callee: callee, closingParen: closingParen, arguments: arguments)
+		return CallExpr(id: "call_\(current)", callee: callee, closingParen: closingParen, arguments: arguments)
 	}
 
 	// It all comes down to this.
@@ -305,19 +302,19 @@ struct Parser {
 
 		switch token.kind {
 		case .number(_), .string(_), .true, .false, .nil:
-			return LiteralExpr(literal: token)
-		case .identifier(_):
-			return VariableExpr(name: token)
+			return LiteralExpr(id: "literal_\(token.kind)_\(current)", literal: token)
+		case .identifier:
+			return VariableExpr(id: "var_\(current)", name: token)
 		case .leftParen:
 			let expr = try expression()
 			try consume(.rightParen, "Expected ')' after expression")
 
-			return GroupingExpr(expr: expr)
+			return GroupingExpr(id: "group_\(current)", expr: expr)
 		default:
 			// TODO: This is wrong
 			TalkTalk.error("Unexpected token: \(token)", token: token)
 
-			return LiteralExpr(literal: token)
+			return LiteralExpr(id: "literal_\(current)", literal: token)
 		}
 	}
 

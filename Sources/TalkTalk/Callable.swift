@@ -1,5 +1,5 @@
 struct CallableWrapper: Equatable, Sendable {
-	static func ==(lhs: CallableWrapper, rhs: CallableWrapper) -> Bool {
+	static func == (lhs: CallableWrapper, rhs: CallableWrapper) -> Bool {
 		lhs.name == rhs.name
 	}
 

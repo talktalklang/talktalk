@@ -30,7 +30,7 @@ struct ExpressionStmt: Stmt {
 }
 
 struct VarStmt: Stmt {
-	let name: String
+	let name: Token
 	let initializer: (any Expr)?
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
@@ -58,7 +58,7 @@ struct IfStmt: Stmt {
 
 struct WhileStmt: Stmt {
 	let condition: any Expr
-	let statements: [any Stmt]
+	let body: [any Stmt]
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)

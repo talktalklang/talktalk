@@ -16,7 +16,7 @@ extension AstInterpreter: StmtVisitor {
 
 			do {
 				try context.executeBlock(functionStmt.body, environment: environment)
-			} catch Return.value(let value) {
+			} catch let Return.value(value) {
 				return value
 			}
 
@@ -34,9 +34,9 @@ extension AstInterpreter: StmtVisitor {
 
 	mutating func visit(_ stmt: VarStmt) throws {
 		if let initializer = stmt.initializer {
-			environment.initialize(name: stmt.name, value: try evaluate(initializer))
+			try environment.initialize(name: stmt.name.lexeme, value: evaluate(initializer))
 		} else {
-			environment.initialize(name: stmt.name, value: .nil)
+			environment.initialize(name: stmt.name.lexeme, value: .nil)
 		}
 	}
 
@@ -54,7 +54,7 @@ extension AstInterpreter: StmtVisitor {
 
 	mutating func visit(_ stmt: WhileStmt) throws {
 		while try isTruthy(evaluate(stmt.condition)) {
-			for statement in stmt.statements {
+			for statement in stmt.body {
 				try execute(statement: statement)
 			}
 		}
@@ -75,11 +75,13 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func executeBlock(_ statements: [any Stmt], environment: Environment) throws {
+		let previousEnvironment = self.environment
+
 		defer {
-			_ = environmentStack.popLast()
+			self.environment = previousEnvironment
 		}
 
-		environmentStack.append(environment)
+		self.environment = environment
 
 		for statement in statements {
 			try execute(statement: statement)

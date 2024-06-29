@@ -1,5 +1,5 @@
-struct Token {
-	enum Kind: Equatable {
+struct Token: Identifiable {
+	enum Kind: Equatable, Identifiable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
 		     comma, dot, minus, plus, semicolon, slash, star
@@ -7,7 +7,7 @@ struct Token {
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,
 		     greater, greaterEqual, less, lessEqual,
-				 and, andAnd, pipe, pipePipe
+		     and, andAnd, pipe, pipePipe
 
 		// Literals
 		case identifier(String), string(String), number(Double)
@@ -37,11 +37,28 @@ struct Token {
 			default: nil
 			}
 		}
+
+		var id: String {
+			switch self {
+			case let .identifier(string):
+				"identifier_\(string)"
+			case let .string(string):
+				"string_\(string)"
+			case let .number(double):
+				"number_\(double)"
+			default:
+				"\(self)"
+			}
+		}
 	}
 
 	let kind: Kind
 	let lexeme: String
 	let line: Int
+
+	var id: String {
+		"_token_\(kind.id)_\(lexeme)_\(line)"
+	}
 
 	var description: String {
 		"\(kind) \(lexeme)"

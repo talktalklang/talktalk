@@ -12,11 +12,13 @@ protocol ExprVisitor {
 	mutating func visit(_ expr: CallExpr) throws -> Value
 }
 
-protocol Expr: Sendable {
+protocol Expr: Sendable, Identifiable {
+	var id: String { get set }
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value
 }
 
 struct BinaryExpr: Expr {
+	var id: String
 	let lhs: any Expr
 	let op: Token
 	let rhs: any Expr
@@ -27,6 +29,7 @@ struct BinaryExpr: Expr {
 }
 
 struct GroupingExpr: Expr {
+	var id: String
 	let expr: any Expr
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
@@ -35,6 +38,7 @@ struct GroupingExpr: Expr {
 }
 
 struct LiteralExpr: Expr {
+	var id: String
 	let literal: Token
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
@@ -43,6 +47,7 @@ struct LiteralExpr: Expr {
 }
 
 struct UnaryExpr: Expr {
+	var id: String
 	let op: Token
 	let expr: any Expr
 
@@ -52,6 +57,7 @@ struct UnaryExpr: Expr {
 }
 
 struct VariableExpr: Expr {
+	var id: String
 	let name: Token
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
@@ -60,6 +66,7 @@ struct VariableExpr: Expr {
 }
 
 struct AssignExpr: Expr {
+	var id: String
 	let name: Token
 	let value: any Expr
 
@@ -69,6 +76,7 @@ struct AssignExpr: Expr {
 }
 
 struct LogicExpr: Expr {
+	var id: String
 	let lhs: any Expr
 	let op: Token
 	let rhs: any Expr
@@ -79,11 +87,12 @@ struct LogicExpr: Expr {
 }
 
 struct CallExpr: Expr {
+	var id: String
 	let callee: any Expr
 	let closingParen: Token // For error reporting
 	let arguments: [any Expr]
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
-		try visitor.visit(self)
+		return try visitor.visit(self)
 	}
 }

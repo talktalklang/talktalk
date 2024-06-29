@@ -16,7 +16,7 @@ let package = Package(
 		.executableTarget(
 			name: "tlk",
 			dependencies: [
-				.product(name: "ArgumentParser", package: "swift-argument-parser")
+				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			],
 			path: "Sources/TalkTalk"
 		),

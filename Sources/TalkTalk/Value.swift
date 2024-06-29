@@ -4,12 +4,12 @@ enum Value: Sendable, Equatable {
 	}
 
 	case string(String),
-			 number(Double),
-			 bool(Bool),
-			 `nil`,
-			 callable(CallableWrapper),
-			 void,
-			 unknown
+	     number(Double),
+	     bool(Bool),
+	     `nil`,
+	     callable(CallableWrapper),
+	     void,
+	     unknown
 
 	func call(_ interpreter: inout AstInterpreter, _ arguments: [Value]) throws -> Value {
 		if case let .callable(wrapper) = self {
@@ -19,5 +19,3 @@ enum Value: Sendable, Equatable {
 		}
 	}
 }
-
-

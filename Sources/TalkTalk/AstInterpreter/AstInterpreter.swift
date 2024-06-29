@@ -1,10 +1,11 @@
 struct AstInterpreter {
 	var lastExpressionValue: Value = .nil
 	var globals = Environment()
-	var environmentStack: [Environment] = []
+	var locals: [String: Int] = [:]
+	var environment: Environment
 
 	init() {
-		environmentStack = [globals]
+		self.environment = globals
 
 		// Define builtins
 		defineClock()
@@ -30,6 +31,19 @@ struct AstInterpreter {
 		}
 	}
 
+	func lookupVariable(_ name: Token, expr: any Expr) throws -> Value {
+		do {
+			if let distance = locals[expr.id] {
+				return try environment.get(token: name, depth: distance)
+			} else {
+				return globals.lookup(name: name.lexeme) ?? .unknown
+			}
+		} catch {
+			print("Locals: \(locals.debugDescription)")
+			throw error
+		}
+	}
+
 	func withEnvironment<T>(callback: (Environment) throws -> T) throws -> T {
 		try callback(Environment(parent: environment))
 	}
@@ -38,15 +52,19 @@ struct AstInterpreter {
 		try statement.accept(visitor: &self)
 	}
 
+	mutating func resolve(_ expr: any Expr, depth: Int) {
+		locals[expr.id] = depth
+	}
+
 	func isTruthy(_ value: Value) -> Bool {
 		switch value {
-		case .string(_):
+		case .string:
 			true
-		case .number(_):
+		case .number:
 			true
-		case .callable(_):
+		case .callable:
 			true
-		case .bool(let bool):
+		case let .bool(bool):
 			bool
 		case .nil:
 			false
@@ -61,9 +79,4 @@ struct AstInterpreter {
 		lastExpressionValue = try expr.accept(visitor: &self)
 		return lastExpressionValue
 	}
-
-	var environment: Environment {
-		environmentStack.last!
-	}
 }
-

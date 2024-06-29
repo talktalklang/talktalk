@@ -16,7 +16,6 @@ struct AstPrinter: ExprVisitor {
 		return parts.joined(separator: "")
 	}
 
-
 	mutating func parenthesize(_ name: String, _ exprs: (any Expr)...) throws -> String {
 		return try parenthesize(name, exprs)
 	}

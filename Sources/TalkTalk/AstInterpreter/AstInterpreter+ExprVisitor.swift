@@ -1,23 +1,26 @@
 extension AstInterpreter: ExprVisitor {
 	mutating func visit(_ expr: VariableExpr) throws -> Value {
-		guard let value = environment.lookup(name: expr.name.lexeme) else {
-			throw RuntimeError.nameError("undefined variable", expr.name)
+		return try lookupVariable(expr.name, expr: expr)
+	}
+
+	mutating func visit(_ expr: AssignExpr) throws -> Value {
+		let value = try evaluate(expr.value)
+		let distance = locals[expr.id]
+
+		if let distance {
+			try environment.assign(name: expr.name, value: value, depth: distance)
+		} else {
+			_ = try globals.assign(name: expr.name.lexeme, value: value)
 		}
 
 		return value
 	}
 
-	mutating func visit(_ expr: AssignExpr) throws -> Value {
-		let value = try evaluate(expr.value)
-		_ = try environment.assign(name: expr.name.lexeme, value: value)
-		return value
-	}
-
 	mutating func visit(_ expr: LiteralExpr) throws -> Value {
 		switch expr.literal.kind {
-		case .number(let number):
+		case let .number(number):
 			return .number(number)
-		case .string(let string):
+		case let .string(string):
 			return .string(string)
 		case .true:
 			return .bool(true)
@@ -49,51 +52,60 @@ extension AstInterpreter: ExprVisitor {
 		switch expr.op.kind {
 		case .minus:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .number(lhs - rhs)
 			}
 		case .plus:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .number(lhs + rhs)
 			} else if case let .string(lhs) = lhs,
-								case let .string(rhs) = rhs {
+			          case let .string(rhs) = rhs
+			{
 				return .string(lhs + rhs)
 			}
-
 		case .slash:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .number(lhs / rhs)
 			}
 		case .star:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .number(lhs * rhs)
 			}
 		case .equalEqual:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .bool(lhs == rhs)
 			}
 		case .greater:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .bool(lhs > rhs)
 			}
 		case .greaterEqual:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .bool(lhs >= rhs)
 			}
 		case .less:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .bool(lhs < rhs)
 			}
 		case .lessEqual:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs {
+			   case let .number(rhs) = rhs
+			{
 				return .bool(lhs <= rhs)
 			}
 		default:
@@ -134,7 +146,4 @@ extension AstInterpreter: ExprVisitor {
 
 		return try callee.call(&self, arguments)
 	}
-
 }
-
-
