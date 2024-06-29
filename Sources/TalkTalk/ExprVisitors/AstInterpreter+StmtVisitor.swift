@@ -8,7 +8,7 @@ extension AstInterpreter: StmtVisitor {
 		let closure: Environment
 
 		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
-			var environment = Environment(parent: closure)
+			let environment = Environment(parent: closure)
 
 			for (i, param) in functionStmt.params.enumerated() {
 				environment.initialize(name: param.lexeme, value: arguments[i])
@@ -61,7 +61,10 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func visit(_ stmt: FunctionStmt) throws {
-		environment.define(name: stmt.name.lexeme, callable: Function(functionStmt: stmt, closure: environment))
+		environment.define(
+			name: stmt.name.lexeme,
+			callable: Function(functionStmt: stmt, closure: environment)
+		)
 	}
 
 	mutating func visit(_ stmt: ReturnStmt) throws {

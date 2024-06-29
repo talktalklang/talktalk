@@ -12,16 +12,14 @@ class Environment {
 	}
 
 	private var vars: [String: Value] = [:]
-	private var parent: Parent?
+	private var parent: Environment?
 
 	init(parent: Environment? = nil) {
-		if let parent {
-			self.parent = Parent(environment: parent)
-		}
+		self.parent = parent
 	}
 
 	func lookup(name: String) -> Value? {
-		vars[name] ?? parent?.environment.lookup(name: name)
+		vars[name] ?? parent?.lookup(name: name)
 	}
 
 	func initialize(name: String, value: Value) {
@@ -29,17 +27,16 @@ class Environment {
 	}
 
 	func assign(name: String, value: Value) throws -> AssignmentResult {
-		if try parent?.environment.assign(name: name, value: value) == .handled {
+		if vars.index(forKey: name) != nil {
+			vars[name] = value
 			return .handled
 		}
 
-		guard lookup(name: name) != nil else {
-			throw RuntimeError.assignmentError("Cannot assign to uninitialized variable")
+		if try parent?.assign(name: name, value: value) == .handled {
+			return .handled
 		}
 
-		vars[name] = value
-
-		return .handled
+		throw RuntimeError.assignmentError("Cannot assign to uninitialized variable")
 	}
 
 	func define(name: String, callable: any Callable) {

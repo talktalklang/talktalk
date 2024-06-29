@@ -63,13 +63,7 @@ struct AstInterpreter {
 	}
 
 	var environment: Environment {
-		get {
-			environmentStack.last!
-		}
-
-		set {
-			environmentStack[environmentStack.count-1] = newValue
-		}
+		environmentStack.last!
 	}
 }
 
