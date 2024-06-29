@@ -2,10 +2,10 @@ prefix=@PREFIX@
 libdir=@LIBDIR@
 includedir=@INCLUDEDIR@
 
-Name: tree-sitter-TalkTalk
+Name: tree-sitter-talktalk
 Description: TalkTalk grammar for tree-sitter
 URL: @URL@
 Version: @VERSION@
 Requires: @REQUIRES@
-Libs: -L${libdir} @ADDITIONAL_LIBS@ -ltree-sitter-TalkTalk
+Libs: -L${libdir} @ADDITIONAL_LIBS@ -ltree-sitter-talktalk
 Cflags: -I${includedir}
