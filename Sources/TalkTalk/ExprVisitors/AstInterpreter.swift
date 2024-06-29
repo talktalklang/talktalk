@@ -1,6 +1,6 @@
 struct AstInterpreter {
 	var lastExpressionValue: Value = .nil
-	let globals = Environment()
+	var globals = Environment()
 	var environmentStack: [Environment] = []
 
 	init() {
@@ -63,7 +63,13 @@ struct AstInterpreter {
 	}
 
 	var environment: Environment {
-		environmentStack.last!
+		get {
+			environmentStack.last!
+		}
+
+		set {
+			environmentStack[environmentStack.count-1] = newValue
+		}
 	}
 }
 

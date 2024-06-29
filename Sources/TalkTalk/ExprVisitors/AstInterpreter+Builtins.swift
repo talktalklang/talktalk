@@ -7,7 +7,7 @@ struct ClockCallable: Callable {
 }
 
 extension AstInterpreter {
-	func defineClock() {
+	mutating func defineClock() {
 		globals.define(name: "clock", callable: ClockCallable())
 	}
 }

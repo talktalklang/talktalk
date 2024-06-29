@@ -3,15 +3,25 @@ class Environment {
 		case handled, unhandled, uninitialized
 	}
 
+	final class Parent {
+		var environment: Environment
+
+		init(environment: Environment) {
+			self.environment = environment
+		}
+	}
+
 	private var vars: [String: Value] = [:]
-	private var parent: Environment?
+	private var parent: Parent?
 
 	init(parent: Environment? = nil) {
-		self.parent = parent
+		if let parent {
+			self.parent = Parent(environment: parent)
+		}
 	}
 
 	func lookup(name: String) -> Value? {
-		vars[name] ?? parent?.lookup(name: name)
+		vars[name] ?? parent?.environment.lookup(name: name)
 	}
 
 	func initialize(name: String, value: Value) {
@@ -19,7 +29,7 @@ class Environment {
 	}
 
 	func assign(name: String, value: Value) throws -> AssignmentResult {
-		if try parent?.assign(name: name, value: value) == .handled {
+		if try parent?.environment.assign(name: name, value: value) == .handled {
 			return .handled
 		}
 

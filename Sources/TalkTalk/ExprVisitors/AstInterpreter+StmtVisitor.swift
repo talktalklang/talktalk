@@ -1,25 +1,26 @@
 extension AstInterpreter: StmtVisitor {
-	struct Function: Callable {
+	struct Function: Callable, @unchecked Sendable {
 		enum Return: Error {
 			case value(Value)
 		}
 
 		let functionStmt: FunctionStmt
+		let closure: Environment
 
 		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
-			try context.withEnvironment { environment in
-				for (i, param) in functionStmt.params.enumerated() {
-					environment.initialize(name: param.lexeme, value: arguments[i])
-				}
+			var environment = Environment(parent: closure)
 
-				do {
-					try context.executeBlock(functionStmt.body, environment: environment)
-				} catch Return.value(let value) {
-					return value
-				}
-
-				return .nil
+			for (i, param) in functionStmt.params.enumerated() {
+				environment.initialize(name: param.lexeme, value: arguments[i])
 			}
+
+			do {
+				try context.executeBlock(functionStmt.body, environment: environment)
+			} catch Return.value(let value) {
+				return value
+			}
+
+			return .nil
 		}
 	}
 
@@ -60,7 +61,7 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func visit(_ stmt: FunctionStmt) throws {
-		environment.define(name: stmt.name.lexeme, callable: Function(functionStmt: stmt))
+		environment.define(name: stmt.name.lexeme, callable: Function(functionStmt: stmt, closure: environment))
 	}
 
 	mutating func visit(_ stmt: ReturnStmt) throws {
