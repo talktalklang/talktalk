@@ -1,4 +1,4 @@
-@testable import TalkTalk
+@testable import tlk
 import XCTest
 
 class TalkTalkTests: XCTestCase {
