@@ -4,6 +4,26 @@ var b = "b";
 {
 	var a = "inner " + a;
 	print a;
+
+	func sup() {
+		var a = "inner sup " + b + ", " + a;
+		print a;
+	}
+
+	sup();
+}
+
+func foo() {
+	var a = "sup " + b + ", " + a;
+	print a;
 }
 
 print a;
+
+func greet() {
+	return "hi";
+}
+
+print greet();
+
+foo();

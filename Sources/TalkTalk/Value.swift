@@ -1,4 +1,4 @@
-enum Value: Equatable {
+enum Value: Sendable, Equatable {
 	enum CallError: Error {
 		case valueNotCallable(Value)
 	}
@@ -7,10 +7,16 @@ enum Value: Equatable {
 			 number(Double),
 			 bool(Bool),
 			 `nil`,
+			 callable(CallableWrapper),
+			 void,
 			 unknown
 
-	func call(_ interpreter: AstInterpreter, _ arguments: [Value]) throws -> Value {
-		throw CallError.valueNotCallable(self)
+	func call(_ interpreter: inout AstInterpreter, _ arguments: [Value]) throws -> Value {
+		if case let .callable(wrapper) = self {
+			return try wrapper.callable.call(&interpreter, arguments: arguments)
+		} else {
+			throw CallError.valueNotCallable(self)
+		}
 	}
 }
 

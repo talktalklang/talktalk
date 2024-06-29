@@ -132,7 +132,7 @@ extension AstInterpreter: ExprVisitor {
 			try arguments.append(evaluate(argument))
 		}
 
-		return try callee.call(self, arguments)
+		return try callee.call(&self, arguments)
 	}
 
 }

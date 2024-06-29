@@ -26,6 +26,10 @@ struct Parser {
 
 	mutating func declaration() throws -> (any Stmt)? {
 		do {
+			if matching(kinds: .func) {
+				return try function("func")
+			}
+
 			if matching(kinds: .var) {
 				return try varDeclaration()
 			}
@@ -65,6 +69,10 @@ struct Parser {
 			return try printStmt()
 		}
 
+		if matching(kinds: .return) {
+			return try returnStmt()
+		}
+
 		if matching(kinds: .while) {
 			return try whileStmt()
 		}
@@ -102,6 +110,18 @@ struct Parser {
 		return PrintStmt(expr: expr)
 	}
 
+	mutating func returnStmt() throws -> any Stmt {
+		var value: (any Expr)?
+
+		if !check(kind: .semicolon) {
+			value = try expression()
+		}
+
+		try consume(.semicolon, "Expected semicolon after return, got: \(previous())")
+
+		return ReturnStmt(value: value)
+	}
+
 	mutating func expressionStmt() throws -> any Stmt {
 		let expr = try expression()
 		try consume(.semicolon, "Expected ';' after expression.")
@@ -120,6 +140,30 @@ struct Parser {
 		try consume(.rightBrace, "Expected '}' after block")
 
 		return statements
+	}
+
+	mutating func function(_ kind: String) throws -> any Stmt {
+		let (nameToken, _) = try consumeIdentifier()
+
+		try consume(.leftParen, "Expected '(' after \(kind) name)")
+
+		var parameters: [Token] = []
+
+		if !check(kind: .rightParen) {
+			repeat {
+				if parameters.count >= 255 {
+					TalkTalk.error("Can't have more than 255 params, cmon", token: peek())
+				}
+
+				let (token, _) = try consumeIdentifier()
+				parameters.append(token)
+			} while matching(kinds: .comma)
+		}
+
+		try consume(.rightParen, "Expected ')' after parameters")
+		try consume(.leftBrace, "Expected '{' before \(kind) body")
+
+		return try FunctionStmt(name: nameToken, params: parameters, body: block())
 	}
 
 	mutating func expression() throws -> any Expr {
@@ -294,6 +338,23 @@ struct Parser {
 		throw ParserError.unexpectedToken(token)
 	}
 
+	private mutating func consumeIdentifier() throws -> (Token, String) {
+		if isAtEnd {
+			TalkTalk.error("Unexpected end of input. Expected identifier.", token: previous())
+			throw ParserError.unexpectedToken(previous())
+		}
+
+		if case let .identifier(name) = peek().kind {
+			let token = peek()
+			advance()
+			return (token, name)
+		}
+
+		let token = peek()
+		TalkTalk.error("Unexpected token: \(token), expected: identifier", token: token)
+		throw ParserError.unexpectedToken(token)
+	}
+
 	// For error recovery
 	private mutating func synchronize() {
 		advance()
@@ -302,7 +363,7 @@ struct Parser {
 			if previous().kind == .semicolon { return }
 
 			switch peek().kind {
-			case .class, .fun, .var, .for, .if, .while, .print, .return:
+			case .class, .func, .var, .for, .if, .while, .print, .return:
 				return
 			default:
 				advance()

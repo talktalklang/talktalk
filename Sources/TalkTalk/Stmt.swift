@@ -5,10 +5,12 @@ protocol StmtVisitor {
 	mutating func visit(_ stmt: BlockStmt) throws
 	mutating func visit(_ stmt: IfStmt) throws
 	mutating func visit(_ stmt: WhileStmt) throws
+	mutating func visit(_ stmt: FunctionStmt) throws
+	mutating func visit(_ stmt: ReturnStmt) throws
 }
 
-protocol Stmt {
-	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws -> Void
+protocol Stmt: Sendable {
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws
 }
 
 struct PrintStmt: Stmt {
@@ -57,6 +59,24 @@ struct IfStmt: Stmt {
 struct WhileStmt: Stmt {
 	let condition: any Expr
 	let statements: [any Stmt]
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct FunctionStmt: Stmt {
+	let name: Token
+	let params: [Token]
+	let body: [any Stmt]
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct ReturnStmt: Stmt {
+	let value: (any Expr)?
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)

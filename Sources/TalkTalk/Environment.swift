@@ -31,6 +31,10 @@ class Environment {
 
 		return .handled
 	}
+
+	func define(name: String, callable: any Callable) {
+		vars[name] = .callable(.init(name: name, callable: callable))
+	}
 }
 
 

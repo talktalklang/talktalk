@@ -1,12 +1,32 @@
 module.exports = grammar({
   name: 'talktalk',
 
+  extras: $ => [
+    /\s+/,
+    $.comment,
+  ],
+
   rules: {
     source_file: $ => repeat($.declaration),
 
+    comment: $ => token(choice(
+      // Single-line comments (including documentation comments)
+      seq(/\/{2,3}[^/].*/),
+      // Multiple-line comments (including documentation comments).
+      seq(
+        /\/\*{1,}[^*]*\*+([^/*][^*]*\*+)*\//,
+      ),
+    )),
+
     declaration: $ => choice(
+      $.function_declaration,
       $.variable_declaration,
       $.statement
+    ),
+
+    function_declaration: $ => seq(
+      'func',
+      $.func
     ),
 
     block: $ => seq(
@@ -21,7 +41,8 @@ module.exports = grammar({
       $.assignment_statement,
       $.block,
       $.if_statement,
-      $.while_statement
+      $.while_statement,
+      $.return_statement
     ),
 
     if_statement: $ => seq(
@@ -35,6 +56,26 @@ module.exports = grammar({
       'else',
       $.block
     ),
+
+    return_statement: $ => seq(
+      'return',
+      $.expression
+    ),
+
+    func: $ => seq(
+      $.identifier,
+      '(',
+      optional($.parameters),
+      ')',
+      $.block
+    ),
+
+    parameters: $ => seq(
+      $.identifier,
+      repeat(seq(',', $.identifier))
+    ),
+
+    identifier: _ => /[a-zA-Z_]\w*/,
 
     equality: $ => seq(
       $.comparison,
@@ -130,7 +171,7 @@ module.exports = grammar({
       ';'
     ),
 
-    call: $ => seq($.primary_expression, repeat1(seq('(', optional($.arguments), ')' ))),
+    call: $ => prec(2, seq($.primary_expression, repeat1(seq('(', optional($.arguments), ')' )))),
     arguments: $ => seq($.expression, repeat(seq(',', $.expression))),
 
     binary_operator: _ => choice('+', '-', '*', '/', '==', '!=', '<', '<=', '>', '>='),

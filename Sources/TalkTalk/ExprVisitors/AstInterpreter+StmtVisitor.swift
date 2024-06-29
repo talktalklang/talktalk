@@ -1,4 +1,28 @@
 extension AstInterpreter: StmtVisitor {
+	struct Function: Callable {
+		enum Return: Error {
+			case value(Value)
+		}
+
+		let functionStmt: FunctionStmt
+
+		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
+			try context.withEnvironment { environment in
+				for (i, param) in functionStmt.params.enumerated() {
+					environment.initialize(name: param.lexeme, value: arguments[i])
+				}
+
+				do {
+					try context.executeBlock(functionStmt.body, environment: environment)
+				} catch Return.value(let value) {
+					return value
+				}
+
+				return .nil
+			}
+		}
+	}
+
 	mutating func visit(_ stmt: PrintStmt) throws {
 		try print(evaluate(stmt.expr))
 	}
@@ -35,6 +59,17 @@ extension AstInterpreter: StmtVisitor {
 		}
 	}
 
+	mutating func visit(_ stmt: FunctionStmt) throws {
+		environment.define(name: stmt.name.lexeme, callable: Function(functionStmt: stmt))
+	}
+
+	mutating func visit(_ stmt: ReturnStmt) throws {
+		// TODO: Figure out a way to do this without throwing
+		if let valueExpr = stmt.value {
+			throw try Function.Return.value(evaluate(valueExpr))
+		}
+	}
+
 	mutating func executeBlock(_ statements: [any Stmt], environment: Environment) throws {
 		defer {
 			_ = environmentStack.popLast()
@@ -43,7 +78,7 @@ extension AstInterpreter: StmtVisitor {
 		environmentStack.append(environment)
 
 		for statement in statements {
-			try	execute(statement: statement)
+			try execute(statement: statement)
 		}
 	}
 }

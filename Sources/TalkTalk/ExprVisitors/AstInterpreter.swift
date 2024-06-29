@@ -5,6 +5,9 @@ struct AstInterpreter {
 
 	init() {
 		environmentStack = [globals]
+
+		// Define builtins
+		defineClock()
 	}
 
 	mutating func run(_ statements: [any Stmt], onComplete: ((Value) -> Void)? = nil) {
@@ -27,6 +30,10 @@ struct AstInterpreter {
 		}
 	}
 
+	func withEnvironment<T>(callback: (Environment) throws -> T) throws -> T {
+		try callback(Environment(parent: environment))
+	}
+
 	mutating func execute(statement: any Stmt) throws {
 		try statement.accept(visitor: &self)
 	}
@@ -37,12 +44,16 @@ struct AstInterpreter {
 			true
 		case .number(_):
 			true
+		case .callable(_):
+			true
 		case .bool(let bool):
 			bool
 		case .nil:
 			false
 		case .unknown:
 			false
+		case .void:
+			fatalError("void no")
 		}
 	}
 

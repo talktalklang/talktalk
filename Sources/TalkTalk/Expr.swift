@@ -12,7 +12,7 @@ protocol ExprVisitor {
 	mutating func visit(_ expr: CallExpr) throws -> Value
 }
 
-protocol Expr {
+protocol Expr: Sendable {
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value
 }
 

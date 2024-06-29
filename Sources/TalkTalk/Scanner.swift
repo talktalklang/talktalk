@@ -13,7 +13,7 @@ struct Token {
 		case identifier(String), string(String), number(Double)
 
 		// Keywords
-		case `class`, `else`, `false`, fun, `for`, `if`, `nil`,
+		case `class`, `else`, `false`, `func`, `for`, `if`, `nil`,
 		     or, print, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case eof
@@ -24,7 +24,7 @@ struct Token {
 			case "else": .else
 			case "false": .false
 			case "for": .for
-			case "fun": .fun
+			case "func": .func
 			case "if": .if
 			case "nil": .nil
 			case "print": .print
