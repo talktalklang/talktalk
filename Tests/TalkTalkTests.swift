@@ -33,7 +33,26 @@ class TestOutput: Output {
 			number(2.0)
 
 			"""
-		)
+		),
+		(
+			"""
+			class Person {
+				init(name) {
+					self.name = name;
+				}
+
+				func greet() {
+					print "hello, " + self.name;
+				}
+			}
+
+			Person("pat").greet();
+			""",
+			"""
+			string("hello, pat")
+
+			"""
+		),
 	]
 ) func helloWorld(input: String, output: String) throws {
 	let actual = TestOutput()
