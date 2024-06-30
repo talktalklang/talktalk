@@ -1,0 +1,11 @@
+class Foo {
+	func bar() {
+		print	"bar";
+	}
+}
+
+var foo = Foo();
+//print foo;
+
+foo.sup = "sup";
+print foo.sup;

@@ -9,7 +9,7 @@ module.exports = grammar({
   rules: {
     source_file: $ => repeat($.declaration),
 
-    comment: $ => token(choice(
+    comment: _ => token(choice(
       // Single-line comments (including documentation comments)
       seq(/\/{2,3}[^/].*/),
       // Multiple-line comments (including documentation comments).
@@ -21,12 +21,34 @@ module.exports = grammar({
     declaration: $ => choice(
       $.function_declaration,
       $.variable_declaration,
+      $.class_declaration,
       $.statement
     ),
 
     function_declaration: $ => seq(
       'func',
-      $.func
+      field('name', $.identifier),
+      '(',
+      optional($.parameters),
+      ')',
+      $.block
+    ),
+
+    init_declaration: $ => seq(
+      'init',
+      field('name', $.identifier),
+      '(',
+      optional($.parameters),
+      ')',
+      $.block
+    ),
+
+    class_declaration: $ => seq(
+      'class',
+      field('name', $.identifier),
+      '{',
+      repeat($.function_declaration),
+      '}'
     ),
 
     block: $ => seq(
@@ -63,7 +85,7 @@ module.exports = grammar({
     ),
 
     func: $ => seq(
-      $.identifier,
+      field('name', $.identifier),
       '(',
       optional($.parameters),
       ')',
@@ -144,7 +166,10 @@ module.exports = grammar({
     ),
 
     assignment_statement: $ => seq(
-      $.variable,
+      optional(
+        seq($.call, '.')
+      ),
+      $.identifier,
       '=',
       $.expression,
       ';'
@@ -160,18 +185,29 @@ module.exports = grammar({
       'nil',
       $.string_literal,
       $.boolean_literal,
-      $.variable,
+      $.identifier,
     ),
 
     variable_declaration: $ => seq(
       'var',
-      $.variable,
+      $.identifier,
       '=',
       $.expression,
       ';'
     ),
 
-    call: $ => prec(2, seq($.primary_expression, repeat1(seq('(', optional($.arguments), ')' )))),
+    call: $ => prec.left(2,
+      seq(
+        $.primary_expression,
+        repeat(
+          choice(
+            seq('(', optional($.arguments), ')' ),
+            seq('.', $.identifier)
+          )
+        )
+      )
+    ),
+
     arguments: $ => seq($.expression, repeat(seq(',', $.expression))),
 
     binary_operator: _ => choice('+', '-', '*', '/', '==', '!=', '<', '<=', '>', '>='),
@@ -181,8 +217,6 @@ module.exports = grammar({
     number_literal: _ => /\d+(\.\d+)?/,
 
     string_literal: _ => /"[^"]*"/,
-
-    variable: _ => /[a-zA-Z_]\w*/,
   }
 });
 

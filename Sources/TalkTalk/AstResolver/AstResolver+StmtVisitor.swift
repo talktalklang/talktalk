@@ -61,4 +61,9 @@ extension AstResolver: StmtVisitor {
 			try resolve(value)
 		}
 	}
+
+	mutating func visit(_ stmt: ClassStmt) throws {
+		declare(stmt.name)
+		define(stmt.name)
+	}
 }

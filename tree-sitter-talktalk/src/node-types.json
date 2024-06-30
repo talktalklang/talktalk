@@ -23,11 +23,15 @@
       "required": true,
       "types": [
         {
+          "type": "call",
+          "named": true
+        },
+        {
           "type": "expression",
           "named": true
         },
         {
-          "type": "variable",
+          "type": "identifier",
           "named": true
         }
       ]
@@ -90,7 +94,37 @@
           "named": true
         },
         {
+          "type": "identifier",
+          "named": true
+        },
+        {
           "type": "primary_expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "class_declaration",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "function_declaration",
           "named": true
         }
       ]
@@ -119,6 +153,10 @@
       "multiple": false,
       "required": true,
       "types": [
+        {
+          "type": "class_declaration",
+          "named": true
+        },
         {
           "type": "function_declaration",
           "named": true
@@ -222,9 +260,20 @@
     }
   },
   {
-    "type": "func",
+    "type": "function_declaration",
     "named": true,
-    "fields": {},
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": true,
@@ -234,26 +283,7 @@
           "named": true
         },
         {
-          "type": "identifier",
-          "named": true
-        },
-        {
           "type": "parameters",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "function_declaration",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "func",
           "named": true
         }
       ]
@@ -273,11 +303,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "identifier",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "if_statement",
@@ -345,15 +370,15 @@
           "named": true
         },
         {
+          "type": "identifier",
+          "named": true
+        },
+        {
           "type": "number_literal",
           "named": true
         },
         {
           "type": "string_literal",
-          "named": true
-        },
-        {
-          "type": "variable",
           "named": true
         }
       ]
@@ -474,11 +499,6 @@
     }
   },
   {
-    "type": "variable",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "variable_declaration",
     "named": true,
     "fields": {},
@@ -491,7 +511,7 @@
           "named": true
         },
         {
-          "type": "variable",
+          "type": "identifier",
           "named": true
         }
       ]
@@ -553,6 +573,10 @@
     "named": false
   },
   {
+    "type": ".",
+    "named": false
+  },
+  {
     "type": "/",
     "named": false
   },
@@ -585,6 +609,10 @@
     "named": false
   },
   {
+    "type": "class",
+    "named": false
+  },
+  {
     "type": "comment",
     "named": true
   },
@@ -601,7 +629,15 @@
     "named": false
   },
   {
+    "type": "identifier",
+    "named": true
+  },
+  {
     "type": "if",
+    "named": false
+  },
+  {
+    "type": "init",
     "named": false
   },
   {

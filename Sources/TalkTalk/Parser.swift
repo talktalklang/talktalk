@@ -34,11 +34,31 @@ struct Parser {
 				return try varDeclaration()
 			}
 
+			if matching(kinds: .class) {
+				return try classDeclaration()
+			}
+
 			return try statement()
 		} catch {
 			synchronize()
 			throw error
 		}
+	}
+
+	mutating func classDeclaration() throws -> any Stmt {
+		let (name, _) = try consumeIdentifier()
+		try consume(.leftBrace, "Expected '{' before class body")
+
+		var methods: [FunctionStmt] = []
+		while !check(kind: .rightBrace), !isAtEnd {
+			try consume(.func, "Expected `func` for method definition")
+			let method = try function("method")
+			methods.append(method)
+		}
+
+		try consume(.rightBrace, "Expected '}' after class body")
+
+		return ClassStmt(name: name, methods: methods)
 	}
 
 	mutating func varDeclaration() throws -> any Stmt {
@@ -140,7 +160,7 @@ struct Parser {
 		return statements
 	}
 
-	mutating func function(_ kind: String) throws -> any Stmt {
+	mutating func function(_ kind: String) throws -> FunctionStmt {
 		let (nameToken, _) = try consumeIdentifier()
 
 		try consume(.leftParen, "Expected '(' after \(kind) name)")
@@ -179,6 +199,8 @@ struct Parser {
 			if let expr = expr as? VariableExpr {
 				let name = expr.name
 				return AssignExpr(id: nextID(), name: name, value: value)
+			} else if let expr = expr as? GetExpr {
+				return SetExpr(id: nextID(), receiver: expr.receiver, name: expr.name, value: value)
 			}
 
 			throw ParserError.unexpectedAssignment(equals)
@@ -275,6 +297,9 @@ struct Parser {
 		while true {
 			if matching(kinds: .leftParen) {
 				expr = try finishCall(expr)
+			} else if matching(kinds: .dot) {
+				let (name, _) = try consumeIdentifier()
+				expr = GetExpr(id: nextID(), receiver: expr, name: name)
 			} else {
 				break
 			}

@@ -51,4 +51,13 @@ struct AstPrinter: ExprVisitor {
 	mutating func visit(_ expr: CallExpr) throws -> String {
 		try parenthesize(self.print(expr: expr.callee), expr.arguments)
 	}
+
+	mutating func visit(_ expr: GetExpr) throws -> String {
+		".\(expr.name)"
+	}
+
+	mutating func visit(_ expr: SetExpr) throws -> String {
+		".\(expr.name) = \(expr.value)"
+	}
+
 }

@@ -64,6 +64,8 @@ struct AstInterpreter {
 			true
 		case .callable:
 			true
+		case .class(_):
+			true
 		case let .bool(bool):
 			bool
 		case .nil:
@@ -72,6 +74,8 @@ struct AstInterpreter {
 			false
 		case .void:
 			fatalError("void no")
+		default:
+			true
 		}
 	}
 

@@ -8,6 +8,8 @@ enum Value: Sendable, Equatable {
 	     bool(Bool),
 	     `nil`,
 	     callable(CallableWrapper),
+			 `class`(AstInterpreter.Class),
+			 instance(AstInterpreter.Class),
 	     void,
 	     unknown
 

@@ -48,4 +48,13 @@ extension AstResolver: ExprVisitor {
 		try resolve(expr.value)
 		resolveLocal(expr: expr, name: expr.name)
 	}
+
+	mutating func visit(_ expr: GetExpr) throws {
+		try resolve(expr.receiver)
+	}
+
+	mutating func visit(_ expr: SetExpr) throws {
+		try resolve(expr.value)
+		try resolve(expr.receiver)
+	}
 }

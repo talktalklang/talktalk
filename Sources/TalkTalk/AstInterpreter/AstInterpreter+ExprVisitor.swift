@@ -146,4 +146,27 @@ extension AstInterpreter: ExprVisitor {
 
 		return try callee.call(&self, arguments)
 	}
+
+	mutating func visit(_ expr: GetExpr) throws -> Value {
+		let receiver = try evaluate(expr.receiver)
+
+		guard case let .instance(instance) = receiver else {
+			throw RuntimeError.typeError("\(receiver) has no property: \(expr.name.lexeme)", expr.name)
+		}
+
+		return instance.get(expr.name)
+	}
+
+	mutating func visit(_ expr: SetExpr) throws -> Value {
+		let receiver = try evaluate(expr.receiver)
+
+		guard case let .instance(instance) = receiver else {
+			throw RuntimeError.typeError("\(receiver) has no property: \(expr.name.lexeme)", expr.name)
+		}
+
+		let value = try evaluate(expr.value)
+		instance.set(expr.name, value: value)
+
+		return value
+	}
 }

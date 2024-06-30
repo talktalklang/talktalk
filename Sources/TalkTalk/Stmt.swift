@@ -7,6 +7,7 @@ protocol StmtVisitor {
 	mutating func visit(_ stmt: WhileStmt) throws
 	mutating func visit(_ stmt: FunctionStmt) throws
 	mutating func visit(_ stmt: ReturnStmt) throws
+	mutating func visit(_ stmt: ClassStmt) throws
 }
 
 protocol Stmt: Sendable {
@@ -78,6 +79,15 @@ struct FunctionStmt: Stmt {
 struct ReturnStmt: Stmt {
 	let token: Token
 	let value: (any Expr)?
+
+	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
+		try visitor.visit(self)
+	}
+}
+
+struct ClassStmt: Stmt {
+	let name: Token
+	let methods: [FunctionStmt]
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
 		try visitor.visit(self)
