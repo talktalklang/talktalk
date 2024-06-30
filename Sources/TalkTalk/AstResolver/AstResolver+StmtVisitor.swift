@@ -53,7 +53,7 @@ extension AstResolver: StmtVisitor {
 
 	mutating func visit(_ stmt: ReturnStmt) throws {
 		if currentFunction == .none {
-			TalkTalk.error("Can't return from top level code.", token: stmt.token)
+			TalkTalkInterpreter.error("Can't return from top level code.", token: stmt.token)
 			throw ResolverError.topLevelReturn
 		}
 

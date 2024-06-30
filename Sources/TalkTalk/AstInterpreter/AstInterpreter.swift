@@ -20,11 +20,11 @@ struct AstInterpreter {
 		} catch let error as RuntimeError {
 			switch error {
 			case let .nameError(message, token):
-				TalkTalk.runtimeError(message, token: token)
+				TalkTalkInterpreter.runtimeError(message, token: token)
 			case let .typeError(message, token):
-				TalkTalk.runtimeError(message, token: token)
+				TalkTalkInterpreter.runtimeError(message, token: token)
 			case let .assignmentError(message):
-				TalkTalk.runtimeError(message, token: .init(kind: .equal, lexeme: "=", line: -1))
+				TalkTalkInterpreter.runtimeError(message, token: .init(kind: .equal, lexeme: "=", line: -1))
 			}
 		} catch {
 			print("RuntimeError: \(error)")

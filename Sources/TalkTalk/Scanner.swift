@@ -126,7 +126,7 @@ struct Scanner {
 		case _ where char.isLetter || char == "_":
 			identifier()
 		default:
-			TalkTalk.error("Unexpected character: \(char)", line: line)
+			TalkTalkInterpreter.error("Unexpected character: \(char)", line: line)
 		}
 	}
 
@@ -151,7 +151,7 @@ struct Scanner {
 		}
 
 		if isAtEnd {
-			TalkTalk.error("Unterminated string", line: line)
+			TalkTalkInterpreter.error("Unterminated string", line: line)
 			return
 		}
 
@@ -178,7 +178,7 @@ struct Scanner {
 		if let literal = Double(String(source[index(at: start) ..< index(at: current)])) {
 			addToken(.number(literal))
 		} else {
-			TalkTalk.error("Invalid number", line: line)
+			TalkTalkInterpreter.error("Invalid number", line: line)
 		}
 	}
 

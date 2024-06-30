@@ -1,10 +1,3 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-//
-// Swift Argument Parser
-// https://swiftpackageindex.com/apple/swift-argument-parser/documentation
-
-import ArgumentParser
 import Foundation
 
 enum RuntimeError: Error {
@@ -13,12 +6,9 @@ enum RuntimeError: Error {
 	     assignmentError(String)
 }
 
-@main
-struct TalkTalk: ParsableCommand {
-	@Argument(help: "The input to run.")
+public struct TalkTalkInterpreter {
 	var input: String?
-
-	@Flag(help: "Just print the tokens") var tokenize: Bool = false
+	var tokenize: Bool = false
 
 	nonisolated(unsafe) static var hadError = false
 	nonisolated(unsafe) static var hadRuntimeError = false
@@ -45,7 +35,12 @@ struct TalkTalk: ParsableCommand {
 		print("[line \(line)] Error\(location): \(message)")
 	}
 
-	mutating func run() throws {
+	public init(input: String? = nil, tokenize: Bool) {
+		self.input = input
+		self.tokenize = tokenize
+	}
+
+	public mutating func run() throws {
 		if let input {
 			if FileManager.default.fileExists(atPath: input) {
 				try runFile(file: input)
@@ -58,13 +53,13 @@ struct TalkTalk: ParsableCommand {
 		}
 	}
 
-	func runFile(file: String) throws {
+	public func runFile(file: String) throws {
 		let source = try! String(contentsOfFile: file)
 		var interpreter = AstInterpreter()
 		try run(source: source, in: &interpreter)
 	}
 
-	func runPrompt() {
+	public func runPrompt() {
 		var interpreter = AstInterpreter()
 
 		while true {

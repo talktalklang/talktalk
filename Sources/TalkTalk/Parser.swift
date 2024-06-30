@@ -177,7 +177,7 @@ struct Parser {
 		if !check(kind: .rightParen) {
 			repeat {
 				if parameters.count >= 255 {
-					TalkTalk.error("Can't have more than 255 params, cmon", token: peek())
+					TalkTalkInterpreter.error("Can't have more than 255 params, cmon", token: peek())
 				}
 
 				let (token, _) = try consumeIdentifier()
@@ -200,7 +200,7 @@ struct Parser {
 		if !check(kind: .rightParen) {
 			repeat {
 				if parameters.count >= 255 {
-					TalkTalk.error("Can't have more than 255 params, cmon", token: peek())
+					TalkTalkInterpreter.error("Can't have more than 255 params, cmon", token: peek())
 				}
 
 				let (token, _) = try consumeIdentifier()
@@ -370,7 +370,7 @@ struct Parser {
 			return GroupingExpr(id: nextID(), expr: expr)
 		default:
 			// TODO: This is wrong
-			TalkTalk.error("Unexpected token: \(token)", token: token)
+			TalkTalkInterpreter.error("Unexpected token: \(token)", token: token)
 
 			return LiteralExpr(id: nextID(), literal: token)
 		}
@@ -378,7 +378,7 @@ struct Parser {
 
 	@discardableResult private mutating func `consume`(_ kind: Token.Kind, _: String) throws -> Token {
 		if isAtEnd, kind != .eof {
-			TalkTalk.error("Unexpected end of input. Expected: \(kind)", token: previous())
+			TalkTalkInterpreter.error("Unexpected end of input. Expected: \(kind)", token: previous())
 			throw ParserError.unexpectedToken(previous())
 		}
 
@@ -389,13 +389,13 @@ struct Parser {
 		}
 
 		let token = peek()
-		TalkTalk.error("Unexpected token: \(token), expected: \(kind)", token: token)
+		TalkTalkInterpreter.error("Unexpected token: \(token), expected: \(kind)", token: token)
 		throw ParserError.unexpectedToken(token)
 	}
 
 	private mutating func consumeIdentifier() throws -> (Token, String) {
 		if isAtEnd {
-			TalkTalk.error("Unexpected end of input. Expected identifier.", token: previous())
+			TalkTalkInterpreter.error("Unexpected end of input. Expected identifier.", token: previous())
 			throw ParserError.unexpectedToken(previous())
 		}
 
@@ -406,7 +406,7 @@ struct Parser {
 		}
 
 		let token = peek()
-		TalkTalk.error("Unexpected token: \(token), expected: identifier", token: token)
+		TalkTalkInterpreter.error("Unexpected token: \(token), expected: identifier", token: token)
 		throw ParserError.unexpectedToken(token)
 	}
 
