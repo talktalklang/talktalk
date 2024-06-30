@@ -1,0 +1,61 @@
+===================
+Basic test
+===================
+
+class Foo {
+	init(fizz) {
+		self.fizz = fizz;
+	}
+
+	func bar() {
+		print	self.fizz;
+	}
+}
+
+var foo = Foo("Buzz");
+foo.bar();
+
+---
+
+(source_file
+	(declaration
+		(class_declaration
+			(identifier)
+			(init_declaration
+				(parameters
+					(identifier))
+				(block
+					(call
+						(primary_expression)
+						(identifier))
+					(declaration
+						(statement
+							(expression_statement
+								(expression
+									(primary_expression
+										(identifier))))))))
+			(function_declaration
+				(identifier)
+				(block
+					(declaration
+						(statement
+							(print_statement
+								(expression
+									(primary_expression))
+								(ERROR
+									(identifier)))))))))
+			(declaration
+        (variable_declaration
+          (identifier)
+           (expression
+             (primary_expression
+               (identifier)))
+          (expression
+            (grouped_expression
+              (expression
+                (primary_expression
+                  (string_literal)))))))
+      (call
+        (primary_expression
+          (identifier))
+      		(identifier)))

@@ -15,3 +15,5 @@
 (string_literal) @string
 (number_literal) @number
 (class_declaration name: (identifier)) @type
+(parameters) @function.parameters
+(init_declaration (block)) @constructor
