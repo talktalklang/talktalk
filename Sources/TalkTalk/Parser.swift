@@ -49,16 +49,23 @@ struct Parser {
 		let (name, _) = try consumeIdentifier()
 		try consume(.leftBrace, "Expected '{' before class body")
 
+		var inits: [FunctionStmt] = []
 		var methods: [FunctionStmt] = []
 		while !check(kind: .rightBrace), !isAtEnd {
-			try consume(.func, "Expected `func` for method definition")
-			let method = try function("method")
-			methods.append(method)
+			if matching(kinds: .func) {
+				let method = try function("method")
+				methods.append(method)
+			}
+
+			if matching(kinds: .initializer) {
+				let initializer = try initializer()
+				inits.append(initializer)
+			}
 		}
 
 		try consume(.rightBrace, "Expected '}' after class body")
 
-		return ClassStmt(name: name, methods: methods)
+		return ClassStmt(name: name, inits: inits, methods: methods)
 	}
 
 	mutating func varDeclaration() throws -> any Stmt {
@@ -182,6 +189,29 @@ struct Parser {
 		try consume(.leftBrace, "Expected '{' before \(kind) body")
 
 		return try FunctionStmt(id: "_func_\(nextID())", name: nameToken, params: parameters, body: block())
+	}
+
+	mutating func initializer() throws -> FunctionStmt {
+		let nameToken = previous()
+		try consume(.leftParen, "Expected '(' after init")
+
+		var parameters: [Token] = []
+
+		if !check(kind: .rightParen) {
+			repeat {
+				if parameters.count >= 255 {
+					TalkTalk.error("Can't have more than 255 params, cmon", token: peek())
+				}
+
+				let (token, _) = try consumeIdentifier()
+				parameters.append(token)
+			} while matching(kinds: .comma)
+		}
+
+		try consume(.rightParen, "Expected ')' after parameters")
+		try consume(.leftBrace, "Expected '{' before init body")
+
+		return try FunctionStmt(id: "_init_\(nextID())", name: nameToken, params: parameters, body: block())
 	}
 
 	mutating func expression() throws -> any Expr {

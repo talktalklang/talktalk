@@ -7,6 +7,7 @@
 "func"
 "return"
 "class"
+"init"
 ] @keyword
 (comment) @comment
 (call) @function.call

@@ -17,7 +17,7 @@ extension AstInterpreter: StmtVisitor {
 			}
 
 			if let method = self.class.methods[name.lexeme] {
-				return try .method(method.bind(to: .instance(self)))
+				return try .method(method.bind(to: self))
 			}
 
 			return .nil
@@ -34,15 +34,22 @@ extension AstInterpreter: StmtVisitor {
 		}
 
 		let name: Token
+		let inits: [Function]
 		let methods: [String: Function]
 
-		init(name: Token, methods: [String: Function]) {
+		init(name: Token, inits: [Function], methods: [String: Function]) {
 			self.name = name
+			self.inits = inits
 			self.methods = methods
 		}
 
 		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
 			let instance = Instance(class: self)
+
+			if let initializer = inits.first(where: { $0.arity == arguments.count }) {
+				_ = try initializer.bind(to: instance).call(&context, arguments: arguments)
+			}
+
 			return .instance(instance)
 		}
 	}
@@ -69,6 +76,10 @@ extension AstInterpreter: StmtVisitor {
 		let functionStmt: FunctionStmt
 		let closure: Environment
 
+		var arity: Int {
+			functionStmt.params.count
+		}
+
 		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
 			let environment = Environment(parent: closure)
 
@@ -85,11 +96,7 @@ extension AstInterpreter: StmtVisitor {
 			return .nil
 		}
 
-		func bind(to instance: Value) throws -> Function {
-			guard case let .instance(instance) = instance else {
-				throw RuntimeError.typeError("function cannot be bound to \(instance)", functionStmt.name)
-			}
-
+		func bind(to instance: Instance) throws -> Function {
 			let environment = Environment(parent: closure)
 			try environment.define(name: "self", value: .instance(instance))
 
@@ -156,7 +163,11 @@ extension AstInterpreter: StmtVisitor {
 			methods[method.name.lexeme] = function
 		}
 
-		let klass = Class(name: stmt.name, methods: methods)
+		let inits = stmt.inits.map { initializer in
+			Function(functionStmt: initializer, closure: environment)
+		}
+
+		let klass = Class(name: stmt.name, inits: inits, methods: methods)
 		environment.define(name: stmt.name.lexeme, callable: klass)
 	}
 

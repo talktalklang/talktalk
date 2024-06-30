@@ -32,7 +32,7 @@ struct Scope {
 
 struct AstResolver {
 	enum FunctionType {
-		case none, function, method
+		case none, function, method, initializer
 	}
 
 	var interpreter: AstInterpreter

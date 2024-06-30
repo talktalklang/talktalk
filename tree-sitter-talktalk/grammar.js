@@ -36,7 +36,6 @@ module.exports = grammar({
 
     init_declaration: $ => seq(
       'init',
-      field('name', $.identifier),
       '(',
       optional($.parameters),
       ')',
@@ -47,7 +46,12 @@ module.exports = grammar({
       'class',
       field('name', $.identifier),
       '{',
-      repeat($.function_declaration),
+      repeat(
+        choice(
+          $.init_declaration,
+          $.function_declaration
+        )
+      ),
       '}'
     ),
 

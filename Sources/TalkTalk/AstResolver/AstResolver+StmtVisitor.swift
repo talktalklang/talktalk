@@ -72,6 +72,11 @@ extension AstResolver: StmtVisitor {
 		for method in stmt.methods {
 			try resolveFunction(method, .method)
 		}
+
+		for initializer in stmt.inits {
+			try resolveFunction(initializer, .initializer)
+		}
+
 		endScope()
 	}
 }

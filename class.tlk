@@ -1,9 +1,12 @@
 class Foo {
+	init(fizz) {
+		self.fizz = fizz;
+	}
+
 	func bar() {
 		print	self.fizz;
 	}
 }
 
-var foo = Foo();
-foo.fizz = "buzz";
+var foo = Foo("Buzz");
 foo.bar();

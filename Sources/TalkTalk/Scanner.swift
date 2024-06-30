@@ -13,7 +13,7 @@ struct Token: Identifiable {
 		case identifier(String), string(String), number(Double)
 
 		// Keywords
-		case `class`, `else`, `false`, `func`, `for`, `if`, `nil`,
+		case `class`, `else`, `false`, `func`, initializer, `for`, `if`, `nil`,
 		     or, print, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case eof
@@ -34,6 +34,7 @@ struct Token: Identifiable {
 			case "true": .true
 			case "var": .var
 			case "while": .while
+			case "init": .initializer
 			default: nil
 			}
 		}

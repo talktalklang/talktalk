@@ -126,6 +126,10 @@
         {
           "type": "function_declaration",
           "named": true
+        },
+        {
+          "type": "init_declaration",
+          "named": true
         }
       ]
     }
@@ -322,6 +326,25 @@
         },
         {
           "type": "expression",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "init_declaration",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "block",
+          "named": true
+        },
+        {
+          "type": "parameters",
           "named": true
         }
       ]
@@ -654,6 +677,10 @@
   },
   {
     "type": "return",
+    "named": false
+  },
+  {
+    "type": "self",
     "named": false
   },
   {

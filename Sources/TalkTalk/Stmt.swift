@@ -88,6 +88,7 @@ struct ReturnStmt: Stmt {
 
 struct ClassStmt: Stmt {
 	let name: Token
+	let inits: [FunctionStmt]
 	let methods: [FunctionStmt]
 
 	func accept<Visitor: StmtVisitor>(visitor: inout Visitor) throws {
