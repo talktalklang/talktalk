@@ -49,6 +49,10 @@ class Environment: Equatable {
 		}
 	}
 
+	func define(name: String, value: Value) throws {
+		vars[name] = value
+	}
+
 	func define(name: String, callable: any Callable) {
 		vars[name] = .callable(.init(name: name, callable: callable))
 	}

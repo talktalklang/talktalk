@@ -9,7 +9,7 @@ enum Value: Sendable, Equatable {
 	     `nil`,
 	     callable(CallableWrapper),
 			 `class`(AstInterpreter.Class),
-			 instance(AstInterpreter.Class),
+			 instance(AstInterpreter.Instance),
 			 method(AstInterpreter.Function),
 	     void,
 	     unknown

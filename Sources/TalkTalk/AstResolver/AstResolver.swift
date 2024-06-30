@@ -57,6 +57,11 @@ struct AstResolver {
 		scopes[scopes.count - 1].mark(token, as: .defined)
 	}
 
+	mutating func define(_ name: String) {
+		if scopes.isEmpty { return }
+		scopes[scopes.count - 1].mark(name, as: .defined)
+	}
+
 	mutating func resolveLocal(expr: any Expr, name: Token) {
 		var i = scopes.count - 1
 		while i >= 0 {

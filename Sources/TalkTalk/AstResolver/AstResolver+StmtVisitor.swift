@@ -67,7 +67,7 @@ extension AstResolver: StmtVisitor {
 		define(stmt.name)
 
 		beginScope()
-		scopes[scopes.count-1].mark("self", as: .defined)
+		define("self")
 
 		for method in stmt.methods {
 			try resolveFunction(method, .method)

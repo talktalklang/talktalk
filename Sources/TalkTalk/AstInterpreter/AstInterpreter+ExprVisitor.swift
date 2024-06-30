@@ -152,8 +152,6 @@ extension AstInterpreter: ExprVisitor {
 
 		if case let .instance(instance) = receiver {
 			return try instance.get(expr.name)
-		} else if case let .callable(wrapper) = receiver {
-			return .callable(wrapper)
 		}
 
 		throw RuntimeError.typeError("\(receiver) has no property: \(expr.name.lexeme)", expr.name)

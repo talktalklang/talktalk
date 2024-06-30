@@ -1,20 +1,14 @@
 extension AstInterpreter: StmtVisitor {
-	class Class: Callable, Equatable, @unchecked Sendable {
-		static func ==(lhs: Class, rhs: Class) -> Bool {
-			lhs.name.lexeme == rhs.name.lexeme
+	class Instance: @unchecked Sendable, Equatable {
+		static func ==(lhs: Instance, rhs: Instance) -> Bool {
+			return lhs.class == rhs.class && lhs.properties == rhs.properties
 		}
 
-		let name: Token
-		let methods: [String: Function]
+		let `class`: Class
 		var properties: [String: Value] = [:]
 
-		init(name: Token, methods: [String: Function]) {
-			self.name = name
-			self.methods = methods
-		}
-
-		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
-			.instance(self)
+		init(class klass: Class) {
+			self.class = klass
 		}
 
 		func get(_ name: Token) throws -> Value {
@@ -22,7 +16,7 @@ extension AstInterpreter: StmtVisitor {
 				return property
 			}
 
-			if let method = methods[name.lexeme] {
+			if let method = self.class.methods[name.lexeme] {
 				return try .method(method.bind(to: .instance(self)))
 			}
 
@@ -31,6 +25,25 @@ extension AstInterpreter: StmtVisitor {
 
 		func set(_ name: Token, value: Value) {
 			properties[name.lexeme] = value
+		}
+	}
+
+	class Class: Callable, Equatable, @unchecked Sendable {
+		static func ==(lhs: Class, rhs: Class) -> Bool {
+			lhs.name.lexeme == rhs.name.lexeme
+		}
+
+		let name: Token
+		let methods: [String: Function]
+
+		init(name: Token, methods: [String: Function]) {
+			self.name = name
+			self.methods = methods
+		}
+
+		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
+			let instance = Instance(class: self)
+			return .instance(instance)
 		}
 	}
 
@@ -78,7 +91,7 @@ extension AstInterpreter: StmtVisitor {
 			}
 
 			let environment = Environment(parent: closure)
-			environment.define(name: "self", callable: instance)
+			try environment.define(name: "self", value: .instance(instance))
 
 			return Function(functionStmt: functionStmt, closure: environment)
 		}
