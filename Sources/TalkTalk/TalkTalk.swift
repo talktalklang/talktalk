@@ -6,9 +6,27 @@ enum RuntimeError: Error {
 	     assignmentError(String)
 }
 
+public protocol Output: AnyObject {
+	func print(_ output: Any...)
+	func print(_ output: Any..., terminator: String)
+}
+
+public final class StdoutOutput: Output {
+	public func print(_ output: Any...) {
+		Swift.print(output)
+	}
+
+	public func print(_ output: Any..., terminator: String = "\n") {
+		Swift.print(output, terminator: terminator)
+	}
+
+	public init() {}
+}
+
 public struct TalkTalkInterpreter {
 	var input: String?
 	var tokenize: Bool = false
+	var output: any Output = StdoutOutput()
 
 	nonisolated(unsafe) static var hadError = false
 	nonisolated(unsafe) static var hadRuntimeError = false
@@ -35,9 +53,10 @@ public struct TalkTalkInterpreter {
 		print("[line \(line)] Error\(location): \(message)")
 	}
 
-	public init(input: String? = nil, tokenize: Bool) {
+	public init(input: String? = nil, tokenize: Bool, output: any Output = StdoutOutput()) {
 		self.input = input
 		self.tokenize = tokenize
+		self.output = output
 	}
 
 	public mutating func run() throws {
@@ -45,7 +64,7 @@ public struct TalkTalkInterpreter {
 			if FileManager.default.fileExists(atPath: input) {
 				try runFile(file: input)
 			} else {
-				var interpreter = AstInterpreter()
+				var interpreter = AstInterpreter(output: output)
 				try run(source: input, in: &interpreter)
 			}
 		} else {
@@ -55,22 +74,22 @@ public struct TalkTalkInterpreter {
 
 	public func runFile(file: String) throws {
 		let source = try! String(contentsOfFile: file)
-		var interpreter = AstInterpreter()
+		var interpreter = AstInterpreter(output: output)
 		try run(source: source, in: &interpreter)
 	}
 
 	public func runPrompt() {
-		var interpreter = AstInterpreter()
+		var interpreter = AstInterpreter(output: output)
 
 		while true {
-			print("> ", terminator: "")
+			output.print("> ", terminator: "")
 			guard let line = readLine() else {
 				break
 			}
 
 			do {
 				try run(source: line, in: &interpreter) { value in
-					print("=> \(value)")
+					output.print("=> \(value)")
 				}
 			} catch {}
 		}
@@ -82,7 +101,7 @@ public struct TalkTalkInterpreter {
 
 		if tokenize {
 			for token in tokens {
-				print(token)
+				output.print(token)
 			}
 
 			return

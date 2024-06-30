@@ -3,9 +3,11 @@ struct AstInterpreter {
 	var globals = Environment()
 	var locals: [String: Int] = [:]
 	var environment: Environment
+	var output: any Output
 
-	init() {
+	init(output: any Output) {
 		self.environment = globals
+		self.output = output
 
 		// Define builtins
 		defineClock()
@@ -27,7 +29,7 @@ struct AstInterpreter {
 				TalkTalkInterpreter.runtimeError(message, token: .init(kind: .equal, lexeme: "=", line: -1))
 			}
 		} catch {
-			print("RuntimeError: \(error)")
+			output.print("RuntimeError: \(error)")
 		}
 	}
 
@@ -39,7 +41,7 @@ struct AstInterpreter {
 				return globals.lookup(name: name.lexeme) ?? .unknown
 			}
 		} catch {
-			print("Locals: \(locals.debugDescription)")
+			output.print("Locals: \(locals.debugDescription)")
 			throw error
 		}
 	}

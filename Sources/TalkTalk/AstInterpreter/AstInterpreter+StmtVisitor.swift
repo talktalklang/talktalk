@@ -105,7 +105,8 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func visit(_ stmt: PrintStmt) throws {
-		try print(evaluate(stmt.expr))
+		
+		try output.print(evaluate(stmt.expr))
 	}
 
 	mutating func visit(_ stmt: ExpressionStmt) throws {

@@ -1,20 +1,44 @@
 import Testing
-@testable import tlk
+@testable import TalkTalk
 
-@Suite("TalkTalk") struct TalkTalkTests {
-	@Test func environmentTests() throws {
-		let parent = Environment()
-		let environment = Environment(parent: parent)
-
-		// Test assigning to outer scope
-		parent.initialize(name: "foo", value: .string("bar"))
-		_ = try environment.assign(name: "foo", value: .string("baz"))
-		#expect(parent.lookup(name: "foo") == .string("baz"))
-		#expect(environment.lookup(name: "foo") == .string("baz"))
-
-		// Test inner declaration doesn't go to outer
-		environment.initialize(name: "fizz", value: .string("buzz"))
-		#expect(environment.lookup(name: "fizz") == .string("buzz"))
-		#expect(parent.lookup(name: "fizz") == nil)
+class TestOutput: Output {
+	func print(_ output: Any...) {
+		out += output.map { "\($0)"}.joined(separator: "") + "\n"
 	}
+
+	func print(_ output: Any..., terminator: String) {
+		out += output.map { "\($0) "}.joined(separator: ", ") + terminator
+	}
+
+	var out = ""
+}
+
+@Test(
+	"Inputs and outputs",
+	arguments: [
+		(
+			"""
+			print "hello world";
+			""",
+			"""
+			string("hello world")
+
+			"""
+		),
+		(
+			"""
+			print 1 + 1;
+			""",
+			"""
+			number(2.0)
+
+			"""
+		)
+	]
+) func helloWorld(input: String, output: String) throws {
+	let actual = TestOutput()
+	var interpreter = TalkTalkInterpreter(input: input, tokenize: false, output: actual)
+	try interpreter.run()
+
+	#expect(actual.out == output)
 }
