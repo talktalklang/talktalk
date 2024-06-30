@@ -150,11 +150,13 @@ extension AstInterpreter: ExprVisitor {
 	mutating func visit(_ expr: GetExpr) throws -> Value {
 		let receiver = try evaluate(expr.receiver)
 
-		guard case let .instance(instance) = receiver else {
-			throw RuntimeError.typeError("\(receiver) has no property: \(expr.name.lexeme)", expr.name)
+		if case let .instance(instance) = receiver {
+			return try instance.get(expr.name)
+		} else if case let .callable(wrapper) = receiver {
+			return .callable(wrapper)
 		}
 
-		return instance.get(expr.name)
+		throw RuntimeError.typeError("\(receiver) has no property: \(expr.name.lexeme)", expr.name)
 	}
 
 	mutating func visit(_ expr: SetExpr) throws -> Value {
@@ -168,5 +170,9 @@ extension AstInterpreter: ExprVisitor {
 		instance.set(expr.name, value: value)
 
 		return value
+	}
+
+	mutating func visit(_ expr: SelfExpr) throws -> Value {
+		try lookupVariable(expr.token, expr: expr)
 	}
 }

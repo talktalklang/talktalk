@@ -12,6 +12,5 @@
 (call) @function.call
 (function_declaration name: (identifier)) @function.name
 (string_literal) @string
-(variable) @variable
 (number_literal) @number
 (class_declaration name: (identifier)) @type

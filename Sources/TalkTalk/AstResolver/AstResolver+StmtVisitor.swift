@@ -65,5 +65,13 @@ extension AstResolver: StmtVisitor {
 	mutating func visit(_ stmt: ClassStmt) throws {
 		declare(stmt.name)
 		define(stmt.name)
+
+		beginScope()
+		scopes[scopes.count-1].mark("self", as: .defined)
+
+		for method in stmt.methods {
+			try resolveFunction(method, .method)
+		}
+		endScope()
 	}
 }

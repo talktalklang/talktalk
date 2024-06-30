@@ -181,7 +181,7 @@ struct Parser {
 		try consume(.rightParen, "Expected ')' after parameters")
 		try consume(.leftBrace, "Expected '{' before \(kind) body")
 
-		return try FunctionStmt(name: nameToken, params: parameters, body: block())
+		return try FunctionStmt(id: "_func_\(nextID())", name: nameToken, params: parameters, body: block())
 	}
 
 	mutating func expression() throws -> any Expr {
@@ -329,6 +329,8 @@ struct Parser {
 		switch token.kind {
 		case .number(_), .string(_), .true, .false, .nil:
 			return LiteralExpr(id: nextID(), literal: token)
+		case .self:
+			return SelfExpr(id: nextID(), token: token)
 		case .identifier:
 			return VariableExpr(id: nextID(), name: token)
 		case .leftParen:

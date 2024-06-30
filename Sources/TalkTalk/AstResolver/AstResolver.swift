@@ -24,11 +24,15 @@ struct Scope {
 	mutating func mark(_ token: Token, as status: Scope.Status) {
 		storage[token.lexeme, default: Status()].insert(status)
 	}
+
+	mutating func mark(_ name: String, as status: Scope.Status)  {
+		storage[name, default: Status()].insert(status)
+	}
 }
 
 struct AstResolver {
 	enum FunctionType {
-		case none, function
+		case none, function, method
 	}
 
 	var interpreter: AstInterpreter

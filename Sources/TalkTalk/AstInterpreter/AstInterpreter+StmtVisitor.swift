@@ -5,18 +5,28 @@ extension AstInterpreter: StmtVisitor {
 		}
 
 		let name: Token
+		let methods: [String: Function]
 		var properties: [String: Value] = [:]
 
-		init(name: Token) {
+		init(name: Token, methods: [String: Function]) {
 			self.name = name
+			self.methods = methods
 		}
 
 		func call(_ context: inout AstInterpreter, arguments: [Value]) throws -> Value {
 			.instance(self)
 		}
 
-		func get(_ name: Token) -> Value {
-			properties[name.lexeme] ?? .nil
+		func get(_ name: Token) throws -> Value {
+			if let property = properties[name.lexeme] {
+				return property
+			}
+
+			if let method = methods[name.lexeme] {
+				return try .method(method.bind(to: .instance(self)))
+			}
+
+			return .nil
 		}
 
 		func set(_ name: Token, value: Value) {
@@ -24,9 +34,14 @@ extension AstInterpreter: StmtVisitor {
 		}
 	}
 
-	struct Function: Callable, @unchecked Sendable {
+	struct Function: Callable, Equatable, @unchecked Sendable {
+		static func ==(lhs: Function, rhs: Function) -> Bool {
+			lhs.functionStmt.id == rhs.functionStmt.id && lhs.closure == rhs.closure
+		}
+
 		static let `void` = Function(
 			functionStmt: FunctionStmt(
+				id: "_void",
 				name: Token(kind: .func, lexeme: "_void", line: -1),
 				params: [],
 				body: []
@@ -55,6 +70,17 @@ extension AstInterpreter: StmtVisitor {
 			}
 
 			return .nil
+		}
+
+		func bind(to instance: Value) throws -> Function {
+			guard case let .instance(instance) = instance else {
+				throw RuntimeError.typeError("function cannot be bound to \(instance)", functionStmt.name)
+			}
+
+			let environment = Environment(parent: closure)
+			environment.define(name: "self", callable: instance)
+
+			return Function(functionStmt: functionStmt, closure: environment)
 		}
 	}
 
@@ -110,7 +136,14 @@ extension AstInterpreter: StmtVisitor {
 
 	mutating func visit(_ stmt: ClassStmt) throws {
 		environment.define(name: stmt.name.lexeme, callable: Function.void)
-		let klass = Class(name: stmt.name)
+
+		var methods: [String: Function] = [:]
+		for method in stmt.methods {
+			let function = Function(functionStmt: method, closure: environment)
+			methods[method.name.lexeme] = function
+		}
+
+		let klass = Class(name: stmt.name, methods: methods)
 		environment.define(name: stmt.name.lexeme, callable: klass)
 	}
 

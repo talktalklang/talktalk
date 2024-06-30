@@ -1,11 +1,9 @@
 class Foo {
 	func bar() {
-		print	"bar";
+		print	self.fizz;
 	}
 }
 
 var foo = Foo();
-//print foo;
-
-foo.sup = "sup";
-print foo.sup;
+foo.fizz = "buzz";
+foo.bar();

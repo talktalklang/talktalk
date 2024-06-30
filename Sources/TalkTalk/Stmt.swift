@@ -66,7 +66,8 @@ struct WhileStmt: Stmt {
 	}
 }
 
-struct FunctionStmt: Stmt {
+struct FunctionStmt: Stmt, Identifiable {
+	let id: String
 	let name: Token
 	let params: [Token]
 	let body: [any Stmt]

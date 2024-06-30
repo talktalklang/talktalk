@@ -57,4 +57,8 @@ extension AstResolver: ExprVisitor {
 		try resolve(expr.value)
 		try resolve(expr.receiver)
 	}
+
+	mutating func visit(_ expr: SelfExpr) throws {
+		resolveLocal(expr: expr, name: expr.token)
+	}
 }

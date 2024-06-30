@@ -182,6 +182,7 @@ module.exports = grammar({
 
     primary_expression: $ => choice(
       $.number_literal,
+      'self',
       'nil',
       $.string_literal,
       $.boolean_literal,

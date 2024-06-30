@@ -1,4 +1,8 @@
-class Environment {
+class Environment: Equatable {
+	static func ==(lhs: Environment, rhs: Environment) -> Bool {
+		return lhs.vars == rhs.vars && lhs.parent == rhs.parent
+	}
+
 	enum AssignmentResult {
 		case handled, unhandled, uninitialized
 	}
@@ -8,6 +12,10 @@ class Environment {
 
 	init(parent: Environment? = nil) {
 		self.parent = parent
+	}
+
+	var description: String {
+		"Environment(vars: \(vars.debugDescription), parent: \(parent?.description as Any))"
 	}
 
 	func lookup(name: String) -> Value? {
@@ -20,22 +28,6 @@ class Environment {
 			throw RuntimeError.nameError("Undefined variable: \(name)", name)
 		}()
 	}
-
-//	func get(token: Token) throws -> Value {
-//		if case let .identifier(name) = token.kind, let value = vars[name] {
-//			return value
-//		}
-//
-//		throw RuntimeError.nameError("Undefined variable: \(token.lexeme)", token)
-//	}
-//
-//	func get(token: Token, depth: Int) throws -> Value {
-//		guard let environment = ancestor(depth: depth) else {
-//			throw RuntimeError.nameError("No environment found at depth \(depth)", token)
-//		}
-//
-//		return try environment.get(token: token)
-//	}
 
 	func initialize(name: String, value: Value) {
 		vars[name] = value

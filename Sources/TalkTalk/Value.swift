@@ -10,12 +10,15 @@ enum Value: Sendable, Equatable {
 	     callable(CallableWrapper),
 			 `class`(AstInterpreter.Class),
 			 instance(AstInterpreter.Class),
+			 method(AstInterpreter.Function),
 	     void,
 	     unknown
 
 	func call(_ interpreter: inout AstInterpreter, _ arguments: [Value]) throws -> Value {
 		if case let .callable(wrapper) = self {
 			return try wrapper.callable.call(&interpreter, arguments: arguments)
+		} else if case let .method(function) = self {
+			return try function.call(&interpreter, arguments: arguments)
 		} else {
 			throw CallError.valueNotCallable(self)
 		}

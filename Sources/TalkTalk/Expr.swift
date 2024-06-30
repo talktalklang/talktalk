@@ -12,6 +12,7 @@ protocol ExprVisitor {
 	mutating func visit(_ expr: CallExpr) throws -> Value
 	mutating func visit(_ expr: GetExpr) throws -> Value
 	mutating func visit(_ expr: SetExpr) throws -> Value
+	mutating func visit(_ expr: SelfExpr) throws -> Value
 }
 
 protocol Expr: Sendable, Identifiable {
@@ -114,6 +115,15 @@ struct SetExpr: Expr {
 	let receiver: any Expr
 	let name: Token
 	let value: any Expr
+
+	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
+		try visitor.visit(self)
+	}
+}
+
+struct SelfExpr: Expr {
+	var id: String
+	var token: Token
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
 		try visitor.visit(self)
