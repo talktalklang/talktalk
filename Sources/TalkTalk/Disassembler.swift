@@ -16,9 +16,10 @@ struct Disassembler: ~Copyable {
 		var opcode: String
 		var extra: String?
 		var line: UInt32
+		var isSameLine: Bool
 
-		func description(_ lastLine: UInt32) -> String {
-			let lineString = lastLine == line ? Array(repeating: " ", count: "\(line)".count - 1) + "|" : "\(line)"
+		var description: String {
+			let lineString = isSameLine ? Array(repeating: " ", count: "\(line)".count - 1) + "|" : "\(line)"
 			return "\(String(format: "%04d", offset))\t\(lineString)\t\(opcode)\t\(extra ?? "")"
 		}
 	}
@@ -26,20 +27,26 @@ struct Disassembler: ~Copyable {
 	var name = ""
 	var instructions: [Instruction] = []
 
-	init(name: String, chunk: borrowing Chunk) {
+	init(name: String = "") {
 		self.name = name
+	}
 
+	mutating func report(byte: UnsafeMutablePointer<Byte>, in chunk: borrowing Chunk) {
+		_ = disassembleInstruction(chunk: chunk, offset: byte - chunk.code.storage)
+
+		for instruction in instructions {
+			print(instruction.description)
+		}
+	}
+
+	mutating func report(chunk: borrowing Chunk) {
 		var offset = 0
 		while offset < chunk.code.count {
 			offset = disassembleInstruction(chunk: chunk, offset: offset)
 		}
-	}
 
-	func report() {
-		var lastLine: UInt32 = 10000
 		for instruction in instructions {
-			print(instruction.description(lastLine))
-			lastLine = instruction.line
+			print(instruction.description)
 		}
 	}
 
@@ -47,34 +54,52 @@ struct Disassembler: ~Copyable {
 		let instruction = chunk.code.storage.advanced(by: offset).pointee
 		let line = chunk.lines.storage.advanced(by: offset).pointee
 
-		switch instruction {
-		case Opcode.constant.rawValue:
-			return constantInstruction("OP_CONSTANT", chunk: chunk, offset: offset, line: line)
-		case Opcode.return.rawValue:
-			return simpleInstruction("OP_RETURN", offset: offset, line: line)
+		let isSameLine = offset > 0 && line == chunk.lines.storage.advanced(by: offset - 1).pointee
+		let opcode = Opcode(rawValue: instruction)
+
+		switch opcode {
+		case .constant:
+			return constantInstruction("OP_CONSTANT", chunk: chunk, offset: offset, line: line, isSameLine: isSameLine)
+		case .return:
+			return simpleInstruction("OP_RETURN", offset: offset, line: line, isSameLine: isSameLine)
+		case .negate:
+			return simpleInstruction("OP_NEGATE", offset: offset, line: line, isSameLine: isSameLine)
+		case .add, .subtract, .multiply, .divide:
+			return simpleInstruction(opcode!.description, offset: offset, line: line, isSameLine: isSameLine)
 		default:
 			instructions.append(
-				Instruction(offset: offset, opcode: "UNKNOWN INSTRUCTION \(instruction)", line: line)
+				Instruction(
+					offset: offset,
+					opcode: "UNKNOWN INSTRUCTION \(instruction.description)",
+					line: line,
+					isSameLine: isSameLine
+				)
 			)
 
 			return offset + 1
 		}
 	}
 
-	mutating func simpleInstruction(_ label: String, offset: Int, line: UInt32) -> Int {
+	mutating func simpleInstruction(_ label: String, offset: Int, line: UInt32, isSameLine: Bool) -> Int {
 		instructions.append(
-			Instruction(offset: offset, opcode: label, line: line)
+			Instruction(offset: offset, opcode: label, line: line, isSameLine: isSameLine)
 		)
 
 		return offset + 1
 	}
 
-	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: UInt32) -> Int {
-		let constant = chunk.code.storage.advanced(by: offset).pointee
+	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: UInt32, isSameLine: Bool) -> Int {
+		let constant = chunk.code.storage.advanced(by: offset+1).pointee
 		let value = chunk.constants.storage.advanced(by: Int(constant)).pointee
 
 		instructions.append(
-			Instruction(offset: offset, opcode: label, extra: String(format: "%04d '\(value)'", constant), line: line)
+			Instruction(
+				offset: offset,
+				opcode: label,
+				extra: String(format: "%04d '\(value)'", constant),
+				line: line,
+				isSameLine: isSameLine
+			)
 		)
 
 		return offset + 2

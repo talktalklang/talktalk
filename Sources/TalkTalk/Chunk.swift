@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 6/30/24.
 //
 
-struct Chunk: ~Copyable {
+public struct Chunk: ~Copyable {
 	var code = DynamicArray<Byte>()
 	var constants = DynamicArray<Value>()
 	var lines = DynamicArray<UInt32>()
@@ -20,11 +20,13 @@ struct Chunk: ~Copyable {
 	}
 
 	mutating func write(value: Value, line: UInt32) {
+		write(.constant, line: line)
 		let offset = Byte(constants.write(value))
 		write(offset, line: line)
 	}
 
 	func disassemble(_ name: String) {
-		Disassembler(name: name, chunk: self).report()
+		var disassembler = Disassembler(name: name)
+		disassembler.report(chunk: self)
 	}
 }

@@ -34,8 +34,15 @@ let package = Package(
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),
-		.target(name: "TalkTalkInterpreter"),
-		.target(name: "TalkTalk"),
+		.target(
+			name: "TalkTalkInterpreter"
+		),
+		.target(
+			name: "TalkTalk",
+			swiftSettings: [
+				.define("DEBUGGING", .when(configuration: .debug))
+			]
+		),
 		.testTarget(
 			name: "TalktalkTests",
 			dependencies: [
