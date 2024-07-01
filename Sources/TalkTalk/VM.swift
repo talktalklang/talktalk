@@ -18,7 +18,7 @@ public struct VM: ~Copyable {
 	var stackTop: UnsafeMutablePointer<Value>
 
 	public init(chunk: consuming Chunk) {
-		self.ip = chunk.code.storage
+		self.ip = UnsafeMutablePointer<Byte>(chunk.code.storage)
 		self.chunk = chunk
 		self.stackTop = UnsafeMutablePointer<Value>(stack)
 	}
@@ -109,5 +109,11 @@ public struct VM: ~Copyable {
 		}
 
 		return ip.pointee
+	}
+
+	deinit {
+		// I don't think I have to deallocate stackTop since it only
+		// refers to memory contained in stack? Same with ip?
+		stack.deallocate()
 	}
 }
