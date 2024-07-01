@@ -10,13 +10,12 @@ import TalkTalk
 
 @main
 struct TlkCommand: ParsableCommand {
-	@Argument(help: "The input to run.")
-	var input: String?
-
-	@Flag(help: "Just print the tokens") var tokenize: Bool = false
+//	@Argument(help: "The input to run.")
+//	var input: String?
+//
+//	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
 	mutating func run() throws {
-		var interpreter = TalkTalkInterpreter(input: input, tokenize: tokenize)
-		try interpreter.run()
+		TalkTalk.VM().main()
 	}
 }

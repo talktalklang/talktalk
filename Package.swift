@@ -14,6 +14,10 @@ let package = Package(
 		.library(
 			name: "TalkTalk",
 			targets: ["TalkTalk"]
+		),
+		.library(
+			name: "TalkTalkInterpreter",
+			targets: ["TalkTalkInterpreter"]
 		)
 	],
 	dependencies: [
@@ -30,6 +34,7 @@ let package = Package(
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),
+		.target(name: "TalkTalkInterpreter"),
 		.target(name: "TalkTalk"),
 		.testTarget(
 			name: "TalktalkTests",
