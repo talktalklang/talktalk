@@ -44,9 +44,16 @@ let package = Package(
 			]
 		),
 		.testTarget(
-			name: "TalktalkTests",
+			name: "TalkTalkTests",
 			dependencies: [
 				"TalkTalk",
+				.product(name: "Testing", package: "swift-testing"),
+			]
+		),
+		.testTarget(
+			name: "TalktalkInterpreterTests",
+			dependencies: [
+				"TalkTalkInterpreter",
 				.product(name: "Testing", package: "swift-testing"),
 			]
 		),

@@ -47,9 +47,9 @@ public struct VM: ~Copyable {
 
 	mutating func stackDebug() {
 		if stack == stackTop { return }
-		print("\t\t\t\t\t", terminator: "")
+		print("\t\t\t\tStack: ", terminator: "")
 		for slot in stack..<stackTop {
-			print("[ \(slot.pointee) ]", terminator: "")
+			print("[\(slot.pointee)]", terminator: "")
 		}
 		print()
 	}
