@@ -80,7 +80,7 @@ struct Lexer: ~Copyable {
 				result += "   | "
 			}
 
-			result += "\(token.kind) \(source[token.start..<source.index(token.start, offsetBy: token.length)])"
+			result += "[\(token.start.utf16Offset(in: source))] \(token.kind) \(source[token.start..<source.index(token.start, offsetBy: token.length)])"
 			result += "\n"
 
 			lastLine = token.line
@@ -90,6 +90,8 @@ struct Lexer: ~Copyable {
 	}
 
 	mutating func next() -> Token {
+		handleWhitespace()
+
 		start = current
 
 		if isAtEnd { return make(.eof) }
@@ -110,9 +112,111 @@ struct Lexer: ~Copyable {
 		case "=": make(match("=") ? .equalEqual : .equal)
 		case "<": make(match("=") ? .lessEqual : .less)
 		case ">": make(match("=") ? .greaterEqual : .greater)
+		case #"""#: string()
+		case _ where char.isNumber: number()
+		case _ where char.isLetter: identifier(start: char)
 		default:
-			error("Unexpected character.")
+			error("Unexpected character: \(char.debugDescription)")
 		}
+	}
+
+	mutating func handleWhitespace() {
+		while let char = peek() {
+			switch char {
+			case " ", "\r", "\t":
+				advance()
+			case "\n":
+				line += 1
+				advance()
+			case "/":
+				if peekNext() == "/" {
+					while peek() != "\n" && !isAtEnd {
+						advance()
+					}
+
+					break
+				}
+			default:
+				return
+			}
+		}
+	}
+
+	mutating func string() -> Token {
+		while peek() != #"""# && !isAtEnd {
+			if peek() == "\n" {
+				line += 1
+			}
+
+			advance()
+		}
+
+		if isAtEnd {
+			return error("Unterminated string.")
+		}
+
+		advance() // The closing quote
+
+		return make(.string)
+	}
+
+	mutating func number() -> Token {
+		while let char = peek(), char.isNumber {
+			advance()
+		}
+
+		if peek() == ".", let next = peekNext(), next.isNumber {
+			// Consume the "."
+			advance()
+
+			while let char = peek(), char.isNumber {
+				advance()
+			}
+		}
+
+		return make(.number)
+	}
+
+	mutating func identifier(start: Character) -> Token {
+		var node = KeywordTrie.trie.root.lookup(start)
+
+		while let char = peek(), isIdentifier(char) {
+			advance()
+
+			if let node = node.children[char],
+				 let keyword = node.keyword,
+				 !isIdentifier(peekNext()) {
+				return make(keyword)
+			}
+
+			node = node.lookup(char)
+		}
+
+		return make(.identifier)
+	}
+
+	func isIdentifier(_ char: Character?) -> Bool {
+		guard let char else {
+			return false
+		}
+
+		return char.isLetter || char.isNumber || char == "_"
+	}
+
+	func peek() -> Character? {
+		if isAtEnd {
+			return nil
+		}
+
+		return source[current]
+	}
+
+	func peekNext() -> Character? {
+		if isAtEnd {
+			return nil
+		}
+
+		return source[source.index(current, offsetBy: 1)]
 	}
 
 	mutating func match(_ char: Character) -> Bool {
@@ -126,12 +230,10 @@ struct Lexer: ~Copyable {
 		return true
 	}
 
-	mutating func advance() -> Character {
-		defer {
-			current = source.index(current, offsetBy: 1)
-		}
-
-		return source[current]
+	@discardableResult mutating func advance() -> Character {
+		let previous = current
+		current = source.index(current, offsetBy: 1)
+		return source[previous]
 	}
 
 	func make(_ kind: Token.Kind) -> Token {
