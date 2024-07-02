@@ -10,7 +10,7 @@ import Glibc
 import Foundation
 #endif
 
-struct Disassembler: ~Copyable {
+struct Disassembler<Output: OutputCollector>: ~Copyable {
 	struct Instruction {
 		var offset: Int
 		var opcode: String
@@ -24,23 +24,25 @@ struct Disassembler: ~Copyable {
 		}
 	}
 
-	static func report(chunk: borrowing Chunk) {
-		var diassembler = Disassembler()
+	static func report(chunk: borrowing Chunk, output: Output) {
+		var diassembler = Disassembler(output: output)
 		diassembler.report(chunk: chunk)
 	}
 
 	var name = ""
 	var instructions: [Instruction] = []
+	var output: Output
 
-	init(name: String = "") {
+	init(name: String = "", output: Output) {
 		self.name = name
+		self.output = output
 	}
 
 	mutating func report(byte: UnsafeMutablePointer<Byte>, in chunk: borrowing Chunk) {
 		_ = disassembleInstruction(chunk: chunk, offset: byte - chunk.code.storage)
 
 		for instruction in instructions {
-			print(instruction.description)
+			output.print(instruction.description)
 		}
 	}
 
@@ -51,7 +53,7 @@ struct Disassembler: ~Copyable {
 		}
 
 		for instruction in instructions {
-			print(instruction.description)
+			output.print(instruction.description)
 		}
 	}
 

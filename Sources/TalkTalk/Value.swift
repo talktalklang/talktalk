@@ -38,12 +38,12 @@ enum Value {
 
 	static func -(lhs: Value, rhs: Value) -> Value {
 		guard case let .number(rhs) = rhs else {
-			return .error("Cannot + \(rhs)")
+			return .error("Cannot - \(rhs)")
 		}
 
 		return switch lhs {
 		case .number(let lhs):
-				.number(lhs / rhs)
+				.number(lhs - rhs)
 		default:
 			.error("Cannot - \(lhs)")
 		}
@@ -51,27 +51,27 @@ enum Value {
 
 	static func *(lhs: Value, rhs: Value) -> Value {
 		guard case let .number(rhs) = rhs else {
-			return .error("Cannot + \(rhs)")
+			return .error("Cannot * \(rhs)")
 		}
 
 		return switch lhs {
 		case .number(let lhs):
 				.number(lhs * rhs)
 		default:
-			.error("Cannot - \(lhs)")
+			.error("Cannot * \(lhs)")
 		}
 	}
 
 	static func /(lhs: Value, rhs: Value) -> Value {
 		guard case let .number(rhs) = rhs else {
-			return .error("Cannot + \(rhs)")
+			return .error("Cannot / \(rhs)")
 		}
 
 		return switch lhs {
 		case .number(let lhs):
 			.number(lhs / rhs)
 		default:
-			.error("Cannot - \(lhs)")
+			.error("Cannot / \(lhs)")
 		}
 	}
 }

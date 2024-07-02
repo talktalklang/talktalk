@@ -48,6 +48,20 @@ struct LexerTests {
 		])
 	}
 
+	@Test("Division (not to be confused with comments)") func division() {
+		let source = """
+		1 / 2
+		"""
+
+		var lexer = Lexer(source: source)
+		#expect(lexer.collect() == [
+			Token(start: source.index(at: 0), length: 1, kind: .number, line: 1),
+			Token(start: source.index(at: 2), length: 1, kind: .slash, line: 1),
+			Token(start: source.index(at: 4), length: 1, kind: .number, line: 1),
+			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+		])
+	}
+
 	@Test("String literal") func stringLiteral() {
 		let source = """
 		"hello world"

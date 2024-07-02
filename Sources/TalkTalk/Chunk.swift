@@ -25,8 +25,8 @@ public class Chunk {
 		write(offset, line: line)
 	}
 
-	func disassemble(_ name: String) {
-		var disassembler = Disassembler(name: name)
+	func disassemble<Output: OutputCollector>(_ name: String, to output: Output) {
+		var disassembler = Disassembler(name: name, output: output)
 		disassembler.report(chunk: self)
 	}
 }

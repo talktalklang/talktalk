@@ -36,6 +36,10 @@ public struct Compiler: ~Copyable {
 	mutating func parse(precedence: Parser.Precedence) {
 		parser.advance()
 
+		if !parser.errors.isEmpty {
+			print("ERROR: \(parser.errors)")
+		}
+
 		let opKind = parser.previous.kind
 		let rule = opKind.rule
 
@@ -48,6 +52,8 @@ public struct Compiler: ~Copyable {
 
 		while precedence < parser.current.kind.rule.precedence {
 			parser.advance();
+
+			print("parser: \(parser.errors)")
 
 			if let infix = parser.previous.kind.rule.infix {
 				infix(&self)

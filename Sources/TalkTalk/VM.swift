@@ -11,12 +11,47 @@ public enum InterpretResult {
 			 runtimeError
 }
 
-public struct VM: ~Copyable {
-	var ip: UnsafeMutablePointer<Byte>!
-	var stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
+public protocol OutputCollector: AnyObject {
+	func print(_ output: String)
+	func print(_ output: String, terminator: String)
+}
+
+public final class StdoutOutput: OutputCollector {
+	public func print(_ output: String) {
+		Swift.print(output)
+	}
+
+	public func print(_ output: String, terminator: String) {
+		Swift.print(output, terminator: terminator)
+	}
+
+	public init() {}
+}
+
+public extension OutputCollector {
+	func print() {
+		self.print("")
+	}
+
+	func printf(_ string: String, _ args: CVarArg...) {
+		self.print(String(format: string, args), terminator: "")
+	}
+
+	func print(format string: String, _ args: CVarArg...) {
+		self.print(String(format: string, args))
+	}
+}
+
+public struct VM<Output: OutputCollector>: ~Copyable {
+	var output: Output
+	var ip: UnsafeMutablePointer<Byte>?
+	var stack: UnsafeMutablePointer<Value>
 	var stackTop: UnsafeMutablePointer<Value>
 
-	public init() {
+	public init(output: Output = StdoutOutput()) {
+		self.output = output
+		self.stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
+		self.stack.initialize(repeating: .nil, count: 256)
 		self.stackTop = UnsafeMutablePointer<Value>(stack)
 	}
 
@@ -44,11 +79,11 @@ public struct VM: ~Copyable {
 
 	mutating func stackDebug() {
 		if stack == stackTop { return }
-		print("\t\t\t\tStack: ", terminator: "")
+		output.print("\t\t\t\tStack: ", terminator: "")
 		for slot in stack..<stackTop {
-			print("[\(slot.pointee)]", terminator: "")
+			output.print("[\(slot.pointee)]", terminator: "")
 		}
-		print()
+		output.print()
 	}
 
 	public mutating func run(chunk: inout Chunk) -> InterpretResult {
@@ -56,14 +91,14 @@ public struct VM: ~Copyable {
 
 		while true {
 			#if DEBUGGING
-			var disassembler = Disassembler()
-			disassembler.report(byte: ip, in: chunk)
+			var disassembler = Disassembler(output: output)
+			disassembler.report(byte: ip!, in: chunk)
 			stackDebug()
 			#endif
 
 			switch Opcode(rawValue: readByte()) {
 			case .return:
-				print("\t\t\t\t\(stackPop())")
+				output.print("\t\t\t\t\(stackPop())")
 				return .ok
 			case .negate:
 				stackPush(-stackPop())
@@ -96,8 +131,12 @@ public struct VM: ~Copyable {
 	}
 
 	mutating func readByte() -> Byte {
+		guard let ip else {
+			return .min
+		}
+
 		defer {
-			ip = ip.successor()
+			self.ip = ip.successor()
 		}
 
 		return ip.pointee
