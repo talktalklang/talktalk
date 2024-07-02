@@ -53,8 +53,6 @@ public struct Compiler: ~Copyable {
 		while precedence < parser.current.kind.rule.precedence {
 			parser.advance();
 
-			print("parser: \(parser.errors)")
-
 			if let infix = parser.previous.kind.rule.infix {
 				infix(&self)
 			}
@@ -85,6 +83,8 @@ public struct Compiler: ~Copyable {
 		// Emit the operator instruction
 		if kind == .minus {
 			emit(.negate)
+		} else if kind == .bang {
+			emit(.not)
 		} else {
 			error("Should be unreachable for nowz.")
 		}
@@ -106,6 +106,20 @@ public struct Compiler: ~Copyable {
 		case .minus: 	emit(.subtract)
 		case .star: 	emit(.multiply)
 		case .slash: 	emit(.divide)
+		case .equalEqual: emit(.equal)
+		case .bangEqual: 	emit(.notEqual)
+		default:
+			() // Unreachable
+		}
+	}
+
+	// MARK: Literals
+
+	mutating func literal() {
+		switch parser.previous.kind {
+		case .false:	emit(.false)
+		case .true:		emit(.true)
+		case .nil:		emit(.nil)
 		default:
 			() // Unreachable
 		}
@@ -136,6 +150,6 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func error(_ message: String) {
-		errors.append(Error(token: parser.previous, message: message))
+		errors.append(Error(token: nil, message: message))
 	}
 }

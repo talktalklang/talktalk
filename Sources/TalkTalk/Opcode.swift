@@ -9,7 +9,11 @@ enum Opcode: Byte {
 	case constant,
 			 `return`,
 			 negate,
-			 add, subtract, multiply, divide
+			 not,
+			 add, subtract, multiply, divide,
+			 equal, notEqual,
+			 `true`, `false`,
+			 `nil`
 
 	var description: String {
 		switch self {
@@ -27,6 +31,16 @@ enum Opcode: Byte {
 			"OP_MULTIPLY"
 		case .divide:
 			"OP_DIVIDE"
+		case .true:
+			"OP_TRUE"
+		case .false:
+			"OP_FALSE"
+		case .nil:
+			"OP_NIL"
+		case .not:
+			"OP_NOT"
+		default:
+			"OP_\("\(self)".uppercased())"
 		}
 	}
 

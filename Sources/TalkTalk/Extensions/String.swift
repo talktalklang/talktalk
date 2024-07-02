@@ -8,4 +8,8 @@ extension String {
 	func index(at offset: Int) -> String.Index {
 		index(startIndex, offsetBy: offset)
 	}
+
+	subscript(_ offset: Int) -> Character {
+		self[index(startIndex, offsetBy: offset)]
+	}
 }

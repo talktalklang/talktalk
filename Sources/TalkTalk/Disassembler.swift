@@ -42,7 +42,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		_ = disassembleInstruction(chunk: chunk, offset: byte - chunk.code.storage)
 
 		for instruction in instructions {
-			output.print(instruction.description)
+			output.debug(instruction.description)
 		}
 	}
 
@@ -53,7 +53,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		}
 
 		for instruction in instructions {
-			output.print(instruction.description)
+			output.debug(instruction.description)
 		}
 	}
 
@@ -80,7 +80,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 			instructions.append(
 				Instruction(
 					offset: offset,
-					opcode: "UNKNOWN INSTRUCTION \(instruction.description)",
+					opcode: "UNKNOWN INSTRUCTION \(instruction.description), OPCODE: \(opcode as Any)",
 					line: line,
 					isSameLine: isSameLine
 				)

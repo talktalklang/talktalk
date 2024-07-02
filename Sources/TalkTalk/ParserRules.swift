@@ -34,10 +34,10 @@ extension Token.Kind {
 		case .semicolon:		.none
 		case .slash:				.init(nil, { $0.binary() }, .factor)
 		case .star:					.init(nil, { $0.binary() }, .factor)
-		case .bang:					.none
-		case .bangEqual:		.none
+		case .bang:					.init({ $0.unary() }, nil, .factor)
+		case .bangEqual:		.init(nil, { $0.binary() }, .equality)
 		case .equal:				.none
-		case .equalEqual:		.none
+		case .equalEqual:		.init(nil, { $0.binary() }, .equality)
 		case .greater:			.none
 		case .greaterEqual:	.none
 		case .less:					.none
@@ -51,18 +51,18 @@ extension Token.Kind {
 		case .number:				.init({ $0.number() }, nil, .none)
 		case .class:				.none
 		case .else:					.none
-		case .false:				.none
+		case .false:				.init({ $0.literal() }, nil, .none)
 		case .func:					.none
 		case .initializer:	.none
 		case .for:					.none
 		case .if:						.none
-		case .nil:					.none
+		case .nil:					.init({ $0.literal() }, nil, .none)
 		case .or:						.none
 		case .print:				.none
 		case .return:				.none
 		case .super:				.none
 		case .self:					.none
-		case .true:					.none
+		case .true:					.init({ $0.literal() }, nil, .none)
 		case .var:					.none
 		case .while:				.none
 		case .eof:					.none

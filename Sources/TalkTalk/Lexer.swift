@@ -98,8 +98,6 @@ struct Lexer: ~Copyable {
 					while peek() != "\n" && !isAtEnd {
 						advance()
 					}
-
-//					break
 				} else {
 					return
 				}

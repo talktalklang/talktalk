@@ -12,16 +12,16 @@ public enum InterpretResult {
 }
 
 public protocol OutputCollector: AnyObject {
-	func print(_ output: String)
 	func print(_ output: String, terminator: String)
+	func debug(_ output: String, terminator: String)
 }
 
 public final class StdoutOutput: OutputCollector {
-	public func print(_ output: String) {
-		Swift.print(output)
+	public func print(_ output: String, terminator: String) {
+		Swift.print(output, terminator: terminator)
 	}
 
-	public func print(_ output: String, terminator: String) {
+	public func debug(_ output: String, terminator: String) {
 		Swift.print(output, terminator: terminator)
 	}
 
@@ -31,6 +31,18 @@ public final class StdoutOutput: OutputCollector {
 public extension OutputCollector {
 	func print() {
 		self.print("")
+	}
+
+	func debug() {
+		self.debug("", terminator: "\n")
+	}
+
+	func debug(_ output: String) {
+		self.debug(output, terminator: "\n")
+	}
+
+	func print(_ output: String) {
+		self.print(output, terminator: "\n")
 	}
 
 	func printf(_ string: String, _ args: CVarArg...) {
@@ -53,6 +65,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		self.stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
 		self.stack.initialize(repeating: .nil, count: 256)
 		self.stackTop = UnsafeMutablePointer<Value>(stack)
+		self.stackTop.initialize(repeating: .nil, count: 256)
 	}
 
 	mutating func initVM() {
@@ -79,11 +92,20 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	mutating func stackDebug() {
 		if stack == stackTop { return }
-		output.print("\t\t\t\tStack: ", terminator: "")
+		output.debug("\t\t\t\tStack: ", terminator: "")
 		for slot in stack..<stackTop {
-			output.print("[\(slot.pointee)]", terminator: "")
+			output.debug("[\(slot.pointee)]", terminator: "")
 		}
-		output.print()
+		output.debug()
+	}
+
+	public mutating func run(source: String) -> InterpretResult {
+		var compiler = Compiler(source: source)
+		compiler.compile()
+
+		var chunk = compiler.compilingChunk
+
+		return run(chunk: &chunk)
 	}
 
 	public mutating func run(chunk: inout Chunk) -> InterpretResult {
@@ -96,9 +118,11 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 			stackDebug()
 			#endif
 
-			switch Opcode(rawValue: readByte()) {
+			let opcode = Opcode(rawValue: readByte())
+
+			switch opcode {
 			case .return:
-				output.print("\t\t\t\t\(stackPop())")
+				output.print(stackPop().description, terminator: "")
 				return .ok
 			case .negate:
 				stackPush(-stackPop())
@@ -120,7 +144,24 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				let b = stackPop()
 				let a = stackPop()
 				stackPush(a / b)
+			case .nil:
+				stackPush(.nil)
+			case .true:
+				stackPush(.bool(true))
+			case .false:
+				stackPush(.bool(false))
+			case .not:
+				stackPush(stackPop().not())
+			case .equal:
+				let a = stackPop()
+				let b = stackPop()
+				stackPush(.bool(a == b))
+			case .notEqual:
+				let a = stackPop()
+				let b = stackPop()
+				stackPush(.bool(a != b))
 			default:
+				print("Unknown opcode: \(opcode?.description ?? "nil")")
 				return .runtimeError
 			}
 		}
