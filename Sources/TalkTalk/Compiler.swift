@@ -135,8 +135,9 @@ public struct Compiler: ~Copyable {
 		// from the source file to the heap... for learning.
 		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: length)
 
-		let source = Array(parser.lexer.source)
+		let source = ContiguousArray(parser.lexer.source)
 
+		// This might not be right?
 		source[start..<(start + length)].withUnsafeBufferPointer {
 			for i in 0..<length {
 				pointer[i] = $0[i]
