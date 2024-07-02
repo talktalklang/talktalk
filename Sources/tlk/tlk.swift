@@ -17,17 +17,17 @@ struct TlkCommand: ParsableCommand {
 
 	mutating func run() throws {
 		var chunk = Chunk()
-		chunk.write(value: 2, line: 1)
-		chunk.write(value: 3, line: 1)
+		chunk.write(value: .number(2), line: 1)
+		chunk.write(value: .number(3), line: 1)
 
 		chunk.write(.multiply, line: 2)
 
-		chunk.write(value: 6, line: 3)
+		chunk.write(value: .number(6), line: 3)
 		chunk.write(.divide, line: 4)
 
 		chunk.write(.return, line: 5)
 
-		var vm = TalkTalk.VM(chunk: chunk)
-		print(vm.run())
+		var vm = TalkTalk.VM()
+		print(vm.run(chunk: &chunk))
 	}
 }

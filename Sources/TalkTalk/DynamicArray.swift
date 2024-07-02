@@ -4,7 +4,6 @@
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
-
 struct DynamicArray<T>: ~Copyable {
 	var count = 0
 	var capacity = 0
@@ -17,17 +16,18 @@ struct DynamicArray<T>: ~Copyable {
 			grow()
 		}
 
-		(storage + count).pointee = value
+		storage.advanced(by: count).pointee = value
 		count += 1
 
 		return count - 1
 	}
 
 	mutating func grow() {
-		let newCapacity = capacity < 8 ? 8 : capacity * 2
-		let newPointer = UnsafeMutablePointer<T>.allocate(capacity: newCapacity)
+		let newCapacity = capacity < 1 ? 1 : capacity * 2
 
-		newPointer.initialize(from: storage, count: count)
+		let newPointer = UnsafeMutablePointer<T>.allocate(capacity: newCapacity)
+		newPointer.moveInitialize(from: storage, count: count)
+
 		storage.deallocate()
 		storage = newPointer
 		capacity = newCapacity

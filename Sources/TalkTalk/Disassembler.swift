@@ -70,7 +70,10 @@ struct Disassembler: ~Copyable {
 		case .negate:
 			return simpleInstruction("OP_NEGATE", offset: offset, line: line, isSameLine: isSameLine)
 		case .add, .subtract, .multiply, .divide:
-			return simpleInstruction(opcode!.description, offset: offset, line: line, isSameLine: isSameLine)
+			guard let opcode else {
+				fatalError("No opcode for \(instruction)")
+			}
+			return simpleInstruction(opcode.description, offset: offset, line: line, isSameLine: isSameLine)
 		default:
 			instructions.append(
 				Instruction(

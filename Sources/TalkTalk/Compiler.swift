@@ -25,10 +25,6 @@ public struct Compiler: ~Copyable {
 		expression()
 		parser.consume(.eof, "Expected end of expression")
 		emit(.return)
-
-		#if DEBUGGING
-		Disassembler.report(chunk: compilingChunk)
-		#endif
 	}
 
 	mutating func expression() {
@@ -73,7 +69,7 @@ public struct Compiler: ~Copyable {
 			return
 		}
 
-		emit(constant: value)
+		emit(constant: .number(value))
 	}
 
 	mutating func unary() {
@@ -111,7 +107,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Emitters
 
-	mutating func emit(constant value: Value) {
+	mutating func emit(constant value: consuming Value) {
 		if compilingChunk.constants.count > UInt8.max {
 			error("Too many constants in one chunk")
 			return
@@ -120,15 +116,15 @@ public struct Compiler: ~Copyable {
 		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
-	mutating func emit(_ opcode: Opcode) {
-		compilingChunk.write(opcode, line: parser.previous?.line ?? -1)
+	mutating func emit(_ opcode: consuming Opcode) {
+		compilingChunk.write(opcode.byte, line: parser.previous?.line ?? -1)
 	}
 
-	mutating func emit(_ byte: Byte) {
+	mutating func emit(_ byte: consuming Byte) {
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
-	mutating func emit(_ byte1: Byte, emit byte2: Byte) {
+	mutating func emit(_ byte1: consuming Byte, emit byte2: consuming Byte) {
 		emit(byte1)
 		emit(byte2)
 	}

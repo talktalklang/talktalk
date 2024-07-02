@@ -12,14 +12,11 @@ public enum InterpretResult {
 }
 
 public struct VM: ~Copyable {
-	var chunk: Chunk
-	var ip: UnsafeMutablePointer<Byte>
+	var ip: UnsafeMutablePointer<Byte>!
 	var stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
 	var stackTop: UnsafeMutablePointer<Value>
 
-	public init(chunk: consuming Chunk) {
-		self.ip = UnsafeMutablePointer<Byte>(chunk.code.storage)
-		self.chunk = chunk
+	public init() {
 		self.stackTop = UnsafeMutablePointer<Value>(stack)
 	}
 
@@ -54,13 +51,15 @@ public struct VM: ~Copyable {
 		print()
 	}
 
-	public mutating func run() -> InterpretResult {
+	public mutating func run(chunk: inout Chunk) -> InterpretResult {
+		self.ip = chunk.code.storage
+
 		while true {
-//			#if DEBUGGING
-//			var disassembler = Disassembler()
-//			disassembler.report(byte: ip, in: chunk)
-//			stackDebug()
-//			#endif
+			#if DEBUGGING
+			var disassembler = Disassembler()
+			disassembler.report(byte: ip, in: chunk)
+			stackDebug()
+			#endif
 
 			switch Opcode(rawValue: readByte()) {
 			case .return:
@@ -69,7 +68,7 @@ public struct VM: ~Copyable {
 			case .negate:
 				stackPush(-stackPop())
 			case .constant:
-				stackPush(readConstant())
+				stackPush(readConstant(in: chunk))
 			case .add:
 				let b = stackPop()
 				let a = stackPop()
@@ -92,7 +91,7 @@ public struct VM: ~Copyable {
 		}
 	}
 
-	mutating func readConstant() -> Value {
+	mutating func readConstant(in chunk: borrowing Chunk) -> Value {
 		(chunk.constants.storage + UnsafeMutablePointer<Value>.Stride(readByte())).pointee
 	}
 

@@ -13,10 +13,10 @@ enum Opcode: Byte {
 
 	var description: String {
 		switch self {
-		case .constant:
-			"OP_CONSTANT"
 		case .return:
 			"OP_RETURN"
+		case .constant:
+			"OP_CONSTANT"
 		case .negate:
 			"OP_NEGATE"
 		case .add:
@@ -28,5 +28,9 @@ enum Opcode: Byte {
 		case .divide:
 			"OP_DIVIDE"
 		}
+	}
+
+	var byte: Byte {
+		rawValue
 	}
 }

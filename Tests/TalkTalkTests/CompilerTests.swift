@@ -14,7 +14,8 @@ struct CompilerTests {
 		compiler.compile()
 
 		
-		var vm = VM(chunk: compiler.compilingChunk)
-		#expect(vm.run() == .ok)
+		var vm = VM()
+		let result = vm.run(chunk: &compiler.compilingChunk)
+		#expect(result == .ok)
 	}
 }

@@ -11,7 +11,7 @@ public class Chunk {
 	var lines = DynamicArray<Int>()
 
 	func write(_ opcode: Opcode, line: Int) {
-		write(opcode.rawValue, line: line)
+		write(opcode.byte, line: line)
 	}
 
 	func write(_ byte: Byte, line: Int) {
@@ -19,7 +19,7 @@ public class Chunk {
 		lines.write(line)
 	}
 
-	func write(value: Value, line: Int) {
+	func write(value: consuming Value, line: Int) {
 		write(.constant, line: line)
 		let offset = Byte(constants.write(value))
 		write(offset, line: line)
