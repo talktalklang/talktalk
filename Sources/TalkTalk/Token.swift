@@ -27,20 +27,23 @@ struct Token: Equatable {
 		case error(String)
 	}
 
-	let start: String.Index
+	let start: Int
 	let length: Int
 	let kind: Kind
 	let line: Int
 
-	init(start: String.Index, length: Int, kind: Kind, line: Int) {
+	init(start: Int, length: Int, kind: Kind, line: Int) {
 		self.start = start
 		self.length = length
 		self.kind = kind
 		self.line = line
 	}
 
-	func lexeme(in source: String) -> Substring {
-		source[start..<source.index(start, offsetBy: length)]
+	@available(*, deprecated, message: "this isn't great")
+	func lexeme(in source: [Character]) -> Substring {
+		Substring(
+		source[start..<start+length]
+		)
 	}
 }
 

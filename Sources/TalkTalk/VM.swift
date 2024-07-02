@@ -93,8 +93,12 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	mutating func stackDebug() {
 		if stack == stackTop { return }
 		output.debug("\t\t\t\tStack: ", terminator: "")
-		for slot in stack..<stackTop {
-			output.debug("[\(slot.pointee)]", terminator: "")
+		if stack < stackTop {
+			for slot in stack..<stackTop {
+				output.debug("[\(slot.pointee)]", terminator: "")
+			}
+		} else {
+			output.print("Stack is in invalid state.")
 		}
 		output.debug()
 	}

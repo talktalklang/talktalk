@@ -6,8 +6,8 @@ struct LexerTests {
 		let source = "+"
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 0), length: 1, kind: .plus, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 1, kind: .plus, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 
@@ -15,9 +15,9 @@ struct LexerTests {
 		let source = "+ >="
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 0), length: 1, kind: .plus, line: 1),
-			Token(start: source.index(at: 2), length: 2, kind: .greaterEqual, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 1, kind: .plus, line: 1),
+			Token(start: 2, length: 2, kind: .greaterEqual, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 
 		lexer.rewind()
@@ -42,9 +42,9 @@ struct LexerTests {
 
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 21), length: 1, kind: .plus, line: 2),
-			Token(start: source.index(at: 23), length: 2, kind: .greaterEqual, line: 2),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 2)
+			Token(start: 21, length: 1, kind: .plus, line: 2),
+			Token(start: 23, length: 2, kind: .greaterEqual, line: 2),
+			Token(start: source.count, length: 0, kind: .eof, line: 2)
 		])
 	}
 
@@ -55,10 +55,10 @@ struct LexerTests {
 
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 0), length: 1, kind: .number, line: 1),
-			Token(start: source.index(at: 2), length: 1, kind: .slash, line: 1),
-			Token(start: source.index(at: 4), length: 1, kind: .number, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 1, kind: .number, line: 1),
+			Token(start: 2, length: 1, kind: .slash, line: 1),
+			Token(start: 4, length: 1, kind: .number, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 
@@ -72,8 +72,8 @@ struct LexerTests {
 		let tokens = lexer.collect()
 
 		#expect(tokens == [
-			Token(start: source.index(at: 0), length: 13, kind: .string, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 13, kind: .string, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 
@@ -87,9 +87,9 @@ struct LexerTests {
 		let tokens = lexer.collect()
 
 		#expect(tokens == [
-			Token(start: source.index(at: 0), length: 1, kind: .number, line: 1),
-			Token(start: source.index(at: 2), length: 3, kind: .number, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 1, kind: .number, line: 1),
+			Token(start: 2, length: 3, kind: .number, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 
@@ -100,8 +100,8 @@ struct LexerTests {
 
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 0), length: 8, kind: .identifier, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 8, kind: .identifier, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 
@@ -112,8 +112,8 @@ struct LexerTests {
 
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 0), length: 1, kind: .identifier, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 1, kind: .identifier, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 
@@ -124,8 +124,8 @@ struct LexerTests {
 
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
-			Token(start: source.index(at: 0), length: 3, kind: .var, line: 1),
-			Token(start: source.endIndex, length: 0, kind: .eof, line: 1)
+			Token(start: 0, length: 3, kind: .var, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1)
 		])
 	}
 }

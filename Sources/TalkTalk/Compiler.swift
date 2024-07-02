@@ -10,13 +10,13 @@ public struct Compiler: ~Copyable {
 		var message: String
 	}
 
-	let source: String
+	let source: [Character]
 	var parser: Parser
 	var compilingChunk: Chunk
 	var errors: [Error] = []
 
 	public init(source: String) {
-		self.source = source
+		self.source = Array(source)
 		self.parser = Parser(lexer: Lexer(source: source))
 		self.compilingChunk = Chunk()
 	}
@@ -69,7 +69,7 @@ public struct Compiler: ~Copyable {
 
 	mutating func number() {
 		guard let previous = parser.previous, let value = Double(previous.lexeme(in: source)) else {
-			error("Could not parse number.")
+			error("Could not parse number: \(parser.previous.lexeme(in: source))")
 			return
 		}
 
@@ -125,6 +125,31 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
+	// TODO: add static string that we don't need to copy?
+	mutating func string() {
+		// Get rid of start/end quotes
+		let start = parser.previous.start + 1
+		let length = parser.previous.length - 2
+
+		// _We_ want to be the ones to allocate and copy the string
+		// from the source file to the heap... for learning.
+		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: length)
+
+		let source = Array(parser.lexer.source)
+
+		source[start..<(start + length)].withUnsafeBufferPointer {
+			for i in 0..<length {
+				pointer[i] = $0[i]
+			}
+		}
+
+		// Trying to keep C semantics in swift is goin' great, pat.
+		let heapValue = HeapValue<Character>(pointer: pointer, length: UInt32(length))
+
+		let value = Value.string(heapValue)
+		emit(constant: value)
+	}
+
 	// MARK: Emitters
 
 	mutating func emit(constant value: consuming Value) {
@@ -150,6 +175,7 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func error(_ message: String) {
+		print("Compiler message: \(message)")
 		errors.append(Error(token: nil, message: message))
 	}
 }

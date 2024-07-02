@@ -12,4 +12,8 @@ extension String {
 	subscript(_ offset: Int) -> Character {
 		self[index(startIndex, offsetBy: offset)]
 	}
+
+	subscript(_ range: Range<Int>) -> Substring {
+		self[index(at: range.lowerBound)..<index(at: range.upperBound)]
+	}
 }

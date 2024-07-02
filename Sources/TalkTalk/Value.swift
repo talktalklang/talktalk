@@ -9,26 +9,37 @@
 
 struct HeapValue<T>: Equatable {
 	let pointer: UnsafePointer<T>
+	let length: UInt32
+
 	var pointee: T {
 		pointer.pointee
 	}
 }
 
 enum Value: Equatable {
-	case error, bool(Bool), `nil`, number(Double), string(HeapValue<String>)
+	case error, bool(Bool), `nil`, number(Double), string(HeapValue<Character>)
 
 	var description: String {
 		switch self {
 		case .error:
-			"Error"
+			return "Error"
 		case .bool(let bool):
-			"\(bool)"
+			return "\(bool)"
 		case .nil:
-			"nil"
+			print("--------------- value mem size: \(MemoryLayout.size(ofValue: self))")
+			return "nil"
 		case .number(let double):
-			"\(double)"
+			return "\(double)"
 		case .string(let heapValue):
-			heapValue.pointee.debugDescription
+			var string = ""
+
+			for i in 0..<heapValue.length {
+				string.append((heapValue.pointer + Int(i)).pointee)
+			}
+
+			print("--------------- value mem size: \(MemoryLayout.size(ofValue: self)), string: \(string)")
+
+			return string
 		}
 	}
 

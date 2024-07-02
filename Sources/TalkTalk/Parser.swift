@@ -71,6 +71,7 @@ struct Parser: ~Copyable {
 	}
 
 	mutating func error(at token: Token, _ message: String) {
+		print("Parser Error: \(token), message: \(message)")
 		self.errors.append(Error(token: token, message: message))
 	}
 }

@@ -6,14 +6,14 @@
 //
 struct Lexer: ~Copyable {
 	var source: String
-	var start: String.Index
-	var current: String.Index
+	var start: Int
+	var current: Int
 	var line = 1
 
 	init(source: String) {
 		self.source = source
-		self.start = source.startIndex
-		self.current = source.startIndex
+		self.start = 0
+		self.current = 0
 	}
 
 	mutating func collect() -> [Token] {
@@ -29,8 +29,8 @@ struct Lexer: ~Copyable {
 	}
 
 	mutating func rewind() {
-		current = source.startIndex
-		start = source.startIndex
+		current = 0
+		start = 0
 	}
 
 	mutating func dump() -> String {
@@ -44,7 +44,7 @@ struct Lexer: ~Copyable {
 				result += "   | "
 			}
 
-			result += "[\(token.start.utf16Offset(in: source))] \(token.kind) \(source[token.start..<source.index(token.start, offsetBy: token.length)])"
+			result += "[\(token.start)] \(token.kind) \(source[token.start..<token.start + token.length])"
 			result += "\n"
 
 			lastLine = token.line
@@ -181,7 +181,7 @@ struct Lexer: ~Copyable {
 			return nil
 		}
 
-		return source[source.index(current, offsetBy: 1)]
+		return source[current + 1]
 	}
 
 	mutating func match(_ char: Character) -> Bool {
@@ -191,18 +191,18 @@ struct Lexer: ~Copyable {
 			return false
 		}
 
-		current = source.index(current, offsetBy: 1)
+		current = current + 1
 		return true
 	}
 
 	@discardableResult mutating func advance() -> Character {
 		let previous = current
-		current = source.index(current, offsetBy: 1)
+		current = current + 1
 		return source[previous]
 	}
 
 	func make(_ kind: Token.Kind) -> Token {
-		Token(start: start, length: source.distance(from: start, to: current), kind: kind, line: line)
+		Token(start: start, length: current - start, kind: kind, line: line)
 	}
 
 	func error(_ message: String) -> Token {
@@ -210,6 +210,6 @@ struct Lexer: ~Copyable {
 	}
 
 	var isAtEnd: Bool {
-		current == source.endIndex
+		current == source.count
 	}
 }
