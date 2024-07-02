@@ -5,21 +5,21 @@
 //  Created by Pat Nakajima on 6/30/24.
 //
 
-public struct Chunk: ~Copyable {
+public class Chunk {
 	var code = DynamicArray<Byte>()
 	var constants = DynamicArray<Value>()
-	var lines = DynamicArray<UInt32>()
+	var lines = DynamicArray<Int>()
 
-	mutating func write(_ opcode: Opcode, line: UInt32) {
+	func write(_ opcode: Opcode, line: Int) {
 		write(opcode.rawValue, line: line)
 	}
 
-	mutating func write(_ byte: Byte, line: UInt32) {
+	func write(_ byte: Byte, line: Int) {
 		code.write(byte)
 		lines.write(line)
 	}
 
-	mutating func write(value: Value, line: UInt32) {
+	func write(value: Value, line: Int) {
 		write(.constant, line: line)
 		let offset = Byte(constants.write(value))
 		write(offset, line: line)

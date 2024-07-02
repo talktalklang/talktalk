@@ -56,16 +56,15 @@ public struct VM: ~Copyable {
 
 	public mutating func run() -> InterpretResult {
 		while true {
-			#if DEBUGGING
-			var disassembler = Disassembler()
-			disassembler.report(byte: ip, in: chunk)
-
-			stackDebug()
-			#endif
+//			#if DEBUGGING
+//			var disassembler = Disassembler()
+//			disassembler.report(byte: ip, in: chunk)
+//			stackDebug()
+//			#endif
 
 			switch Opcode(rawValue: readByte()) {
 			case .return:
-				print(".return(\(stackPop()))")
+				print("\t\t\t\t\(stackPop())")
 				return .ok
 			case .negate:
 				stackPush(-stackPop())
@@ -91,12 +90,6 @@ public struct VM: ~Copyable {
 				return .runtimeError
 			}
 		}
-	}
-
-	// This is a C macro in the book but i don't feel like adding swift macros
-	// at the moment.
-	mutating func binaryOp(_ operation: PartialKeyPath<Value>) {
-
 	}
 
 	mutating func readConstant() -> Value {

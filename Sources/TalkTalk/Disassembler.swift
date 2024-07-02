@@ -15,13 +15,18 @@ struct Disassembler: ~Copyable {
 		var offset: Int
 		var opcode: String
 		var extra: String?
-		var line: UInt32
+		var line: Int
 		var isSameLine: Bool
 
 		var description: String {
 			let lineString = isSameLine ? Array(repeating: " ", count: "\(line)".count - 1) + "|" : "\(line)"
 			return "\(String(format: "%04d", offset))\t\(lineString)\t\(opcode)\t\(extra ?? "")"
 		}
+	}
+
+	static func report(chunk: borrowing Chunk) {
+		var diassembler = Disassembler()
+		diassembler.report(chunk: chunk)
 	}
 
 	var name = ""
@@ -80,7 +85,7 @@ struct Disassembler: ~Copyable {
 		}
 	}
 
-	mutating func simpleInstruction(_ label: String, offset: Int, line: UInt32, isSameLine: Bool) -> Int {
+	mutating func simpleInstruction(_ label: String, offset: Int, line: Int, isSameLine: Bool) -> Int {
 		instructions.append(
 			Instruction(offset: offset, opcode: label, line: line, isSameLine: isSameLine)
 		)
@@ -88,7 +93,7 @@ struct Disassembler: ~Copyable {
 		return offset + 1
 	}
 
-	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: UInt32, isSameLine: Bool) -> Int {
+	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: Int, isSameLine: Bool) -> Int {
 		let constant = chunk.code.storage.advanced(by: offset+1).pointee
 		let value = chunk.constants.storage.advanced(by: Int(constant)).pointee
 
