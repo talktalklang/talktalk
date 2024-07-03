@@ -137,15 +137,23 @@ public struct Compiler: ~Copyable {
 
 		let source = ContiguousArray(parser.lexer.source)
 
+		// Calculate the hash value while we're copying characters anyway
+		var hasher = Hasher() //
+
 		// This might not be right?
 		source[start..<(start + length)].withUnsafeBufferPointer {
 			for i in 0..<length {
 				pointer[i] = $0[i]
+				hasher.combine($0[i])
 			}
 		}
 
 		// Trying to keep C semantics in swift is goin' great, pat.
-		let heapValue = HeapValue<Character>(pointer: pointer, length: UInt32(length))
+		let heapValue = HeapValue<Character>(
+			pointer: pointer,
+			length: length,
+			hashValue: hasher.value
+		)
 
 		let value = Value.string(heapValue)
 		emit(constant: value)
