@@ -5,13 +5,13 @@
 //  Created by Pat Nakajima on 7/1/24.
 //
 struct Lexer: ~Copyable {
-	var source: String
+	var source: ContiguousArray<Character>
 	var start: Int
 	var current: Int
 	var line = 1
 
 	init(source: String) {
-		self.source = source
+		self.source = ContiguousArray(source)
 		self.start = 0
 		self.current = 0
 	}
@@ -44,7 +44,7 @@ struct Lexer: ~Copyable {
 				result += "   | "
 			}
 
-			result += "[\(token.start)] \(token.kind) \(source[token.start..<token.start + token.length])"
+			result += "[\(token.start)] \(token.kind) \(String(source[token.start..<token.start + token.length]))"
 			result += "\n"
 
 			lastLine = token.line

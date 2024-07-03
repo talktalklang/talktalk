@@ -101,7 +101,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 			Instruction(
 				offset: offset,
 				opcode: label,
-				extra: String(format: "%04d '\(value)'", constant),
+				extra: String(format: "%04d '\(value.description)'", constant),
 				line: line,
 				isSameLine: isSameLine
 			)

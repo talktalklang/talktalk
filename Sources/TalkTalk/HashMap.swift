@@ -31,7 +31,7 @@ class HashMap {
 		storage[key] = value
 	}
 
-	public func get(_ key: borrowing Value) -> Value? {
+	public func get(_ key: Value) -> Value? {
 		storage[key]
 	}
 }

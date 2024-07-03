@@ -39,8 +39,12 @@ struct Token: Equatable {
 		self.line = line
 	}
 
+	func same(lexeme other: Token, in source: ContiguousArray<Character>) -> Bool {
+		length == other.length && lexeme(in: source) == other.lexeme(in: source)
+	}
+
 //	@available(*, deprecated, message: "this isn't great")
-	func lexeme(in source: [Character]) -> ContiguousArray<Character> {
+	func lexeme(in source: ContiguousArray<Character>) -> ContiguousArray<Character> {
 		ContiguousArray(
 			source[start..<start+length]
 		)

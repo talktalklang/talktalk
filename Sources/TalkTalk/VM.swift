@@ -18,6 +18,23 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	var stackTop: UnsafeMutablePointer<Value>
 	var globals: [String: Value] = [:]
 
+	static func run(source: String, output: Output) -> InterpretResult {
+		var vm = VM(output: output)
+		var compiler = Compiler(source: source)
+
+		do {
+			try compiler.compile()
+		} catch {
+			for error in compiler.errors {
+				output.print(error.description)
+			}
+
+			return .compileError
+		}
+
+		return vm.run(chunk: &compiler.compilingChunk)
+	}
+
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
 		self.stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
@@ -63,10 +80,13 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	public mutating func run(source: String) -> InterpretResult {
 		var compiler = Compiler(source: source)
-		compiler.compile()
+		do {
+			try compiler.compile()
+		} catch {
+			return .compileError
+		}
 
 		var chunk = compiler.compilingChunk
-
 		return run(chunk: &chunk)
 	}
 
@@ -80,7 +100,11 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 			stackDebug()
 			#endif
 
-			let opcode = Opcode(rawValue: readByte())
+			let byte = readByte()
+			guard let opcode = Opcode(rawValue: byte) else {
+				print("Unknown opcode: \(byte)")
+				return .runtimeError
+			}
 
 			switch opcode {
 			case .return:
@@ -126,18 +150,24 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 			case .print:
 				output.print(stackPop().description)
 			case .defineGlobal:
-				let name = readString(in: chunk)
+				let name = chunk.constants.read(byte: readByte()).as(String.self)
 				globals[name] = stackPop()
 			case .getGlobal:
 				let name = readString(in: chunk)
 				guard let value = globals[name] else {
+					output.debug("Undefined variable '\(name)' \(globals.debugDescription)")
 					output.print("Error: Undefined variable '\(name)'")
 					return .runtimeError
 				}
 				stackPush(value)
-			default:
-				print("Unknown opcode: \(opcode?.description ?? "nil")")
-				return .runtimeError
+			case .setGlobal:
+				let name = chunk.constants.read(byte: readByte()).as(String.self)
+				if globals[name] == nil {
+					runtimeError("Undefined variable \(name).")
+					return .runtimeError
+				}
+
+				globals[name] = peek()
 			}
 		}
 	}
@@ -162,8 +192,12 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		return ip.pointee
 	}
 
-	func peek(_ offset: Int) -> Value {
-		(stackTop + offset).pointee
+	func peek(_ offset: Int = 0) -> Value {
+		(stackTop + offset - 1).pointee
+	}
+
+	func runtimeError(_ message: String) {
+		output.print("Runtime Error: \(message)")
 	}
 
 	deinit {

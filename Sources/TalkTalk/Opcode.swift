@@ -15,7 +15,7 @@ enum Opcode: Byte {
 			 `true`, `false`,
 			 print,
 			 pop,
-			 defineGlobal, getGlobal,
+			 defineGlobal, getGlobal, setGlobal,
 			 `nil`
 
 	var description: String {

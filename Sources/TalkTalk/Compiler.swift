@@ -5,15 +5,39 @@
 //  Created by Pat Nakajima on 7/1/24.
 //
 public struct Compiler: ~Copyable {
+	enum Errors: Swift.Error {
+		case errors([Error])
+	}
+
 	struct Error {
 		var token: Token?
 		var message: String
+
+		var description: String {
+			if let token {
+				"Compiler Error: \(message) at \(token)"
+			} else {
+				"Compiler Error: \(message)"
+			}
+		}
 	}
 
-	let source: [Character]
 	var parser: Parser
 	var compilingChunk: Chunk
 	var errors: [Error] = []
+
+	// MARK: Local variable management
+
+	struct Local {
+		let name: Token
+		let depth: Int
+	}
+
+	var locals = ContiguousArray<Local?>.init(repeating: nil, count: 256)
+	var localCount = 0
+	var scopeDepth = 0
+
+	// MARK: Debuggy
 
 	#if DEBUG
 	var parserRepeats: [Int: Int] = [:]
@@ -28,12 +52,15 @@ public struct Compiler: ~Copyable {
 	#endif
 
 	public init(source: String) {
-		self.source = Array(source)
 		self.parser = Parser(lexer: Lexer(source: source))
 		self.compilingChunk = Chunk()
 	}
 
-	public mutating func compile() {
+	var source: ContiguousArray<Character> {
+		parser.lexer.source
+	}
+
+	public mutating func compile() throws {
 		while parser.current.kind != .eof {
 			declaration()
 
@@ -42,7 +69,12 @@ public struct Compiler: ~Copyable {
 			#endif
 		}
 
-		emit(.return)
+		if errors.isEmpty {
+			emit(.return)
+			return
+		}
+
+		throw Errors.errors(errors)
 	}
 
 	mutating func declaration() {
@@ -57,8 +89,7 @@ public struct Compiler: ~Copyable {
 		let global = parseVariable("Expected variable name")
 		
 		defer {
-			emit(.defineGlobal)
-			emit(global)
+			defineVariable(global: global)
 		}
 
 		if parser.match(.equal) {
@@ -75,9 +106,19 @@ public struct Compiler: ~Copyable {
 	mutating func statement() {
 		if parser.match(.print) {
 			printStatement()
+		} else if parser.match(.leftBrace) {
+			withScope { $0.block() }
 		} else {
 			expressionStatement()
 		}
+	}
+
+	mutating func block() {
+		while !parser.check(.rightBrace), !parser.check(.eof) {
+			declaration()
+		}
+
+		parser.consume(.rightBrace, "Expected '}' after block.")
 	}
 
 	mutating func printStatement() {
@@ -98,6 +139,13 @@ public struct Compiler: ~Copyable {
 
 	mutating func parseVariable(_ message: String) -> Byte {
 		parser.consume(.identifier, message)
+
+		declareVariable()
+
+		if scopeDepth > 0 {
+			return 0
+		}
+
 		return identifierConstant(parser.previous)
 	}
 
@@ -118,26 +166,31 @@ public struct Compiler: ~Copyable {
 			return
 		}
 
-		prefix(&self)
+		let canAssign = precedence <= .assignment
+		prefix(&self, canAssign)
 
 		while precedence < parser.current.kind.rule.precedence {
 			parser.advance();
 
 			if let infix = parser.previous.kind.rule.infix {
-				infix(&self)
+				infix(&self, canAssign)
+			}
+
+			if canAssign, parser.match(.equal) {
+				error("Syntax Error: Invalid target assignment", at: parser.previous)
 			}
 		}
 	}
 
 	// MARK:  Prefix expressions
 
-	mutating func grouping() {
+	mutating func grouping(_ canAssign: Bool) {
 		// Assume the initial "(" has been consumed
 		expression()
 		parser.consume(.rightParen, "Expected ')' after expression.")
 	}
 
-	mutating func number() {
+	mutating func number(_ canAssign: Bool) {
 		let lexeme = parser.previous.lexeme(in: source).reduce(into: "") { $0.append($1) }
 		guard let value = Double(lexeme) else {
 			error("Could not parse number: \(parser.previous.lexeme(in: source))")
@@ -147,7 +200,7 @@ public struct Compiler: ~Copyable {
 		emit(constant: .number(value))
 	}
 
-	mutating func unary() {
+	mutating func unary(_ canAssign: Bool) {
 		let kind = parser.previous.kind
 		parse(precedence: .unary)
 
@@ -163,7 +216,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Binary expressions
 
-	mutating func binary() {
+	mutating func binary(_ canAssign: Bool) {
 		guard let kind = parser.previous?.kind else {
 			error("No previous token for unary expr.")
 			return
@@ -186,7 +239,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Literals
 
-	mutating func literal() {
+	mutating func literal(_ canAssign: Bool) {
 		switch parser.previous.kind {
 		case .false:	emit(.false)
 		case .true:		emit(.true)
@@ -197,7 +250,7 @@ public struct Compiler: ~Copyable {
 	}
 
 	// TODO: add static string that we don't need to copy?
-	mutating func string() {
+	mutating func string(_ canAssign: Bool) {
 		// Get rid of start/end quotes
 		let start = parser.previous.start + 1
 		let length = parser.previous.length - 2
@@ -230,21 +283,89 @@ public struct Compiler: ~Copyable {
 		emit(constant: value)
 	}
 
-	mutating func variable() {
-		namedVariable(parser.previous)
+	mutating func variable(_ canAssign: Bool) {
+		namedVariable(parser.previous, canAssign)
 	}
 
 	// MARK: Helpers
 
-	mutating func namedVariable(_ token: Token) {
+	mutating func declareVariable() {
+		if scopeDepth == 0 {
+			return
+		}
+
+		if let name = parser.previous {
+			var i = localCount
+			while i >= 0 {
+				guard let local = locals[i] else {
+					i -= 1
+					continue
+				}
+
+				if local.depth != -1, local.depth < scopeDepth {
+					break
+				}
+
+				if name.same(lexeme: local.name, in: source) {
+					error("Already a variable with this name in this scope")
+				}
+
+				i -= 1
+			}
+
+			addLocal(name: name)
+		} else {
+			error("No variable name at \(parser.current.line)")
+		}
+	}
+
+	mutating func defineVariable(global: Byte) {
+		if scopeDepth > 0 {
+			return
+		}
+
+		emit(.defineGlobal)
+		emit(global)
+	}
+
+	mutating func addLocal(name: Token) {
+		if localCount == 256 {
+			error("Too many local variables in function")
+			return
+		}
+
+		locals[localCount] = Local(name: name, depth: scopeDepth)
+		localCount += 1
+	}
+
+	mutating func namedVariable(_ token: Token, _ canAssign: Bool) {
 		let arg = identifierConstant(token)
-		emit(.getGlobal)
-		emit(arg)
+
+		if canAssign, parser.match(.equal) {
+			expression()
+			emit(.setGlobal)
+			emit(arg)
+		} else {
+			emit(.getGlobal)
+			emit(arg)
+		}
 	}
 
 	mutating func identifierConstant(_ token: Token) -> Byte {
 		let value = Value.string(token.lexeme(in: source))
 		return compilingChunk.write(constant: value)
+	}
+
+	mutating func withScope(perform: (inout Self) -> Void) {
+		scopeDepth += 1
+		perform(&self)
+		scopeDepth -= 1
+
+		// The block is done, gotta clean up the scope
+		while localCount > 0, let local = locals[localCount - 1], local.depth > scopeDepth {
+			emit(.pop)
+			localCount -= 1
+		}
 	}
 
 	// MARK: Emitters
@@ -271,8 +392,13 @@ public struct Compiler: ~Copyable {
 		emit(byte2)
 	}
 
+	mutating func error(_ message: String, at token: Token) {
+		print("Compiler Error: \(message)")
+		errors.append(Error(token: token, message: message))
+	}
+
 	mutating func error(_ message: String) {
-		print("Compiler message: \(message)")
+		print("Compiler Error: \(message)")
 		errors.append(Error(token: nil, message: message))
 	}
 }

@@ -22,15 +22,6 @@ class TestOutput: OutputCollector {
 	var debugOut: String = ""
 }
 
-extension VM {
-	static func run(source: String, output: Output) -> InterpretResult {
-		var vm = VM(output: output)
-		var compiler = Compiler(source: source)
-		compiler.compile()
-		return vm.run(chunk: &compiler.compilingChunk)
-	}
-}
-
 struct CompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
@@ -65,7 +56,7 @@ struct CompilerTests {
 				for _ in 0..<100 {
 					let source = "print 1 + -2;"
 					var compiler = Compiler(source: source)
-					compiler.compile()
+					try! compiler.compile()
 
 					let output = TestOutput()
 					var vm = VM(output: output)
@@ -125,7 +116,7 @@ struct CompilerTests {
 		print "hello world";
 		"""
 		var compiler = Compiler(source: source)
-		compiler.compile()
+		try! compiler.compile()
 
 		var vm = VM(output: output)
 		let result = vm.run(chunk: &compiler.compilingChunk)
@@ -143,5 +134,32 @@ struct CompilerTests {
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "hello world\n")
+	}
+
+	@Test("Global variable reassignment") func globalReassignment() {
+		let output = TestOutput()
+		let source = """
+		var greeting = "hello world";
+		greeting = greeting + " SUP";
+		print greeting;
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "hello world SUP\n")
+	}
+
+	@Test("Assignment precedence") func assignmentPrecedence() {
+		let output = TestOutput()
+		let source = """
+		var a = 1;
+		var b = 1;
+		var c = 1;
+		var d = 1;
+
+		print a * b = c + d;
+		"""
+
+		#expect(VM.run(source: source, output: output) == .compileError)
+		#expect(output.stdout.contains("Syntax Error"))
 	}
 }
