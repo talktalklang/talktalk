@@ -13,7 +13,7 @@ public enum InterpretResult {
 
 public struct VM<Output: OutputCollector>: ~Copyable {
 	var output: Output
-	var ip: UnsafeMutablePointer<Byte>?
+	var ip: UnsafeMutablePointer<Byte>
 	var stack: UnsafeMutablePointer<Value>
 	var stackTop: UnsafeMutablePointer<Value>
 	var globals: [String: Value] = [:]
@@ -41,6 +41,9 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		stack.initialize(repeating: .nil, count: 256)
 		self.stackTop = UnsafeMutablePointer<Value>(stack)
 		stackTop.initialize(repeating: .nil, count: 256)
+
+		// Placeholder
+		self.ip = .allocate(capacity: 0)
 	}
 
 	mutating func initVM() {
@@ -100,7 +103,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		while true {
 			#if DEBUGGING
 				var disassembler = Disassembler(output: output)
-				disassembler.report(byte: ip!, in: chunk)
+				disassembler.report(byte: ip, in: chunk)
 				stackDebug()
 			#endif
 
@@ -178,8 +181,25 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 			case .setLocal:
 				let slot = readByte()
 				stack[Int(slot)] = peek()
+			case .uninitialized:
+				()
+			case .jumpIfFalse:
+				let offset = readShort()
+				let isTrue = peek().as(Bool.self)
+				if !isTrue {
+					self.ip += Int(offset)
+				}
 			}
 		}
+	}
+
+	mutating func readShort() -> UInt16 {
+		// Move two bytes, because we're gonna read... two bytes
+		self.ip += 2
+
+		// Grab those two bytes from the chunk's code and build
+		// a 16 bit (two byte, nice) unsigned int.
+		return UInt16((ip.advanced(by: -2).pointee << 8) | ip.advanced(by: -1).pointee)
 	}
 
 	mutating func readString(in chunk: borrowing Chunk) -> String {
@@ -191,12 +211,8 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func readByte() -> Byte {
-		guard let ip else {
-			return .min
-		}
-
 		defer {
-			self.ip = ip.successor()
+			ip = ip.successor()
 		}
 
 		return ip.pointee

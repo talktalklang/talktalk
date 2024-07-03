@@ -10,6 +10,10 @@ public class Chunk {
 	var constants = DynamicArray<Value>()
 	var lines = DynamicArray<Int>()
 
+	var count: Int {
+		code.count
+	}
+
 	func write(constant value: Value) -> Byte {
 		Byte(constants.write(value))
 	}

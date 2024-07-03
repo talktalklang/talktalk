@@ -88,7 +88,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func simpleInstruction(_ label: String, offset: Int, line: Int, isSameLine: Bool) -> Int {
-		instructions.append(
+		append(
 			Instruction(offset: offset, opcode: label, line: line, isSameLine: isSameLine)
 		)
 
@@ -99,7 +99,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		let constant = chunk.code.storage.advanced(by: offset + 1).pointee
 		let value = chunk.constants.storage.advanced(by: Int(constant)).pointee
 
-		instructions.append(
+		append(
 			Instruction(
 				offset: offset,
 				opcode: label,
@@ -110,5 +110,9 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		)
 
 		return offset + 2
+	}
+
+	mutating func append(_ instruction: Instruction) {
+		instructions.append(instruction)
 	}
 }

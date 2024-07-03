@@ -100,6 +100,10 @@ enum Value: Equatable, Hashable {
 
 	func `as`<T>(_ type: T.Type) -> T {
 		switch type {
+		case is Bool.Type:
+			if case let .bool(bool) = self {
+				return bool as! T
+			}
 		case is String.Type:
 			return description as! T
 		case is Byte.Type:
@@ -110,7 +114,7 @@ enum Value: Equatable, Hashable {
 			()
 		}
 
-		fatalError("Cannot cast \(self) to \(T.self)")
+		fatalError("\(self) cast to \(T.self) not implemented.")
 	}
 
 	var description: String {

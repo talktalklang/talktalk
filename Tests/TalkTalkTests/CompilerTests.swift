@@ -198,7 +198,22 @@ struct CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		print(output.debugOut)
 		#expect(output.stdout == "3.0\n4.0\n")
+	}
+
+	@Test("If statement") func ifStatement() {
+		let output = TestOutput()
+		let source = """
+		if false {
+			print "Dont show up";
+		}
+
+		if true {
+			print "hello world";
+		}
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "hello world\n")
 	}
 }

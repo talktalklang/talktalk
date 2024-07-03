@@ -107,6 +107,8 @@ public struct Compiler: ~Copyable {
 	mutating func statement() {
 		if parser.match(.print) {
 			printStatement()
+		} else if parser.match(.if) {
+			ifStatement()
 		} else if parser.match(.leftBrace) {
 			withScope { $0.block() }
 		} else {
@@ -126,6 +128,18 @@ public struct Compiler: ~Copyable {
 		expression()
 		parser.consume(.semicolon, "Expected ';' after value.")
 		emit(.print)
+	}
+
+	mutating func ifStatement() {
+		expression() // Add the if EXPRESSION to the stack
+
+		let thenJumpLocation = emit(jump: .jumpIfFalse)
+
+		parser.consume(.leftBrace, "Expected '{' before `if` statement.")
+		block()
+
+		// Backpack the jump
+		patchJump(thenJumpLocation)
 	}
 
 	mutating func expressionStatement() {
@@ -408,6 +422,32 @@ public struct Compiler: ~Copyable {
 	}
 
 	// MARK: Emitters
+
+	mutating func emit(jump instruction: Opcode) -> Int {
+		emit(instruction)
+
+		// Use two bytes for the offset, which lets us jump over 65k bytes of code.
+		// We'll fill these in with the patchJump later.
+		emit(.uninitialized)
+		emit(.uninitialized)
+
+		// Return the current location of our chunk code, offset by 2 (since that's
+		// where we're gonna store our offset.
+		return compilingChunk.count - 2
+	}
+
+	mutating func patchJump(_ offset: Int) {
+		// -2 to adjust for the bytecode for the jump offset itself
+		let jump = compilingChunk.count - offset - 2
+		if jump > UInt16.max {
+			error("Too much code to jump over")
+		}
+
+		// Go back and replace the two placeholder bytes from emit(jump:)
+		// the actual offset to jump over.
+		compilingChunk.code[offset] = Byte((jump >> 8) & 0xff)
+		compilingChunk.code[offset + 1] = Byte(jump & 0xff)
+	}
 
 	mutating func emit(constant value: consuming Value) {
 		if compilingChunk.constants.count > UInt8.max {

@@ -9,6 +9,16 @@ struct DynamicArray<T>: ~Copyable {
 	var capacity = 0
 	var storage = UnsafeMutablePointer<T>.allocate(capacity: 0)
 
+	subscript(_ index: Int) -> T {
+		get {
+			storage[index]
+		}
+
+		set {
+			storage[index] = newValue
+		}
+	}
+
 	// Adds the value to the storage, resizing if necessary. Returns the offset
 	// of the written value.
 	@discardableResult mutating func write(_ value: T) -> Int {
