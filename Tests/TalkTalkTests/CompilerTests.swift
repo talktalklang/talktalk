@@ -272,4 +272,18 @@ struct CompilerTests {
 		""", output: output) == .ok)
 		#expect(output.stdout == "")
 	}
+
+	@Test("while loop") func whileLoop() {
+		var output = TestOutput()
+		let source = """
+		var a = 0;
+		while a < 3 {
+			a = a + 1;
+			print a;
+		}
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "1\n2\n3\n")
+	}
 }

@@ -187,7 +187,7 @@ public struct Compiler: ~Copyable {
 		let rule = opKind.rule
 
 		guard let prefix = rule.prefix else {
-			error("Expected expression.")
+			error("Expected expression at line \(parser.previous.line).")
 			return
 		}
 
