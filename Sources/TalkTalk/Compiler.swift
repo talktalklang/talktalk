@@ -445,8 +445,8 @@ public struct Compiler: ~Copyable {
 
 		// Go back and replace the two placeholder bytes from emit(jump:)
 		// the actual offset to jump over.
-		compilingChunk.code[offset] = Byte((jump >> 8) & 0xff)
-		compilingChunk.code[offset + 1] = Byte(jump & 0xff)
+		compilingChunk.code[offset] = Byte((jump >> 8) & 0xFF)
+		compilingChunk.code[offset + 1] = Byte(jump & 0xFF)
 	}
 
 	mutating func emit(constant value: consuming Value) {

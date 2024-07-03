@@ -187,7 +187,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				let offset = readShort()
 				let isTrue = peek().as(Bool.self)
 				if !isTrue {
-					self.ip += Int(offset)
+					ip += Int(offset)
 				}
 			}
 		}
@@ -195,7 +195,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	mutating func readShort() -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
-		self.ip += 2
+		ip += 2
 
 		// Grab those two bytes from the chunk's code and build
 		// a 16 bit (two byte, nice) unsigned int.

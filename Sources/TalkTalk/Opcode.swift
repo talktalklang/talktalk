@@ -10,7 +10,7 @@ enum Opcode: Byte {
 	// what goes wrong when the VM.ip is wrong. Otherwise, it just assumes the opcode is
 	// constant which can lead to red herrings.
 	case uninitialized,
-			 constant,
+	     constant,
 	     `return`,
 	     negate,
 	     not,
@@ -21,7 +21,7 @@ enum Opcode: Byte {
 	     pop,
 	     defineGlobal, getGlobal, setGlobal,
 	     getLocal, setLocal,
-			 jumpIfFalse,
+	     jumpIfFalse,
 	     `nil`
 
 	var description: String {
