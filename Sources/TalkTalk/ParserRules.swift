@@ -46,7 +46,7 @@ extension Token.Kind {
 		case .andAnd:				.none
 		case .pipe:					.none
 		case .pipePipe:			.none
-		case .identifier:		.none
+		case .identifier:		.init({ $0.variable() }, nil, .none)
 		case .string:				.init({ $0.string() }, nil, .none)
 		case .number:				.init({ $0.number() }, nil, .none)
 		case .class:				.none

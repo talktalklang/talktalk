@@ -48,8 +48,11 @@ enum Value: Equatable, Hashable {
 	}
 
 	static func string(_ string: String) -> Value {
-		let source = ContiguousArray(string)
-		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: string.count)
+		Value.string(ContiguousArray(string))
+	}
+
+	static func string(_ source: ContiguousArray<Character>) -> Value {
+		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: source.count)
 
 		// This might not be right?
 		var hasher = Hasher()
@@ -63,13 +66,26 @@ enum Value: Equatable, Hashable {
 		// Trying to keep C semantics in swift is goin' great, pat.
 		let heapValue = HeapValue<Character>(
 			pointer: pointer,
-			length: string.count,
+			length: source.count,
 			hashValue: hasher.value
 		)
 
-		print("Hash value for: \(string), \(hasher.value)")
-
 		return .string(heapValue)
+	}
+
+	func `as`<T>(_ type: T.Type) -> T {
+		switch type {
+		case is String.Type:
+			return description as! T
+		case is Byte.Type:
+			if case let .number(double) = self {
+				return Byte(double) as! T
+			}
+		default:
+			()
+		}
+
+		fatalError("Cannot cast \(self) to \(T.self)")
 	}
 
 	var description: String {
@@ -79,7 +95,6 @@ enum Value: Equatable, Hashable {
 		case .bool(let bool):
 			return "\(bool)"
 		case .nil:
-			print("--------------- value mem size: \(MemoryLayout.size(ofValue: self))")
 			return "nil"
 		case .number(let double):
 			return "\(double)"

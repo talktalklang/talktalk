@@ -22,6 +22,10 @@ struct DynamicArray<T>: ~Copyable {
 		return count - 1
 	}
 
+	func read(byte: Byte) -> T {
+		storage.advanced(by: Int(byte)).pointee
+	}
+
 	mutating func grow() {
 		let newCapacity = capacity < 1 ? 1 : capacity * 2
 

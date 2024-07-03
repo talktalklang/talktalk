@@ -81,16 +81,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		case .pop:
 			return simpleInstruction("OP_POP", offset: offset, line: line, isSameLine: isSameLine)
 		default:
-			instructions.append(
-				Instruction(
-					offset: offset,
-					opcode: "UNKNOWN INSTRUCTION \(instruction.description), OPCODE: \(opcode as Any)",
-					line: line,
-					isSameLine: isSameLine
-				)
-			)
-
-			return offset + 1
+			return simpleInstruction(opcode!.description, offset: offset, line: line, isSameLine: isSameLine)
 		}
 	}
 

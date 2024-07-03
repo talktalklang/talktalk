@@ -133,4 +133,15 @@ struct CompilerTests {
 		#expect(result == .ok)
 		#expect(output.stdout == "hello world\n")
 	}
+
+	@Test("Global variables") func globals() {
+		let output = TestOutput()
+		let source = """
+		var greeting = "hello world";
+		print greeting;
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "hello world\n")
+	}
 }

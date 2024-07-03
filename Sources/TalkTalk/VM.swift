@@ -16,6 +16,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	var ip: UnsafeMutablePointer<Byte>?
 	var stack: UnsafeMutablePointer<Value>
 	var stackTop: UnsafeMutablePointer<Value>
+	var globals: [String: Value] = [:]
 
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
@@ -52,7 +53,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		output.debug("\t\t\t\tStack: ", terminator: "")
 		if stack < stackTop {
 			for slot in stack..<stackTop {
-				output.debug("[\(slot.pointee)]", terminator: "")
+				output.debug("[\(slot.pointee.description)]", terminator: "")
 			}
 		} else {
 			output.print("Stack is in invalid state.")
@@ -124,11 +125,25 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				_ = stackPop()
 			case .print:
 				output.print(stackPop().description)
+			case .defineGlobal:
+				let name = readString(in: chunk)
+				globals[name] = stackPop()
+			case .getGlobal:
+				let name = readString(in: chunk)
+				guard let value = globals[name] else {
+					output.print("Error: Undefined variable '\(name)'")
+					return .runtimeError
+				}
+				stackPush(value)
 			default:
 				print("Unknown opcode: \(opcode?.description ?? "nil")")
 				return .runtimeError
 			}
 		}
+	}
+
+	mutating func readString(in chunk: borrowing Chunk) -> String {
+		return chunk.constants.read(byte: readByte()).as(String.self)
 	}
 
 	mutating func readConstant(in chunk: borrowing Chunk) -> Value {
@@ -145,6 +160,10 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		}
 
 		return ip.pointee
+	}
+
+	func peek(_ offset: Int) -> Value {
+		(stackTop + offset).pointee
 	}
 
 	deinit {

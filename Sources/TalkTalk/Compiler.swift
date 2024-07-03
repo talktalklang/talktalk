@@ -46,8 +46,31 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func declaration() {
-		statement()
+		if parser.match(.var) {
+			varDeclaration()
+		} else {
+			statement()
+		}
 	}
+
+	mutating func varDeclaration() {
+		let global = parseVariable("Expected variable name")
+		
+		defer {
+			emit(.defineGlobal)
+			emit(global)
+		}
+
+		if parser.match(.equal) {
+			expression()
+		} else {
+			emit(.nil)
+		}
+
+		parser.consume(.semicolon, "Expected ';' after variable declaration")
+	}
+
+	// MARK: Statements
 
 	mutating func statement() {
 		if parser.match(.print) {
@@ -56,8 +79,6 @@ public struct Compiler: ~Copyable {
 			expressionStatement()
 		}
 	}
-
-	// MARK: Statements
 
 	mutating func printStatement() {
 		expression()
@@ -73,6 +94,11 @@ public struct Compiler: ~Copyable {
 
 	mutating func expression() {
 		parse(precedence: .assignment)
+	}
+
+	mutating func parseVariable(_ message: String) -> Byte {
+		parser.consume(.identifier, message)
+		return identifierConstant(parser.previous)
 	}
 
 	// Starting with parser.current, parse expressions at `precedence`
@@ -112,7 +138,8 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func number() {
-		guard let previous = parser.previous, let value = Double(previous.lexeme(in: source)) else {
+		let lexeme = parser.previous.lexeme(in: source).reduce(into: "") { $0.append($1) }
+		guard let value = Double(lexeme) else {
 			error("Could not parse number: \(parser.previous.lexeme(in: source))")
 			return
 		}
@@ -203,6 +230,23 @@ public struct Compiler: ~Copyable {
 		emit(constant: value)
 	}
 
+	mutating func variable() {
+		namedVariable(parser.previous)
+	}
+
+	// MARK: Helpers
+
+	mutating func namedVariable(_ token: Token) {
+		let arg = identifierConstant(token)
+		emit(.getGlobal)
+		emit(arg)
+	}
+
+	mutating func identifierConstant(_ token: Token) -> Byte {
+		let value = Value.string(token.lexeme(in: source))
+		return compilingChunk.write(constant: value)
+	}
+
 	// MARK: Emitters
 
 	mutating func emit(constant value: consuming Value) {
@@ -222,7 +266,7 @@ public struct Compiler: ~Copyable {
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
-	mutating func emit(_ byte1: consuming Byte, emit byte2: consuming Byte) {
+	mutating func emit(_ byte1: consuming Byte, _ byte2: consuming Byte) {
 		emit(byte1)
 		emit(byte2)
 	}

@@ -39,10 +39,10 @@ struct Token: Equatable {
 		self.line = line
 	}
 
-	@available(*, deprecated, message: "this isn't great")
-	func lexeme(in source: [Character]) -> Substring {
-		Substring(
-		source[start..<start+length]
+//	@available(*, deprecated, message: "this isn't great")
+	func lexeme(in source: [Character]) -> ContiguousArray<Character> {
+		ContiguousArray(
+			source[start..<start+length]
 		)
 	}
 }
