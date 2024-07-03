@@ -61,6 +61,20 @@ struct Parser: ~Copyable {
 		}
 	}
 
+	mutating func match(_ kind: Token.Kind) -> Bool {
+		if !check(kind) {
+			return false
+		}
+
+		advance()
+
+		return true
+	}
+
+	func check(_ kind: Token.Kind) -> Bool {
+		current.kind == kind
+	}
+
 	mutating func consume(_ kind: Token.Kind, _ message: String) {
 		if current.kind == kind {
 			advance()

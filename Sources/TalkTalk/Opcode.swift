@@ -13,6 +13,8 @@ enum Opcode: Byte {
 			 add, subtract, multiply, divide,
 			 equal, notEqual,
 			 `true`, `false`,
+			 print,
+			 pop,
 			 `nil`
 
 	var description: String {

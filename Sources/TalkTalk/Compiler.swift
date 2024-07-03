@@ -15,6 +15,18 @@ public struct Compiler: ~Copyable {
 	var compilingChunk: Chunk
 	var errors: [Error] = []
 
+	#if DEBUG
+	var parserRepeats: [Int: Int] = [:]
+
+	mutating func checkForInfiniteLoop() {
+		parserRepeats[parser.current.start, default: 0] += 1
+
+		if parserRepeats[parser.current.start]! > 100 {
+			fatalError("Probably an infinite loop goin pat.")
+		}
+	}
+	#endif
+
 	public init(source: String) {
 		self.source = Array(source)
 		self.parser = Parser(lexer: Lexer(source: source))
@@ -22,9 +34,41 @@ public struct Compiler: ~Copyable {
 	}
 
 	public mutating func compile() {
-		expression()
-		parser.consume(.eof, "Expected end of expression")
+		while parser.current.kind != .eof {
+			declaration()
+
+			#if DEBUG
+			checkForInfiniteLoop()
+			#endif
+		}
+
 		emit(.return)
+	}
+
+	mutating func declaration() {
+		statement()
+	}
+
+	mutating func statement() {
+		if parser.match(.print) {
+			printStatement()
+		} else {
+			expressionStatement()
+		}
+	}
+
+	// MARK: Statements
+
+	mutating func printStatement() {
+		expression()
+		parser.consume(.semicolon, "Expected ';' after value.")
+		emit(.print)
+	}
+
+	mutating func expressionStatement() {
+		expression()
+		parser.consume(.semicolon, "Expected ';' after expression")
+		emit(.pop)
 	}
 
 	mutating func expression() {

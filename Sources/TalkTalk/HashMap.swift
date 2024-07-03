@@ -24,8 +24,6 @@ struct Hasher {
 	}
 }
 
-extension Value: Hashable {}
-
 class HashMap {
 	var storage: [Value: Value] = [:]
 

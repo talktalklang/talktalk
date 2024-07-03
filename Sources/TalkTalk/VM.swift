@@ -83,7 +83,6 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 			switch opcode {
 			case .return:
-				output.print(stackPop().description, terminator: "")
 				return .ok
 			case .negate:
 				stackPush(-stackPop())
@@ -121,6 +120,10 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				let a = stackPop()
 				let b = stackPop()
 				stackPush(.bool(a != b))
+			case .pop:
+				_ = stackPop()
+			case .print:
+				output.print(stackPop().description)
 			default:
 				print("Unknown opcode: \(opcode?.description ?? "nil")")
 				return .runtimeError

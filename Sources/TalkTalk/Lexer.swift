@@ -157,6 +157,10 @@ struct Lexer: ~Copyable {
 			node = node.lookup(char)
 		}
 
+		if let keyword = node.keyword {
+			return make(keyword)
+		}
+
 		return make(.identifier)
 	}
 
@@ -177,7 +181,7 @@ struct Lexer: ~Copyable {
 	}
 
 	func peekNext() -> Character? {
-		if isAtEnd {
+		if current > source.count-2 {
 			return nil
 		}
 

@@ -18,10 +18,10 @@ struct HashMapTests {
 		hashera.combine(2)
 		hashera.combine(3)
 
-		let hasherb = Hasher()
-		hashera.combine(3)
-		hashera.combine(2)
-		hashera.combine(1)
+		var hasherb = Hasher()
+		hasherb.combine(3)
+		hasherb.combine(2)
+		hasherb.combine(1)
 
 		#expect(hashera.value != hasherb.value)
 	}

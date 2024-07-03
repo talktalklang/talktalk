@@ -21,8 +21,12 @@ struct HeapValue<T: Equatable>: Equatable {
 	}
 }
 
-enum Value: Equatable {
+enum Value: Equatable, Hashable {
 	case error, bool(Bool), `nil`, number(Double), string(HeapValue<Character>)
+
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(hashValue)
+	}
 
 	var hashValue: Int {
 		switch self {

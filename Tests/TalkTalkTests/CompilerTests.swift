@@ -34,33 +34,36 @@ extension VM {
 struct CompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
-		#expect(VM.run(source: "1 + -2", output: output) == .ok)
-		#expect(output.stdout == "-1.0")
+		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
+
+		print(output.debugOut)
+
+		#expect(output.stdout == "-1.0\n")
 	}
 
 	@Test("Subtraction") func subtraction() {
 		let output = TestOutput()
-		#expect(VM.run(source: "123 - 3", output: output) == .ok)
-		#expect(output.stdout == "120.0")
+		#expect(VM.run(source: "print 123 - 3;", output: output) == .ok)
+		#expect(output.stdout == "120.0\n")
 	}
 
 	@Test("Multiplication") func multiplication() {
 		let output = TestOutput()
-		#expect(VM.run(source: "5 * 5", output: output) == .ok)
-		#expect(output.stdout == "25.0")
+		#expect(VM.run(source: "print 5 * 5;", output: output) == .ok)
+		#expect(output.stdout == "25.0\n")
 	}
 
 	@Test("Division") func dividing() {
 		let output = TestOutput()
-		#expect(VM.run(source: "25 / 5", output: output) == .ok)
-		#expect(output.stdout == "5.0")
+		#expect(VM.run(source: "print 25 / 5;", output: output) == .ok)
+		#expect(output.stdout == "5.0\n")
 	}
 
 	@Test("Basic (with concurrency)") func basic() async {
 		let count = await withTaskGroup(of: Void.self) { group in
 			group.addTask {
 				for _ in 0..<100 {
-					let source = "1 + -2"
+					let source = "print 1 + -2;"
 					var compiler = Compiler(source: source)
 					compiler.compile()
 
@@ -84,42 +87,42 @@ struct CompilerTests {
 
 	@Test("Bools") func bools() {
 		var output = TestOutput()
-		#expect(VM.run(source: "true", output: output) == .ok)
-		#expect(output.stdout == "true")
+		#expect(VM.run(source: "print true;", output: output) == .ok)
+		#expect(output.stdout == "true\n")
 
 		output = TestOutput()
-		#expect(VM.run(source: "false", output: output) == .ok)
-		#expect(output.stdout == "false")
+		#expect(VM.run(source: "print false;", output: output) == .ok)
+		#expect(output.stdout == "false\n")
 	}
 
 	@Test("Negation") func negation() {
 		let output = TestOutput()
-		#expect(VM.run(source: "!false", output: output) == .ok)
-		#expect(output.stdout == "true")
+		#expect(VM.run(source: "print !false;", output: output) == .ok)
+		#expect(output.stdout == "true\n")
 	}
 
 	@Test("Equality") func equality() {
 		let output = TestOutput()
-		#expect(VM.run(source: "2 == 2", output: output) == .ok)
-		#expect(output.stdout == "true")
+		#expect(VM.run(source: "print 2 == 2;", output: output) == .ok)
+		#expect(output.stdout == "true\n")
 	}
 
 	@Test("Not equality") func notEquality() {
 		let output = TestOutput()
-		#expect(VM.run(source: "1 != 2", output: output) == .ok)
-		#expect(output.stdout == "true")
+		#expect(VM.run(source: "print 1 != 2;", output: output) == .ok)
+		#expect(output.stdout == "true\n")
 	}
 
 	@Test("nil") func nill() {
 		let output = TestOutput()
-		#expect(VM.run(source: "nil", output: output) == .ok)
-		#expect(output.stdout == "nil")
+		#expect(VM.run(source: "print nil;", output: output) == .ok)
+		#expect(output.stdout == "nil\n")
 	}
 
 	@Test("Strings") func string() {
 		let output = TestOutput()
 		let source = """
-		"hello world"
+		print "hello world";
 		"""
 		var compiler = Compiler(source: source)
 		compiler.compile()
@@ -128,6 +131,6 @@ struct CompilerTests {
 		let result = vm.run(chunk: &compiler.compilingChunk)
 
 		#expect(result == .ok)
-		#expect(output.stdout == "hello world")
+		#expect(output.stdout == "hello world\n")
 	}
 }

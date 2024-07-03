@@ -76,6 +76,10 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 				fatalError("No opcode for \(instruction)")
 			}
 			return simpleInstruction(opcode.description, offset: offset, line: line, isSameLine: isSameLine)
+		case .print:
+			return simpleInstruction("OP_PRINT", offset: offset, line: line, isSameLine: isSameLine)
+		case .pop:
+			return simpleInstruction("OP_POP", offset: offset, line: line, isSameLine: isSameLine)
 		default:
 			instructions.append(
 				Instruction(
