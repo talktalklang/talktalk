@@ -1,6 +1,6 @@
 //
 //  Lexer.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -44,7 +44,7 @@ struct Lexer: ~Copyable {
 				result += "   | "
 			}
 
-			result += "[\(token.start)] \(token.kind) \(String(source[token.start..<token.start + token.length]))"
+			result += "[\(token.start)] \(token.kind) \(String(source[token.start ..< token.start + token.length]))"
 			result += "\n"
 
 			lastLine = token.line
@@ -149,8 +149,9 @@ struct Lexer: ~Copyable {
 			advance()
 
 			if let node = node.children[char],
-				 let keyword = node.keyword,
-				 !isIdentifier(peekNext()) {
+			   let keyword = node.keyword,
+			   !isIdentifier(peekNext())
+			{
 				return make(keyword)
 			}
 
@@ -181,7 +182,7 @@ struct Lexer: ~Copyable {
 	}
 
 	func peekNext() -> Character? {
-		if current > source.count-2 {
+		if current > source.count - 2 {
 			return nil
 		}
 

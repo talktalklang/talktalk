@@ -1,13 +1,13 @@
 //
 //  Debug.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
 #if canImport(Glibc)
-import Glibc
+	import Glibc
 #elseif canImport(Foundation)
-import Foundation
+	import Foundation
 #endif
 
 struct Disassembler<Output: OutputCollector>: ~Copyable {
@@ -19,7 +19,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		var isSameLine: Bool
 
 		var description: String {
-			let lineString = isSameLine ? Array(repeating: " ", count: "\(line)".count - 1) + "|" : "\(line)"
+			let lineString = isSameLine ? "   |" : String(format: "%04d", line)
 			return "\(String(format: "%04d", offset))\t\(lineString)\t\(opcode)\t\(extra ?? "")"
 		}
 	}
@@ -47,6 +47,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func report(chunk: borrowing Chunk) {
+		output.print("BYTE\tLINE\tOPCODE\t\tEXTRA")
+
 		var offset = 0
 		while offset < chunk.code.count {
 			offset = disassembleInstruction(chunk: chunk, offset: offset)
@@ -94,7 +96,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: Int, isSameLine: Bool) -> Int {
-		let constant = chunk.code.storage.advanced(by: offset+1).pointee
+		let constant = chunk.code.storage.advanced(by: offset + 1).pointee
 		let value = chunk.constants.storage.advanced(by: Int(constant)).pointee
 
 		instructions.append(
@@ -110,5 +112,3 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		return offset + 2
 	}
 }
-
-

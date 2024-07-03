@@ -66,7 +66,7 @@ struct AstInterpreter {
 			true
 		case .callable:
 			true
-		case .class(_):
+		case .class:
 			true
 		case let .bool(bool):
 			bool

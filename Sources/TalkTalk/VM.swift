@@ -1,14 +1,14 @@
 //
 //  VM.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
 
 public enum InterpretResult {
 	case ok,
-			 compileError,
-			 runtimeError
+	     compileError,
+	     runtimeError
 }
 
 public struct VM<Output: OutputCollector>: ~Copyable {
@@ -38,9 +38,9 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
 		self.stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
-		self.stack.initialize(repeating: .nil, count: 256)
+		stack.initialize(repeating: .nil, count: 256)
 		self.stackTop = UnsafeMutablePointer<Value>(stack)
-		self.stackTop.initialize(repeating: .nil, count: 256)
+		stackTop.initialize(repeating: .nil, count: 256)
 	}
 
 	mutating func initVM() {
@@ -67,9 +67,9 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	mutating func stackDebug() {
 		if stack == stackTop { return }
-		output.debug("\t\t\t\tStack: ", terminator: "")
+		output.debug("\t\t\t\t\t\tStack: ", terminator: "")
 		if stack < stackTop {
-			for slot in stack..<stackTop {
+			for slot in stack ..< stackTop {
 				output.debug("[\(slot.pointee.description)]", terminator: "")
 			}
 		} else {
@@ -91,13 +91,17 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	}
 
 	public mutating func run(chunk: inout Chunk) -> InterpretResult {
-		self.ip = chunk.code.storage
+		ip = chunk.code.storage
+
+		#if DEBUGGING
+			output.debug("POS\t\tLINE\tOPCODE\t\t\tEXTRA")
+		#endif
 
 		while true {
 			#if DEBUGGING
-			var disassembler = Disassembler(output: output)
-			disassembler.report(byte: ip!, in: chunk)
-			stackDebug()
+				var disassembler = Disassembler(output: output)
+				disassembler.report(byte: ip!, in: chunk)
+				stackDebug()
 			#endif
 
 			let byte = readByte()

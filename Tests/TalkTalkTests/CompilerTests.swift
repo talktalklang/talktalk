@@ -1,6 +1,6 @@
 //
 //  CompilerTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -53,7 +53,7 @@ struct CompilerTests {
 	@Test("Basic (with concurrency)") func basic() async {
 		let count = await withTaskGroup(of: Void.self) { group in
 			group.addTask {
-				for _ in 0..<100 {
+				for _ in 0 ..< 100 {
 					let source = "print 1 + -2;"
 					var compiler = Compiler(source: source)
 					try! compiler.compile()
@@ -168,7 +168,7 @@ struct CompilerTests {
 		let source = """
 		{
 			var a = "world";
-			
+
 			{
 				var a = "hello";
 				print a;
@@ -180,5 +180,25 @@ struct CompilerTests {
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "hello\nworld\n")
+	}
+
+	@Test("Local variables with numbers") func localsWithNumbers() {
+		let output = TestOutput()
+		let source = """
+		{
+			var a = 1;
+
+			{
+				var b = 2;
+				print a + b;
+			}
+
+			print a + 3;
+		}
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		print(output.debugOut)
+		#expect(output.stdout == "3.0\n4.0\n")
 	}
 }

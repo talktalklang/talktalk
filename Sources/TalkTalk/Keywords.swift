@@ -1,6 +1,6 @@
 //
 //  Keywords.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -9,7 +9,7 @@ class KeywordTrie: @unchecked Sendable {
 		var keyword: Token.Kind?
 		var children: [Character: Node]
 
-		init(keyword: Token.Kind? = nil, children: [Character : Node]) {
+		init(keyword: Token.Kind? = nil, children: [Character: Node]) {
 			self.keyword = keyword
 			self.children = children
 		}
@@ -67,6 +67,6 @@ extension KeywordTrie {
 		.self,
 		.true,
 		.var,
-		.while
+		.while,
 	]
 }

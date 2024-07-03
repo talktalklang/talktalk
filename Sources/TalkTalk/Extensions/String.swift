@@ -1,6 +1,6 @@
 //
 //  String.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -14,6 +14,6 @@ extension String {
 	}
 
 	subscript(_ range: Range<Int>) -> Substring {
-		self[index(at: range.lowerBound)..<index(at: range.upperBound)]
+		self[index(at: range.lowerBound) ..< index(at: range.upperBound)]
 	}
 }

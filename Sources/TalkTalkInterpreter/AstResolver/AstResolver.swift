@@ -25,7 +25,7 @@ struct Scope {
 		storage[token.lexeme, default: Status()].insert(status)
 	}
 
-	mutating func mark(_ name: String, as status: Scope.Status)  {
+	mutating func mark(_ name: String, as status: Scope.Status) {
 		storage[name, default: Status()].insert(status)
 	}
 }

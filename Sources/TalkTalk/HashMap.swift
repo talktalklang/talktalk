@@ -1,6 +1,6 @@
 //
-//  Hash.swift
-//  
+//  HashMap.swift
+//
 //
 //  Created by Pat Nakajima on 7/2/24.
 //
@@ -8,11 +8,11 @@
 struct Hasher {
 	nonisolated(unsafe) static var isBadAlgorithm = false
 
-	var value: Int = 2166136261
+	var value: Int = 2_166_136_261
 
 	mutating func combine(_ i: Int) {
 		value ^= i
-		value &*= 16777619
+		value &*= 16_777_619
 	}
 
 	mutating func combine(_ char: Character) {

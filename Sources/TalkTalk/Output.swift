@@ -1,6 +1,6 @@
 //
 //  Output.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/2/24.
 //
@@ -28,11 +28,11 @@ public extension OutputCollector {
 	}
 
 	func debug() {
-		self.debug("", terminator: "\n")
+		debug("", terminator: "\n")
 	}
 
 	func debug(_ output: String) {
-		self.debug(output, terminator: "\n")
+		debug(output, terminator: "\n")
 	}
 
 	func print(_ output: String) {

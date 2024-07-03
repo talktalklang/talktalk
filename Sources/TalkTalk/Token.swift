@@ -1,6 +1,6 @@
 //
 //  Token.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -8,19 +8,19 @@ struct Token: Equatable {
 	enum Kind: Equatable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
-				 comma, dot, minus, plus, semicolon, slash, star
+		     comma, dot, minus, plus, semicolon, slash, star
 
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,
-				 greater, greaterEqual, less, lessEqual,
-				 and, andAnd, pipe, pipePipe
+		     greater, greaterEqual, less, lessEqual,
+		     and, andAnd, pipe, pipePipe
 
 		// Literals
 		case identifier, string, number
 
 		// Keywords
 		case `class`, `else`, `false`, `func`, initializer, `for`, `if`, `nil`,
-				 or, print, `return`, `super`, `self`, `true`, `var`, `while`
+		     or, print, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case eof
 
@@ -46,8 +46,7 @@ struct Token: Equatable {
 //	@available(*, deprecated, message: "this isn't great")
 	func lexeme(in source: ContiguousArray<Character>) -> ContiguousArray<Character> {
 		ContiguousArray(
-			source[start..<start+length]
+			source[start ..< start + length]
 		)
 	}
 }
-

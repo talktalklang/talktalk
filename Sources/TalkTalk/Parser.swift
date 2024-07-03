@@ -1,6 +1,6 @@
 //
 //  Parser.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -10,26 +10,24 @@ struct Parser: ~Copyable {
 			lhs.rawValue < rhs.rawValue
 		}
 
-		static func +(lhs: Precedence, rhs: Byte) -> Precedence {
+		static func + (lhs: Precedence, rhs: Byte) -> Precedence {
 			Precedence(rawValue: lhs.rawValue + rhs) ?? .any
 		}
 
 		case none,
-				 assignment, 	// =
-				 `or`,				// ||
-				 `and`,				// &&
-				 equality,		// == !=
-				 comparison,	// < > <= >=
-				 term,				// + -
-				 factor,			// * /
-				 unary,				// ! -
-				 call,				// . ()
-				 primary,
+		     assignment, // =
+		     or, // ||
+		     and, // &&
+		     equality, // == !=
+		     comparison, // < > <= >=
+		     term, // + -
+		     factor, // * /
+		     unary, // ! -
+		     call, // . ()
+		     primary,
 
-				 any
+		     any
 	}
-
-	
 
 	struct Error {
 		var token: Token
@@ -48,9 +46,9 @@ struct Parser: ~Copyable {
 	}
 
 	mutating func advance() {
-		self.previous = current
+		previous = current
 		while true {
-			self.current = lexer.next()
+			current = lexer.next()
 
 			if case let .error(message) = current.kind {
 				error(at: current, message)
@@ -75,7 +73,7 @@ struct Parser: ~Copyable {
 		current.kind == kind
 	}
 
-	mutating func consume(_ kind: Token.Kind, _ message: String) {
+	mutating func consume(_ kind: Token.Kind, _: String) {
 		if current.kind == kind {
 			advance()
 			return
@@ -86,6 +84,6 @@ struct Parser: ~Copyable {
 
 	mutating func error(at token: Token, _ message: String) {
 		print("Parser Error: \(token), message: \(message)")
-		self.errors.append(Error(token: token, message: message))
+		errors.append(Error(token: token, message: message))
 	}
 }

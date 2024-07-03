@@ -8,7 +8,7 @@
 // typealias Value = Double
 
 struct HeapValue<T: Equatable>: Equatable {
-	static func ==(lhs: HeapValue<T>, rhs: HeapValue<T>) -> Bool {
+	static func == (lhs: HeapValue<T>, rhs: HeapValue<T>) -> Bool {
 		lhs.hashValue == rhs.hashValue && lhs.length == rhs.length && lhs.pointee == rhs.pointee
 	}
 
@@ -32,17 +32,19 @@ enum Value: Equatable, Hashable {
 		switch self {
 		case .error:
 			return 0
-		case .bool(let bool):
+		case let .bool(bool):
 			return bool ? 1 : 0
 		case .nil:
 			fatalError("Attempted to use nil hash key")
-		case .number(var double):
+		case var .number(double):
 			var hasher = Hasher()
 			withUnsafeBytes(of: &double) {
-				for i in $0 { hasher.combine(Int(i)) }
+				for i in $0 {
+					hasher.combine(Int(i))
+				}
 			}
 			return abs(hasher.value)
-		case .string(let heapValue):
+		case let .string(heapValue):
 			return Int(heapValue.hashValue)
 		}
 	}
@@ -51,12 +53,12 @@ enum Value: Equatable, Hashable {
 		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: lhs.length + rhs.length)
 		var hasher = Hasher()
 
-		for i in 0..<lhs.length {
+		for i in 0 ..< lhs.length {
 			pointer[i] = lhs.pointer[i]
 			hasher.combine(lhs.pointer[i])
 		}
 
-		for i in 0..<rhs.length {
+		for i in 0 ..< rhs.length {
 			pointer[lhs.length + i] = rhs.pointer[i]
 			hasher.combine(rhs.pointer[i])
 		}
@@ -80,7 +82,7 @@ enum Value: Equatable, Hashable {
 		// This might not be right?
 		var hasher = Hasher()
 		source.withUnsafeBufferPointer {
-			for i in 0..<source.count {
+			for i in 0 ..< source.count {
 				pointer[i] = $0[i]
 				hasher.combine($0[i])
 			}
@@ -115,16 +117,16 @@ enum Value: Equatable, Hashable {
 		switch self {
 		case let .error(msg):
 			return "Error: \(msg)"
-		case .bool(let bool):
+		case let .bool(bool):
 			return "\(bool)"
 		case .nil:
 			return "nil"
-		case .number(let double):
+		case let .number(double):
 			return "\(double)"
-		case .string(let heapValue):
+		case let .string(heapValue):
 			var string = ""
 
-			for i in 0..<heapValue.length {
+			for i in 0 ..< heapValue.length {
 				string.append((heapValue.pointer + Int(i)).pointee)
 			}
 
@@ -134,32 +136,32 @@ enum Value: Equatable, Hashable {
 
 	func not() -> Value {
 		switch self {
-		case .bool(let bool):
+		case let .bool(bool):
 			.bool(!bool)
 		default:
 			.error("Cannot negate \(self)")
 		}
 	}
 
-	static prefix func -(rhs: Value) -> Value {
+	static prefix func - (rhs: Value) -> Value {
 		switch rhs {
-		case .number(let double):
+		case let .number(double):
 			.number(-double)
 		default:
 			.error("Cannot negate \(self)")
 		}
 	}
 
-	static func +(lhs: Value, rhs: Value) -> Value {
+	static func + (lhs: Value, rhs: Value) -> Value {
 		switch lhs {
-		case .number(let lhs):
-			guard case .number(let rhs) = rhs else {
+		case let .number(lhs):
+			guard case let .number(rhs) = rhs else {
 				return .error("Cannot + \(rhs)")
 			}
 
 			return .number(lhs + rhs)
-		case .string(let lhs):
-			guard case .string(let rhs) = rhs else {
+		case let .string(lhs):
+			guard case let .string(rhs) = rhs else {
 				return .error("Cannot + \(self)")
 			}
 
@@ -169,42 +171,42 @@ enum Value: Equatable, Hashable {
 		}
 	}
 
-	static func -(lhs: Value, rhs: Value) -> Value {
-		guard case .number(let rhs) = rhs else {
+	static func - (lhs: Value, rhs: Value) -> Value {
+		guard case let .number(rhs) = rhs else {
 			return .error("Cannot - \(rhs)")
 		}
 
 		return switch lhs {
-		case .number(let lhs):
+		case let .number(lhs):
 			.number(lhs - rhs)
 		default:
 			.error("Cannot - \(lhs) \(rhs)")
 		}
 	}
 
-	static func *(lhs: Value, rhs: Value) -> Value {
-		guard case .number(let rhs) = rhs else {
+	static func * (lhs: Value, rhs: Value) -> Value {
+		guard case let .number(rhs) = rhs else {
 			return .error("Cannot * \(rhs)")
 		}
 
 		return switch lhs {
-		case .number(let lhs):
+		case let .number(lhs):
 			.number(lhs * rhs)
 		default:
 			.error("Cannot * \(lhs) \(rhs)")
 		}
 	}
 
-	static func /(lhs: Value, rhs: Value) -> Value {
-		guard case .number(let rhs) = rhs else {
+	static func / (lhs: Value, rhs: Value) -> Value {
+		guard case let .number(rhs) = rhs else {
 			return .error("Cannot / \(rhs)")
 		}
 
 		return switch lhs {
-		case .number(let lhs):
+		case let .number(lhs):
 			.number(lhs / rhs)
 		default:
-				.error("Cannot / \(lhs) \(rhs)")
+			.error("Cannot / \(lhs) \(rhs)")
 		}
 	}
 }

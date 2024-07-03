@@ -60,7 +60,7 @@ struct AstPrinter: ExprVisitor {
 		".\(expr.name) = \(expr.value)"
 	}
 
-	mutating func visit(_ expr: SelfExpr) throws -> String {
+	mutating func visit(_: SelfExpr) throws -> String {
 		"self"
 	}
 }

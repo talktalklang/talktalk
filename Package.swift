@@ -18,7 +18,7 @@ let package = Package(
 		.library(
 			name: "TalkTalkInterpreter",
 			targets: ["TalkTalkInterpreter"]
-		)
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
@@ -40,7 +40,7 @@ let package = Package(
 		.target(
 			name: "TalkTalk",
 			swiftSettings: [
-				.define("DEBUGGING", .when(configuration: .debug))
+				.define("DEBUGGING", .when(configuration: .debug)),
 			]
 		),
 		.testTarget(

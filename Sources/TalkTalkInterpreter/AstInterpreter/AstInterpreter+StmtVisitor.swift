@@ -1,6 +1,6 @@
 extension AstInterpreter: StmtVisitor {
 	class Instance: @unchecked Sendable, Equatable {
-		static func ==(lhs: Instance, rhs: Instance) -> Bool {
+		static func == (lhs: Instance, rhs: Instance) -> Bool {
 			return lhs.class == rhs.class && lhs.properties == rhs.properties
 		}
 
@@ -29,7 +29,7 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	class Class: Callable, Equatable, @unchecked Sendable {
-		static func ==(lhs: Class, rhs: Class) -> Bool {
+		static func == (lhs: Class, rhs: Class) -> Bool {
 			lhs.name.lexeme == rhs.name.lexeme
 		}
 
@@ -55,11 +55,11 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	struct Function: Callable, Equatable, @unchecked Sendable {
-		static func ==(lhs: Function, rhs: Function) -> Bool {
+		static func == (lhs: Function, rhs: Function) -> Bool {
 			lhs.functionStmt.id == rhs.functionStmt.id && lhs.closure == rhs.closure
 		}
 
-		static let `void` = Function(
+		static let void = Function(
 			functionStmt: FunctionStmt(
 				id: "_void",
 				name: Token(kind: .func, lexeme: "_void", line: -1),
@@ -105,7 +105,6 @@ extension AstInterpreter: StmtVisitor {
 	}
 
 	mutating func visit(_ stmt: PrintStmt) throws {
-		
 		try output.print(evaluate(stmt.expr))
 	}
 

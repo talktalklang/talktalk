@@ -1,5 +1,5 @@
 class Environment: Equatable {
-	static func ==(lhs: Environment, rhs: Environment) -> Bool {
+	static func == (lhs: Environment, rhs: Environment) -> Bool {
 		return lhs.vars == rhs.vars && lhs.parent == rhs.parent
 	}
 

@@ -1,6 +1,6 @@
 //
 //  Compiler.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
@@ -34,22 +34,22 @@ public struct Compiler: ~Copyable {
 		var isInitialized = false
 	}
 
-	var locals = ContiguousArray<Local?>.init(repeating: nil, count: 256)
+	var locals = ContiguousArray<Local?>(repeating: nil, count: 256)
 	var localCount = 0
 	var scopeDepth = 0
 
 	// MARK: Debuggy
 
 	#if DEBUG
-	var parserRepeats: [Int: Int] = [:]
+		var parserRepeats: [Int: Int] = [:]
 
-	mutating func checkForInfiniteLoop() {
-		parserRepeats[parser.current.start, default: 0] += 1
+		mutating func checkForInfiniteLoop() {
+			parserRepeats[parser.current.start, default: 0] += 1
 
-		if parserRepeats[parser.current.start]! > 100 {
-			fatalError("Probably an infinite loop goin pat.")
+			if parserRepeats[parser.current.start]! > 100 {
+				fatalError("Probably an infinite loop goin pat.")
+			}
 		}
-	}
 	#endif
 
 	public init(source: String) {
@@ -66,7 +66,7 @@ public struct Compiler: ~Copyable {
 			declaration()
 
 			#if DEBUG
-			checkForInfiniteLoop()
+				checkForInfiniteLoop()
 			#endif
 		}
 
@@ -88,7 +88,7 @@ public struct Compiler: ~Copyable {
 
 	mutating func varDeclaration() {
 		let global = parseVariable("Expected variable name")
-		
+
 		defer {
 			defineVariable(global: global)
 		}
@@ -171,7 +171,7 @@ public struct Compiler: ~Copyable {
 		prefix(&self, canAssign)
 
 		while precedence < parser.current.kind.rule.precedence {
-			parser.advance();
+			parser.advance()
 
 			if let infix = parser.previous.kind.rule.infix {
 				infix(&self, canAssign)
@@ -183,15 +183,15 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
-	// MARK:  Prefix expressions
+	// MARK: Prefix expressions
 
-	mutating func grouping(_ canAssign: Bool) {
+	mutating func grouping(_: Bool) {
 		// Assume the initial "(" has been consumed
 		expression()
 		parser.consume(.rightParen, "Expected ')' after expression.")
 	}
 
-	mutating func number(_ canAssign: Bool) {
+	mutating func number(_: Bool) {
 		let lexeme = parser.previous.lexeme(in: source).reduce(into: "") { $0.append($1) }
 		guard let value = Double(lexeme) else {
 			error("Could not parse number: \(parser.previous.lexeme(in: source))")
@@ -201,7 +201,7 @@ public struct Compiler: ~Copyable {
 		emit(constant: .number(value))
 	}
 
-	mutating func unary(_ canAssign: Bool) {
+	mutating func unary(_: Bool) {
 		let kind = parser.previous.kind
 		parse(precedence: .unary)
 
@@ -217,7 +217,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Binary expressions
 
-	mutating func binary(_ canAssign: Bool) {
+	mutating func binary(_: Bool) {
 		guard let kind = parser.previous?.kind else {
 			error("No previous token for unary expr.")
 			return
@@ -227,12 +227,12 @@ public struct Compiler: ~Copyable {
 		parse(precedence: rule.precedence + 1)
 
 		switch kind {
-		case .plus: 	emit(.add)
-		case .minus: 	emit(.subtract)
-		case .star: 	emit(.multiply)
-		case .slash: 	emit(.divide)
+		case .plus: emit(.add)
+		case .minus: emit(.subtract)
+		case .star: emit(.multiply)
+		case .slash: emit(.divide)
 		case .equalEqual: emit(.equal)
-		case .bangEqual: 	emit(.notEqual)
+		case .bangEqual: emit(.notEqual)
 		default:
 			() // Unreachable
 		}
@@ -240,18 +240,18 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Literals
 
-	mutating func literal(_ canAssign: Bool) {
+	mutating func literal(_: Bool) {
 		switch parser.previous.kind {
-		case .false:	emit(.false)
-		case .true:		emit(.true)
-		case .nil:		emit(.nil)
+		case .false: emit(.false)
+		case .true: emit(.true)
+		case .nil: emit(.nil)
 		default:
 			() // Unreachable
 		}
 	}
 
 	// TODO: add static string that we don't need to copy?
-	mutating func string(_ canAssign: Bool) {
+	mutating func string(_: Bool) {
 		// Get rid of start/end quotes
 		let start = parser.previous.start + 1
 		let length = parser.previous.length - 2
@@ -266,8 +266,8 @@ public struct Compiler: ~Copyable {
 		var hasher = Hasher() //
 
 		// This might not be right?
-		source[start..<(start + length)].withUnsafeBufferPointer {
-			for i in 0..<length {
+		source[start ..< (start + length)].withUnsafeBufferPointer {
+			for i in 0 ..< length {
 				pointer[i] = $0[i]
 				hasher.combine($0[i])
 			}

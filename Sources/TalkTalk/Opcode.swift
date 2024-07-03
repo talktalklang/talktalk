@@ -1,23 +1,23 @@
 //
 //  Opcode.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
 
 enum Opcode: Byte {
 	case constant,
-			 `return`,
-			 negate,
-			 not,
-			 add, subtract, multiply, divide,
-			 equal, notEqual,
-			 `true`, `false`,
-			 print,
-			 pop,
-			 defineGlobal, getGlobal, setGlobal,
-			 getLocal, setLocal,
-			 `nil`
+	     `return`,
+	     negate,
+	     not,
+	     add, subtract, multiply, divide,
+	     equal, notEqual,
+	     `true`, `false`,
+	     print,
+	     pop,
+	     defineGlobal, getGlobal, setGlobal,
+	     getLocal, setLocal,
+	     `nil`
 
 	var description: String {
 		switch self {

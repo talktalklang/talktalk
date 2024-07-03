@@ -1,13 +1,13 @@
-import Testing
 @testable import TalkTalkInterpreter
+import Testing
 
 class TestOutput: Output {
 	func print(_ output: Any...) {
-		out += output.map { "\($0)"}.joined(separator: "") + "\n"
+		out += output.map { "\($0)" }.joined(separator: "") + "\n"
 	}
 
 	func print(_ output: Any..., terminator: String) {
-		out += output.map { "\($0) "}.joined(separator: ", ") + terminator
+		out += output.map { "\($0) " }.joined(separator: ", ") + terminator
 	}
 
 	var out = ""
