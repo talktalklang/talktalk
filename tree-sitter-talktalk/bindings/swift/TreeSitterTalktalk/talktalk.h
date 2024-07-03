@@ -1,5 +1,5 @@
-#ifndef TREE_SITTER_TALKTALK_H_
-#define TREE_SITTER_TALKTALK_H_
+#ifndef TREE_SITTER_TALK_TALK_H_
+#define TREE_SITTER_TALK_TALK_H_
 
 typedef struct TSLanguage TSLanguage;
 
@@ -7,10 +7,10 @@ typedef struct TSLanguage TSLanguage;
 extern "C" {
 #endif
 
-const TSLanguage *tree_sitter_talktalk(void);
+const TSLanguage *tree_sitter_TalkTalk(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // TREE_SITTER_TALKTALK_H_
+#endif // TREE_SITTER_TALK_TALK_H_

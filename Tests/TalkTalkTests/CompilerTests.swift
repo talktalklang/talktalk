@@ -209,11 +209,25 @@ struct CompilerTests {
 		}
 
 		if true {
-			print "hello world";
+			print "Do show up";
 		}
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "hello world\n")
+		#expect(output.stdout == "Do show up\n")
+	}
+
+	@Test("Else statement") func elseStatement() {
+		let output = TestOutput()
+		let source = """
+		if false {
+			print "Dont show up";
+		} else {
+			print "Do show up";
+		}
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "Do show up\n")
 	}
 }
