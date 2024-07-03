@@ -255,6 +255,7 @@ struct CompilerTests {
 	}
 
 	@Test("||") func or() {
+		// TODO: Actually test the evaluation
 		var output = TestOutput()
 		#expect(VM.run(source: """
 		if false || true {
