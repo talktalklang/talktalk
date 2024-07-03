@@ -241,6 +241,24 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Binary expressions
 
+	mutating func and(_: Bool) {
+		let endJump = emit(jump: .jumpIfFalse)
+		emit(.pop)
+		parse(precedence: .and)
+		patchJump(endJump)
+	}
+
+	mutating func or(_: Bool) {
+		let elseJump = emit(jump: .jumpIfFalse)
+		let endJump = emit(jump: .jump)
+
+		patchJump(elseJump)
+		emit(.pop)
+
+		parse(precedence: .or)
+		patchJump(endJump)
+	}
+
 	mutating func binary(_: Bool) {
 		guard let kind = parser.previous?.kind else {
 			error("No previous token for unary expr.")

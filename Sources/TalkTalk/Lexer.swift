@@ -77,6 +77,8 @@ struct Lexer: ~Copyable {
 		case "=": make(match("=") ? .equalEqual : .equal)
 		case "<": make(match("=") ? .lessEqual : .less)
 		case ">": make(match("=") ? .greaterEqual : .greater)
+		case "&": make(match("&") ? .andAnd : .and)
+		case "|": make(match("|") ? .pipePipe : .pipe)
 		case #"""#: string()
 		case _ where char.isNumber: number()
 		case _ where char.isLetter: identifier(start: char)

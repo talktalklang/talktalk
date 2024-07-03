@@ -243,4 +243,32 @@ struct CompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "Do show up\n")
 	}
+
+	@Test("&&") func and() {
+		var output = TestOutput()
+		#expect(VM.run(source: "print true && false;", output: output) == .ok)
+		#expect(output.stdout == "false\n")
+
+		output = TestOutput()
+		#expect(VM.run(source: "print true && true;", output: output) == .ok)
+		#expect(output.stdout == "true\n")
+	}
+
+	@Test("||") func or() {
+		var output = TestOutput()
+		#expect(VM.run(source: """
+		if false || true {
+		 print("cool")
+		}
+		""", output: output) == .ok)
+		#expect(output.stdout == "cool\n")
+
+		output = TestOutput()
+		#expect(VM.run(source: """
+		if false || false {
+		 print("cool")
+		}
+		""", output: output) == .ok)
+		#expect(output.stdout == "")
+	}
 }
