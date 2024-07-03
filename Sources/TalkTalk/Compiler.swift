@@ -30,7 +30,8 @@ public struct Compiler: ~Copyable {
 
 	struct Local {
 		let name: Token
-		let depth: Int
+		var depth: Int
+		var isInitialized = false
 	}
 
 	var locals = ContiguousArray<Local?>.init(repeating: nil, count: 256)
@@ -321,6 +322,7 @@ public struct Compiler: ~Copyable {
 
 	mutating func defineVariable(global: Byte) {
 		if scopeDepth > 0 {
+			markInitialized()
 			return
 		}
 
@@ -338,15 +340,34 @@ public struct Compiler: ~Copyable {
 		localCount += 1
 	}
 
+	mutating func markInitialized() {
+		locals[localCount - 1]?.isInitialized = true
+	}
+
 	mutating func namedVariable(_ token: Token, _ canAssign: Bool) {
-		let arg = identifierConstant(token)
+		let getOp, setOp: Opcode
+
+		var arg: Byte? = resolveLocal(token)
+		if arg != nil {
+			getOp = .getLocal
+			setOp = .setLocal
+		} else {
+			arg = identifierConstant(token)
+			getOp = .getGlobal
+			setOp = .setGlobal
+		}
+
+		guard let arg else {
+			error("Could not get variable opcode", at: token)
+			return
+		}
 
 		if canAssign, parser.match(.equal) {
 			expression()
-			emit(.setGlobal)
+			emit(setOp)
 			emit(arg)
 		} else {
-			emit(.getGlobal)
+			emit(getOp)
 			emit(arg)
 		}
 	}
@@ -366,6 +387,24 @@ public struct Compiler: ~Copyable {
 			emit(.pop)
 			localCount -= 1
 		}
+	}
+
+	mutating func resolveLocal(_ name: Token) -> Byte? {
+		var i = localCount - 1 // Subtracting 1 because we're indexing into an array
+		while i >= 0, let local = locals[i] {
+			if name.same(lexeme: local.name, in: source) {
+				guard local.isInitialized else {
+					error("Cannot read local variable in its own initializer")
+					return nil
+				}
+
+				return Byte(i)
+			}
+
+			i -= 1
+		}
+
+		return nil
 	}
 
 	// MARK: Emitters

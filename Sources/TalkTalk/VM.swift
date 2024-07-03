@@ -168,6 +168,12 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				}
 
 				globals[name] = peek()
+			case .getLocal:
+				let slot = readByte()
+				stackPush(stack[Int(slot)])
+			case .setLocal:
+				let slot = readByte()
+				stack[Int(slot)] = peek()
 			}
 		}
 	}

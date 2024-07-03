@@ -162,4 +162,23 @@ struct CompilerTests {
 		#expect(VM.run(source: source, output: output) == .compileError)
 		#expect(output.stdout.contains("Syntax Error"))
 	}
+
+	@Test("Local vars") func locals() {
+		let output = TestOutput()
+		let source = """
+		{
+			var a = "world";
+			
+			{
+				var a = "hello";
+				print a;
+			}
+
+			print a;
+		}
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "hello\nworld\n")
+	}
 }
