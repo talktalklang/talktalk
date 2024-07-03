@@ -20,8 +20,17 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 
 		var description: String {
 			let lineString = isSameLine ? "   |" : String(format: "%04d", line)
-			return "\(String(format: "%04d", offset))\t\(lineString)\t\(opcode)\t\(extra ?? "")"
+			let extra = if let extra {
+				"|\t\(extra)"
+			} else {
+				""
+			}
+			return "\(String(format: "%04d", offset))\t\(lineString)\t\(opcode)\t\(extra)"
 		}
+	}
+
+	static var header: String {
+		"POS\t\tLINE\tOPERATION"
 	}
 
 	static func report(chunk: borrowing Chunk, output: Output) {
@@ -47,7 +56,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func report(chunk: borrowing Chunk) {
-		output.print("BYTE\tLINE\tOPCODE\t\tEXTRA")
+		output.print(Disassembler.header)
 
 		var offset = 0
 		while offset < chunk.code.count {
@@ -82,6 +91,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 			return simpleInstruction("OP_PRINT", offset: offset, line: line, isSameLine: isSameLine)
 		case .pop:
 			return simpleInstruction("OP_POP", offset: offset, line: line, isSameLine: isSameLine)
+		case .jump, .jumpIfFalse:
+			return jumpInstruction(opcode!.description, chunk: chunk, sign: 1, offset: offset, line: line, isSameLine: isSameLine)
 		default:
 			return simpleInstruction(opcode!.description, offset: offset, line: line, isSameLine: isSameLine)
 		}
@@ -110,6 +121,23 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		)
 
 		return offset + 2
+	}
+
+	mutating func jumpInstruction(_ label: String, chunk: borrowing Chunk, sign: Int, offset: Int, line: Int, isSameLine: Bool) -> Int {
+		var jump = chunk.code.storage.advanced(by: offset + 1).pointee << 8
+		jump |= chunk.code.storage.advanced(by: offset + 2).pointee
+
+		append(
+			Instruction(
+				offset: offset,
+				opcode: label,
+				extra: "JUMP TO \(offset + 3 + sign * Int(jump))",
+				line: line,
+				isSameLine: isSameLine
+			)
+		)
+
+		return offset + 3
 	}
 
 	mutating func append(_ instruction: Instruction) {

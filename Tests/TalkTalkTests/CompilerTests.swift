@@ -218,12 +218,25 @@ struct CompilerTests {
 	}
 
 	@Test("Else statement") func elseStatement() {
-		let output = TestOutput()
-		let source = """
+		var output = TestOutput()
+		var source = """
 		if false {
 			print "Dont show up";
 		} else {
 			print "Do show up";
+		}
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		print(output.debugOut)
+		#expect(output.stdout == "Do show up\n")
+
+		output = TestOutput()
+		source = """
+		if true {
+			print "Do show up";
+		} else {
+			print "Dont show up";
 		}
 		"""
 

@@ -134,12 +134,22 @@ public struct Compiler: ~Copyable {
 		expression() // Add the if EXPRESSION to the stack
 
 		let thenJumpLocation = emit(jump: .jumpIfFalse)
+		emit(.pop) // Pop the condition off the stack
 
 		parser.consume(.leftBrace, "Expected '{' before `if` statement.")
 		block()
 
+		let elseJump = emit(jump: .jump)
+
 		// Backpack the jump
 		patchJump(thenJumpLocation)
+		emit(.pop) // Pop the condition off the stack
+
+		if parser.match(.else) {
+			statement()
+		}
+
+		patchJump(elseJump)
 	}
 
 	mutating func expressionStatement() {

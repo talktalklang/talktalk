@@ -54,6 +54,10 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		stackTop = UnsafeMutablePointer<Value>(stack)
 	}
 
+	var stackSize: Int {
+		stackTop - stack
+	}
+
 	mutating func stackPush(_ value: Value) {
 		if stackTop - stack >= 256 {
 			fatalError("Stack level too deep.") // TODO: Just grow the stack babyyyyy
@@ -97,7 +101,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		ip = chunk.code.storage
 
 		#if DEBUGGING
-			output.debug("POS\t\tLINE\tOPCODE\t\t\tEXTRA")
+		output.debug(Disassembler<Output>.header)
 		#endif
 
 		while true {
@@ -115,6 +119,10 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 			switch opcode {
 			case .return:
+				if stackSize != 0 {
+					output.print("Warning: Stack left at \(stackSize)")
+				}
+
 				return .ok
 			case .negate:
 				stackPush(-stackPop())
@@ -183,6 +191,9 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				stack[Int(slot)] = peek()
 			case .uninitialized:
 				()
+			case .jump:
+				let offset = readShort()
+				ip += Int(offset)
 			case .jumpIfFalse:
 				let offset = readShort()
 				let isTrue = peek().as(Bool.self)

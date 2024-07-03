@@ -21,7 +21,7 @@ enum Opcode: Byte {
 	     pop,
 	     defineGlobal, getGlobal, setGlobal,
 	     getLocal, setLocal,
-	     jumpIfFalse,
+	     jump, jumpIfFalse,
 	     `nil`
 
 	var description: String {
