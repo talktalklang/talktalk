@@ -370,7 +370,7 @@ struct Parser {
 			return GroupingExpr(id: nextID(), expr: expr)
 		default:
 			// TODO: This is wrong
-			TalkTalkInterpreter.error("Unexpected token: \(token)", token: token)
+			TalkTalkInterpreter.error("Really unexpected token: \(token as Any)", token: token)
 
 			return LiteralExpr(id: nextID(), literal: token)
 		}
@@ -389,7 +389,7 @@ struct Parser {
 		}
 
 		let token = peek()
-		TalkTalkInterpreter.error("Unexpected token: \(token), expected: \(kind)", token: token)
+		TalkTalkInterpreter.error("Unexpected token: \(token.description), expected: \(kind)", token: token)
 		throw ParserError.unexpectedToken(token)
 	}
 
@@ -406,7 +406,7 @@ struct Parser {
 		}
 
 		let token = peek()
-		TalkTalkInterpreter.error("Unexpected token: \(token), expected: identifier", token: token)
+		TalkTalkInterpreter.error("Unexpected token: \(token.description), expected: identifier", token: token)
 		throw ParserError.unexpectedToken(token)
 	}
 

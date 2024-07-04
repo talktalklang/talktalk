@@ -93,6 +93,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 			return simpleInstruction("OP_POP", offset: offset, line: line, isSameLine: isSameLine)
 		case .jump, .jumpIfFalse:
 			return jumpInstruction(opcode!.description, chunk: chunk, sign: 1, offset: offset, line: line, isSameLine: isSameLine)
+		case .loop:
+			return jumpInstruction(opcode!.description, chunk: chunk, sign: -1, offset: offset, line: line, isSameLine: isSameLine)
 		default:
 			return simpleInstruction(opcode!.description, offset: offset, line: line, isSameLine: isSameLine)
 		}

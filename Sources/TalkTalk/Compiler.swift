@@ -109,6 +109,8 @@ public struct Compiler: ~Copyable {
 			printStatement()
 		} else if parser.match(.if) {
 			ifStatement()
+		} else if parser.match(.while) {
+			whileStatement()
 		} else if parser.match(.leftBrace) {
 			withScope { $0.block() }
 		} else {
@@ -150,6 +152,28 @@ public struct Compiler: ~Copyable {
 		}
 
 		patchJump(elseJump)
+	}
+
+	mutating func whileStatement() {
+		// This is where we return to while the condition is true
+		let loopStart = compilingChunk.count
+
+		// Add the condition to the top of the stack
+		expression()
+
+		// Get the while condition
+		parser.consume(.leftBrace, "Expected '{' after while condition")
+
+		// Get the instruction to leave the loop
+		let exitJump = emit(jump: .jumpIfFalse)
+		emit(.pop) // Clean up the stack
+
+		// The body of the loop
+		block()
+		emit(loop: loopStart)
+
+		patchJump(exitJump)
+		emit(.pop)
 	}
 
 	mutating func expressionStatement() {
@@ -275,6 +299,10 @@ public struct Compiler: ~Copyable {
 		case .slash: emit(.divide)
 		case .equalEqual: emit(.equal)
 		case .bangEqual: emit(.notEqual)
+		case .less: emit(.less)
+		case .lessEqual: emit(.greater, .not)
+		case .greater: emit(.greater)
+		case .greaterEqual: emit(.less, .not)
 		default:
 			() // Unreachable
 		}
@@ -449,7 +477,26 @@ public struct Compiler: ~Copyable {
 		return nil
 	}
 
+	mutating func uint16ToBytes(_ uint16: Int) -> (Byte, Byte) {
+		let a = (uint16 >> 8) & 0xff
+		let b = (uint16 & 0xff)
+
+		return (Byte(a), Byte(b))
+	}
+
 	// MARK: Emitters
+
+	mutating func emit(loop backToInstruction: Int) {
+		emit(.loop)
+
+		let offset = compilingChunk.count - backToInstruction + 2
+		if offset > UInt16.max {
+			error("Loop body too large, cmon.")
+		}
+
+		let (a, b) = uint16ToBytes(offset)
+		emit(a, b)
+	}
 
 	mutating func emit(jump instruction: Opcode) -> Int {
 		emit(instruction)
@@ -473,8 +520,9 @@ public struct Compiler: ~Copyable {
 
 		// Go back and replace the two placeholder bytes from emit(jump:)
 		// the actual offset to jump over.
-		compilingChunk.code[offset] = Byte((jump >> 8) & 0xFF)
-		compilingChunk.code[offset + 1] = Byte(jump & 0xFF)
+		let (a, b) = uint16ToBytes(jump)
+		compilingChunk.code[offset] = a
+		compilingChunk.code[offset + 1] = b
 	}
 
 	mutating func emit(constant value: consuming Value) {
@@ -487,7 +535,12 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func emit(_ opcode: consuming Opcode) {
-		compilingChunk.write(opcode.byte, line: parser.previous?.line ?? -1)
+		emit(opcode.byte)
+	}
+
+	mutating func emit(_ opcode1: consuming Opcode, _ opcode2: consuming Opcode) {
+		emit(opcode1)
+		emit(opcode2)
 	}
 
 	mutating func emit(_ byte: consuming Byte) {

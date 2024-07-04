@@ -79,11 +79,11 @@ struct Parser: ~Copyable {
 			return
 		}
 
-		error(at: current, "Unexpected token: \(current as Any). Expected: \(kind).")
+		error(at: current, "Unexpected token: \(current.description(in: lexer.source)). Expected: \(kind).")
 	}
 
 	mutating func error(at token: Token, _ message: String) {
-		print("Parser Error: \(token), message: \(message)")
+		print("Parser Error at line \(token.line), message: \(message)")
 		errors.append(Error(token: token, message: message))
 	}
 }

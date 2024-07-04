@@ -43,6 +43,10 @@ struct Token: Equatable {
 		length == other.length && lexeme(in: source) == other.lexeme(in: source)
 	}
 
+	func description(in source: borrowing ContiguousArray<Character>) -> String {
+		"\(kind) \(lexeme(in: source))"
+	}
+
 //	@available(*, deprecated, message: "this isn't great")
 	func lexeme(in source: ContiguousArray<Character>) -> ContiguousArray<Character> {
 		ContiguousArray(

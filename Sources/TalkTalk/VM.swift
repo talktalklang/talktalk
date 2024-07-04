@@ -144,6 +144,14 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				let b = stackPop()
 				let a = stackPop()
 				stackPush(a / b)
+			case .less:
+				let b = stackPop()
+				let a = stackPop()
+				stackPush(a < b)
+			case .greater:
+				let b = stackPop()
+				let a = stackPop()
+				stackPush(a > b)
 			case .nil:
 				stackPush(.nil)
 			case .true:
@@ -166,7 +174,8 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				output.print(stackPop().description)
 			case .defineGlobal:
 				let name = chunk.constants.read(byte: readByte()).as(String.self)
-				globals[name] = stackPop()
+				globals[name] = peek()
+				_ = stackPop()
 			case .getGlobal:
 				let name = readString(in: chunk)
 				guard let value = globals[name] else {
@@ -190,7 +199,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				let slot = readByte()
 				stack[Int(slot)] = peek()
 			case .uninitialized:
-				()
+				runtimeError("Unitialized instruction cannot be run: \(peek().description)")
 			case .jump:
 				let offset = readShort()
 				ip += Int(offset)
@@ -200,6 +209,9 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				if !isTrue {
 					ip += Int(offset)
 				}
+			case .loop:
+				let offset = readShort()
+				ip -= Int(offset)
 			}
 		}
 	}

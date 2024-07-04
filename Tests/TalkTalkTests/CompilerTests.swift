@@ -258,8 +258,9 @@ struct CompilerTests {
 		// TODO: Actually test the evaluation
 		var output = TestOutput()
 		#expect(VM.run(source: """
-		if false || true {
-		 print("cool")
+		var a = 1;
+		if a > 2 || true {
+			print "cool";
 		}
 		""", output: output) == .ok)
 		#expect(output.stdout == "cool\n")
@@ -267,14 +268,14 @@ struct CompilerTests {
 		output = TestOutput()
 		#expect(VM.run(source: """
 		if false || false {
-		 print("cool")
+			print "cool"
 		}
 		""", output: output) == .ok)
 		#expect(output.stdout == "")
 	}
 
 	@Test("while loop") func whileLoop() {
-		var output = TestOutput()
+		let output = TestOutput()
 		let source = """
 		var a = 0;
 		while a < 3 {
@@ -284,6 +285,6 @@ struct CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "1\n2\n3\n")
+		#expect(output.stdout == "1.0\n2.0\n3.0\n")
 	}
 }

@@ -16,12 +16,16 @@ enum Opcode: Byte {
 	     not,
 	     add, subtract, multiply, divide,
 	     equal, notEqual,
+			 less, greater,
 	     `true`, `false`,
 	     print,
 	     pop,
 	     defineGlobal, getGlobal, setGlobal,
 	     getLocal, setLocal,
-	     jump, jumpIfFalse,
+	     jump,
+			 // If the top of the stack is false, jumps to its operand
+			 jumpIfFalse,
+			 loop,
 	     `nil`
 
 	var description: String {

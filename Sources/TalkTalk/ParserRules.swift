@@ -38,10 +38,10 @@ extension Token.Kind {
 		case .bangEqual: .init(nil, { $0.binary($1) }, .equality)
 		case .equal: .none
 		case .equalEqual: .init(nil, { $0.binary($1) }, .equality)
-		case .greater: .none
-		case .greaterEqual: .none
-		case .less: .none
-		case .lessEqual: .none
+		case .greater: .init(nil, { $0.binary($1) }, .comparison)
+		case .greaterEqual: .init(nil, { $0.binary($1) }, .comparison)
+		case .less: .init(nil, { $0.binary($1) }, .comparison)
+		case .lessEqual: .init(nil, { $0.binary($1) }, .comparison)
 		case .and: .none
 		case .andAnd: .init(nil, { $0.and($1) }, .and)
 		case .pipe: .none

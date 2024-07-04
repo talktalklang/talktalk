@@ -213,6 +213,32 @@ enum Value: Equatable, Hashable {
 			.error("Cannot / \(lhs) \(rhs)")
 		}
 	}
+
+	static func < (lhs: Value, rhs: Value) -> Value {
+		guard case let .number(rhs) = rhs else {
+			return .error("Cannot < \(rhs)")
+		}
+
+		return switch lhs {
+		case let .number(lhs):
+			.bool(lhs < rhs)
+		default:
+			.error("Cannot < \(lhs) \(rhs)")
+		}
+	}
+
+	static func > (lhs: Value, rhs: Value) -> Value {
+		guard case let .number(rhs) = rhs else {
+			return .error("Cannot > \(rhs)")
+		}
+
+		return switch lhs {
+		case let .number(lhs):
+			.bool(lhs > rhs)
+		default:
+			.error("Cannot > \(lhs) \(rhs)")
+		}
+	}
 }
 
 extension Value: ExpressibleByFloatLiteral {
