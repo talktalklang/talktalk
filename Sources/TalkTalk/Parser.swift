@@ -83,7 +83,6 @@ struct Parser: ~Copyable {
 	}
 
 	mutating func error(at token: Token, _ message: String) {
-		print("Parser Error at line \(token.line), message: \(message)")
 		errors.append(Error(token: token, message: message))
 	}
 }

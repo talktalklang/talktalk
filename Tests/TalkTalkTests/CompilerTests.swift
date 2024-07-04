@@ -26,9 +26,6 @@ struct CompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
-
-		print(output.debugOut)
-
 		#expect(output.stdout == "-1.0\n")
 	}
 
@@ -228,7 +225,6 @@ struct CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		print(output.debugOut)
 		#expect(output.stdout == "Do show up\n")
 
 		output = TestOutput()

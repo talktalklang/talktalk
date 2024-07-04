@@ -203,10 +203,6 @@ public struct Compiler: ~Copyable {
 	mutating func parse(precedence: Parser.Precedence) {
 		parser.advance()
 
-		if !parser.errors.isEmpty {
-			print("ERROR: \(parser.errors)")
-		}
-
 		let opKind = parser.previous.kind
 		let rule = opKind.rule
 
@@ -553,12 +549,10 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func error(_ message: String, at token: Token) {
-		print("Compiler Error: \(message)")
 		errors.append(Error(token: token, message: message))
 	}
 
 	mutating func error(_ message: String) {
-		print("Compiler Error: \(message)")
 		errors.append(Error(token: nil, message: message))
 	}
 }
