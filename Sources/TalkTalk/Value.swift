@@ -7,7 +7,7 @@
 
 // typealias Value = Double
 enum Value: Equatable, Hashable {
-	case error(String), bool(Bool), `nil`, number(Double), string(String)
+	case error(String), bool(Bool), `nil`, number(Double), string(String), function(Function)
 
 	func hash(into hasher: inout Hasher) {
 		hasher.combine(hash)
@@ -21,10 +21,12 @@ enum Value: Equatable, Hashable {
 			return bool ? 1 : 0
 		case .nil:
 			fatalError("Attempted to use nil hash key")
-		case var .number(double):
+		case let .number(double):
 			return abs(double.hashValue)
 		case let .string(heapValue):
 			return Int(heapValue.hashValue)
+		case let .function(function):
+			return function.chunk.hashValue
 		}
 	}
 
@@ -59,6 +61,8 @@ enum Value: Equatable, Hashable {
 			return "\(double)"
 		case let .string(string):
 			return string
+		case let .function(function):
+			return "[func \(function.name)]"
 		}
 	}
 

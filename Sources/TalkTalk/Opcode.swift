@@ -26,6 +26,7 @@ enum Opcode: Byte {
 	     // If the top of the stack is false, jumps to its operand
 	     jumpIfFalse,
 	     loop,
+	     call,
 	     `nil`
 
 	var description: String {

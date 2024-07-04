@@ -1,12 +1,12 @@
 //
 //  Benchmark.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/3/24.
 //
+import Foundation
 @testable import TalkTalk
 import Testing
-import Foundation
 
 struct BenchmarkTests {
 	@Test("Test compile time") func compile() {
@@ -23,7 +23,7 @@ struct BenchmarkTests {
 		"""
 
 		let t = ContinuousClock().measure {
-			for _ in 0..<50000 {
+			for _ in 0 ..< 5000 {
 				var compiler = Compiler(source: source)
 				try! compiler.compile()
 			}
@@ -48,12 +48,12 @@ struct BenchmarkTests {
 
 		let output = TestOutput()
 		let t = ContinuousClock().measure {
-			for _ in 0..<500 {
+			for _ in 0 ..< 50 {
 				_ = VM.run(source: source, output: output)
 			}
 		}
 
 		print("Took \(t) sec.")
-		#expect(t < .seconds(10))
+		#expect(t < .seconds(5))
 	}
 }

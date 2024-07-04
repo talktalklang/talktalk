@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-struct Lexer: ~Copyable {
+class Lexer {
 	var source: ContiguousArray<Character>
 	var start: Int
 	var current: Int
@@ -16,7 +16,7 @@ struct Lexer: ~Copyable {
 		self.current = 0
 	}
 
-	mutating func collect() -> [Token] {
+	func collect() -> [Token] {
 		var result: [Token] = []
 		while true {
 			let token = next()
@@ -28,12 +28,12 @@ struct Lexer: ~Copyable {
 		return result
 	}
 
-	mutating func rewind() {
+	func rewind() {
 		current = 0
 		start = 0
 	}
 
-	mutating func dump() -> String {
+	func dump() -> String {
 		var lastLine = 0
 		var result = ""
 
@@ -53,7 +53,7 @@ struct Lexer: ~Copyable {
 		return result
 	}
 
-	mutating func next() -> Token {
+	func next() -> Token {
 		handleWhitespace()
 
 		start = current
@@ -87,7 +87,7 @@ struct Lexer: ~Copyable {
 		}
 	}
 
-	mutating func handleWhitespace() {
+	func handleWhitespace() {
 		while let char = peek() {
 			switch char {
 			case " ", "\r", "\t":
@@ -97,7 +97,7 @@ struct Lexer: ~Copyable {
 				advance()
 			case "/":
 				if peekNext() == "/" {
-					while peek() != "\n" && !isAtEnd {
+					while peek() != "\n", !isAtEnd {
 						advance()
 					}
 				} else {
@@ -109,7 +109,7 @@ struct Lexer: ~Copyable {
 		}
 	}
 
-	mutating func string() -> Token {
+	func string() -> Token {
 		while peek() != #"""# && !isAtEnd {
 			if peek() == "\n" {
 				line += 1
@@ -127,7 +127,7 @@ struct Lexer: ~Copyable {
 		return make(.string)
 	}
 
-	mutating func number() -> Token {
+	func number() -> Token {
 		while let char = peek(), char.isNumber {
 			advance()
 		}
@@ -144,7 +144,7 @@ struct Lexer: ~Copyable {
 		return make(.number)
 	}
 
-	mutating func identifier(start: Character) -> Token {
+	func identifier(start: Character) -> Token {
 		var node = KeywordTrie.trie.root.lookup(start)
 
 		while let char = peek(), isIdentifier(char) {
@@ -191,7 +191,7 @@ struct Lexer: ~Copyable {
 		return source[current + 1]
 	}
 
-	mutating func match(_ char: Character) -> Bool {
+	func match(_ char: Character) -> Bool {
 		if isAtEnd { return false }
 
 		if source[current] != char {
@@ -202,7 +202,7 @@ struct Lexer: ~Copyable {
 		return true
 	}
 
-	@discardableResult mutating func advance() -> Character {
+	@discardableResult func advance() -> Character {
 		let previous = current
 		current = current + 1
 		return source[previous]

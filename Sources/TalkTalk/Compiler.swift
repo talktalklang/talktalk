@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-public struct Compiler: ~Copyable {
+public class Compiler {
 	enum Errors: Swift.Error {
 		case errors([Error])
 	}
@@ -22,8 +22,9 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
+	var parent: Compiler?
 	var parser: Parser
-	var compilingChunk: Chunk
+	var currentFunction: Function
 	var errors: [Error] = []
 
 	// MARK: Local variable management
@@ -35,7 +36,7 @@ public struct Compiler: ~Copyable {
 	}
 
 	var locals = ContiguousArray<Local?>(repeating: nil, count: 256)
-	var localCount = 0
+	var localCount = 1 // Reserve local count spot 0 for internal use
 	var scopeDepth = 0
 
 	// MARK: Debuggy
@@ -43,7 +44,7 @@ public struct Compiler: ~Copyable {
 	#if DEBUG
 		var parserRepeats: [Int: Int] = [:]
 
-		mutating func checkForInfiniteLoop() {
+		func checkForInfiniteLoop() {
 			parserRepeats[parser.current.start, default: 0] += 1
 
 			if parserRepeats[parser.current.start]! > 100 {
@@ -52,16 +53,26 @@ public struct Compiler: ~Copyable {
 		}
 	#endif
 
+	init(parent: Compiler) {
+		self.parent = parent
+		self.parser = parent.parser
+		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "")
+	}
+
 	public init(source: String) {
 		self.parser = Parser(lexer: Lexer(source: source))
-		self.compilingChunk = Chunk()
+		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "")
+	}
+
+	var compilingChunk: Chunk {
+		currentFunction.chunk
 	}
 
 	var source: ContiguousArray<Character> {
 		parser.lexer.source
 	}
 
-	public mutating func compile() throws {
+	public func compile() throws {
 		while parser.current.kind != .eof {
 			declaration()
 
@@ -78,15 +89,24 @@ public struct Compiler: ~Copyable {
 		throw Errors.errors(errors)
 	}
 
-	mutating func declaration() {
-		if parser.match(.var) {
+	func declaration() {
+		if parser.match(.func) {
+			funcDeclaration()
+		} else if parser.match(.var) {
 			varDeclaration()
 		} else {
 			statement()
 		}
 	}
 
-	mutating func varDeclaration() {
+	func funcDeclaration() {
+		let global = parseVariable("Expected function name.")
+		markInitialized()
+		function(.function)
+		defineVariable(global: global)
+	}
+
+	func varDeclaration() {
 		let global = parseVariable("Expected variable name")
 
 		defer {
@@ -104,7 +124,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Statements
 
-	mutating func statement() {
+	func statement() {
 		if parser.match(.print) {
 			printStatement()
 		} else if parser.match(.if) {
@@ -118,7 +138,57 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
-	mutating func block() {
+	func function(_: Function.Kind) {
+		let compiler = Compiler(parent: self)
+
+		compiler.scopeDepth += 1
+		compiler.currentFunction.name = String(parser.previous.lexeme(in: source))
+		compiler.parser.consume(.leftParen, "Expected '(' after function name")
+
+		if !compiler.parser.check(.rightParen) {
+			repeat {
+				compiler.currentFunction.arity += 1
+
+				if compiler.currentFunction.arity > 255 {
+					compiler.parser.error(at: parser.current, "Can't have more than 255 params, cmon.")
+				}
+
+				let constant = compiler.parseVariable("Expected parameter name")
+				compiler.defineVariable(global: constant)
+			} while compiler.parser.match(.comma)
+		}
+
+		compiler.parser.consume(.rightParen, "Expected ')' after function parameters")
+		compiler.parser.consume(.leftBrace, "Expected '{' before function body")
+		compiler.block()
+		compiler.emit(.return)
+
+		emit(constant: .function(compiler.currentFunction))
+	}
+
+	func call(_: Bool) {
+		let argCount = argumentList()
+		emit(.call)
+		emit(argCount)
+	}
+
+	func argumentList() -> Byte {
+		var count: Byte = 0
+		if !parser.check(.rightParen) {
+			repeat {
+				expression()
+				if count == 255 {
+					error("Can't have more than 255 arguments, cmon", at: parser.previous)
+				}
+				count += 1
+			} while parser.match(.comma)
+		}
+
+		parser.consume(.rightParen, "Expected ')' after arguments")
+		return count
+	}
+
+	func block() {
 		while !parser.check(.rightBrace), !parser.check(.eof) {
 			declaration()
 		}
@@ -126,13 +196,13 @@ public struct Compiler: ~Copyable {
 		parser.consume(.rightBrace, "Expected '}' after block.")
 	}
 
-	mutating func printStatement() {
+	func printStatement() {
 		expression()
 		parser.consume(.semicolon, "Expected ';' after value.")
 		emit(.print)
 	}
 
-	mutating func ifStatement() {
+	func ifStatement() {
 		expression() // Add the if EXPRESSION to the stack
 
 		let thenJumpLocation = emit(jump: .jumpIfFalse)
@@ -154,7 +224,7 @@ public struct Compiler: ~Copyable {
 		patchJump(elseJump)
 	}
 
-	mutating func whileStatement() {
+	func whileStatement() {
 		// This is where we return to while the condition is true
 		let loopStart = compilingChunk.count
 
@@ -176,17 +246,17 @@ public struct Compiler: ~Copyable {
 		emit(.pop)
 	}
 
-	mutating func expressionStatement() {
+	func expressionStatement() {
 		expression()
 		parser.consume(.semicolon, "Expected ';' after expression")
 		emit(.pop)
 	}
 
-	mutating func expression() {
+	func expression() {
 		parse(precedence: .assignment)
 	}
 
-	mutating func parseVariable(_ message: String) -> Byte {
+	func parseVariable(_ message: String) -> Byte {
 		parser.consume(.identifier, message)
 
 		declareVariable()
@@ -200,7 +270,7 @@ public struct Compiler: ~Copyable {
 
 	// Starting with parser.current, parse expressions at `precedence`
 	// level or higher.
-	mutating func parse(precedence: Parser.Precedence) {
+	func parse(precedence: Parser.Precedence) {
 		parser.advance()
 
 		let opKind = parser.previous.kind
@@ -212,13 +282,15 @@ public struct Compiler: ~Copyable {
 		}
 
 		let canAssign = precedence <= .assignment
-		prefix(&self, canAssign)
+		prefix(self, canAssign)
 
 		while precedence < parser.current.kind.rule.precedence {
+			checkForInfiniteLoop()
+
 			parser.advance()
 
 			if let infix = parser.previous.kind.rule.infix {
-				infix(&self, canAssign)
+				infix(self, canAssign)
 			}
 
 			if canAssign, parser.match(.equal) {
@@ -229,13 +301,13 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Prefix expressions
 
-	mutating func grouping(_: Bool) {
+	func grouping(_: Bool) {
 		// Assume the initial "(" has been consumed
 		expression()
 		parser.consume(.rightParen, "Expected ')' after expression.")
 	}
 
-	mutating func number(_: Bool) {
+	func number(_: Bool) {
 		let lexeme = parser.previous.lexeme(in: source).reduce(into: "") { $0.append($1) }
 		guard let value = Double(lexeme) else {
 			error("Could not parse number: \(parser.previous.lexeme(in: source))")
@@ -245,7 +317,7 @@ public struct Compiler: ~Copyable {
 		emit(constant: .number(value))
 	}
 
-	mutating func unary(_: Bool) {
+	func unary(_: Bool) {
 		let kind = parser.previous.kind
 		parse(precedence: .unary)
 
@@ -261,14 +333,14 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Binary expressions
 
-	mutating func and(_: Bool) {
+	func and(_: Bool) {
 		let endJump = emit(jump: .jumpIfFalse)
 		emit(.pop)
 		parse(precedence: .and)
 		patchJump(endJump)
 	}
 
-	mutating func or(_: Bool) {
+	func or(_: Bool) {
 		let elseJump = emit(jump: .jumpIfFalse)
 		let endJump = emit(jump: .jump)
 
@@ -279,7 +351,7 @@ public struct Compiler: ~Copyable {
 		patchJump(endJump)
 	}
 
-	mutating func binary(_: Bool) {
+	func binary(_: Bool) {
 		guard let kind = parser.previous?.kind else {
 			error("No previous token for unary expr.")
 			return
@@ -306,7 +378,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Literals
 
-	mutating func literal(_: Bool) {
+	func literal(_: Bool) {
 		switch parser.previous.kind {
 		case .false: emit(.false)
 		case .true: emit(.true)
@@ -317,21 +389,21 @@ public struct Compiler: ~Copyable {
 	}
 
 	// TODO: add static string that we don't need to copy?
-	mutating func string(_: Bool) {
+	func string(_: Bool) {
 		// Get rid of start/end quotes
 		let start = parser.previous.start + 1
 		let length = parser.previous.length - 2
-		let value = Value.string(String(source[start..<start+length]))
+		let value = Value.string(String(source[start ..< start + length]))
 		emit(constant: value)
 	}
 
-	mutating func variable(_ canAssign: Bool) {
+	func variable(_ canAssign: Bool) {
 		namedVariable(parser.previous, canAssign)
 	}
 
 	// MARK: Helpers
 
-	mutating func declareVariable() {
+	func declareVariable() {
 		if scopeDepth == 0 {
 			return
 		}
@@ -361,7 +433,7 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
-	mutating func defineVariable(global: Byte) {
+	func defineVariable(global: Byte) {
 		if scopeDepth > 0 {
 			markInitialized()
 			return
@@ -371,7 +443,7 @@ public struct Compiler: ~Copyable {
 		emit(global)
 	}
 
-	mutating func addLocal(name: Token) {
+	func addLocal(name: Token) {
 		if localCount == 256 {
 			error("Too many local variables in function")
 			return
@@ -381,11 +453,15 @@ public struct Compiler: ~Copyable {
 		localCount += 1
 	}
 
-	mutating func markInitialized() {
+	func markInitialized() {
+		if scopeDepth == 0 {
+			return
+		}
+
 		locals[localCount - 1]?.isInitialized = true
 	}
 
-	mutating func namedVariable(_ token: Token, _ canAssign: Bool) {
+	func namedVariable(_ token: Token, _ canAssign: Bool) {
 		let getOp, setOp: Opcode
 
 		var arg: Byte? = resolveLocal(token)
@@ -413,14 +489,14 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
-	mutating func identifierConstant(_ token: Token) -> Byte {
+	func identifierConstant(_ token: Token) -> Byte {
 		let value = Value.string(String(token.lexeme(in: source)))
 		return compilingChunk.write(constant: value)
 	}
 
-	mutating func withScope(perform: (inout Self) -> Void) {
+	func withScope(perform: (Compiler) -> Void) {
 		scopeDepth += 1
-		perform(&self)
+		perform(self)
 		scopeDepth -= 1
 
 		// The block is done, gotta clean up the scope
@@ -430,7 +506,7 @@ public struct Compiler: ~Copyable {
 		}
 	}
 
-	mutating func resolveLocal(_ name: Token) -> Byte? {
+	func resolveLocal(_ name: Token) -> Byte? {
 		var i = localCount - 1 // Subtracting 1 because we're indexing into an array
 		while i >= 0, let local = locals[i] {
 			if name.same(lexeme: local.name, in: source) {
@@ -448,7 +524,7 @@ public struct Compiler: ~Copyable {
 		return nil
 	}
 
-	mutating func uint16ToBytes(_ uint16: Int) -> (Byte, Byte) {
+	func uint16ToBytes(_ uint16: Int) -> (Byte, Byte) {
 		let a = (uint16 >> 8) & 0xFF
 		let b = (uint16 & 0xFF)
 
@@ -457,7 +533,7 @@ public struct Compiler: ~Copyable {
 
 	// MARK: Emitters
 
-	mutating func emit(loop backToInstruction: Int) {
+	func emit(loop backToInstruction: Int) {
 		emit(.loop)
 
 		let offset = compilingChunk.count - backToInstruction + 2
@@ -469,7 +545,7 @@ public struct Compiler: ~Copyable {
 		emit(a, b)
 	}
 
-	mutating func emit(jump instruction: Opcode) -> Int {
+	func emit(jump instruction: Opcode) -> Int {
 		emit(instruction)
 
 		// Use two bytes for the offset, which lets us jump over 65k bytes of code.
@@ -482,7 +558,7 @@ public struct Compiler: ~Copyable {
 		return compilingChunk.count - 2
 	}
 
-	mutating func patchJump(_ offset: Int) {
+	func patchJump(_ offset: Int) {
 		// -2 to adjust for the bytecode for the jump offset itself
 		let jump = compilingChunk.count - offset - 2
 		if jump > UInt16.max {
@@ -496,7 +572,7 @@ public struct Compiler: ~Copyable {
 		compilingChunk.code[offset + 1] = b
 	}
 
-	mutating func emit(constant value: consuming Value) {
+	func emit(constant value: consuming Value) {
 		if compilingChunk.constants.count > UInt8.max {
 			error("Too many constants in one chunk")
 			return
@@ -505,29 +581,29 @@ public struct Compiler: ~Copyable {
 		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
-	mutating func emit(_ opcode: consuming Opcode) {
+	func emit(_ opcode: consuming Opcode) {
 		emit(opcode.byte)
 	}
 
-	mutating func emit(_ opcode1: consuming Opcode, _ opcode2: consuming Opcode) {
+	func emit(_ opcode1: consuming Opcode, _ opcode2: consuming Opcode) {
 		emit(opcode1)
 		emit(opcode2)
 	}
 
-	mutating func emit(_ byte: consuming Byte) {
+	func emit(_ byte: consuming Byte) {
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
-	mutating func emit(_ byte1: consuming Byte, _ byte2: consuming Byte) {
+	func emit(_ byte1: consuming Byte, _ byte2: consuming Byte) {
 		emit(byte1)
 		emit(byte2)
 	}
 
-	mutating func error(_ message: String, at token: Token) {
+	func error(_ message: String, at token: Token) {
 		errors.append(Error(token: token, message: message))
 	}
 
-	mutating func error(_ message: String) {
+	func error(_ message: String) {
 		errors.append(Error(token: nil, message: message))
 	}
 }

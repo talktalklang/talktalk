@@ -41,7 +41,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		self.output = output
 	}
 
-	mutating func report(byte: Int, in chunk: borrowing Chunk) {
+	mutating func report(byte: Int, in chunk: Chunk) {
 		_ = disassembleInstruction(chunk: chunk, offset: byte)
 
 		for instruction in instructions {
@@ -66,7 +66,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		let instruction = chunk.code[offset]
 		let line = chunk.lines[offset]
 
-		let isSameLine = offset > 0 && line == chunk.lines[offset-1]
+		let isSameLine = offset > 0 && line == chunk.lines[offset - 1]
 		let opcode = Opcode(rawValue: instruction)
 
 		switch opcode {

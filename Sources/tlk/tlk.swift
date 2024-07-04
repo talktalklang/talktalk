@@ -28,6 +28,6 @@ struct TlkCommand: ParsableCommand {
 		chunk.write(.return, line: 5)
 
 		var vm = TalkTalk.VM()
-		print(vm.run(chunk: &chunk))
+//		print(vm.run(chunk: chunk))
 	}
 }

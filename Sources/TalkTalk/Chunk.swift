@@ -5,10 +5,20 @@
 //  Created by Pat Nakajima on 6/30/24.
 //
 
-public class Chunk {
+public class Chunk: Hashable {
+	public static func == (lhs: Chunk, rhs: Chunk) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
 	var code = DynamicArray<Byte>()
 	var constants = DynamicArray<Value>()
 	var lines = DynamicArray<Int>()
+
+	public func hash(into hasher: inout Swift.Hasher) {
+		hasher.combine(code.storage.hashValue)
+		hasher.combine(constants.storage.hashValue)
+		hasher.combine(lines.storage.hashValue)
+	}
 
 	var count: Int {
 		code.count

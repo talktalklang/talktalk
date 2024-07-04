@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-struct Parser: ~Copyable {
+public class Parser {
 	enum Precedence: Byte, Comparable {
 		static func < (lhs: Parser.Precedence, rhs: Parser.Precedence) -> Bool {
 			lhs.rawValue < rhs.rawValue
@@ -45,7 +45,7 @@ struct Parser: ~Copyable {
 		self.lexer = lexer
 	}
 
-	mutating func advance() {
+	func advance() {
 		previous = current
 		while true {
 			current = lexer.next()
@@ -59,7 +59,7 @@ struct Parser: ~Copyable {
 		}
 	}
 
-	mutating func match(_ kind: Token.Kind) -> Bool {
+	func match(_ kind: Token.Kind) -> Bool {
 		if !check(kind) {
 			return false
 		}
@@ -73,7 +73,7 @@ struct Parser: ~Copyable {
 		current.kind == kind
 	}
 
-	mutating func consume(_ kind: Token.Kind, _: String) {
+	func consume(_ kind: Token.Kind, _: String) {
 		if current.kind == kind {
 			advance()
 			return
@@ -82,7 +82,11 @@ struct Parser: ~Copyable {
 		error(at: current, "Unexpected token: \(current.description(in: lexer.source)). Expected: \(kind).")
 	}
 
-	mutating func error(at token: Token, _ message: String) {
+	func line(_ number: Int) -> String {
+		String(lexer.source).components(separatedBy: "\n")[number]
+	}
+
+	func error(at token: Token, _ message: String) {
 		errors.append(Error(token: token, message: message))
 	}
 }

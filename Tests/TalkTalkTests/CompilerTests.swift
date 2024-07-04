@@ -57,7 +57,7 @@ actor CompilerTests {
 
 					let output = TestOutput()
 					var vm = VM(output: output)
-					let result = vm.run(chunk: &compiler.compilingChunk)
+					let result = vm.run(function: compiler.currentFunction)
 					#expect(result == .ok)
 				}
 			}
@@ -116,7 +116,7 @@ actor CompilerTests {
 		try! compiler.compile()
 
 		var vm = VM(output: output)
-		let result = vm.run(chunk: &compiler.compilingChunk)
+		let result = vm.run(function: compiler.currentFunction)
 
 		#expect(result == .ok)
 		#expect(output.stdout == "hello world\n")
@@ -282,5 +282,20 @@ actor CompilerTests {
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "1.0\n2.0\n3.0\n")
+	}
+
+	@Test("Function") func function() {
+		let output = TestOutput()
+		let source = """
+		func greet() {
+			print "sup";
+		}
+
+		greet();
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		print(output.stdout)
+//		#expect(output.stdout == "sup\n")
 	}
 }

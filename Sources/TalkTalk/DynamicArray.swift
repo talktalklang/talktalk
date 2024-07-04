@@ -26,7 +26,7 @@ struct DynamicArray<T> {
 	// of the written value.
 	@discardableResult mutating func write(_ value: T) -> Int {
 		storage.append(value)
-		return storage.count-1
+		return storage.count - 1
 	}
 
 	func read(byte: Byte) -> T {

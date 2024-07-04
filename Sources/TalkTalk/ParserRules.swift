@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-typealias ParseFunction = (inout Compiler, Bool) -> Void
+typealias ParseFunction = (Compiler, Bool) -> Void
 
 struct ParserRule {
 	var prefix: ParseFunction?
@@ -23,7 +23,7 @@ struct ParserRule {
 extension Token.Kind {
 	var rule: ParserRule {
 		return switch self {
-		case .leftParen: .init({ $0.grouping($1) }, nil, .none)
+		case .leftParen: .init({ $0.grouping($1) }, { $0.call($1) }, .call)
 		case .rightParen: .none
 		case .leftBrace: .none
 		case .rightBrace: .none

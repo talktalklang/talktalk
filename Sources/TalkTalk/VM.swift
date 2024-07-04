@@ -11,65 +11,24 @@ public enum InterpretResult {
 	     runtimeError
 }
 
-struct Stack: ~Copyable {
-	var count = 0
-	private var storage: [Value] = []
-
-	subscript(_ offset: Int) -> Value {
-		get {
-			storage[offset]
-		}
-
-		set {
-			storage[offset] = newValue
-		}
-	}
-
-	var isEmpty: Bool {
-		count == 0
-	}
-
-	func peek(offset: Int = 0) -> Value {
-		storage[count - 1 - offset]
-	}
-
-	mutating func push(_ value: Value) {
-		storage.append(value)
-		count += 1
-	}
-
-	mutating func pop() -> Value {
-		count -= 1
-		return storage.removeLast()
-	}
-
-	mutating func reset() {
-		count = 0
-		storage = []
-	}
-}
-
 public struct VM<Output: OutputCollector>: ~Copyable {
 	var output: Output
-	var ip: Int = 0
-	var stack = Stack()
+	var stack = Stack<Value>()
+	var frames = Stack<CallFrame>()
 	var globals: [String: Value] = [:]
 
 	static func run(source: String, output: Output) -> InterpretResult {
 		var vm = VM(output: output)
-		var compiler = Compiler(source: source)
+		let compiler = Compiler(source: source)
 
 		do {
 			try compiler.compile()
 		} catch {
-			for error in compiler.errors {
-				output.print(error.description)
-			}
-
+			output.print(compiler.errors.map { $0.description }.joined(separator: "\n"))
 			return .compileError
 		}
 
-		return vm.run(chunk: &compiler.compilingChunk)
+		return vm.run(function: compiler.currentFunction)
 	}
 
 	public init(output: Output = StdoutOutput()) {
@@ -80,54 +39,50 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		stack.reset()
 	}
 
-	var stackSize: Int {
-		stack.count
+	var ip: Int {
+		get {
+			currentFrame.ip
+		}
+
+		set {
+			currentFrame.ip = newValue
+		}
 	}
 
-	mutating func stackPush(_ value: Value) {
-		stack.push(value)
-	}
-
-	mutating func stackPop() -> Value {
-		stack.pop()
+	var currentFrame: CallFrame {
+		frames.peek()
 	}
 
 	mutating func stackDebug() {
 		if stack.isEmpty { return }
-		output.debug("\t\t\t\t\t\tStack (\(stackSize): ", terminator: "")
-		for slot in 0..<stack.count {
+		output.debug("\t\t\t\t\t\tStack (\(stack.size): ", terminator: "")
+		for slot in 0 ..< stack.size {
 			output.debug("[\(stack.peek(offset: slot).description)]", terminator: "")
 		}
 		output.debug()
 	}
 
 	public mutating func run(source: String) -> InterpretResult {
-		var compiler = Compiler(source: source)
+		let compiler = Compiler(source: source)
+
 		do {
 			try compiler.compile()
 		} catch {
 			return .compileError
 		}
 
-		var chunk = compiler.compilingChunk
-		return run(chunk: &chunk)
+		return run(function: compiler.currentFunction)
 	}
 
-	public mutating func run(chunk: inout Chunk) -> InterpretResult {
-		ip = 0
+	public mutating func run(function: Function) -> InterpretResult {
+		frames.push(CallFrame(function: function, stack: stack, offset: 0))
 
 		#if DEBUGGING
 			output.debug(Disassembler<Output>.header)
 		#endif
 
 		while true {
-			#if DEBUGGING
-				var disassembler = Disassembler(output: output)
-				disassembler.report(byte: ip, in: chunk)
-				stackDebug()
-			#endif
-
-			let byte = readByte(in: chunk)
+			let byte = readByte()
 			guard let opcode = Opcode(rawValue: byte) else {
 				print("Unknown opcode: \(byte)")
 				return .runtimeError
@@ -135,73 +90,85 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 			switch opcode {
 			case .return:
-				if stackSize != 0 {
-					output.print("Warning: Stack left at \(stackSize)")
+				let result: Value? = stack.isEmpty ? nil : stack.pop()
+				let discard = frames.pop()
+
+				if frames.isEmpty {
+					return .ok
 				}
 
-				return .ok
+				// Discard slots that were used for passing arguments and params
+				// and locals
+				for _ in 0 ..< discard.offset {
+					_ = stack.pop()
+				}
+
+				// Append the return value
+				if let result {
+					stack.push(result)
+				}
 			case .negate:
-				stackPush(-stackPop())
+				stack.push(-stack.pop())
 			case .constant:
-				stackPush(readConstant(in: chunk))
+				stack.push(readConstant())
 			case .add:
-				let b = stackPop()
-				let a = stackPop()
-				stackPush(a + b)
+				let b = stack.pop()
+				let a = stack.pop()
+				stack.push(a + b)
 			case .subtract:
-				let b = stackPop()
-				let a = stackPop()
-				stackPush(a - b)
+				let b = stack.pop()
+				let a = stack.pop()
+				stack.push(a - b)
 			case .multiply:
-				let b = stackPop()
-				let a = stackPop()
-				stackPush(a * b)
+				let b = stack.pop()
+				let a = stack.pop()
+				stack.push(a * b)
 			case .divide:
-				let b = stackPop()
-				let a = stackPop()
-				stackPush(a / b)
+				let b = stack.pop()
+				let a = stack.pop()
+				stack.push(a / b)
 			case .less:
-				let b = stackPop()
-				let a = stackPop()
-				stackPush(a < b)
+				let b = stack.pop()
+				let a = stack.pop()
+				stack.push(a < b)
 			case .greater:
-				let b = stackPop()
-				let a = stackPop()
-				stackPush(a > b)
+				let b = stack.pop()
+				let a = stack.pop()
+				stack.push(a > b)
 			case .nil:
-				stackPush(.nil)
+				stack.push(.nil)
 			case .true:
-				stackPush(.bool(true))
+				stack.push(.bool(true))
 			case .false:
-				stackPush(.bool(false))
+				stack.push(.bool(false))
 			case .not:
-				stackPush(stackPop().not())
+				stack.push(stack.pop().not())
 			case .equal:
-				let a = stackPop()
-				let b = stackPop()
-				stackPush(.bool(a == b))
+				let a = stack.pop()
+				let b = stack.pop()
+				stack.push(.bool(a == b))
 			case .notEqual:
-				let a = stackPop()
-				let b = stackPop()
-				stackPush(.bool(a != b))
+				let a = stack.pop()
+				let b = stack.pop()
+				stack.push(.bool(a != b))
 			case .pop:
-				_ = stackPop()
+				_ = stack.pop()
 			case .print:
-				output.print(stackPop().description)
+				output.print(stack.pop().description)
 			case .defineGlobal:
-				let name = chunk.constants.read(byte: readByte(in: chunk)).as(String.self)
+				let name = chunk.constants.read(byte: readByte()).as(String.self)
 				globals[name] = peek()
-				_ = stackPop()
+				_ = stack.pop()
 			case .getGlobal:
-				let name = readString(in: chunk)
+				let name = readString()
 				guard let value = globals[name] else {
 					output.debug("Undefined variable '\(name)' \(globals.debugDescription)")
 					output.print("Error: Undefined variable '\(name)'")
 					return .runtimeError
 				}
-				stackPush(value)
+				stack.push(value)
 			case .setGlobal:
-				let name = chunk.constants.read(byte: readByte(in: chunk)).as(String.self)
+				let name = chunk.constants.read(byte: readByte()).as(String.self)
 				if globals[name] == nil {
 					runtimeError("Undefined variable \(name).")
 					return .runtimeError
@@ -209,30 +176,69 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 				globals[name] = peek()
 			case .getLocal:
-				let slot = readByte(in: chunk)
-				stackPush(stack[Int(slot)])
+				let slot = readByte()
+				stack.push(
+					currentFrame.stack[Int(slot)]
+				)
 			case .setLocal:
-				let slot = readByte(in: chunk)
-				stack[Int(slot)] = peek()
+				let slot = readByte()
+				currentFrame.stack[Int(slot)] = peek()
 			case .uninitialized:
 				runtimeError("Unitialized instruction cannot be run: \(peek().description)")
 			case .jump:
-				let offset = readShort(in: chunk)
-				ip += Int(offset)
+				let offset = readShort()
+				currentFrame.ip += Int(offset)
 			case .jumpIfFalse:
-				let offset = readShort(in: chunk)
+				let offset = readShort()
 				let isTrue = peek().as(Bool.self)
 				if !isTrue {
-					ip += Int(offset)
+					currentFrame.ip += Int(offset)
 				}
 			case .loop:
-				let offset = readShort(in: chunk)
-				ip -= Int(offset)
+				let offset = readShort()
+				currentFrame.ip -= Int(offset)
+			case .call:
+				let argCount = readByte()
+				if !callValue(peek(argCount), argCount) {
+					return .runtimeError
+				}
 			}
+
+			#if DEBUGGING
+				var disassembler = Disassembler(output: output)
+				disassembler.report(byte: ip, in: currentFrame.function.chunk)
+				stackDebug()
+			#endif
 		}
 	}
 
-	mutating func readShort(in chunk: borrowing Chunk) -> UInt16 {
+	mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
+		switch callee {
+		case let .function(function):
+			return call(function, argCount: argCount)
+		default:
+			runtimeError("\(callee) not callable")
+			return false // Non-callable type
+		}
+	}
+
+	mutating func call(_ function: Function, argCount: Byte) -> Bool {
+		if argCount != function.arity {
+			runtimeError("Expected \(function.arity) arguments, got \(argCount)")
+			return false
+		}
+
+		if frames.size > 255 {
+			runtimeError("Stack level too deep")
+			return false
+		}
+
+		let frame = CallFrame(function: function, stack: stack, offset: stack.size - Int(argCount) - 1)
+		frames.push(frame)
+		return true
+	}
+
+	mutating func readShort() -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
 		ip += 2
 
@@ -244,20 +250,24 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		return UInt16((a << 8) | b)
 	}
 
-	mutating func readString(in chunk: borrowing Chunk) -> String {
-		return chunk.constants.read(byte: readByte(in: chunk)).as(String.self)
+	mutating func readString() -> String {
+		return chunk.constants.read(byte: readByte()).as(String.self)
 	}
 
-	mutating func readConstant(in chunk: borrowing Chunk) -> Value {
-		chunk.constants[Int(readByte(in: chunk))]
+	mutating func readConstant() -> Value {
+		chunk.constants[Int(readByte())]
 	}
 
-	mutating func readByte(in chunk: borrowing Chunk) -> Byte {
+	mutating func readByte() -> Byte {
 		defer {
 			ip += 1
 		}
 
 		return chunk.code[ip]
+	}
+
+	func peek(_ offset: Byte) -> Value {
+		stack.peek(offset: Int(offset))
 	}
 
 	func peek(_ offset: Int = 0) -> Value {
@@ -266,5 +276,19 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	func runtimeError(_ message: String) {
 		output.print("Runtime Error: \(message)")
+
+		var i = frames.size - 1
+		while i >= 0 {
+			let frame = frames[i]
+			let function = frame.function
+			let instruction = function.chunk.code[ip]
+			output.print("[line \(function.chunk.lines[Int(instruction)])] in \(function.name)()")
+		}
+
+		stack.reset()
+	}
+
+	var chunk: Chunk {
+		currentFrame.function.chunk
 	}
 }
