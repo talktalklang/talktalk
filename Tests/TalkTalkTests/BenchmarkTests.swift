@@ -9,7 +9,31 @@ import Testing
 import Foundation
 
 struct BenchmarkTests {
-	@Test("Test basics") func basics() {
+	@Test("Test compile time") func compile() {
+		let source = """
+		var i = 0;
+		var s = "here's a string";
+		var d = "and another string????????";
+		var b = s + d;
+
+		while i < 100 {
+			b = b + d;
+			i = i + 1;
+		}
+		"""
+
+		let t = ContinuousClock().measure {
+			for _ in 0..<50000 {
+				var compiler = Compiler(source: source)
+				try! compiler.compile()
+			}
+		}
+
+		print("Took \(t) sec.")
+		#expect(t < .seconds(10))
+	}
+
+	@Test("Test execution time") func basics() {
 		let source = """
 		var i = 0;
 		var s = "here's a string";
