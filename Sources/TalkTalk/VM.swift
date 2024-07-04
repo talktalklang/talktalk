@@ -217,7 +217,7 @@ public struct VM<Output: OutputCollector> {
 			return false
 		}
 
-		let frame = CallFrame(function: function, stack: stack, offset: stack.size - Int(argCount) - 1)
+		let frame = CallFrame(function: function, stack: stack, offset: stack.size - Int(argCount))
 		frames.push(frame)
 		return true
 	}

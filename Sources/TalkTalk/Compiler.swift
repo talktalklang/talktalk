@@ -128,6 +128,8 @@ public class Compiler {
 	func statement() {
 		if parser.match(.print) {
 			printStatement()
+		} else if parser.match(.return) {
+			returnStatement()
 		} else if parser.match(.if) {
 			ifStatement()
 		} else if parser.match(.while) {
@@ -203,6 +205,17 @@ public class Compiler {
 		expression()
 		parser.consume(.semicolon, "Expected ';' after value.")
 		emit(.print)
+	}
+
+	func returnStatement() {
+		if parser.match(.semicolon) {
+			emit(.nil)
+			emit(.return)
+		} else {
+			expression()
+			parser.consume(.semicolon, "Expected ';' after return value")
+			emit(.return)
+		}
 	}
 
 	func ifStatement() {

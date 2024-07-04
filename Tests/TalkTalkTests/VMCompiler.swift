@@ -297,4 +297,20 @@ actor CompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup\n")
 	}
+
+	@Test("Function Returns") func functionReturns() {
+		let output = TestOutput()
+		let source = """
+		func greet(name) {
+			return "sup, " + name;
+
+			print "don't show up.";
+		}
+
+		print greet("pat");
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "sup, pat\n")
+	}
 }
