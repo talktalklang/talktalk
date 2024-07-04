@@ -313,4 +313,13 @@ actor CompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup, pat\n")
 	}
+
+	@Test("Top level returns are a no no") func topLevelReturns() {
+		let output = TestOutput()
+		let source = """
+		return "nope"
+		"""
+
+		#expect(VM.run(source: source, output: output) == .compileError)
+	}
 }

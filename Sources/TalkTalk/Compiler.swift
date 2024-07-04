@@ -61,7 +61,7 @@ public class Compiler {
 
 	public init(source: String) {
 		self.parser = Parser(lexer: Lexer(source: source))
-		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "main")
+		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
 	}
 
 	var compilingChunk: Chunk {
@@ -208,6 +208,10 @@ public class Compiler {
 	}
 
 	func returnStatement() {
+		if currentFunction.kind == .main {
+			error("Cannot return from top level", at: parser.previous)
+		}
+
 		if parser.match(.semicolon) {
 			emit(.nil)
 			emit(.return)

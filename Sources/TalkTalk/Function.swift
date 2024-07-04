@@ -6,7 +6,7 @@
 //
 public class Function: Equatable, Hashable {
 	public enum Kind {
-		case function, script
+		case function, main
 	}
 
 	public static func == (_: Function, _: Function) -> Bool {
@@ -16,11 +16,13 @@ public class Function: Equatable, Hashable {
 	var arity: Int
 	let chunk: Chunk
 	var name: String
+	var kind: Kind
 
-	init(arity: Int, chunk: Chunk, name: String) {
+	init(arity: Int, chunk: Chunk, name: String, kind: Kind = .function) {
 		self.arity = arity
 		self.chunk = chunk
 		self.name = name
+		self.kind = kind
 	}
 
 	public func hash(into hasher: inout Swift.Hasher) {
