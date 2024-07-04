@@ -101,7 +101,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		ip = chunk.code.storage
 
 		#if DEBUGGING
-		output.debug(Disassembler<Output>.header)
+			output.debug(Disassembler<Output>.header)
 		#endif
 
 		while true {

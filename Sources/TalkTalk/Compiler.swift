@@ -478,8 +478,8 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func uint16ToBytes(_ uint16: Int) -> (Byte, Byte) {
-		let a = (uint16 >> 8) & 0xff
-		let b = (uint16 & 0xff)
+		let a = (uint16 >> 8) & 0xFF
+		let b = (uint16 & 0xFF)
 
 		return (Byte(a), Byte(b))
 	}
