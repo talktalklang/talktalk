@@ -41,6 +41,7 @@ let package = Package(
 			name: "TalkTalk",
 			swiftSettings: [
 				.define("DEBUGGING", .when(configuration: .debug)),
+				.enableUpcomingFeature("StrictConcurrency")
 			]
 		),
 		.testTarget(

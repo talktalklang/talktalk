@@ -283,6 +283,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 			let function = frame.function
 			let instruction = function.chunk.code[ip]
 			output.print("[line \(function.chunk.lines[Int(instruction)])] in \(function.name)()")
+			i -= 1
 		}
 
 		stack.reset()

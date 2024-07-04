@@ -52,7 +52,7 @@ actor CompilerTests {
 			group.addTask {
 				for _ in 0 ..< 100 {
 					let source = "print 1 + -2;"
-					var compiler = Compiler(source: source)
+					let compiler = Compiler(source: source)
 					try! compiler.compile()
 
 					let output = TestOutput()
@@ -112,7 +112,7 @@ actor CompilerTests {
 		let source = """
 		print "hello world";
 		"""
-		var compiler = Compiler(source: source)
+		let compiler = Compiler(source: source)
 		try! compiler.compile()
 
 		var vm = VM(output: output)
