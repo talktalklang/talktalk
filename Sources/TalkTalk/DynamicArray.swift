@@ -26,7 +26,7 @@ struct DynamicArray<T>: ~Copyable {
 			grow()
 		}
 
-		storage.advanced(by: count).pointee = value
+		storage.advanced(by: count).initialize(to: value)
 		count += 1
 
 		return count - 1
@@ -40,7 +40,7 @@ struct DynamicArray<T>: ~Copyable {
 		let newCapacity = capacity < 1 ? 1 : capacity * 2
 
 		let newPointer = UnsafeMutablePointer<T>.allocate(capacity: newCapacity)
-		newPointer.moveInitialize(from: storage, count: count)
+		newPointer.initialize(from: storage, count: count)
 
 		storage.deallocate()
 		storage = newPointer

@@ -51,6 +51,7 @@ enum Value: Equatable, Hashable {
 
 	static func string(lhs: HeapValue<Character>, rhs: HeapValue<Character>) -> Value {
 		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: lhs.length + rhs.length)
+		pointer.initialize(repeating: "0", count: lhs.length + rhs.length)
 		var hasher = Hasher()
 
 		for i in 0 ..< lhs.length {
