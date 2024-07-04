@@ -37,13 +37,7 @@ enum Value: Equatable, Hashable {
 		case .nil:
 			fatalError("Attempted to use nil hash key")
 		case var .number(double):
-			var hasher = Hasher()
-			withUnsafeBytes(of: &double) {
-				for i in $0 {
-					hasher.combine(Int(i))
-				}
-			}
-			return abs(hasher.value)
+			return abs(double.hashValue)
 		case let .string(heapValue):
 			return Int(heapValue.hashValue)
 		}
@@ -51,6 +45,7 @@ enum Value: Equatable, Hashable {
 
 	static func string(lhs: HeapValue<Character>, rhs: HeapValue<Character>) -> Value {
 		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: lhs.length + rhs.length)
+		pointer.initialize(repeating: "0", count: lhs.length + rhs.length)
 		var hasher = Hasher()
 
 		for i in 0 ..< lhs.length {

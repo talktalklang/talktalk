@@ -22,7 +22,7 @@ class TestOutput: OutputCollector {
 	var debugOut: String = ""
 }
 
-struct CompilerTests {
+actor CompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
