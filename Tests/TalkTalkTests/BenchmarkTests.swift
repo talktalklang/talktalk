@@ -24,7 +24,7 @@ struct BenchmarkTests {
 
 		let t = ContinuousClock().measure {
 			for _ in 0 ..< 5000 {
-				var compiler = Compiler(source: source)
+				let compiler = Compiler(source: source)
 				try! compiler.compile()
 			}
 		}

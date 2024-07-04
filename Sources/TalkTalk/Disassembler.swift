@@ -27,17 +27,19 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		"POS\t\tLINE\tOPERATION"
 	}
 
-	static func report(chunk: borrowing Chunk, output: Output) {
-		var diassembler = Disassembler(output: output)
+	static func report(chunk: borrowing Chunk, nest: Int, output: Output) {
+		var diassembler = Disassembler(nest: nest, output: output)
 		diassembler.report(chunk: chunk)
 	}
 
 	var name = ""
+	let nest: Int
 	var instructions: [Instruction] = []
 	var output: Output
 
-	init(name: String = "", output: Output) {
+	init(name: String = "", nest: Int, output: Output) {
 		self.name = name
+		self.nest = nest
 		self.output = output
 	}
 
@@ -72,6 +74,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		switch opcode {
 		case .constant:
 			return constantInstruction("OP_CONSTANT", chunk: chunk, offset: offset, line: line, isSameLine: isSameLine)
+		case .defineGlobal:
+			return constantInstruction("OP_DEFINE_GLOBAL", chunk: chunk, offset: offset, line: line, isSameLine: isSameLine)
 		case .return:
 			return simpleInstruction("OP_RETURN", offset: offset, line: line, isSameLine: isSameLine)
 		case .negate:

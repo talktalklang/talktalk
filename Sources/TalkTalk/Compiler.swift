@@ -61,7 +61,7 @@ public class Compiler {
 
 	public init(source: String) {
 		self.parser = Parser(lexer: Lexer(source: source))
-		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "")
+		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "main")
 	}
 
 	var compilingChunk: Chunk {
@@ -82,6 +82,7 @@ public class Compiler {
 		}
 
 		if errors.isEmpty {
+			emit(.nil)
 			emit(.return)
 			return
 		}
@@ -161,6 +162,8 @@ public class Compiler {
 		compiler.parser.consume(.rightParen, "Expected ')' after function parameters")
 		compiler.parser.consume(.leftBrace, "Expected '{' before function body")
 		compiler.block()
+
+		compiler.emit(.nil)
 		compiler.emit(.return)
 
 		emit(constant: .function(compiler.currentFunction))

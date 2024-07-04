@@ -11,7 +11,7 @@ public enum InterpretResult {
 	     runtimeError
 }
 
-public struct VM<Output: OutputCollector>: ~Copyable {
+public struct VM<Output: OutputCollector> {
 	var output: Output
 	var stack = Stack<Value>()
 	var frames = Stack<CallFrame>()
@@ -39,20 +39,6 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		stack.reset()
 	}
 
-	var ip: Int {
-		get {
-			currentFrame.ip
-		}
-
-		set {
-			currentFrame.ip = newValue
-		}
-	}
-
-	var currentFrame: CallFrame {
-		frames.peek()
-	}
-
 	mutating func stackDebug() {
 		if stack.isEmpty { return }
 		output.debug("\t\t\t\t\t\tStack (\(stack.size): ", terminator: "")
@@ -76,9 +62,13 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	public mutating func run(function: Function) -> InterpretResult {
 		frames.push(CallFrame(function: function, stack: stack, offset: 0))
+//		stack.push(.function(function))
 
 		#if DEBUGGING
 			output.debug(Disassembler<Output>.header)
+			var disassembler = Disassembler(nest: frames.size, output: output)
+			disassembler.report(byte: ip, in: currentFrame.function.chunk)
+			stackDebug()
 		#endif
 
 		while true {
@@ -90,8 +80,9 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 			switch opcode {
 			case .return:
-				let result: Value? = stack.isEmpty ? nil : stack.pop()
 				let discard = frames.pop()
+
+				let result = stack.pop()
 
 				if frames.isEmpty {
 					return .ok
@@ -100,13 +91,12 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				// Discard slots that were used for passing arguments and params
 				// and locals
 				for _ in 0 ..< discard.offset {
-					_ = stack.pop()
+					let popped = stack.pop()
+					print("return popped: \(popped)")
 				}
 
 				// Append the return value
-				if let result {
-					stack.push(result)
-				}
+				stack.push(result)
 			case .negate:
 				stack.push(-stack.pop())
 			case .constant:
@@ -203,12 +193,6 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 					return .runtimeError
 				}
 			}
-
-			#if DEBUGGING
-				var disassembler = Disassembler(output: output)
-				disassembler.report(byte: ip, in: currentFrame.function.chunk)
-				stackDebug()
-			#endif
 		}
 	}
 
@@ -281,7 +265,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 		while i >= 0 {
 			let frame = frames[i]
 			let function = frame.function
-			let instruction = function.chunk.code[ip]
+			let instruction = function.chunk.code[ip - 1]
 			output.print("[line \(function.chunk.lines[Int(instruction)])] in \(function.name)()")
 			i -= 1
 		}
@@ -291,5 +275,19 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	var chunk: Chunk {
 		currentFrame.function.chunk
+	}
+
+	var ip: Int {
+		get {
+			currentFrame.ip
+		}
+
+		set {
+			currentFrame.ip = newValue
+		}
+	}
+
+	var currentFrame: CallFrame {
+		frames.peek()
 	}
 }

@@ -4,7 +4,7 @@ import Testing
 struct LexerTests {
 	@Test("Lexing Basic") func lex() {
 		let source = "+"
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 1, kind: .plus, line: 1),
 			Token(start: source.count, length: 0, kind: .eof, line: 1),
@@ -13,7 +13,7 @@ struct LexerTests {
 
 	@Test("Lexing multiple") func lex2() {
 		let source = "+ >="
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 1, kind: .plus, line: 1),
 			Token(start: 2, length: 2, kind: .greaterEqual, line: 1),
@@ -40,7 +40,7 @@ struct LexerTests {
 		+ >=
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 21, length: 1, kind: .plus, line: 2),
 			Token(start: 23, length: 2, kind: .greaterEqual, line: 2),
@@ -53,7 +53,7 @@ struct LexerTests {
 		1 / 2
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 1, kind: .number, line: 1),
 			Token(start: 2, length: 1, kind: .slash, line: 1),
@@ -67,7 +67,7 @@ struct LexerTests {
 		"hello world"
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 
 		let tokens = lexer.collect()
 
@@ -82,7 +82,7 @@ struct LexerTests {
 		1 1.2
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 
 		let tokens = lexer.collect()
 
@@ -98,7 +98,7 @@ struct LexerTests {
 		variable
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 8, kind: .identifier, line: 1),
 			Token(start: source.count, length: 0, kind: .eof, line: 1),
@@ -110,7 +110,7 @@ struct LexerTests {
 		v
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 1, kind: .identifier, line: 1),
 			Token(start: source.count, length: 0, kind: .eof, line: 1),
@@ -122,7 +122,7 @@ struct LexerTests {
 		var
 		"""
 
-		var lexer = Lexer(source: source)
+		let lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 3, kind: .var, line: 1),
 			Token(start: source.count, length: 0, kind: .eof, line: 1),

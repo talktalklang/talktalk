@@ -295,7 +295,6 @@ actor CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		print(output.stdout)
-//		#expect(output.stdout == "sup\n")
+		#expect(output.stdout == "sup\n")
 	}
 }
