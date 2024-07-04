@@ -4,12 +4,6 @@
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
-#if canImport(Glibc)
-	import Glibc
-#elseif canImport(Foundation)
-	import Foundation
-#endif
-
 struct Disassembler<Output: OutputCollector>: ~Copyable {
 	struct Instruction {
 		var offset: Int

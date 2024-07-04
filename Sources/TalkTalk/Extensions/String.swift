@@ -17,3 +17,17 @@ extension String {
 		self[index(at: range.lowerBound) ..< index(at: range.upperBound)]
 	}
 }
+
+#if canImport(Glibc)
+import Glibc
+
+extension String {
+	init(format: String, _ arguments: CVarArg...) {
+		withVaList(arguments) {
+			vprintf(format, $0)
+		}
+	}
+}
+#elseif canImport(Foundation)
+import Foundation
+#endif
