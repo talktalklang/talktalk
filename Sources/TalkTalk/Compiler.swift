@@ -325,6 +325,7 @@ public struct Compiler: ~Copyable {
 		// _We_ want to be the ones to allocate and copy the string
 		// from the source file to the heap... for learning.
 		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: length)
+		pointer.initialize(repeating: "0", count: length)
 
 		let source = ContiguousArray(parser.lexer.source)
 

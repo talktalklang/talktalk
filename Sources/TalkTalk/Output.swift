@@ -38,12 +38,4 @@ public extension OutputCollector {
 	func print(_ output: String) {
 		self.print(output, terminator: "\n")
 	}
-
-	func printf(_ string: String, _ args: CVarArg...) {
-		self.print(String(format: string, args), terminator: "")
-	}
-
-	func print(format string: String, _ args: CVarArg...) {
-		self.print(String(format: string, args))
-	}
 }

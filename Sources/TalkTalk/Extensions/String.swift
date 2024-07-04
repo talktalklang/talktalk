@@ -18,22 +18,4 @@ extension String {
 	}
 }
 
-#if canImport(Glibc)
-import Glibc
-
-extension String {
-	init(format: String, _ arguments: CVarArg...) {
-		let buffer = UnsafeMutablePointer<CChar>.allocate(capacity: 1024)
-		defer {
-			buffer.deallocate()
-		}
-		withVaList(arguments) { pointer in
-			vsnprintf(buffer, 1024, format, pointer)
-		}
-		self = String(cString: buffer)
-	}
-}
-
-#elseif canImport(Foundation)
 import Foundation
-#endif
