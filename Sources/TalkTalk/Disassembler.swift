@@ -41,8 +41,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		self.output = output
 	}
 
-	mutating func report(byte: UnsafeMutablePointer<Byte>, in chunk: borrowing Chunk) {
-		_ = disassembleInstruction(chunk: chunk, offset: byte - chunk.code.storage)
+	mutating func report(byte: Int, in chunk: borrowing Chunk) {
+		_ = disassembleInstruction(chunk: chunk, offset: byte)
 
 		for instruction in instructions {
 			output.debug(instruction.description)
@@ -63,10 +63,10 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func disassembleInstruction(chunk: borrowing Chunk, offset: Int) -> Int {
-		let instruction = chunk.code.storage.advanced(by: offset).pointee
-		let line = chunk.lines.storage.advanced(by: offset).pointee
+		let instruction = chunk.code[offset]
+		let line = chunk.lines[offset]
 
-		let isSameLine = offset > 0 && line == chunk.lines.storage.advanced(by: offset - 1).pointee
+		let isSameLine = offset > 0 && line == chunk.lines[offset-1]
 		let opcode = Opcode(rawValue: instruction)
 
 		switch opcode {
@@ -103,8 +103,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: Int, isSameLine: Bool) -> Int {
-		let constant = chunk.code.storage.advanced(by: offset + 1).pointee
-		let value = chunk.constants.storage.advanced(by: Int(constant)).pointee
+		let constant = Int(chunk.code[offset + 1])
+		let value = chunk.constants[constant]
 
 		append(
 			Instruction(
@@ -120,8 +120,8 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	}
 
 	mutating func jumpInstruction(_ label: String, chunk: borrowing Chunk, sign: Int, offset: Int, line: Int, isSameLine: Bool) -> Int {
-		var jump = chunk.code.storage.advanced(by: offset + 1).pointee << 8
-		jump |= chunk.code.storage.advanced(by: offset + 2).pointee
+		var jump = chunk.code[offset + 1] << 8
+		jump |= chunk.code[offset + 2]
 
 		append(
 			Instruction(

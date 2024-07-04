@@ -321,33 +321,7 @@ public struct Compiler: ~Copyable {
 		// Get rid of start/end quotes
 		let start = parser.previous.start + 1
 		let length = parser.previous.length - 2
-
-		// _We_ want to be the ones to allocate and copy the string
-		// from the source file to the heap... for learning.
-		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: length)
-		pointer.initialize(repeating: "0", count: length)
-
-		let source = ContiguousArray(parser.lexer.source)
-
-		// Calculate the hash value while we're copying characters anyway
-		var hasher = Hasher() //
-
-		// This might not be right?
-		source[start ..< (start + length)].withUnsafeBufferPointer {
-			for i in 0 ..< length {
-				pointer[i] = $0[i]
-				hasher.combine($0[i])
-			}
-		}
-
-		// Trying to keep C semantics in swift is goin' great, pat.
-		let heapValue = HeapValue<Character>(
-			pointer: pointer,
-			length: length,
-			hashValue: hasher.value
-		)
-
-		let value = Value.string(heapValue)
+		let value = Value.string(String(source[start..<start+length]))
 		emit(constant: value)
 	}
 
@@ -440,7 +414,7 @@ public struct Compiler: ~Copyable {
 	}
 
 	mutating func identifierConstant(_ token: Token) -> Byte {
-		let value = Value.string(token.lexeme(in: source))
+		let value = Value.string(String(token.lexeme(in: source)))
 		return compilingChunk.write(constant: value)
 	}
 

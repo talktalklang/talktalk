@@ -48,7 +48,7 @@ struct BenchmarkTests {
 
 		let output = TestOutput()
 		let t = ContinuousClock().measure {
-			for _ in 0..<25 {
+			for _ in 0..<500 {
 				_ = VM.run(source: source, output: output)
 			}
 		}

@@ -11,11 +11,48 @@ public enum InterpretResult {
 	     runtimeError
 }
 
+struct Stack: ~Copyable {
+	var count = 0
+	private var storage: [Value] = []
+
+	subscript(_ offset: Int) -> Value {
+		get {
+			storage[offset]
+		}
+
+		set {
+			storage[offset] = newValue
+		}
+	}
+
+	var isEmpty: Bool {
+		count == 0
+	}
+
+	func peek(offset: Int = 0) -> Value {
+		storage[count - 1 - offset]
+	}
+
+	mutating func push(_ value: Value) {
+		storage.append(value)
+		count += 1
+	}
+
+	mutating func pop() -> Value {
+		count -= 1
+		return storage.removeLast()
+	}
+
+	mutating func reset() {
+		count = 0
+		storage = []
+	}
+}
+
 public struct VM<Output: OutputCollector>: ~Copyable {
 	var output: Output
-	var ip: UnsafeMutablePointer<Byte>
-	var stack: UnsafeMutablePointer<Value>
-	var stackTop: UnsafeMutablePointer<Value>
+	var ip: Int = 0
+	var stack = Stack()
 	var globals: [String: Value] = [:]
 
 	static func run(source: String, output: Output) -> InterpretResult {
@@ -37,50 +74,29 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
-		self.stack = UnsafeMutablePointer<Value>.allocate(capacity: 256)
-		stack.initialize(repeating: .nil, count: 256)
-		self.stackTop = UnsafeMutablePointer<Value>(stack)
-		stackTop.initialize(repeating: .nil, count: 256)
-
-		// Placeholder
-		self.ip = .allocate(capacity: 0)
 	}
 
 	mutating func initVM() {
-		stackReset()
-	}
-
-	mutating func stackReset() {
-		stackTop = UnsafeMutablePointer<Value>(stack)
+		stack.reset()
 	}
 
 	var stackSize: Int {
-		stackTop - stack
+		stack.count
 	}
 
 	mutating func stackPush(_ value: Value) {
-		if stackTop - stack >= 256 {
-			fatalError("Stack level too deep.") // TODO: Just grow the stack babyyyyy
-		}
-
-		stackTop.pointee = value
-		stackTop += 1
+		stack.push(value)
 	}
 
 	mutating func stackPop() -> Value {
-		stackTop -= 1
-		return stackTop.pointee
+		stack.pop()
 	}
 
 	mutating func stackDebug() {
-		if stack == stackTop { return }
+		if stack.isEmpty { return }
 		output.debug("\t\t\t\t\t\tStack (\(stackSize): ", terminator: "")
-		if stack < stackTop {
-			for slot in stack ..< stackTop {
-				output.debug("[\(slot.pointee.description)]", terminator: "")
-			}
-		} else {
-			output.print("Stack is in invalid state.")
+		for slot in 0..<stack.count {
+			output.debug("[\(stack.peek(offset: slot).description)]", terminator: "")
 		}
 		output.debug()
 	}
@@ -98,7 +114,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 	}
 
 	public mutating func run(chunk: inout Chunk) -> InterpretResult {
-		ip = chunk.code.storage
+		ip = 0
 
 		#if DEBUGGING
 			output.debug(Disassembler<Output>.header)
@@ -111,7 +127,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				stackDebug()
 			#endif
 
-			let byte = readByte()
+			let byte = readByte(in: chunk)
 			guard let opcode = Opcode(rawValue: byte) else {
 				print("Unknown opcode: \(byte)")
 				return .runtimeError
@@ -173,7 +189,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 			case .print:
 				output.print(stackPop().description)
 			case .defineGlobal:
-				let name = chunk.constants.read(byte: readByte()).as(String.self)
+				let name = chunk.constants.read(byte: readByte(in: chunk)).as(String.self)
 				globals[name] = peek()
 				_ = stackPop()
 			case .getGlobal:
@@ -185,7 +201,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 				}
 				stackPush(value)
 			case .setGlobal:
-				let name = chunk.constants.read(byte: readByte()).as(String.self)
+				let name = chunk.constants.read(byte: readByte(in: chunk)).as(String.self)
 				if globals[name] == nil {
 					runtimeError("Undefined variable \(name).")
 					return .runtimeError
@@ -193,65 +209,62 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 				globals[name] = peek()
 			case .getLocal:
-				let slot = readByte()
+				let slot = readByte(in: chunk)
 				stackPush(stack[Int(slot)])
 			case .setLocal:
-				let slot = readByte()
+				let slot = readByte(in: chunk)
 				stack[Int(slot)] = peek()
 			case .uninitialized:
 				runtimeError("Unitialized instruction cannot be run: \(peek().description)")
 			case .jump:
-				let offset = readShort()
+				let offset = readShort(in: chunk)
 				ip += Int(offset)
 			case .jumpIfFalse:
-				let offset = readShort()
+				let offset = readShort(in: chunk)
 				let isTrue = peek().as(Bool.self)
 				if !isTrue {
 					ip += Int(offset)
 				}
 			case .loop:
-				let offset = readShort()
+				let offset = readShort(in: chunk)
 				ip -= Int(offset)
 			}
 		}
 	}
 
-	mutating func readShort() -> UInt16 {
+	mutating func readShort(in chunk: borrowing Chunk) -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
 		ip += 2
 
+		let a = chunk.code[ip - 2]
+		let b = chunk.code[ip - 1]
+
 		// Grab those two bytes from the chunk's code and build
 		// a 16 bit (two byte, nice) unsigned int.
-		return UInt16((ip.advanced(by: -2).pointee << 8) | ip.advanced(by: -1).pointee)
+		return UInt16((a << 8) | b)
 	}
 
 	mutating func readString(in chunk: borrowing Chunk) -> String {
-		return chunk.constants.read(byte: readByte()).as(String.self)
+		return chunk.constants.read(byte: readByte(in: chunk)).as(String.self)
 	}
 
 	mutating func readConstant(in chunk: borrowing Chunk) -> Value {
-		(chunk.constants.storage + UnsafeMutablePointer<Value>.Stride(readByte())).pointee
+		chunk.constants[Int(readByte(in: chunk))]
 	}
 
-	mutating func readByte() -> Byte {
+	mutating func readByte(in chunk: borrowing Chunk) -> Byte {
 		defer {
-			ip = ip.successor()
+			ip += 1
 		}
 
-		return ip.pointee
+		return chunk.code[ip]
 	}
 
 	func peek(_ offset: Int = 0) -> Value {
-		(stackTop + offset - 1).pointee
+		stack.peek(offset: offset)
 	}
 
 	func runtimeError(_ message: String) {
 		output.print("Runtime Error: \(message)")
-	}
-
-	deinit {
-		// I don't think I have to deallocate stackTop since it only
-		// refers to memory contained in stack? Same with ip?
-		stack.deallocate()
 	}
 }
