@@ -74,7 +74,7 @@ public struct VM<Output: OutputCollector>: ~Copyable {
 
 	mutating func stackDebug() {
 		if stack == stackTop { return }
-		output.debug("\t\t\t\t\t\tStack: ", terminator: "")
+		output.debug("\t\t\t\t\t\tStack (\(stackSize): ", terminator: "")
 		if stack < stackTop {
 			for slot in stack ..< stackTop {
 				output.debug("[\(slot.pointee.description)]", terminator: "")
