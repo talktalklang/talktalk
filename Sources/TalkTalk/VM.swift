@@ -33,6 +33,11 @@ public struct VM<Output: OutputCollector> {
 
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
+
+		let nativeEnvironment = NativeEnvironment(output: output)
+		for (name, function) in Native.list {
+			globals[name] = .native("print")
+		}
 	}
 
 	mutating func initVM() {
@@ -92,7 +97,6 @@ public struct VM<Output: OutputCollector> {
 				// and locals
 				for _ in 0 ..< discard.offset {
 					let popped = stack.pop()
-					print("return popped: \(popped)")
 				}
 
 				// Append the return value
@@ -200,6 +204,14 @@ public struct VM<Output: OutputCollector> {
 		switch callee {
 		case let .function(function):
 			return call(function, argCount: argCount)
+		case let .native(name):
+			if let fn = Native.list[name]?.init() {
+				stack.push(fn.call(arguments: stack.pop(count: fn.arity), in: NativeEnvironment(output: output)))
+				return true
+			} else {
+				runtimeError("No native function named \(name)")
+				return false
+			}
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type

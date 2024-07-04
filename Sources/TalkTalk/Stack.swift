@@ -37,6 +37,11 @@ class Stack<Value> {
 		return storage.removeLast()
 	}
 
+	func pop(count: Int) -> [Value] {
+		size -= count
+		return (0..<count).map { _ in storage.removeLast() }
+	}
+
 	func reset() {
 		size = 0
 		storage = []

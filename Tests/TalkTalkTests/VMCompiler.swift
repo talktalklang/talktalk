@@ -25,25 +25,25 @@ class TestOutput: OutputCollector {
 actor CompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
+		#expect(VM.run(source: "print(1 + -2);", output: output) == .ok)
 		#expect(output.stdout == "-1.0\n")
 	}
 
 	@Test("Subtraction") func subtraction() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 123 - 3;", output: output) == .ok)
+		#expect(VM.run(source: "print(123 - 3);", output: output) == .ok)
 		#expect(output.stdout == "120.0\n")
 	}
 
 	@Test("Multiplication") func multiplication() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 5 * 5;", output: output) == .ok)
+		#expect(VM.run(source: "print(5 * 5);", output: output) == .ok)
 		#expect(output.stdout == "25.0\n")
 	}
 
 	@Test("Division") func dividing() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 25 / 5;", output: output) == .ok)
+		#expect(VM.run(source: "print(25 / 5);", output: output) == .ok)
 		#expect(output.stdout == "5.0\n")
 	}
 
@@ -51,7 +51,7 @@ actor CompilerTests {
 		let count = await withTaskGroup(of: Void.self) { group in
 			group.addTask {
 				for _ in 0 ..< 100 {
-					let source = "print 1 + -2;"
+					let source = "print(1 + -2);"
 					let compiler = Compiler(source: source)
 					try! compiler.compile()
 
@@ -75,42 +75,42 @@ actor CompilerTests {
 
 	@Test("Bools") func bools() {
 		var output = TestOutput()
-		#expect(VM.run(source: "print true;", output: output) == .ok)
+		#expect(VM.run(source: "print(true);", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 
 		output = TestOutput()
-		#expect(VM.run(source: "print false;", output: output) == .ok)
+		#expect(VM.run(source: "print(false);", output: output) == .ok)
 		#expect(output.stdout == "false\n")
 	}
 
 	@Test("Negation") func negation() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print !false;", output: output) == .ok)
+		#expect(VM.run(source: "print(!false);", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
 	@Test("Equality") func equality() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 2 == 2;", output: output) == .ok)
+		#expect(VM.run(source: "print(2 == 2);", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
 	@Test("Not equality") func notEquality() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 1 != 2;", output: output) == .ok)
+		#expect(VM.run(source: "print(1 != 2);", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
 	@Test("nil") func nill() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print nil;", output: output) == .ok)
+		#expect(VM.run(source: "print(nil);", output: output) == .ok)
 		#expect(output.stdout == "nil\n")
 	}
 
 	@Test("Strings") func string() {
 		let output = TestOutput()
 		let source = """
-		print "hello world";
+		print("hello world");
 		"""
 		let compiler = Compiler(source: source)
 		try! compiler.compile()
@@ -126,7 +126,7 @@ actor CompilerTests {
 		let output = TestOutput()
 		let source = """
 		var greeting = "hello world";
-		print greeting;
+		print(greeting);
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -138,7 +138,7 @@ actor CompilerTests {
 		let source = """
 		var greeting = "hello world";
 		greeting = greeting + " SUP";
-		print greeting;
+		print(greeting);
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -153,7 +153,7 @@ actor CompilerTests {
 		var c = 1;
 		var d = 1;
 
-		print a * b = c + d;
+		print(a * b = c + d);
 		"""
 
 		#expect(VM.run(source: source, output: output) == .compileError)
@@ -168,10 +168,10 @@ actor CompilerTests {
 
 			{
 				var a = "hello";
-				print a;
+				print(a);
 			}
 
-			print a;
+			print(a);
 		}
 		"""
 
@@ -187,10 +187,10 @@ actor CompilerTests {
 
 			{
 				var b = 2;
-				print a + b;
+				print(a + b);
 			}
 
-			print a + 3;
+			print(a + 3);
 		}
 		"""
 
@@ -202,11 +202,11 @@ actor CompilerTests {
 		let output = TestOutput()
 		let source = """
 		if false {
-			print "Dont show up";
+			print("Dont show up");
 		}
 
 		if true {
-			print "Do show up";
+			print("Do show up");
 		}
 		"""
 
@@ -218,9 +218,9 @@ actor CompilerTests {
 		var output = TestOutput()
 		var source = """
 		if false {
-			print "Dont show up";
+			print("Dont show up");
 		} else {
-			print "Do show up";
+			print("Do show up");
 		}
 		"""
 
@@ -230,9 +230,9 @@ actor CompilerTests {
 		output = TestOutput()
 		source = """
 		if true {
-			print "Do show up";
+			print("Do show up");
 		} else {
-			print "Dont show up";
+			print("Dont show up");
 		}
 		"""
 
@@ -242,11 +242,11 @@ actor CompilerTests {
 
 	@Test("&&") func and() {
 		var output = TestOutput()
-		#expect(VM.run(source: "print true && false;", output: output) == .ok)
+		#expect(VM.run(source: "print(true && false);", output: output) == .ok)
 		#expect(output.stdout == "false\n")
 
 		output = TestOutput()
-		#expect(VM.run(source: "print true && true;", output: output) == .ok)
+		#expect(VM.run(source: "print(true && true);", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
@@ -256,7 +256,7 @@ actor CompilerTests {
 		#expect(VM.run(source: """
 		var a = 1;
 		if a > 2 || true {
-			print "cool";
+			print("cool");
 		}
 		""", output: output) == .ok)
 		#expect(output.stdout == "cool\n")
@@ -264,7 +264,7 @@ actor CompilerTests {
 		output = TestOutput()
 		#expect(VM.run(source: """
 		if false || false {
-			print "cool"
+			print("cool");
 		}
 		""", output: output) == .ok)
 		#expect(output.stdout == "")
@@ -276,7 +276,7 @@ actor CompilerTests {
 		var a = 0;
 		while a < 3 {
 			a = a + 1;
-			print a;
+			print(a);
 		}
 		"""
 
@@ -288,11 +288,13 @@ actor CompilerTests {
 		let output = TestOutput()
 		let source = """
 		func greet() {
-			print "sup";
+			print("sup");
 		}
 
 		greet();
 		"""
+
+		print(MemoryLayout.size(ofValue: Value.bool(true)))
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup\n")
@@ -304,10 +306,10 @@ actor CompilerTests {
 		func greet(name) {
 			return "sup, " + name;
 
-			print "don't show up.";
+			print("don't show up.");
 		}
 
-		print greet("pat");
+		print(greet("pat"));
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)

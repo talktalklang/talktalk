@@ -25,13 +25,13 @@ struct Hasher {
 }
 
 class HashMap {
-	var storage: [Value: Value] = [:]
+	var storage: [Int: Value] = [:]
 
 	public func set(_ key: Value, _ value: Value) {
-		storage[key] = value
+		storage[key.hash] = value
 	}
 
 	public func get(_ key: Value) -> Value? {
-		storage[key]
+		storage[key.hash]
 	}
 }

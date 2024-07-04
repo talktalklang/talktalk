@@ -27,7 +27,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		"POS\t\tLINE\tOPERATION"
 	}
 
-	static func report(chunk: borrowing Chunk, nest: Int, output: Output) {
+	static func report(chunk: borrowing Chunk, nest: Int = 0, output: Output) {
 		var diassembler = Disassembler(nest: nest, output: output)
 		diassembler.report(chunk: chunk)
 	}
@@ -37,7 +37,7 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 	var instructions: [Instruction] = []
 	var output: Output
 
-	init(name: String = "", nest: Int, output: Output) {
+	init(name: String = "", nest: Int = 0, output: Output) {
 		self.name = name
 		self.nest = nest
 		self.output = output

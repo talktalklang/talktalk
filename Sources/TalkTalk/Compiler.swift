@@ -126,9 +126,7 @@ public class Compiler {
 	// MARK: Statements
 
 	func statement() {
-		if parser.match(.print) {
-			printStatement()
-		} else if parser.match(.return) {
+		if parser.match(.return) {
 			returnStatement()
 		} else if parser.match(.if) {
 			ifStatement()

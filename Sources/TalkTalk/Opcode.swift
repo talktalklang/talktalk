@@ -27,6 +27,7 @@ enum Opcode: Byte {
 	     jumpIfFalse,
 	     loop,
 	     call,
+//			 native,
 	     `nil`
 
 	var description: String {

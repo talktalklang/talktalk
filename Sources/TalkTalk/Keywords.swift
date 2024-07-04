@@ -61,7 +61,6 @@ extension KeywordTrie {
 		.if,
 		.nil,
 		.or,
-		.print,
 		.return,
 		.super,
 		.self,

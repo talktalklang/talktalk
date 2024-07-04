@@ -20,7 +20,7 @@ struct Token: Equatable {
 
 		// Keywords
 		case `class`, `else`, `false`, `func`, initializer, `for`, `if`, `nil`,
-		     or, print, `return`, `super`, `self`, `true`, `var`, `while`
+		     or, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case eof
 

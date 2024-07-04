@@ -44,7 +44,7 @@ public class Chunk: Hashable {
 	}
 
 	func disassemble<Output: OutputCollector>(_ name: String, to output: Output) {
-		var disassembler = Disassembler(name: name, nest: 0, output: output)
+		var disassembler = Disassembler(name: name, output: output)
 		disassembler.report(chunk: self)
 	}
 }
