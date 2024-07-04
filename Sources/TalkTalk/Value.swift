@@ -73,6 +73,7 @@ enum Value: Equatable, Hashable {
 
 	static func string(_ source: ContiguousArray<Character>) -> Value {
 		let pointer = UnsafeMutablePointer<Character>.allocate(capacity: source.count)
+		pointer.initialize(repeating: "0", count: source.count)
 
 		// This might not be right?
 		var hasher = Hasher()
