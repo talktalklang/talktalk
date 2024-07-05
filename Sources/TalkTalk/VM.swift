@@ -11,14 +11,14 @@ public enum InterpretResult {
 	     runtimeError
 }
 
-public struct VM<Output: OutputCollector> {
+public class VM<Output: OutputCollector> {
 	var output: Output
 	var stack = Stack<Value>()
 	var frames = Stack<CallFrame>()
 	var globals: [String: Value] = [:]
 
 	static func run(source: String, output: Output) -> InterpretResult {
-		var vm = VM(output: output)
+		let vm = VM(output: output)
 		let compiler = Compiler(source: source)
 
 		do {
@@ -38,11 +38,11 @@ public struct VM<Output: OutputCollector> {
 		}
 	}
 
-	mutating func initVM() {
+	func initVM() {
 		stack.reset()
 	}
 
-	mutating func stackDebug() {
+	func stackDebug() {
 		if stack.isEmpty { return }
 		output.debug("\t\t\t\t\t\tStack (\(stack.size): ", terminator: "")
 		for slot in 0 ..< stack.size {
@@ -51,7 +51,7 @@ public struct VM<Output: OutputCollector> {
 		output.debug()
 	}
 
-	public mutating func run(source: String) -> InterpretResult {
+	public func run(source: String) -> InterpretResult {
 		let compiler = Compiler(source: source)
 
 		do {
@@ -63,7 +63,8 @@ public struct VM<Output: OutputCollector> {
 		return run(function: compiler.currentFunction)
 	}
 
-	public mutating func run(function root: Function) -> InterpretResult {
+	public func run(function root: Function) -> InterpretResult {
+		stack.push(.function(root))
 		let rootClosure = Closure(function: root)
 		_ = call(rootClosure, argCount: 0)
 
@@ -72,9 +73,10 @@ public struct VM<Output: OutputCollector> {
 
 		while true {
 			#if DEBUGGING
+				stackDebug()
 				Disassembler.dump(chunk: chunk, ip: ip, into: output)
 //			disassembler.report(ip: ip)
-				stackDebug()
+
 			#endif
 
 			let byte = readByte()
@@ -149,7 +151,7 @@ public struct VM<Output: OutputCollector> {
 			case .print:
 				output.print(stack.pop().description)
 			case .defineGlobal:
-				let name = chunk.constants.read(byte: readByte()).as(String.self)
+				let name = readString()
 				globals[name] = peek()
 				_ = stack.pop()
 			case .getGlobal:
@@ -212,7 +214,7 @@ public struct VM<Output: OutputCollector> {
 				stack.push(.closure(closure))
 			case .getUpvalue:
 				let slot = readByte()
-				stack.push(currentFrame.closure.upvalues[Int(slot - 1)]!)
+				stack.push(currentFrame.closure.upvalues[Int(slot-1)]!)
 			case .setUpvalue:
 				let slot = readByte()
 				currentFrame.closure.upvalues[Int(slot)] = peek(0)
@@ -224,7 +226,7 @@ public struct VM<Output: OutputCollector> {
 		return .upvalue(local)
 	}
 
-	mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
+	func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
 		switch callee {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
@@ -243,23 +245,7 @@ public struct VM<Output: OutputCollector> {
 		}
 	}
 
-//	mutating func call(_ function: Function, argCount: Byte) -> Bool {
-//		if argCount != function.arity {
-//			runtimeError("Expected \(function.arity) arguments for \(function.name)(), got \(argCount)")
-//			return false
-//		}
-//
-//		if frames.size > 255 {
-//			runtimeError("Stack level too deep")
-//			return false
-//		}
-//
-//		let frame = CallFrame(function: function, stack: stack, offset: stack.size - Int(argCount) - 1)
-//		frames.push(frame)
-//		return true
-//	}
-
-	mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
+	func call(_ closure: Closure, argCount: Byte) -> Bool {
 		let fn = closure.function
 		if argCount != fn.arity {
 			runtimeError("Expected \(fn.arity) arguments for \(fn.name)(), got \(argCount)")
@@ -276,7 +262,7 @@ public struct VM<Output: OutputCollector> {
 		return true
 	}
 
-	mutating func readShort() -> UInt16 {
+	func readShort() -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
 		ip += 2
 
@@ -288,15 +274,15 @@ public struct VM<Output: OutputCollector> {
 		return UInt16((a << 8) | b)
 	}
 
-	mutating func readString() -> String {
+	func readString() -> String {
 		return chunk.constants.read(byte: readByte()).as(String.self)
 	}
 
-	mutating func readConstant() -> Value {
+	func readConstant() -> Value {
 		chunk.constants[Int(readByte())]
 	}
 
-	mutating func readByte() -> Byte {
+	func readByte() -> Byte {
 		defer {
 			ip += 1
 		}
@@ -312,7 +298,7 @@ public struct VM<Output: OutputCollector> {
 		stack.peek(offset: offset)
 	}
 
-	mutating func runtimeError(_ message: String) {
+	func runtimeError(_ message: String) {
 		output.print("------------------------------------------------------------------")
 		output.print("Runtime Error: \(message)")
 		output.print("------------------------------------------------------------------")

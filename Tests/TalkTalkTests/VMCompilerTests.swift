@@ -377,7 +377,7 @@ actor CompilerTests {
 	}
 
 	@Test("Closure") func closure() {
-		let output = TestOutput()
+		let output = TestOutput(debug: true)
 		let source = """
 		func outer() {
 			var x = "outside";
