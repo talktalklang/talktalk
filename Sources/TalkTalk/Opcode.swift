@@ -22,11 +22,13 @@ enum Opcode: Byte {
 	     pop,
 	     defineGlobal, getGlobal, setGlobal,
 	     getLocal, setLocal,
+			 getUpvalue, setUpvalue,
 	     jump,
 	     // If the top of the stack is false, jumps to its operand
 	     jumpIfFalse,
 	     loop,
 	     call,
+			 closure,
 //			 native,
 	     `nil`
 

@@ -6,7 +6,7 @@
 //
 
 // typealias Value = Double
-enum Value: Equatable, Hashable {
+indirect enum Value: Equatable, Hashable {
 	static func ==(lhs: Value, rhs: Value) -> Bool {
 		lhs.equals(rhs)
 	}
@@ -16,8 +16,10 @@ enum Value: Equatable, Hashable {
 			 `nil`,
 			 number(Double),
 			 string(String),
+			 closure(Closure),
 			 function(Function),
-			 native(String)
+			 native(String),
+			 upvalue(Value)
 
 	func hash(into hasher: inout Swift.Hasher) {
 		hasher.combine(hash)
@@ -58,8 +60,12 @@ enum Value: Equatable, Hashable {
 			return Int(heapValue.hashValue)
 		case let .function(function):
 			return function.chunk.hashValue
+		case let .closure(closure):
+			return closure.function.chunk.hashValue
 		case let .native(native):
 			return native.hashValue
+		case let .upvalue(value):
+			return "upvalue-\(value.hashValue)".hashValue
 		}
 	}
 
@@ -74,6 +80,16 @@ enum Value: Equatable, Hashable {
 		case is Byte.Type:
 			if case let .number(double) = self {
 				return Byte(double) as! T
+			}
+		case is Function.Type:
+			if case let .function(function) = self {
+				return function as! T
+			} else if case let .closure(closure) = self {
+				return closure.function as! T
+			}
+		case is Closure.Type:
+			if case let .closure(closure) = self {
+				return closure as! T
 			}
 		default:
 			()
@@ -96,8 +112,12 @@ enum Value: Equatable, Hashable {
 			return string
 		case let .function(function):
 			return "[func \(function.name)]"
+		case let .closure(closure):
+			return "[func(closure) \(closure.function.name)]"
 		case let .native(native):
 			return "[native \(native)]"
+		case let .upvalue(value):
+			return "[upvalue \(value.description)]"
 		}
 	}
 

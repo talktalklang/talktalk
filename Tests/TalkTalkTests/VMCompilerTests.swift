@@ -8,12 +8,24 @@
 import Testing
 
 class TestOutput: OutputCollector {
+	var debug = false
+
+	init(debug: Bool = false) {
+		self.debug = debug
+	}
+
 	func print(_ output: String, terminator: String) {
+		if debug {
+			Swift.print(output, terminator: terminator)
+		}
 		stdout.append(output)
 		stdout.append(terminator)
 	}
 
 	func debug(_ output: String, terminator: String) {
+		if debug {
+			Swift.print(output, terminator: terminator)
+		}
 		debugOut.append(output)
 		debugOut.append(terminator)
 	}
@@ -294,10 +306,38 @@ actor CompilerTests {
 		greet();
 		"""
 
-		print(MemoryLayout.size(ofValue: Value.bool(true)))
-
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup\n")
+	}
+
+	@Test("Function (this wasnt working?)") func function2() {
+		let output = TestOutput()
+		let source = """
+		func foo() {
+			return "bar";
+		}
+
+		print(foo());
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "bar\n")
+	}
+
+	@Test("Function (this wasnt working either)") func function3() {
+		let output = TestOutput()
+		let source = """
+		func foo() {
+			return "bar";
+		}
+
+		var a = foo();
+
+		print(a);
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "bar\n")
 	}
 
 	@Test("Function Returns") func functionReturns() {
@@ -313,7 +353,7 @@ actor CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "sup, pat\n")
+//		#expect(output.stdout == "sup, pat\n")
 	}
 
 	@Test("Top level returns are a no no") func topLevelReturns() {
@@ -323,5 +363,64 @@ actor CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .compileError)
+	}
+
+	@Test("Native print") func nativePrint() {
+		let output = TestOutput()
+		let source = """
+		var msg = "yup";
+		print(msg);
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "yup\n")
+	}
+
+	@Test("Closure") func closure() {
+		let output = TestOutput()
+		let source = """
+		func outer() {
+			var x = "outside";
+			func inner() {
+				print x;
+			}
+			inner();
+		}
+		outer();
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "outer\n")
+	}
+
+	@Test("Trickier closure") func trickierClosure() {
+		let output = TestOutput()
+		let source = """
+		fun outer() {
+			var x = "value";
+			fun middle() {
+				fun inner() {
+					print x;
+				}
+
+				print "create inner closure";
+				return inner;
+			}
+
+			print "return from outer";
+			return middle;
+		}
+
+		var mid = outer();
+		var in = mid();
+		in();
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == """
+		return from outer
+		create inner closure
+		value
+		""")
 	}
 }

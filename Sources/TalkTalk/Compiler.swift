@@ -38,6 +38,7 @@ public class Compiler {
 	var locals = ContiguousArray<Local?>(repeating: nil, count: 256)
 	var localCount = 1 // Reserve local count spot 0 for internal use
 	var scopeDepth = 0
+	var upvalues: [Upvalue] = []
 
 	// MARK: Debuggy
 
@@ -133,7 +134,9 @@ public class Compiler {
 		} else if parser.match(.while) {
 			whileStatement()
 		} else if parser.match(.leftBrace) {
-			withScope { $0.block() }
+			beginScope()
+			block()
+			endScope()
 		} else {
 			expressionStatement()
 		}
@@ -166,7 +169,13 @@ public class Compiler {
 		compiler.emit(.nil)
 		compiler.emit(.return)
 
-		emit(constant: .function(compiler.currentFunction))
+		let constant = compilingChunk.make(constant: .function(compiler.currentFunction))
+		emit(.closure)
+		emit(constant)
+		for upvalue in compiler.upvalues {
+			emit(upvalue.isLocal ? 1 : 0)
+			emit(upvalue.index)
+		}
 	}
 
 	func call(_: Bool) {
@@ -208,11 +217,11 @@ public class Compiler {
 	func returnStatement() {
 		if currentFunction.kind == .main {
 			error("Cannot return from top level", at: parser.previous)
+			return
 		}
 
 		if parser.match(.semicolon) {
-			emit(.nil)
-			emit(.return)
+			emitReturn()
 		} else {
 			expression()
 			parser.consume(.semicolon, "Expected ';' after return value")
@@ -486,6 +495,10 @@ public class Compiler {
 		if arg != nil {
 			getOp = .getLocal
 			setOp = .setLocal
+		} else if let upvalue = resolveUpvalue(from: token), upvalue != -1 {
+			arg = Byte(upvalue)
+			getOp = .getUpvalue
+			setOp = .setUpvalue
 		} else {
 			arg = identifierConstant(token)
 			getOp = .getGlobal
@@ -507,14 +520,32 @@ public class Compiler {
 		}
 	}
 
+	func resolveUpvalue(from token: Token) -> Int? {
+		guard let parent = self.parent else {
+			return nil
+		}
+
+		if let localByte = parent.resolveLocal(token) {
+			return addUpvalue(index: localByte, isLocal: true)
+		}
+
+		if let upvalue = parent.resolveUpvalue(from: token) {
+			return addUpvalue(index: Byte(upvalue), isLocal: false)
+		}
+
+		return nil
+	}
+
 	func identifierConstant(_ token: Token) -> Byte {
 		let value = Value.string(String(token.lexeme(in: source)))
 		return compilingChunk.write(constant: value)
 	}
 
-	func withScope(perform: (Compiler) -> Void) {
+	func beginScope() {
 		scopeDepth += 1
-		perform(self)
+	}
+
+	func endScope() {
 		scopeDepth -= 1
 
 		// The block is done, gotta clean up the scope
@@ -540,6 +571,26 @@ public class Compiler {
 		}
 
 		return nil
+	}
+
+	func addUpvalue(index: Byte, isLocal: Bool) -> Int {
+		for i in 0..<currentFunction.upvalueCount where i <= upvalues.count {
+			let upvalue = upvalues[i]
+			if upvalue.index == index && upvalue.isLocal == isLocal {
+				return i
+			}
+		}
+
+		if currentFunction.upvalueCount == Byte.max {
+			error("Too many closure variables in function")
+			return 0
+		}
+
+		currentFunction.upvalueCount += 1
+		let upvalue = Upvalue(isLocal: isLocal, index: index)
+		upvalues.append(upvalue)
+
+		return currentFunction.upvalueCount
 	}
 
 	func uint16ToBytes(_ uint16: Int) -> (Byte, Byte) {
@@ -590,7 +641,7 @@ public class Compiler {
 		compilingChunk.code[offset + 1] = b
 	}
 
-	func emit(constant value: consuming Value) {
+	func emit(constant value: Value) {
 		if compilingChunk.constants.count > UInt8.max {
 			error("Too many constants in one chunk")
 			return
@@ -599,22 +650,27 @@ public class Compiler {
 		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
-	func emit(_ opcode: consuming Opcode) {
+	func emit(_ opcode: Opcode) {
 		emit(opcode.byte)
 	}
 
-	func emit(_ opcode1: consuming Opcode, _ opcode2: consuming Opcode) {
+	func emit(_ opcode1: Opcode, _ opcode2: Opcode) {
 		emit(opcode1)
 		emit(opcode2)
 	}
 
-	func emit(_ byte: consuming Byte) {
+	func emit(_ byte: Byte) {
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
-	func emit(_ byte1: consuming Byte, _ byte2: consuming Byte) {
+	func emit(_ byte1: Byte, _ byte2: Byte) {
 		emit(byte1)
 		emit(byte2)
+	}
+
+	func emitReturn() {
+		emit(.nil)
+		emit(.return)
 	}
 
 	func error(_ message: String, at token: Token) {

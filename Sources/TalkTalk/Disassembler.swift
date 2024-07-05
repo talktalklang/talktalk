@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
-struct Disassembler<Output: OutputCollector>: ~Copyable {
+struct Disassembler {
 	struct Instruction {
 		var offset: Int
 		var opcode: String
@@ -27,120 +27,190 @@ struct Disassembler<Output: OutputCollector>: ~Copyable {
 		"POS\t\tLINE\tOPERATION"
 	}
 
-	static func report(chunk: borrowing Chunk, nest: Int = 0, output: Output) {
-		var diassembler = Disassembler(nest: nest, output: output)
-		diassembler.report(chunk: chunk)
-	}
-
 	var name = ""
-	let nest: Int
 	var instructions: [Instruction] = []
-	var output: Output
+	var chunk: Chunk
+	var offset = 0
 
-	init(name: String = "", nest: Int = 0, output: Output) {
+	init(name: String = "", chunk: Chunk) {
 		self.name = name
-		self.nest = nest
-		self.output = output
+		self.chunk = chunk
 	}
 
-	mutating func report(byte: Int, in chunk: Chunk) {
-		_ = disassembleInstruction(chunk: chunk, offset: byte)
-
-		for instruction in instructions {
-			output.debug(instruction.description)
+	static func dump(chunk: Chunk, into output: some OutputCollector) {
+		var disassembler = Disassembler(chunk: chunk)
+		output.print(Self.header)
+		while let instruction = disassembler.nextInstruction() {
+			output.print(instruction.description)
 		}
 	}
 
-	mutating func report(chunk: borrowing Chunk) {
-		output.print(Disassembler.header)
-
-		var offset = 0
-		while offset < chunk.code.count {
-			offset = disassembleInstruction(chunk: chunk, offset: offset)
-		}
-
-		for instruction in instructions {
-			output.debug(instruction.description)
+	static func dump(chunk: Chunk, ip: Int, into output: some OutputCollector) {
+		var disassembler = Disassembler(chunk: chunk)
+		disassembler.offset = ip
+		if let out = disassembler.nextInstruction()?.description {
+			output.debug(out)
+		} else {
+			output.debug("No instruction at \(ip)")
 		}
 	}
 
-	mutating func disassembleInstruction(chunk: borrowing Chunk, offset: Int) -> Int {
+	private mutating func nextInstruction() -> Instruction? {
+		if offset >= chunk.count - 1 {
+			return nil
+		}
+
 		let instruction = chunk.code[offset]
-		let line = chunk.lines[offset]
-
-		let isSameLine = offset > 0 && line == chunk.lines[offset - 1]
 		let opcode = Opcode(rawValue: instruction)
 
 		switch opcode {
 		case .constant:
-			return constantInstruction("OP_CONSTANT", chunk: chunk, offset: offset, line: line, isSameLine: isSameLine)
-		case .defineGlobal:
-			return constantInstruction("OP_DEFINE_GLOBAL", chunk: chunk, offset: offset, line: line, isSameLine: isSameLine)
+			return constantInstruction("OP_CONSTANT")
+		case .defineGlobal, .getGlobal, .setGlobal:
+			return constantInstruction(opcode!.description)
 		case .return:
-			return simpleInstruction("OP_RETURN", offset: offset, line: line, isSameLine: isSameLine)
+			return simpleInstruction("OP_RETURN")
 		case .negate:
-			return simpleInstruction("OP_NEGATE", offset: offset, line: line, isSameLine: isSameLine)
+			return simpleInstruction("OP_NEGATE")
 		case .add, .subtract, .multiply, .divide:
 			guard let opcode else {
 				fatalError("No opcode for \(instruction)")
 			}
-			return simpleInstruction(opcode.description, offset: offset, line: line, isSameLine: isSameLine)
+			return simpleInstruction(opcode.description)
 		case .print:
-			return simpleInstruction("OP_PRINT", offset: offset, line: line, isSameLine: isSameLine)
+			return simpleInstruction("OP_PRINT")
 		case .pop:
-			return simpleInstruction("OP_POP", offset: offset, line: line, isSameLine: isSameLine)
+			return simpleInstruction("OP_POP")
+		case .getLocal, .setLocal, .call:
+			return byteInstruction(
+				opcode!.description
+			)
 		case .jump, .jumpIfFalse:
-			return jumpInstruction(opcode!.description, chunk: chunk, sign: 1, offset: offset, line: line, isSameLine: isSameLine)
+			return jumpInstruction(opcode!.description, sign: 1)
 		case .loop:
-			return jumpInstruction(opcode!.description, chunk: chunk, sign: -1, offset: offset, line: line, isSameLine: isSameLine)
+			return jumpInstruction(opcode!.description, sign: -1)
+		case .closure:
+			var offsetOffset = 1
+
+			let constant = chunk.code[offset + offsetOffset]
+			offsetOffset += 1
+			let function = chunk.constants[Int(constant)].as(Function.self)
+			var extra = "\(function.name)"
+			for _ in 0..<function.upvalueCount {
+				let isLocal = chunk.code[offset+offsetOffset]
+				offsetOffset += 1
+				let index = chunk.code[offset+offsetOffset]
+				extra += " \(isLocal == 1 ? "local" : "upvalue") \(index)"
+			}
+
+			defer {
+				self.offset += offsetOffset
+			}
+
+			// TODO: add upvalues
+			return Instruction(
+				offset: offset,
+				opcode: "OP_CLOSURE",
+				extra: extra,
+				line: line,
+				isSameLine: isSameLine
+			)
 		default:
-			return simpleInstruction(opcode!.description, offset: offset, line: line, isSameLine: isSameLine)
+			return simpleInstruction(opcode!.description + " (unhandled)")
 		}
 	}
 
-	mutating func simpleInstruction(_ label: String, offset: Int, line: Int, isSameLine: Bool) -> Int {
-		append(
-			Instruction(offset: offset, opcode: label, line: line, isSameLine: isSameLine)
+	private mutating func simpleInstruction(_ label: String) -> Instruction {
+		defer {
+			offset += 1
+		}
+
+		return Instruction(
+			offset: offset,
+			opcode: label,
+			line: line,
+			isSameLine: isSameLine
+		)
+	}
+	
+	private mutating func byteInstruction(_ label: String) -> Instruction {
+		defer {
+			offset += 2
+		}
+
+		let slot = chunk.code[offset + 1]
+		let instruction = Instruction(
+			offset: offset,
+			opcode: label,
+			extra: "slot:\(slot)",
+			line: line,
+			isSameLine: isSameLine
 		)
 
-		return offset + 1
+		return instruction
 	}
 
-	mutating func constantInstruction(_ label: String, chunk: borrowing Chunk, offset: Int, line: Int, isSameLine: Bool) -> Int {
+	private mutating func constantInstruction(_ label: String) -> Instruction {
+		defer {
+			offset += 2
+		}
+
 		let constant = Int(chunk.code[offset + 1])
 		let value = chunk.constants[constant]
 
-		append(
-			Instruction(
-				offset: offset,
-				opcode: label,
-				extra: String(format: "%04d '\(value.description)'", constant),
-				line: line,
-				isSameLine: isSameLine
-			)
+		return Instruction(
+			offset: offset,
+			opcode: label,
+			extra: String(format: "%04d '\(value.description)'", constant),
+			line: line,
+			isSameLine: isSameLine
 		)
-
-		return offset + 2
 	}
 
-	mutating func jumpInstruction(_ label: String, chunk: borrowing Chunk, sign: Int, offset: Int, line: Int, isSameLine: Bool) -> Int {
+	private mutating func jumpInstruction(_ label: String, sign: Int) -> Instruction {
 		var jump = chunk.code[offset + 1] << 8
 		jump |= chunk.code[offset + 2]
 
-		append(
-			Instruction(
-				offset: offset,
-				opcode: label,
-				extra: "JUMP TO \(offset + 3 + sign * Int(jump))",
-				line: line,
-				isSameLine: isSameLine
-			)
-		)
+		defer {
+			offset += 3
+		}
 
-		return offset + 3
+		return Instruction(
+			offset: offset,
+			opcode: label,
+			extra: "JUMP TO \(offset + 3 + sign * Int(jump))",
+			line: line,
+			isSameLine: isSameLine
+		)
 	}
 
-	mutating func append(_ instruction: Instruction) {
+	private mutating func append(_ instruction: Instruction) {
 		instructions.append(instruction)
+	}
+
+	var line: Int {
+		chunk.lines[offset]
+	}
+
+	var isSameLine: Bool {
+		offset > 0 && line == chunk.lines[offset - 1]
+	}
+}
+
+extension Disassembler: Sequence {
+	struct Iterator: IteratorProtocol {
+		var disassembler: Disassembler
+
+		init(disassembler: Disassembler) {
+			self.disassembler = disassembler
+		}
+
+		mutating func next() -> Instruction? {
+			disassembler.nextInstruction()
+		}
+	}
+
+	func makeIterator() -> Iterator {
+		Iterator(disassembler: self)
 	}
 }

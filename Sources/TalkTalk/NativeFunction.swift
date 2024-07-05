@@ -22,7 +22,7 @@ protocol NativeFunction: Equatable, Hashable {
 	var name: String { get }
 	var arity: Int { get }
 
-	func call(arguments: [Value], in environment: NativeEnvironment) -> Value
+	func call(arguments: some Sequence<Value>, in environment: NativeEnvironment) -> Value
 
 	init()
 }
@@ -37,7 +37,7 @@ final class NativeFunctionPrint: NativeFunction {
 
 	init() {}
 
-	func call(arguments: [Value], in environment: NativeEnvironment) -> Value {
+	func call(arguments: some Sequence<Value>, in environment: NativeEnvironment) -> Value {
 		environment.output.print(arguments.map(\.description).joined(separator: ", "))
 		return .nil
 	}

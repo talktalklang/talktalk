@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/3/24.
 //
 class CallFrame {
-	let function: Function
+	let closure: Closure
 	let stack: CallFrameStack
 	let offset: Int
 	var ip: Int = 0
@@ -21,17 +21,17 @@ class CallFrame {
 
 		subscript(_ slot: Int) -> Value {
 			get {
-				stackRef[slot - 1 + offset]
+				stackRef[slot + offset]
 			}
 
 			set {
-				stackRef[slot - 1 + offset] = newValue
+				stackRef[slot + offset] = newValue
 			}
 		}
 	}
 
-	init(function: Function, stack: Stack<Value>, offset: Int) {
-		self.function = function
+	init(closure: Closure, stack: Stack<Value>, offset: Int) {
+		self.closure = closure
 		self.stack = CallFrameStack(stackRef: stack, offset: offset)
 		self.offset = offset
 	}

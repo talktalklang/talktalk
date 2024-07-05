@@ -17,6 +17,7 @@ public class Function: Equatable, Hashable {
 	let chunk: Chunk
 	var name: String
 	var kind: Kind
+	var upvalueCount = 0
 
 	init(arity: Int, chunk: Chunk, name: String, kind: Kind = .function) {
 		self.arity = arity

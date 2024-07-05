@@ -24,6 +24,10 @@ public class Chunk: Hashable {
 		code.count
 	}
 
+	func make(constant value: Value) -> Byte {
+		Byte(constants.write(value))
+	}
+
 	func write(constant value: Value) -> Byte {
 		Byte(constants.write(value))
 	}
@@ -33,6 +37,7 @@ public class Chunk: Hashable {
 	}
 
 	func write(_ byte: Byte, line: Int) {
+//		print("[\(code.count)] WRITE -> \(byte) \(Opcode(rawValue: byte)?.description ?? "") line: \(line)")
 		code.write(byte)
 		lines.write(line)
 	}
@@ -43,8 +48,7 @@ public class Chunk: Hashable {
 		write(offset, line: line)
 	}
 
-	func disassemble<Output: OutputCollector>(_ name: String, to output: Output) {
-		var disassembler = Disassembler(name: name, output: output)
-		disassembler.report(chunk: self)
+	func disassemble<Output: OutputCollector>(to output: Output) {
+		Disassembler.dump(chunk: self, into: output)
 	}
 }

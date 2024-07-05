@@ -19,12 +19,21 @@ class Stack<Value> {
 		}
 	}
 
+	subscript(_ range: Range<Int>) -> ArraySlice<Value> {
+		get {
+			storage[range]
+		}
+	}
+
 	var isEmpty: Bool {
 		size == 0
 	}
 
 	func peek(offset: Int = 0) -> Value {
-		storage[size - 1 - offset]
+		if !storage.indices.contains(size - 1 - offset) {
+			
+		}
+		return storage[size - 1 - offset]
 	}
 
 	func push(_ value: Value) {
@@ -37,7 +46,7 @@ class Stack<Value> {
 		return storage.removeLast()
 	}
 
-	func pop(count: Int) -> [Value] {
+	@discardableResult func pop(count: Int) -> [Value] {
 		size -= count
 		return (0..<count).map { _ in storage.removeLast() }
 	}

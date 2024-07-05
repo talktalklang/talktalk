@@ -33,10 +33,8 @@ public struct VM<Output: OutputCollector> {
 
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
-
-		let nativeEnvironment = NativeEnvironment(output: output)
 		for (name, function) in Native.list {
-			globals[name] = .native("print")
+			globals[name] = .native(function.init().name)
 		}
 	}
 
@@ -48,7 +46,7 @@ public struct VM<Output: OutputCollector> {
 		if stack.isEmpty { return }
 		output.debug("\t\t\t\t\t\tStack (\(stack.size): ", terminator: "")
 		for slot in 0 ..< stack.size {
-			output.debug("[\(stack.peek(offset: slot).description)]", terminator: "")
+			output.debug("[\(stack.peek(offset: stack.size - slot - 1).description)]", terminator: "")
 		}
 		output.debug()
 	}
@@ -65,18 +63,20 @@ public struct VM<Output: OutputCollector> {
 		return run(function: compiler.currentFunction)
 	}
 
-	public mutating func run(function: Function) -> InterpretResult {
-		frames.push(CallFrame(function: function, stack: stack, offset: 0))
-//		stack.push(.function(function))
+	public mutating func run(function root: Function) -> InterpretResult {
+		let rootClosure = Closure(function: root)
+		_ = call(rootClosure, argCount: 0)
 
-		#if DEBUGGING
-			output.debug(Disassembler<Output>.header)
-			var disassembler = Disassembler(nest: frames.size, output: output)
-			disassembler.report(byte: ip, in: currentFrame.function.chunk)
-			stackDebug()
-		#endif
+//		output.debug(Disassembler.header)
+//		Disassembler.dump(chunk: chunk, into: StdoutOutput())
 
 		while true {
+			#if DEBUGGING
+			Disassembler.dump(chunk: chunk, ip: ip, into: output)
+//			disassembler.report(ip: ip)
+			stackDebug()
+			#endif
+
 			let byte = readByte()
 			guard let opcode = Opcode(rawValue: byte) else {
 				print("Unknown opcode: \(byte)")
@@ -85,9 +85,8 @@ public struct VM<Output: OutputCollector> {
 
 			switch opcode {
 			case .return:
-				let discard = frames.pop()
-
 				let result = stack.pop()
+				let frame = frames.pop()
 
 				if frames.isEmpty {
 					return .ok
@@ -95,12 +94,13 @@ public struct VM<Output: OutputCollector> {
 
 				// Discard slots that were used for passing arguments and params
 				// and locals
-				for _ in 0 ..< discard.offset {
-					let popped = stack.pop()
+				for _ in 0 ..< frame.offset {
+					let _ = stack.pop()
 				}
 
 				// Append the return value
 				stack.push(result)
+
 			case .negate:
 				stack.push(-stack.pop())
 			case .constant:
@@ -162,7 +162,7 @@ public struct VM<Output: OutputCollector> {
 				}
 				stack.push(value)
 			case .setGlobal:
-				let name = chunk.constants.read(byte: readByte()).as(String.self)
+				let name = readString()
 				if globals[name] == nil {
 					runtimeError("Undefined variable \(name).")
 					return .runtimeError
@@ -196,17 +196,43 @@ public struct VM<Output: OutputCollector> {
 				if !callValue(peek(argCount), argCount) {
 					return .runtimeError
 				}
+			case .closure:
+				let function = readConstant().as(Function.self)
+				let closure = Closure(function: function)
+
+				for i in 0..<closure.function.upvalueCount {
+					let isLocal = readByte() == 1
+					let index = Int(readByte())
+					if isLocal {
+						closure.upvalues[i] = captureUpvalue(currentFrame.stack[index])
+					} else {
+						closure.upvalues[i] = currentFrame.closure.upvalues[index]
+					}
+				}
+
+				stack.push(.closure(closure))
+			case .getUpvalue:
+				let slot = readByte()
+				stack.push(currentFrame.closure.upvalues[Int(slot - 1)]!)
+			case .setUpvalue:
+				let slot = readByte()
+				currentFrame.closure.upvalues[Int(slot)] = peek(0)
 			}
 		}
 	}
 
+	func captureUpvalue(_ local: Value) -> Value {
+		return .upvalue(local)
+	}
+
 	mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
 		switch callee {
-		case let .function(function):
-			return call(function, argCount: argCount)
+		case let .closure(closure):
+			return call(closure, argCount: argCount)
 		case let .native(name):
 			if let fn = Native.list[name]?.init() {
-				stack.push(fn.call(arguments: stack.pop(count: fn.arity), in: NativeEnvironment(output: output)))
+				let args = stack.pop(count: fn.arity)
+				stack.push(fn.call(arguments: args, in: NativeEnvironment(output: output)))
 				return true
 			} else {
 				runtimeError("No native function named \(name)")
@@ -218,9 +244,26 @@ public struct VM<Output: OutputCollector> {
 		}
 	}
 
-	mutating func call(_ function: Function, argCount: Byte) -> Bool {
-		if argCount != function.arity {
-			runtimeError("Expected \(function.arity) arguments, got \(argCount)")
+//	mutating func call(_ function: Function, argCount: Byte) -> Bool {
+//		if argCount != function.arity {
+//			runtimeError("Expected \(function.arity) arguments for \(function.name)(), got \(argCount)")
+//			return false
+//		}
+//
+//		if frames.size > 255 {
+//			runtimeError("Stack level too deep")
+//			return false
+//		}
+//
+//		let frame = CallFrame(function: function, stack: stack, offset: stack.size - Int(argCount) - 1)
+//		frames.push(frame)
+//		return true
+//	}
+
+	mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
+		let fn = closure.function
+		if argCount != fn.arity {
+			runtimeError("Expected \(fn.arity) arguments for \(fn.name)(), got \(argCount)")
 			return false
 		}
 
@@ -229,7 +272,7 @@ public struct VM<Output: OutputCollector> {
 			return false
 		}
 
-		let frame = CallFrame(function: function, stack: stack, offset: stack.size - Int(argCount))
+		let frame = CallFrame(closure: closure, stack: stack, offset: stack.size - Int(argCount) - 1)
 		frames.push(frame)
 		return true
 	}
@@ -270,15 +313,17 @@ public struct VM<Output: OutputCollector> {
 		stack.peek(offset: offset)
 	}
 
-	func runtimeError(_ message: String) {
+	mutating func runtimeError(_ message: String) {
+		output.print("------------------------------------------------------------------")
 		output.print("Runtime Error: \(message)")
-
+		output.print("------------------------------------------------------------------")
+		stackDebug()
 		var i = frames.size - 1
 		while i >= 0 {
 			let frame = frames[i]
-			let function = frame.function
+			let function = frame.closure.function
 			let instruction = function.chunk.code[ip - 1]
-			output.print("[line \(function.chunk.lines[Int(instruction)])] in \(function.name)()")
+			output.print("\t[line \(function.chunk.lines[Int(instruction)])] in \(function.name)()")
 			i -= 1
 		}
 
@@ -286,7 +331,7 @@ public struct VM<Output: OutputCollector> {
 	}
 
 	var chunk: Chunk {
-		currentFrame.function.chunk
+		currentFrame.closure.function.chunk
 	}
 
 	var ip: Int {
