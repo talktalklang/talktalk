@@ -67,5 +67,6 @@ extension KeywordTrie {
 		.true,
 		.var,
 		.while,
+		.print
 	]
 }

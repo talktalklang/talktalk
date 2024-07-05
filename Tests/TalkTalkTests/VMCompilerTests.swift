@@ -37,7 +37,7 @@ class TestOutput: OutputCollector {
 actor CompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(1 + -2);", output: output) == .ok)
+		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
 		#expect(output.stdout == "-1.0\n")
 	}
 
@@ -353,7 +353,25 @@ actor CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-//		#expect(output.stdout == "sup, pat\n")
+		#expect(output.stdout == "sup, pat\n")
+	}
+
+	@Test("Nested function returns") func nestedFunctionReturns() {
+		let output = TestOutput()
+		let source = """
+		func outer() {
+			func inner(name) {
+				return name;
+			}
+
+			return inner("pat");
+		}
+
+		print outer();
+		"""
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "pat\n")
 	}
 
 	@Test("Top level returns are a no no") func topLevelReturns() {
@@ -377,12 +395,12 @@ actor CompilerTests {
 	}
 
 	@Test("Closure") func closure() {
-		let output = TestOutput(debug: true)
+		let output = TestOutput()
 		let source = """
 		func outer() {
 			var x = "outside";
 			func inner() {
-				print x;
+				print(x);
 			}
 			inner();
 		}
@@ -390,17 +408,17 @@ actor CompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "outer\n")
+		#expect(output.stdout == "outside\n")
 	}
 
 	@Test("Trickier closure") func trickierClosure() {
 		let output = TestOutput()
 		let source = """
-		fun outer() {
+		func outer() {
 			var x = "value";
-			fun middle() {
-				fun inner() {
-					print x;
+			func middle() {
+				func inner() {
+					print(x);
 				}
 
 				print "create inner closure";
@@ -421,6 +439,7 @@ actor CompilerTests {
 		return from outer
 		create inner closure
 		value
+
 		""")
 	}
 }

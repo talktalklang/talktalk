@@ -9,6 +9,8 @@ extension Compiler {
 	func statement() {
 		if parser.match(.return) {
 			returnStatement()
+		} else if parser.match(.print) {
+			printStatement()
 		} else if parser.match(.if) {
 			ifStatement()
 		} else if parser.match(.while) {

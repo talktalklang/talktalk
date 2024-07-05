@@ -7,6 +7,7 @@
 class CallFrame {
 	let closure: Closure
 	let stack: CallFrameStack
+	let originalStackLocation: Int
 	let offset: Int
 	var ip: Int = 0
 
@@ -33,6 +34,7 @@ class CallFrame {
 	init(closure: Closure, stack: Stack<Value>, offset: Int) {
 		self.closure = closure
 		self.stack = CallFrameStack(stackRef: stack, offset: offset)
+		self.originalStackLocation = stack.size
 		self.offset = offset
 	}
 }

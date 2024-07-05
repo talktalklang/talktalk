@@ -98,6 +98,14 @@ indirect enum Value: Equatable, Hashable {
 		fatalError("\(self) cast to \(T.self) not implemented.")
 	}
 
+	func unwrap() -> Value {
+		if case let .upvalue(value) = self {
+			return value
+		}
+
+		fatalError("cannot unwrap non-upvalue: \(self)")
+	}
+
 	var description: String {
 		switch self {
 		case let .error(msg):
@@ -111,13 +119,13 @@ indirect enum Value: Equatable, Hashable {
 		case let .string(string):
 			return string
 		case let .function(function):
-			return "[func \(function.name)]"
+			return "<\(function.name)>"
 		case let .closure(closure):
-			return "[func(closure) \(closure.function.name)]"
+			return "<\(closure.function.name)>"
 		case let .native(native):
-			return "[native \(native)]"
+			return "<native \(native)>"
 		case let .upvalue(value):
-			return "[upvalue \(value.description)]"
+			return "<upvalue \(value.description)>"
 		}
 	}
 

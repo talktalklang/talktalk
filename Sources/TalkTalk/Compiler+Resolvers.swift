@@ -149,7 +149,7 @@ extension Compiler {
 	}
 
 	func addUpvalue(index: Byte, isLocal: Bool) -> Int {
-		for i in 0 ..< currentFunction.upvalueCount where i <= upvalues.count {
+		for i in 0 ..< currentFunction.upvalueCount where i < upvalues.count {
 			let upvalue = upvalues[i]
 			if upvalue.index == index && upvalue.isLocal == isLocal {
 				return i
@@ -161,10 +161,10 @@ extension Compiler {
 			return 0
 		}
 
-		currentFunction.upvalueCount += 1
 		let upvalue = Upvalue(isLocal: isLocal, index: index)
 		upvalues.append(upvalue)
 
+		currentFunction.upvalueCount += 1
 		return currentFunction.upvalueCount
 	}
 }

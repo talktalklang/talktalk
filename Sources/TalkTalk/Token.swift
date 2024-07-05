@@ -23,6 +23,7 @@ struct Token: Equatable {
 		     or, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case eof
+		case print
 
 		case error(String)
 	}

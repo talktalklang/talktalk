@@ -44,9 +44,9 @@ public class VM<Output: OutputCollector> {
 
 	func stackDebug() {
 		if stack.isEmpty { return }
-		output.debug("\t\t\t\t\t\tStack (\(stack.size): ", terminator: "")
-		for slot in 0 ..< stack.size {
-			output.debug("[\(stack.peek(offset: stack.size - slot - 1).description)]", terminator: "")
+		output.debug("\t\t\t\t\t\t", terminator: "")
+		for slot in stack.entries {
+			output.debug("[ \(slot.description) ]", terminator: "")
 		}
 		output.debug()
 	}
@@ -64,8 +64,8 @@ public class VM<Output: OutputCollector> {
 	}
 
 	public func run(function root: Function) -> InterpretResult {
-		stack.push(.function(root))
 		let rootClosure = Closure(function: root)
+		stack.push(.closure(rootClosure))
 		_ = call(rootClosure, argCount: 0)
 
 //		output.debug(Disassembler.header)
@@ -94,10 +94,8 @@ public class VM<Output: OutputCollector> {
 					return .ok
 				}
 
-				// Discard slots that were used for passing arguments and params
-				// and locals
-				for _ in 0 ..< frame.offset {
-					let _ = stack.pop()
+				while stack.size >= frame.originalStackLocation {
+					_ = stack.pop()
 				}
 
 				// Append the return value
@@ -207,14 +205,17 @@ public class VM<Output: OutputCollector> {
 					if isLocal {
 						closure.upvalues[i] = captureUpvalue(currentFrame.stack[index])
 					} else {
-						closure.upvalues[i] = currentFrame.closure.upvalues[index]
+						// TODO: the -1 here doesn't smell right to me but it got the tests passing?
+						closure.upvalues[i] = currentFrame.closure.upvalues[index-1]
 					}
 				}
 
 				stack.push(.closure(closure))
 			case .getUpvalue:
 				let slot = readByte()
-				stack.push(currentFrame.closure.upvalues[Int(slot-1)]!)
+				let upvalue = currentFrame.closure.upvalues[Int(slot-1)]!
+				let unwrapped = upvalue.unwrap()
+				stack.push(unwrapped)
 			case .setUpvalue:
 				let slot = readByte()
 				currentFrame.closure.upvalues[Int(slot)] = peek(0)
@@ -232,8 +233,17 @@ public class VM<Output: OutputCollector> {
 			return call(closure, argCount: argCount)
 		case let .native(name):
 			if let fn = Native.list[name]?.init() {
-				let args = stack.pop(count: fn.arity)
-				stack.push(fn.call(arguments: args, in: NativeEnvironment(output: output)))
+				// Grab the args off the stack
+				let args = stack.last(count: Int(argCount))
+
+				// Call the native func
+				let result = fn.call(arguments: args, in: NativeEnvironment(output: output))
+
+				// Cleanup the args and the function itself from the stack
+				stack.pop(count: Int(argCount) + 1)
+
+				stack.push(result)
+
 				return true
 			} else {
 				runtimeError("No native function named \(name)")
@@ -257,7 +267,11 @@ public class VM<Output: OutputCollector> {
 			return false
 		}
 
-		let frame = CallFrame(closure: closure, stack: stack, offset: stack.size - Int(argCount) - 1)
+		let frame = CallFrame(
+			closure: closure,
+			stack: stack,
+			offset: stack.size - Int(argCount) - 1
+		)
 		frames.push(frame)
 		return true
 	}
