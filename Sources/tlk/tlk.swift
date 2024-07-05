@@ -6,8 +6,8 @@
 //
 
 import ArgumentParser
-@testable import TalkTalk
 import Foundation
+@testable import TalkTalk
 
 @main
 struct TlkCommand: ParsableCommand {

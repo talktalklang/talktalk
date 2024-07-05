@@ -96,10 +96,10 @@ struct Disassembler {
 			offsetOffset += 1
 			let function = chunk.constants[Int(constant)].as(Function.self)
 			var extra = "\(function.name)"
-			for _ in 0..<function.upvalueCount {
-				let isLocal = chunk.code[offset+offsetOffset]
+			for _ in 0 ..< function.upvalueCount {
+				let isLocal = chunk.code[offset + offsetOffset]
 				offsetOffset += 1
-				let index = chunk.code[offset+offsetOffset]
+				let index = chunk.code[offset + offsetOffset]
 				extra += " \(isLocal == 1 ? "local" : "upvalue") \(index)"
 			}
 
@@ -132,7 +132,7 @@ struct Disassembler {
 			isSameLine: isSameLine
 		)
 	}
-	
+
 	private mutating func byteInstruction(_ label: String) -> Instruction {
 		defer {
 			offset += 2

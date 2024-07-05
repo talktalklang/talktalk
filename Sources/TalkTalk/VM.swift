@@ -72,9 +72,9 @@ public struct VM<Output: OutputCollector> {
 
 		while true {
 			#if DEBUGGING
-			Disassembler.dump(chunk: chunk, ip: ip, into: output)
+				Disassembler.dump(chunk: chunk, ip: ip, into: output)
 //			disassembler.report(ip: ip)
-			stackDebug()
+				stackDebug()
 			#endif
 
 			let byte = readByte()
@@ -100,7 +100,6 @@ public struct VM<Output: OutputCollector> {
 
 				// Append the return value
 				stack.push(result)
-
 			case .negate:
 				stack.push(-stack.pop())
 			case .constant:
@@ -200,7 +199,7 @@ public struct VM<Output: OutputCollector> {
 				let function = readConstant().as(Function.self)
 				let closure = Closure(function: function)
 
-				for i in 0..<closure.function.upvalueCount {
+				for i in 0 ..< closure.function.upvalueCount {
 					let isLocal = readByte() == 1
 					let index = Int(readByte())
 					if isLocal {

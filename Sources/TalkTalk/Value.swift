@@ -7,19 +7,19 @@
 
 // typealias Value = Double
 indirect enum Value: Equatable, Hashable {
-	static func ==(lhs: Value, rhs: Value) -> Bool {
+	static func == (lhs: Value, rhs: Value) -> Bool {
 		lhs.equals(rhs)
 	}
 
 	case error(String),
-			 bool(Bool),
-			 `nil`,
-			 number(Double),
-			 string(String),
-			 closure(Closure),
-			 function(Function),
-			 native(String),
-			 upvalue(Value)
+	     bool(Bool),
+	     `nil`,
+	     number(Double),
+	     string(String),
+	     closure(Closure),
+	     function(Function),
+	     native(String),
+	     upvalue(Value)
 
 	func hash(into hasher: inout Swift.Hasher) {
 		hasher.combine(hash)
@@ -27,19 +27,19 @@ indirect enum Value: Equatable, Hashable {
 
 	func equals(_ other: Value) -> Bool {
 		switch (self, other) {
-		case (.error(let string), .error(let other)):
+		case let (.error(string), .error(other)):
 			return string == other
-		case (.bool(let bool), .bool(let other)):
+		case let (.bool(bool), .bool(other)):
 			return bool == other
 		case (.nil, .nil):
 			return true
-		case (.number(let double), .number(let other)):
+		case let (.number(double), .number(other)):
 			return double == other
-		case (.string(let string), .string(let other)):
+		case let (.string(string), .string(other)):
 			return string == other
-		case (.function(let function), .function(let other)):
+		case let (.function(function), .function(other)):
 			return function == other
-		case (.native(let nativeFunction), .native(let other)):
+		case let (.native(nativeFunction), .native(other)):
 			return nativeFunction == other
 		default:
 			return false

@@ -521,7 +521,7 @@ public class Compiler {
 	}
 
 	func resolveUpvalue(from token: Token) -> Int? {
-		guard let parent = self.parent else {
+		guard let parent = parent else {
 			return nil
 		}
 
@@ -574,7 +574,7 @@ public class Compiler {
 	}
 
 	func addUpvalue(index: Byte, isLocal: Bool) -> Int {
-		for i in 0..<currentFunction.upvalueCount where i <= upvalues.count {
+		for i in 0 ..< currentFunction.upvalueCount where i <= upvalues.count {
 			let upvalue = upvalues[i]
 			if upvalue.index == index && upvalue.isLocal == isLocal {
 				return i

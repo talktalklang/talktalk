@@ -1,6 +1,6 @@
 //
 //  Closure.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/4/24.
 //
@@ -12,9 +12,9 @@ class Closure: Hashable, Equatable {
 	var function: Function
 	var upvalues: [Value?]
 
-	init(function: Function, upvalues: [Value] = []) {
+	init(function: Function, upvalues _: [Value] = []) {
 		self.function = function
-		self.upvalues = Array<Value?>.init(repeating: nil, count: function.upvalueCount)
+		self.upvalues = [Value?](repeating: nil, count: function.upvalueCount)
 	}
 
 	func hash(into hasher: inout Swift.Hasher) {

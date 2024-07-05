@@ -6,12 +6,12 @@
 //
 class Native {
 	static let list: [String: any NativeFunction.Type] = [
-		"print": NativeFunctionPrint.self
+		"print": NativeFunctionPrint.self,
 	]
 }
 
 struct NativeEnvironment: Equatable {
-	static func ==(lhs: NativeEnvironment, rhs: NativeEnvironment) -> Bool {
+	static func == (lhs: NativeEnvironment, rhs: NativeEnvironment) -> Bool {
 		return type(of: lhs.output) == type(of: rhs.output)
 	}
 
@@ -28,7 +28,7 @@ protocol NativeFunction: Equatable, Hashable {
 }
 
 final class NativeFunctionPrint: NativeFunction {
-	static func ==(lhs: NativeFunctionPrint, rhs: NativeFunctionPrint) -> Bool {
+	static func == (_: NativeFunctionPrint, _: NativeFunctionPrint) -> Bool {
 		true
 	}
 
