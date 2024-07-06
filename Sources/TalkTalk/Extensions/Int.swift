@@ -10,3 +10,15 @@ extension Int {
 		String(repeating: " ", count: "\(self)".count - 1) + "|"
 	}
 }
+
+// Implement postfix increment
+postfix func ++(value: inout Int) -> Int {
+		defer { value += 1 }
+		return value
+}
+
+// Implement postfix decrement
+postfix func --(value: inout Int) -> Int {
+		defer { value -= 1 }
+		return value
+}

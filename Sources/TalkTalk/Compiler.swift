@@ -22,7 +22,6 @@ public class Compiler {
 		}
 	}
 
-	var tracer: CompilerTracer!
 	var parent: Compiler?
 	var parser: Parser
 	var currentFunction: Function
@@ -52,14 +51,12 @@ public class Compiler {
 		self.parent = parent
 		self.parser = parent.parser
 		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "")
-		self.tracer = CompilerTracer(compiler: self)
 		self.locals[0] = Local(name: parser.current, depth: 0)
 	}
 
 	public init(source: String) {
 		self.parser = Parser(lexer: Lexer(source: source))
 		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
-		self.tracer = CompilerTracer(compiler: self)
 		self.locals[0] = Local(name: parser.current, depth: 0)
 	}
 
@@ -233,7 +230,6 @@ public class Compiler {
 			return
 		}
 
-		tracer.trace(0, message: message)
 		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
@@ -247,7 +243,6 @@ public class Compiler {
 	}
 
 	func emit(_ byte: Byte, _ message: String) {
-		tracer.trace(byte, message: message)
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 

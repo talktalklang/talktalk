@@ -4,11 +4,56 @@
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
+struct ConstantMetadata: Disassembler.Metadata {
+	var byte: Byte
+	var value: Value
+
+	var description: String {
+		"\(byte) \(value.description)"
+	}
+}
+
+struct ByteMetadata: Disassembler.Metadata {
+	var byte: Byte
+
+	var description: String {
+		"Byte: \(byte)"
+	}
+}
+
+struct ClosureMetadata: Disassembler.Metadata {
+	var function: Function
+	var upvalues: [Upvalue]
+	var constant: Byte
+
+	var description: String {
+		var parts = ["\(constant) <fn \(function.name)>"]
+		for upvalue in upvalues {
+			parts.append(
+				String(repeating: " ", count: 8) + " | \(upvalue.index) \(upvalue.isLocal ? "local" : "up value")"
+			)
+		}
+
+		return parts.joined(separator: "\n")
+	}
+}
+
+struct JumpMetadata: Disassembler.Metadata {
+	var jump: Int
+
+	var description: String {
+		"jump: \(jump)"
+	}
+}
+
 struct Disassembler {
+	protocol Metadata: Equatable, CustomStringConvertible  {
+	}
+
 	struct Instruction {
 		var offset: Int
 		var opcode: String
-		var extra: String?
+		var metadata: (any Metadata)?
 		var line: Int
 		var isSameLine: Bool
 
@@ -18,7 +63,7 @@ struct Disassembler {
 				String(format: "%04d", offset),
 				lineString,
 				opcode,
-				extra ?? ""
+				metadata?.description ?? ""
 			]
 
 			return parts.joined(separator: " ")
@@ -57,7 +102,7 @@ struct Disassembler {
 		}
 	}
 
-	private mutating func nextInstruction() -> Instruction? {
+	mutating func nextInstruction() -> Instruction? {
 		if offset >= chunk.count {
 			return nil
 		}
@@ -94,40 +139,35 @@ struct Disassembler {
 		case .getUpvalue, .setUpvalue:
 			return byteInstruction(opcode!.description)
 		case .closure:
-			var offsetOffset = 1
-
-			let constant = chunk.code[offset + offsetOffset]
-			offsetOffset += 1
+			let start = offset
+			let line = line
+			let isSameLine = isSameLine
+			_ = offset++
+			let constant = chunk.code[offset++]
 			let function = chunk.constants[Int(constant)].as(Function.self)
-			var extra = "\(constant) \(function.name)"
-
-			if function.upvalueCount > 0 {
-				extra += "\n"
-			}
+			var upvalues: [Upvalue] = []
 
 			for _ in 0 ..< function.upvalueCount {
-				extra += String(repeating: " ", count: 8) + " |"
-				let isLocal = chunk.code[offset + offsetOffset]
-				offsetOffset += 1
-				let index = chunk.code[offset + offsetOffset]
-				offsetOffset += 1
-				extra += " \(isLocal == 1 ? "local" : "upvalue") \(index)"
-			}
+				let isLocal = chunk.code[offset++]
+				let index = chunk.code[offset++]
 
-			defer {
-				self.offset += offsetOffset
+				upvalues.append(Upvalue(isLocal: isLocal != 0, index: index))
 			}
 
 			// TODO: add upvalues
 			return Instruction(
-				offset: offset,
+				offset: start,
 				opcode: "OP_CLOSURE",
-				extra: extra,
+				metadata: ClosureMetadata(
+					function: function,
+					upvalues: upvalues,
+					constant: constant
+				),
 				line: line,
 				isSameLine: isSameLine
 			)
 		default:
-			return simpleInstruction(opcode!.description + " (unhandled)")
+			return simpleInstruction(opcode!.description)
 		}
 	}
 
@@ -149,11 +189,11 @@ struct Disassembler {
 			offset += 2
 		}
 
-		let slot = chunk.code[offset + 1]
+		let byte = chunk.code[offset + 1]
 		let instruction = Instruction(
 			offset: offset,
 			opcode: label,
-			extra: "slot:\(slot)",
+			metadata: ByteMetadata(byte: byte),
 			line: line,
 			isSameLine: isSameLine
 		)
@@ -166,21 +206,21 @@ struct Disassembler {
 			offset += 2
 		}
 
-		let constant = Int(chunk.code[offset + 1])
-		let value = chunk.constants[constant]
+		let constant = chunk.code[offset + 1]
+		let value = chunk.constants[Int(constant)]
 
 		return Instruction(
 			offset: offset,
 			opcode: label,
-			extra: String(format: "%04d '\(value.description)'", constant),
+			metadata: ConstantMetadata(byte: constant, value: value),
 			line: line,
 			isSameLine: isSameLine
 		)
 	}
 
 	private mutating func jumpInstruction(_ label: String, sign: Int) -> Instruction {
-		var jump = chunk.code[offset + 1] << 8
-		jump |= chunk.code[offset + 2]
+		var jump = Int(chunk.code[offset + 1] << 8)
+		jump |= Int(chunk.code[offset + 2])
 
 		defer {
 			offset += 3
@@ -189,7 +229,7 @@ struct Disassembler {
 		return Instruction(
 			offset: offset,
 			opcode: label,
-			extra: "JUMP TO \(offset + 3 + sign * Int(jump))",
+			metadata: JumpMetadata(jump: jump),
 			line: line,
 			isSameLine: isSameLine
 		)

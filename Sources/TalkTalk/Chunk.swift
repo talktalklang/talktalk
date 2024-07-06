@@ -33,7 +33,6 @@ public class Chunk: Hashable {
 	}
 
 	func write(_ byte: Byte, line: Int) {
-//		print("[\(code.count)] WRITE -> \(byte) \(Opcode(rawValue: byte)?.description ?? "") line: \(line)")
 		code.write(byte)
 		lines.write(line)
 	}

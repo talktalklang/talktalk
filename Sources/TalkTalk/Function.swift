@@ -9,8 +9,8 @@ public class Function: Equatable, Hashable {
 		case function, main
 	}
 
-	public static func == (_: Function, _: Function) -> Bool {
-		false
+	public static func == (lhs: Function, rhs: Function) -> Bool {
+		lhs.arity == rhs.arity && lhs.chunk == rhs.chunk && lhs.name == rhs.name && lhs.kind == rhs.kind && lhs.upvalueCount == rhs.upvalueCount
 	}
 
 	var arity: Int

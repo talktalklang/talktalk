@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/4/24.
 //
-struct Upvalue {
+struct Upvalue: Equatable {
 	let isLocal: Bool
 	let index: Byte
 

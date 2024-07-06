@@ -91,7 +91,7 @@ public class VM<Output: OutputCollector> {
 
 			let byte = readByte()
 			guard let opcode = Opcode(rawValue: byte) else {
-				print("Unknown opcode: \(byte)")
+				output.print("Unknown opcode: \(byte)")
 				return .runtimeError
 			}
 

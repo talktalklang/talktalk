@@ -44,8 +44,7 @@ extension Compiler {
 			return
 		}
 
-		locals[localCount] = Local(name: name, depth: -1)
-		localCount += 1
+		locals[localCount++] = Local(name: name, depth: -1)
 	}
 
 	func markInitialized() {
@@ -98,7 +97,7 @@ extension Compiler {
 			return addUpvalue(index: localByte, isLocal: true)
 		}
 
-		if let upvalue = parent.resolveUpvalue(from: token) {
+		if let upvalue = parent.resolveUpvalue(from: token), upvalue != -1 {
 			return addUpvalue(index: Byte(upvalue), isLocal: false)
 		}
 
@@ -130,8 +129,11 @@ extension Compiler {
 	}
 
 	func resolveLocal(_ name: Token) -> Byte? {
-		var i = localCount - 1 // Subtracting 1 because we're indexing into an array
-		while i >= 0, let local = locals[i] {
+		for i in stride(from: localCount-1, to: 0, by: -1) {
+			guard let local = locals[i] else {
+				continue
+			}
+
 			if name.same(lexeme: local.name, in: source) {
 				guard local.isInitialized else {
 					error("Cannot read local variable in its own initializer")
@@ -140,8 +142,6 @@ extension Compiler {
 
 				return Byte(i)
 			}
-
-			i -= 1
 		}
 
 		return nil
@@ -156,13 +156,12 @@ extension Compiler {
 
 		if currentFunction.upvalueCount == Byte.max {
 			error("Too many closure variables in function")
-			return 0
+			return -1
 		}
 
 		let upvalue = Upvalue(isLocal: isLocal, index: index)
 		upvalues.append(upvalue)
-		currentFunction.upvalueCount += 1
 
-		return currentFunction.upvalueCount
+		return currentFunction.upvalueCount++
 	}
 }

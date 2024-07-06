@@ -34,7 +34,7 @@ class TestOutput: OutputCollector {
 	var debugOut: String = ""
 }
 
-actor CompilerTests {
+actor VMCompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
@@ -68,7 +68,7 @@ actor CompilerTests {
 					try! compiler.compile()
 
 					let output = TestOutput()
-					var vm = VM(output: output)
+					let vm = VM(output: output)
 					let result = vm.run(function: compiler.currentFunction)
 					#expect(result == .ok)
 				}
@@ -127,7 +127,7 @@ actor CompilerTests {
 		let compiler = Compiler(source: source)
 		try! compiler.compile()
 
-		var vm = VM(output: output)
+		let vm = VM(output: output)
 		let result = vm.run(function: compiler.currentFunction)
 
 		#expect(result == .ok)
@@ -412,7 +412,7 @@ actor CompilerTests {
 	}
 
 	@Test("Trickier closure") func trickierClosure() {
-		let output = TestOutput(debug: true)
+		let output = TestOutput()
 		let source = """
 		func outer() {
 			var x = "value";
@@ -461,7 +461,7 @@ actor CompilerTests {
 		counter();
 		"""
 
-		let output = TestOutput(debug: true)
+		let output = TestOutput()
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "1.0\n2.0\n")
