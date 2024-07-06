@@ -3,14 +3,8 @@ func fib(n) {
 	return fib(n - 2) + fib(n - 1);
 }
 
-var start = clock();
-
 var i = 0;
-while i < 50 {
+while i < 25 {
 	print fib(i);
 	i = i + 1;
 }
-
-var end = clock();
-
-print end - start;

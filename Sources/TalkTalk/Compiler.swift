@@ -162,7 +162,9 @@ public class Compiler {
 		prefix(self, canAssign)
 
 		while precedence < parser.current.kind.rule.precedence {
+			#if DEBUG
 			checkForInfiniteLoop()
+			#endif
 
 			parser.advance()
 

@@ -27,7 +27,7 @@ public class VM<Output: OutputCollector> {
 	var globals: [String: Value] = [:]
 	var openUpvalues: OpenUpvalues?
 
-	static func run(source: String, output: Output) -> InterpretResult {
+	public static func run(source: String, output: Output) -> InterpretResult {
 		let vm = VM(output: output)
 		let compiler = Compiler(source: source)
 
@@ -100,11 +100,14 @@ public class VM<Output: OutputCollector> {
 				let result = stack.pop()
 				let frame = frames.pop()
 
+				closeUpvalues()
+
 				if frames.isEmpty {
+					_ = stack.pop()
 					return .ok
 				}
 
-				while stack.size >= frame.originalStackLocation {
+				while stack.size > frame.stackOffset {
 					_ = stack.pop()
 				}
 
@@ -209,9 +212,15 @@ public class VM<Output: OutputCollector> {
 				let function = readConstant().as(Function.self)
 				let closure = Closure(function: function)
 
+				stack.push(.closure(closure))
+
 				for i in 0 ..< closure.function.upvalueCount {
 					let isLocal = readByte() == 1
 					let index = Int(readByte())
+
+					print("CLOSURE: \(isLocal), \(index)")
+					stackDebug()
+
 					if isLocal {
 						closure.upvalues[i] = captureUpvalue(currentFrame.stack[index])
 					} else {
@@ -219,8 +228,6 @@ public class VM<Output: OutputCollector> {
 						closure.upvalues[i] = currentFrame.closure.upvalues[index]
 					}
 				}
-
-				stack.push(.closure(closure))
 			case .getUpvalue:
 				let slot = readByte()
 				let upvalue = currentFrame.closure.upvalues[Int(slot)]!
@@ -274,24 +281,8 @@ public class VM<Output: OutputCollector> {
 		switch callee {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
-		case let .native(name):
-			if let fn = Native.list[name]?.init() {
-				// Grab the args off the stack
-				let args = stack.last(count: Int(argCount))
-
-				// Call the native func
-				let result = fn.call(arguments: args, in: NativeEnvironment(output: output))
-
-				// Cleanup the args and the function itself from the stack
-				stack.pop(count: Int(argCount) + 1)
-
-				stack.push(result)
-
-				return true
-			} else {
-				runtimeError("No native function named \(name)")
-				return false
-			}
+		case let .native(_):
+			return false
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type
@@ -313,8 +304,9 @@ public class VM<Output: OutputCollector> {
 		let frame = CallFrame(
 			closure: closure,
 			stack: stack,
-			offset: stack.size - Int(argCount) - 1
+			stackOffset: stack.size - Int(argCount) - 1
 		)
+
 		frames.push(frame)
 		return true
 	}
@@ -340,11 +332,7 @@ public class VM<Output: OutputCollector> {
 	}
 
 	func readByte() -> Byte {
-		defer {
-			ip += 1
-		}
-
-		return chunk.code[ip]
+		return chunk.code[ip++]
 	}
 
 	func peek(_ offset: Byte) -> Value {

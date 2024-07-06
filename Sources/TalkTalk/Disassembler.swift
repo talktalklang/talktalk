@@ -39,10 +39,12 @@ struct ClosureMetadata: Disassembler.Metadata {
 }
 
 struct JumpMetadata: Disassembler.Metadata {
+	var offset: Int
+	var sign: Int
 	var jump: Int
 
 	var description: String {
-		"jump: \(jump)"
+		"\(offset) -> \(offset + 3 + sign * jump)"
 	}
 }
 
@@ -229,7 +231,7 @@ struct Disassembler {
 		return Instruction(
 			offset: offset,
 			opcode: label,
-			metadata: JumpMetadata(jump: jump),
+			metadata: JumpMetadata(offset: offset, sign: sign, jump: jump),
 			line: line,
 			isSameLine: isSameLine
 		)

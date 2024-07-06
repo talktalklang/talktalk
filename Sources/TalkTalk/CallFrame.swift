@@ -7,8 +7,7 @@
 class CallFrame {
 	let closure: Closure
 	let stack: CallFrameStack
-	let originalStackLocation: Int
-	let offset: Int
+	let stackOffset: Int
 	var ip: Int = 0
 
 	class CallFrameStack {
@@ -22,19 +21,18 @@ class CallFrame {
 
 		subscript(_ slot: Int) -> Value {
 			get {
-				stackRef[slot + offset]
+				stackRef[offset + slot]
 			}
 
 			set {
-				stackRef[slot + offset] = newValue
+				stackRef[offset + slot] = newValue
 			}
 		}
 	}
 
-	init(closure: Closure, stack: Stack<Value>, offset: Int) {
+	init(closure: Closure, stack: Stack<Value>, stackOffset: Int) {
 		self.closure = closure
-		self.stack = CallFrameStack(stackRef: stack, offset: offset)
-		self.originalStackLocation = stack.size
-		self.offset = offset
+		self.stack = CallFrameStack(stackRef: stack, offset: stackOffset)
+		self.stackOffset = stackOffset
 	}
 }

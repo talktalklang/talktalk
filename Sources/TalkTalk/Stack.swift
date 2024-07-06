@@ -7,7 +7,7 @@
 
 class Stack<Value> {
 	var size = 0
-	private var storage: [Value] = []
+	private var storage: ContiguousArray<Value> = []
 
 	subscript(_ offset: Int) -> Value {
 		get {
@@ -27,7 +27,7 @@ class Stack<Value> {
 		size == 0
 	}
 
-	var entries: [Value] {
+	var entries: some Collection<Value> {
 		storage
 	}
 

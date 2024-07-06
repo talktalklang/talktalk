@@ -7,7 +7,7 @@
 
 import ArgumentParser
 import Foundation
-@testable import TalkTalk
+import TalkTalk
 
 @main
 struct TlkCommand: ParsableCommand {
