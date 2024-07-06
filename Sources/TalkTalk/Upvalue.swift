@@ -7,4 +7,9 @@
 struct Upvalue {
 	let isLocal: Bool
 	let index: Byte
+
+	init(isLocal: Bool, index: Byte) {
+		self.isLocal = isLocal
+		self.index = index
+	}
 }

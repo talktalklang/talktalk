@@ -13,6 +13,9 @@ import Foundation
 struct TlkCommand: ParsableCommand {
 	@Argument(help: "The input to run.")
 	var input: String
+
+	@Argument(help: "Print debug info")
+	var isDebug: Bool = false
 //
 //	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
@@ -23,7 +26,7 @@ struct TlkCommand: ParsableCommand {
 			input
 		}
 
-		if VM.run(source: source, output: StdoutOutput()) == .ok {
+		if VM.run(source: source, output: StdoutOutput(isDebug: isDebug)) == .ok {
 			return
 		} else {
 			throw ExitCode.failure

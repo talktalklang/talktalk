@@ -11,15 +11,21 @@ public protocol OutputCollector: AnyObject {
 }
 
 public final class StdoutOutput: OutputCollector {
+	var isDebug = false
+
 	public func print(_ output: String, terminator: String) {
 		Swift.print(output, terminator: terminator)
 	}
 
 	public func debug(_ output: String, terminator: String) {
-		Swift.print(output, terminator: terminator)
+		if isDebug {
+			Swift.print(output, terminator: terminator)
+		}
 	}
 
-	public init() {}
+	public init(isDebug: Bool = false) {
+		self.isDebug = isDebug
+	}
 }
 
 public extension OutputCollector {

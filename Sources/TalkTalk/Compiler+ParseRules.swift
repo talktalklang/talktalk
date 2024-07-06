@@ -18,7 +18,7 @@ extension Compiler {
 			return
 		}
 
-		emit(constant: .number(value))
+		emit(constant: .number(value), "number constant")
 	}
 
 	func unary(_: Bool) {
@@ -27,9 +27,9 @@ extension Compiler {
 
 		// Emit the operator instruction
 		if kind == .minus {
-			emit(.negate)
+			emit(opcode: .negate, "negate opcode")
 		} else if kind == .bang {
-			emit(.not)
+			emit(opcode: .not, "not opcode")
 		} else {
 			error("Should be unreachable for nowz.")
 		}
@@ -39,7 +39,7 @@ extension Compiler {
 
 	func and(_: Bool) {
 		let endJump = emit(jump: .jumpIfFalse)
-		emit(.pop)
+		emit(opcode: .pop, "and pop")
 		parse(precedence: .and)
 		patchJump(endJump)
 	}
@@ -49,7 +49,7 @@ extension Compiler {
 		let endJump = emit(jump: .jump)
 
 		patchJump(elseJump)
-		emit(.pop)
+		emit(opcode: .pop, "or pop")
 
 		parse(precedence: .or)
 		patchJump(endJump)
@@ -65,16 +65,16 @@ extension Compiler {
 		parse(precedence: rule.precedence + 1)
 
 		switch kind {
-		case .plus: emit(.add)
-		case .minus: emit(.subtract)
-		case .star: emit(.multiply)
-		case .slash: emit(.divide)
-		case .equalEqual: emit(.equal)
-		case .bangEqual: emit(.notEqual)
-		case .less: emit(.less)
-		case .lessEqual: emit(.greater, .not)
-		case .greater: emit(.greater)
-		case .greaterEqual: emit(.less, .not)
+		case .plus: emit(opcode: .add, "plus opcode")
+		case .minus: emit(opcode: .subtract, "minus opcode")
+		case .star: emit(opcode: .multiply, "star opcode")
+		case .slash: emit(opcode: .divide, "slash opcode")
+		case .equalEqual: emit(opcode: .equal, "== opcode")
+		case .bangEqual: emit(opcode: .notEqual, "!= opcode")
+		case .less: emit(opcode: .less, "< opcode")
+		case .lessEqual: emit(.greater, .not, "<= opcode")
+		case .greater: emit(opcode: .greater, "> opcode")
+		case .greaterEqual: emit(.less, .not, ">= opcode")
 		default:
 			() // Unreachable
 		}
@@ -84,9 +84,9 @@ extension Compiler {
 
 	func literal(_: Bool) {
 		switch parser.previous.kind {
-		case .false: emit(.false)
-		case .true: emit(.true)
-		case .nil: emit(.nil)
+		case .false: emit(opcode: .false, "false opcode")
+		case .true: emit(opcode: .true, "true opcode")
+		case .nil: emit(opcode: .nil, "nil opcode")
 		default:
 			() // Unreachable
 		}
@@ -98,7 +98,7 @@ extension Compiler {
 		let start = parser.previous.start + 1
 		let length = parser.previous.length - 2
 		let value = Value.string(String(source[start ..< start + length]))
-		emit(constant: value)
+		emit(constant: value, "string opcode")
 	}
 
 	func variable(_ canAssign: Bool) {

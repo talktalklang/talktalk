@@ -12,9 +12,9 @@ class Closure: Hashable, Equatable {
 	var function: Function
 	var upvalues: [Value?]
 
-	init(function: Function, upvalues _: [Value] = []) {
+	init(function: Function) {
 		self.function = function
-		self.upvalues = [Value?](repeating: nil, count: function.upvalueCount)
+		self.upvalues = Array(repeating: nil, count: function.upvalueCount)
 	}
 
 	func hash(into hasher: inout Swift.Hasher) {

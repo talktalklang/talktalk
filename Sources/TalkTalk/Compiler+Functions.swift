@@ -8,7 +8,7 @@ extension Compiler {
 	func function(_: Function.Kind) {
 		let compiler = Compiler(parent: self)
 
-		compiler.scopeDepth += 1
+		compiler.beginScope()
 		compiler.currentFunction.name = String(parser.previous.lexeme(in: source))
 		compiler.parser.consume(.leftParen, "Expected '(' after function name")
 
@@ -29,22 +29,26 @@ extension Compiler {
 		compiler.parser.consume(.leftBrace, "Expected '{' before function body")
 		compiler.block()
 
-		compiler.emit(.nil)
-		compiler.emit(.return)
+		// Always generate a return at the end of a function in case there's
+		// not an explicit one. if there's an explicit one then this one will never
+		// get executed
+		compiler.emitReturn("implicit return")
 
 		let constant = compilingChunk.make(constant: .function(compiler.currentFunction))
-		emit(.closure)
-		emit(constant)
+		emit(opcode: .closure, "Function closure opcode for line #\(parser.line(parser.previous.line))")
+		emit(constant, "Function closure constant")
 		for upvalue in compiler.upvalues {
-			emit(upvalue.isLocal ? 1 : 0)
-			emit(upvalue.index)
+			emit(upvalue.isLocal ? 1 : 0, "Upvalue is local: \(upvalue.isLocal) closure")
+			emit(upvalue.index, "Upvalue index \(upvalue.index)")
 		}
+
+		assert(compiler.upvalues.count == compiler.currentFunction.upvalueCount, "upvalue count != function upvalue count (\(compiler.upvalues.count) != \(compiler.currentFunction.upvalueCount))")
 	}
 
 	func call(_: Bool) {
 		let argCount = argumentList()
-		emit(.call)
-		emit(argCount)
+		emit(opcode: .call, "Call opcode")
+		emit(argCount, "Call argcount \(argCount)")
 	}
 
 	func argumentList() -> Byte {

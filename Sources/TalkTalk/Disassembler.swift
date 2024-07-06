@@ -13,13 +13,15 @@ struct Disassembler {
 		var isSameLine: Bool
 
 		var description: String {
-			let lineString = isSameLine ? "   |" : String(format: "%04d", line)
-			let extra = if let extra {
-				"|\t\(extra)"
-			} else {
-				""
-			}
-			return "\(String(format: "%04d", offset))\t\(lineString)\t\(opcode)\t\(extra)"
+			let lineString = isSameLine ? "  |" : String(format: "% 3d", line)
+			let parts = [
+				String(format: "%04d", offset),
+				lineString,
+				opcode,
+				extra ?? ""
+			]
+
+			return parts.joined(separator: " ")
 		}
 	}
 
@@ -56,7 +58,7 @@ struct Disassembler {
 	}
 
 	private mutating func nextInstruction() -> Instruction? {
-		if offset >= chunk.count - 1 {
+		if offset >= chunk.count {
 			return nil
 		}
 
@@ -89,17 +91,26 @@ struct Disassembler {
 			return jumpInstruction(opcode!.description, sign: 1)
 		case .loop:
 			return jumpInstruction(opcode!.description, sign: -1)
+		case .getUpvalue, .setUpvalue:
+			return byteInstruction(opcode!.description)
 		case .closure:
 			var offsetOffset = 1
 
 			let constant = chunk.code[offset + offsetOffset]
 			offsetOffset += 1
 			let function = chunk.constants[Int(constant)].as(Function.self)
-			var extra = "\(function.name)"
+			var extra = "\(constant) \(function.name)"
+
+			if function.upvalueCount > 0 {
+				extra += "\n"
+			}
+
 			for _ in 0 ..< function.upvalueCount {
+				extra += String(repeating: " ", count: 8) + " |"
 				let isLocal = chunk.code[offset + offsetOffset]
 				offsetOffset += 1
 				let index = chunk.code[offset + offsetOffset]
+				offsetOffset += 1
 				extra += " \(isLocal == 1 ? "local" : "upvalue") \(index)"
 			}
 

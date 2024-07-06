@@ -22,6 +22,7 @@ public class Compiler {
 		}
 	}
 
+	var tracer: CompilerTracer!
 	var parent: Compiler?
 	var parser: Parser
 	var currentFunction: Function
@@ -51,11 +52,15 @@ public class Compiler {
 		self.parent = parent
 		self.parser = parent.parser
 		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "")
+		self.tracer = CompilerTracer(compiler: self)
+		self.locals[0] = Local(name: parser.current, depth: 0)
 	}
 
 	public init(source: String) {
 		self.parser = Parser(lexer: Lexer(source: source))
 		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
+		self.tracer = CompilerTracer(compiler: self)
+		self.locals[0] = Local(name: parser.current, depth: 0)
 	}
 
 	var compilingChunk: Chunk {
@@ -76,8 +81,8 @@ public class Compiler {
 		}
 
 		if errors.isEmpty {
-			emit(.nil)
-			emit(.return)
+			emit(opcode: .nil, "Final function nil return")
+			emit(opcode: .return, "Final function return")
 			return
 		}
 
@@ -111,7 +116,7 @@ public class Compiler {
 		if parser.match(.equal) {
 			expression()
 		} else {
-			emit(.nil)
+			emit(opcode: .nil, "Default nil return variable")
 		}
 
 		parser.consume(.semicolon, "Expected ';' after variable declaration")
@@ -184,7 +189,7 @@ public class Compiler {
 	// MARK: Emitters
 
 	func emit(loop backToInstruction: Int) {
-		emit(.loop)
+		emit(opcode: .loop, "Jump loop opcode")
 
 		let offset = compilingChunk.count - backToInstruction + 2
 		if offset > UInt16.max {
@@ -192,16 +197,16 @@ public class Compiler {
 		}
 
 		let (a, b) = uint16ToBytes(offset)
-		emit(a, b)
+		emit(a, b, "Loop jump bytes")
 	}
 
 	func emit(jump instruction: Opcode) -> Int {
-		emit(instruction)
+		emit(opcode: instruction, "Emitting jump")
 
 		// Use two bytes for the offset, which lets us jump over 65k bytes of code.
 		// We'll fill these in with the patchJump later.
-		emit(.uninitialized)
-		emit(.uninitialized)
+		emit(opcode: .uninitialized, "Jump placeholder 1")
+		emit(opcode: .uninitialized, "Jump placeholder 2")
 
 		// Return the current location of our chunk code, offset by 2 (since that's
 		// where we're gonna store our offset.
@@ -222,36 +227,38 @@ public class Compiler {
 		compilingChunk.code[offset + 1] = b
 	}
 
-	func emit(constant value: Value) {
+	func emit(constant value: Value, _ message: String) {
 		if compilingChunk.constants.count > UInt8.max {
 			error("Too many constants in one chunk")
 			return
 		}
 
+		tracer.trace(0, message: message)
 		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
-	func emit(_ opcode: Opcode) {
-		emit(opcode.byte)
+	func emit(opcode: Opcode, _ message: String) {
+		emit(opcode.byte, message)
 	}
 
-	func emit(_ opcode1: Opcode, _ opcode2: Opcode) {
-		emit(opcode1)
-		emit(opcode2)
+	func emit(_ opcode1: Opcode, _ opcode2: Opcode, _ message: String) {
+		emit(opcode: opcode1, message)
+		emit(opcode: opcode2, message)
 	}
 
-	func emit(_ byte: Byte) {
+	func emit(_ byte: Byte, _ message: String) {
+		tracer.trace(byte, message: message)
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
-	func emit(_ byte1: Byte, _ byte2: Byte) {
-		emit(byte1)
-		emit(byte2)
+	func emit(_ byte1: Byte, _ byte2: Byte, _ message: String) {
+		emit(byte1, message)
+		emit(byte2, message)
 	}
 
-	func emitReturn() {
-		emit(.nil)
-		emit(.return)
+	func emitReturn(_ message: String) {
+		emit(opcode: .nil, message)
+		emit(opcode: .return, message)
 	}
 
 	func error(_ message: String, at token: Token) {

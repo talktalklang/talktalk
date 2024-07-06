@@ -412,7 +412,7 @@ actor CompilerTests {
 	}
 
 	@Test("Trickier closure") func trickierClosure() {
-		let output = TestOutput()
+		let output = TestOutput(debug: true)
 		let source = """
 		func outer() {
 			var x = "value";
@@ -441,5 +441,29 @@ actor CompilerTests {
 		value
 
 		""")
+	}
+
+	@Test("Counter example") func counter() {
+		let source = """
+		func makeCounter() {
+			var i = 0;
+
+			func count() {
+				i = i + 1;
+				print i;
+			}
+
+			return count;
+		}
+
+		var counter = makeCounter();
+		counter();
+		counter();
+		"""
+
+		let output = TestOutput(debug: true)
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "1.0\n2.0\n")
 	}
 }

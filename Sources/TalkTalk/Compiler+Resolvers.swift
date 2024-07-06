@@ -10,29 +10,22 @@ extension Compiler {
 			return
 		}
 
-		if let name = parser.previous {
-			var i = localCount
-			while i >= 0 {
-				guard let local = locals[i] else {
-					i -= 1
-					continue
-				}
+		let name = parser.previous!
 
-				if local.depth != -1, local.depth < scopeDepth {
-					break
-				}
-
-				if name.same(lexeme: local.name, in: source) {
-					error("Already a variable with this name in this scope")
-				}
-
-				i -= 1
+		var i = localCount - 1
+		while i >= 0, let local = locals[i] {
+			if local.depth != -1, local.depth < scopeDepth {
+				break // negative
 			}
 
-			addLocal(name: name)
-		} else {
-			error("No variable name at \(parser.current.line)")
+			if name.same(lexeme: local.name, in: source) {
+				error("Already a variable with this name in this scope")
+			}
+
+			i -= 1
 		}
+
+		addLocal(name: name)
 	}
 
 	func defineVariable(global: Byte) {
@@ -41,8 +34,8 @@ extension Compiler {
 			return
 		}
 
-		emit(.defineGlobal)
-		emit(global)
+		emit(opcode: .defineGlobal, "global define")
+		emit(global, "global byte")
 	}
 
 	func addLocal(name: Token) {
@@ -51,7 +44,7 @@ extension Compiler {
 			return
 		}
 
-		locals[localCount] = Local(name: name, depth: scopeDepth)
+		locals[localCount] = Local(name: name, depth: -1)
 		localCount += 1
 	}
 
@@ -60,7 +53,7 @@ extension Compiler {
 			return
 		}
 
-		locals[localCount - 1]?.isInitialized = true
+		locals[localCount - 1]?.depth = scopeDepth
 	}
 
 	func namedVariable(_ token: Token, _ canAssign: Bool) {
@@ -87,20 +80,21 @@ extension Compiler {
 
 		if canAssign, parser.match(.equal) {
 			expression()
-			emit(setOp)
-			emit(arg)
+			emit(opcode: setOp, "namedVariable setOp")
+			emit(arg, "namedVariable arg")
 		} else {
-			emit(getOp)
-			emit(arg)
+			emit(opcode: getOp, "namedVariable getOp")
+			emit(arg, "namedVariable arg")
 		}
 	}
 
 	func resolveUpvalue(from token: Token) -> Int? {
-		guard let parent = parent else {
+		guard let parent else {
 			return nil
 		}
 
 		if let localByte = parent.resolveLocal(token) {
+			parent.locals[Int(localByte)]!.isCaptured = true
 			return addUpvalue(index: localByte, isLocal: true)
 		}
 
@@ -113,7 +107,7 @@ extension Compiler {
 
 	func identifierConstant(_ token: Token) -> Byte {
 		let value = Value.string(String(token.lexeme(in: source)))
-		return compilingChunk.write(constant: value)
+		return compilingChunk.make(constant: value)
 	}
 
 	func beginScope() {
@@ -125,7 +119,12 @@ extension Compiler {
 
 		// The block is done, gotta clean up the scope
 		while localCount > 0, let local = locals[localCount - 1], local.depth > scopeDepth {
-			emit(.pop)
+			if local.isCaptured {
+				emit(opcode: .closeUpvalue, "endScope")
+			} else {
+				emit(opcode: .pop, "endScope pop")
+			}
+
 			localCount -= 1
 		}
 	}
@@ -149,8 +148,7 @@ extension Compiler {
 	}
 
 	func addUpvalue(index: Byte, isLocal: Bool) -> Int {
-		for i in 0 ..< currentFunction.upvalueCount where i < upvalues.count {
-			let upvalue = upvalues[i]
+		for (i, upvalue) in upvalues.enumerated() {
 			if upvalue.index == index && upvalue.isLocal == isLocal {
 				return i
 			}
@@ -163,8 +161,8 @@ extension Compiler {
 
 		let upvalue = Upvalue(isLocal: isLocal, index: index)
 		upvalues.append(upvalue)
-
 		currentFunction.upvalueCount += 1
+
 		return currentFunction.upvalueCount
 	}
 }

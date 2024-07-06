@@ -28,10 +28,6 @@ public class Chunk: Hashable {
 		Byte(constants.write(value))
 	}
 
-	func write(constant value: Value) -> Byte {
-		Byte(constants.write(value))
-	}
-
 	func write(_ opcode: Opcode, line: Int) {
 		write(opcode.byte, line: line)
 	}

@@ -11,11 +11,21 @@ public enum InterpretResult {
 	     runtimeError
 }
 
+class OpenUpvalues {
+	var value: Value
+	var next: OpenUpvalues?
+
+	init(value: Value) {
+		self.value = value
+	}
+}
+
 public class VM<Output: OutputCollector> {
 	var output: Output
 	var stack = Stack<Value>()
 	var frames = Stack<CallFrame>()
 	var globals: [String: Value] = [:]
+	var openUpvalues: OpenUpvalues?
 
 	static func run(source: String, output: Output) -> InterpretResult {
 		let vm = VM(output: output)
@@ -44,7 +54,7 @@ public class VM<Output: OutputCollector> {
 
 	func stackDebug() {
 		if stack.isEmpty { return }
-		output.debug("\t\t\t\t\t\t", terminator: "")
+		output.debug(String(repeating: " ", count: 9), terminator: "")
 		for slot in stack.entries {
 			output.debug("[ \(slot.description) ]", terminator: "")
 		}
@@ -206,25 +216,58 @@ public class VM<Output: OutputCollector> {
 						closure.upvalues[i] = captureUpvalue(currentFrame.stack[index])
 					} else {
 						// TODO: the -1 here doesn't smell right to me but it got the tests passing?
-						closure.upvalues[i] = currentFrame.closure.upvalues[index-1]
+						closure.upvalues[i] = currentFrame.closure.upvalues[index]
 					}
 				}
 
 				stack.push(.closure(closure))
 			case .getUpvalue:
 				let slot = readByte()
-				let upvalue = currentFrame.closure.upvalues[Int(slot-1)]!
+				let upvalue = currentFrame.closure.upvalues[Int(slot)]!
 				let unwrapped = upvalue.unwrap()
 				stack.push(unwrapped)
 			case .setUpvalue:
 				let slot = readByte()
-				currentFrame.closure.upvalues[Int(slot)] = peek(0)
+				currentFrame.closure.upvalues[Int(slot)] = .upvalue(peek(0))
+			case .closeUpvalue:
+				closeUpvalues()
+				_ = stack.pop()
 			}
 		}
 	}
 
 	func captureUpvalue(_ local: Value) -> Value {
-		return .upvalue(local)
+		var prevUpvalue: OpenUpvalues?
+		var upvalue = openUpvalues
+
+		// If we were using actual C we could check to see if the upvalue's
+		// location is  greater than the local's but we're not managing
+		// memory so ¯\_(ツ)_/¯
+		while let nextUpvalue = upvalue {
+			if nextUpvalue.value.unwrap() == local {
+				return nextUpvalue.value
+			}
+
+			prevUpvalue = nextUpvalue
+			upvalue = nextUpvalue.next
+		}
+
+		let createdUpvalue = Value.upvalue(local)
+		if let prevUpvalue {
+			prevUpvalue.next = OpenUpvalues(value: createdUpvalue)
+		} else {
+			self.openUpvalues = OpenUpvalues(value: createdUpvalue)
+		}
+
+		return createdUpvalue
+	}
+
+	// I don't think this makes sense without pointers?
+	func closeUpvalues() {
+//		var nextUpvalue = openUpvalues
+//		while let upvalue = nextUpvalue {
+//			upvalue.closed
+//		}
 	}
 
 	func callValue(_ callee: Value, _ argCount: Byte) -> Bool {

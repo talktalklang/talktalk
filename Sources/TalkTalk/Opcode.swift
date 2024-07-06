@@ -4,7 +4,6 @@
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
-
 enum Opcode: Byte {
 	// The uninitialized opcode needs to be zero, just so we have better visibility into
 	// what goes wrong when the VM.ip is wrong. Otherwise, it just assumes the opcode is
@@ -29,6 +28,7 @@ enum Opcode: Byte {
 	     loop,
 	     call,
 	     closure,
+			 closeUpvalue,
 //			 native,
 	     `nil`
 
@@ -57,8 +57,14 @@ enum Opcode: Byte {
 		case .not:
 			"OP_NOT"
 		default:
-			"OP_\("\(self)".uppercased())"
+			"OP_\(format())"
 		}
+	}
+
+	func format() -> String {
+		return "\(self)"
+			.replacing(#/([a-z])([A-Z])/#, with: { "\($0.output.1)_\($0.output.2)" })
+			.uppercased()
 	}
 
 	var byte: Byte {

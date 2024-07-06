@@ -7,11 +7,14 @@
 class Local {
 	let name: Token
 	var depth: Int
-	var isInitialized = false
+	var isCaptured = false
 
-	init(name: Token, depth: Int, isInitialized: Bool = false) {
+	init(name: Token, depth: Int) {
 		self.name = name
 		self.depth = depth
-		self.isInitialized = isInitialized
+	}
+
+	var isInitialized: Bool {
+		depth != -1
 	}
 }
