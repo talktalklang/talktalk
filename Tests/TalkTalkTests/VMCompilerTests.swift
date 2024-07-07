@@ -37,25 +37,35 @@ final class TestOutput: OutputCollector {
 actor VMCompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
+		#expect(VM.run(source: "print 1 + -2", output: output) == .ok)
 		#expect(output.stdout == "-1\n")
 	}
 
 	@Test("Subtraction") func subtraction() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(123 - 3);", output: output) == .ok)
+		#expect(VM.run(source: "print(123 - 3)", output: output) == .ok)
 		#expect(output.stdout == "120\n")
 	}
 
 	@Test("Multiplication") func multiplication() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(5 * 5);", output: output) == .ok)
+		#expect(VM.run(source: "print(5 * 5)", output: output) == .ok)
 		#expect(output.stdout == "25\n")
 	}
 
 	@Test("Division") func dividing() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(25 / 5);", output: output) == .ok)
+		#expect(VM.run(source: "print(25 / 5)", output: output) == .ok)
+		#expect(output.stdout == "5\n")
+	}
+
+	@Test("Incessant terminators") func terminators() {
+		let output = TestOutput()
+		#expect(VM.run(source: """
+		;;;
+		;print(25 / 5);;;
+		;;;;;;
+		""", output: output) == .ok)
 		#expect(output.stdout == "5\n")
 	}
 
@@ -64,7 +74,7 @@ actor VMCompilerTests {
 			group.addTask {
 				for _ in 0 ..< 100 {
 					let output = TestOutput()
-					let result = VM.run(source: "print(1 + -2);", output: output)
+					let result = VM.run(source: "print(1 + -2)", output: output)
 					#expect(result == .ok)
 				}
 			}
@@ -82,42 +92,42 @@ actor VMCompilerTests {
 
 	@Test("Bools") func bools() {
 		var output = TestOutput()
-		#expect(VM.run(source: "print(true);", output: output) == .ok)
+		#expect(VM.run(source: "print(true)", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 
 		output = TestOutput()
-		#expect(VM.run(source: "print(false);", output: output) == .ok)
+		#expect(VM.run(source: "print(false)", output: output) == .ok)
 		#expect(output.stdout == "false\n")
 	}
 
 	@Test("Negation") func negation() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(!false);", output: output) == .ok)
+		#expect(VM.run(source: "print(!false)", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
 	@Test("Equality") func equality() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(2 == 2);", output: output) == .ok)
+		#expect(VM.run(source: "print(2 == 2)", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
 	@Test("Not equality") func notEquality() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(1 != 2);", output: output) == .ok)
+		#expect(VM.run(source: "print(1 != 2)", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
 	@Test("nil") func nill() {
 		let output = TestOutput()
-		#expect(VM.run(source: "print(nil);", output: output) == .ok)
+		#expect(VM.run(source: "print(nil)", output: output) == .ok)
 		#expect(output.stdout == "nil\n")
 	}
 
 	@Test("Strings") func string() {
 		let output = TestOutput()
 		let source = """
-		print("hello world");
+		print("hello world")
 		"""
 
 		let result = VM.run(source: source, output: output)
@@ -129,8 +139,8 @@ actor VMCompilerTests {
 	@Test("Global variables") func globals() {
 		let output = TestOutput()
 		let source = """
-		var greeting = "hello world";
-		print(greeting);
+		var greeting = "hello world"
+		print(greeting)
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -140,9 +150,9 @@ actor VMCompilerTests {
 	@Test("Global variable reassignment") func globalReassignment() {
 		let output = TestOutput()
 		let source = """
-		var greeting = "hello world";
-		greeting = greeting + " SUP";
-		print(greeting);
+		var greeting = "hello world"
+		greeting = greeting + " SUP"
+		print(greeting)
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -152,12 +162,12 @@ actor VMCompilerTests {
 	@Test("Assignment precedence") func assignmentPrecedence() {
 		let output = TestOutput()
 		let source = """
-		var a = 1;
-		var b = 1;
-		var c = 1;
-		var d = 1;
+		var a = 1
+		var b = 1
+		var c = 1
+		var d = 1
 
-		print(a * b = c + d);
+		print(a * b = c + d)
 		"""
 
 		#expect(VM.run(source: source, output: output) == .compileError)
@@ -168,14 +178,14 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		{
-			var a = "world";
+			var a = "world"
 
 			{
-				var a = "hello";
-				print(a);
+				var a = "hello"
+				print(a)
 			}
 
-			print(a);
+			print(a)
 		}
 		"""
 
@@ -187,14 +197,14 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		{
-			var a = 1;
+			var a = 1
 
 			{
-				var b = 2;
-				print(a + b);
+				var b = 2
+				print(a + b)
 			}
 
-			print(a + 3);
+			print(a + 3)
 		}
 		"""
 
@@ -206,11 +216,11 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		if false {
-			print("Dont show up");
+			print("Dont show up")
 		}
 
 		if true {
-			print("Do show up");
+			print("Do show up")
 		}
 		"""
 
@@ -222,9 +232,9 @@ actor VMCompilerTests {
 		var output = TestOutput()
 		var source = """
 		if false {
-			print("Dont show up");
+			print("Dont show up")
 		} else {
-			print("Do show up");
+			print("Do show up")
 		}
 		"""
 
@@ -234,9 +244,9 @@ actor VMCompilerTests {
 		output = TestOutput()
 		source = """
 		if true {
-			print("Do show up");
+			print("Do show up")
 		} else {
-			print("Dont show up");
+			print("Dont show up")
 		}
 		"""
 
@@ -246,11 +256,11 @@ actor VMCompilerTests {
 
 	@Test("&&") func and() {
 		var output = TestOutput()
-		#expect(VM.run(source: "print(true && false);", output: output) == .ok)
+		#expect(VM.run(source: "print(true && false)", output: output) == .ok)
 		#expect(output.stdout == "false\n")
 
 		output = TestOutput()
-		#expect(VM.run(source: "print(true && true);", output: output) == .ok)
+		#expect(VM.run(source: "print(true && true)", output: output) == .ok)
 		#expect(output.stdout == "true\n")
 	}
 
@@ -258,9 +268,9 @@ actor VMCompilerTests {
 		// TODO: Actually test the evaluation
 		var output = TestOutput()
 		#expect(VM.run(source: """
-		var a = 1;
+		var a = 1
 		if a > 2 || true {
-			print("cool");
+			print("cool")
 		}
 		""", output: output) == .ok)
 		#expect(output.stdout == "cool\n")
@@ -268,7 +278,7 @@ actor VMCompilerTests {
 		output = TestOutput()
 		#expect(VM.run(source: """
 		if false || false {
-			print("cool");
+			print("cool")
 		}
 		""", output: output) == .ok)
 		#expect(output.stdout == "")
@@ -277,10 +287,10 @@ actor VMCompilerTests {
 	@Test("while loop") func whileLoop() {
 		let output = TestOutput()
 		let source = """
-		var a = 0;
+		var a = 0
 		while a < 3 {
-			a = a + 1;
-			print(a);
+			a = a + 1
+			print(a)
 		}
 		"""
 
@@ -292,7 +302,7 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		func greet() {
-			print("sup");
+			print("sup")
 		}
 
 		greet();
@@ -306,10 +316,10 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		func foo() {
-			return "bar";
+			return "bar"
 		}
 
-		print(foo());
+		print(foo())
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -320,12 +330,12 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		func foo() {
-			return "bar";
+			return "bar"
 		}
 
-		var a = foo();
+		var a = foo()
 
-		print(a);
+		print(a)
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -336,12 +346,12 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		func greet(name) {
-			return "sup, " + name;
+			return "sup, " + name
 
-			print("don't show up.");
+			print("don't show up.")
 		}
 
-		print(greet("pat"));
+		print(greet("pat"))
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -353,13 +363,13 @@ actor VMCompilerTests {
 		let source = """
 		func outer() {
 			func inner(name) {
-				return name;
+				return name
 			}
 
-			return inner("pat");
+			return inner("pat")
 		}
 
-		print outer();
+		print outer()
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -378,8 +388,8 @@ actor VMCompilerTests {
 	@Test("Native print") func nativePrint() {
 		let output = TestOutput()
 		let source = """
-		var msg = "yup";
-		print(msg);
+		var msg = "yup"
+		print(msg)
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -390,13 +400,13 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		func outer() {
-			var x = "outside";
+			var x = "outside"
 			func inner() {
-				print(x);
+				print(x)
 			}
-			inner();
+			inner()
 		}
-		outer();
+		outer()
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -407,23 +417,23 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		func outer() {
-			var x = "value";
+			var x = "value"
 			func middle() {
 				func inner() {
-					print(x);
+					print(x)
 				}
 
-				print "create inner closure";
-				return inner;
+				print "create inner closure"
+				return inner
 			}
 
-			print "return from outer";
-			return middle;
+			print "return from outer"
+			return middle
 		}
 
-		var mid = outer();
-		var in = mid();
-		in();
+		var mid = outer()
+		var in = mid()
+		in()
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
@@ -438,19 +448,19 @@ actor VMCompilerTests {
 	@Test("Counter example") func counter() {
 		let source = """
 		func makeCounter() {
-			var i = 0;
+			var i = 0
 
 			func count() {
-				i = i + 1;
-				print i;
+				i = i + 1
+				print i
 			}
 
-			return count;
+			return count
 		}
 
-		var counter = makeCounter();
-		counter();
-		counter();
+		var counter = makeCounter()
+		counter()
+		counter()
 		"""
 
 		let output = TestOutput()

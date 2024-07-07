@@ -6,7 +6,7 @@
 //
 public final class Compiler {
 	enum Errors: Swift.Error {
-		case errors([Error])
+		case errors([TalkTalk.Error])
 	}
 
 	public struct Error: Sendable {
@@ -84,13 +84,13 @@ public final class Compiler {
 			#endif
 		}
 
-		if errors.isEmpty {
+		if collectErrors().isEmpty {
 			emit(opcode: .nil)
 			emit(opcode: .return)
 			return
 		}
 
-		throw Errors.errors(errors)
+		throw Errors.errors(collectErrors())
 	}
 
 	func declaration() {
@@ -123,7 +123,7 @@ public final class Compiler {
 			emit(opcode: .nil)
 		}
 
-		parser.consume(.semicolon, "Expected ';' after variable declaration")
+		parser.consume(.statementTerminators, "Expected ';' or new line after variable declaration")
 	}
 
 	// MARK: Statements
@@ -265,11 +265,33 @@ public final class Compiler {
 		emit(opcode: .return)
 	}
 
+	func collectErrors() -> [TalkTalk.Error] {
+		var result: [TalkTalk.Error] = []
+
+		if !errors.isEmpty {
+			result.append(.compiler(errors))
+		}
+
+		if !parser.errors.isEmpty {
+			result.append(.parser(parser.errors))
+		}
+
+		return result
+	}
+
 	func error(_ message: String, at token: Token) {
-		errors.append(Error(token: token, message: message))
+		if let parent {
+			parent.error(message, at: token)
+		} else {
+			errors.append(Error(token: token, message: message))
+		}
 	}
 
 	func error(_ message: String) {
-		errors.append(Error(token: nil, message: message))
+		if let parent {
+			parent.error(message)
+		} else {
+			errors.append(Error(token: nil, message: message))
+		}
 	}
 }

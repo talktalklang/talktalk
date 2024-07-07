@@ -29,9 +29,13 @@ public final class Parser {
 		     any
 	}
 
-	struct Error {
+	public struct Error: Swift.Error {
 		var token: Token
-		var message: String
+		public var message: String
+
+		var description: String {
+			message
+		}
 	}
 
 	var lexer: Lexer
@@ -69,8 +73,30 @@ public final class Parser {
 		return true
 	}
 
+	func match(_ kinds: Token.Kinds) -> Bool {
+		if kinds.contains(current.kind) {
+			advance()
+			return true
+		}
+
+		return false
+	}
+
 	func check(_ kind: Token.Kind) -> Bool {
 		current.kind == kind
+	}
+
+	func check(_ kinds: Token.Kinds) -> Bool {
+		kinds.contains(current.kind)
+	}
+
+	func consume(_ kinds: Token.Kinds, _: String) {
+		if kinds.contains(current.kind) {
+			advance()
+			return
+		}
+
+		error(at: current, "Unexpected token: \(current.description(in: lexer.source)). Expected: \(kinds).")
 	}
 
 	func consume(_ kind: Token.Kind, _: String) {

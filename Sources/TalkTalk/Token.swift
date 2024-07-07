@@ -5,7 +5,9 @@
 //  Created by Pat Nakajima on 7/1/24.
 //
 struct Token: Equatable, Sendable {
-	enum Kind: Equatable {
+	typealias Kinds = Set<Token.Kind>
+
+	enum Kind: Equatable, Hashable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
 		     comma, dot, minus, plus, semicolon, slash, star
@@ -21,6 +23,8 @@ struct Token: Equatable, Sendable {
 		// Keywords
 		case `class`, `else`, `false`, `func`, initializer, `for`, `if`, `nil`,
 		     or, `return`, `super`, `self`, `true`, `var`, `while`
+
+		case newline
 
 		case eof
 		case print
@@ -45,7 +49,7 @@ struct Token: Equatable, Sendable {
 	}
 
 	func description(in source: borrowing ContiguousArray<Character>) -> String {
-		"\(kind) \(lexeme(in: source))"
+		return "\(kind) `\(String(lexeme(in: source)))` position: \(start) line: \(line)"
 	}
 
 //	@available(*, deprecated, message: "this isn't great")
@@ -54,4 +58,12 @@ struct Token: Equatable, Sendable {
 			source[start ..< start + length]
 		)
 	}
+}
+
+extension Token.Kinds {
+	static let statementTerminators: Token.Kinds = [
+		.semicolon,
+		.newline,
+		.eof,
+	]
 }

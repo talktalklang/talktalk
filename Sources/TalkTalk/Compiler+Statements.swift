@@ -15,6 +15,10 @@ extension Compiler {
 			ifStatement()
 		} else if parser.match(.while) {
 			whileStatement()
+		} else if parser.check(.statementTerminators) {
+			// If we're not in the middle of another statement,
+			// just go past.
+			parser.advance()
 		} else if parser.match(.leftBrace) {
 			beginScope()
 			block()
@@ -26,13 +30,13 @@ extension Compiler {
 
 	func expressionStatement() {
 		expression()
-		parser.consume(.semicolon, "Expected ';' after expression")
+		parser.consume(.statementTerminators, "Expected ';' after expression")
 		emit(opcode: .pop)
 	}
 
 	func printStatement() {
 		expression()
-		parser.consume(.semicolon, "Expected ';' after value.")
+		parser.consume(.statementTerminators, "Expected ';' after value.")
 		emit(opcode: .print)
 	}
 
@@ -42,11 +46,11 @@ extension Compiler {
 			return
 		}
 
-		if parser.match(.semicolon) {
+		if parser.match(.statementTerminators) {
 			emitReturn()
 		} else {
 			expression()
-			parser.consume(.semicolon, "Expected ';' after return value")
+			parser.consume(.statementTerminators, "Expected ';' after return value")
 			emit(opcode: .return)
 		}
 	}

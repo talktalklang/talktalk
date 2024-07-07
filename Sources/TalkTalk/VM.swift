@@ -38,7 +38,7 @@ public struct VM<Output: OutputCollector> {
 		do {
 			try compiler.compile()
 		} catch {
-			output.print(compiler.errors.map { $0.description }.joined(separator: "\n"))
+			output.print(compiler.collectErrors().map { $0.description }.joined(separator: "\n"))
 			return .compileError
 		}
 

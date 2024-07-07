@@ -7,8 +7,8 @@
 struct Stack<Element> {
 	final class Storage: ManagedBuffer<Void, Element> {
 		fileprivate func copy(count: Int) -> Storage {
-			withUnsafeMutablePointers { header, elements in
-				return Storage.create(minimumCapacity: count) { newBuffer in
+			withUnsafeMutablePointers { _, elements in
+				Storage.create(minimumCapacity: count) { newBuffer in
 					newBuffer.withUnsafeMutablePointerToElements { newElements in
 						newElements.initialize(from: elements, count: count)
 					}
@@ -17,8 +17,8 @@ struct Stack<Element> {
 		}
 
 		fileprivate func resize(newSize: Int, oldSize: Int) -> Storage {
-			withUnsafeMutablePointers { size, oldElements in
-				return Storage.create(minimumCapacity: newSize) { newBuf in
+			withUnsafeMutablePointers { _, oldElements in
+				Storage.create(minimumCapacity: newSize) { newBuf in
 					newBuf.withUnsafeMutablePointerToElements { newElements in
 						newElements.moveInitialize(from: oldElements, count: oldSize)
 					}
@@ -51,7 +51,7 @@ struct Stack<Element> {
 	mutating func entries() -> [Element] {
 		let storage = isKnownUniquelyReferenced(&storage) ? storage : storage.copy(count: size)
 
-		return storage.withUnsafeMutablePointers { header, elements in
+		return storage.withUnsafeMutablePointers { _, elements in
 			(0 ..< size).map { i in
 				elements[i]
 			}
@@ -89,7 +89,7 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
-	mutating func pop(count: Int) -> [Element] {
+	mutating func pop(count _: Int) -> [Element] {
 		(0 ..< size).map { _ in pop() }
 	}
 

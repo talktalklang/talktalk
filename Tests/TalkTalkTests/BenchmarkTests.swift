@@ -67,7 +67,7 @@ struct BenchmarkTests {
 
 	@Test("Test compile time") func compile() {
 		let source = """
-		var i = 0;
+		var i = 0
 		var s = "here's a string";
 		var d = "and another string????????";
 		var b = s + d;

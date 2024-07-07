@@ -42,6 +42,7 @@ struct LexerTests {
 
 		var lexer = Lexer(source: source)
 		#expect(lexer.collect() == [
+			Token(start: 20, length: 1, kind: .newline, line: 1),
 			Token(start: 21, length: 1, kind: .plus, line: 2),
 			Token(start: 23, length: 2, kind: .greaterEqual, line: 2),
 			Token(start: source.count, length: 0, kind: .eof, line: 2),
@@ -102,6 +103,24 @@ struct LexerTests {
 		#expect(lexer.collect() == [
 			Token(start: 0, length: 8, kind: .identifier, line: 1),
 			Token(start: source.count, length: 0, kind: .eof, line: 1),
+		])
+	}
+
+	@Test("Newline") func newline() {
+		let source = """
+		var foo
+		foo = 1
+		"""
+
+		var lexer = Lexer(source: source)
+		#expect(lexer.collect() == [
+			Token(start: 0, length: 3, kind: .var, line: 1),
+			Token(start: 4, length: 3, kind: .identifier, line: 1),
+			Token(start: 7, length: 1, kind: .newline, line: 1),
+			Token(start: 8, length: 3, kind: .identifier, line: 2),
+			Token(start: 12, length: 1, kind: .equal, line: 2),
+			Token(start: 14, length: 1, kind: .number, line: 2),
+			Token(start: source.count, length: 0, kind: .eof, line: 2),
 		])
 	}
 

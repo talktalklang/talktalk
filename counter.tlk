@@ -1,15 +1,15 @@
 // Test closures
 func makeCounter() {
-	var i = 0;
+	var i = 0
 
 	func count() {
-		i = i + 1;
-		print i;
+		i = i + 1
+		print i
 	}
 
-	return count;
+	return count
 }
 
-var counter = makeCounter();
-counter();
-counter();
+var counter = makeCounter()
+counter()
+counter()

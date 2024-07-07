@@ -48,18 +48,18 @@ let package = Package(
 				"TalkTalk",
 			],
 			swiftSettings: [
-				.enableUpcomingFeature("SwiftTesting")
+				.enableUpcomingFeature("SwiftTesting"),
 			]
 		),
 	]
 )
 
 #if os(Linux)
-package.dependencies.append(
-	.package(url: "https://github.com/apple/swift-testing", branch: "main")
-)
+	package.dependencies.append(
+		.package(url: "https://github.com/apple/swift-testing", branch: "main")
+	)
 
-for target in package.targets.filter({ $0.isTest }) {
-	target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
-}
+	for target in package.targets.filter({ $0.isTest }) {
+		target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
+	}
 #endif

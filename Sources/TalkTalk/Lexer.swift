@@ -79,6 +79,7 @@ struct Lexer: ~Copyable {
 		case ">": make(match("=") ? .greaterEqual : .greater)
 		case "&": make(match("&") ? .andAnd : .and)
 		case "|": make(match("|") ? .pipePipe : .pipe)
+		case "\n": newline()
 		case #"""#: string()
 		case _ where char.isNumber: number()
 		case _ where char.isLetter: identifier(start: char)
@@ -92,12 +93,9 @@ struct Lexer: ~Copyable {
 			switch char {
 			case " ", "\r", "\t":
 				advance()
-			case "\n":
-				line += 1
-				advance()
 			case "/":
 				if peekNext() == "/" {
-					while peek() != "\n", !isAtEnd {
+					while peekNext() != "\n", !isAtEnd {
 						advance()
 					}
 				} else {
@@ -107,6 +105,14 @@ struct Lexer: ~Copyable {
 				return
 			}
 		}
+	}
+
+	mutating func newline() -> Token {
+		defer {
+			line += 1
+		}
+
+		return make(.newline)
 	}
 
 	mutating func string() -> Token {

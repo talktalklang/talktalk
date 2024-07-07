@@ -67,6 +67,7 @@ extension Token.Kind {
 		case .while: .none
 		case .eof: .none
 		case .error: .none
+		case .newline: .none
 		}
 	}
 }

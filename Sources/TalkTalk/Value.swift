@@ -14,7 +14,7 @@ enum Value: Equatable, Hashable {
 	case error(String),
 	     bool(Bool),
 	     `nil`,
-			 int(Int),
+	     int(Int),
 	     string(String),
 	     closure(Closure),
 	     function(Function),

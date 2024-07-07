@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/4/24.
 //
-final class Native {
+enum Native {
 	static let list: [String: any NativeFunction.Type] = [
 		"print": NativeFunctionPrint.self,
 	]
