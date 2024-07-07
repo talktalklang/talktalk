@@ -32,14 +32,14 @@ extension Compiler {
 		// Always generate a return at the end of a function in case there's
 		// not an explicit one. if there's an explicit one then this one will never
 		// get executed
-		compiler.emitReturn("implicit return")
+		compiler.emitReturn()
 
 		let constant = compilingChunk.make(constant: .function(compiler.currentFunction))
-		emit(opcode: .closure, "Function closure opcode for line #\(parser.line(parser.previous.line))")
-		emit(constant, "Function closure constant")
+		emit(opcode: .closure)
+		emit(constant)
 		for upvalue in compiler.upvalues {
-			emit(upvalue.isLocal ? 1 : 0, "Upvalue is local: \(upvalue.isLocal) closure")
-			emit(upvalue.index, "Upvalue index \(upvalue.index)")
+			emit(upvalue.isLocal ? 1 : 0)
+			emit(upvalue.index)
 		}
 
 		assert(compiler.upvalues.count == compiler.currentFunction.upvalueCount, "upvalue count != function upvalue count (\(compiler.upvalues.count) != \(compiler.currentFunction.upvalueCount))")
@@ -47,8 +47,8 @@ extension Compiler {
 
 	func call(_: Bool) {
 		let argCount = argumentList()
-		emit(opcode: .call, "Call opcode")
-		emit(argCount, "Call argcount \(argCount)")
+		emit(opcode: .call)
+		emit(argCount)
 	}
 
 	func argumentList() -> Byte {

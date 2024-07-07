@@ -78,8 +78,8 @@ public class Compiler {
 		}
 
 		if errors.isEmpty {
-			emit(opcode: .nil, "Final function nil return")
-			emit(opcode: .return, "Final function return")
+			emit(opcode: .nil)
+			emit(opcode: .return)
 			return
 		}
 
@@ -113,7 +113,7 @@ public class Compiler {
 		if parser.match(.equal) {
 			expression()
 		} else {
-			emit(opcode: .nil, "Default nil return variable")
+			emit(opcode: .nil)
 		}
 
 		parser.consume(.semicolon, "Expected ';' after variable declaration")
@@ -188,7 +188,7 @@ public class Compiler {
 	// MARK: Emitters
 
 	func emit(loop backToInstruction: Int) {
-		emit(opcode: .loop, "Jump loop opcode")
+		emit(opcode: .loop)
 
 		let offset = compilingChunk.count - backToInstruction + 2
 		if offset > UInt16.max {
@@ -196,16 +196,16 @@ public class Compiler {
 		}
 
 		let (a, b) = uint16ToBytes(offset)
-		emit(a, b, "Loop jump bytes")
+		emit(a, b)
 	}
 
 	func emit(jump instruction: Opcode) -> Int {
-		emit(opcode: instruction, "Emitting jump")
+		emit(opcode: instruction)
 
 		// Use two bytes for the offset, which lets us jump over 65k bytes of code.
 		// We'll fill these in with the patchJump later.
-		emit(opcode: .uninitialized, "Jump placeholder 1")
-		emit(opcode: .uninitialized, "Jump placeholder 2")
+		emit(opcode: .uninitialized)
+		emit(opcode: .uninitialized)
 
 		// Return the current location of our chunk code, offset by 2 (since that's
 		// where we're gonna store our offset.
@@ -226,7 +226,7 @@ public class Compiler {
 		compilingChunk.code[offset + 1] = b
 	}
 
-	func emit(constant value: Value, _ message: String) {
+	func emit(constant value: Value) {
 		if compilingChunk.constants.count > UInt8.max {
 			error("Too many constants in one chunk")
 			return
@@ -235,27 +235,27 @@ public class Compiler {
 		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
-	func emit(opcode: Opcode, _ message: String) {
-		emit(opcode.byte, message)
+	func emit(opcode: Opcode) {
+		emit(opcode.byte)
 	}
 
-	func emit(_ opcode1: Opcode, _ opcode2: Opcode, _ message: String) {
-		emit(opcode: opcode1, message)
-		emit(opcode: opcode2, message)
+	func emit(_ opcode1: Opcode, _ opcode2: Opcode) {
+		emit(opcode: opcode1)
+		emit(opcode: opcode2)
 	}
 
-	func emit(_ byte: Byte, _ message: String) {
+	func emit(_ byte: Byte) {
 		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
-	func emit(_ byte1: Byte, _ byte2: Byte, _ message: String) {
-		emit(byte1, message)
-		emit(byte2, message)
+	func emit(_ byte1: Byte, _ byte2: Byte) {
+		emit(byte1)
+		emit(byte2)
 	}
 
-	func emitReturn(_ message: String) {
-		emit(opcode: .nil, message)
-		emit(opcode: .return, message)
+	func emitReturn() {
+		emit(opcode: .nil)
+		emit(opcode: .return)
 	}
 
 	func error(_ message: String, at token: Token) {

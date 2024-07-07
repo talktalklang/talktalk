@@ -34,8 +34,8 @@ extension Compiler {
 			return
 		}
 
-		emit(opcode: .defineGlobal, "global define")
-		emit(global, "global byte")
+		emit(opcode: .defineGlobal)
+		emit(global)
 	}
 
 	func addLocal(name: Token) {
@@ -79,11 +79,11 @@ extension Compiler {
 
 		if canAssign, parser.match(.equal) {
 			expression()
-			emit(opcode: setOp, "namedVariable setOp")
-			emit(arg, "namedVariable arg")
+			emit(opcode: setOp)
+			emit(arg)
 		} else {
-			emit(opcode: getOp, "namedVariable getOp")
-			emit(arg, "namedVariable arg")
+			emit(opcode: getOp)
+			emit(arg)
 		}
 	}
 
@@ -119,9 +119,9 @@ extension Compiler {
 		// The block is done, gotta clean up the scope
 		while localCount > 0, let local = locals[localCount - 1], local.depth > scopeDepth {
 			if local.isCaptured {
-				emit(opcode: .closeUpvalue, "endScope")
+				emit(opcode: .closeUpvalue)
 			} else {
-				emit(opcode: .pop, "endScope pop")
+				emit(opcode: .pop)
 			}
 
 			localCount -= 1

@@ -81,15 +81,10 @@ public class VM<Output: OutputCollector> {
 		stack.push(.closure(rootClosure))
 		_ = call(rootClosure, argCount: 0)
 
-//		output.debug(Disassembler.header)
-//		Disassembler.dump(chunk: chunk, into: StdoutOutput())
-
 		while true {
 			#if DEBUGGING
 				stackDebug()
 				Disassembler.dump(chunk: chunk, ip: ip, into: output)
-//			disassembler.report(ip: ip)
-
 			#endif
 
 			let byte = readByte()

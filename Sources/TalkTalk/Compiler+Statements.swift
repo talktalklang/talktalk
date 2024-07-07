@@ -27,13 +27,13 @@ extension Compiler {
 	func expressionStatement() {
 		expression()
 		parser.consume(.semicolon, "Expected ';' after expression")
-		emit(opcode: .pop, "expression statement pop")
+		emit(opcode: .pop)
 	}
 
 	func printStatement() {
 		expression()
 		parser.consume(.semicolon, "Expected ';' after value.")
-		emit(opcode: .print, "print")
+		emit(opcode: .print)
 	}
 
 	func returnStatement() {
@@ -43,11 +43,11 @@ extension Compiler {
 		}
 
 		if parser.match(.semicolon) {
-			emitReturn("return return")
+			emitReturn()
 		} else {
 			expression()
 			parser.consume(.semicolon, "Expected ';' after return value")
-			emit(opcode: .return, "return value")
+			emit(opcode: .return)
 		}
 	}
 
@@ -55,7 +55,7 @@ extension Compiler {
 		expression() // Add the if EXPRESSION to the stack
 
 		let thenJumpLocation = emit(jump: .jumpIfFalse)
-		emit(opcode: .pop, "if pop condition off stack") // Pop the condition off the stack
+		emit(opcode: .pop) // Pop the condition off the stack
 
 		parser.consume(.leftBrace, "Expected '{' before `if` statement.")
 		block()
@@ -64,7 +64,7 @@ extension Compiler {
 
 		// Backpack the jump
 		patchJump(thenJumpLocation)
-		emit(opcode: .pop, "if pop condition off stack") // Pop the condition off the stack
+		emit(opcode: .pop) // Pop the condition off the stack
 
 		if parser.match(.else) {
 			statement()
@@ -85,13 +85,13 @@ extension Compiler {
 
 		// Get the instruction to leave the loop
 		let exitJump = emit(jump: .jumpIfFalse)
-		emit(opcode: .pop, "while statement condition pop") // Clean up the stack
+		emit(opcode: .pop) // Clean up the stack
 
 		// The body of the loop
 		block()
 		emit(loop: loopStart)
 
 		patchJump(exitJump)
-		emit(opcode: .pop, "while statement condition pop")
+		emit(opcode: .pop)
 	}
 }
