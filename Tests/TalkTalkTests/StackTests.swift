@@ -21,7 +21,7 @@ struct StackTests {
 	}
 
 	@Test("Basics") func peek() {
-		var stack = Stack<Item>()
+		var stack = Stack<Item>(capacity: 16)
 		stack.push(Item(value: "3"))
 		stack.push(Item(value: "2"))
 		stack.push(Item(value: "1"))
@@ -37,7 +37,7 @@ struct StackTests {
 	}
 
 	@Test("Bench") func bench() {
-		var stack = Stack<Int>()
+		var stack = Stack<Int>(capacity: 10_000_001)
 		for i in 0 ..< 10_000_000 {
 			stack.push(i)
 			stack.size

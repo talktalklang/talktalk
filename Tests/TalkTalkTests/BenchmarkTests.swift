@@ -23,7 +23,7 @@ struct BenchmarkTests {
 		}
 		"""
 
-		var output = TestOutput()
+		let output = TestOutput()
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == """
 		0.0

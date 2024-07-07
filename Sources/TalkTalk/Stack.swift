@@ -30,8 +30,8 @@ struct Stack<Element> {
 	private var storage: Storage
 	public var size: Int = 0
 
-	init(capacity: Int = 8) {
-		self.storage = Storage.create(minimumCapacity: capacity) { _ in 0 } as! Storage
+	init(capacity: Int) {
+		self.storage = Storage.create(minimumCapacity: capacity) { _ in } as! Storage
 	}
 
 	subscript(_ index: Int) -> Element {
@@ -69,9 +69,9 @@ struct Stack<Element> {
 
 	@inline(__always)
 	mutating func push(_ element: Element) {
-		if storage.capacity < size + 1 {
-			storage = storage.resize(newSize: storage.capacity * 2, oldSize: size)
-		}
+//		if storage.capacity < size + 1 {
+//			storage = storage.resize(newSize: storage.capacity * 2, oldSize: size)
+//		}
 
 		storage.withUnsafeMutablePointers {
 			($1 + size++).initialize(to: element)

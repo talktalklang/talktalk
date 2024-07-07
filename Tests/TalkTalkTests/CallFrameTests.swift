@@ -9,7 +9,7 @@ import Testing
 
 struct CallFrameTests {
 	@Test("Stack window") func frame() {
-		var stack = Stack<Value>()
+		var stack = Stack<Value>(capacity: 16)
 		for i in 0 ..< 10 {
 			stack.push(.int(Int(i)))
 		}

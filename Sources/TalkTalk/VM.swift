@@ -23,8 +23,8 @@ class OpenUpvalues {
 public struct VM<Output: OutputCollector> {
 	var output: Output
 	var stack = Stack<Value>(capacity: 256)
-	var frames = Stack<CallFrame>()
-	var globals: [String: Value] = [:]
+	var frames = Stack<CallFrame>(capacity: 256)
+	var globals: [Int: Value] = [:]
 	var openUpvalues: OpenUpvalues?
 
 	var chunk: Chunk!
@@ -48,7 +48,7 @@ public struct VM<Output: OutputCollector> {
 	public init(output: Output = StdoutOutput()) {
 		self.output = output
 		for (name, function) in Native.list {
-			globals[name] = .native(function.init().name)
+			globals[name.hashValue] = .native(function.init().name)
 		}
 	}
 
@@ -166,11 +166,11 @@ public struct VM<Output: OutputCollector> {
 				output.print(stack.pop().description)
 			case .defineGlobal:
 				let name = readString()
-				globals[name] = peek()
+				globals[name.hashValue] = stack.peek()
 				_ = stack.pop()
 			case .getGlobal:
 				let name = readString()
-				guard let value = globals[name] else {
+				guard let value = globals[name.hashValue] else {
 					output.debug("Undefined variable '\(name)' \(globals.debugDescription)")
 					output.print("Error: Undefined variable '\(name)'")
 					return .runtimeError
@@ -178,12 +178,12 @@ public struct VM<Output: OutputCollector> {
 				stack.push(value)
 			case .setGlobal:
 				let name = readString()
-				if globals[name] == nil {
+				if globals[name.hashValue] == nil {
 					runtimeError("Undefined variable \(name).")
 					return .runtimeError
 				}
 
-				globals[name] = peek()
+				globals[name.hashValue] = stack.peek()
 			case .getLocal:
 				let slot = readByte()
 				stack.push(
@@ -191,15 +191,15 @@ public struct VM<Output: OutputCollector> {
 				)
 			case .setLocal:
 				let slot = readByte()
-				currentFrame.stack[Int(slot)] = peek()
+				currentFrame.stack[Int(slot)] = stack.peek()
 			case .uninitialized:
-				runtimeError("Unitialized instruction cannot be run: \(peek().description)")
+				runtimeError("Unitialized instruction cannot be run (maybe it's a constant?): \(stack.peek().description)")
 			case .jump:
 				let offset = readShort()
 				ip += Int(offset)
 			case .jumpIfFalse:
 				let offset = readShort()
-				let isTrue = peek().as(Bool.self)
+				let isTrue = stack.peek().as(Bool.self)
 				if !isTrue {
 					ip += Int(offset)
 				}
@@ -208,7 +208,7 @@ public struct VM<Output: OutputCollector> {
 				ip -= Int(offset)
 			case .call:
 				let argCount = readByte()
-				if !callValue(peek(argCount), argCount) {
+				if !callValue(stack.peek(offset: Int(argCount)), argCount) {
 					return .runtimeError
 				}
 			case .closure:
@@ -237,7 +237,7 @@ public struct VM<Output: OutputCollector> {
 				stack.push(unwrapped)
 			case .setUpvalue:
 				let slot = readByte()
-				currentFrame.closure.upvalues[Int(slot)] = peek(0)
+				currentFrame.closure.upvalues[Int(slot)] = stack.peek(offset: 0)
 			case .closeUpvalue:
 				closeUpvalues()
 				_ = stack.pop()
@@ -337,10 +337,12 @@ public struct VM<Output: OutputCollector> {
 		return UInt16((a << 8) | b)
 	}
 
+	@inline(__always)
 	private mutating func readString() -> String {
 		return chunk.constants.read(byte: readByte()).as(String.self)
 	}
 
+	@inline(__always)
 	private mutating func readConstant() -> Value {
 		chunk.constants[Int(readByte())]
 	}
@@ -348,14 +350,6 @@ public struct VM<Output: OutputCollector> {
 	@inline(__always)
 	private mutating func readByte() -> Byte {
 		return chunk.code[ip++]
-	}
-
-	private mutating func peek(_ offset: Byte) -> Value {
-		stack.peek(offset: Int(offset))
-	}
-
-	private mutating func peek(_ offset: Int = 0) -> Value {
-		stack.peek(offset: offset)
 	}
 
 	private mutating func runtimeError(_ message: String) {
