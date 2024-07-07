@@ -17,5 +17,3 @@ extension String {
 		self[index(at: range.lowerBound) ..< index(at: range.upperBound)]
 	}
 }
-
-import Foundation

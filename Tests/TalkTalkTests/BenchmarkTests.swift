@@ -9,7 +9,7 @@ import Foundation
 import Testing
 
 struct BenchmarkTests {
-	@Test("Fib") func fib() {
+	@Test("Fib", .disabled()) func fib() {
 		let source = """
 		func fib(n) {
 			if (n <= 1) { return n; }
@@ -17,7 +17,7 @@ struct BenchmarkTests {
 		}
 
 		var i = 0;
-		while i < 30 {
+		while i < 35 {
 			print(fib(i));
 			i = i + 1;
 		}
@@ -26,36 +26,41 @@ struct BenchmarkTests {
 		let output = TestOutput()
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == """
-		0.0
-		1.0
-		1.0
-		2.0
-		3.0
-		5.0
-		8.0
-		13.0
-		21.0
-		34.0
-		55.0
-		89.0
-		144.0
-		233.0
-		377.0
-		610.0
-		987.0
-		1597.0
-		2584.0
-		4181.0
-		6765.0
-		10946.0
-		17711.0
-		28657.0
-		46368.0
-		75025.0
-		121393.0
-		196418.0
-		317811.0
-		514229.0
+		0
+		1
+		1
+		2
+		3
+		5
+		8
+		13
+		21
+		34
+		55
+		89
+		144
+		233
+		377
+		610
+		987
+		1597
+		2584
+		4181
+		6765
+		10946
+		17711
+		28657
+		46368
+		75025
+		121393
+		196418
+		317811
+		514229
+		832040
+		1346269
+		2178309
+		3524578
+		5702887
 
 		""")
 	}

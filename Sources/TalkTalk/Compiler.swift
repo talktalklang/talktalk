@@ -9,11 +9,11 @@ public final class Compiler {
 		case errors([Error])
 	}
 
-	struct Error {
+	public struct Error {
 		var token: Token?
 		var message: String
 
-		var description: String {
+		public var description: String {
 			if let token {
 				"Compiler Error: \(message) at \(token)"
 			} else {
@@ -25,7 +25,7 @@ public final class Compiler {
 	var parent: Compiler?
 	var parser: Parser
 	var function: Function
-	var errors: [Error] = []
+	public var errors: [Error] = []
 
 	// MARK: Local variable management
 

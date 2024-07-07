@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/3/24.
 //
 struct CallFrame {
-	let closure: Closure
+	var closure: Closure
 	var stack: CallFrameStack
 	let stackOffset: Int
 	var lastIP: Int = 0

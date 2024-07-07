@@ -69,10 +69,6 @@ struct Stack<Element> {
 
 	@inline(__always)
 	mutating func push(_ element: Element) {
-//		if storage.capacity < size + 1 {
-//			storage = storage.resize(newSize: storage.capacity * 2, oldSize: size)
-//		}
-
 		storage.withUnsafeMutablePointers {
 			($1 + size++).initialize(to: element)
 		}
@@ -102,63 +98,3 @@ struct Stack<Element> {
 		(0 ..< size).map { i in peek(offset: count - i) }
 	}
 }
-
-//
-//
-// class Stack<Value> {
-//	var size = 0
-//	private var storage: ContiguousArray<Value> = []
-//
-//	subscript(_ offset: Int) -> Value {
-//		get {
-//			storage[offset]
-//		}
-//
-//		set {
-//			storage[offset] = newValue
-//		}
-//	}
-//
-//	subscript(_ range: Range<Int>) -> ArraySlice<Value> {
-//		storage[range]
-//	}
-//
-//	var isEmpty: Bool {
-//		size == 0
-//	}
-//
-//	var entries: some Collection<Value> {
-//		storage
-//	}
-//
-//	func peek(offset: Int = 0) -> Value {
-//		return storage[size - 1 - offset]
-//	}
-//
-//	func push(_ value: Value) {
-//		storage.append(value)
-//		size += 1
-//	}
-//
-//	func pop() -> Value {
-//		size -= 1
-//		return storage.removeLast()
-//	}
-//
-//	@discardableResult func pop(count: Int) -> [Value] {
-//		defer {
-//			size -= count
-//		}
-//
-//		return (0 ..< count).map { _ in storage.removeLast() }
-//	}
-//
-//	func last(count: Int) -> ArraySlice<Value> {
-//		return storage[size - count..<size]
-//	}
-//
-//	func reset() {
-//		size = 0
-//		storage = []
-//	}
-// }

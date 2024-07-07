@@ -12,8 +12,26 @@ public enum InterpretResult {
 }
 
 class OpenUpvalues {
+	enum Node {
+		case next(OpenUpvalues)
+		var value: OpenUpvalues {
+			switch self {
+			case .next(let val): val
+			}
+		}
+	}
+
 	var value: Value
-	var next: OpenUpvalues?
+	var nextNode: Node?
+	var next: OpenUpvalues? {
+		get {
+			nextNode?.value
+		}
+
+		set {
+			nextNode = (newValue != nil) ? .next(newValue!) : nil
+		}
+	}
 
 	init(value: Value) {
 		self.value = value
@@ -325,6 +343,7 @@ public struct VM<Output: OutputCollector> {
 		return true
 	}
 
+	@inline(__always)
 	private mutating func readShort() -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
 		ip += 2
