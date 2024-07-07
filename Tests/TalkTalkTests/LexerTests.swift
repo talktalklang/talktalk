@@ -29,9 +29,6 @@ struct LexerTests {
 
 		"""
 
-		print(dump)
-		print(expected)
-
 		#expect(
 			dump == expected
 		)

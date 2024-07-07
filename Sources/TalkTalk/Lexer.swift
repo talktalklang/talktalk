@@ -197,9 +197,8 @@ struct Lexer: ~Copyable {
 		if source[current] != char {
 			return false
 		}
-		print("start: \(start) current = \(current) \(char)")
+
 		current++
-		print("start: \(start) current = \(current) \(char)")
 		return true
 	}
 

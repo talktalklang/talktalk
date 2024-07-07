@@ -5,34 +5,30 @@
 //  Created by Pat Nakajima on 7/3/24.
 //
 struct Stack<Element> {
-	final class Storage: ManagedBuffer<Int, Element> {
-		func copy() -> Storage {
+	final class Storage: ManagedBuffer<Void, Element> {
+		fileprivate func copy(count: Int) -> Storage {
 			withUnsafeMutablePointers { header, elements in
-				let count = header.pointee
 				return Storage.create(minimumCapacity: count) { newBuffer in
 					newBuffer.withUnsafeMutablePointerToElements { newElements in
 						newElements.initialize(from: elements, count: count)
 					}
-
-					return header.pointee
 				} as! Storage
 			}
 		}
 
-		func resize(newSize: Int) -> Storage {
+		fileprivate func resize(newSize: Int, oldSize: Int) -> Storage {
 			withUnsafeMutablePointers { size, oldElements in
-				let oldSize = size.pointee
 				return Storage.create(minimumCapacity: newSize) { newBuf in
 					newBuf.withUnsafeMutablePointerToElements { newElements in
 						newElements.moveInitialize(from: oldElements, count: oldSize)
 					}
-					return oldSize
 				} as! Storage
 			}
 		}
 	}
 
 	private var storage: Storage
+	public var size: Int = 0
 
 	init(capacity: Int = 8) {
 		self.storage = Storage.create(minimumCapacity: capacity) { _ in 0 } as! Storage
@@ -53,10 +49,10 @@ struct Stack<Element> {
 	}
 
 	mutating func entries() -> [Element] {
-		let storage = isKnownUniquelyReferenced(&storage) ? storage : storage.copy()
+		let storage = isKnownUniquelyReferenced(&storage) ? storage : storage.copy(count: size)
 
 		return storage.withUnsafeMutablePointers { header, elements in
-			(0 ..< header.pointee).map { i in
+			(0 ..< size).map { i in
 				elements[i]
 			}
 		}
@@ -67,47 +63,37 @@ struct Stack<Element> {
 	}
 
 	var isEmpty: Bool {
-		storage.header == 0
-	}
-
-	var size: Int {
-		get {
-			storage.withUnsafeMutablePointerToHeader { $0.pointee }
-		}
-
-		set {
-			storage.withUnsafeMutablePointerToHeader { $0.pointee = newValue }
-		}
+		size == 0
 	}
 
 	mutating func push(_ element: Element) {
-		if storage.capacity < storage.header + 1 {
-			storage = storage.resize(newSize: storage.capacity * 2)
+		if storage.capacity < size + 1 {
+			storage = storage.resize(newSize: storage.capacity * 2, oldSize: size)
 		}
 
 		storage.withUnsafeMutablePointers {
-			($1 + $0.pointee++).initialize(to: element)
+			($1 + size++).initialize(to: element)
 		}
 	}
 
 	mutating func pop() -> Element {
 		storage.withUnsafeMutablePointers {
-			($1 + --$0.pointee).pointee
+			($1 + --size).pointee
 		}
 	}
 
 	func peek(offset: Int = 0) -> Element {
 		storage.withUnsafeMutablePointers {
-			($1 + $0.pointee - 1 - offset).pointee
+			($1 + size - 1 - offset).pointee
 		}
 	}
 
 	mutating func pop(count: Int) -> [Element] {
-		(0 ..< count).map { _ in pop() }
+		(0 ..< size).map { _ in pop() }
 	}
 
 	func last(count: Int) -> [Element] {
-		(0 ..< count).map { i in peek(offset: count - i) }
+		(0 ..< size).map { i in peek(offset: count - i) }
 	}
 }
 

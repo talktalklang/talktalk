@@ -77,7 +77,7 @@ public struct VM<Output: OutputCollector> {
 		return run(function: compiler.function)
 	}
 
-	public mutating func run(function root: Function) -> InterpretResult {
+	private mutating func run(function root: Function) -> InterpretResult {
 		let rootClosure = Closure(function: root)
 		stack.push(.closure(rootClosure))
 		_ = call(rootClosure, argCount: 0)
@@ -245,7 +245,7 @@ public struct VM<Output: OutputCollector> {
 		}
 	}
 
-	mutating func captureUpvalue(_ local: Value) -> Value {
+	private mutating func captureUpvalue(_ local: Value) -> Value {
 		var prevUpvalue: OpenUpvalues?
 		var upvalue = openUpvalues
 
@@ -279,7 +279,7 @@ public struct VM<Output: OutputCollector> {
 //		}
 	}
 
-	mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
+	private mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
 		switch callee {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
@@ -291,7 +291,7 @@ public struct VM<Output: OutputCollector> {
 		}
 	}
 
-	mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
+	private mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
 		chunk = closure.function.chunk
 
 		let fn = closure.function
@@ -323,7 +323,7 @@ public struct VM<Output: OutputCollector> {
 		return true
 	}
 
-	mutating func readShort() -> UInt16 {
+	private mutating func readShort() -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
 		ip += 2
 
@@ -335,27 +335,27 @@ public struct VM<Output: OutputCollector> {
 		return UInt16((a << 8) | b)
 	}
 
-	mutating func readString() -> String {
+	private mutating func readString() -> String {
 		return chunk.constants.read(byte: readByte()).as(String.self)
 	}
 
-	mutating func readConstant() -> Value {
+	private mutating func readConstant() -> Value {
 		chunk.constants[Int(readByte())]
 	}
 
-	mutating func readByte() -> Byte {
+	private mutating func readByte() -> Byte {
 		return chunk.code[ip++]
 	}
 
-	mutating func peek(_ offset: Byte) -> Value {
+	private mutating func peek(_ offset: Byte) -> Value {
 		stack.peek(offset: Int(offset))
 	}
 
-	mutating func peek(_ offset: Int = 0) -> Value {
+	private mutating func peek(_ offset: Int = 0) -> Value {
 		stack.peek(offset: offset)
 	}
 
-	mutating func runtimeError(_ message: String) {
+	private mutating func runtimeError(_ message: String) {
 		output.print("------------------------------------------------------------------")
 		output.print("Runtime Error: \(message)")
 		output.print("------------------------------------------------------------------")
