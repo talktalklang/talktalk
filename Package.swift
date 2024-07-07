@@ -69,6 +69,6 @@ package.dependencies.append(
 )
 
 for target in package.targets.filter({ $0.isTest }) {
-	target.dependencies.append(.product(name: "SwiftTesting", package: "swift-testing"))
+	target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
 }
 #endif
