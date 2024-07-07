@@ -22,7 +22,6 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-		.package(url: "https://github.com/apple/swift-testing.git", from: "0.10.0"),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -47,14 +46,18 @@ let package = Package(
 			name: "TalkTalkTests",
 			dependencies: [
 				"TalkTalk",
-				.product(name: "Testing", package: "swift-testing"),
+			],
+			swiftSettings: [
+				.enableUpcomingFeature("SwiftTesting")
 			]
 		),
 		.testTarget(
 			name: "TalktalkInterpreterTests",
 			dependencies: [
 				"TalkTalkInterpreter",
-				.product(name: "Testing", package: "swift-testing"),
+			],
+			swiftSettings: [
+				.enableUpcomingFeature("SwiftTesting")
 			]
 		),
 	]
