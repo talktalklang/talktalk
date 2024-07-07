@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/4/24.
 //
-class Closure: Hashable, Equatable {
+final class Closure: Hashable, Equatable {
 	static func == (lhs: Closure, rhs: Closure) -> Bool {
 		lhs.function == rhs.function
 	}

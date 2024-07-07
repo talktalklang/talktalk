@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/3/24.
 //
 struct Stack<Element> {
-	class Storage: ManagedBuffer<Int, Element> {
+	final class Storage: ManagedBuffer<Int, Element> {
 		func copy() -> Storage {
 			withUnsafeMutablePointers { header, elements in
 				let count = header.pointee

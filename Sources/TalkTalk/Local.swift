@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/5/24.
 //
-class Local {
+struct Local {
 	let name: Token
 	var depth: Int
 	var isCaptured = false

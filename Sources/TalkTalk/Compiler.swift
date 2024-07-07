@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-public class Compiler {
+public final class Compiler {
 	enum Errors: Swift.Error {
 		case errors([Error])
 	}
