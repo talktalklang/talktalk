@@ -6,7 +6,7 @@
 //
 
 // typealias Value = Double
-indirect enum Value: Equatable, Hashable {
+enum Value: Equatable, Hashable {
 	static func == (lhs: Value, rhs: Value) -> Bool {
 		lhs.equals(rhs)
 	}
@@ -18,8 +18,7 @@ indirect enum Value: Equatable, Hashable {
 	     string(String),
 	     closure(Closure),
 	     function(Function),
-	     native(String),
-	     upvalue(Value)
+	     native(String)
 
 	func hash(into hasher: inout Swift.Hasher) {
 		hasher.combine(hash)
@@ -64,8 +63,6 @@ indirect enum Value: Equatable, Hashable {
 			return closure.function.chunk.hashValue
 		case let .native(native):
 			return native.hashValue
-		case let .upvalue(value):
-			return "upvalue-\(value.hashValue)".hashValue
 		}
 	}
 
@@ -98,14 +95,6 @@ indirect enum Value: Equatable, Hashable {
 		fatalError("\(self) cast to \(T.self) not implemented.")
 	}
 
-	func unwrap() -> Value {
-		if case let .upvalue(value) = self {
-			return value
-		}
-
-		fatalError("cannot unwrap non-upvalue: \(self)")
-	}
-
 	var description: String {
 		switch self {
 		case let .error(msg):
@@ -124,8 +113,6 @@ indirect enum Value: Equatable, Hashable {
 			return "<\(closure.function.name)>"
 		case let .native(native):
 			return "<native \(native)>"
-		case let .upvalue(value):
-			return "<upvalue \(value.description)>"
 		}
 	}
 

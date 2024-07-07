@@ -34,8 +34,8 @@ struct Stack<Element> {
 
 	private var storage: Storage
 
-	init() {
-		self.storage = Storage.create(minimumCapacity: 8) { _ in 0 } as! Storage
+	init(capacity: Int = 8) {
+		self.storage = Storage.create(minimumCapacity: capacity) { _ in 0 } as! Storage
 	}
 
 	subscript(_ index: Int) -> Element {

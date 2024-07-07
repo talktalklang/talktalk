@@ -9,7 +9,7 @@ import Foundation
 import Testing
 
 struct BenchmarkTests {
-	@Test("Fib", .disabled()) func fib() {
+	@Test("Fib") func fib() {
 		let source = """
 		func fib(n) {
 			if (n <= 1) { return n; }

@@ -22,7 +22,7 @@ class OpenUpvalues {
 
 public struct VM<Output: OutputCollector> {
 	var output: Output
-	var stack = Stack<Value>()
+	var stack = Stack<Value>(capacity: 256)
 	var frames = Stack<CallFrame>()
 	var globals: [String: Value] = [:]
 	var openUpvalues: OpenUpvalues?
@@ -99,7 +99,7 @@ public struct VM<Output: OutputCollector> {
 				let result = stack.pop()
 				let frame = frames.pop()
 
-				closeUpvalues()
+				// closeUpvalues()
 
 				if frames.isEmpty {
 					_ = stack.pop()
@@ -233,11 +233,11 @@ public struct VM<Output: OutputCollector> {
 			case .getUpvalue:
 				let slot = readByte()
 				let upvalue = currentFrame.closure.upvalues[Int(slot)]!
-				let unwrapped = upvalue.unwrap()
+				let unwrapped = upvalue
 				stack.push(unwrapped)
 			case .setUpvalue:
 				let slot = readByte()
-				currentFrame.closure.upvalues[Int(slot)] = .upvalue(peek(0))
+				currentFrame.closure.upvalues[Int(slot)] = peek(0)
 			case .closeUpvalue:
 				closeUpvalues()
 				_ = stack.pop()
@@ -253,7 +253,7 @@ public struct VM<Output: OutputCollector> {
 		// location is  greater than the local's but we're not managing
 		// memory so ¯\_(ツ)_/¯
 		while let nextUpvalue = upvalue {
-			if nextUpvalue.value.unwrap() == local {
+			if nextUpvalue.value == local {
 				return nextUpvalue.value
 			}
 
@@ -261,7 +261,7 @@ public struct VM<Output: OutputCollector> {
 			upvalue = nextUpvalue.next
 		}
 
-		let createdUpvalue = Value.upvalue(local)
+		let createdUpvalue = local
 		if let prevUpvalue {
 			prevUpvalue.next = OpenUpvalues(value: createdUpvalue)
 		} else {
