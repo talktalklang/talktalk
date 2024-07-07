@@ -40,8 +40,8 @@ struct StackTests {
 		var stack = Stack<Int>(capacity: 10_000_001)
 		for i in 0 ..< 10_000_000 {
 			stack.push(i)
-			stack.size
-			stack.peek()
+			_ = stack.size
+			_ = stack.peek()
 			_ = stack.pop()
 		}
 	}

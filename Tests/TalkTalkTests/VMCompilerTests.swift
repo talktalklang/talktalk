@@ -38,25 +38,25 @@ actor VMCompilerTests {
 	@Test("Addition") func addition() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print 1 + -2;", output: output) == .ok)
-		#expect(output.stdout == "-1.0\n")
+		#expect(output.stdout == "-1\n")
 	}
 
 	@Test("Subtraction") func subtraction() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print(123 - 3);", output: output) == .ok)
-		#expect(output.stdout == "120.0\n")
+		#expect(output.stdout == "120\n")
 	}
 
 	@Test("Multiplication") func multiplication() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print(5 * 5);", output: output) == .ok)
-		#expect(output.stdout == "25.0\n")
+		#expect(output.stdout == "25\n")
 	}
 
 	@Test("Division") func dividing() {
 		let output = TestOutput()
 		#expect(VM.run(source: "print(25 / 5);", output: output) == .ok)
-		#expect(output.stdout == "5.0\n")
+		#expect(output.stdout == "5\n")
 	}
 
 	@Test("Basic (with concurrency)") func basic() async {
@@ -199,7 +199,7 @@ actor VMCompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "3.0\n4.0\n")
+		#expect(output.stdout == "3\n4\n")
 	}
 
 	@Test("If statement") func ifStatement() {
@@ -285,7 +285,7 @@ actor VMCompilerTests {
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "1.0\n2.0\n3.0\n")
+		#expect(output.stdout == "1\n2\n3\n")
 	}
 
 	@Test("Function") func function() {
@@ -456,6 +456,6 @@ actor VMCompilerTests {
 		let output = TestOutput()
 
 		#expect(VM.run(source: source, output: output) == .ok)
-		#expect(output.stdout == "1.0\n2.0\n")
+		#expect(output.stdout == "1\n2\n")
 	}
 }

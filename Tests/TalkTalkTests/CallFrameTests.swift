@@ -24,5 +24,7 @@ struct CallFrameTests {
 			stack: stack,
 			stackOffset: 3
 		)
+
+		#expect(callFrame.stack[0] == .int(3))
 	}
 }

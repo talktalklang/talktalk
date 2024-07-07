@@ -8,9 +8,9 @@
 import Testing
 
 struct ValueTests {
-	@Test("Test number description") func number() {
+	@Test("Test int description") func number() {
 		let value = Value.int(123)
-		#expect(value.description == "123.0")
+		#expect(value.description == "123")
 	}
 
 	@Test("Test string description") func string() {

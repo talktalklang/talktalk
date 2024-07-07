@@ -51,15 +51,6 @@ let package = Package(
 				.enableUpcomingFeature("SwiftTesting")
 			]
 		),
-		.testTarget(
-			name: "TalktalkInterpreterTests",
-			dependencies: [
-				"TalkTalkInterpreter",
-			],
-			swiftSettings: [
-				.enableUpcomingFeature("SwiftTesting")
-			]
-		),
 	]
 )
 
