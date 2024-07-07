@@ -96,6 +96,8 @@ public final class Compiler {
 	func declaration() {
 		if parser.match(.func) {
 			funcDeclaration()
+		} else if parser.match(.class) {
+			classDeclaration()
 		} else if parser.match(.var) {
 			varDeclaration()
 		} else {
@@ -108,6 +110,20 @@ public final class Compiler {
 		markInitialized()
 		function(.function)
 		defineVariable(global: global)
+	}
+
+	func classDeclaration() {
+		parser.consume(.identifier, "Expected class name")
+
+		let nameConstant = identifierConstant(parser.previous)
+		declareVariable()
+
+		emit(opcode: .class)
+		emit(nameConstant)
+		defineVariable(global: nameConstant)
+
+		parser.consume(.leftBrace, "Expected '{' before class body")
+		parser.consume(.rightBrace, "Expected '}' after class body")
 	}
 
 	func varDeclaration() {

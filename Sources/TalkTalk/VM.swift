@@ -85,7 +85,7 @@ public struct VM<Output: OutputCollector> {
 		while true {
 			#if DEBUGGING
 				stackDebug()
-				Disassembler.dump(chunk: chunk, ip: ip, into: &output)
+				Disassembler.dump(chunk: chunk, ip: ip, into: output)
 			#endif
 
 			let byte = readByte()
@@ -241,6 +241,34 @@ public struct VM<Output: OutputCollector> {
 			case .closeUpvalue:
 				closeUpvalues()
 				_ = stack.pop()
+			case .class:
+				stack.push(
+					.class(
+						Class(name: readString())
+					)
+				)
+			case .getProperty:
+				let property = readString()
+				let callee = stack.pop().as(ClassInstance.self)
+
+				if let value = callee.get(property) {
+					stack.push(value)
+				} else {
+					runtimeError("No property named `\(property)` for \(callee)")
+				}
+			case .setProperty:
+				let instance = stack.peek(offset: 1).as(ClassInstance.self)
+				let property = readString()
+				instance.set(property, stack.peek())
+
+				// Get the value
+				let value = stack.pop()
+
+				// Pop off the instance
+				stack.pop()
+
+				// Return the value
+				stack.push(value)
 			}
 		}
 	}
@@ -284,8 +312,9 @@ public struct VM<Output: OutputCollector> {
 		switch callee {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
-		case .native:
-			return false
+		case let .class(klass):
+			stack.push(.classInstance(ClassInstance(klass: klass, fields: [:])))
+			return true
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type

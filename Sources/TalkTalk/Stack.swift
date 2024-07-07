@@ -75,7 +75,7 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
-	mutating func pop() -> Element {
+	@discardableResult mutating func pop() -> Element {
 		storage.withUnsafeMutablePointers {
 			($1 + --size).pointee
 		}

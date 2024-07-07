@@ -28,7 +28,7 @@ extension Token.Kind {
 		case .leftBrace: .none
 		case .rightBrace: .none
 		case .comma: .none
-		case .dot: .none
+		case .dot: .init(nil, { $0.dot($1) }, .call)
 		case .minus: .init({ $0.unary($1) }, { $0.binary($1) }, .term)
 		case .plus: .init(nil, { $0.binary($1) }, .term)
 		case .semicolon: .none

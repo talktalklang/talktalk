@@ -43,7 +43,7 @@ public struct Chunk: Hashable {
 		write(offset, line: line)
 	}
 
-	func disassemble<Output: OutputCollector>(to output: inout Output) {
-		Disassembler.dump(chunk: self, into: &output)
+	func disassemble<Output: OutputCollector>(to output: Output) {
+		Disassembler.dump(chunk: self, into: output)
 	}
 }

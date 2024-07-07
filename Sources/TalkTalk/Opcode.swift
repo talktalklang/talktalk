@@ -30,6 +30,9 @@ enum Opcode: Byte {
 	     closure,
 	     closeUpvalue,
 //			 native,
+	     `class`,
+	     getProperty,
+	     setProperty,
 	     `nil`
 
 	var description: String {

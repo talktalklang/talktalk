@@ -85,7 +85,7 @@ struct Disassembler {
 		self.chunk = chunk
 	}
 
-	static func dump(chunk: Chunk, into output: inout some OutputCollector) {
+	static func dump(chunk: Chunk, into output: some OutputCollector) {
 		var disassembler = Disassembler(chunk: chunk)
 		output.print(Self.header)
 		while let instruction = disassembler.nextInstruction() {
@@ -93,7 +93,7 @@ struct Disassembler {
 		}
 	}
 
-	static func dump(chunk: Chunk, ip: Int, into output: inout some OutputCollector) {
+	static func dump(chunk: Chunk, ip: Int, into output: some OutputCollector) {
 		var disassembler = Disassembler(chunk: chunk)
 		disassembler.offset = ip
 		if let out = disassembler.nextInstruction()?.description {
@@ -140,33 +140,11 @@ struct Disassembler {
 		case .getUpvalue, .setUpvalue:
 			return byteInstruction(opcode!.description)
 		case .closure:
-			let start = offset
-			let line = line
-			let isSameLine = isSameLine
-			_ = offset++
-			let constant = chunk.code[offset++]
-			let function = chunk.constants[Int(constant)].as(Function.self)
-			var upvalues: [Upvalue] = []
-
-			for _ in 0 ..< function.upvalueCount {
-				let isLocal = chunk.code[offset++]
-				let index = chunk.code[offset++]
-
-				upvalues.append(Upvalue(isLocal: isLocal != 0, index: index))
-			}
-
-			// TODO: add upvalues
-			return Instruction(
-				offset: start,
-				opcode: "OP_CLOSURE",
-				metadata: ClosureMetadata(
-					function: function,
-					upvalues: upvalues,
-					constant: constant
-				),
-				line: line,
-				isSameLine: isSameLine
-			)
+			return closureInstruction()
+		case .class:
+			return constantInstruction("OP_CLASS")
+		case .getProperty, .setProperty:
+			return constantInstruction(opcode!.description)
 		default:
 			return simpleInstruction(opcode!.description)
 		}
@@ -180,6 +158,35 @@ struct Disassembler {
 		return Instruction(
 			offset: offset,
 			opcode: label,
+			line: line,
+			isSameLine: isSameLine
+		)
+	}
+
+	private mutating func closureInstruction() -> Instruction {
+		let start = offset
+		let line = line
+		let isSameLine = isSameLine
+		_ = offset++
+		let constant = chunk.code[offset++]
+		let function = chunk.constants[Int(constant)].as(Function.self)
+		var upvalues: [Upvalue] = []
+
+		for _ in 0 ..< function.upvalueCount {
+			let isLocal = chunk.code[offset++]
+			let index = chunk.code[offset++]
+
+			upvalues.append(Upvalue(isLocal: isLocal != 0, index: index))
+		}
+
+		return Instruction(
+			offset: start,
+			opcode: "OP_CLOSURE",
+			metadata: ClosureMetadata(
+				function: function,
+				upvalues: upvalues,
+				constant: constant
+			),
 			line: line,
 			isSameLine: isSameLine
 		)

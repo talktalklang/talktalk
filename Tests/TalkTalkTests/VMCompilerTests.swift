@@ -468,4 +468,46 @@ actor VMCompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "1\n2\n")
 	}
+
+	@Test("Simple class") func simpleClass() {
+		let source = """
+		class Person {}
+
+		print(Person)
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "<class Person>\n")
+	}
+
+	@Test("Simple Instance") func simpleInstance() {
+		let source = """
+		class Person {}
+
+		print(Person())
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "<Person instance>\n")
+	}
+
+	@Test("Simple get/set property") func getset() {
+		let source = """
+		class Person {}
+
+		var person = Person()
+		person.name = "Pat"
+
+		print(person.name)
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "Pat\n")
+	}
 }

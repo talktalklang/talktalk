@@ -21,6 +21,21 @@ extension Compiler {
 		emit(constant: .int(value))
 	}
 
+	func dot(_ canAssign: Bool) {
+		parser.consume(.identifier, "Expected property name after '.'")
+
+		let name = identifierConstant(parser.previous)
+
+		if canAssign, parser.match(.equal) {
+			expression()
+			emit(opcode: .setProperty)
+			emit(name)
+		} else {
+			emit(opcode: .getProperty)
+			emit(name)
+		}
+	}
+
 	func unary(_: Bool) {
 		let kind = parser.previous.kind
 		parse(precedence: .unary)

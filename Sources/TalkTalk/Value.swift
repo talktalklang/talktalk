@@ -18,7 +18,9 @@ enum Value: Equatable, Hashable {
 	     string(String),
 	     closure(Closure),
 	     function(Function),
-	     native(String)
+	     native(String),
+	     `class`(Class),
+	     classInstance(ClassInstance)
 
 	func hash(into hasher: inout Swift.Hasher) {
 		hasher.combine(hash)
@@ -64,6 +66,10 @@ enum Value: Equatable, Hashable {
 			return closure.function.chunk.hashValue
 		case let .native(native):
 			return native.hashValue
+		case let .class(klass):
+			return klass.hashValue
+		case let .classInstance(instance):
+			return instance.hashValue
 		}
 	}
 
@@ -88,6 +94,10 @@ enum Value: Equatable, Hashable {
 		case is Closure.Type:
 			if case let .closure(closure) = self {
 				return closure as! T
+			}
+		case is ClassInstance.Type:
+			if case let .classInstance(classInstance) = self {
+				return classInstance as! T
 			}
 		default:
 			()
@@ -114,6 +124,10 @@ enum Value: Equatable, Hashable {
 			return "<\(closure.function.name)>"
 		case let .native(native):
 			return "<native \(native)>"
+		case let .class(klass):
+			return "<class \(klass.name)>"
+		case let .classInstance(instance):
+			return "<\(instance.klass.name) instance>"
 		}
 	}
 
