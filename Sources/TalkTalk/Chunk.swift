@@ -15,9 +15,9 @@ public class Chunk: Hashable {
 	var lines = DynamicArray<Int>()
 
 	public func hash(into hasher: inout Swift.Hasher) {
-		hasher.combine(code.storage.hashValue)
-		hasher.combine(constants.storage.hashValue)
-		hasher.combine(lines.storage.hashValue)
+		hasher.combine(code.hashValue)
+		hasher.combine(constants.hashValue)
+		hasher.combine(lines.hashValue)
 	}
 
 	var count: Int {

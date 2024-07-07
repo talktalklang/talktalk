@@ -40,7 +40,7 @@ class TestOutput: Output {
 	var interpreter = TalkTalkInterpreter(
 		input: source,
 		tokenize: false,
-		output: TestOutput(debug: true)
+		output: TestOutput()
 	)
 
 	try interpreter.run()

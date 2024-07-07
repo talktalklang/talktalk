@@ -395,7 +395,7 @@ actor VMCompilerTests {
 	}
 
 	@Test("Closure") func closure() {
-		let output = TestOutput(debug: true)
+		let output = TestOutput()
 		let source = """
 		func outer() {
 			var x = "outside";

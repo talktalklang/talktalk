@@ -12,13 +12,19 @@ extension Int {
 }
 
 // Implement postfix increment
-postfix func ++(value: inout Int) -> Int {
+@discardableResult postfix func ++(value: inout Int) -> Int {
 		defer { value += 1 }
 		return value
 }
 
 // Implement postfix decrement
-postfix func --(value: inout Int) -> Int {
+@discardableResult postfix func --(value: inout Int) -> Int {
 		defer { value -= 1 }
+		return value
+}
+
+// Implement prefix decrement
+@discardableResult prefix func --(value: inout Int) -> Int {
+		value -= 1
 		return value
 }

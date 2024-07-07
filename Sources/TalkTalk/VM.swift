@@ -27,6 +27,9 @@ public class VM<Output: OutputCollector> {
 	var globals: [String: Value] = [:]
 	var openUpvalues: OpenUpvalues?
 
+	var chunk: Chunk!
+	var currentFrame: CallFrame!
+
 	public static func run(source: String, output: Output) -> InterpretResult {
 		let vm = VM(output: output)
 		let compiler = Compiler(source: source)
@@ -55,7 +58,7 @@ public class VM<Output: OutputCollector> {
 	func stackDebug() {
 		if stack.isEmpty { return }
 		output.debug(String(repeating: " ", count: 9), terminator: "")
-		for slot in stack.entries {
+		for slot in stack.entries() {
 			output.debug("[ \(slot.description) ]", terminator: "")
 		}
 		output.debug()
@@ -113,6 +116,9 @@ public class VM<Output: OutputCollector> {
 
 				// Append the return value
 				stack.push(result)
+
+				self.currentFrame = frames.peek()
+				self.chunk = currentFrame.closure.function.chunk
 			case .negate:
 				stack.push(-stack.pop())
 			case .constant:
@@ -218,7 +224,6 @@ public class VM<Output: OutputCollector> {
 					let isLocal = readByte() == 1
 					let index = Int(readByte())
 
-					print("CLOSURE: \(isLocal), \(index)")
 					stackDebug()
 
 					if isLocal {
@@ -281,7 +286,7 @@ public class VM<Output: OutputCollector> {
 		switch callee {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
-		case let .native(_):
+		case .native(_):
 			return false
 		default:
 			runtimeError("\(callee) not callable")
@@ -290,6 +295,8 @@ public class VM<Output: OutputCollector> {
 	}
 
 	func call(_ closure: Closure, argCount: Byte) -> Bool {
+		self.chunk = closure.function.chunk
+
 		let fn = closure.function
 		if argCount != fn.arity {
 			runtimeError("Expected \(fn.arity) arguments for \(fn.name)(), got \(argCount)")
@@ -308,6 +315,8 @@ public class VM<Output: OutputCollector> {
 		)
 
 		frames.push(frame)
+		self.currentFrame = frame
+
 		return true
 	}
 
@@ -360,10 +369,6 @@ public class VM<Output: OutputCollector> {
 		stack.reset()
 	}
 
-	var chunk: Chunk {
-		currentFrame.closure.function.chunk
-	}
-
 	var ip: Int {
 		get {
 			currentFrame.ip
@@ -372,9 +377,5 @@ public class VM<Output: OutputCollector> {
 		set {
 			currentFrame.ip = newValue
 		}
-	}
-
-	var currentFrame: CallFrame {
-		frames.peek()
 	}
 }
