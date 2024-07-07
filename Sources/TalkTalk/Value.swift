@@ -14,7 +14,7 @@ enum Value: Equatable, Hashable {
 	case error(String),
 	     bool(Bool),
 	     `nil`,
-	     number(Double),
+			 int(Int),
 	     string(String),
 	     closure(Closure),
 	     function(Function),
@@ -24,6 +24,7 @@ enum Value: Equatable, Hashable {
 		hasher.combine(hash)
 	}
 
+	@inline(__always)
 	func equals(_ other: Value) -> Bool {
 		switch (self, other) {
 		case let (.error(string), .error(other)):
@@ -32,7 +33,7 @@ enum Value: Equatable, Hashable {
 			return bool == other
 		case (.nil, .nil):
 			return true
-		case let (.number(double), .number(other)):
+		case let (.int(double), .int(other)):
 			return double == other
 		case let (.string(string), .string(other)):
 			return string == other
@@ -53,7 +54,7 @@ enum Value: Equatable, Hashable {
 			return bool ? 1 : 0
 		case .nil:
 			fatalError("Attempted to use nil hash key")
-		case let .number(double):
+		case let .int(double):
 			return abs(double.hashValue)
 		case let .string(heapValue):
 			return Int(heapValue.hashValue)
@@ -75,7 +76,7 @@ enum Value: Equatable, Hashable {
 		case is String.Type:
 			return description as! T
 		case is Byte.Type:
-			if case let .number(double) = self {
+			if case let .int(double) = self {
 				return Byte(double) as! T
 			}
 		case is Function.Type:
@@ -103,7 +104,7 @@ enum Value: Equatable, Hashable {
 			return "\(bool)"
 		case .nil:
 			return "nil"
-		case let .number(double):
+		case let .int(double):
 			return "\(double)"
 		case let .string(string):
 			return string
@@ -127,8 +128,8 @@ enum Value: Equatable, Hashable {
 
 	static prefix func - (rhs: Value) -> Value {
 		switch rhs {
-		case let .number(double):
-			.number(-double)
+		case let .int(double):
+			.int(-double)
 		default:
 			.error("Cannot negate \(self)")
 		}
@@ -136,12 +137,12 @@ enum Value: Equatable, Hashable {
 
 	static func + (lhs: Value, rhs: Value) -> Value {
 		switch lhs {
-		case let .number(lhs):
-			guard case let .number(rhs) = rhs else {
+		case let .int(lhs):
+			guard case let .int(rhs) = rhs else {
 				return .error("Cannot + \(rhs)")
 			}
 
-			return .number(lhs + rhs)
+			return .int(lhs + rhs)
 		case let .string(lhs):
 			guard case let .string(rhs) = rhs else {
 				return .error("Cannot + \(self)")
@@ -154,51 +155,51 @@ enum Value: Equatable, Hashable {
 	}
 
 	static func - (lhs: Value, rhs: Value) -> Value {
-		guard case let .number(rhs) = rhs else {
+		guard case let .int(rhs) = rhs else {
 			return .error("Cannot - \(rhs)")
 		}
 
 		return switch lhs {
-		case let .number(lhs):
-			.number(lhs - rhs)
+		case let .int(lhs):
+			.int(lhs - rhs)
 		default:
 			.error("Cannot - \(lhs) \(rhs)")
 		}
 	}
 
 	static func * (lhs: Value, rhs: Value) -> Value {
-		guard case let .number(rhs) = rhs else {
+		guard case let .int(rhs) = rhs else {
 			return .error("Cannot * \(rhs)")
 		}
 
 		return switch lhs {
-		case let .number(lhs):
-			.number(lhs * rhs)
+		case let .int(lhs):
+			.int(lhs * rhs)
 		default:
 			.error("Cannot * \(lhs) \(rhs)")
 		}
 	}
 
 	static func / (lhs: Value, rhs: Value) -> Value {
-		guard case let .number(rhs) = rhs else {
+		guard case let .int(rhs) = rhs else {
 			return .error("Cannot / \(rhs)")
 		}
 
 		return switch lhs {
-		case let .number(lhs):
-			.number(lhs / rhs)
+		case let .int(lhs):
+			.int(lhs / rhs)
 		default:
 			.error("Cannot / \(lhs) \(rhs)")
 		}
 	}
 
 	static func < (lhs: Value, rhs: Value) -> Value {
-		guard case let .number(rhs) = rhs else {
+		guard case let .int(rhs) = rhs else {
 			return .error("Cannot < \(rhs)")
 		}
 
 		return switch lhs {
-		case let .number(lhs):
+		case let .int(lhs):
 			.bool(lhs < rhs)
 		default:
 			.error("Cannot < \(lhs) \(rhs)")
@@ -206,12 +207,12 @@ enum Value: Equatable, Hashable {
 	}
 
 	static func > (lhs: Value, rhs: Value) -> Value {
-		guard case let .number(rhs) = rhs else {
+		guard case let .int(rhs) = rhs else {
 			return .error("Cannot > \(rhs)")
 		}
 
 		return switch lhs {
-		case let .number(lhs):
+		case let .int(lhs):
 			.bool(lhs > rhs)
 		default:
 			.error("Cannot > \(lhs) \(rhs)")
@@ -219,8 +220,8 @@ enum Value: Equatable, Hashable {
 	}
 }
 
-extension Value: ExpressibleByFloatLiteral {
-	init(floatLiteral: Float) {
-		self = .number(Double(floatLiteral))
+extension Value: ExpressibleByIntegerLiteral {
+	init(integerLiteral: Float) {
+		self = .int(Int(integerLiteral))
 	}
 }

@@ -7,7 +7,7 @@
 @testable import TalkTalk
 import Testing
 
-class TestOutput: OutputCollector {
+final class TestOutput: OutputCollector {
 	var debug = false
 
 	init(debug: Bool = false) {

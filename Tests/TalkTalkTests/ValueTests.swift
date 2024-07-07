@@ -9,7 +9,7 @@ import Testing
 
 struct ValueTests {
 	@Test("Test number description") func number() {
-		let value = Value.number(123)
+		let value = Value.int(123)
 		#expect(value.description == "123.0")
 	}
 

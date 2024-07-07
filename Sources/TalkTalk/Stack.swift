@@ -62,10 +62,12 @@ struct Stack<Element> {
 		size = 0
 	}
 
+	@inline(__always)
 	var isEmpty: Bool {
 		size == 0
 	}
 
+	@inline(__always)
 	mutating func push(_ element: Element) {
 		if storage.capacity < size + 1 {
 			storage = storage.resize(newSize: storage.capacity * 2, oldSize: size)
@@ -76,22 +78,26 @@ struct Stack<Element> {
 		}
 	}
 
+	@inline(__always)
 	mutating func pop() -> Element {
 		storage.withUnsafeMutablePointers {
 			($1 + --size).pointee
 		}
 	}
 
+	@inline(__always)
 	func peek(offset: Int = 0) -> Element {
 		storage.withUnsafeMutablePointers {
 			($1 + size - 1 - offset).pointee
 		}
 	}
 
+	@inline(__always)
 	mutating func pop(count: Int) -> [Element] {
 		(0 ..< size).map { _ in pop() }
 	}
 
+	@inline(__always)
 	func last(count: Int) -> [Element] {
 		(0 ..< size).map { i in peek(offset: count - i) }
 	}

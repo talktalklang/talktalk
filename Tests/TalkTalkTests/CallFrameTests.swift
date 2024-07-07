@@ -11,11 +11,11 @@ struct CallFrameTests {
 	@Test("Stack window") func frame() {
 		var stack = Stack<Value>()
 		for i in 0 ..< 10 {
-			stack.push(.number(Double(i)))
+			stack.push(.int(Int(i)))
 		}
 
 		#expect(stack.size == 10)
-		#expect(stack.peek() == .number(9))
+		#expect(stack.peek() == .int(9))
 
 		let closure = Closure(function: Function(arity: 3, chunk: Chunk(), name: "testin"))
 

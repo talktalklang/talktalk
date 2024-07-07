@@ -26,7 +26,9 @@ struct TlkCommand: ParsableCommand {
 			input
 		}
 
-		if VM.run(source: source, output: StdoutOutput(isDebug: isDebug)) == .ok {
+		var output = StdoutOutput(isDebug: isDebug)
+
+		if VM.run(source: source, output: output) == .ok {
 			return
 		} else {
 			throw ExitCode.failure

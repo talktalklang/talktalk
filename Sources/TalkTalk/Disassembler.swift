@@ -85,7 +85,7 @@ struct Disassembler {
 		self.chunk = chunk
 	}
 
-	static func dump(chunk: Chunk, into output: some OutputCollector) {
+	static func dump(chunk: Chunk, into output: inout some OutputCollector) {
 		var disassembler = Disassembler(chunk: chunk)
 		output.print(Self.header)
 		while let instruction = disassembler.nextInstruction() {
@@ -93,7 +93,7 @@ struct Disassembler {
 		}
 	}
 
-	static func dump(chunk: Chunk, ip: Int, into output: some OutputCollector) {
+	static func dump(chunk: Chunk, ip: Int, into output: inout some OutputCollector) {
 		var disassembler = Disassembler(chunk: chunk)
 		disassembler.offset = ip
 		if let out = disassembler.nextInstruction()?.description {

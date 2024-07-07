@@ -85,7 +85,7 @@ public struct VM<Output: OutputCollector> {
 		while true {
 			#if DEBUGGING
 				stackDebug()
-				Disassembler.dump(chunk: chunk, ip: ip, into: output)
+				Disassembler.dump(chunk: chunk, ip: ip, into: &output)
 			#endif
 
 			let byte = readByte()
@@ -279,6 +279,7 @@ public struct VM<Output: OutputCollector> {
 //		}
 	}
 
+	@inline(__always)
 	private mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
 		switch callee {
 		case let .closure(closure):
@@ -291,6 +292,7 @@ public struct VM<Output: OutputCollector> {
 		}
 	}
 
+	@inline(__always)
 	private mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
 		chunk = closure.function.chunk
 
@@ -343,6 +345,7 @@ public struct VM<Output: OutputCollector> {
 		chunk.constants[Int(readByte())]
 	}
 
+	@inline(__always)
 	private mutating func readByte() -> Byte {
 		return chunk.code[ip++]
 	}

@@ -13,12 +13,12 @@ extension Compiler {
 
 	func number(_: Bool) {
 		let lexeme = parser.previous.lexeme(in: source).reduce(into: "") { $0.append($1) }
-		guard let value = Double(lexeme) else {
+		guard let value = Int(lexeme) else {
 			error("Could not parse number: \(parser.previous.lexeme(in: source))")
 			return
 		}
 
-		emit(constant: .number(value))
+		emit(constant: .int(value))
 	}
 
 	func unary(_: Bool) {
