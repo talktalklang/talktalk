@@ -14,8 +14,8 @@ struct TlkCommand: ParsableCommand {
 	@Argument(help: "The input to run.")
 	var input: String
 
-	@Argument(help: "Print debug info")
-	var isDebug: Bool = false
+	@Flag(help: "Print debug info")
+	var debug: Bool = false
 //
 //	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
@@ -26,7 +26,7 @@ struct TlkCommand: ParsableCommand {
 			input
 		}
 
-		var output = StdoutOutput(isDebug: isDebug)
+		let output = StdoutOutput(isDebug: debug)
 
 		if VM.run(source: source, output: output) == .ok {
 			return

@@ -9,7 +9,7 @@ public final class Compiler {
 		case errors([Error])
 	}
 
-	public struct Error {
+	public struct Error: Sendable {
 		var token: Token?
 		var message: String
 

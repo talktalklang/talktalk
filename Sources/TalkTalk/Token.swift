@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-struct Token: Equatable {
+struct Token: Equatable, Sendable {
 	enum Kind: Equatable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
