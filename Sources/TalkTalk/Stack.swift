@@ -35,7 +35,7 @@ struct Stack<Element> {
 	private var storage: Storage
 
 	init() {
-		storage = Storage.create(minimumCapacity: 8) { _ in 0 } as! Storage
+		self.storage = Storage.create(minimumCapacity: 8) { _ in 0 } as! Storage
 	}
 
 	subscript(_ index: Int) -> Element {
@@ -56,7 +56,7 @@ struct Stack<Element> {
 		let storage = isKnownUniquelyReferenced(&storage) ? storage : storage.copy()
 
 		return storage.withUnsafeMutablePointers { header, elements in
-			(0..<header.pointee).map { i in
+			(0 ..< header.pointee).map { i in
 				elements[i]
 			}
 		}
@@ -103,11 +103,11 @@ struct Stack<Element> {
 	}
 
 	mutating func pop(count: Int) -> [Element] {
-		(0..<count).map { _ in pop() }
+		(0 ..< count).map { _ in pop() }
 	}
 
 	func last(count: Int) -> [Element] {
-		(0..<count).map { i in peek(offset: count-i) }
+		(0 ..< count).map { i in peek(offset: count - i) }
 	}
 }
 

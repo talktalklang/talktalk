@@ -24,10 +24,11 @@ public class Compiler {
 
 	var parent: Compiler?
 	var parser: Parser
-	var currentFunction: Function
+	var function: Function
 	var errors: [Error] = []
 
 	// MARK: Local variable management
+
 	var locals = ContiguousArray<Local?>(repeating: nil, count: 256)
 	var localCount = 1 // Reserve local count spot 0 for internal use
 	var scopeDepth = 0
@@ -50,18 +51,24 @@ public class Compiler {
 	init(parent: Compiler) {
 		self.parent = parent
 		self.parser = parent.parser
-		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "")
-		self.locals[0] = Local(name: parser.current, depth: 0)
+		self.function = Function(arity: 0, chunk: Chunk(), name: "")
+		locals[0] = Local(name: parser.current, depth: 0)
 	}
 
 	public init(source: String) {
 		self.parser = Parser(lexer: Lexer(source: source))
-		self.currentFunction = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
-		self.locals[0] = Local(name: parser.current, depth: 0)
+		self.function = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
+		locals[0] = Local(name: parser.current, depth: 0)
 	}
 
-	var compilingChunk: Chunk {
-		currentFunction.chunk
+	var chunk: Chunk {
+		get {
+			function.chunk
+		}
+
+		set {
+			function.chunk = newValue
+		}
 	}
 
 	var source: ContiguousArray<Character> {
@@ -163,7 +170,7 @@ public class Compiler {
 
 		while precedence < parser.current.kind.rule.precedence {
 			#if DEBUG
-			checkForInfiniteLoop()
+				checkForInfiniteLoop()
 			#endif
 
 			parser.advance()
@@ -190,7 +197,7 @@ public class Compiler {
 	func emit(loop backToInstruction: Int) {
 		emit(opcode: .loop)
 
-		let offset = compilingChunk.count - backToInstruction + 2
+		let offset = chunk.count - backToInstruction + 2
 		if offset > UInt16.max {
 			error("Loop body too large, cmon.")
 		}
@@ -209,12 +216,12 @@ public class Compiler {
 
 		// Return the current location of our chunk code, offset by 2 (since that's
 		// where we're gonna store our offset.
-		return compilingChunk.count - 2
+		return chunk.count - 2
 	}
 
 	func patchJump(_ offset: Int) {
 		// -2 to adjust for the bytecode for the jump offset itself
-		let jump = compilingChunk.count - offset - 2
+		let jump = chunk.count - offset - 2
 		if jump > UInt16.max {
 			error("Too much code to jump over")
 		}
@@ -222,17 +229,17 @@ public class Compiler {
 		// Go back and replace the two placeholder bytes from emit(jump:)
 		// the actual offset to jump over.
 		let (a, b) = uint16ToBytes(jump)
-		compilingChunk.code[offset] = a
-		compilingChunk.code[offset + 1] = b
+		chunk.code[offset] = a
+		chunk.code[offset + 1] = b
 	}
 
 	func emit(constant value: Value) {
-		if compilingChunk.constants.count > UInt8.max {
+		if chunk.constants.count > UInt8.max {
 			error("Too many constants in one chunk")
 			return
 		}
 
-		compilingChunk.write(value: value, line: parser.previous?.line ?? -1)
+		chunk.write(value: value, line: parser.previous?.line ?? -1)
 	}
 
 	func emit(opcode: Opcode) {
@@ -245,7 +252,7 @@ public class Compiler {
 	}
 
 	func emit(_ byte: Byte) {
-		compilingChunk.write(byte, line: parser.previous?.line ?? -1)
+		chunk.write(byte, line: parser.previous?.line ?? -1)
 	}
 
 	func emit(_ byte1: Byte, _ byte2: Byte) {

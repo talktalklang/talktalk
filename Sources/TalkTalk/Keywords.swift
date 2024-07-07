@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-class KeywordTrie: @unchecked Sendable {
+struct KeywordTrie: @unchecked Sendable {
 	class Node: @unchecked Sendable {
 		var keyword: Token.Kind?
 		var children: [Character: Node]
@@ -67,6 +67,6 @@ extension KeywordTrie {
 		.true,
 		.var,
 		.while,
-		.print
+		.print,
 	]
 }

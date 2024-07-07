@@ -20,7 +20,7 @@ class OpenUpvalues {
 	}
 }
 
-public class VM<Output: OutputCollector> {
+public struct VM<Output: OutputCollector> {
 	var output: Output
 	var stack = Stack<Value>()
 	var frames = Stack<CallFrame>()
@@ -29,9 +29,10 @@ public class VM<Output: OutputCollector> {
 
 	var chunk: Chunk!
 	var currentFrame: CallFrame!
+	var ip: Int = 0
 
 	public static func run(source: String, output: Output) -> InterpretResult {
-		let vm = VM(output: output)
+		var vm = VM(output: output)
 		let compiler = Compiler(source: source)
 
 		do {
@@ -41,7 +42,7 @@ public class VM<Output: OutputCollector> {
 			return .compileError
 		}
 
-		return vm.run(function: compiler.currentFunction)
+		return vm.run(function: compiler.function)
 	}
 
 	public init(output: Output = StdoutOutput()) {
@@ -51,11 +52,11 @@ public class VM<Output: OutputCollector> {
 		}
 	}
 
-	func initVM() {
+	mutating func initVM() {
 		stack.reset()
 	}
 
-	func stackDebug() {
+	mutating func stackDebug() {
 		if stack.isEmpty { return }
 		output.debug(String(repeating: " ", count: 9), terminator: "")
 		for slot in stack.entries() {
@@ -64,7 +65,7 @@ public class VM<Output: OutputCollector> {
 		output.debug()
 	}
 
-	public func run(source: String) -> InterpretResult {
+	public mutating func run(source: String) -> InterpretResult {
 		let compiler = Compiler(source: source)
 
 		do {
@@ -73,10 +74,10 @@ public class VM<Output: OutputCollector> {
 			return .compileError
 		}
 
-		return run(function: compiler.currentFunction)
+		return run(function: compiler.function)
 	}
 
-	public func run(function root: Function) -> InterpretResult {
+	public mutating func run(function root: Function) -> InterpretResult {
 		let rootClosure = Closure(function: root)
 		stack.push(.closure(rootClosure))
 		_ = call(rootClosure, argCount: 0)
@@ -112,8 +113,9 @@ public class VM<Output: OutputCollector> {
 				// Append the return value
 				stack.push(result)
 
-				self.currentFrame = frames.peek()
-				self.chunk = currentFrame.closure.function.chunk
+				ip = frame.lastIP
+				currentFrame = frames.peek()
+				chunk = currentFrame.closure.function.chunk
 			case .negate:
 				stack.push(-stack.pop())
 			case .constant:
@@ -194,16 +196,16 @@ public class VM<Output: OutputCollector> {
 				runtimeError("Unitialized instruction cannot be run: \(peek().description)")
 			case .jump:
 				let offset = readShort()
-				currentFrame.ip += Int(offset)
+				ip += Int(offset)
 			case .jumpIfFalse:
 				let offset = readShort()
 				let isTrue = peek().as(Bool.self)
 				if !isTrue {
-					currentFrame.ip += Int(offset)
+					ip += Int(offset)
 				}
 			case .loop:
 				let offset = readShort()
-				currentFrame.ip -= Int(offset)
+				ip -= Int(offset)
 			case .call:
 				let argCount = readByte()
 				if !callValue(peek(argCount), argCount) {
@@ -243,7 +245,7 @@ public class VM<Output: OutputCollector> {
 		}
 	}
 
-	func captureUpvalue(_ local: Value) -> Value {
+	mutating func captureUpvalue(_ local: Value) -> Value {
 		var prevUpvalue: OpenUpvalues?
 		var upvalue = openUpvalues
 
@@ -263,7 +265,7 @@ public class VM<Output: OutputCollector> {
 		if let prevUpvalue {
 			prevUpvalue.next = OpenUpvalues(value: createdUpvalue)
 		} else {
-			self.openUpvalues = OpenUpvalues(value: createdUpvalue)
+			openUpvalues = OpenUpvalues(value: createdUpvalue)
 		}
 
 		return createdUpvalue
@@ -277,11 +279,11 @@ public class VM<Output: OutputCollector> {
 //		}
 	}
 
-	func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
+	mutating func callValue(_ callee: Value, _ argCount: Byte) -> Bool {
 		switch callee {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
-		case .native(_):
+		case .native:
 			return false
 		default:
 			runtimeError("\(callee) not callable")
@@ -289,8 +291,8 @@ public class VM<Output: OutputCollector> {
 		}
 	}
 
-	func call(_ closure: Closure, argCount: Byte) -> Bool {
-		self.chunk = closure.function.chunk
+	mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
+		chunk = closure.function.chunk
 
 		let fn = closure.function
 		if argCount != fn.arity {
@@ -303,19 +305,25 @@ public class VM<Output: OutputCollector> {
 			return false
 		}
 
-		let frame = CallFrame(
+		var frame = CallFrame(
 			closure: closure,
 			stack: stack,
 			stackOffset: stack.size - Int(argCount) - 1
 		)
 
+		// Stash the current IP on the frame to be restored on return
+		frame.lastIP = ip
+
+		// Set the IP back to zero for the current frame
+		ip = 0
+
 		frames.push(frame)
-		self.currentFrame = frame
+		currentFrame = frame
 
 		return true
 	}
 
-	func readShort() -> UInt16 {
+	mutating func readShort() -> UInt16 {
 		// Move two bytes, because we're gonna read... two bytes
 		ip += 2
 
@@ -327,27 +335,27 @@ public class VM<Output: OutputCollector> {
 		return UInt16((a << 8) | b)
 	}
 
-	func readString() -> String {
+	mutating func readString() -> String {
 		return chunk.constants.read(byte: readByte()).as(String.self)
 	}
 
-	func readConstant() -> Value {
+	mutating func readConstant() -> Value {
 		chunk.constants[Int(readByte())]
 	}
 
-	func readByte() -> Byte {
+	mutating func readByte() -> Byte {
 		return chunk.code[ip++]
 	}
 
-	func peek(_ offset: Byte) -> Value {
+	mutating func peek(_ offset: Byte) -> Value {
 		stack.peek(offset: Int(offset))
 	}
 
-	func peek(_ offset: Int = 0) -> Value {
+	mutating func peek(_ offset: Int = 0) -> Value {
 		stack.peek(offset: offset)
 	}
 
-	func runtimeError(_ message: String) {
+	mutating func runtimeError(_ message: String) {
 		output.print("------------------------------------------------------------------")
 		output.print("Runtime Error: \(message)")
 		output.print("------------------------------------------------------------------")
@@ -362,15 +370,5 @@ public class VM<Output: OutputCollector> {
 		}
 
 		stack.reset()
-	}
-
-	var ip: Int {
-		get {
-			currentFrame.ip
-		}
-
-		set {
-			currentFrame.ip = newValue
-		}
 	}
 }

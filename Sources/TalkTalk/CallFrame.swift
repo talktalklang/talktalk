@@ -4,13 +4,13 @@
 //
 //  Created by Pat Nakajima on 7/3/24.
 //
-class CallFrame {
+struct CallFrame {
 	let closure: Closure
-	let stack: CallFrameStack
+	var stack: CallFrameStack
 	let stackOffset: Int
-	var ip: Int = 0
+	var lastIP: Int = 0
 
-	class CallFrameStack {
+	struct CallFrameStack {
 		var stackRef: Stack<Value>
 		let offset: Int
 

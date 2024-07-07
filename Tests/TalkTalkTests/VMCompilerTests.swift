@@ -63,13 +63,8 @@ actor VMCompilerTests {
 		let count = await withTaskGroup(of: Void.self) { group in
 			group.addTask {
 				for _ in 0 ..< 100 {
-					let source = "print(1 + -2);"
-					let compiler = Compiler(source: source)
-					try! compiler.compile()
-
 					let output = TestOutput()
-					let vm = VM(output: output)
-					let result = vm.run(function: compiler.currentFunction)
+					let result = VM.run(source: "print(1 + -2);", output: output)
 					#expect(result == .ok)
 				}
 			}
@@ -124,11 +119,8 @@ actor VMCompilerTests {
 		let source = """
 		print("hello world");
 		"""
-		let compiler = Compiler(source: source)
-		try! compiler.compile()
 
-		let vm = VM(output: output)
-		let result = vm.run(function: compiler.currentFunction)
+		let result = VM.run(source: source, output: output)
 
 		#expect(result == .ok)
 		#expect(output.stdout == "hello world\n")

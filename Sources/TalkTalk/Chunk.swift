@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 6/30/24.
 //
 
-public class Chunk: Hashable {
+public struct Chunk: Hashable {
 	public static func == (lhs: Chunk, rhs: Chunk) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
@@ -24,20 +24,20 @@ public class Chunk: Hashable {
 		code.count
 	}
 
-	func make(constant value: Value) -> Byte {
+	mutating func make(constant value: Value) -> Byte {
 		Byte(constants.write(value))
 	}
 
-	func write(_ opcode: Opcode, line: Int) {
+	mutating func write(_ opcode: Opcode, line: Int) {
 		write(opcode.byte, line: line)
 	}
 
-	func write(_ byte: Byte, line: Int) {
+	mutating func write(_ byte: Byte, line: Int) {
 		code.write(byte)
 		lines.write(line)
 	}
 
-	func write(value: consuming Value, line: Int) {
+	mutating func write(value: consuming Value, line: Int) {
 		write(.constant, line: line)
 		let offset = Byte(constants.write(value))
 		write(offset, line: line)

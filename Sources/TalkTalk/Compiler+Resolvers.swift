@@ -1,6 +1,6 @@
 //
 //  Compiler+Resolvers.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/5/24.
 //
@@ -106,7 +106,7 @@ extension Compiler {
 
 	func identifierConstant(_ token: Token) -> Byte {
 		let value = Value.string(String(token.lexeme(in: source)))
-		return compilingChunk.make(constant: value)
+		return chunk.make(constant: value)
 	}
 
 	func beginScope() {
@@ -129,7 +129,7 @@ extension Compiler {
 	}
 
 	func resolveLocal(_ name: Token) -> Byte? {
-		for i in stride(from: localCount-1, to: 0, by: -1) {
+		for i in stride(from: localCount - 1, to: 0, by: -1) {
 			guard let local = locals[i] else {
 				continue
 			}
@@ -154,7 +154,7 @@ extension Compiler {
 			}
 		}
 
-		if currentFunction.upvalueCount == Byte.max {
+		if function.upvalueCount == Byte.max {
 			error("Too many closure variables in function")
 			return -1
 		}
@@ -162,6 +162,6 @@ extension Compiler {
 		let upvalue = Upvalue(isLocal: isLocal, index: index)
 		upvalues.append(upvalue)
 
-		return currentFunction.upvalueCount++
+		return function.upvalueCount++
 	}
 }

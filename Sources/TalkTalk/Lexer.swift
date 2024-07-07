@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-class Lexer {
+struct Lexer: ~Copyable {
 	var source: ContiguousArray<Character>
 	var start: Int
 	var current: Int
@@ -16,7 +16,7 @@ class Lexer {
 		self.current = 0
 	}
 
-	func collect() -> [Token] {
+	mutating func collect() -> [Token] {
 		var result: [Token] = []
 		while true {
 			let token = next()
@@ -28,12 +28,12 @@ class Lexer {
 		return result
 	}
 
-	func rewind() {
+	mutating func rewind() {
 		current = 0
 		start = 0
 	}
 
-	func dump() -> String {
+	mutating func dump() -> String {
 		var lastLine = 0
 		var result = ""
 
@@ -53,7 +53,7 @@ class Lexer {
 		return result
 	}
 
-	func next() -> Token {
+	mutating func next() -> Token {
 		handleWhitespace()
 
 		start = current
@@ -87,7 +87,7 @@ class Lexer {
 		}
 	}
 
-	func handleWhitespace() {
+	mutating func handleWhitespace() {
 		while let char = peek() {
 			switch char {
 			case " ", "\r", "\t":
@@ -109,7 +109,7 @@ class Lexer {
 		}
 	}
 
-	func string() -> Token {
+	mutating func string() -> Token {
 		while peek() != #"""# && !isAtEnd {
 			if peek() == "\n" {
 				line += 1
@@ -127,7 +127,7 @@ class Lexer {
 		return make(.string)
 	}
 
-	func number() -> Token {
+	mutating func number() -> Token {
 		while let char = peek(), char.isNumber {
 			advance()
 		}
@@ -144,7 +144,7 @@ class Lexer {
 		return make(.number)
 	}
 
-	func identifier(start: Character) -> Token {
+	mutating func identifier(start: Character) -> Token {
 		var node = KeywordTrie.trie.root.lookup(start)
 
 		while let char = peek(), isIdentifier(char) {
@@ -191,25 +191,26 @@ class Lexer {
 		return source[current + 1]
 	}
 
-	func match(_ char: Character) -> Bool {
+	mutating func match(_ char: Character) -> Bool {
 		if isAtEnd { return false }
 
 		if source[current] != char {
 			return false
 		}
-
-		current = current + 1
+		print("start: \(start) current = \(current) \(char)")
+		current++
+		print("start: \(start) current = \(current) \(char)")
 		return true
 	}
 
-	@discardableResult func advance() -> Character {
+	@discardableResult mutating func advance() -> Character {
 		let previous = current
 		current = current + 1
 		return source[previous]
 	}
 
 	func make(_ kind: Token.Kind) -> Token {
-		Token(start: start, length: current - start, kind: kind, line: line)
+		return Token(start: start, length: current - start, kind: kind, line: line)
 	}
 
 	func error(_ message: String) -> Token {

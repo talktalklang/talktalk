@@ -1,6 +1,6 @@
 //
 //  CallFrameTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/6/24.
 //
@@ -10,7 +10,7 @@ import Testing
 struct CallFrameTests {
 	@Test("Stack window") func frame() {
 		var stack = Stack<Value>()
-		for i in 0..<10 {
+		for i in 0 ..< 10 {
 			stack.push(.number(Double(i)))
 		}
 

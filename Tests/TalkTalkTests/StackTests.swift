@@ -1,6 +1,6 @@
 //
 //  StackTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/5/24.
 //
@@ -26,7 +26,7 @@ struct StackTests {
 		stack.push(Item(value: "2"))
 		stack.push(Item(value: "1"))
 
-		#expect(stack.entries().map(\.value) == ["3","2","1"])
+		#expect(stack.entries().map(\.value) == ["3", "2", "1"])
 
 		#expect(stack.size == 3)
 		#expect(stack.peek().value == "1")
@@ -38,7 +38,7 @@ struct StackTests {
 
 	@Test("Bench") func bench() {
 		var stack = Stack<Int>()
-		for i in 0..<10_000_000 {
+		for i in 0 ..< 10_000_000 {
 			stack.push(i)
 			stack.size
 			stack.peek()

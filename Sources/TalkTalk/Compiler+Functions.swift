@@ -1,6 +1,6 @@
 //
 //  Compiler+Functions.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/5/24.
 //
@@ -9,14 +9,14 @@ extension Compiler {
 		let compiler = Compiler(parent: self)
 
 		compiler.beginScope()
-		compiler.currentFunction.name = String(parser.previous.lexeme(in: source))
+		compiler.function.name = String(parser.previous.lexeme(in: source))
 		compiler.parser.consume(.leftParen, "Expected '(' after function name")
 
 		if !compiler.parser.check(.rightParen) {
 			repeat {
-				compiler.currentFunction.arity += 1
+				compiler.function.arity += 1
 
-				if compiler.currentFunction.arity > 255 {
+				if compiler.function.arity > 255 {
 					compiler.parser.error(at: parser.current, "Can't have more than 255 params, cmon.")
 				}
 
@@ -34,7 +34,7 @@ extension Compiler {
 		// get executed
 		compiler.emitReturn()
 
-		let constant = compilingChunk.make(constant: .function(compiler.currentFunction))
+		let constant = chunk.make(constant: .function(compiler.function))
 		emit(opcode: .closure)
 		emit(constant)
 		for upvalue in compiler.upvalues {
@@ -42,7 +42,7 @@ extension Compiler {
 			emit(upvalue.index)
 		}
 
-		assert(compiler.upvalues.count == compiler.currentFunction.upvalueCount, "upvalue count != function upvalue count (\(compiler.upvalues.count) != \(compiler.currentFunction.upvalueCount))")
+		assert(compiler.upvalues.count == compiler.function.upvalueCount, "upvalue count != function upvalue count (\(compiler.upvalues.count) != \(compiler.function.upvalueCount))")
 	}
 
 	func call(_: Bool) {

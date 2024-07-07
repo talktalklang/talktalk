@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/3/24.
 //
-public class Function: Equatable, Hashable {
+public struct Function: Equatable, Hashable {
 	public enum Kind {
 		case function, main
 	}
@@ -14,7 +14,7 @@ public class Function: Equatable, Hashable {
 	}
 
 	var arity: Int
-	let chunk: Chunk
+	var chunk: Chunk
 	var name: String
 	var kind: Kind
 	var upvalueCount = 0

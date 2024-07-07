@@ -1,6 +1,6 @@
 //
 //  DisassemblerTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/6/24.
 //
@@ -56,7 +56,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_CONSTANT") func constantTest() {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(value: .nil, line: 123)
 
@@ -71,7 +71,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_NIL") func nilTest() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.nil, line: 123)
 
@@ -85,7 +85,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_TRUE") func trueTest() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.true, line: 123)
 
@@ -99,7 +99,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_FALSE") func falseTest() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.false, line: 123)
 
@@ -113,7 +113,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_POP") func popTest() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.pop, line: 123)
 
@@ -127,7 +127,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_GET_LOCAL") func getLocal() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.getLocal, line: 123)
 		chunk.write(4, line: 123)
@@ -143,7 +143,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_SET_LOCAL") func setLocal() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.setLocal, line: 123)
 		chunk.write(4, line: 123)
@@ -159,7 +159,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_GET_GLOBAL") func getGlobal() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		let constant = chunk.make(constant: .nil)
 		chunk.write(.getGlobal, line: 123)
@@ -176,7 +176,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_DEFINE_GLOBAL") func defineGlobal() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		let constant = chunk.make(constant: .nil)
 		chunk.write(.defineGlobal, line: 123)
@@ -193,7 +193,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_SET_GLOBAL") func setGlobal() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		let constant = chunk.make(constant: .nil)
 		chunk.write(.setGlobal, line: 123)
@@ -210,7 +210,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_GET_UPVALUE") func getUpvalue() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.getUpvalue, line: 123)
 		chunk.write(16, line: 123)
@@ -226,7 +226,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_SET_UPVALUE") func setUpvalue() throws {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(.setUpvalue, line: 123)
 		chunk.write(16, line: 123)
@@ -253,7 +253,7 @@ struct DisassemblerTests {
 		Opcode.notEqual,
 		Opcode.negate,
 	]) func operators(_ opcode: Opcode) {
-		let chunk = Chunk()
+		var chunk = Chunk()
 
 		chunk.write(opcode, line: 123)
 
@@ -267,8 +267,8 @@ struct DisassemblerTests {
 	}
 
 	@Test("OP_CLOSURE") func closure() {
-		let chunk = Chunk()
-		let function = Function(arity: 0, chunk: Chunk(), name: "testin")
+		var chunk = Chunk()
+		var function = Function(arity: 0, chunk: Chunk(), name: "testin")
 		function.upvalueCount = 1
 
 		chunk.write(.closure, line: 123)

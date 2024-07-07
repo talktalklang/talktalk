@@ -49,8 +49,7 @@ struct JumpMetadata: Disassembler.Metadata {
 }
 
 struct Disassembler {
-	protocol Metadata: Equatable, CustomStringConvertible  {
-	}
+	protocol Metadata: Equatable, CustomStringConvertible {}
 
 	struct Instruction {
 		var offset: Int
@@ -65,7 +64,7 @@ struct Disassembler {
 				String(format: "%04d", offset),
 				lineString,
 				opcode,
-				metadata?.description ?? ""
+				metadata?.description ?? "",
 			]
 
 			return parts.joined(separator: " ")

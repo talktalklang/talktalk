@@ -28,7 +28,7 @@ enum Opcode: Byte {
 	     loop,
 	     call,
 	     closure,
-			 closeUpvalue,
+	     closeUpvalue,
 //			 native,
 	     `nil`
 

@@ -1,6 +1,6 @@
 //
 //  Compiler+Statements.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/5/24.
 //
@@ -37,7 +37,7 @@ extension Compiler {
 	}
 
 	func returnStatement() {
-		if currentFunction.kind == .main {
+		if function.kind == .main {
 			error("Cannot return from top level", at: parser.previous)
 			return
 		}
@@ -75,7 +75,7 @@ extension Compiler {
 
 	func whileStatement() {
 		// This is where we return to while the condition is true
-		let loopStart = compilingChunk.count
+		let loopStart = chunk.count
 
 		// Add the condition to the top of the stack
 		expression()
