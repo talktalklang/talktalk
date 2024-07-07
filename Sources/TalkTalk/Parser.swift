@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-public class Parser {
+public final class Parser {
 	enum Precedence: Byte, Comparable {
 		static func < (lhs: Parser.Precedence, rhs: Parser.Precedence) -> Bool {
 			lhs.rawValue < rhs.rawValue

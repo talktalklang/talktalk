@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/1/24.
 //
 struct KeywordTrie: @unchecked Sendable {
-	class Node: @unchecked Sendable {
+	final class Node: @unchecked Sendable {
 		var keyword: Token.Kind?
 		var children: [Character: Node]
 

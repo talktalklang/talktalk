@@ -11,27 +11,9 @@ public enum InterpretResult {
 	     runtimeError
 }
 
-class OpenUpvalues {
-	enum Node {
-		case next(OpenUpvalues)
-		var value: OpenUpvalues {
-			switch self {
-			case .next(let val): val
-			}
-		}
-	}
-
+final class OpenUpvalues {
 	var value: Value
-	var nextNode: Node?
-	var next: OpenUpvalues? {
-		get {
-			nextNode?.value
-		}
-
-		set {
-			nextNode = (newValue != nil) ? .next(newValue!) : nil
-		}
-	}
+	var next: OpenUpvalues?
 
 	init(value: Value) {
 		self.value = value
