@@ -41,7 +41,9 @@ struct LexerTests {
 		"""
 
 		var lexer = Lexer(source: source)
-		#expect(lexer.collect() == [
+		let results = lexer.collect()
+
+		#expect(results == [
 			Token(start: 20, length: 1, kind: .newline, line: 1),
 			Token(start: 21, length: 1, kind: .plus, line: 2),
 			Token(start: 23, length: 2, kind: .greaterEqual, line: 2),

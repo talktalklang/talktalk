@@ -95,7 +95,7 @@ struct Lexer: ~Copyable {
 				advance()
 			case "/":
 				if peekNext() == "/" {
-					while peekNext() != "\n", !isAtEnd {
+					while peek() != "\n", !isAtEnd {
 						advance()
 					}
 				} else {
