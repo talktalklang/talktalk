@@ -112,6 +112,10 @@ struct LexerTests {
 		let source = """
 		var foo
 		foo = 1
+
+
+
+
 		"""
 
 		var lexer = Lexer(source: source)
@@ -122,7 +126,8 @@ struct LexerTests {
 			Token(start: 8, length: 3, kind: .identifier, line: 2),
 			Token(start: 12, length: 1, kind: .equal, line: 2),
 			Token(start: 14, length: 1, kind: .number, line: 2),
-			Token(start: source.count, length: 0, kind: .eof, line: 2),
+			Token(start: 15, length: 4, kind: .newline, line: 2), // Collapse multiple newlines
+			Token(start: source.count, length: 0, kind: .eof, line: 6),
 		])
 	}
 

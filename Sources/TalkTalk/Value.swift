@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 6/30/24.
 //
 
-// typealias Value = Double
+// Values are anything that can be passed around or defined
 enum Value: Equatable, Hashable {
 	static func == (lhs: Value, rhs: Value) -> Bool {
 		lhs.equals(rhs)
@@ -20,7 +20,8 @@ enum Value: Equatable, Hashable {
 	     function(Function),
 	     native(String),
 	     `class`(Class),
-	     classInstance(ClassInstance)
+	     classInstance(ClassInstance),
+			 boundMethod(ClassInstance, Closure)
 
 	func hash(into hasher: inout Swift.Hasher) {
 		hasher.combine(hash)
@@ -70,6 +71,8 @@ enum Value: Equatable, Hashable {
 			return klass.hashValue
 		case let .classInstance(instance):
 			return instance.hashValue
+		case let .boundMethod(instance, method):
+			return instance.hashValue + method.hashValue
 		}
 	}
 
@@ -94,6 +97,10 @@ enum Value: Equatable, Hashable {
 		case is Closure.Type:
 			if case let .closure(closure) = self {
 				return closure as! T
+			}
+		case is Class.Type:
+			if case let .class(klass) = self {
+				return klass as! T
 			}
 		case is ClassInstance.Type:
 			if case let .classInstance(classInstance) = self {
@@ -128,6 +135,8 @@ enum Value: Equatable, Hashable {
 			return "<class \(klass.name)>"
 		case let .classInstance(instance):
 			return "<\(instance.klass.name) instance>"
+		case let .boundMethod(instance, method):
+			return "<\(instance) bound method>"
 		}
 	}
 

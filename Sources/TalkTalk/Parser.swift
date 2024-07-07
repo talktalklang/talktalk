@@ -33,8 +33,13 @@ public final class Parser {
 		var token: Token
 		public var message: String
 
-		var description: String {
-			message
+		public func description(in compiler: Compiler) -> String {
+			"""
+			\(message) at \(token.start), line: \(token.line)
+
+			\t\(compiler.parser.line(token.line))
+
+			"""
 		}
 	}
 
@@ -47,6 +52,18 @@ public final class Parser {
 		let first = lexer.next()
 		self.current = first
 		self.lexer = lexer
+	}
+
+	func skip(_ kind: Token.Kind) {
+		while check(kind) {
+			advance()
+		}
+	}
+
+	func skip(_ kinds: Token.Kinds) {
+		while check(kinds) {
+			advance()
+		}
 	}
 
 	func advance() {
@@ -74,7 +91,7 @@ public final class Parser {
 	}
 
 	func match(_ kinds: Token.Kinds) -> Bool {
-		if kinds.contains(current.kind) {
+		if check(kinds) {
 			advance()
 			return true
 		}
@@ -83,11 +100,11 @@ public final class Parser {
 	}
 
 	func check(_ kind: Token.Kind) -> Bool {
-		current.kind == kind
+		return current.kind == kind
 	}
 
 	func check(_ kinds: Token.Kinds) -> Bool {
-		kinds.contains(current.kind)
+		return kinds.contains(current.kind)
 	}
 
 	func consume(_ kinds: Token.Kinds, _: String) {
@@ -96,20 +113,28 @@ public final class Parser {
 			return
 		}
 
+		let kinds = kinds.map { "\($0)".components(separatedBy: ".").last! }.joined(separator: ", ")
 		error(at: current, "Unexpected token: \(current.description(in: lexer.source)). Expected: \(kinds).")
 	}
 
 	func consume(_ kind: Token.Kind, _: String) {
 		if current.kind == kind {
 			advance()
+
 			return
 		}
 
+		let kind = "\(kind)".components(separatedBy: ".").last!
 		error(at: current, "Unexpected token: \(current.description(in: lexer.source)). Expected: \(kind).")
 	}
 
 	func line(_ number: Int) -> String {
-		String(lexer.source).components(separatedBy: "\n")[number]
+		let lines = String(lexer.source).components(separatedBy: "\n")
+		if number >= lines.count {
+			return "EOF"
+		} else {
+			return lines[number]
+		}
 	}
 
 	func error(at token: Token, _ message: String) {

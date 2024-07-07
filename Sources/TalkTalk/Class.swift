@@ -4,6 +4,28 @@
 //
 //  Created by Pat Nakajima on 7/7/24.
 //
-struct Class: Hashable {
+final class Class: Hashable {
+	static func == (lhs: Class, rhs: Class) -> Bool {
+		lhs.name == rhs.name
+	}
+
 	let name: String
+	var methods: [String: Closure]
+
+	init(name: String, methods: [String : Closure] = [:]) {
+		self.name = name
+		self.methods = methods
+	}
+
+	func hash(into hasher: inout Hasher) {
+		hasher.combine(name)
+	}
+
+	func lookup(method: String) -> Closure? {
+		methods[method]
+	}
+
+	func define(method: Closure, as name: String) {
+		methods[name] = method
+	}
 }

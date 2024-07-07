@@ -61,7 +61,7 @@ extension Token.Kind {
 		case .or: .none
 		case .return: .none
 		case .super: .none
-		case .self: .none
+		case .self: .init({ $0._self($1) }, nil, .none)
 		case .true: .init({ $0.literal($1) }, nil, .none)
 		case .var: .none
 		case .while: .none

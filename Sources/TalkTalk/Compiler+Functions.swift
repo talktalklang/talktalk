@@ -5,8 +5,9 @@
 //  Created by Pat Nakajima on 7/5/24.
 //
 extension Compiler {
-	func function(_: Function.Kind) {
-		let compiler = Compiler(parent: self)
+	func function(kind: Function.Kind) {
+		let compiler = Compiler(parent: self, kind: kind)
+		compiler.currentClass = self.currentClass
 
 		compiler.beginScope()
 		compiler.function.name = String(parser.previous.lexeme(in: source))

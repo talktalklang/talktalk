@@ -145,6 +145,8 @@ struct Disassembler {
 			return constantInstruction("OP_CLASS")
 		case .getProperty, .setProperty:
 			return constantInstruction(opcode!.description)
+		case .method:
+			return constantInstruction(opcode!.description)
 		default:
 			return simpleInstruction(opcode!.description)
 		}

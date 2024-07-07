@@ -36,6 +36,15 @@ extension Compiler {
 		}
 	}
 
+	func _self(_ canAssign: Bool) {
+		if currentClass == nil {
+			error("Cannot reference `self` outside a class")
+			return
+		}
+
+		variable(false)
+	}
+
 	func unary(_: Bool) {
 		let kind = parser.previous.kind
 		parse(precedence: .unary)

@@ -6,7 +6,7 @@
 //
 public struct Function: Equatable, Hashable {
 	public enum Kind {
-		case function, main
+		case function, main, method
 	}
 
 	public static func == (lhs: Function, rhs: Function) -> Bool {

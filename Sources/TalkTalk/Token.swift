@@ -45,7 +45,11 @@ struct Token: Equatable, Sendable {
 	}
 
 	func same(lexeme other: Token, in source: ContiguousArray<Character>) -> Bool {
-		length == other.length && lexeme(in: source) == other.lexeme(in: source)
+		if kind == .self && other.kind == .self {
+			return true
+		}
+
+		return length == other.length && lexeme(in: source) == other.lexeme(in: source)
 	}
 
 	func description(in source: borrowing ContiguousArray<Character>) -> String {
@@ -65,5 +69,13 @@ extension Token.Kinds {
 		.semicolon,
 		.newline,
 		.eof,
+	]
+
+	static let skipNewlines: Token.Kinds = [
+		.leftBrace,
+		.rightBrace,
+		.leftParen,
+		.rightParen,
+		.comma
 	]
 }

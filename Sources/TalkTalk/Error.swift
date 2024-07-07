@@ -8,12 +8,12 @@ public enum Error: Swift.Error {
 	case compiler([Compiler.Error]),
 	     parser([Parser.Error])
 
-	var description: String {
+	func description(in compiler: Compiler) -> String {
 		switch self {
 		case let .compiler(errors):
-			errors.map(\.description).joined(separator: ", ")
+			errors.map { $0.description(in: compiler) }.joined(separator: "\n")
 		case let .parser(errors):
-			errors.map(\.description).joined(separator: ", ")
+			errors.map { $0.description(in: compiler) }.joined(separator: "\n")
 		}
 	}
 }

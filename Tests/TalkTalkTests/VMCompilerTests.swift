@@ -510,4 +510,46 @@ actor VMCompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "Pat\n")
 	}
+
+	@Test("Simple method") func simpleMethod() {
+		let source = """
+		class Person {
+			func greet() {
+				print("sup")
+			}
+		}
+
+		Person().greet()
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "sup\n")
+	}
+
+	@Test("Top level self is a no no") func topLevelSelf() {
+		let output = TestOutput()
+
+		#expect(VM.run(source: "self", output: output) == .compileError)
+	}
+
+	@Test("Bound method") func boundMethod() {
+		let source = """
+		class Person {
+			func greet() {
+				print(self.name)
+			}
+		}
+
+		var person = Person()
+		person.name = "sup"
+		person.greet()
+		"""
+
+		let output = TestOutput()
+
+//		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "sup\n")
+	}
 }

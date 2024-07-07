@@ -38,7 +38,11 @@ public struct VM<Output: OutputCollector> {
 		do {
 			try compiler.compile()
 		} catch {
-			output.print(compiler.collectErrors().map { $0.description }.joined(separator: "\n"))
+			output.print(
+				compiler.collectErrors()
+					.map { $0.description(in: compiler) }
+					.joined(separator: "\n")
+			)
 			return .compileError
 		}
 
@@ -253,7 +257,7 @@ public struct VM<Output: OutputCollector> {
 
 				if let value = callee.get(property) {
 					stack.push(value)
-				} else {
+				} else if !bindMethod(callee, named: property) {
 					runtimeError("No property named `\(property)` for \(callee)")
 				}
 			case .setProperty:
@@ -269,7 +273,32 @@ public struct VM<Output: OutputCollector> {
 
 				// Return the value
 				stack.push(value)
+			case .method:
+				defineMethod(named: readString())
 			}
+		}
+	}
+
+	private mutating func defineMethod(named name: String) {
+		let method = stack.peek().as(Closure.self)
+		let klass = stack.peek(offset: 1).as(Class.self)
+
+		klass.define(method: method, as: name)
+
+		stack.pop()
+	}
+
+	private mutating func bindMethod(_ callee: ClassInstance, named name: String) -> Bool {
+		if let method = callee.klass.lookup(method: name) {
+			// Pop the callee (instance) off the stack
+			stack.pop()
+
+			// Add the bound method
+			stack.push(.boundMethod(callee, method))
+
+			return true
+		} else {
+			return false
 		}
 	}
 
@@ -315,6 +344,9 @@ public struct VM<Output: OutputCollector> {
 		case let .class(klass):
 			stack.push(.classInstance(ClassInstance(klass: klass, fields: [:])))
 			return true
+		case let .boundMethod(callee, closure):
+			stack[stack.size - Int(argCount) - 1] = .classInstance(callee)
+			return call(closure, argCount: argCount)
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type

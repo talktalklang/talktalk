@@ -13,11 +13,16 @@ public final class Compiler {
 		var token: Token?
 		var message: String
 
-		public var description: String {
+		public func description(in compiler: Compiler) -> String {
 			if let token {
-				"Compiler Error: \(message) at \(token)"
+				"""
+				\(message) at \(token.start), line: \(token.line)
+
+				\t\(compiler.parser.line(token.line))
+
+				"""
 			} else {
-				"Compiler Error: \(message)"
+				"\(message)"
 			}
 		}
 	}
@@ -25,6 +30,8 @@ public final class Compiler {
 	var parent: Compiler?
 	var parser: Parser
 	var function: Function
+	var currentClass: ClassCompiler?
+
 	public var errors: [Error] = []
 
 	// MARK: Local variable management
@@ -48,11 +55,16 @@ public final class Compiler {
 		}
 	#endif
 
-	init(parent: Compiler) {
+	init(parent: Compiler, kind: Function.Kind) {
 		self.parent = parent
 		self.parser = parent.parser
-		self.function = Function(arity: 0, chunk: Chunk(), name: "")
-		locals[0] = Local(name: parser.current, depth: 0)
+		self.function = Function(arity: 0, chunk: Chunk(), name: "", kind: kind)
+
+		if kind != .function {
+			locals[0] = Local(name: Token(start: -4, length: 4, kind: .self, line: -1), depth: 0)
+		} else {
+			locals[0] = Local(name: parser.current, depth: 0)
+		}
 	}
 
 	public init(source: String) {
@@ -93,55 +105,6 @@ public final class Compiler {
 		throw Errors.errors(collectErrors())
 	}
 
-	func declaration() {
-		if parser.match(.func) {
-			funcDeclaration()
-		} else if parser.match(.class) {
-			classDeclaration()
-		} else if parser.match(.var) {
-			varDeclaration()
-		} else {
-			statement()
-		}
-	}
-
-	func funcDeclaration() {
-		let global = parseVariable("Expected function name.")
-		markInitialized()
-		function(.function)
-		defineVariable(global: global)
-	}
-
-	func classDeclaration() {
-		parser.consume(.identifier, "Expected class name")
-
-		let nameConstant = identifierConstant(parser.previous)
-		declareVariable()
-
-		emit(opcode: .class)
-		emit(nameConstant)
-		defineVariable(global: nameConstant)
-
-		parser.consume(.leftBrace, "Expected '{' before class body")
-		parser.consume(.rightBrace, "Expected '}' after class body")
-	}
-
-	func varDeclaration() {
-		let global = parseVariable("Expected variable name")
-
-		defer {
-			defineVariable(global: global)
-		}
-
-		if parser.match(.equal) {
-			expression()
-		} else {
-			emit(opcode: .nil)
-		}
-
-		parser.consume(.statementTerminators, "Expected ';' or new line after variable declaration")
-	}
-
 	// MARK: Statements
 
 	func block() {
@@ -177,7 +140,8 @@ public final class Compiler {
 		let rule = opKind.rule
 
 		guard let prefix = rule.prefix else {
-			error("Expected expression at line \(parser.previous.line).")
+			error("Expected expression at line \(parser.previous.line):\n\n\t\(parser.line(parser.previous.line))\n")
+
 			return
 		}
 

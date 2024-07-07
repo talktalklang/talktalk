@@ -45,5 +45,9 @@ public struct Chunk: Hashable {
 
 	func disassemble<Output: OutputCollector>(to output: Output) {
 		Disassembler.dump(chunk: self, into: output)
+		output.print("Constants:")
+		for (i, constant) in constants.enumerated() {
+			output.print("\(i): \(constant)")
+		}
 	}
 }

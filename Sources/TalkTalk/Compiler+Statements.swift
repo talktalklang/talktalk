@@ -15,10 +15,6 @@ extension Compiler {
 			ifStatement()
 		} else if parser.match(.while) {
 			whileStatement()
-		} else if parser.check(.statementTerminators) {
-			// If we're not in the middle of another statement,
-			// just go past.
-			parser.advance()
 		} else if parser.match(.leftBrace) {
 			beginScope()
 			block()

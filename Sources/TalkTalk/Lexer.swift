@@ -108,8 +108,15 @@ struct Lexer: ~Copyable {
 	}
 
 	mutating func newline() -> Token {
+		var count = 1
+
+		while peek() == "\n" {
+			count += 1
+			advance()
+		}
+
 		defer {
-			line += 1
+			line += count
 		}
 
 		return make(.newline)
