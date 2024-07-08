@@ -108,6 +108,18 @@ struct LexerTests {
 		])
 	}
 
+	@Test("Identifier with underscore") func identifierWithUnderscore() {
+		let source = """
+		_variable
+		"""
+
+		var lexer = Lexer(source: source)
+		#expect(lexer.collect() == [
+			Token(start: 0, length: 9, kind: .identifier, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1),
+		])
+	}
+
 	@Test("Newline") func newline() {
 		let source = """
 		var foo

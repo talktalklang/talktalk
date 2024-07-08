@@ -128,6 +128,23 @@ enum Value: Equatable, Hashable {
 		}
 	}
 
+	func describe<Output: OutputCollector>(in vm: inout VM<Output>) -> String {
+		if case let .classInstance(instance) = self {
+			if let prop = instance.get("description") {
+				return prop.as(String.self)
+			}
+
+			if let computed = instance.klass.lookup(computedProperty: "description") {
+				let result = vm.eval(closure: computed, in: instance)
+				return result.as(String.self)
+			}
+
+			return "INSTANCE: \(description)"
+		}
+
+		return description
+	}
+
 	func not() -> Value {
 		switch self {
 		case let .bool(bool):

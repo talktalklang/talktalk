@@ -12,10 +12,12 @@ final class Class: Hashable {
 	let name: String
 	var hasInitializer = false
 	var methods: [String: Closure]
+	var computedProperties: [String: Closure]
 
 	init(name: String, methods: [String: Closure] = [:]) {
 		self.name = name
 		self.methods = methods
+		self.computedProperties = [:]
 	}
 
 	func hash(into hasher: inout Hasher) {
@@ -26,11 +28,19 @@ final class Class: Hashable {
 		methods[method]
 	}
 
+	func lookup(computedProperty: String) -> Closure? {
+		computedProperties[computedProperty]
+	}
+
 	func define(method: Closure, as name: String) {
 		if name == "init" {
 			hasInitializer = true
 		}
 
 		methods[name] = method
+	}
+
+	func define(computedProperty: Closure, as name: String) {
+		computedProperties[name] = computedProperty
 	}
 }

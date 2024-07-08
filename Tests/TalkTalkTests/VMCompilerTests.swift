@@ -590,6 +590,57 @@ actor VMCompilerTests {
 		#expect(VM.run(source: source, output: output) == .compileError)
 	}
 
+	@Test("Custom description property") func customDescriptionProperty() {
+		let source = """
+		class Person {
+			init() {
+				self.description = "Sup"
+			}
+		}
+
+		println(Person())
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "Sup\n")
+	}
+
+	@Test("Custom description computed property") func customDescriptionComputedProperty() {
+		let source = """
+		class Person {
+			var description {
+				return "Sup"
+			}
+		}
+
+		println(Person())
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "Sup\n")
+	}
+
+	@Test("Computed properties") func computed() {
+		let source = """
+		class Person {
+			var name {
+				return "Pat"
+			}
+		}
+
+		println(Person().name)
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "Pat\n")
+	}
+
 	@Test("Weird non invocation") func nonInvocation() {
 		let source = """
 		class Person {
@@ -689,5 +740,22 @@ actor VMCompilerTests {
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "3\n")
+	}
+
+	@Test("Basic array iteration") func arrayWhile() {
+		let source = """
+		var array = [1, 2, 3]
+
+		var i = 0
+		while i < array.count {
+			println(array[i])
+			i = i + 1
+		}
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "1\n2\n3\n")
 	}
 }

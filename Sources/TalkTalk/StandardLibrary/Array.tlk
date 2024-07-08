@@ -4,4 +4,12 @@ class Array {
 		self.elements = elements
 		self.count = count
 	}
+
+	func subscript(index) {
+		return self.elements[index]
+	}
+
+	var description {
+		return _describe(self.elements)
+	}
 }

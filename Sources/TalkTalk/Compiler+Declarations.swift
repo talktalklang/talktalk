@@ -75,6 +75,11 @@ extension Compiler {
 			// Field declarations will go here too
 			parser.skip(.newline)
 
+			#if DEBUG
+			checkForInfiniteLoop()
+			#endif
+
+			if parser.match(.var) { computedProperty() }
 			if parser.match(.func) { method() }
 			if parser.match(.`init`) { initializer() }
 
@@ -91,6 +96,20 @@ extension Compiler {
 		}
 
 		self.currentClass = currentClass.parent
+	}
+
+	func computedProperty() {
+		parser.consume(.identifier, "Expected property name")
+
+		// Get the constant byte for the property's name
+		let name = identifierConstant(parser.previous)
+
+		// Parse/emit the body, including parameters
+		function(kind: .computedProperty)
+
+		// Emit the code
+		emit(opcode: .computedProperty)
+		emit(name)
 	}
 
 	func initializer() {

@@ -161,6 +161,8 @@ struct Disassembler {
 			return constantInstruction(opcode!.description)
 		case .method:
 			return constantInstruction(opcode!.description)
+		case .computedProperty:
+			return constantInstruction(opcode!.description)
 		case .invoke, .invokeSuper:
 			return invokeInstruction()
 		case .getSuper:

@@ -11,23 +11,27 @@ extension Compiler {
 
 		compiler.beginScope()
 		compiler.function.name = String(parser.previous.lexeme(in: source))
-		compiler.parser.consume(.leftParen, "Expected '(' after function name")
 
-		if !compiler.parser.check(.rightParen) {
-			repeat {
-				compiler.function.arity += 1
+		if kind.takesArguments {
+			compiler.parser.consume(.leftParen, "Expected '(' after \(kind) name")
 
-				if compiler.function.arity > 255 {
-					compiler.parser.error(at: parser.current, "Can't have more than 255 params, cmon.")
-				}
+			if !compiler.parser.check(.rightParen) {
+				repeat {
+					compiler.function.arity += 1
 
-				let constant = compiler.parseVariable("Expected parameter name")
-				compiler.defineVariable(global: constant)
-			} while compiler.parser.match(.comma)
+					if compiler.function.arity > 255 {
+						compiler.parser.error(at: parser.current, "Can't have more than 255 params, cmon.")
+					}
+
+					let constant = compiler.parseVariable("Expected parameter name")
+					compiler.defineVariable(global: constant)
+				} while compiler.parser.match(.comma)
+			}
+
+			compiler.parser.consume(.rightParen, "Expected ')' after \(kind) parameters")
 		}
 
-		compiler.parser.consume(.rightParen, "Expected ')' after function parameters")
-		compiler.parser.consume(.leftBrace, "Expected '{' before function body")
+		compiler.parser.consume(.leftBrace, "Expected '{' before \(kind) body")
 		compiler.block()
 
 		// Always generate a return at the end of a function in case there's

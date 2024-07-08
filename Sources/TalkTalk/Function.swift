@@ -6,7 +6,11 @@
 //
 public struct Function: Equatable, Hashable {
 	public enum Kind {
-		case function, main, method, initializer
+		case function, main, method, initializer, computedProperty
+
+		var takesArguments: Bool {
+			self != .computedProperty
+		}
 	}
 
 	private final class Storage {

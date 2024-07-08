@@ -28,6 +28,8 @@ public struct VM<Output: OutputCollector> {
 	var globals: [Int: Value] = [:]
 	var openUpvalues: OpenUpvalues?
 
+	var result: Value?
+
 	var chunk: Chunk!
 	var currentFrame: CallFrame!
 	var ip: Int = 0
@@ -86,15 +88,19 @@ public struct VM<Output: OutputCollector> {
 	}
 
 	@inline(__always)
-	private mutating func restoreFrame(from frame: CallFrame) {
+	mutating func restoreFrame(from frame: CallFrame) {
 		ip = frame.lastIP
 		currentFrame = frames.peek()
 		chunk = currentFrame.closure.function.chunk
 	}
 
-	private mutating func run(function root: Function) -> InterpretResult {
-		let rootClosure = Closure(function: root)
+	private mutating func run(function: Function) -> InterpretResult {
+		let rootClosure = Closure(function: function)
 		stack.push(.closure(rootClosure))
+		return run(closure: rootClosure)
+	}
+
+	private mutating func run(closure rootClosure: Closure) -> InterpretResult {
 		_ = call(rootClosure, argCount: 0)
 
 		while true {
@@ -117,7 +123,7 @@ public struct VM<Output: OutputCollector> {
 				// closeUpvalues()
 
 				if frames.isEmpty {
-					_ = stack.pop()
+					self.result = result
 					return .ok
 				}
 
@@ -233,8 +239,6 @@ public struct VM<Output: OutputCollector> {
 					let isLocal = readByte() == 1
 					let index = Int(readByte())
 
-					stackDebug()
-
 					if isLocal {
 						closure.upvalues[i] = captureUpvalue(currentFrame.stack[index])
 					} else {
@@ -265,6 +269,13 @@ public struct VM<Output: OutputCollector> {
 
 				if let value = callee.get(property) {
 					stack.push(value)
+				} else if let computed = callee.klass.lookup(computedProperty: property) {
+					stack.push(.classInstance(callee))
+					if !call(computed, argCount: 0) {
+						return .runtimeError
+					}
+					stack.pop()
+//					restoreFrame(from: frames.pop())
 				} else if !bindMethod(callee.klass, named: property) {
 					runtimeError("No property named `\(property)` for \(callee)")
 				}
@@ -283,6 +294,8 @@ public struct VM<Output: OutputCollector> {
 				stack.push(value)
 			case .method:
 				defineMethod(named: readString())
+			case .computedProperty:
+				defineComputedProperty(named: readString())
 			case .invoke:
 				let method = readString()
 				let argCount = readByte()
@@ -290,7 +303,6 @@ public struct VM<Output: OutputCollector> {
 				if !invoke(method, argCount) {
 					return .runtimeError
 				}
-//				restoreFrame(from: frames.pop())
 			case .inherit:
 				// TODO: Don't make this crash, just return a runtime error? (preferably a compiler err)
 				let superclass = stack.peek(offset: 1).as(Class.self)
@@ -361,6 +373,15 @@ public struct VM<Output: OutputCollector> {
 		stack.pop()
 	}
 
+	private mutating func defineComputedProperty(named name: String) {
+		let property = stack.peek().as(Closure.self)
+		let klass = stack.peek(offset: 1).as(Class.self)
+
+		klass.define(computedProperty: property, as: name)
+
+		stack.pop()
+	}
+
 	private mutating func bindMethod(_ klass: Class, named name: String) -> Bool {
 		if let method = klass.lookup(method: name) {
 			let callee = stack.peek().as(ClassInstance.self)
@@ -403,6 +424,18 @@ public struct VM<Output: OutputCollector> {
 		return createdUpvalue
 	}
 
+	mutating func eval(closure: Closure, in instance: ClassInstance) -> Value {
+		var vm = VM(output: output)
+		vm.stack.push(.closure(closure))
+		vm.stack.push(.classInstance(instance))
+		if vm.run(closure: closure) == .ok {
+			return vm.result ?? .nil
+		} else {
+			runtimeError("Error evaluating closure")
+			return .nil
+		}
+	}
+
 	// I don't think this makes sense without pointers?
 	func closeUpvalues() {
 //		var nextUpvalue = openUpvalues
@@ -427,6 +460,7 @@ public struct VM<Output: OutputCollector> {
 				runtimeError("Expected 0 arguments to \(klass.name) init, got \(argCount)")
 				return false
 			} else {
+				stack.pop() // Remove the class
 				stack.push(.classInstance(instance))
 				return true
 			}
@@ -444,8 +478,7 @@ public struct VM<Output: OutputCollector> {
 			}
 
 			let args = stack.pop(count: Int(argCount))
-			var env = NativeEnvironment(output: output)
-			let result = instance.call(arguments: args, in: &env)
+			let result = instance.call(arguments: args, in: &self)
 			stack.push(result)
 			return true
 		case .array(let array):
@@ -464,6 +497,13 @@ public struct VM<Output: OutputCollector> {
 			}
 
 			return true
+		case let .classInstance(instance):
+			if let subscriptFunc = instance.klass.lookup(method: "subscript") {
+				return call(subscriptFunc, argCount: 1)
+			} else {
+				runtimeError("\(instance) does not have any subscripts")
+				return false
+			}
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type
@@ -471,7 +511,7 @@ public struct VM<Output: OutputCollector> {
 	}
 
 	@inline(__always)
-	private mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
+	mutating func call(_ closure: Closure, argCount: Byte) -> Bool {
 		chunk = closure.function.chunk
 
 		let fn = closure.function

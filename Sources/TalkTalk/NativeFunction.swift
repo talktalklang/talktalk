@@ -7,24 +7,36 @@
 enum Native {
 	static let list: [String: any NativeFunction.Type] = [
 		"println": NativeFunctionPrint.self,
+		"_describe": NativeFunctionDescribe.self
 	]
-}
-
-struct NativeEnvironment: Equatable {
-	static func == (lhs: NativeEnvironment, rhs: NativeEnvironment) -> Bool {
-		return type(of: lhs.output) == type(of: rhs.output)
-	}
-
-	var output: any OutputCollector
 }
 
 protocol NativeFunction: Equatable, Hashable {
 	var name: String { get }
 	var arity: Int { get }
 
-	func call(arguments: some Sequence<Value>, in environment: inout NativeEnvironment) -> Value
+	func call<Output: OutputCollector>(arguments: some Collection<Value>, in vm: inout VM<Output>) -> Value
 
 	init()
+}
+
+final class NativeFunctionDescribe: NativeFunction {
+	static func == (_: NativeFunctionDescribe, _: NativeFunctionDescribe) -> Bool {
+		true
+	}
+
+	let name = "_describe"
+	let arity = 1
+
+	init() {}
+
+	func call<Output: OutputCollector>(arguments: some Collection<Value>, in vm: inout VM<Output>) -> Value {
+		return .string(arguments.first!.description)
+	}
+
+	func hash(into hasher: inout Swift.Hasher) {
+		hasher.combine(name)
+	}
 }
 
 final class NativeFunctionPrint: NativeFunction {
@@ -37,8 +49,12 @@ final class NativeFunctionPrint: NativeFunction {
 
 	init() {}
 
-	func call(arguments: some Sequence<Value>, in environment: inout NativeEnvironment) -> Value {
-		environment.output.print(arguments.map(\.description).joined(separator: ", "))
+	func call<Output: OutputCollector>(arguments: some Collection<Value>, in vm: inout VM<Output>) -> Value {
+		let outputs = arguments.map { value in
+			value.describe(in: &vm)
+		}
+
+		vm.output.print(outputs.joined(separator: ", "))
 		return .nil
 	}
 

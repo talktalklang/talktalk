@@ -85,7 +85,7 @@ struct Lexer: ~Copyable {
 		case "\n": newline()
 		case #"""#: string()
 		case _ where char.isNumber: number()
-		case _ where char.isLetter: identifier(start: char)
+		case _ where isIdentifier(char): identifier(start: char)
 		default:
 			error("Unexpected character: \(char.debugDescription)")
 		}
