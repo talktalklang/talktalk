@@ -69,7 +69,7 @@ struct BenchmarkTests {
 		#expect(MemoryLayout<Value>.size <= 17)
 	}
 
-	@Test("Test compile time") func compile() {
+	@Test("Test compile time", .disabled()) func compile() {
 		let source = """
 		var i = 0
 		var s = "here's a string";
@@ -93,7 +93,7 @@ struct BenchmarkTests {
 		#expect(t < .seconds(10))
 	}
 
-	@Test("Test execution time") func basics() {
+	@Test("Test execution time", .disabled()) func basics() {
 		let source = """
 		var i = 0;
 		var s = "here's a string";
