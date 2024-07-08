@@ -2,7 +2,7 @@ module.exports = grammar({
   name: 'talktalk',
 
   extras: $ => [
-    /\s+/,
+    /[\s\t]+/,
     $.comment,
   ],
 
@@ -51,15 +51,18 @@ module.exports = grammar({
       $.identifier,
       optional(
         seq("=", $.expr)
-      )
+      ),
+      choice("\n", ";")
     ),
 
-    statement: $ => choice(
-      $.exprStmt,
-      $.ifStmt,
-      $.returnStmt,
-      $.whileStmt,
-      $.block
+    statement: $ => seq(
+      choice(
+        $.exprStmt,
+        $.ifStmt,
+        $.returnStmt,
+        $.whileStmt,
+        $.block
+      )
     ),
 
     exprStmt: $ => $.expr,
@@ -75,12 +78,12 @@ module.exports = grammar({
     ),
 
     returnStmt: $ => seq(
-      "return",
-      optional(
-        $.expr
+        "return",
+        optional(
+          $.expr
+        ),
+        optional(";")
       ),
-      "\n"
-    ),
 
     whileStmt: $ => seq(
       "while",
@@ -198,8 +201,10 @@ module.exports = grammar({
     )),
 
     primary: $ => choice(
-      "true", "false", "nil", "self", $.number,
-      $.string, $.identifier,
+      "true", "false", "nil", "self",
+      $.number,
+      $.string,
+      $.identifier,
       seq("(", $.expr, ")"),
       seq("super", ".", $.identifier)
     ),

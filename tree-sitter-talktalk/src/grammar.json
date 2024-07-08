@@ -161,31 +161,49 @@
               "type": "BLANK"
             }
           ]
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "\n"
+            },
+            {
+              "type": "STRING",
+              "value": ";"
+            }
+          ]
         }
       ]
     },
     "statement": {
-      "type": "CHOICE",
+      "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "exprStmt"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "ifStmt"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "returnStmt"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "whileStmt"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "block"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "exprStmt"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "ifStmt"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "returnStmt"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "whileStmt"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "block"
+            }
+          ]
         }
       ]
     },
@@ -251,8 +269,16 @@
           ]
         },
         {
-          "type": "STRING",
-          "value": "\n"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "STRING",
+              "value": ";"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
         }
       ]
     },
@@ -844,7 +870,7 @@
   "extras": [
     {
       "type": "PATTERN",
-      "value": "\\s+"
+      "value": "[\\s\\t]+"
     },
     {
       "type": "SYMBOL",
