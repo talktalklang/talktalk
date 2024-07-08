@@ -61,9 +61,9 @@ public final class Compiler {
 		self.function = Function(arity: 0, chunk: Chunk(), name: "", kind: kind)
 
 		if kind != .function {
-			locals[0] = Local(name: Token(start: -4, length: 4, kind: .self, line: -1), depth: 0)
+			locals[0] = Local(name: .self, depth: 0)
 		} else {
-			locals[0] = Local(name: parser.current, depth: 0)
+			locals[0] = Local(name: .self, depth: 0)
 		}
 	}
 

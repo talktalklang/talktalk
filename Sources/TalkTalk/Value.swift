@@ -21,7 +21,7 @@ enum Value: Equatable, Hashable {
 	     native(String),
 	     `class`(Class),
 	     classInstance(ClassInstance),
-			 boundMethod(ClassInstance, Closure)
+	     boundMethod(ClassInstance, Closure)
 
 	func hash(into hasher: inout Swift.Hasher) {
 		hasher.combine(hash)

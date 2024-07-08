@@ -7,7 +7,7 @@
 extension Compiler {
 	func function(kind: Function.Kind) {
 		let compiler = Compiler(parent: self, kind: kind)
-		compiler.currentClass = self.currentClass
+		compiler.currentClass = currentClass
 
 		compiler.beginScope()
 		compiler.function.name = String(parser.previous.lexeme(in: source))

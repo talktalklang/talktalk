@@ -1,11 +1,13 @@
 //
 //  Compiler+Declarations.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/7/24.
 //
 extension Compiler {
 	func declaration() {
+		parser.skip(.statementTerminators)
+
 		if parser.match(.func) {
 			funcDeclaration()
 		} else if parser.match(.class) {
@@ -43,15 +45,17 @@ extension Compiler {
 		// Add the class name back to the top of the stack so methods can
 		// access it
 		namedVariable(className, false)
-		
+
+		parser.skip(.newline)
 		parser.consume(.leftBrace, "Expected '{' before class body")
+		parser.skip(.newline)
 
 		while !parser.check(.rightBrace), !parser.check(.eof) {
 			// Field declarations will go here too
 
-			if parser.match(.func) {
-				method()
-			}
+			parser.skip(.newline)
+			if parser.match(.func) { method() }
+			parser.skip(.newline)
 		}
 
 		parser.consume(.rightBrace, "Expected '}' after class body")

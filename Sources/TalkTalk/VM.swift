@@ -175,15 +175,14 @@ public struct VM<Output: OutputCollector> {
 			case .getGlobal:
 				let name = readString()
 				guard let value = globals[name.hashValue] else {
-					output.debug("Undefined variable '\(name)' \(globals.debugDescription)")
-					output.print("Error: Undefined variable '\(name)'")
+					runtimeError("Undefined global variable '\(name)' \(globals.debugDescription)")
 					return .runtimeError
 				}
 				stack.push(value)
 			case .setGlobal:
 				let name = readString()
 				if globals[name.hashValue] == nil {
-					runtimeError("Undefined variable \(name).")
+					runtimeError("Undefined global variable \(name).")
 					return .runtimeError
 				}
 

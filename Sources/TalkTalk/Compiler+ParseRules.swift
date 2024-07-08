@@ -36,7 +36,7 @@ extension Compiler {
 		}
 	}
 
-	func _self(_ canAssign: Bool) {
+	func _self(_: Bool) {
 		if currentClass == nil {
 			error("Cannot reference `self` outside a class")
 			return

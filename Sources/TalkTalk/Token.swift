@@ -7,6 +7,8 @@
 struct Token: Equatable, Sendable {
 	typealias Kinds = Set<Token.Kind>
 
+	static let `self` = Token(start: -4, length: 4, kind: .self, line: 0)
+
 	enum Kind: Equatable, Hashable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
@@ -58,7 +60,11 @@ struct Token: Equatable, Sendable {
 
 //	@available(*, deprecated, message: "this isn't great")
 	func lexeme(in source: ContiguousArray<Character>) -> ContiguousArray<Character> {
-		ContiguousArray(
+		if kind == .self {
+			return ContiguousArray("self")
+		}
+
+		return ContiguousArray(
 			source[start ..< start + length]
 		)
 	}
@@ -69,13 +75,5 @@ extension Token.Kinds {
 		.semicolon,
 		.newline,
 		.eof,
-	]
-
-	static let skipNewlines: Token.Kinds = [
-		.leftBrace,
-		.rightBrace,
-		.leftParen,
-		.rightParen,
-		.comma
 	]
 }

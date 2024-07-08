@@ -12,7 +12,7 @@ final class Class: Hashable {
 	let name: String
 	var methods: [String: Closure]
 
-	init(name: String, methods: [String : Closure] = [:]) {
+	init(name: String, methods: [String: Closure] = [:]) {
 		self.name = name
 		self.methods = methods
 	}

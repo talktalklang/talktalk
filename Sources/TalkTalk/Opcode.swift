@@ -33,7 +33,7 @@ enum Opcode: Byte {
 	     `class`,
 	     getProperty,
 	     setProperty,
-			 method,
+	     method,
 	     `nil`
 
 	var description: String {

@@ -7,6 +7,8 @@
 
 extension Compiler {
 	func statement() {
+		parser.skip(.statementTerminators)
+
 		if parser.match(.return) {
 			returnStatement()
 		} else if parser.match(.print) {
@@ -22,6 +24,8 @@ extension Compiler {
 		} else {
 			expressionStatement()
 		}
+
+		parser.skip(.statementTerminators)
 	}
 
 	func expressionStatement() {

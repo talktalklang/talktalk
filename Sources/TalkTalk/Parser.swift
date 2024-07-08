@@ -55,13 +55,13 @@ public final class Parser {
 	}
 
 	func skip(_ kind: Token.Kind) {
-		while check(kind) {
+		while check(kind), current.kind != .eof {
 			advance()
 		}
 	}
 
 	func skip(_ kinds: Token.Kinds) {
-		while check(kinds) {
+		while check(kinds), current.kind != .eof {
 			advance()
 		}
 	}
@@ -120,7 +120,6 @@ public final class Parser {
 	func consume(_ kind: Token.Kind, _: String) {
 		if current.kind == kind {
 			advance()
-
 			return
 		}
 

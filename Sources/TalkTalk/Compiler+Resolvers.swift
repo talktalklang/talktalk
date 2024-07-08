@@ -129,7 +129,7 @@ extension Compiler {
 	}
 
 	func resolveLocal(_ name: Token) -> Byte? {
-		for i in stride(from: localCount, to: -1, by: -1) {
+		for i in stride(from: localCount - 1, to: -1, by: -1) {
 			guard let local = locals[i] else {
 				continue
 			}
