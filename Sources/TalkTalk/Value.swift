@@ -139,7 +139,7 @@ enum Value: Equatable, Hashable {
 			return "<class \(klass.name)>"
 		case let .classInstance(instance):
 			return "<\(instance.klass.name) instance>"
-		case let .boundMethod(instance, method):
+		case let .boundMethod(instance, _):
 			return "<\(instance) bound method>"
 		}
 	}

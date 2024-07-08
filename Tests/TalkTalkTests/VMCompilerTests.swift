@@ -389,7 +389,7 @@ actor VMCompilerTests {
 		let output = TestOutput()
 		let source = """
 		var msg = "yup"
-		print(msg)
+		println(msg)
 		"""
 
 		#expect(VM.run(source: source, output: output) == .ok)
