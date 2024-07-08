@@ -65,6 +65,10 @@ struct BenchmarkTests {
 		""")
 	}
 
+	@Test("Value size") func valueSize() {
+		#expect(MemoryLayout<Value>.size <= 17)
+	}
+
 	@Test("Test compile time") func compile() {
 		let source = """
 		var i = 0

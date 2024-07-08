@@ -216,7 +216,7 @@ public struct VM<Output: OutputCollector> {
 				}
 			case .closure:
 				let function = readConstant().as(Function.self)
-				let closure = Closure(function: function)
+				var closure = Closure(function: function)
 
 				stack.push(.closure(closure))
 
