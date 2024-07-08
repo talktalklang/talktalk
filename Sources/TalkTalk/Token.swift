@@ -13,7 +13,9 @@ struct Token: Equatable, Sendable {
 
 	enum Kind: Equatable, Hashable {
 		// Single character tokens
-		case leftParen, rightParen, leftBrace, rightBrace,
+		case leftParen, rightParen,
+				 leftBrace, rightBrace,
+				 leftBracket, rightBracket,
 		     comma, dot, minus, plus, semicolon, slash, star, colon
 
 		// One or two character tokens

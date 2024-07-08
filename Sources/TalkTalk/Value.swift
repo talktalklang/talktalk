@@ -5,6 +5,14 @@
 //  Created by Pat Nakajima on 6/30/24.
 //
 
+struct InternalArray: Hashable {
+	var storage: DynamicArray<Value>
+
+	init(_ elements: some Collection<Value>) {
+		self.storage = DynamicArray(elements)
+	}
+}
+
 // Values are anything that can be passed around or defined
 enum Value: Equatable, Hashable {
 	static func == (lhs: Value, rhs: Value) -> Bool {
@@ -21,11 +29,8 @@ enum Value: Equatable, Hashable {
 	     native(String),
 	     `class`(Class),
 	     classInstance(ClassInstance),
-	     boundMethod(ClassInstance, Closure)
-
-	func hash(into hasher: inout Swift.Hasher) {
-		hasher.combine(hash)
-	}
+	     boundMethod(ClassInstance, Closure),
+			 array(InternalArray)
 
 	@inline(__always)
 	func equals(_ other: Value) -> Bool {
@@ -46,33 +51,6 @@ enum Value: Equatable, Hashable {
 			return nativeFunction == other
 		default:
 			return false
-		}
-	}
-
-	var hash: Int {
-		switch self {
-		case .error:
-			return 0
-		case let .bool(bool):
-			return bool ? 1 : 0
-		case .nil:
-			fatalError("Attempted to use nil hash key")
-		case let .int(double):
-			return abs(double.hashValue)
-		case let .string(heapValue):
-			return Int(heapValue.hashValue)
-		case let .function(function):
-			return function.chunk.hashValue
-		case let .closure(closure):
-			return closure.function.chunk.hashValue
-		case let .native(native):
-			return native.hashValue
-		case let .class(klass):
-			return klass.hashValue
-		case let .classInstance(instance):
-			return instance.hashValue
-		case let .boundMethod(instance, method):
-			return instance.hashValue + method.hashValue
 		}
 	}
 
@@ -110,6 +88,10 @@ enum Value: Equatable, Hashable {
 			if case let .classInstance(classInstance) = self {
 				return classInstance as! T
 			}
+		case is InternalArray.Type:
+			if case let .array(array) = self {
+				return array as! T
+			}
 		default:
 			()
 		}
@@ -141,6 +123,8 @@ enum Value: Equatable, Hashable {
 			return "<\(instance.klass.name) instance>"
 		case let .boundMethod(instance, _):
 			return "<\(instance) bound method>"
+		case let .array(array):
+			return "[" + array.storage.map(\.description).joined(separator: ", ") + "]"
 		}
 	}
 

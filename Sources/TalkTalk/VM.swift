@@ -4,6 +4,7 @@
 //
 //  Created by Pat Nakajima on 6/30/24.
 //
+import Foundation
 
 public enum InterpretResult {
 	case ok,
@@ -60,7 +61,9 @@ public struct VM<Output: OutputCollector> {
 		stack.reset()
 	}
 
-	mutating func stackDebug() {
+	mutating func stackDebug(into output: (any OutputCollector)? = nil) {
+		let output: any OutputCollector = output ?? self.output
+
 		if stack.isEmpty { return }
 		output.debug(String(repeating: " ", count: 9), terminator: "")
 		for slot in stack.entries() {
@@ -70,6 +73,7 @@ public struct VM<Output: OutputCollector> {
 	}
 
 	public mutating func run(source: String) -> InterpretResult {
+		// TODO: Handle actual imports
 		let compiler = Compiler(source: source)
 
 		do {
@@ -312,6 +316,17 @@ public struct VM<Output: OutputCollector> {
 				if !invokeFromClass(superclass, method, argCount) {
 					return .runtimeError
 				}
+			case .arrayLiteral:
+				let argCount = readByte()
+				let elements = stack.pop(count: Int(argCount)).reversed()
+				let klass = globals["Array".hashValue]!.as(Class.self)
+
+				stack.push(.array(.init(elements)))
+				stack.push(.int(Int(argCount)))
+
+				if !callValue(.class(klass), 2) {
+					return .runtimeError
+				}
 			}
 		}
 	}
@@ -347,9 +362,9 @@ public struct VM<Output: OutputCollector> {
 	}
 
 	private mutating func bindMethod(_ klass: Class, named name: String) -> Bool {
-		let callee = stack.peek().as(ClassInstance.self)
-
 		if let method = klass.lookup(method: name) {
+			let callee = stack.peek().as(ClassInstance.self)
+
 			// Pop the callee (instance) off the stack
 			stack.pop()
 
@@ -433,6 +448,22 @@ public struct VM<Output: OutputCollector> {
 			let result = instance.call(arguments: args, in: &env)
 			stack.push(result)
 			return true
+		case .array(let array):
+			if argCount != 1 {
+				runtimeError("Expected 1 argument to array subscript, got \(argCount)")
+				return false
+			}
+
+			let index = stack.pop().as(Int.self)
+			stack.pop() // pop the array
+
+			if index >= array.storage.count || index < 0 {
+				stack.push(.nil)
+			} else {
+				stack.push(array.storage[index])
+			}
+
+			return true
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type
@@ -515,5 +546,14 @@ public struct VM<Output: OutputCollector> {
 		}
 
 		stack.reset()
+	}
+
+	mutating func dump(into output: some OutputCollector = StdoutOutput()) {
+		Disassembler.dump(chunk: chunk, into: output, highlight: ip - 1)
+		stackDebug(into: output)
+		output.print("Constants:")
+		for (i, constant) in chunk.constants.enumerated() {
+			output.print("\(i): \(constant)")
+		}
 	}
 }

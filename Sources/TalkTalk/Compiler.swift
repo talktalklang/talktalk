@@ -4,6 +4,8 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
+import Foundation
+
 public final class Compiler {
 	enum Errors: Swift.Error {
 		case errors([TalkTalk.Error])
@@ -41,6 +43,10 @@ public final class Compiler {
 	var scopeDepth = 0
 	var upvalues: [Upvalue] = []
 
+	func load(source: String) {
+
+	}
+
 	// MARK: Debuggy
 
 	#if DEBUG
@@ -68,7 +74,9 @@ public final class Compiler {
 	}
 
 	public init(source: String) {
-		self.parser = Parser(lexer: Lexer(source: source))
+		var headers = try! String(contentsOf: Bundle.module.url(forResource: "Array", withExtension: "tlk")!)
+
+		self.parser = Parser(lexer: Lexer(source: headers + "\n" + source))
 		self.function = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
 		locals[0] = Local(name: parser.current, depth: 0)
 	}

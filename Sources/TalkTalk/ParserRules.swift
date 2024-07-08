@@ -69,6 +69,8 @@ extension Token.Kind {
 		case .error: .none
 		case .newline: .none
 		case .colon: .none
+		case .leftBracket: .init({ $0.leftBracket($1) }, { $0.call($1) }, .call)
+		case .rightBracket: .none
 		}
 	}
 }

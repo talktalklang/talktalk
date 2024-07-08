@@ -66,6 +66,8 @@ struct Lexer: ~Copyable {
 		case ")": make(.rightParen)
 		case "{": make(.leftBrace)
 		case "}": make(.rightBrace)
+		case "[": make(.leftBracket)
+		case "]": make(.rightBracket)
 		case ",": make(.comma)
 		case ".": make(.dot)
 		case "-": make(.minus)

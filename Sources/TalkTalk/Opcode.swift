@@ -38,7 +38,8 @@ enum Opcode: Byte {
 	     inherit,
 	     getSuper,
 			 invokeSuper,
-	     `nil`
+	     `nil`,
+			 arrayLiteral
 
 	var description: String {
 		switch self {

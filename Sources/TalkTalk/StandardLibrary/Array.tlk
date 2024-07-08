@@ -1,0 +1,7 @@
+class Array {
+	// elements: InternalArray
+	init(elements, count) {
+		self.elements = elements
+		self.count = count
+	}
+}

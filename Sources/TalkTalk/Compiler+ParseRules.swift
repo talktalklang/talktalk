@@ -80,6 +80,13 @@ extension Compiler {
 		}
 	}
 
+	func leftBracket(_: Bool) {
+		let argCount = argumentList(terminator: .rightBracket)
+
+		emit(opcode: .arrayLiteral)
+		emit(argCount)
+	}
+
 	func unary(_: Bool) {
 		let kind = parser.previous.kind
 		parse(precedence: .unary)

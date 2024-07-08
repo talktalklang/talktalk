@@ -53,14 +53,24 @@ extension Compiler {
 	}
 
 	func call(_: Bool) {
-		let argCount = argumentList()
+		let terminator: Token.Kind = switch parser.previous.kind {
+		case .leftParen: .rightParen
+		case .leftBracket: .rightBracket
+		default:
+			{
+				error("Invalid call", at: parser.previous)
+				return .nil
+			}()
+		}
+
+		let argCount = argumentList(terminator: terminator)
 		emit(opcode: .call)
 		emit(argCount)
 	}
 
-	func argumentList() -> Byte {
+	func argumentList(terminator: Token.Kind = .rightParen) -> Byte {
 		var count: Byte = 0
-		if !parser.check(.rightParen) {
+		if !parser.check(terminator) {
 			repeat {
 				expression()
 				if count == 255 {
@@ -70,7 +80,7 @@ extension Compiler {
 			} while parser.match(.comma)
 		}
 
-		parser.consume(.rightParen, "Expected ')' after arguments")
+		parser.consume(terminator, "Expected '\(terminator)' after arguments")
 		return count
 	}
 }

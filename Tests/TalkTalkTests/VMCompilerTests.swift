@@ -642,4 +642,52 @@ actor VMCompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "I say moo\n")
 	}
+
+	@Test("Simple array") func array() {
+		let source = """
+		var array = [1, 2, 3]
+		println(array)
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "[1, 2, 3]\n")
+	}
+
+	@Test("Simple array access") func arrayAccess() {
+		let source = """
+		var array = [1, 2, 3]
+		println(array[2])
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "3\n")
+	}
+
+	@Test("Simple array access") func arrayBeyondBoundsAccess() {
+		let source = """
+		var array = [1, 2, 3]
+		println(array[100])
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "nil\n")
+	}
+
+	@Test("Array count") func arrayCount() {
+		let source = """
+		var array = [1, 2, 3]
+		println(array.count)
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "3\n")
+	}
 }

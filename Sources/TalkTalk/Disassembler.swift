@@ -57,6 +57,14 @@ struct InvokeMetadata: Disassembler.Metadata {
 	}
 }
 
+struct ArrayMetadata: Disassembler.Metadata {
+	var count: Int
+
+	var description: String {
+		"count \(count)"
+	}
+}
+
 struct Disassembler {
 	protocol Metadata: Equatable, CustomStringConvertible {}
 
@@ -66,6 +74,7 @@ struct Disassembler {
 		var metadata: (any Metadata)?
 		var line: Int
 		var isSameLine: Bool
+		var isCurrent: Bool = false
 
 		var description: String {
 			let lineString = isSameLine ? "  |" : String(format: "% 3d", line)
@@ -94,11 +103,20 @@ struct Disassembler {
 		self.chunk = chunk
 	}
 
-	static func dump(chunk: Chunk, into output: some OutputCollector) {
+	static func dump(chunk: Chunk, into output: some OutputCollector, highlight: Int? = nil) {
 		var disassembler = Disassembler(chunk: chunk)
+
+		if highlight != nil {
+			print("  ", terminator: "")
+		}
+
 		output.print(Self.header)
 		while let instruction = disassembler.nextInstruction() {
-			output.print(instruction.description)
+			if let highlight {
+				output.print((highlight == instruction.offset ? "> " : "  ") + instruction.description)
+			} else {
+				output.print(instruction.description)
+			}
 		}
 	}
 
@@ -147,9 +165,29 @@ struct Disassembler {
 			return invokeInstruction()
 		case .getSuper:
 			return constantInstruction("OP_GET_SUPER")
+		case .arrayLiteral:
+			return arrayInstruction()
 		default:
 			return simpleInstruction(opcode!.description)
 		}
+	}
+
+	private mutating func arrayInstruction() -> Instruction {
+		let originalOffset = offset
+
+		let argCount = chunk.code[++offset]
+
+		defer {
+			offset++
+		}
+
+		return Instruction(
+			offset: originalOffset,
+			opcode: "OP_ARRAY_LITERAL",
+			metadata: ArrayMetadata(count: Int(argCount)),
+			line: line,
+			isSameLine: isSameLine
+		)
 	}
 
 	private mutating func simpleInstruction(_ label: String) -> Instruction {

@@ -154,4 +154,17 @@ struct LexerTests {
 			Token(start: source.count, length: 0, kind: .eof, line: 1),
 		])
 	}
+
+	@Test("Brackets") func brackets() {
+		let source = """
+		[]
+		"""
+
+		var lexer = Lexer(source: source)
+		#expect(lexer.collect() == [
+			Token(start: 0, length: 1, kind: .leftBracket, line: 1),
+			Token(start: 1, length: 1, kind: .rightBracket, line: 1),
+			Token(start: source.count, length: 0, kind: .eof, line: 1),
+		])
+	}
 }
