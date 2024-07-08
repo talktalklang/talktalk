@@ -107,7 +107,7 @@ enum Value: Equatable, Hashable {
 				return klass as! T
 			}
 		case is ClassInstance.Type:
-			if  case let .classInstance(classInstance) = self {
+			if case let .classInstance(classInstance) = self {
 				return classInstance as! T
 			}
 		default:

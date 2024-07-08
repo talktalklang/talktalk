@@ -28,7 +28,7 @@ final class Class: Hashable {
 
 	func define(method: Closure, as name: String) {
 		if name == "init" {
-			self.hasInitializer = true
+			hasInitializer = true
 		}
 
 		methods[name] = method

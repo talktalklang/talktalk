@@ -281,17 +281,16 @@ public struct VM<Output: OutputCollector> {
 			case .invoke:
 				let method = readString()
 				let argCount = readByte()
-				
+
 				if !invoke(method, argCount) {
 					return .runtimeError
 				}
-
 //				restoreFrame(from: frames.pop())
 			case .inherit:
 				// TODO: Don't make this crash, just return a runtime error? (preferably a compiler err)
 				let superclass = stack.peek(offset: 1).as(Class.self)
 				let subclass = stack.peek().as(Class.self)
-				
+
 				// This only works while classes can't be extended:
 				for (name, closure) in superclass.methods {
 					subclass.define(method: closure, as: name)
@@ -395,10 +394,10 @@ public struct VM<Output: OutputCollector> {
 			return call(closure, argCount: argCount)
 		case let .class(klass):
 			let instance = ClassInstance(klass: klass, fields: [:])
-			
+
 			if let initializer = klass.lookup(method: "init") {
 				stack[stack.size - Int(argCount) - 1] = .classInstance(instance)
-				
+
 				return call(initializer, argCount: argCount)
 			} else if argCount > 0 {
 				runtimeError("Expected 0 arguments to \(klass.name) init, got \(argCount)")
