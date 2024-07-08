@@ -341,8 +341,19 @@ public struct VM<Output: OutputCollector> {
 		case let .closure(closure):
 			return call(closure, argCount: argCount)
 		case let .class(klass):
-			stack.push(.classInstance(ClassInstance(klass: klass, fields: [:])))
-			return true
+			let instance = ClassInstance(klass: klass, fields: [:])
+			
+			if let initializer = klass.lookup(method: "init") {
+				stack[stack.size - Int(argCount) - 1] = .classInstance(instance)
+				
+				return call(initializer, argCount: argCount)
+			} else if argCount > 0 {
+				runtimeError("Expected 0 arguments to \(klass.name) init, got \(argCount)")
+				return false
+			} else {
+				stack.push(.classInstance(instance))
+				return true
+			}
 		case let .boundMethod(callee, closure):
 			stack[stack.size - Int(argCount) - 1] = .classInstance(callee)
 			return call(closure, argCount: argCount)

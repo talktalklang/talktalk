@@ -10,6 +10,7 @@ final class Class: Hashable {
 	}
 
 	let name: String
+	var hasInitializer = false
 	var methods: [String: Closure]
 
 	init(name: String, methods: [String: Closure] = [:]) {
@@ -26,6 +27,10 @@ final class Class: Hashable {
 	}
 
 	func define(method: Closure, as name: String) {
+		if name == "init" {
+			self.hasInitializer = true
+		}
+
 		methods[name] = method
 	}
 }

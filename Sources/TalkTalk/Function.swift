@@ -6,7 +6,7 @@
 //
 public struct Function: Equatable, Hashable {
 	public enum Kind {
-		case function, main, method
+		case function, main, method, initializer
 	}
 
 	private final class Storage {

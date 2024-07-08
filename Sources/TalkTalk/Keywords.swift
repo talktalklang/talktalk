@@ -56,7 +56,7 @@ extension KeywordTrie {
 		.else,
 		.false,
 		.func,
-		.initializer,
+		.`init`,
 		.for,
 		.if,
 		.nil,

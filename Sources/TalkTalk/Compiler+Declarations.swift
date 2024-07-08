@@ -52,9 +52,11 @@ extension Compiler {
 
 		while !parser.check(.rightBrace), !parser.check(.eof) {
 			// Field declarations will go here too
-
 			parser.skip(.newline)
+
 			if parser.match(.func) { method() }
+			if parser.match(.`init`) { initializer() }
+
 			parser.skip(.newline)
 		}
 
@@ -64,6 +66,18 @@ extension Compiler {
 		emit(opcode: .pop)
 
 		self.currentClass = currentClass.parent
+	}
+
+	func initializer() {
+		// Get the constant byte for the method's name
+		let name = chunk.make(constant: .string("init"))
+
+		// Parse/emit the body, including parameters
+		function(kind: .initializer)
+
+		// Emit the code
+		emit(opcode: .method)
+		emit(name)
 	}
 
 	func method() {

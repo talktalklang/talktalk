@@ -33,7 +33,13 @@ extension Compiler {
 		// Always generate a return at the end of a function in case there's
 		// not an explicit one. if there's an explicit one then this one will never
 		// get executed
-		compiler.emitReturn()
+		if kind == .initializer {
+			compiler.emit(opcode: .getLocal)
+			compiler.emit(0) // `self` is always 0 on the stack
+			compiler.emit(opcode: .return)
+		} else {
+			compiler.emitReturn()
+		}
 
 		let constant = chunk.make(constant: .function(compiler.function))
 		emit(opcode: .closure)

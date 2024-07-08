@@ -552,4 +552,22 @@ actor VMCompilerTests {
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup\n")
 	}
+
+	@Test("Simple init") func simpleInit() {
+		let source = """
+		class Person {
+			init(name) {
+				self.name = name
+			}
+		}
+
+		var person = Person("sup")
+		print(person.name)
+		"""
+
+		let output = TestOutput(debug: true)
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "sup\n")
+	}
 }

@@ -23,7 +23,7 @@ struct Token: Equatable, Sendable {
 		case identifier, string, number
 
 		// Keywords
-		case `class`, `else`, `false`, `func`, initializer, `for`, `if`, `nil`,
+		case `class`, `else`, `false`, `func`, `init`, `for`, `if`, `nil`,
 		     or, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case newline
