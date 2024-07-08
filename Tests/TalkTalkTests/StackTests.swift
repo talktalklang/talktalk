@@ -36,6 +36,15 @@ struct StackTests {
 		#expect(stack.size == 2)
 	}
 
+	@Test("Pop many") func popmany() {
+		var stack = Stack<Item>(capacity: 16)
+		stack.push(Item(value: "3"))
+		stack.push(Item(value: "2"))
+		stack.push(Item(value: "1"))
+
+		#expect(stack.pop(count: 2).map(\.value) == ["1", "2"])
+	}
+
 	@Test("Bench") func bench() {
 		var stack = Stack<Int>(capacity: 10_000_001)
 		for i in 0 ..< 10_000_000 {

@@ -418,6 +418,21 @@ public struct VM<Output: OutputCollector> {
 		case let .boundMethod(callee, closure):
 			stack[stack.size - Int(argCount) - 1] = .classInstance(callee)
 			return call(closure, argCount: argCount)
+		case let .native(name):
+			guard let instance = Native.list[name]?.init() else {
+				return false
+			}
+
+			if instance.arity != argCount {
+				runtimeError("Expected \(instance.arity) arguments for \(name)(), got \(argCount)")
+				return false
+			}
+
+			let args = stack.pop(count: Int(argCount))
+			var env = NativeEnvironment(output: output)
+			let result = instance.call(arguments: args, in: &env)
+			stack.push(result)
+			return true
 		default:
 			runtimeError("\(callee) not callable")
 			return false // Non-callable type

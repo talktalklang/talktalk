@@ -6,7 +6,7 @@
 //
 enum Native {
 	static let list: [String: any NativeFunction.Type] = [
-		"print": NativeFunctionPrint.self,
+		"println": NativeFunctionPrint.self,
 	]
 }
 
@@ -32,7 +32,7 @@ final class NativeFunctionPrint: NativeFunction {
 		true
 	}
 
-	let name = "print"
+	let name = "println"
 	let arity = 1
 
 	init() {}

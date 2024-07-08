@@ -89,8 +89,8 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
-	mutating func pop(count _: Int) -> [Element] {
-		(0 ..< size).map { _ in pop() }
+	mutating func pop(count: Int) -> [Element] {
+		(size - count ..< size).map { _ in pop() }
 	}
 
 	@inline(__always)
