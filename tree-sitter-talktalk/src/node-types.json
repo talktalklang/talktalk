@@ -8,58 +8,38 @@
       "required": true,
       "types": [
         {
-          "type": "expression",
+          "type": "expr",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "assignment_statement",
+    "type": "assignment",
     "named": true,
     "fields": {},
     "children": {
       "multiple": true,
       "required": true,
       "types": [
+        {
+          "type": "assignment",
+          "named": true
+        },
         {
           "type": "call",
           "named": true
         },
         {
-          "type": "expression",
-          "named": true
-        },
-        {
           "type": "identifier",
           "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "binary_expression",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "binary_operator",
-          "named": true
         },
         {
-          "type": "expression",
+          "type": "logic_or",
           "named": true
         }
       ]
     }
-  },
-  {
-    "type": "binary_operator",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "block",
@@ -75,11 +55,6 @@
         }
       ]
     }
-  },
-  {
-    "type": "boolean_literal",
-    "named": true,
-    "fields": {}
   },
   {
     "type": "call",
@@ -98,14 +73,14 @@
           "named": true
         },
         {
-          "type": "primary_expression",
+          "type": "primary",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "class_declaration",
+    "type": "classDecl",
     "named": true,
     "fields": {
       "name": {
@@ -124,11 +99,15 @@
       "required": false,
       "types": [
         {
-          "type": "function_declaration",
+          "type": "function",
           "named": true
         },
         {
-          "type": "init_declaration",
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "init",
           "named": true
         }
       ]
@@ -158,11 +137,11 @@
       "required": true,
       "types": [
         {
-          "type": "class_declaration",
+          "type": "classDecl",
           "named": true
         },
         {
-          "type": "function_declaration",
+          "type": "funcDecl",
           "named": true
         },
         {
@@ -170,22 +149,7 @@
           "named": true
         },
         {
-          "type": "variable_declaration",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "else_statement",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "block",
+          "type": "varDecl",
           "named": true
         }
       ]
@@ -207,7 +171,7 @@
     }
   },
   {
-    "type": "expression",
+    "type": "expr",
     "named": true,
     "fields": {},
     "children": {
@@ -215,26 +179,14 @@
       "required": true,
       "types": [
         {
-          "type": "binary_expression",
-          "named": true
-        },
-        {
-          "type": "grouped_expression",
-          "named": true
-        },
-        {
-          "type": "primary_expression",
-          "named": true
-        },
-        {
-          "type": "unary_expression",
+          "type": "assignment",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "expression_statement",
+    "type": "exprStmt",
     "named": true,
     "fields": {},
     "children": {
@@ -242,7 +194,7 @@
       "required": true,
       "types": [
         {
-          "type": "expression",
+          "type": "expr",
           "named": true
         }
       ]
@@ -257,14 +209,33 @@
       "required": true,
       "types": [
         {
-          "type": "unary_expression",
+          "type": "factor",
+          "named": true
+        },
+        {
+          "type": "unary",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "function_declaration",
+    "type": "funcDecl",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "function",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "function",
     "named": true,
     "fields": {
       "name": {
@@ -294,22 +265,7 @@
     }
   },
   {
-    "type": "grouped_expression",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expression",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "if_statement",
+    "type": "ifStmt",
     "named": true,
     "fields": {},
     "children": {
@@ -321,18 +277,18 @@
           "named": true
         },
         {
-          "type": "else_statement",
+          "type": "expr",
           "named": true
         },
         {
-          "type": "expression",
+          "type": "statement",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "init_declaration",
+    "type": "init",
     "named": true,
     "fields": {},
     "children": {
@@ -366,6 +322,21 @@
     }
   },
   {
+    "type": "logic_or",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "logic_and",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "parameters",
     "named": true,
     "fields": {},
@@ -381,7 +352,7 @@
     }
   },
   {
-    "type": "primary_expression",
+    "type": "primary",
     "named": true,
     "fields": {},
     "children": {
@@ -389,7 +360,7 @@
       "required": false,
       "types": [
         {
-          "type": "boolean_literal",
+          "type": "expr",
           "named": true
         },
         {
@@ -397,41 +368,26 @@
           "named": true
         },
         {
-          "type": "number_literal",
+          "type": "number",
           "named": true
         },
         {
-          "type": "string_literal",
+          "type": "string",
           "named": true
         }
       ]
     }
   },
   {
-    "type": "print_statement",
+    "type": "returnStmt",
     "named": true,
     "fields": {},
     "children": {
       "multiple": false,
-      "required": true,
+      "required": false,
       "types": [
         {
-          "type": "expression",
-          "named": true
-        }
-      ]
-    }
-  },
-  {
-    "type": "return_statement",
-    "named": true,
-    "fields": {},
-    "children": {
-      "multiple": false,
-      "required": true,
-      "types": [
-        {
-          "type": "expression",
+          "type": "expr",
           "named": true
         }
       ]
@@ -461,31 +417,23 @@
       "required": true,
       "types": [
         {
-          "type": "assignment_statement",
-          "named": true
-        },
-        {
           "type": "block",
           "named": true
         },
         {
-          "type": "expression_statement",
+          "type": "exprStmt",
           "named": true
         },
         {
-          "type": "if_statement",
+          "type": "ifStmt",
           "named": true
         },
         {
-          "type": "print_statement",
+          "type": "returnStmt",
           "named": true
         },
         {
-          "type": "return_statement",
-          "named": true
-        },
-        {
-          "type": "while_statement",
+          "type": "whileStmt",
           "named": true
         }
       ]
@@ -507,7 +455,7 @@
     }
   },
   {
-    "type": "unary_expression",
+    "type": "unary",
     "named": true,
     "fields": {},
     "children": {
@@ -517,12 +465,16 @@
         {
           "type": "call",
           "named": true
+        },
+        {
+          "type": "unary",
+          "named": true
         }
       ]
     }
   },
   {
-    "type": "variable_declaration",
+    "type": "varDecl",
     "named": true,
     "fields": {},
     "children": {
@@ -530,7 +482,7 @@
       "required": true,
       "types": [
         {
-          "type": "expression",
+          "type": "expr",
           "named": true
         },
         {
@@ -541,7 +493,7 @@
     }
   },
   {
-    "type": "while_statement",
+    "type": "whileStmt",
     "named": true,
     "fields": {},
     "children": {
@@ -553,11 +505,15 @@
           "named": true
         },
         {
-          "type": "expression",
+          "type": "expr",
           "named": true
         }
       ]
     }
+  },
+  {
+    "type": "\n",
+    "named": false
   },
   {
     "type": "!",
@@ -604,7 +560,7 @@
     "named": false
   },
   {
-    "type": ";",
+    "type": ":",
     "named": false
   },
   {
@@ -668,12 +624,8 @@
     "named": false
   },
   {
-    "type": "number_literal",
+    "type": "number",
     "named": true
-  },
-  {
-    "type": "print",
-    "named": false
   },
   {
     "type": "return",
@@ -684,8 +636,12 @@
     "named": false
   },
   {
-    "type": "string_literal",
+    "type": "string",
     "named": true
+  },
+  {
+    "type": "super",
+    "named": false
   },
   {
     "type": "true",
