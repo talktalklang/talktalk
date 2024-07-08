@@ -143,7 +143,7 @@ struct Disassembler {
 			return constantInstruction(opcode!.description)
 		case .method:
 			return constantInstruction(opcode!.description)
-		case .invoke:
+		case .invoke, .invokeSuper:
 			return invokeInstruction()
 		case .getSuper:
 			return constantInstruction("OP_GET_SUPER")

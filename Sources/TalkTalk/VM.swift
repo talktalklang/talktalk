@@ -81,6 +81,7 @@ public struct VM<Output: OutputCollector> {
 		return run(function: compiler.function)
 	}
 
+	@inline(__always)
 	private mutating func restoreFrame(from frame: CallFrame) {
 		ip = frame.lastIP
 		currentFrame = frames.peek()
@@ -301,6 +302,14 @@ public struct VM<Output: OutputCollector> {
 				let name = readString()
 				let superclass = stack.pop().as(Class.self)
 				if !bindMethod(superclass, named: name) {
+					return .runtimeError
+				}
+			case .invokeSuper:
+				let method = readString()
+				let argCount = readByte()
+				let superclass = stack.pop().as(Class.self)
+
+				if !invokeFromClass(superclass, method, argCount) {
 					return .runtimeError
 				}
 			}

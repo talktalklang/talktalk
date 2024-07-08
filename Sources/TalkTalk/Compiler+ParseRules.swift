@@ -66,10 +66,18 @@ extension Compiler {
 		let name = identifierConstant(parser.previous)
 
 		namedVariable(.synthetic(.self, length: 4), false)
-		namedVariable(.synthetic(.super, length: 5), false)
 
-		emit(opcode: .getSuper)
-		emit(name)
+		if parser.match(.leftParen) {
+			let argCount = argumentList()
+			namedVariable(.synthetic(.super, length: 5), false)
+			emit(opcode: .invokeSuper)
+			emit(name)
+			emit(argCount)
+		} else {
+			namedVariable(.synthetic(.super, length: 5), false)
+			emit(opcode: .getSuper)
+			emit(name)
+		}
 	}
 
 	func unary(_: Bool) {

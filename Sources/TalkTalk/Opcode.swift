@@ -37,6 +37,7 @@ enum Opcode: Byte {
 	     invoke,
 	     inherit,
 	     getSuper,
+			 invokeSuper,
 	     `nil`
 
 	var description: String {
