@@ -46,6 +46,11 @@ extension Compiler {
 			return
 		}
 
+		if function.kind == .initializer {
+			error("Cannot return from init", at: parser.previous)
+			return
+		}
+
 		if parser.match(.statementTerminators) {
 			emitReturn()
 		} else {

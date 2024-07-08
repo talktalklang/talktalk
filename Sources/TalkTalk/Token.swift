@@ -7,12 +7,14 @@
 struct Token: Equatable, Sendable {
 	typealias Kinds = Set<Token.Kind>
 
-	static let `self` = Token(start: -4, length: 4, kind: .self, line: 0)
+	static func synthetic(_ kind: Token.Kind, length: Int) -> Token {
+		Token(start: -length, length: length, kind: kind, line: 0)
+	}
 
 	enum Kind: Equatable, Hashable {
 		// Single character tokens
 		case leftParen, rightParen, leftBrace, rightBrace,
-		     comma, dot, minus, plus, semicolon, slash, star
+		     comma, dot, minus, plus, semicolon, slash, star, colon
 
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,
@@ -51,6 +53,10 @@ struct Token: Equatable, Sendable {
 			return true
 		}
 
+		if kind == .super && other.kind == .super {
+			return true
+		}
+
 		return length == other.length && lexeme(in: source) == other.lexeme(in: source)
 	}
 
@@ -62,6 +68,10 @@ struct Token: Equatable, Sendable {
 	func lexeme(in source: ContiguousArray<Character>) -> ContiguousArray<Character> {
 		if kind == .self {
 			return ContiguousArray("self")
+		}
+
+		if kind == .super {
+			return ContiguousArray("super")
 		}
 
 		return ContiguousArray(

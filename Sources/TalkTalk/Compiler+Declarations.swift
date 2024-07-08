@@ -42,6 +42,27 @@ extension Compiler {
 		self.currentClass?.parent = currentClass
 		self.currentClass = currentClass
 
+		if parser.match(.colon) {
+			parser.consume(.identifier, "Expected inheritance name")
+
+			if className.same(lexeme: parser.previous, in: source) {
+				error("type cannot inherit from self", at: className)
+				return
+			}
+
+			variable(false)
+
+			beginScope()
+			addLocal(name: .synthetic(.super, length: 5))
+			defineVariable(global: 0)
+
+			// Emit the superclass name so it can be inherited from
+			namedVariable(className, false)
+
+			emit(opcode: .inherit)
+			currentClass.hasSuperclass = true
+		}
+
 		// Add the class name back to the top of the stack so methods can
 		// access it
 		namedVariable(className, false)
@@ -64,6 +85,10 @@ extension Compiler {
 
 		// Pop the class name back off
 		emit(opcode: .pop)
+
+		if currentClass.hasSuperclass {
+			endScope()
+		}
 
 		self.currentClass = currentClass.parent
 	}

@@ -82,6 +82,10 @@ enum Value: Equatable, Hashable {
 			if case let .bool(bool) = self {
 				return bool as! T
 			}
+		case is Int.Type:
+			if case let .int(int) = self {
+				return int as! T
+			}
 		case is String.Type:
 			return description as! T
 		case is Byte.Type:
@@ -103,7 +107,7 @@ enum Value: Equatable, Hashable {
 				return klass as! T
 			}
 		case is ClassInstance.Type:
-			if case let .classInstance(classInstance) = self {
+			if  case let .classInstance(classInstance) = self {
 				return classInstance as! T
 			}
 		default:

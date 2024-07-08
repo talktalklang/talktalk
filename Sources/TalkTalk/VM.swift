@@ -81,6 +81,12 @@ public struct VM<Output: OutputCollector> {
 		return run(function: compiler.function)
 	}
 
+	private mutating func restoreFrame(from frame: CallFrame) {
+		ip = frame.lastIP
+		currentFrame = frames.peek()
+		chunk = currentFrame.closure.function.chunk
+	}
+
 	private mutating func run(function root: Function) -> InterpretResult {
 		let rootClosure = Closure(function: root)
 		stack.push(.closure(rootClosure))
@@ -117,9 +123,7 @@ public struct VM<Output: OutputCollector> {
 				// Append the return value
 				stack.push(result)
 
-				ip = frame.lastIP
-				currentFrame = frames.peek()
-				chunk = currentFrame.closure.function.chunk
+				restoreFrame(from: frame)
 			case .negate:
 				stack.push(-stack.pop())
 			case .constant:
@@ -256,7 +260,7 @@ public struct VM<Output: OutputCollector> {
 
 				if let value = callee.get(property) {
 					stack.push(value)
-				} else if !bindMethod(callee, named: property) {
+				} else if !bindMethod(callee.klass, named: property) {
 					runtimeError("No property named `\(property)` for \(callee)")
 				}
 			case .setProperty:
@@ -274,7 +278,54 @@ public struct VM<Output: OutputCollector> {
 				stack.push(value)
 			case .method:
 				defineMethod(named: readString())
+			case .invoke:
+				let method = readString()
+				let argCount = readByte()
+				
+				if !invoke(method, argCount) {
+					return .runtimeError
+				}
+
+//				restoreFrame(from: frames.pop())
+			case .inherit:
+				// TODO: Don't make this crash, just return a runtime error? (preferably a compiler err)
+				let superclass = stack.peek(offset: 1).as(Class.self)
+				let subclass = stack.peek().as(Class.self)
+				
+				// This only works while classes can't be extended:
+				for (name, closure) in superclass.methods {
+					subclass.define(method: closure, as: name)
+				}
+
+				stack.pop()
+			case .getSuper:
+				let name = readString()
+				let superclass = stack.pop().as(Class.self)
+				if !bindMethod(superclass, named: name) {
+					return .runtimeError
+				}
 			}
+		}
+	}
+
+	private mutating func invoke(_ name: String, _ argCount: Byte) -> Bool {
+		let receiver = stack.peek(offset: Int(argCount))
+		let instance = receiver.as(ClassInstance.self)
+
+		if let property = instance.get(name) {
+			stack[stack.size - 1 - Int(argCount)] = .classInstance(instance)
+			return callValue(property, argCount)
+		}
+
+		return invokeFromClass(instance.klass, name, argCount)
+	}
+
+	private mutating func invokeFromClass(_ klass: Class, _ name: String, _ argCount: Byte) -> Bool {
+		if let method = klass.lookup(method: name) {
+			return call(method, argCount: argCount)
+		} else {
+			runtimeError("Undefined property \(name) for \(klass.name)")
+			return false
 		}
 	}
 
@@ -287,8 +338,10 @@ public struct VM<Output: OutputCollector> {
 		stack.pop()
 	}
 
-	private mutating func bindMethod(_ callee: ClassInstance, named name: String) -> Bool {
-		if let method = callee.klass.lookup(method: name) {
+	private mutating func bindMethod(_ klass: Class, named name: String) -> Bool {
+		let callee = stack.peek().as(ClassInstance.self)
+
+		if let method = klass.lookup(method: name) {
 			// Pop the callee (instance) off the stack
 			stack.pop()
 

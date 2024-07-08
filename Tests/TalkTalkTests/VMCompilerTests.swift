@@ -547,7 +547,7 @@ actor VMCompilerTests {
 		person.greet()
 		"""
 
-		let output = TestOutput(debug: true)
+		let output = TestOutput()
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup\n")
@@ -565,9 +565,81 @@ actor VMCompilerTests {
 		print(person.name)
 		"""
 
-		let output = TestOutput(debug: true)
+		let output = TestOutput()
 
 		#expect(VM.run(source: source, output: output) == .ok)
 		#expect(output.stdout == "sup\n")
+	}
+
+	@Test("Invalid return in init") func invalidReturnInInit() {
+		let source = """
+		class Person {
+			init(name) {
+				self.name = name
+
+				return 123
+			}
+		}
+
+		var person = Person("sup")
+		print(person.name)
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .compileError)
+	}
+
+	@Test("Weird non invocation") func nonInvocation() {
+		let source = """
+		class Person {
+			init() {
+				func f() {
+					print("oops")
+				}
+
+				self.field = f
+			}
+		}
+
+		Person().field()
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "oops\n")
+	}
+
+	@Test("Cant subclass from self") func cantselfsubclass() {
+		let source = """
+		class Animal: Animal {}
+		"""
+
+		#expect(VM.run(source: source, output: TestOutput()) == .compileError)
+	}
+
+	@Test("Subclassing") func subclassing() {
+		let source = """
+		class Animal {
+			func greeting() {
+				return "I say "
+			}
+		}
+
+		class Cow: Animal {
+			func greeting() {
+				return super.greeting() + "moo"
+			}
+		}
+
+		var cow = Cow()
+		print(cow.greeting())
+		"""
+
+		let output = TestOutput()
+
+		#expect(VM.run(source: source, output: output) == .ok)
+		#expect(output.stdout == "I say moo\n")
 	}
 }

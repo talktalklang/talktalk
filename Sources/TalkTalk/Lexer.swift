@@ -73,6 +73,7 @@ struct Lexer: ~Copyable {
 		case ";": make(.semicolon)
 		case "*": make(.star)
 		case "/": make(.slash)
+		case ":": make(.colon)
 		case "!": make(match("=") ? .bangEqual : .bang)
 		case "=": make(match("=") ? .equalEqual : .equal)
 		case "<": make(match("=") ? .lessEqual : .less)

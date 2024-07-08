@@ -48,6 +48,15 @@ struct JumpMetadata: Disassembler.Metadata {
 	}
 }
 
+struct InvokeMetadata: Disassembler.Metadata {
+	var name: String
+	var arity: Byte
+
+	var description: String {
+		".\(name) \(arity)"
+	}
+}
+
 struct Disassembler {
 	protocol Metadata: Equatable, CustomStringConvertible {}
 
@@ -116,19 +125,6 @@ struct Disassembler {
 			return constantInstruction("OP_CONSTANT")
 		case .defineGlobal, .getGlobal, .setGlobal:
 			return constantInstruction(opcode!.description)
-		case .return:
-			return simpleInstruction("OP_RETURN")
-		case .negate:
-			return simpleInstruction("OP_NEGATE")
-		case .add, .subtract, .multiply, .divide:
-			guard let opcode else {
-				fatalError("No opcode for \(instruction)")
-			}
-			return simpleInstruction(opcode.description)
-		case .print:
-			return simpleInstruction("OP_PRINT")
-		case .pop:
-			return simpleInstruction("OP_POP")
 		case .getLocal, .setLocal, .call:
 			return byteInstruction(
 				opcode!.description
@@ -147,6 +143,10 @@ struct Disassembler {
 			return constantInstruction(opcode!.description)
 		case .method:
 			return constantInstruction(opcode!.description)
+		case .invoke:
+			return invokeInstruction()
+		case .getSuper:
+			return constantInstruction("OP_GET_SUPER")
 		default:
 			return simpleInstruction(opcode!.description)
 		}
@@ -240,6 +240,27 @@ struct Disassembler {
 			offset: offset,
 			opcode: label,
 			metadata: JumpMetadata(offset: offset, sign: sign, jump: jump),
+			line: line,
+			isSameLine: isSameLine
+		)
+	}
+
+	private mutating func invokeInstruction() -> Instruction {
+		defer {
+			offset += 3
+		}
+
+		let constant = chunk.code[offset + 1]
+		let name = chunk.constants[Int(constant)]
+		let argCount = chunk.code[offset + 2]
+
+		return Instruction(
+			offset: offset,
+			opcode: "OP_INVOKE",
+			metadata: InvokeMetadata(
+				name: name.as(String.self),
+				arity: argCount
+			),
 			line: line,
 			isSameLine: isSameLine
 		)

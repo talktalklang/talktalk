@@ -30,6 +30,10 @@ extension Compiler {
 			expression()
 			emit(opcode: .setProperty)
 			emit(name)
+		} else if parser.match(.leftParen) {
+			let argCount = argumentList()
+			emit(opcode: .invoke)
+			emit(name, argCount)
 		} else {
 			emit(opcode: .getProperty)
 			emit(name)
@@ -43,6 +47,29 @@ extension Compiler {
 		}
 
 		variable(false)
+	}
+
+	func _super(_: Bool) {
+		guard let currentClass else {
+			error("Can't use 'super' outside a class")
+			return
+		}
+
+		guard currentClass.hasSuperclass else {
+			error("Can't use 'super' in a class with no superclass")
+			return
+		}
+
+		parser.consume(.dot, "Expected '.' after 'super'")
+		parser.consume(.identifier, "Expect superclass method name")
+
+		let name = identifierConstant(parser.previous)
+
+		namedVariable(.synthetic(.self, length: 4), false)
+		namedVariable(.synthetic(.super, length: 5), false)
+
+		emit(opcode: .getSuper)
+		emit(name)
 	}
 
 	func unary(_: Bool) {
