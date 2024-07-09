@@ -14,12 +14,14 @@ struct ProgramNode: Syntax {
 struct Parser {
 	var errors: [Error] = []
 	var lexer: Lexer
+	var previous: Token
 	var current: Token
 	var parserRepeats: [Int: Int] = [:]
 
 	init(lexer: Lexer) {
 		self.lexer = lexer
-		self.current = self.lexer.next()
+		self.previous = self.lexer.next()
+		self.current = self.previous
 	}
 
 	mutating func parse() -> [any Syntax] {
@@ -33,16 +35,37 @@ struct Parser {
 	}
 
 	mutating func decl() -> any Syntax {
-		switch current.kind {
-		default:
-			let position = current.start
-			let expr = parse(precedence: .assignment)
-			return ExprStmtSyntax(
-				position: current.start,
-				length: position - current.start,
-				expr: expr
-			)
+		if match(.var) {
+			return varDecl()
 		}
+
+		let position = current.start
+		let expr = parse(precedence: .assignment)
+		return ExprStmtSyntax(
+			position: current.start,
+			length: position - current.start,
+			expr: expr
+		)
+	}
+
+	mutating func varDecl() -> any Syntax {
+		let start = previous.start
+
+		guard let identifier = consume(IdentifierSyntax.self) else {
+			return ErrorSyntax(token: current, expected: .identifier)
+		}
+
+		var expr: (any Expr)?
+		if match(.equal) {
+			expr = parse(precedence: .assignment)
+		}
+
+		return VarDeclSyntax(
+			position: start,
+			length: current.start - start,
+			variable: identifier,
+			expr: expr
+		)
 	}
 
 	mutating func parse(precedence: Precedence) -> any Expr {

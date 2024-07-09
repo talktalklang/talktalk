@@ -28,6 +28,7 @@ extension Parser {
 	}
 
 	mutating func advance() {
+		previous = current
 		current = lexer.next()
 	}
 
@@ -47,13 +48,13 @@ extension Parser {
 		return kinds.contains(current.kind)
 	}
 
-	mutating func consume<T: Consumable>(_ token: Token, as _: T.Type) -> T? {
-		if let result = T.consuming(token) {
+	mutating func consume<T: Consumable>(_: T.Type) -> T? {
+		if let result = T.consuming(current) {
 			advance()
 			return result
 		}
 
-		error("Expected \(T.self), got \(token.kind)", at: current)
+		error("Expected \(T.self), got \(current.kind)", at: current)
 
 		return nil
 	}

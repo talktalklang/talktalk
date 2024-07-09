@@ -12,6 +12,8 @@ struct Token: Equatable, Sendable {
 	}
 
 	enum Kind: Equatable, Hashable {
+		case bof // Placeholder for previous when we first start
+
 		// Single character tokens
 		case leftParen, rightParen,
 		     leftBrace, rightBrace,

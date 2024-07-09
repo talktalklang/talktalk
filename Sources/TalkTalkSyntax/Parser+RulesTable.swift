@@ -77,6 +77,7 @@ extension Token.Kind {
 		case .colon: .none
 		case .leftBracket: .init({ $0.arrayLiteral($1) }, { $0.call($1, $2) }, .call)
 		case .rightBracket: .none
+		case .bof: .none
 		}
 	}
 }

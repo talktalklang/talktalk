@@ -82,8 +82,14 @@ struct SyntaxTreeTests {
 	}
 
 	@Test("var statement") func varStmt() {
-		//let tree = SyntaxTree.parse(source: """
-		//var foo = "123"
-		//""")
+		let tree = SyntaxTree.parse(source: """
+		var foo = "123"
+		""")
+
+		let stmt = tree.root[0].cast(VarDeclSyntax.self)
+		#expect(stmt.position == 0)
+		#expect(stmt.length == 15)
+		#expect(stmt.variable.lexeme == "foo")
+		#expect(stmt.expr!.cast(StringLiteralSyntax.self).lexeme == #""123""#)
 	}
 }

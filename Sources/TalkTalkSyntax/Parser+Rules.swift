@@ -11,7 +11,7 @@ extension Parser {
 	}
 
 	mutating func unary(_: Bool) -> any Expr {
-		let op = consume(current, as: UnaryOperator.self)!
+		let op = consume(UnaryOperator.self)!
 
 		let expr = parse(precedence: .unary)
 		advance()
@@ -25,7 +25,7 @@ extension Parser {
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
-		guard let op = consume(current, as: BinaryOperatorSyntax.self) else {
+		guard let op = consume(BinaryOperatorSyntax.self) else {
 			return ErrorSyntax(token: current)
 		}
 
@@ -63,7 +63,7 @@ extension Parser {
 	}
 
 	mutating func string(_: Bool) -> any Expr {
-		if let expr = consume(current, as: StringLiteralSyntax.self) {
+		if let expr = consume(StringLiteralSyntax.self) {
 			return expr
 		} else {
 			return ErrorSyntax(token: current, expected: .string)
@@ -71,7 +71,7 @@ extension Parser {
 	}
 
 	mutating func number(_: Bool) -> any Expr {
-		if let expr = consume(current, as: IntLiteralSyntax.self) {
+		if let expr = consume(IntLiteralSyntax.self) {
 			return expr
 		} else {
 			return ErrorSyntax(token: current, expected: .number)
