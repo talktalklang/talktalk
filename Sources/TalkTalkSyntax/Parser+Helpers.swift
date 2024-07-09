@@ -65,7 +65,7 @@ extension Parser {
 		}
 
 		let kinds = kinds.map { "\($0)".components(separatedBy: ".").last! }.joined(separator: ", ")
-		error("Unexpected token: \(current.description(in: lexer.source)). Expected: \(kinds).", at: current)
+		error("Unexpected token: \(current.description). Expected: \(kinds).", at: current)
 	}
 
 	mutating func consume(_ kind: Token.Kind, _: String) {
@@ -75,7 +75,7 @@ extension Parser {
 		}
 
 		let kind = "\(kind)".components(separatedBy: ".").last!
-		error("Unexpected token: \(current.description(in: lexer.source)). Expected: \(kind).", at: current)
+		error("Unexpected token: \(current.description). Expected: \(kind).", at: current)
 	}
 
 	mutating func line(_ number: Int) -> String {

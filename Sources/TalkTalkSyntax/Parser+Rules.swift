@@ -62,16 +62,20 @@ extension Parser {
 		ErrorSyntax(token: current)
 	}
 
-	mutating func string(_: Bool) -> some Expr {
-		StringLiteralSyntax(position: current.start, length: current.length, lexeme: current.lexeme(in: lexer))
+	mutating func string(_: Bool) -> any Expr {
+		if let expr = consume(current, as: StringLiteralSyntax.self) {
+			return expr
+		} else {
+			return ErrorSyntax(token: current, expected: .string)
+		}
 	}
 
-	mutating func number(_: Bool) -> some Expr {
-		defer {
-			advance()
+	mutating func number(_: Bool) -> any Expr {
+		if let expr = consume(current, as: IntLiteralSyntax.self) {
+			return expr
+		} else {
+			return ErrorSyntax(token: current, expected: .number)
 		}
-
-		return IntLiteralSyntax(position: current.start, length: current.length, lexeme: current.lexeme(in: lexer))
 	}
 
 	mutating func literal(_: Bool) -> some Expr {

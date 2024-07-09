@@ -142,7 +142,7 @@ struct Lexer {
 
 		advance() // The closing quote
 
-		return make(.string)
+		return make(.string, lexeme: true)
 	}
 
 	mutating func number() -> Token {
@@ -159,7 +159,7 @@ struct Lexer {
 			}
 		}
 
-		return make(.number)
+		return make(.number, lexeme: true)
 	}
 
 	mutating func identifier(start: Character) -> Token {
@@ -172,7 +172,7 @@ struct Lexer {
 			   let keyword = node.keyword,
 			   !isIdentifier(peekNext())
 			{
-				return make(keyword)
+				return make(keyword, lexeme: true)
 			}
 
 			node = node.lookup(char)
@@ -182,7 +182,7 @@ struct Lexer {
 			return make(keyword)
 		}
 
-		return make(.identifier)
+		return make(.identifier, lexeme: true)
 	}
 
 	func isIdentifier(_ char: Character?) -> Bool {
@@ -226,8 +226,14 @@ struct Lexer {
 		return source[previous]
 	}
 
-	func make(_ kind: Token.Kind) -> Token {
-		return Token(start: start, length: current - start, kind: kind, line: line)
+	func make(_ kind: Token.Kind, lexeme: Bool = false) -> Token {
+		return Token(
+			start: start,
+			length: current - start,
+			kind: kind,
+			line: line,
+			lexeme: lexeme ? String(source[start..<current]) : nil
+		)
 	}
 
 	func error(_ message: String) -> Token {

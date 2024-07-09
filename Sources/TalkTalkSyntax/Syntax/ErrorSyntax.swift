@@ -6,6 +6,7 @@
 //
 struct ErrorSyntax: Syntax, Expr {
 	var token: Token
+	var expected: Token.Kind? = nil
 
 	var position: Int { token.start }
 	var length: Int { token.length }

@@ -68,4 +68,22 @@ struct SyntaxTreeTests {
 		#expect(rhs.length == 2)
 		#expect(rhs.lexeme == "20")
 	}
+
+	@Test("string literal") func string() {
+		let tree = SyntaxTree.parse(source: """
+		"hello world"
+		""")
+
+		let expr = tree.root[0].cast(ExprStmtSyntax.self).expr.cast(StringLiteralSyntax.self)
+
+		#expect(expr.lexeme == #""hello world""#)
+		#expect(expr.length == 13)
+		#expect(expr.position == 0)
+	}
+
+	@Test("var statement") func varStmt() {
+		//let tree = SyntaxTree.parse(source: """
+		//var foo = "123"
+		//""")
+	}
 }
