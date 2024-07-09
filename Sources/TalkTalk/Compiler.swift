@@ -75,8 +75,9 @@ public final class Compiler {
 
 	public init(source: String) {
 		var headers = try! String(contentsOf: Bundle.module.url(forResource: "Array", withExtension: "tlk")!)
+		headers += "\n"
 
-		self.parser = Parser(lexer: Lexer(source: headers + "\n" + source))
+		self.parser = Parser(lexer: Lexer(source: headers + source))
 		self.function = Function(arity: 0, chunk: Chunk(), name: "main", kind: .main)
 		locals[0] = Local(name: parser.current, depth: 0)
 	}

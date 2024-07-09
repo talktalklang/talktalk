@@ -37,6 +37,9 @@ let package = Package(
 			name: "TalkTalkInterpreter"
 		),
 		.target(
+			name: "TalkTalkSyntax"
+		),
+		.target(
 			name: "TalkTalk",
 			resources: [
 				.process("StandardLibrary/Array.tlk")
@@ -58,6 +61,15 @@ let package = Package(
 			name: "TalkTalkInterpreterTests",
 			dependencies: [
 				"TalkTalkInterpreter",
+			],
+			swiftSettings: [
+				.enableUpcomingFeature("SwiftTesting"),
+			]
+		),
+		.testTarget(
+			name: "TalkTalkSyntaxTests",
+			dependencies: [
+				"TalkTalkSyntax",
 			],
 			swiftSettings: [
 				.enableUpcomingFeature("SwiftTesting"),
