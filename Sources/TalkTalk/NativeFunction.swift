@@ -7,7 +7,7 @@
 enum Native {
 	static let list: [String: any NativeFunction.Type] = [
 		"println": NativeFunctionPrint.self,
-		"_describe": NativeFunctionDescribe.self
+		"_describe": NativeFunctionDescribe.self,
 	]
 }
 
@@ -30,7 +30,7 @@ final class NativeFunctionDescribe: NativeFunction {
 
 	init() {}
 
-	func call<Output: OutputCollector>(arguments: some Collection<Value>, in vm: inout VM<Output>) -> Value {
+	func call<Output: OutputCollector>(arguments: some Collection<Value>, in _: inout VM<Output>) -> Value {
 		return .string(arguments.first!.description)
 	}
 

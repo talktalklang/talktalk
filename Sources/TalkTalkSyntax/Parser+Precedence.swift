@@ -15,18 +15,18 @@ extension Parser {
 		}
 
 		case none,
-				 assignment, // =
-				 or, // ||
-				 and, // &&
-				 equality, // == !=
-				 comparison, // < > <= >=
-				 term, // + -
-				 factor, // * /
-				 unary, // ! -
-				 call, // . ()
-				 primary,
+		     assignment, // =
+		     or, // ||
+		     and, // &&
+		     equality, // == !=
+		     comparison, // < > <= >=
+		     term, // + -
+		     factor, // * /
+		     unary, // ! -
+		     call, // . ()
+		     primary,
 
-				 any
+		     any
 
 		var canAssign: Bool {
 			self <= .assignment

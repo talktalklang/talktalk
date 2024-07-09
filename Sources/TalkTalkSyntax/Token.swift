@@ -14,21 +14,21 @@ struct Token: Equatable, Sendable {
 	enum Kind: Equatable, Hashable {
 		// Single character tokens
 		case leftParen, rightParen,
-				 leftBrace, rightBrace,
-				 leftBracket, rightBracket,
-				 comma, dot, minus, plus, semicolon, slash, star, colon
+		     leftBrace, rightBrace,
+		     leftBracket, rightBracket,
+		     comma, dot, minus, plus, semicolon, slash, star, colon
 
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,
-				 greater, greaterEqual, less, lessEqual,
-				 and, andAnd, pipe, pipePipe
+		     greater, greaterEqual, less, lessEqual,
+		     and, andAnd, pipe, pipePipe
 
 		// Literals
 		case identifier, string, number
 
 		// Keywords
 		case `class`, `else`, `false`, `func`, `init`, `for`, `if`, `nil`,
-				 or, `return`, `super`, `self`, `true`, `var`, `while`
+		     or, `return`, `super`, `self`, `true`, `var`, `while`
 
 		case newline
 

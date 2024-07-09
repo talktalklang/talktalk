@@ -42,7 +42,7 @@ let package = Package(
 		.target(
 			name: "TalkTalk",
 			resources: [
-				.process("StandardLibrary/Array.tlk")
+				.process("StandardLibrary/Array.tlk"),
 			],
 			swiftSettings: [
 				.define("DEBUGGING", .when(configuration: .debug)),

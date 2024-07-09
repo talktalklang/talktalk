@@ -30,7 +30,7 @@ enum Value: Equatable, Hashable {
 	     `class`(Class),
 	     classInstance(ClassInstance),
 	     boundMethod(ClassInstance, Closure),
-			 array(InternalArray)
+	     array(InternalArray)
 
 	@inline(__always)
 	func equals(_ other: Value) -> Bool {

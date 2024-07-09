@@ -37,10 +37,10 @@ enum Opcode: Byte {
 	     invoke,
 	     inherit,
 	     getSuper,
-			 invokeSuper,
+	     invokeSuper,
 	     `nil`,
-			 arrayLiteral,
-			 computedProperty
+	     arrayLiteral,
+	     computedProperty
 
 	var description: String {
 		switch self {

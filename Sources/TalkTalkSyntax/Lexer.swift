@@ -169,8 +169,8 @@ struct Lexer {
 			advance()
 
 			if let node = node.children[char],
-				 let keyword = node.keyword,
-				 !isIdentifier(peekNext())
+			   let keyword = node.keyword,
+			   !isIdentifier(peekNext())
 			{
 				return make(keyword)
 			}

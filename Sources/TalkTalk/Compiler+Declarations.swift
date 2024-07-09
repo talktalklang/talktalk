@@ -76,7 +76,7 @@ extension Compiler {
 			parser.skip(.newline)
 
 			#if DEBUG
-			checkForInfiniteLoop()
+				checkForInfiniteLoop()
 			#endif
 
 			if parser.match(.var) { computedProperty() }

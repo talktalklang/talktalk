@@ -43,9 +43,7 @@ public final class Compiler {
 	var scopeDepth = 0
 	var upvalues: [Upvalue] = []
 
-	func load(source: String) {
-
-	}
+	func load(source _: String) {}
 
 	// MARK: Debuggy
 

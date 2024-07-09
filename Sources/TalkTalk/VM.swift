@@ -481,7 +481,7 @@ public struct VM<Output: OutputCollector> {
 			let result = instance.call(arguments: args, in: &self)
 			stack.push(result)
 			return true
-		case .array(let array):
+		case let .array(array):
 			if argCount != 1 {
 				runtimeError("Expected 1 argument to array subscript, got \(argCount)")
 				return false

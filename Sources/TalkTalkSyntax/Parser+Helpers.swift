@@ -1,6 +1,6 @@
 //
 //  Parser+Helpers.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/8/24.
 //
@@ -23,13 +23,12 @@ extension Parser {
 		return false
 	}
 
-
 	mutating func check(_ kind: Token.Kind) -> Bool {
 		return current.kind == kind
 	}
 
 	mutating func advance() {
-		self.current = lexer.next()
+		current = lexer.next()
 	}
 
 	mutating func skip(_ kind: Token.Kind) {
@@ -48,7 +47,7 @@ extension Parser {
 		return kinds.contains(current.kind)
 	}
 
-	mutating func consume<T: Consumable>(_ token: Token, as: T.Type) -> T? {
+	mutating func consume<T: Consumable>(_ token: Token, as _: T.Type) -> T? {
 		if let result = T.consuming(token) {
 			advance()
 			return result

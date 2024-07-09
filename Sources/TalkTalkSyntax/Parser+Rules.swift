@@ -6,7 +6,7 @@
 //
 
 extension Parser {
-	mutating func call(_: Bool, _ lhs: any Expr) -> some Expr {
+	mutating func call(_: Bool, _: any Expr) -> some Expr {
 		ErrorSyntax(token: current)
 	}
 
@@ -46,15 +46,15 @@ extension Parser {
 		return GroupingSyntax(position: position, length: position - current.start, expression: expr)
 	}
 
-	mutating func dot(_: Bool, _ lhs: any Expr) -> some Expr {
+	mutating func dot(_: Bool, _: any Expr) -> some Expr {
 		ErrorSyntax(token: current)
 	}
 
-	mutating func and(_: Bool, _ lhs: any Expr) -> some Expr {
+	mutating func and(_: Bool, _: any Expr) -> some Expr {
 		ErrorSyntax(token: current)
 	}
 
-	mutating func or(_: Bool, _ lhs: any Expr) -> some Expr {
+	mutating func or(_: Bool, _: any Expr) -> some Expr {
 		ErrorSyntax(token: current)
 	}
 
@@ -70,7 +70,7 @@ extension Parser {
 		defer {
 			advance()
 		}
-		
+
 		return IntLiteralSyntax(position: current.start, length: current.length, lexeme: current.lexeme(in: lexer))
 	}
 
