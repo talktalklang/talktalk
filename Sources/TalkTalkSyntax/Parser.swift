@@ -117,6 +117,7 @@ struct Parser {
 		while precedence < current.kind.rule.precedence {
 			if let infix = current.kind.rule.infix, lhs != nil {
 				lhs = infix(&self, precedence.canAssign, lhs!)
+				skip(.newline)
 			}
 		}
 
@@ -181,10 +182,12 @@ struct Parser {
 		let start = current.start
 		var arguments: [any Expr] = []
 
-		if !check(.rightParen) {
+		if !match(terminator) {
 			repeat {
 				arguments.append(parse(precedence: .assignment))
-			} while match(.comma) && !check(.eof)
+			} while match(.comma) && !match(.eof)
+
+			consume(terminator, "Expected ')' after argument list")
 		}
 
 		return ArgumentListSyntax(

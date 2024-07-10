@@ -13,8 +13,6 @@ extension Parser {
 
 		let argumentList = argumentList(terminator: .rightParen)
 
-		consume(.rightParen, "Expected ')' after argument list")
-
 		return CallExprSyntax(
 			position: start,
 			length: current.start - start,
