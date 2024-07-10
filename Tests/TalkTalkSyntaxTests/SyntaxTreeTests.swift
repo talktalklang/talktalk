@@ -13,7 +13,7 @@ struct SyntaxTreeTests {
 		at keypath: PartialKeyPath<R>,
 		as _: T.Type
 	) -> T {
-		let root = SyntaxTree.parse(source: string).root[0] as! R
+		let root = SyntaxTree.parse(source: string).decls[0] as! R
 
 		return root[keyPath: keypath] as! T
 	}
@@ -22,18 +22,17 @@ struct SyntaxTreeTests {
 		_ string: String,
 		as _: T.Type
 	) -> T {
-		let root = SyntaxTree.parse(source: string).root[0]
+		let root = SyntaxTree.parse(source: string).decls[0]
 		return root as! T
 	}
 
 	@Test("Basic") func basic() throws {
-		let tree = SyntaxTree.parse(source: """
-		1
-		""")
+		let exprStmt = parse(
+			"1",
+			as: ExprStmtSyntax.self
+		)
 
-		let expr = tree.root.first?
-			.as(ExprStmtSyntax.self)?.expr
-			.as(IntLiteralSyntax.self)
+		let expr = exprStmt.expr.as(IntLiteralSyntax.self)
 
 		let root = try #require(expr)
 		#expect(root.position == 0)
@@ -42,57 +41,50 @@ struct SyntaxTreeTests {
 	}
 
 	@Test("Unary") func unary() throws {
-		let tree = SyntaxTree.parse(source: """
-		-1
-		""")
+		let expr = parse(
+			"-1",
+			as: ExprStmtSyntax.self
+		).expr.cast(UnaryExprSyntax.self)
 
-		let expr = tree.root.first?
-			.as(ExprStmtSyntax.self)?.expr
-			.as(UnaryExprSyntax.self)
+		#expect(expr.op.position == 0)
+		#expect(expr.op.length == 1)
+		#expect(expr.op.kind == .minus)
 
-		let root = try #require(expr)
-		#expect(root.op.position == 0)
-		#expect(root.op.length == 1)
-		#expect(root.op.kind == .minus)
-
-		let int = root.rhs.as(IntLiteralSyntax.self)!
+		let int = expr.rhs.as(IntLiteralSyntax.self)!
 		#expect(int.position == 1)
 		#expect(int.length == 1)
 		#expect(int.lexeme == "1")
 	}
 
 	@Test("Binary") func binary() throws {
-		let tree = SyntaxTree.parse(source: """
-		10 + 20
-		""")
+		let expr = parse(
+			"10 + 20",
+			as: ExprStmtSyntax.self
+		).expr.cast(BinaryExprSyntax.self)
 
-		let expr = tree.root.first?
-			.as(ExprStmtSyntax.self)?.expr
-			.as(BinaryExprSyntax.self)
-		let root = try #require(expr)
-
-		let lhs = root.lhs.cast(IntLiteralSyntax.self)
+		let lhs = expr.lhs.cast(IntLiteralSyntax.self)
 		#expect(lhs.position == 0)
 		#expect(lhs.length == 2)
 		#expect(lhs.lexeme == "10")
 
-		let op = root.op
+		let op = expr.op
 		#expect(op.position == 3)
 		#expect(op.length == 1)
 		#expect(op.kind == .plus)
 
-		let rhs = root.rhs.cast(IntLiteralSyntax.self)
+		let rhs = expr.rhs.cast(IntLiteralSyntax.self)
 		#expect(rhs.position == 5)
 		#expect(rhs.length == 2)
 		#expect(rhs.lexeme == "20")
 	}
 
 	@Test("string literal") func string() {
-		let tree = SyntaxTree.parse(source: """
-		"hello world"
-		""")
-
-		let expr = tree.root[0].cast(ExprStmtSyntax.self).expr.cast(StringLiteralSyntax.self)
+		let expr = parse(
+			"""
+			"hello world"
+			""",
+			as: ExprStmtSyntax.self
+		).expr.cast(StringLiteralSyntax.self)
 
 		#expect(expr.lexeme == #""hello world""#)
 		#expect(expr.length == 13)
@@ -100,11 +92,13 @@ struct SyntaxTreeTests {
 	}
 
 	@Test("var statement") func varStmt() {
-		let tree = SyntaxTree.parse(source: """
-		var foo = "123"
-		""")
+		let decl = parse(
+			"""
+			var foo = "123"
+			""",
+			as: VarDeclSyntax.self
+		)
 
-		let decl = tree.root[0].cast(VarDeclSyntax.self)
 		#expect(decl.position == 0)
 		#expect(decl.length == 15)
 		#expect(decl.variable.lexeme == "foo")
@@ -112,13 +106,12 @@ struct SyntaxTreeTests {
 	}
 
 	@Test("Group") func groupExpr() {
-		let tree = SyntaxTree.parse(source: """
-		(1 + 2)
-		""")
-
-		let groupExpr = tree.root[0]
-			.cast(ExprStmtSyntax.self).expr
-			.cast(GroupExpr.self)
+		let groupExpr = parse(
+			"""
+			(1 + 2)
+			""",
+			as: ExprStmtSyntax.self
+		).expr.cast(GroupExpr.self)
 
 		#expect(groupExpr.position == 0)
 		#expect(groupExpr.length == 7)
@@ -199,5 +192,86 @@ struct SyntaxTreeTests {
 
 		let exprStmt = funcDecl.body.decls[0].cast(ExprStmtSyntax.self)
 		#expect(exprStmt.description == "1 + 2")
+	}
+
+	@Test("Gross Function Body Formatting") func functionGrossBody() {
+		let funcDecl = parse("""
+		func foo()
+		{
+			1 + 2
+		}
+		""", as: FunctionDeclSyntax.self)
+
+		#expect(funcDecl.position == 0)
+		#expect(funcDecl.length == 21)
+
+		#expect(funcDecl.name.position == 5)
+		#expect(funcDecl.name.length == 3)
+		#expect(funcDecl.name.description == "foo")
+
+		#expect(funcDecl.parameters.isEmpty)
+
+		#expect(funcDecl.body.decls.count == 1)
+		#expect(funcDecl.body.position == 11)
+		#expect(funcDecl.body.length == 10)
+
+		let exprStmt = funcDecl.body.decls[0].cast(ExprStmtSyntax.self)
+		#expect(exprStmt.description == "1 + 2")
+	}
+
+	@Test("Blocks") func blocks() {
+		let blockStmt = parse("""
+		{
+			var foo = "bar"
+		}
+		""", as: BlockStmtSyntax.self)
+
+		#expect(blockStmt.position == 3)
+		#expect(blockStmt.length == 17)
+
+		let decl = blockStmt.decls[0].cast(VarDeclSyntax.self)
+		#expect(decl.length == 15)
+		#expect(decl.variable.lexeme == "foo")
+		#expect(decl.variable.position == 7)
+
+		#expect(blockStmt.description == """
+		{
+			var foo = "bar"
+		}
+		""")
+	}
+
+	@Test("Call expression") func call() {
+		let callExpr = parse(
+			"""
+			foo()
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: CallExprSyntax.self
+		)
+
+		#expect(callExpr.position == 3)
+		#expect(callExpr.length == 2)
+
+		#expect(callExpr.callee.cast(VariableExprSyntax.self).name.lexeme == "foo")
+		#expect(callExpr.arguments.isEmpty)
+	}
+
+	@Test("Call expression with args") func callWithArgs() {
+		let callExpr = parse(
+			"""
+			foo(1 + 2)
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: CallExprSyntax.self
+		)
+
+		#expect(callExpr.position == 3)
+		#expect(callExpr.length == 7)
+
+		#expect(callExpr.callee.cast(VariableExprSyntax.self).name.lexeme == "foo")
+
+		let argExpr = callExpr.arguments[0].cast(BinaryExprSyntax.self)
+		#expect(argExpr.description == "1 + 2")
 	}
 }

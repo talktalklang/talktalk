@@ -30,6 +30,7 @@ let package = Package(
 			name: "tlk",
 			dependencies: [
 				"TalkTalk",
+				"TalkTalkSyntax",
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),

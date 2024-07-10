@@ -15,4 +15,13 @@ public struct BinaryExprSyntax: Syntax, Expr {
 	public var description: String {
 		"\(lhs.description) \(op.description) \(rhs.description)"
 	}
+
+	public var debugDescription: String {
+		"""
+		BinaryExprSyntax(position: \(position), length: \(length))
+			lhs: \(lhs.debugDescription)
+			op: \(op)
+			rhs: \(rhs.debugDescription)
+		"""
+	}
 }

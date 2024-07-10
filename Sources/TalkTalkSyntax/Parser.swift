@@ -4,13 +4,21 @@
 //
 //  Created by Pat Nakajima on 7/8/24.
 //
-struct ProgramNode: Syntax {
-	var position = -1
-	var length = -1
+public struct ProgramSyntax: Syntax {
+	public let position: Int
+	public let length: Int
 
-	var declarations: [Decl] = []
-	var description: String {
-		declarations.map(\.description).joined(separator: "\n")
+	public var decls: [any Decl] = []
+
+	public var description: String {
+		decls.map(\.description).joined(separator: "\n")
+	}
+
+	public var debugDescription: String {
+		"""
+		Program
+			decls: \(decls.map(\.debugDescription).joined(separator: "\n\t\t"))
+		"""
 	}
 }
 
@@ -27,10 +35,11 @@ struct Parser {
 		self.current = previous
 	}
 
-	mutating func parse() -> [any Syntax] {
-		var decls: [any Syntax] = []
+	mutating func parse() -> [any Decl] {
+		var decls: [any Decl] = []
 
 		while current.kind != .eof {
+			skip(.newline)
 			decls.append(decl())
 		}
 
@@ -46,14 +55,7 @@ struct Parser {
 			return funcDecl()
 		}
 
-		let position = current.start
-		let expr = parse(precedence: .assignment)
-
-		return ExprStmtSyntax(
-			position: current.start,
-			length: position - current.start,
-			expr: expr
-		)
+		return statement()
 	}
 
 	mutating func varDecl() -> any Decl {
@@ -83,7 +85,7 @@ struct Parser {
 		consume(.leftParen, "Expected '(' before parameter list")
 		let parameters = parameterList()
 
-		let body = functionBody()
+		let body = block()
 
 		return FunctionDeclSyntax(
 			position: position,
@@ -91,6 +93,21 @@ struct Parser {
 			name: name,
 			parameters: parameters,
 			body: body
+		)
+	}
+
+	mutating func statement() -> any Stmt {
+		if match(.leftBrace) {
+			return block()
+		}
+
+		let position = current.start
+		let expr = parse(precedence: .assignment)
+
+		return ExprStmtSyntax(
+			position: current.start,
+			length: position - current.start,
+			expr: expr
 		)
 	}
 
@@ -104,8 +121,10 @@ struct Parser {
 			lhs = prefix(&self, precedence.canAssign)
 		}
 
-		if let lhs, let infix = current.kind.rule.infix {
-			return infix(&self, precedence.canAssign, lhs)
+		while precedence < current.kind.rule.precedence {
+			if let infix = current.kind.rule.infix, lhs != nil {
+				lhs = infix(&self, precedence.canAssign, lhs!)
+			}
 		}
 
 		return lhs ?? ErrorSyntax(token: current)
@@ -139,7 +158,9 @@ struct Parser {
 		)
 	}
 
-	private mutating func functionBody() -> BlockSyntax {
+	private mutating func block() -> BlockStmtSyntax {
+		skip(.newline) // for brace on next line style that i don't love
+
 		let start = current.start
 		consume(.leftBrace, "Expected '{' before function body")
 
@@ -153,10 +174,27 @@ struct Parser {
 
 		consume(.rightBrace, "Expected '{' after function body")
 
-		return BlockSyntax(
+		return BlockStmtSyntax(
 			position: start,
 			length: current.start - start,
 			decls: decls
+		)
+	}
+
+	mutating func argumentList() -> ArgumentListSyntax {
+		let start = current.start
+		var arguments: [any Expr] = []
+
+		if !match(.rightParen) {
+			repeat {
+				arguments.append(parse(precedence: .assignment))
+			} while !match(.rightParen) && !match(.eof)
+		}
+
+		return ArgumentListSyntax(
+			position: start,
+			length: current.start - start,
+			arguments: arguments
 		)
 	}
 }

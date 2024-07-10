@@ -6,8 +6,21 @@
 //
 
 extension Parser {
-	mutating func call(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(token: current)
+	mutating func call(_: Bool, _ lhs: any Expr) -> some Expr {
+		let start = current.start
+
+		consume(.leftParen, "Expected '(' before argument list")
+
+		let argumentList = argumentList()
+
+		consume(.rightParen, "Expected ')' after argument list")
+
+		return CallExprSyntax(
+			position: start,
+			length: current.start - start,
+			callee: lhs,
+			arguments: argumentList
+		)
 	}
 
 	mutating func unary(_: Bool) -> any Expr {
@@ -67,8 +80,16 @@ extension Parser {
 		ErrorSyntax(token: current)
 	}
 
-	mutating func variable(_: Bool) -> some Expr {
-		ErrorSyntax(token: current)
+	mutating func variable(_: Bool) -> any Expr {
+		if let identifier = consume(IdentifierSyntax.self) {
+			return VariableExprSyntax(
+				position: identifier.position,
+				length: identifier.length,
+				name: identifier
+			)
+		} else {
+			return ErrorSyntax(token: current, expected: .identifier)
+		}
 	}
 
 	mutating func string(_: Bool) -> any Expr {

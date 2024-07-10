@@ -4,10 +4,9 @@
 //
 //  Created by Pat Nakajima on 7/8/24.
 //
-public protocol Syntax {
+public protocol Syntax: CustomStringConvertible, CustomDebugStringConvertible {
 	var position: Int { get }
 	var length: Int { get }
-	var description: String { get }
 }
 
 public extension Syntax {

@@ -1,7 +1,7 @@
 func foo() {
-	return "bar";
+	"bar"
 }
 
-var a = foo();
+var a = foo()
 
-println(a);
+println(a)

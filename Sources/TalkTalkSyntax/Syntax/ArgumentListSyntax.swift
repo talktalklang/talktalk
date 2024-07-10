@@ -1,27 +1,35 @@
 //
-//  ParameterListSyntax.swift
+//  ArgumentListSyntax.swift
 //
 //
 //  Created by Pat Nakajima on 7/9/24.
 //
-public struct ParameterListSyntax: Syntax {
+public struct ArgumentListSyntax: Syntax {
 	public let position: Int
 	public let length: Int
-	public let parameters: [IdentifierSyntax]
+	public let arguments: [any Expr]
 
-	public subscript(_ index: Int) -> IdentifierSyntax {
-		return parameters[index]
+	public subscript(_ index: Int) -> any Expr {
+		return arguments[index]
 	}
 
 	public var count: Int {
-		parameters.count
+		arguments.count
 	}
 
 	public var isEmpty: Bool {
-		parameters.isEmpty
+		arguments.isEmpty
 	}
 
 	public var description: String {
-		""
+		arguments.map(\.description).joined(separator: ", ")
+	}
+
+	public var debugDescription: String {
+		"""
+		ArgumentListSyntax(position: \(position), length: \(length))
+			arguments:
+				\(arguments.map(\.debugDescription).joined(separator: "\n\t\t"))
+		"""
 	}
 }

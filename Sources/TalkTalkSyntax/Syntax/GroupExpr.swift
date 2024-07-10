@@ -12,4 +12,11 @@ public struct GroupExpr: Expr, Syntax {
 	public var description: String {
 		"(\(expr.description))"
 	}
+
+	public var debugDescription: String {
+		"""
+		GroupExpr(position: \(position), length: \(length))
+			expr: \(expr.debugDescription)
+		"""
+	}
 }

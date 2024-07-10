@@ -11,4 +11,8 @@ public struct StmtSyntax: Syntax {
 	public var description: String {
 		"stmt?"
 	}
+
+	public var debugDescription: String {
+		"stmt"
+	}
 }

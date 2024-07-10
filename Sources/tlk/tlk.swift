@@ -8,6 +8,7 @@
 import ArgumentParser
 import Foundation
 import TalkTalk
+import TalkTalkSyntax
 
 @main
 struct TlkCommand: ParsableCommand {
@@ -16,6 +17,9 @@ struct TlkCommand: ParsableCommand {
 
 	@Flag(help: "Print debug info")
 	var debug: Bool = false
+
+	@Flag(help: "Print the AST")
+	var ast: Bool = false
 //
 //	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
@@ -27,6 +31,11 @@ struct TlkCommand: ParsableCommand {
 		}
 
 		let output = StdoutOutput(isDebug: debug)
+
+		if ast {
+			print(SyntaxTree.parse(source: source).debugDescription)
+			return
+		}
 
 		if VM.run(source: source, output: output) == .ok {
 			return

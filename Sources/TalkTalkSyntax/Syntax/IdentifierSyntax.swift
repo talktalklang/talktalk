@@ -6,6 +6,13 @@ public struct IdentifierSyntax: Syntax {
 	public var description: String {
 		lexeme
 	}
+
+	public var debugDescription: String {
+		"""
+		IdentifierSyntax(position: \(position), length: \(length))
+			lexeme: \(lexeme)
+		"""
+	}
 }
 
 extension IdentifierSyntax: Consumable {

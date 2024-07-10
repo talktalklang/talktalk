@@ -12,4 +12,11 @@ public struct ExprStmtSyntax: Syntax, Stmt {
 	public var description: String {
 		expr.description
 	}
+
+	public var debugDescription: String {
+		"""
+		ExprStmtSyntax(position: \(position), length: \(length))
+			expr: \(expr.debugDescription)
+		"""
+	}
 }

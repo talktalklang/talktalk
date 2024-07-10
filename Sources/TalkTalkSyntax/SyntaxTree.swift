@@ -7,10 +7,15 @@
 public struct SyntaxTree {
 	public var root: [any Syntax]
 
-	public static func parse(source: String) -> SyntaxTree {
+	public static func parse(source: String) -> ProgramSyntax {
 		let lexer = Lexer(source: source)
 		var parser = Parser(lexer: lexer)
+		let decls = parser.parse()
 
-		return SyntaxTree(root: parser.parse())
+		return ProgramSyntax(
+			position: 0,
+			length: parser.current.start,
+			decls: decls
+		)
 	}
 }
