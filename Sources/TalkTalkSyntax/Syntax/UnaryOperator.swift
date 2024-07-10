@@ -12,4 +12,13 @@ public struct UnaryOperator: Syntax {
 	public let position: Int
 	public let length: Int
 	public let kind: Kind
+
+	public var description: String {
+		switch kind {
+		case .minus:
+			"-"
+		case .bang:
+			"!"
+		}
+	}
 }

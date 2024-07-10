@@ -232,7 +232,7 @@ struct Lexer {
 			length: current - start,
 			kind: kind,
 			line: line,
-			lexeme: lexeme ? String(source[start..<current]) : nil
+			lexeme: lexeme ? String(source[start ..< current]) : nil
 		)
 	}
 

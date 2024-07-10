@@ -24,4 +24,33 @@ public struct BinaryOperatorSyntax: Syntax {
 
 	public var position: Int
 	public var length: Int
+
+	public var description: String {
+		switch kind {
+		case .plus:
+			"+"
+		case .minus:
+			"-"
+		case .star:
+			"*"
+		case .slash:
+			"/"
+		case .equal:
+			"="
+		case .equalEqual:
+			"=="
+		case .bangEqual:
+			"!="
+		case .greater:
+			">"
+		case .greaterEqual:
+			">="
+		case .less:
+			"<"
+		case .lessEqual:
+			"<="
+		case .dot:
+			"."
+		}
+	}
 }

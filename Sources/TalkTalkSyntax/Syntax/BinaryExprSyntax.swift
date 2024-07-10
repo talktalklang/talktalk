@@ -11,4 +11,8 @@ public struct BinaryExprSyntax: Syntax, Expr {
 
 	public var position: Int
 	public var length: Int
+
+	public var description: String {
+		"\(lhs.description) \(op.description) \(rhs.description)"
+	}
 }

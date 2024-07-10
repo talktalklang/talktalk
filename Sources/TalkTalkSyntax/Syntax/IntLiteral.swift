@@ -8,6 +8,10 @@ public struct IntLiteralSyntax: Syntax, Expr {
 	public var position: Int
 	public var length: Int
 	public var lexeme: String
+
+	public var description: String {
+		lexeme
+	}
 }
 
 extension IntLiteralSyntax: Consumable {

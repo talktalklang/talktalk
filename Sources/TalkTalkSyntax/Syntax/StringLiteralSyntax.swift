@@ -8,6 +8,10 @@ public struct StringLiteralSyntax: Syntax, Expr {
 	public let position: Int
 	public let length: Int
 	public let lexeme: String
+
+	public var description: String {
+		lexeme
+	}
 }
 
 extension StringLiteralSyntax: Consumable {

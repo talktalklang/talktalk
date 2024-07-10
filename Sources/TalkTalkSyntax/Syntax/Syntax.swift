@@ -7,9 +7,14 @@
 public protocol Syntax {
 	var position: Int { get }
 	var length: Int { get }
+	var description: String { get }
 }
 
 public extension Syntax {
+	func at<T: Syntax>(_ keyPath: KeyPath<Self, T>) -> T {
+		self[keyPath: keyPath]
+	}
+
 	func `as`<T: Syntax>(_: T.Type) -> T? {
 		if let cast = self as? T {
 			return cast

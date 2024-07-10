@@ -7,4 +7,8 @@
 public struct StmtSyntax: Syntax {
 	public var position: Int
 	public var length: Int
+
+	public var description: String {
+		"stmt?"
+	}
 }

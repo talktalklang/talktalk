@@ -42,8 +42,17 @@ extension Parser {
 
 	mutating func grouping(_: Bool) -> some Expr {
 		let position = current.start
+
+		advance()
 		let expr = parse(precedence: .none)
-		return GroupingSyntax(position: position, length: position - current.start, expression: expr)
+
+		consume(.rightParen, "Expected ')' after grouping")
+
+		return GroupExpr(
+			position: position,
+			length: current.start - position,
+			expr: expr
+		)
 	}
 
 	mutating func dot(_: Bool, _: any Expr) -> some Expr {

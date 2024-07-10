@@ -1,15 +1,15 @@
 //
-//  Untitled.swift
+//  GroupExpr.swift
 //
 //
-//  Created by Pat Nakajima on 7/8/24.
+//  Created by Pat Nakajima on 7/9/24.
 //
-public struct ExprStmtSyntax: Syntax, Stmt {
+public struct GroupExpr: Expr, Syntax {
 	public let position: Int
 	public let length: Int
 	public let expr: any Expr
 
 	public var description: String {
-		expr.description
+		"(\(expr.description))"
 	}
 }

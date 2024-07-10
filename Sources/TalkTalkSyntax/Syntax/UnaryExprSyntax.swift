@@ -10,4 +10,8 @@ public struct UnaryExprSyntax: Syntax, Expr {
 
 	public let op: UnaryOperator
 	public let rhs: any Expr
+
+	public var description: String {
+		"\(op.description)\(rhs.description)"
+	}
 }
