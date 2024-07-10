@@ -13,13 +13,6 @@ public struct ProgramSyntax: Syntax {
 	public var description: String {
 		decls.map(\.description).joined(separator: "\n")
 	}
-
-	public var debugDescription: String {
-		"""
-		Program
-			decls: \(decls.map(\.debugDescription).joined(separator: "\n\t\t"))
-		"""
-	}
 }
 
 struct Parser {
@@ -62,7 +55,7 @@ struct Parser {
 		let start = previous.start
 
 		guard let identifier = consume(IdentifierSyntax.self) else {
-			return ErrorSyntax(token: current, expected: .identifier)
+			return ErrorSyntax(token: current, expected: .token(.identifier))
 		}
 
 		var expr: (any Expr)?
@@ -127,7 +120,10 @@ struct Parser {
 			}
 		}
 
-		return lhs ?? ErrorSyntax(token: current)
+		return lhs ?? ErrorSyntax(
+			token: current,
+			expected: .type(ExprStmtSyntax.self)
+		)
 	}
 
 	private mutating func parameterList() -> ParameterListSyntax {
@@ -181,14 +177,14 @@ struct Parser {
 		)
 	}
 
-	mutating func argumentList() -> ArgumentListSyntax {
+	mutating func argumentList(terminator: Token.Kind) -> ArgumentListSyntax {
 		let start = current.start
 		var arguments: [any Expr] = []
 
-		if !match(.rightParen) {
+		if !check(.rightParen) {
 			repeat {
 				arguments.append(parse(precedence: .assignment))
-			} while !match(.rightParen) && !match(.eof)
+			} while match(.comma) && !check(.eof)
 		}
 
 		return ArgumentListSyntax(

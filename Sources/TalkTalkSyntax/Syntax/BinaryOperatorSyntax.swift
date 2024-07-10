@@ -53,11 +53,4 @@ public struct BinaryOperatorSyntax: Syntax {
 			"."
 		}
 	}
-
-	public var debugDescription: String {
-		"""
-		BinaryOperatorSyntax(position: \(position), length: \(length))
-			kind: \(kind)
-		"""
-	}
 }

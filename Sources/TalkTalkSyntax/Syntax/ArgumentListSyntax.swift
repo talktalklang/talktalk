@@ -24,12 +24,4 @@ public struct ArgumentListSyntax: Syntax {
 	public var description: String {
 		arguments.map(\.description).joined(separator: ", ")
 	}
-
-	public var debugDescription: String {
-		"""
-		ArgumentListSyntax(position: \(position), length: \(length))
-			arguments:
-				\(arguments.map(\.debugDescription).joined(separator: "\n\t\t"))
-		"""
-	}
 }

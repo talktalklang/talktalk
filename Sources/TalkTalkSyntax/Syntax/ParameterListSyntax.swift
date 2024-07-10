@@ -24,12 +24,4 @@ public struct ParameterListSyntax: Syntax {
 	public var description: String {
 		""
 	}
-
-	public var debugDescription: String {
-		"""
-		ParameterListSyntax(position: \(position), length: \(length))
-			parameters:
-				\(parameters.map(\.debugDescription).joined(separator: "\n\t\t"))
-		"""
-	}
 }

@@ -12,11 +12,4 @@ public struct VariableExprSyntax: Syntax, Expr {
 	public var description: String {
 		name.description
 	}
-
-	public var debugDescription: String {
-		"""
-		VariableExprSyntax(position: \(position), length: \(length))
-			name: \(name.debugDescription)
-		"""
-	}
 }

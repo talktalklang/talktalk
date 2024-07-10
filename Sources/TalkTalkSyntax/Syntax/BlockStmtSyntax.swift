@@ -20,12 +20,4 @@ public struct BlockStmtSyntax: Syntax, Stmt {
 		}
 		"""
 	}
-
-	public var debugDescription: String {
-		"""
-		BlockStmtSyntax(position: \(position), length: \(length))
-			decls:
-				\(decls.map(\.debugDescription).joined(separator: "\n\t\t"))
-		"""
-	}
 }

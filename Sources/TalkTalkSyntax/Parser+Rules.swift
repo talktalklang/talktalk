@@ -11,7 +11,7 @@ extension Parser {
 
 		consume(.leftParen, "Expected '(' before argument list")
 
-		let argumentList = argumentList()
+		let argumentList = argumentList(terminator: .rightParen)
 
 		consume(.rightParen, "Expected ')' after argument list")
 
@@ -39,7 +39,10 @@ extension Parser {
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
 		guard let op = consume(BinaryOperatorSyntax.self) else {
-			return ErrorSyntax(token: current)
+			return ErrorSyntax(
+				token: current,
+				expected: .type(BinaryOperatorSyntax.self)
+			)
 		}
 
 		let rhs = parse(precedence: current.kind.rule.precedence + 1)
@@ -69,15 +72,15 @@ extension Parser {
 	}
 
 	mutating func dot(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.dot))
 	}
 
 	mutating func and(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.andAnd))
 	}
 
 	mutating func or(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.pipePipe))
 	}
 
 	mutating func variable(_: Bool) -> any Expr {
@@ -88,7 +91,7 @@ extension Parser {
 				name: identifier
 			)
 		} else {
-			return ErrorSyntax(token: current, expected: .identifier)
+			return ErrorSyntax(token: current, expected: .token(.identifier))
 		}
 	}
 
@@ -96,7 +99,7 @@ extension Parser {
 		if let expr = consume(StringLiteralSyntax.self) {
 			return expr
 		} else {
-			return ErrorSyntax(token: current, expected: .string)
+			return ErrorSyntax(token: current, expected: .token(.string))
 		}
 	}
 
@@ -104,23 +107,23 @@ extension Parser {
 		if let expr = consume(IntLiteralSyntax.self) {
 			return expr
 		} else {
-			return ErrorSyntax(token: current, expected: .number)
+			return ErrorSyntax(token: current, expected: .token(.number))
 		}
 	}
 
 	mutating func literal(_: Bool) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.dot))
 	}
 
 	mutating func _super(_: Bool) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.dot))
 	}
 
 	mutating func _self(_: Bool) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.dot))
 	}
 
 	mutating func arrayLiteral(_: Bool) -> some Expr {
-		ErrorSyntax(token: current)
+		ErrorSyntax(token: current, expected: .token(.dot))
 	}
 }

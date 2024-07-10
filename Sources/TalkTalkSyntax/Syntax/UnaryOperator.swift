@@ -21,11 +21,4 @@ public struct UnaryOperator: Syntax {
 			"!"
 		}
 	}
-
-	public var debugDescription: String {
-		"""
-		UnaryOperator(position: \(position), length: \(length))
-			kind: \(kind)
-		"""
-	}
 }

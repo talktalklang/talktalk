@@ -11,12 +11,4 @@ public struct VarDeclSyntax: Decl, Syntax {
 			"var \(variable.description)"
 		}
 	}
-
-	public var debugDescription: String {
-		"""
-		VarDeclSyntax(position: \(position), length: \(length))
-			variable: \(variable.debugDescription)
-			expr: \(expr.debugDescription)
-		"""
-	}
 }

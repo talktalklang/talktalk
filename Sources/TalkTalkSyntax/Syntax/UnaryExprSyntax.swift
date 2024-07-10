@@ -14,12 +14,4 @@ public struct UnaryExprSyntax: Syntax, Expr {
 	public var description: String {
 		"\(op.description)\(rhs.description)"
 	}
-
-	public var debugDescription: String {
-		"""
-		UnaryExprSyntax(position: \(position), length: \(length))
-			op: \(op)
-			rhs: \(rhs.debugDescription)
-		"""
-	}
 }

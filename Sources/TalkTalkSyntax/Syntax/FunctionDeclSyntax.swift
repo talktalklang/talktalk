@@ -16,15 +16,4 @@ public struct FunctionDeclSyntax: Syntax, Decl {
 		func \(name.description)(\(parameters.description)) \(body.description)
 		"""
 	}
-
-	public var debugDescription: String {
-		"""
-		FunctionDeclSyntax(position: \(position), length: \(length))
-			name: \(name.debugDescription)
-			parameters:
-				\(parameters.debugDescription)
-			body:
-				\(body.debugDescription)
-		"""
-	}
 }

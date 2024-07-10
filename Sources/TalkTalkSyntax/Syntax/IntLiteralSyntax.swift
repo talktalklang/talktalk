@@ -12,13 +12,6 @@ public struct IntLiteralSyntax: Syntax, Expr {
 	public var description: String {
 		lexeme
 	}
-
-	public var debugDescription: String {
-		"""
-		IntLiteralSyntax(position: \(position), length: \(length))
-			lexeme: \(lexeme)
-		"""
-	}
 }
 
 extension IntLiteralSyntax: Consumable {

@@ -13,13 +13,4 @@ public struct CallExprSyntax: Syntax, Expr {
 	public var description: String {
 		"\(callee.description)(\(arguments.description))"
 	}
-
-	public var debugDescription: String {
-		"""
-		CallExprSyntax(position: \(position), length: \(length))
-			callee: \(callee.debugDescription)
-			arguments:
-				\(arguments.debugDescription)
-		"""
-	}
 }

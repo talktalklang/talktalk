@@ -33,7 +33,7 @@ struct TlkCommand: ParsableCommand {
 		let output = StdoutOutput(isDebug: debug)
 
 		if ast {
-			print(SyntaxTree.parse(source: source).debugDescription)
+			print(SyntaxTree.parse(source: source))
 			return
 		}
 
