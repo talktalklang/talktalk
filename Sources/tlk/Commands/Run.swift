@@ -9,7 +9,7 @@ import Foundation
 import TalkTalk
 
 struct Run: AsyncParsableCommand {
-	@Argument(help: "The input to run.")
+	@Argument(help: "The input to run. Use `-` for stdin.")
 	var input: String
 
 	@Flag(help: "Debug mode")
@@ -18,6 +18,14 @@ struct Run: AsyncParsableCommand {
 	func run() async throws {
 		let source = if FileManager.default.fileExists(atPath: input) {
 			try String(contentsOfFile: input)
+		} else if input == "-" {
+			{
+				var source = ""
+				while let line = readLine() {
+					source += line
+				}
+				return source
+			}()
 		} else {
 			input
 		}
