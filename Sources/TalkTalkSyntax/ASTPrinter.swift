@@ -12,12 +12,16 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 	}
 
 	private func describe<T: Syntax>(_ type: T) {
-		print("\(T.self)(pos: \(type.position), len: \(type.length))")
+		self.print("\(T.self)(pos: \(type.position), len: \(type.length))")
 	}
 
 	private func print(_ string: String) {
 		let indentation = String(repeating: "  ", count: indent)
-		Swift.print(indentation + string)
+		let indented = string.components(separatedBy: .newlines).map {
+			indentation + $0
+		}.joined(separator: "\n")
+
+		Swift.print(indented)
 	}
 
 	public func indenting(perform: (inout ASTPrinter) -> Void) {

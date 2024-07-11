@@ -4,7 +4,7 @@ func makeCounter() {
 
 	func count() {
 		i = i + 1
-		print i
+		print(i)
 	}
 
 	return count

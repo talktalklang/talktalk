@@ -42,7 +42,8 @@ struct TlkCommand: ParsableCommand {
 		}
 
 		if format {
-			try print(SyntaxTree.parse(source: source).description)
+			let tree = try SyntaxTree.parse(source: source)
+			ASTFormatter.print(tree)
 			return
 		}
 
