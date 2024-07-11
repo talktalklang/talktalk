@@ -106,6 +106,22 @@ struct Parser {
 			)
 		}
 
+		let typeDecl: TypeDeclSyntax? = if match(.colon) {
+			{
+				guard let name = consume(IdentifierSyntax.self) else {
+					return nil
+				}
+
+				return TypeDeclSyntax(
+					position: previous.start,
+					length: name.length,
+					name: name
+				)
+			}()
+		} else {
+			nil
+		}
+
 		var expr: (any Expr)?
 		if match(.equal) {
 			expr = parse(precedence: .assignment)
@@ -115,6 +131,7 @@ struct Parser {
 			position: start,
 			length: current.start - start,
 			variable: identifier,
+			typeDecl: typeDecl,
 			expr: expr
 		)
 	}

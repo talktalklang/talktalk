@@ -37,4 +37,5 @@ public protocol ASTVisitor {
 	mutating func visit(_ node: ArgumentListSyntax) -> Value
 	mutating func visit(_ node: ParameterListSyntax) -> Value
 	mutating func visit(_ node: ErrorSyntax) -> Value
+	mutating func visit(_ node: TypeDeclSyntax) -> Value
 }

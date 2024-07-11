@@ -8,8 +8,8 @@ public struct InitDeclSyntax: Decl, Syntax {
 	public var position: Int
 	public var length: Int
 
-	var parameters: ParameterListSyntax
-	var body: BlockStmtSyntax
+	public var parameters: ParameterListSyntax
+	public var body: BlockStmtSyntax
 
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)

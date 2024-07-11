@@ -105,6 +105,21 @@ struct SyntaxTreeTests {
 		#expect(decl.expr!.cast(StringLiteralSyntax.self).lexeme == #""123""#)
 	}
 
+	@Test("var statement with type") func varStmtWithType() {
+		let decl = parse(
+			"""
+			var foo: Int = 123
+			""",
+			as: VarDeclSyntax.self
+		)
+
+		#expect(decl.position == 0)
+		#expect(decl.length == 18)
+		#expect(decl.variable.lexeme == "foo")
+		#expect(decl.typeDecl!.name.cast(IdentifierSyntax.self).lexeme == "Int")
+		#expect(decl.expr!.cast(IntLiteralSyntax.self).lexeme == "123")
+	}
+
 	@Test("Group") func groupExpr() {
 		let groupExpr = parse(
 			"""
