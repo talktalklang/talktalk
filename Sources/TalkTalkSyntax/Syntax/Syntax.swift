@@ -26,4 +26,8 @@ public extension Syntax {
 	func cast<T: Syntax>(_: T.Type) -> T {
 		self as! T
 	}
+
+	var description: String {
+		ASTFormatter.format(self)
+	}
 }

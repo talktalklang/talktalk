@@ -9,10 +9,6 @@ public struct ArrayLiteralSyntax: Expr, Syntax {
 	public var length: Int
 	public var elements: ArgumentListSyntax
 	
-	public var description: String {
-		"[\(elements.description)]"
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

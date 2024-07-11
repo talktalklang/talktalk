@@ -13,14 +13,6 @@ public struct BlockStmtSyntax: Syntax, Stmt {
 		decls.isEmpty
 	}
 
-	public var description: String {
-		"""
-		{
-			\(decls.map(\.description).joined(separator: "\n\t"))
-		}
-		"""
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

@@ -12,10 +12,6 @@ public struct BinaryExprSyntax: Syntax, Expr {
 	public var position: Int
 	public var length: Int
 
-	public var description: String {
-		"\(lhs.description) \(op.description) \(rhs.description)"
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

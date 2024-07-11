@@ -11,12 +11,6 @@ public struct FunctionDeclSyntax: Syntax, Decl {
 	public var parameters: ParameterListSyntax
 	public var body: BlockStmtSyntax
 
-	public var description: String {
-		"""
-		func \(name.description)(\(parameters.description)) \(body.description)
-		"""
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

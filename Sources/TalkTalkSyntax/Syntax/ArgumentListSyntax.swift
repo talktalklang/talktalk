@@ -21,10 +21,6 @@ public struct ArgumentListSyntax: Syntax {
 		arguments.isEmpty
 	}
 
-	public var description: String {
-		arguments.map(\.description).joined(separator: ", ")
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

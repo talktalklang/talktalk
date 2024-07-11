@@ -11,10 +11,6 @@ public struct PropertyAccessExpr: Expr, Syntax {
 	public var receiver: any Expr
 	public var property: IdentifierSyntax
 
-	public var description: String {
-		"\(receiver.description).\(property.description)"
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

@@ -3,10 +3,6 @@ public struct IdentifierSyntax: Syntax {
 	public let length: Int
 	public let lexeme: String
 
-	public var description: String {
-		lexeme
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

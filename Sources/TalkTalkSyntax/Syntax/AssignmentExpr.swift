@@ -13,10 +13,4 @@ public struct AssignmentExpr: Syntax, Expr {
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}
-
-	public var description: String {
-		"""
-		\(lhs.description) = \(rhs.description)
-		"""
-	}
 }

@@ -9,10 +9,6 @@ public struct ExprStmtSyntax: Syntax, Stmt {
 	public let length: Int
 	public let expr: any Expr
 
-	public var description: String {
-		expr.description
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

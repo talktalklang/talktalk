@@ -4,14 +4,6 @@ public struct VarDeclSyntax: Decl, Syntax {
 	public var variable: IdentifierSyntax
 	public var expr: (any Expr)?
 
-	public var description: String {
-		if let expr {
-			"var \(variable.description) = \(expr.description)"
-		} else {
-			"var \(variable.description)"
-		}
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

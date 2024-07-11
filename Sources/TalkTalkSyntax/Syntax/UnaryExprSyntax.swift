@@ -10,10 +10,6 @@ public struct UnaryExprSyntax: Syntax, Expr {
 	public let op: UnaryOperator
 	public let rhs: any Expr
 
-	public var description: String {
-		"\(op.description)\(rhs.description)"
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}

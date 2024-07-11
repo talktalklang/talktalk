@@ -9,10 +9,6 @@ public struct IntLiteralSyntax: Syntax, Expr {
 	public var length: Int
 	public var lexeme: String
 
-	public var description: String {
-		lexeme
-	}
-
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}
