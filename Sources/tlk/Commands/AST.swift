@@ -1,11 +1,11 @@
 //
 //  AST.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/11/24.
 //
-import Foundation
 import ArgumentParser
+import Foundation
 import TalkTalkSyntax
 
 struct AST: AsyncParsableCommand {

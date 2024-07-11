@@ -18,8 +18,8 @@ public struct BinaryOperatorSyntax: Syntax {
 		     less,
 		     lessEqual,
 		     dot,
-				 andAnd,
-				 pipePipe
+		     andAnd,
+		     pipePipe
 	}
 
 	public var kind: Kind

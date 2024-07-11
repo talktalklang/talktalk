@@ -6,6 +6,8 @@ public protocol ASTVisitor {
 	// Decls
 	mutating func visit(_ node: FunctionDeclSyntax) -> Value
 	mutating func visit(_ node: VarDeclSyntax) -> Value
+	mutating func visit(_ node: ClassDeclSyntax) -> Value
+	mutating func visit(_ node: InitDeclSyntax) -> Value
 
 	// Stmts
 	mutating func visit(_ node: ExprStmtSyntax) -> Value
@@ -26,6 +28,7 @@ public protocol ASTVisitor {
 	mutating func visit(_ node: VariableExprSyntax) -> Value
 	mutating func visit(_ node: AssignmentExpr) -> Value
 	mutating func visit(_ node: LiteralExprSyntax) -> Value
+	mutating func visit(_ node: PropertyAccessExpr) -> Value
 
 	// Utility
 	mutating func visit(_ node: UnaryOperator) -> Value

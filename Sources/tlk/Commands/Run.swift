@@ -1,6 +1,6 @@
 //
 //  Run.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/11/24.
 //
@@ -37,6 +37,5 @@ struct Run: AsyncParsableCommand {
 		} else {
 			throw ExitCode.failure
 		}
-
 	}
 }

@@ -70,13 +70,52 @@ extension Parser {
 		)
 	}
 
-	mutating func dot(_: Bool, _: any Expr) -> some Expr {
-		fatalError("Implement me")
-		return ErrorSyntax(
-			token: current,
-			expected: .token(.dot),
-			message: "FIXME"
-		)
+	mutating func dot(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
+		consume(.dot, "Expected .")
+
+		guard let identifier = consume(IdentifierSyntax.self) else {
+			return ErrorSyntax(
+				token: current,
+				expected: .token(.identifier),
+				message: "Expected identifer"
+			)
+		}
+
+		if canAssign, match(.equal) {
+			let rhs = expression()
+			return AssignmentExpr(
+				position: lhs.position,
+				length: current.start - lhs.position,
+				lhs: PropertyAccessExpr(
+					position: lhs.position,
+					length: current.start - lhs.position,
+					receiver: lhs,
+					property: identifier
+				),
+				rhs: rhs
+			)
+		} else if match(.leftParen) {
+			let arguments = argumentList(terminator: .rightParen)
+
+			return CallExprSyntax(
+				position: lhs.position,
+				length: current.start - identifier.position,
+				callee: PropertyAccessExpr(
+					position: lhs.position,
+					length: current.start - lhs.position,
+					receiver: lhs,
+					property: identifier
+				),
+				arguments: arguments
+			)
+		} else {
+			return PropertyAccessExpr(
+				position: lhs.position,
+				length: current.start - lhs.position,
+				receiver: lhs,
+				property: identifier
+			)
+		}
 	}
 
 	mutating func and(_: Bool, _ lhs: any Expr) -> some Expr {
@@ -169,8 +208,15 @@ extension Parser {
 	}
 
 	mutating func _self(_: Bool) -> some Expr {
-		fatalError("Implement me")
-		return ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+		defer {
+			advance()
+		}
+
+		return VariableExprSyntax(
+			position: previous.start,
+			length: 4,
+			name: .init(position: previous.start, length: 4, lexeme: "self")
+		)
 	}
 
 	mutating func arrayLiteral(_: Bool) -> some Expr {

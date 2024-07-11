@@ -4,7 +4,11 @@ class Foo {
 	}
 
 	func bar() {
-		print	self.fizz;
+		print(self.fizz);
+	}
+
+	func fizz() {
+		print("buzz")
 	}
 }
 

@@ -412,4 +412,124 @@ struct SyntaxTreeTests {
 		#expect(expr.op.kind == .pipePipe)
 		#expect(expr.rhs.cast(LiteralExprSyntax.self).kind == .false)
 	}
+
+	@Test("Basic class") func basicClass() {
+		let expr = parse(
+			"""
+			class Person {}
+			""",
+			as: ClassDeclSyntax.self
+		)
+
+		#expect(expr.name.cast(IdentifierSyntax.self).lexeme == "Person")
+		#expect(expr.body.isEmpty)
+	}
+
+	@Test("Class methods") func classMethods() {
+		let expr = parse(
+			"""
+			class Person {
+				func foo() {
+					print("foo")
+				}
+
+				func bar() {
+					print("bar")
+				}
+			}
+			""",
+			as: ClassDeclSyntax.self
+		)
+
+		#expect(expr.name.cast(IdentifierSyntax.self).lexeme == "Person")
+		#expect(expr.body.decls.count == 2)
+	}
+
+	@Test("Class init") func classInit() {
+		let expr = parse(
+			"""
+			class Person {
+				init() {
+					print("foo")
+				}
+
+				func bar() {
+					print("bar")
+				}
+			}
+			""",
+			as: ClassDeclSyntax.self
+		)
+
+		ASTFormatter.print(expr)
+
+		#expect(expr.name.cast(IdentifierSyntax.self).lexeme == "Person")
+		#expect(expr.body.decls.count == 2)
+		#expect(expr.body.decls[0].cast(InitDeclSyntax.self).position == 16)
+		#expect(expr.body.decls[1].cast(FunctionDeclSyntax.self).name.lexeme == "bar")
+	}
+
+	@Test("Error when trying to init all willy nill") func classBadInit() {
+		let expr = parse(
+			"""
+			init() {
+				// This doesn't work
+			}
+			""",
+			as: ErrorSyntax.self
+		)
+
+		#expect(expr.position == 0)
+	}
+
+	@Test("Get property") func getProperty() {
+		let expr = parse(
+			"""
+			foo.bar
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: PropertyAccessExpr.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 7)
+		#expect(expr.receiver.cast(VariableExprSyntax.self).name.lexeme == "foo")
+		#expect(expr.property.cast(IdentifierSyntax.self).lexeme == "bar")
+		#expect(ASTFormatter.format(expr) == "foo.bar")
+	}
+
+	@Test("Set property") func setProperty() {
+		let expr = parse(
+			"""
+			foo.bar = 123
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: AssignmentExpr.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 13)
+		#expect(expr.lhs.cast(PropertyAccessExpr.self).receiver.cast(VariableExprSyntax.self).name.lexeme == "foo")
+
+		#expect(expr.rhs.cast(IntLiteralSyntax.self).lexeme == "123")
+		#expect(ASTFormatter.format(expr) == "foo.bar = 123")
+	}
+
+	@Test("Call property") func callProperty() {
+		let expr = parse(
+			"""
+			foo.bar(123)
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: CallExprSyntax.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 8)
+
+		#expect(expr.callee.cast(PropertyAccessExpr.self).receiver.cast(VariableExprSyntax.self).name.lexeme == "foo")
+		#expect(expr.callee.cast(PropertyAccessExpr.self).property.lexeme == "bar")
+		#expect(expr.arguments[0].cast(IntLiteralSyntax.self).lexeme == "123")
+		#expect(ASTFormatter.format(expr) == "foo.bar(123)")
+	}
 }

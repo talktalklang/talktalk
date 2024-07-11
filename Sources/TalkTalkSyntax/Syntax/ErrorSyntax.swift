@@ -6,7 +6,7 @@
 //
 public struct ErrorSyntax: Syntax, Expr, Decl {
 	enum Expectation {
-		case type(any Syntax.Type), token(Token.Kind)
+		case type(any Syntax.Type), token(Token.Kind), none
 	}
 
 	var token: Token

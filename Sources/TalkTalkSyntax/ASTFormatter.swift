@@ -4,9 +4,14 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 	let root: Root
 	var indent = 0
 
+	public static func format(_ root: Root) -> String {
+		var formatter = ASTFormatter(root: root)
+		return root.accept(&formatter)
+	}
+
 	public static func print(_ root: Root) {
-		var printer = ASTFormatter(root: root)
-		Swift.print(root.accept(&printer))
+		var formatter = ASTFormatter(root: root)
+		Swift.print(root.accept(&formatter))
 	}
 
 	public init(root: Root) {
@@ -22,6 +27,10 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 		}.joined(separator: "\n")
 	}
 
+	public mutating func visit(_ node: PropertyAccessExpr) -> String {
+		"\(visit(node.receiver)).\(visit(node.property))"
+	}
+
 	public func visit(_ node: LiteralExprSyntax) -> String {
 		node.description
 	}
@@ -32,6 +41,13 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 
 	public mutating func visit(_ node: any Syntax) -> String {
 		node.accept(&self)
+	}
+
+	public mutating func visit(_ node: InitDeclSyntax) -> String {
+		var result = "init(\(visit(node.parameters))) "
+		result += visit(node.body)
+		result += "\n"
+		return result
 	}
 
 	public mutating func visit(_ node: ProgramSyntax) -> String {
@@ -92,7 +108,7 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 				$0.visit(decl)
 			}
 		}.joined(separator: "\n")
-		result += "\n}\n"
+		result += "\n}"
 		return result
 	}
 
@@ -118,10 +134,18 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 		}.joined(separator: ", ")
 	}
 
+	public mutating func visit(_ node: ClassDeclSyntax) -> String {
+		var result = "class \(visit(node.name))"
+		result += visit(node.body)
+		result += "\n"
+		return result
+	}
+
 	public mutating func visit(_ node: FunctionDeclSyntax) -> String {
 		var result = "func " + visit(node.name)
 		result += "(\(visit(node.parameters))) "
 		result += visit(node.body)
+		result += "\n"
 		return result
 	}
 

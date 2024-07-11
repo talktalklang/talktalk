@@ -25,11 +25,33 @@ struct Parser {
 	var previous: Token
 	var current: Token
 	var parserRepeats: [Int: Int] = [:]
+	var declContext: DeclContext = .topLevel
 
 	init(lexer: Lexer) {
 		self.lexer = lexer
 		self.previous = self.lexer.next()
 		self.current = previous
+	}
+
+	init(copying: inout Parser, declContext: DeclContext) {
+		self.lexer = copying.lexer
+		self.previous = copying.previous
+		self.current = copying.current
+		self.declContext = declContext
+	}
+
+	mutating func withDeclContext<D: Decl>(
+		_ context: DeclContext,
+		perform: (inout Parser) -> D
+	) -> D {
+		let currentContext = declContext
+		var copy = Parser(copying: &self, declContext: context)
+
+		defer {
+			self = Parser(copying: &copy, declContext: currentContext)
+		}
+
+		return perform(&copy)
 	}
 
 	mutating func parse() -> [any Decl] {
@@ -54,10 +76,26 @@ struct Parser {
 			return funcDecl()
 		}
 
+		if match(.class) {
+			return classDecl()
+		}
+
+		if match(.`init`) {
+			return initDecl()
+		}
+
 		return statement()
 	}
 
 	mutating func varDecl() -> any Decl {
+		guard declContext.allowedDecls.contains(.var) else {
+			return ErrorSyntax(
+				token: current,
+				expected: .none,
+				message: "Cannot define vars from \(declContext)"
+			)
+		}
+
 		let start = previous.start
 
 		guard let identifier = consume(IdentifierSyntax.self) else {
@@ -81,20 +119,82 @@ struct Parser {
 		)
 	}
 
-	mutating func funcDecl() -> FunctionDeclSyntax {
+	mutating func funcDecl() -> any Decl {
+		guard declContext.allowedDecls.contains(.func) else {
+			return ErrorSyntax(
+				token: current,
+				expected: .none,
+				message: "Cannot define func from \(declContext)"
+			)
+		}
+
 		let position = previous.start
 		let name = consume(IdentifierSyntax.self)!
 
 		consume(.leftParen, "Expected '(' before parameter list")
 		let parameters = parameterList()
 
-		let body = block()
+		let body = withDeclContext(.function) { $0.block() }
 
 		return FunctionDeclSyntax(
 			position: position,
 			length: current.start - position,
 			name: name,
 			parameters: parameters,
+			body: body
+		)
+	}
+
+	mutating func initDecl() -> any Decl {
+		guard declContext.allowedDecls.contains(.`init`) else {
+			return ErrorSyntax(
+				token: previous,
+				expected: .none,
+				message: "Cannot define init from \(declContext)"
+			)
+		}
+
+		let position = previous.start
+
+		consume(.leftParen, "Expected '(' before parameter list")
+		let parameters = parameterList()
+
+		let body = withDeclContext(.`init`) {
+			$0.block()
+		}
+
+		return InitDeclSyntax(
+			position: position,
+			length: current.start - position,
+			parameters: parameters,
+			body: body
+		)
+	}
+
+	mutating func classDecl() -> any Decl {
+//		guard declContext.allowedDecls.contains(.class) else {
+//			return ErrorSyntax(
+//				token: current,
+//				expected: .none,
+//				message: "Cannot define class from \(declContext)"
+//			)
+//		}
+
+		let start = previous.start
+
+		guard let name = consume(IdentifierSyntax.self) else {
+			return ErrorSyntax(
+				token: current,
+				expected: .token(.identifier),
+				message: "Expected class name"
+			)
+		}
+
+		let body = withDeclContext(.class) { $0.block() }
+		return ClassDeclSyntax(
+			position: start,
+			length: current.start - start,
+			name: name,
 			body: body
 		)
 	}

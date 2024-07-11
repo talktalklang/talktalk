@@ -1,15 +1,15 @@
 //
 //  Format.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/11/24.
 //
-import Foundation
 import ArgumentParser
+import Foundation
 import TalkTalkSyntax
 
 struct Format: AsyncParsableCommand {
-	@Argument(help: "The input to run.")
+	@Argument(help: "The input to format. (beta)")
 	var input: String
 
 	func run() async throws {

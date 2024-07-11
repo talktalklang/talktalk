@@ -30,6 +30,30 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		perform(&copy)
 	}
 
+	public mutating func visit(_ node: PropertyAccessExpr) {
+		describe(node)
+		indenting {
+			$0.visit(node.receiver)
+			$0.visit(node.property)
+		}
+	}
+
+	public mutating func visit(_ node: InitDeclSyntax) {
+		describe(node)
+		indenting {
+			$0.visit(node.parameters)
+			$0.visit(node.body)
+		}
+	}
+
+	public mutating func visit(_ node: ClassDeclSyntax) {
+		describe(node)
+		indenting {
+			$0.visit(node.name)
+			$0.visit(node.body)
+		}
+	}
+
 	public mutating func visit(_ node: UnaryOperator) {
 		describe(node)
 		indenting {
