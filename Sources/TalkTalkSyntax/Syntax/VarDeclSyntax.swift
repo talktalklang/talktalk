@@ -11,4 +11,8 @@ public struct VarDeclSyntax: Decl, Syntax {
 			"var \(variable.description)"
 		}
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
+		visitor.visit(self)
+	}
 }

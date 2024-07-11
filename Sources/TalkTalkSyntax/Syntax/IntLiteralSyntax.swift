@@ -12,6 +12,11 @@ public struct IntLiteralSyntax: Syntax, Expr {
 	public var description: String {
 		lexeme
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value{
+		visitor.visit(self)
+	}
+
 }
 
 extension IntLiteralSyntax: Consumable {

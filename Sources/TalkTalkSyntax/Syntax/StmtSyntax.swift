@@ -15,4 +15,9 @@ public struct StmtSyntax: Syntax {
 	public var debugDescription: String {
 		"stmt"
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value{
+		visitor.visit(self)
+	}
+
 }

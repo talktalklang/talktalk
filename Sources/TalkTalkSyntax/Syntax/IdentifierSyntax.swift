@@ -6,6 +6,11 @@ public struct IdentifierSyntax: Syntax {
 	public var description: String {
 		lexeme
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value{
+		visitor.visit(self)
+	}
+
 }
 
 extension IdentifierSyntax: Consumable {

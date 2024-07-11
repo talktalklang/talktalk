@@ -13,6 +13,10 @@ public struct ProgramSyntax: Syntax {
 	public var description: String {
 		decls.map(\.description).joined(separator: "\n")
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
+		visitor.visit(self)
+	}
 }
 
 struct Parser {

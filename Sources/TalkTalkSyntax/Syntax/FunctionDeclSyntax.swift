@@ -16,4 +16,9 @@ public struct FunctionDeclSyntax: Syntax, Decl {
 		func \(name.description)(\(parameters.description)) \(body.description)
 		"""
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value{
+		visitor.visit(self)
+	}
+
 }

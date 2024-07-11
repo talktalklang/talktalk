@@ -1,6 +1,6 @@
 //
 //  CallExprSyntax.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/10/24.
 //
@@ -12,5 +12,9 @@ public struct CallExprSyntax: Syntax, Expr {
 
 	public var description: String {
 		"\(callee.description)(\(arguments.description))"
+	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
+		visitor.visit(self)
 	}
 }

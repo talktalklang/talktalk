@@ -24,4 +24,9 @@ public struct ParameterListSyntax: Syntax {
 	public var description: String {
 		""
 	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value{
+		visitor.visit(self)
+	}
+
 }

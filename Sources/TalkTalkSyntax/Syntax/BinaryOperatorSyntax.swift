@@ -7,17 +7,17 @@
 public struct BinaryOperatorSyntax: Syntax {
 	public enum Kind {
 		case plus,
-		     minus,
-		     star,
-		     slash,
-		     equal,
-		     equalEqual,
-		     bangEqual,
-		     greater,
-		     greaterEqual,
-		     less,
-		     lessEqual,
-		     dot
+			minus,
+			star,
+			slash,
+			equal,
+			equalEqual,
+			bangEqual,
+			greater,
+			greaterEqual,
+			less,
+			lessEqual,
+			dot
 	}
 
 	public var kind: Kind
@@ -52,5 +52,9 @@ public struct BinaryOperatorSyntax: Syntax {
 		case .dot:
 			"."
 		}
+	}
+
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
+		visitor.visit(self)
 	}
 }
