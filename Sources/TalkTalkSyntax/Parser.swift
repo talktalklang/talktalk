@@ -126,6 +126,10 @@ struct Parser {
 		)
 	}
 
+	mutating func expression() -> any Expr {
+		parse(precedence: .assignment)
+	}
+
 	mutating func parse(precedence: Precedence) -> any Expr {
 		checkForInfiniteLoop()
 

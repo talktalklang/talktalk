@@ -45,11 +45,8 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 	}
 
 	public mutating func visit(_ node: IfStmtSyntax) -> String {
-		var result = "if \(visit(node.condition))) {\n"
-
+		var result = "if \(visit(node.condition))) "
 		result += visit(node.body)
-
-		result += "\n}\n"
 
 		return result
 	}
@@ -59,9 +56,8 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 	}
 
 	public mutating func visit(_ node: WhileStmtSyntax) -> String {
-		var result = "while \(visit(node.condition)) {\n"
+		var result = "\nwhile \(visit(node.condition)) "
 		result += visit(node.body)
-		result += "\n}\n"
 		return result
 	}
 
@@ -90,11 +86,14 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 	}
 
 	public mutating func visit(_ node: BlockStmtSyntax) -> String {
-		node.decls.map { decl in
+		var result = "{\n"
+		result += node.decls.map { decl in
 			indenting {
 				$0.visit(decl)
 			}
 		}.joined(separator: "\n")
+		result += "\n}\n"
+		return result
 	}
 
 	public mutating func visit(_ node: UnaryExprSyntax) -> String {
@@ -121,10 +120,8 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 
 	public mutating func visit(_ node: FunctionDeclSyntax) -> String {
 		var result = "func " + visit(node.name)
-		result += "(\(visit(node.parameters)))"
-		result += " {\n"
+		result += "(\(visit(node.parameters))) "
 		result += visit(node.body)
-		result += "\n}\n"
 		return result
 	}
 

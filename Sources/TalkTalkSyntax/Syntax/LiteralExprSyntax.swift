@@ -28,3 +28,20 @@ public struct LiteralExprSyntax: Syntax, Expr {
 		}
 	}
 }
+
+extension LiteralExprSyntax: Consumable {
+	static func consuming(_ token: Token) -> LiteralExprSyntax? {
+		let kind: LiteralExprSyntax.Kind? = switch token.kind {
+		case .true: .true
+		case .false: .false
+		case .nil: .nil
+		default: nil
+		}
+
+		guard let kind else {
+			return nil
+		}
+
+		return LiteralExprSyntax(position: token.start, length: token.length, kind: kind)
+	}
+}

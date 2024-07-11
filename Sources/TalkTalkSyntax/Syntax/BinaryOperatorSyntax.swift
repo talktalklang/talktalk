@@ -17,7 +17,9 @@ public struct BinaryOperatorSyntax: Syntax {
 		     greaterEqual,
 		     less,
 		     lessEqual,
-		     dot
+		     dot,
+				 andAnd,
+				 pipePipe
 	}
 
 	public var kind: Kind
@@ -51,6 +53,10 @@ public struct BinaryOperatorSyntax: Syntax {
 			"<="
 		case .dot:
 			"."
+		case .andAnd:
+			"&&"
+		case .pipePipe:
+			"||"
 		}
 	}
 

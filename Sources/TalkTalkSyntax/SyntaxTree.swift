@@ -11,7 +11,7 @@ public struct SyntaxTree {
 
 	public var root: [any Syntax]
 
-	public static func parse(source: String) throws -> ProgramSyntax {
+	public static func parse(source: String) -> ProgramSyntax {
 		let lexer = Lexer(source: source)
 		var parser = Parser(lexer: lexer)
 		let decls = parser.parse()

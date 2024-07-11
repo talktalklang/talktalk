@@ -376,9 +376,9 @@ struct SyntaxTreeTests {
 	}
 
 	@Test("Literals") func literals() {
-		let t = parse("true", at: \ExprStmtSyntax.expr, as: LiteralSyntax.self)
-		let f = parse("false", at: \ExprStmtSyntax.expr, as: LiteralSyntax.self)
-		let n = parse("nil", at: \ExprStmtSyntax.expr, as: LiteralSyntax.self)
+		let t = parse("true", at: \ExprStmtSyntax.expr, as: LiteralExprSyntax.self)
+		let f = parse("false", at: \ExprStmtSyntax.expr, as: LiteralExprSyntax.self)
+		let n = parse("nil", at: \ExprStmtSyntax.expr, as: LiteralExprSyntax.self)
 
 		#expect(t.kind == .true)
 		#expect(f.kind == .false)
@@ -389,7 +389,27 @@ struct SyntaxTreeTests {
 		let expr = parse(
 			"""
 			true && false
-			"""
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: BinaryExprSyntax.self
 		)
+
+		#expect(expr.lhs.cast(LiteralExprSyntax.self).kind == .true)
+		#expect(expr.op.kind == .andAnd)
+		#expect(expr.rhs.cast(LiteralExprSyntax.self).kind == .false)
+	}
+
+	@Test("||") func or() {
+		let expr = parse(
+			"""
+			true || false
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: BinaryExprSyntax.self
+		)
+
+		#expect(expr.lhs.cast(LiteralExprSyntax.self).kind == .true)
+		#expect(expr.op.kind == .pipePipe)
+		#expect(expr.rhs.cast(LiteralExprSyntax.self).kind == .false)
 	}
 }

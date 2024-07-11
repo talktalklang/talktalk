@@ -71,19 +71,36 @@ extension Parser {
 	}
 
 	mutating func dot(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(
+		fatalError("Implement me")
+		return ErrorSyntax(
 			token: current,
 			expected: .token(.dot),
 			message: "FIXME"
 		)
 	}
 
-	mutating func and(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(token: current, expected: .token(.andAnd), message: "FIXME")
+	mutating func and(_: Bool, _ lhs: any Expr) -> some Expr {
+		let op = consume(BinaryOperatorSyntax.self)!
+		let rhs = expression()
+		return BinaryExprSyntax(
+			lhs: lhs,
+			op: op,
+			rhs: rhs,
+			position: lhs.position,
+			length: current.start - lhs.position
+		)
 	}
 
-	mutating func or(_: Bool, _: any Expr) -> some Expr {
-		ErrorSyntax(token: current, expected: .token(.pipePipe), message: "FIXME")
+	mutating func or(_: Bool, _ lhs: any Expr) -> some Expr {
+		let op = consume(BinaryOperatorSyntax.self)!
+		let rhs = expression()
+		return BinaryExprSyntax(
+			lhs: lhs,
+			op: op,
+			rhs: rhs,
+			position: lhs.position,
+			length: current.start - lhs.position
+		)
 	}
 
 	mutating func variable(_ canAssign: Bool) -> any Expr {
@@ -141,19 +158,23 @@ extension Parser {
 		}
 	}
 
-	mutating func literal(_: Bool) -> some Expr {
-		ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+	mutating func literal(_: Bool) -> any Expr {
+		return consume(LiteralExprSyntax.self) ??
+			ErrorSyntax(token: current, expected: .type(LiteralExprSyntax.self), message: "Unreachable?")
 	}
 
 	mutating func _super(_: Bool) -> some Expr {
-		ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+		fatalError("Implement me")
+		return ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
 	}
 
 	mutating func _self(_: Bool) -> some Expr {
-		ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+		fatalError("Implement me")
+		return ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
 	}
 
 	mutating func arrayLiteral(_: Bool) -> some Expr {
-		ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+		fatalError("Implement me")
+		return ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
 	}
 }

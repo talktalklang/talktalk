@@ -19,6 +19,8 @@ extension BinaryOperatorSyntax: Consumable {
 		case .less: .less
 		case .lessEqual: .lessEqual
 		case .dot: .dot
+		case .andAnd: .andAnd
+		case .pipePipe: .pipePipe
 		default:
 			fatalError("Unreachable")
 		}
