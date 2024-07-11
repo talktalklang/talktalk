@@ -11,12 +11,12 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		self.root = root
 	}
 
-	private func describe(_ type: any Syntax) {
-		print("\(type)(position: \(type.position), length: \(type.length))")
+	private func describe<T: Syntax>(_ type: T) {
+		print("\(T.self)(position: \(type.position), length: \(type.length))")
 	}
 
 	private func print(_ string: String) {
-		let indentation = String(repeating: " ", count: indent)
+		let indentation = String(repeating: "  ", count: indent)
 		Swift.print(indentation + string)
 	}
 
@@ -24,6 +24,17 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		var copy = self
 		copy.indent += 1
 		perform(&copy)
+	}
+
+	public mutating func visit(_ node: UnaryOperator) {
+		describe(node)
+		indenting {
+			$0.print(node.description)
+		}
+	}
+
+	public mutating func visit(_ node: any Syntax) {
+		node.accept(&self)
 	}
 
 	public mutating func visit(_ node: ProgramSyntax) {
@@ -55,7 +66,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		indenting {
 			$0.visit(node.variable)
 			if let expr = node.expr {
-				$0.visit(expr.concrete)
+				$0.visit(expr)
 			}
 		}
 	}

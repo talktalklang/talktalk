@@ -23,6 +23,7 @@ public protocol ASTVisitor {
 	mutating func visit(_ node: VariableExprSyntax) -> Value
 
 	// Utility
+	mutating func visit(_ node: UnaryOperator) -> Value
 	mutating func visit(_ node: BinaryOperatorSyntax) -> Value
 	mutating func visit(_ node: ArgumentListSyntax) -> Value
 	mutating func visit(_ node: ParameterListSyntax) -> Value
