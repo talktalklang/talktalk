@@ -18,4 +18,7 @@ extension TypeDef {
 	public static var string: TypeDef { TypeDef(name: "String") }
 	public static var bool: TypeDef { TypeDef(name: "Bool") }
 
+	public static func array(_ elementDef: TypeDef) -> TypeDef {
+		TypeDef(name: "Array<\(elementDef.name)>")
+	}
 }

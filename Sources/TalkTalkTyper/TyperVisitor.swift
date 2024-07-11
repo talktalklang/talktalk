@@ -118,7 +118,7 @@ struct TyperVisitor: ASTVisitor {
 	mutating func visit(_ node: InitDeclSyntax) -> TypeDef? {
 		visit(node.body)
 
-		return nil // We can always assume this is the enclosing class
+		return nil  // We can always assume this is the enclosing class
 	}
 
 	mutating func visit(_ node: BlockStmtSyntax) -> TypeDef? {
@@ -129,39 +129,61 @@ struct TyperVisitor: ASTVisitor {
 		return nil
 	}
 
-	mutating func visit(_ node: WhileStmtSyntax) {
-
+	mutating func visit(_ node: WhileStmtSyntax) -> TypeDef? {
+		visit(node.condition)
+		visit(node.body)
+		return nil
 	}
 
-	mutating func visit(_ node: BinaryOperatorSyntax) {
-
+	mutating func visit(_ node: BinaryOperatorSyntax) -> TypeDef? {
+		nil
 	}
 
-	mutating func visit(_ node: ParameterListSyntax) {
-
+	mutating func visit(_ node: ParameterListSyntax) -> TypeDef? {
+		// TODO: handle type decls
+		return nil
 	}
 
-	mutating func visit(_ node: ArgumentListSyntax) {
+	mutating func visit(_ node: ArgumentListSyntax) -> TypeDef? {
+		for argument in node.arguments {
+			visit(argument)
+		}
 
+		return nil
 	}
 
-	mutating func visit(_ node: ArrayLiteralSyntax) {
+	mutating func visit(_ node: ArrayLiteralSyntax) -> TypeDef? {
+		if node.elements.isEmpty {
+			return nil
+		}
+
+		let elemDefs = node.elements.arguments.map {
+			visit($0)
+		}
+
+		// TODO: Check taht they match or add heterogenous arrays who knows
+		let firstElemDef = elemDefs[0]
+
+		return .array(firstElemDef)
 	}
 
-	mutating func visit(_ node: IdentifierSyntax) {
-
+	mutating func visit(_ node: IdentifierSyntax) -> TypeDef? {
+		nil
 	}
 
-	mutating func visit(_ node: ReturnStmtSyntax) {
-
+	mutating func visit(_ node: ReturnStmtSyntax) -> TypeDef? {
+		visit(node.value)
+		return nil
 	}
 
-	mutating func visit(_ node: ExprStmtSyntax) {
-
+	mutating func visit(_ node: ExprStmtSyntax) -> TypeDef? {
+		visit(node.expr)
+		return nil // Statements dont have types
 	}
 
-	mutating func visit(_ node: PropertyAccessExpr) {
-
+	mutating func visit(_ node: PropertyAccessExpr) -> TypeDef? {
+		let receiverDef = visit(node.receiver)
+		let propertyDef = receiverDef.proper
 	}
 
 	mutating func visit(_ node: LiteralExprSyntax) {
@@ -169,7 +191,7 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: UnaryExprSyntax) -> TypeDef? {
-	let exprDef = visit(node.rhs)
+		let exprDef = visit(node.rhs)
 
 		switch node.op.kind {
 		case .bang:
@@ -190,33 +212,61 @@ struct TyperVisitor: ASTVisitor {
 
 		return nil
 
+	}
+
+	mutating func visit(_ node: ErrorSyntax) -> TypeDef? {
+		TypeDef(name: "Error")
+	}
+
+	mutating func visit(_ node: ClassDeclSyntax) -> TypeDef?{
+		nil // At some point it'd be cool to have like a meta type
+	}
+
+	mutating func visit(_ node: BinaryExprSyntax) -> TypeDef? {
+		guard let lhsDef = visit(node.lhs) else {
+			error(node.lhs, "unable to determine type")
+			return nil
+		}
+
+		guard let rhsDef = visit(node.rhs) else {
+			error(node.rhs, "unable to determine type")
+			return nil
+		}
+
+		guard lhsDef == rhsDef else {
+			error(node.op, "not the same type")
+			return nil
+		}
+
+		// TODO: handle non-bool case
+		return .bool
 
 	}
 
-	mutating func visit(_ node: ErrorSyntax) {
-
+	mutating func visit(_ node: IntLiteralSyntax) -> TypeDef? {
+		.int
 	}
 
-	mutating func visit(_ node: ClassDeclSyntax) {
+	mutating func visit(_ node: FunctionDeclSyntax) -> TypeDef? {
+		visit(node.body)
 
+		let returnDefs: [TypeDef] = node.body.decls.compactMap { (decl) -> TypeDef? in
+			guard let stmt = decl.as(ReturnStmtSyntax.self) else {
+				return nil
+			}
+
+			return visit(stmt.value)
+		}
+
+		// TODO: validate these match
+		return returnDefs.first
 	}
 
-	mutating func visit(_ node: BinaryExprSyntax) {
+	mutating func visit(_ node: VariableExprSyntax) -> TypeDef? {
+		nil // todo
 	}
 
-	mutating func visit(_ node: IntLiteralSyntax) {
-		define(node, as: .int)
-	}
-
-	mutating func visit(_ node: FunctionDeclSyntax) {
-
-	}
-
-	mutating func visit(_ node: VariableExprSyntax) {
-
-	}
-
-	mutating func visit(_ node: StringLiteralSyntax) {
-		define(node, as: .string)
+	mutating func visit(_ node: StringLiteralSyntax) -> TypeDef? {
+		return .string
 	}
 }
