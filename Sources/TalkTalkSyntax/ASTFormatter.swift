@@ -98,7 +98,7 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 	}
 
 	public mutating func visit(_ node: BinaryExprSyntax) -> String {
-		visit(node.lhs) +	visit(node.op) + visit(node.rhs)
+		visit(node.lhs) + visit(node.op) + visit(node.rhs)
 	}
 
 	public mutating func visit(_ node: IdentifierSyntax) -> String {
@@ -142,7 +142,7 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 		" " + node.description + " "
 	}
 
-	public mutating func visit(_ node: StmtSyntax) -> String {
+	public mutating func visit(_: StmtSyntax) -> String {
 		""
 	}
 

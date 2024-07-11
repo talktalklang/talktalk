@@ -143,9 +143,7 @@ struct Parser {
 			}
 		}
 
-		if lhs == nil {
-
-		}
+		if lhs == nil {}
 
 		return lhs ?? ErrorSyntax(
 			token: current,

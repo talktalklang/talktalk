@@ -14,7 +14,7 @@ public struct UnaryExprSyntax: Syntax, Expr {
 		"\(op.description)\(rhs.description)"
 	}
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value	{
+	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)
 	}
 }

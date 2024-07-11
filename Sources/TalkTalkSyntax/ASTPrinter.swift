@@ -66,7 +66,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: ReturnStmtSyntax) -> () {
+	public mutating func visit(_ node: ReturnStmtSyntax) {
 		describe(node)
 		indenting {
 			$0.visit(node.value)
@@ -199,8 +199,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		describe(node)
 	}
 
-	public mutating func visit(_ node: StmtSyntax) {
-	}
+	public mutating func visit(_: StmtSyntax) {}
 
 	public mutating func visit(_ node: ErrorSyntax) {
 		describe(node)
