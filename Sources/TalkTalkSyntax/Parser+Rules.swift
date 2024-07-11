@@ -203,8 +203,15 @@ extension Parser {
 	}
 
 	mutating func _super(_: Bool) -> some Expr {
-		fatalError("Implement me")
-		return ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+		defer {
+			advance()
+		}
+
+		return VariableExprSyntax(
+			position: previous.start,
+			length: 5,
+			name: .init(position: previous.start, length: 4, lexeme: "super")
+		)
 	}
 
 	mutating func _self(_: Bool) -> some Expr {

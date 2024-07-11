@@ -482,6 +482,46 @@ struct SyntaxTreeTests {
 		#expect(expr.position == 0)
 	}
 
+	@Test("self") func testSelf() {
+		let fn = parse(
+			"""
+			class Person {
+				func foo() {
+					self
+				}
+			}
+			""",
+			at: \ClassDeclSyntax.body.decls[0],
+			as: FunctionDeclSyntax.self
+		)
+
+		let expr = fn.body.decls[0].cast(ExprStmtSyntax.self).expr.cast(VariableExprSyntax.self)
+
+		#expect(expr.position == 28)
+		#expect(expr.length == 4)
+		#expect(expr.name.lexeme == "self")
+	}
+
+	@Test("super") func testSuper() {
+		let fn = parse(
+			"""
+			class Person {
+				func foo() {
+					super
+				}
+			}
+			""",
+			at: \ClassDeclSyntax.body.decls[0],
+			as: FunctionDeclSyntax.self
+		)
+
+		let expr = fn.body.decls[0].cast(ExprStmtSyntax.self).expr.cast(VariableExprSyntax.self)
+
+		#expect(expr.position == 28)
+		#expect(expr.length == 5)
+		#expect(expr.name.lexeme == "super")
+	}
+
 	@Test("Get property") func getProperty() {
 		let expr = parse(
 			"""
