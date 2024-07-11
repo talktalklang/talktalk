@@ -1,5 +1,5 @@
 func foo() {
-	"bar"
+	return "bar"
 }
 
 var a = foo()

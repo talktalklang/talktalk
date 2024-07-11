@@ -7,50 +7,15 @@
 
 import ArgumentParser
 import Foundation
-import TalkTalk
-import TalkTalkSyntax
 
 @main
-struct TlkCommand: ParsableCommand {
-	@Argument(help: "The input to run.")
-	var input: String
+struct TlkCommand: AsyncParsableCommand {
+	static let version = "tlk v0.0.1"
 
-	@Flag(help: "Print debug info")
-	var debug: Bool = false
-
-	@Flag(help: "Print the AST")
-	var ast: Bool = false
-
-	@Flag(help: "Format")
-	var format: Bool = false
-//
-//	@Flag(help: "Just print the tokens") var tokenize: Bool = false
-
-	mutating func run() throws {
-		let source = if FileManager.default.fileExists(atPath: input) {
-			try String(contentsOfFile: input)
-		} else {
-			input
-		}
-
-		let output = StdoutOutput(isDebug: debug)
-
-		if ast {
-			let tree = try SyntaxTree.parse(source: source)
-			ASTPrinter.print(tree)
-			return
-		}
-
-		if format {
-			let tree = try SyntaxTree.parse(source: source)
-			ASTFormatter.print(tree)
-			return
-		}
-
-		if VM.run(source: source, output: output) == .ok {
-			return
-		} else {
-			throw ExitCode.failure
-		}
-	}
+	static let configuration = CommandConfiguration(
+		commandName: "tlk",
+		abstract: "The TalkTalk programming lanaguage",
+		version: version,
+		subcommands: [Run.self, Format.self, AST.self]
+	)
 }
