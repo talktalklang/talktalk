@@ -22,6 +22,10 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 		}.joined(separator: "\n")
 	}
 
+	public func visit(_ node: LiteralExprSyntax) -> String {
+		node.description
+	}
+
 	public mutating func visit(_ node: UnaryOperator) -> String {
 		node.description
 	}

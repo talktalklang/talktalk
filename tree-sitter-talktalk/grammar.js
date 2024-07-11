@@ -52,7 +52,7 @@ module.exports = grammar({
       optional(
         seq("=", $.expr)
       ),
-      choice("\n", ";")
+      "\n"
     ),
 
     statement: $ => seq(
@@ -77,13 +77,12 @@ module.exports = grammar({
       ))
     ),
 
-    returnStmt: $ => seq(
+    returnStmt: $ => prec.left(seq(
         "return",
         optional(
           $.expr
-        ),
-        optional(";")
-      ),
+        )
+      )),
 
     whileStmt: $ => seq(
       "while",

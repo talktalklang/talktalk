@@ -50,6 +50,13 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
+	public mutating func visit(_ node: LiteralExprSyntax) {
+		describe(node)
+		indenting {
+			$0.print("lexeme: \(node.description)")
+		}
+	}
+
 	public mutating func visit(_ node: AssignmentExpr) {
 		describe(node)
 		indenting {
