@@ -374,4 +374,22 @@ struct SyntaxTreeTests {
 		#expect(expr.lhs.cast(VariableExprSyntax.self).name.lexeme == "a")
 		#expect(expr.rhs.cast(IntLiteralSyntax.self).lexeme == "123")
 	}
+
+	@Test("Literals") func literals() {
+		let t = parse("true", at: \ExprStmtSyntax.expr, as: LiteralSyntax.self)
+		let f = parse("false", at: \ExprStmtSyntax.expr, as: LiteralSyntax.self)
+		let n = parse("nil", at: \ExprStmtSyntax.expr, as: LiteralSyntax.self)
+
+		#expect(t.kind == .true)
+		#expect(f.kind == .false)
+		#expect(n.kind == .nil)
+	}
+
+	@Test("&&") func and() {
+		let expr = parse(
+			"""
+			true && false
+			"""
+		)
+	}
 }
