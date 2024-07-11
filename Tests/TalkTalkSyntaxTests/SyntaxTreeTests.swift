@@ -572,4 +572,18 @@ struct SyntaxTreeTests {
 		#expect(expr.arguments[0].cast(IntLiteralSyntax.self).lexeme == "123")
 		#expect(ASTFormatter.format(expr) == "foo.bar(123)")
 	}
+
+	@Test("Array literal syntax") func arrayLiteral() {
+		let expr = parse(
+			"""
+			[1, 2, 3]
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: ArrayLiteralSyntax.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 9)
+		#expect(expr.description == "[1, 2, 3]")
+	}
 }

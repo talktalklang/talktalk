@@ -30,6 +30,13 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		perform(&copy)
 	}
 
+	public mutating func visit(_ node: ArrayLiteralSyntax) {
+		describe(node)
+		indenting {
+			$0.visit(node.elements)
+		}
+	}
+
 	public mutating func visit(_ node: PropertyAccessExpr) {
 		describe(node)
 		indenting {

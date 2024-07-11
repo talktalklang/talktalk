@@ -227,7 +227,14 @@ extension Parser {
 	}
 
 	mutating func arrayLiteral(_: Bool) -> some Expr {
-		fatalError("Implement me")
-		return ErrorSyntax(token: current, expected: .token(.dot), message: "FIXME")
+		let start = current.start
+		consume(.leftBracket, "Expected '[' to start array")
+		let elements = argumentList(terminator: .rightBracket)
+
+		return ArrayLiteralSyntax(
+			position: start,
+			length: current.start - start,
+			elements: elements
+		)
 	}
 }

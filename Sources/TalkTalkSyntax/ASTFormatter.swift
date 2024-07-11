@@ -134,6 +134,13 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 		}.joined(separator: ", ")
 	}
 
+	public mutating func visit(_ node: ArrayLiteralSyntax) -> String {
+		var result = "["
+		result += visit(node.elements)
+		result += "]"
+		return result
+	}
+
 	public mutating func visit(_ node: ClassDeclSyntax) -> String {
 		var result = "class \(visit(node.name))"
 		result += visit(node.body)
