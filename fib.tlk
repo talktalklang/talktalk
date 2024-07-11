@@ -5,6 +5,6 @@ func fib(n) {
 
 var i = 0;
 while i < 35 {
-	print fib(i);
+	print(fib(i));
 	i = i + 1;
 }

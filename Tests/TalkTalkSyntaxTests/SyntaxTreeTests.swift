@@ -212,8 +212,8 @@ struct SyntaxTreeTests {
 		#expect(funcDecl.parameters.isEmpty)
 
 		#expect(funcDecl.body.decls.count == 1)
-		#expect(funcDecl.body.position == 11)
-		#expect(funcDecl.body.length == 10)
+		#expect(funcDecl.body.position == 10)
+		#expect(funcDecl.body.length == 11)
 
 		let exprStmt = funcDecl.body.decls[0].cast(ExprStmtSyntax.self)
 		#expect(exprStmt.description == "1 + 2")
@@ -226,8 +226,8 @@ struct SyntaxTreeTests {
 		}
 		""", as: BlockStmtSyntax.self)
 
-		#expect(blockStmt.position == 3)
-		#expect(blockStmt.length == 17)
+		#expect(blockStmt.position == 1)
+		#expect(blockStmt.length == 19)
 
 		let decl = blockStmt.decls[0].cast(VarDeclSyntax.self)
 		#expect(decl.length == 15)
@@ -273,5 +273,105 @@ struct SyntaxTreeTests {
 
 		let argExpr = callExpr.arguments[0].cast(BinaryExprSyntax.self)
 		#expect(argExpr.description == "1 + 2")
+	}
+
+	@Test("Nested calls") func nestedCalls() {
+		let call = parse(
+			"""
+			print(foo(n))
+			""",
+			at: \ExprStmtSyntax.expr,
+			as: CallExprSyntax.self
+		)
+
+		#expect(call.callee.cast(VariableExprSyntax.self).name.lexeme == "print")
+
+		let inner = call.arguments[0].cast(CallExprSyntax.self)
+		#expect(inner.callee.cast(VariableExprSyntax.self).name.lexeme == "foo")
+	}
+
+	@Test("Order of operations") func orderOfOperations() {
+		let expr = parse(
+			"1 + 2 * 3",
+			at: \ExprStmtSyntax.expr,
+			as: BinaryExprSyntax.self
+		)
+
+		let lhs = expr.lhs.cast(IntLiteralSyntax.self)
+		#expect(lhs.lexeme == "1")
+		#expect(expr.op.kind == .plus)
+
+		let rhs = expr.rhs.cast(BinaryExprSyntax.self)
+		#expect(rhs.description == "2 * 3")
+	}
+
+	@Test("If statement") func ifStatement() {
+		let expr = parse(
+			"""
+			if 1 < 2 {
+				3
+			}
+			""",
+			as: IfStmtSyntax.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 15)
+
+		#expect(expr.condition.description == "1 < 2")
+		#expect(expr.body.description == """
+		{
+			3
+		}
+		""")
+	}
+
+	@Test("while statement") func whileStatement() {
+		let expr = parse(
+			"""
+			while 1 < 2 {
+				3
+			}
+			""",
+			as: WhileStmtSyntax.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 18)
+
+		#expect(expr.condition.description == "1 < 2")
+		#expect(expr.body.description == """
+		{
+			3
+		}
+		""")
+	}
+
+	@Test("Return statement") func returnStatement() {
+		let expr = parse(
+			"""
+			func foo() { return "bar" }
+			""",
+			at: \FunctionDeclSyntax.body.decls[0],
+			as: ReturnStmtSyntax.self
+		)
+
+		#expect(expr.position == 13)
+		#expect(expr.length == 13)
+		#expect(expr.value.description == #""bar""#)
+		#expect(expr.description == """
+		return "bar"
+		""")
+	}
+
+	@Test("Assignment") func assignment() {
+		let expr = parse(
+			"a = 123",
+			at: \ExprStmtSyntax.expr,
+			as: AssignmentExpr.self
+		)
+
+		#expect(expr.lhs.cast(VariableExprSyntax.self).name.lexeme == "a")
+		#expect(expr.rhs.cast(IntLiteralSyntax.self).lexeme == "123")
 	}
 }

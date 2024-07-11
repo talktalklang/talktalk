@@ -11,13 +11,13 @@ public struct ErrorSyntax: Syntax, Expr, Decl {
 
 	var token: Token
 	var expected: Expectation
-	public var message: String?
+	public var message: String
 
 	public var position: Int { token.start }
 	public var length: Int { token.length }
 
 	public var description: String {
-		"\(message ?? "Error"): \(token), expected: \(expected)"
+		"\(message): \(token), expected: \(expected)"
 	}
 
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {

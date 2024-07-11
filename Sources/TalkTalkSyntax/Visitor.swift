@@ -10,7 +10,10 @@ public protocol ASTVisitor {
 	// Stmts
 	mutating func visit(_ node: ExprStmtSyntax) -> Value
 	mutating func visit(_ node: BlockStmtSyntax) -> Value
+	mutating func visit(_ node: IfStmtSyntax) -> Value
 	mutating func visit(_ node: StmtSyntax) -> Value
+	mutating func visit(_ node: WhileStmtSyntax) -> Value
+	mutating func visit(_ node: ReturnStmtSyntax) -> Value
 
 	// Exprs
 	mutating func visit(_ node: GroupExpr) -> Value
@@ -21,6 +24,7 @@ public protocol ASTVisitor {
 	mutating func visit(_ node: IntLiteralSyntax) -> Value
 	mutating func visit(_ node: StringLiteralSyntax) -> Value
 	mutating func visit(_ node: VariableExprSyntax) -> Value
+	mutating func visit(_ node: AssignmentExpr) -> Value
 
 	// Utility
 	mutating func visit(_ node: UnaryOperator) -> Value

@@ -12,7 +12,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 	}
 
 	private func describe<T: Syntax>(_ type: T) {
-		print("\(T.self)(position: \(type.position), length: \(type.length))")
+		print("\(T.self)(pos: \(type.position), len: \(type.length))")
 	}
 
 	private func print(_ string: String) {
@@ -41,15 +41,39 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		describe(node)
 		indenting {
 			for decl in node.decls {
-				switch decl {
-				case let decl as VarDeclSyntax:
-					$0.visit(decl)
-				case let decl as FunctionDeclSyntax:
-					$0.visit(decl)
-				default:
-					()
-				}
+				$0.visit(decl)
 			}
+		}
+	}
+
+	public mutating func visit(_ node: AssignmentExpr) {
+		describe(node)
+		indenting {
+			$0.visit(node.lhs)
+			$0.visit(node.rhs)
+		}
+	}
+
+	public mutating func visit(_ node: IfStmtSyntax) {
+		describe(node)
+		indenting {
+			$0.visit(node.condition)
+			$0.visit(node.body)
+		}
+	}
+
+	public mutating func visit(_ node: ReturnStmtSyntax) -> () {
+		describe(node)
+		indenting {
+			$0.visit(node.value)
+		}
+	}
+
+	public mutating func visit(_ node: WhileStmtSyntax) {
+		describe(node)
+		indenting {
+			$0.visit(node.condition)
+			$0.visit(node.body)
 		}
 	}
 

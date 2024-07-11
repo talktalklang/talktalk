@@ -20,6 +20,9 @@ struct TlkCommand: ParsableCommand {
 
 	@Flag(help: "Print the AST")
 	var ast: Bool = false
+
+	@Flag(help: "Format")
+	var format: Bool = false
 //
 //	@Flag(help: "Just print the tokens") var tokenize: Bool = false
 
@@ -33,8 +36,13 @@ struct TlkCommand: ParsableCommand {
 		let output = StdoutOutput(isDebug: debug)
 
 		if ast {
-			let tree = SyntaxTree.parse(source: source)
+			let tree = try SyntaxTree.parse(source: source)
 			ASTPrinter.print(tree)
+			return
+		}
+
+		if format {
+			try print(SyntaxTree.parse(source: source).description)
 			return
 		}
 

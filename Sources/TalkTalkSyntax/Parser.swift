@@ -35,9 +35,11 @@ struct Parser {
 	mutating func parse() -> [any Decl] {
 		var decls: [any Decl] = []
 
+		skip(.statementTerminators)
+
 		while current.kind != .eof {
-			skip(.newline)
 			decls.append(decl())
+			skip(.statementTerminators)
 		}
 
 		return decls
@@ -59,7 +61,11 @@ struct Parser {
 		let start = previous.start
 
 		guard let identifier = consume(IdentifierSyntax.self) else {
-			return ErrorSyntax(token: current, expected: .token(.identifier))
+			return ErrorSyntax(
+				token: current,
+				expected: .token(.identifier),
+				message: "Expected identifier in var declaration"
+			)
 		}
 
 		var expr: (any Expr)?
@@ -98,12 +104,24 @@ struct Parser {
 			return block()
 		}
 
+		if match(.if) {
+			return ifStatement()
+		}
+
+		if match(.while) {
+			return whileStatement()
+		}
+
+		if match(.return) {
+			return returnStatement()
+		}
+
 		let position = current.start
 		let expr = parse(precedence: .assignment)
 
 		return ExprStmtSyntax(
 			position: current.start,
-			length: position - current.start,
+			length: current.start - position,
 			expr: expr
 		)
 	}
@@ -121,13 +139,18 @@ struct Parser {
 		while precedence < current.kind.rule.precedence {
 			if let infix = current.kind.rule.infix, lhs != nil {
 				lhs = infix(&self, precedence.canAssign, lhs!)
-				skip(.newline)
+				skip(.statementTerminators)
 			}
+		}
+
+		if lhs == nil {
+
 		}
 
 		return lhs ?? ErrorSyntax(
 			token: current,
-			expected: .type(ExprStmtSyntax.self)
+			expected: .type(ExprStmtSyntax.self),
+			message: "Expected lhs parsing"
 		)
 	}
 
@@ -160,17 +183,18 @@ struct Parser {
 	}
 
 	private mutating func block() -> BlockStmtSyntax {
-		skip(.newline) // for brace on next line style that i don't love
-
 		let start = current.start
+
+		skip(.newline) // for brace on next line style that i don't love
 		consume(.leftBrace, "Expected '{' before function body")
+		skip(.newline)
 
 		var decls: [any Decl] = []
 
 		while !check(.rightBrace), !check(.eof) {
 			skip(.newline)
 			decls.append(decl())
-			skip(.newline)
+			skip(.statementTerminators)
 		}
 
 		consume(.rightBrace, "Expected '{' after function body")
@@ -198,6 +222,44 @@ struct Parser {
 			position: start,
 			length: current.start - start,
 			arguments: arguments
+		)
+	}
+
+	mutating func ifStatement() -> IfStmtSyntax {
+		let start = previous.start
+
+		let condition = parse(precedence: .assignment)
+		let body = block()
+
+		return IfStmtSyntax(
+			position: start,
+			length: current.start - start,
+			condition: condition,
+			body: body
+		)
+	}
+
+	mutating func whileStatement() -> WhileStmtSyntax {
+		let start = previous.start
+
+		let condition = parse(precedence: .assignment)
+		let body = block()
+
+		return WhileStmtSyntax(
+			position: start,
+			length: current.start - start,
+			condition: condition,
+			body: body
+		)
+	}
+
+	mutating func returnStatement() -> ReturnStmtSyntax {
+		let start = previous.start
+		let value = parse(precedence: .assignment)
+		return ReturnStmtSyntax(
+			position: start,
+			length: current.start - start,
+			value: value
 		)
 	}
 }
