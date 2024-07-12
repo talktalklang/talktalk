@@ -17,6 +17,6 @@ extension UnaryOperator: Consumable {
 			return nil
 		}
 
-		return .init(position: token.start, length: 1, kind: kind)
+		return .init(start: token, end: token, kind: kind)
 	}
 }

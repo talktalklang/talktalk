@@ -1,4 +1,5 @@
 import Testing
+import TalkTalkSyntax
 import TalkTalkTyper
 
 struct TyperTests {
@@ -35,5 +36,21 @@ struct TyperTests {
 		let error = try #require(results.errors.first)
 
 		#expect(error.syntax.position == 4)
+		#expect(error.message.contains("not assignable"))
+	}
+
+	@Test("Error on bad assignment") func badAssignment() throws {
+		let typer = Typer(
+			source: """
+			var foo = "bar"
+			foo = 123
+			"""
+		)
+
+		let results = typer.check()
+		let error = try #require(results.errors.first)
+
+		#expect(error.syntax.position == 16)
+		#expect(error.message.contains("not assignable to String"))
 	}
 }

@@ -9,8 +9,8 @@ public struct BinaryExprSyntax: Syntax, Expr {
 	public let op: BinaryOperatorSyntax
 	public let rhs: any Expr
 
-	public var position: Int
-	public var length: Int
+	public let start: Token
+	public let end: Token
 
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
 		visitor.visit(self)

@@ -7,15 +7,15 @@
 
 extension Parser {
 	mutating func call(_: Bool, _ lhs: any Expr) -> some Expr {
-		let start = current.start
+		let start = current
 
 		consume(.leftParen, "Expected '(' before argument list")
 
 		let argumentList = argumentList(terminator: .rightParen)
 
 		return CallExprSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			callee: lhs,
 			arguments: argumentList
 		)
@@ -28,8 +28,8 @@ extension Parser {
 		advance()
 
 		return UnaryExprSyntax(
-			position: op.position,
-			length: op.position - current.start,
+			start: op.start,
+			end: op.end,
 			op: op,
 			rhs: expr
 		)
@@ -50,13 +50,13 @@ extension Parser {
 			lhs: lhs,
 			op: op,
 			rhs: rhs,
-			position: lhs.position,
-			length: lhs.position - current.start + current.length
+			start: lhs.start,
+			end: rhs.end
 		)
 	}
 
 	mutating func grouping(_: Bool) -> some Expr {
-		let position = current.start
+		let start = current
 
 		advance()
 		let expr = parse(precedence: .none)
@@ -64,8 +64,8 @@ extension Parser {
 		consume(.rightParen, "Expected ')' after grouping")
 
 		return GroupExpr(
-			position: position,
-			length: current.start - position,
+			start: start,
+			end: previous,
 			expr: expr
 		)
 	}
@@ -84,11 +84,11 @@ extension Parser {
 		if canAssign, match(.equal) {
 			let rhs = expression()
 			return AssignmentExpr(
-				position: lhs.position,
-				length: current.start - lhs.position,
+				start: lhs.end,
+				end: rhs.end,
 				lhs: PropertyAccessExpr(
-					position: lhs.position,
-					length: current.start - lhs.position,
+					start: lhs.start,
+					end: rhs.end,
 					receiver: lhs,
 					property: identifier
 				),
@@ -98,11 +98,11 @@ extension Parser {
 			let arguments = argumentList(terminator: .rightParen)
 
 			return CallExprSyntax(
-				position: lhs.position,
-				length: current.start - identifier.position,
+				start: lhs.start,
+				end: arguments.end,
 				callee: PropertyAccessExpr(
-					position: lhs.position,
-					length: current.start - lhs.position,
+					start: lhs.start,
+					end: arguments.end,
 					receiver: lhs,
 					property: identifier
 				),
@@ -110,8 +110,8 @@ extension Parser {
 			)
 		} else {
 			return PropertyAccessExpr(
-				position: lhs.position,
-				length: current.start - lhs.position,
+				start: lhs.end,
+				end: identifier.start,
 				receiver: lhs,
 				property: identifier
 			)
@@ -125,8 +125,8 @@ extension Parser {
 			lhs: lhs,
 			op: op,
 			rhs: rhs,
-			position: lhs.position,
-			length: current.start - lhs.position
+			start: lhs.start,
+			end: rhs.end
 		)
 	}
 
@@ -137,19 +137,19 @@ extension Parser {
 			lhs: lhs,
 			op: op,
 			rhs: rhs,
-			position: lhs.position,
-			length: current.start - lhs.position
+			start: lhs.start,
+			end: rhs.end
 		)
 	}
 
 	mutating func variable(_ canAssign: Bool) -> any Expr {
-		let start = current.start
+		let start = current
 		let lhs: any Expr
 
 		if let identifier = consume(IdentifierSyntax.self) {
 			lhs = VariableExprSyntax(
-				position: identifier.position,
-				length: identifier.length,
+				start: start,
+				end: previous,
 				name: identifier
 			)
 		} else {
@@ -163,8 +163,8 @@ extension Parser {
 		if canAssign, match(.equal) {
 			let rhs = parse(precedence: .assignment)
 			return AssignmentExpr(
-				position: start,
-				length: current.start - start,
+				start: start,
+				end: previous,
 				lhs: lhs,
 				rhs: rhs
 			)
@@ -208,9 +208,9 @@ extension Parser {
 		}
 
 		return VariableExprSyntax(
-			position: previous.start,
-			length: 5,
-			name: .init(position: previous.start, length: 4, lexeme: "super")
+			start: current,
+			end: current,
+			name: .init(start: current, end: current, lexeme: "super")
 		)
 	}
 
@@ -220,20 +220,20 @@ extension Parser {
 		}
 
 		return VariableExprSyntax(
-			position: previous.start,
-			length: 4,
-			name: .init(position: previous.start, length: 4, lexeme: "self")
+			start: current,
+			end: current,
+			name: .init(start: current, end: current, lexeme: "self")
 		)
 	}
 
 	mutating func arrayLiteral(_: Bool) -> some Expr {
-		let start = current.start
+		let start = current
 		consume(.leftBracket, "Expected '[' to start array")
 		let elements = argumentList(terminator: .rightBracket)
 
 		return ArrayLiteralSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			elements: elements
 		)
 	}

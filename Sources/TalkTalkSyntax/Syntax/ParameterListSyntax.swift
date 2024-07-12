@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/9/24.
 //
 public struct ParameterListSyntax: Syntax {
-	public let position: Int
-	public let length: Int
+	public let start: Token
+	public let end: Token
 	public let parameters: [IdentifierSyntax]
 
 	public subscript(_ index: Int) -> IdentifierSyntax {

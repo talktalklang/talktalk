@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/10/24.
 //
 public struct CallExprSyntax: Syntax, Expr {
-	public let position: Int
-	public let length: Int
+	public let start: Token
+	public let end: Token
 	public let callee: any Expr
 	public let arguments: ArgumentListSyntax
 

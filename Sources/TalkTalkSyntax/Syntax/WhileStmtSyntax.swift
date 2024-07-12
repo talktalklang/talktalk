@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/10/24.
 //
 public struct WhileStmtSyntax: Syntax, Stmt {
-	public var position: Int
-	public var length: Int
+	public let start: Token
+	public let end: Token
 	public var condition: any Expr
 	public var body: BlockStmtSyntax
 

@@ -25,6 +25,6 @@ extension BinaryOperatorSyntax: Consumable {
 			fatalError("Unreachable")
 		}
 
-		return .init(kind: opKind, position: token.start, length: token.length)
+		return .init(kind: opKind, start: token, end: token)
 	}
 }

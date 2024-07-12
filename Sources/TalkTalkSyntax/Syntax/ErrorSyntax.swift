@@ -13,8 +13,8 @@ public struct ErrorSyntax: Syntax, Expr, Decl {
 	var expected: Expectation
 	public var message: String
 
-	public var position: Int { token.start }
-	public var length: Int { token.length }
+	public var start: Token { token }
+	public var end: Token { token }
 
 	public var description: String {
 		"\(message): \(token), expected: \(expected)"

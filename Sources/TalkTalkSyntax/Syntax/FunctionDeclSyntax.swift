@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/9/24.
 //
 public struct FunctionDeclSyntax: Syntax, Decl {
-	public var position: Int
-	public var length: Int
+	public let start: Token
+	public let end: Token
 	public var name: IdentifierSyntax
 	public var parameters: ParameterListSyntax
 	public var body: BlockStmtSyntax

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/9/24.
 //
 public struct ArgumentListSyntax: Syntax {
-	public let position: Int
-	public let length: Int
+	public let start: Token
+	public let end: Token
 	public let arguments: [any Expr]
 
 	public subscript(_ index: Int) -> any Expr {

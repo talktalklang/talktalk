@@ -14,11 +14,13 @@ public struct SyntaxTree {
 	public static func parse(source: String) -> ProgramSyntax {
 		let lexer = Lexer(source: source)
 		var parser = Parser(lexer: lexer)
+
+		let start = parser.current
 		let decls = parser.parse()
 
 		return ProgramSyntax(
-			position: 0,
-			length: parser.current.start,
+			start: start,
+			end: parser.current,
 			decls: decls
 		)
 	}

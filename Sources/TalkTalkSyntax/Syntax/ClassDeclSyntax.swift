@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/11/24.
 //
 public struct ClassDeclSyntax: Decl, Syntax {
-	public var position: Int
-	public var length: Int
+	public let start: Token
+	public let end: Token
 	public var name: IdentifierSyntax
 	public var body: BlockStmtSyntax
 

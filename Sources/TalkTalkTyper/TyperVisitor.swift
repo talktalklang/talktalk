@@ -1,7 +1,7 @@
 import TalkTalkSyntax
 
 public class Results {
-	public var errors: [Error] = []
+	public var errors: [TypeError] = []
 	public var warnings: [String] = []
 	var typedefs: [Range<Int>: TypeDef] = [:]
 
@@ -17,12 +17,39 @@ public class Results {
 	}
 }
 
+class Scope {
+	var parent: Scope?
+	var locals: [String: TypeDef] = [:]
+
+	init(parent: Scope? = nil) {
+		self.parent = parent
+	}
+
+	func lookup(identifier: String) -> TypeDef? {
+		locals[identifier] ?? parent?.lookup(identifier: identifier)
+	}
+}
+
 struct TyperVisitor: ASTVisitor {
 	let ast: ProgramSyntax
 	var results: Results = .init()
+	var scopes: [Scope] = [Scope()]
+	var currentScope: Scope {
+		scopes.last!
+	}
+	mutating func withScope(perform: (inout TyperVisitor) -> Void) {
+		let scope = Scope(parent: currentScope)
+		var copy = self
+		copy.scopes.append(scope)
+		perform(&copy)
+	}
 
 	mutating func define(_ node: any Syntax, as typedef: TypeDef) {
 		results.typedefs[node.position..<node.position + node.length] = typedef
+	}
+
+	mutating func define(_ name: String, as typedef: TypeDef) {
+		currentScope.locals[name] = typedef
 	}
 
 	mutating func error(_ node: any Syntax, _ msg: String) {
@@ -42,6 +69,8 @@ struct TyperVisitor: ASTVisitor {
 		_ = visit(ast)
 		return results
 	}
+
+	// MARK: Visits
 
 	mutating func visit(_ node: ProgramSyntax) -> TypeDef? {
 		for decl in node.decls {
@@ -72,7 +101,9 @@ struct TyperVisitor: ASTVisitor {
 			error(node.condition, "must be not bool")
 		}
 
-		_ = visit(node.body)
+		withScope {
+			_ = $0.visit(node.body)
+		}
 
 		return nil
 	}
@@ -82,24 +113,25 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: TypeDeclSyntax) -> TypeDef? {
-		nil
+		TypeDef(name: node.name.lexeme, definition: node)
 	}
 
 	mutating func visit(_ node: VarDeclSyntax) -> TypeDef? {
-		let exprDef = visit(node.expr!)! // TODO: handle no expr case
+		guard let expr = node.expr, let exprDef = visit(expr) else {
+			error(node, "unable to determine expression type")
+			return nil
+		} // TODO: handle no expr case
+
 
 		if let typeDecl = node.typeDecl,
 			 let declDef = visit(typeDecl),
 			 !declDef.assignable(from: exprDef) {
-			print("DECL DEF \(declDef)")
-			print("EXPR DEF \(exprDef)")
-			error(node, "not assignable to \(declDef.name)")
+			error(node.variable, "not assignable to \(declDef.name)")
 			return nil
 		}
 
-
-
 		define(node.variable, as: exprDef)
+		define(node.variable.lexeme, as: exprDef)
 
 		return exprDef
 	}
@@ -116,30 +148,34 @@ struct TyperVisitor: ASTVisitor {
 		}
 
 		if receiverDef.assignable(from: exprDef) {
+			define(node.lhs, as: exprDef)
 			return receiverDef
 		} else {
-			error(node.rhs, "not assignable to \(receiverDef.name)")
+			error(node.lhs, "not assignable to \(receiverDef.name)")
 			return nil
 		}
 	}
 
 	mutating func visit(_ node: CallExprSyntax) -> TypeDef? {
 		let calleeDef = visit(node.callee)
-		print(calleeDef as Any)
 		// This is gonna take some work.
 
 		return nil
 	}
 
 	mutating func visit(_ node: InitDeclSyntax) -> TypeDef? {
-		_ = visit(node.body)
+		withScope {
+			_ = $0.visit(node.body)
+		}
 
 		return nil  // We can always assume this is the enclosing class
 	}
 
 	mutating func visit(_ node: BlockStmtSyntax) -> TypeDef? {
-		for decl in node.decls {
-			_ = decl.accept(&self)
+		withScope {
+			for decl in node.decls {
+				_ = decl.accept(&$0)
+			}
 		}
 
 		return nil
@@ -147,7 +183,11 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: WhileStmtSyntax) -> TypeDef? {
 		_ = visit(node.condition)
-		_ = visit(node.body)
+
+		withScope {
+			_ = $0.visit(node.body)
+		}
+
 		// TODO: Validate condition is bool
 		return nil
 	}
@@ -182,7 +222,7 @@ struct TyperVisitor: ASTVisitor {
 		// TODO: Check taht they match or add heterogenous arrays who knows
 		let firstElemDef = elemDefs[0]
 
-		return .array(firstElemDef)
+		return .array(firstElemDef, from: firstElemDef.definition)
 	}
 
 	mutating func visit(_ node: IdentifierSyntax) -> TypeDef? {
@@ -202,18 +242,15 @@ struct TyperVisitor: ASTVisitor {
 	mutating func visit(_ node: PropertyAccessExpr) -> TypeDef? {
 		let receiverDef = visit(node.receiver)
 		let propertyDef = visit(node.property)
-
-		print(receiverDef as Any)
-		print(propertyDef as Any)
 		// TODO:
 		return nil
 	}
 
 	mutating func visit(_ node: LiteralExprSyntax) -> TypeDef?{
 		switch node.kind {
-		case .nil: TypeDef(name: "Nil")
-		case .true: .bool
-		case .false: .bool
+		case .nil: TypeDef(name: "Nil", definition: node)
+		case .true: .bool(from: node)
+		case .false: .bool(from: node)
 		}
 	}
 
@@ -230,22 +267,22 @@ struct TyperVisitor: ASTVisitor {
 				return nil
 			}
 
-			return .bool
+			return .bool(from: node)
 		case .minus:
 			if exprDef.name != "Int" {
 				error(node, "can't negate \(exprDef.name)")
 				return nil
 			}
 
-			return .int
+			return .int(from: node.rhs)
 		}
 	}
 
 	mutating func visit(_ node: ErrorSyntax) -> TypeDef? {
-		TypeDef(name: "Error")
+		TypeDef(name: "Error", definition: node)
 	}
 
-	mutating func visit(_ node: ClassDeclSyntax) -> TypeDef?{
+	mutating func visit(_ node: ClassDeclSyntax) -> TypeDef? {
 		nil // At some point it'd be cool to have like a meta type
 	}
 
@@ -260,22 +297,24 @@ struct TyperVisitor: ASTVisitor {
 			return nil
 		}
 
-		guard lhsDef == rhsDef else {
+		guard lhsDef.name == rhsDef.name else {
 			error(node.op, "not the same type")
 			return nil
 		}
 
 		// TODO: handle non-bool case
-		return .bool
+		return .bool(from: node.op)
 
 	}
 
 	mutating func visit(_ node: IntLiteralSyntax) -> TypeDef? {
-		.int
+		.int(from: node)
 	}
 
 	mutating func visit(_ node: FunctionDeclSyntax) -> TypeDef? {
-		_ = visit(node.body)
+		withScope {
+			_ = $0.visit(node.body)
+		}
 
 		let returnDefs: [TypeDef] = node.body.decls.compactMap { (decl) -> TypeDef? in
 			guard let stmt = decl.as(ReturnStmtSyntax.self) else {
@@ -290,10 +329,10 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: VariableExprSyntax) -> TypeDef? {
-		nil // todo
+		currentScope.lookup(identifier: node.name.lexeme)
 	}
 
 	mutating func visit(_ node: StringLiteralSyntax) -> TypeDef? {
-		return .string
+		return .string(from: node)
 	}
 }

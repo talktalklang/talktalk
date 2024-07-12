@@ -9,8 +9,8 @@ public struct UnaryOperator: Syntax {
 		case minus, bang
 	}
 
-	public let position: Int
-	public let length: Int
+	public let start: Token
+	public let end: Token
 	public let kind: Kind
 
 	public var description: String {

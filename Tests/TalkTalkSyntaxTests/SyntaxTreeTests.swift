@@ -152,8 +152,8 @@ struct SyntaxTreeTests {
 		#expect(funcDecl.name.description == "foo")
 
 		#expect(funcDecl.parameters.isEmpty)
-		#expect(funcDecl.parameters.position == 9)
-		#expect(funcDecl.parameters.length == 0)
+		#expect(funcDecl.parameters.position == 8)
+		#expect(funcDecl.parameters.length == 2)
 
 		#expect(funcDecl.body.isEmpty)
 		#expect(funcDecl.body.position == 11)
@@ -173,7 +173,7 @@ struct SyntaxTreeTests {
 		#expect(funcDecl.name.description == "foo")
 
 		#expect(funcDecl.parameters.count == 1)
-		#expect(funcDecl.parameters.position == 9)
+		#expect(funcDecl.parameters.position == 8)
 
 		let param = funcDecl.parameters[0]
 		#expect(param.position == 9)
@@ -372,7 +372,7 @@ struct SyntaxTreeTests {
 		)
 
 		#expect(expr.position == 13)
-		#expect(expr.length == 13)
+		#expect(expr.length == 12)
 		#expect(expr.value.description == #""bar""#)
 		#expect(expr.description == """
 		return "bar"
@@ -512,7 +512,7 @@ struct SyntaxTreeTests {
 
 		let expr = fn.body.decls[0].cast(ExprStmtSyntax.self).expr.cast(VariableExprSyntax.self)
 
-		#expect(expr.position == 28)
+		#expect(expr.position == 31)
 		#expect(expr.length == 4)
 		#expect(expr.name.lexeme == "self")
 	}
@@ -532,7 +532,7 @@ struct SyntaxTreeTests {
 
 		let expr = fn.body.decls[0].cast(ExprStmtSyntax.self).expr.cast(VariableExprSyntax.self)
 
-		#expect(expr.position == 28)
+		#expect(expr.position == 31)
 		#expect(expr.length == 5)
 		#expect(expr.name.lexeme == "super")
 	}
@@ -580,7 +580,7 @@ struct SyntaxTreeTests {
 		)
 
 		#expect(expr.position == 0)
-		#expect(expr.length == 8)
+		#expect(expr.length == 12)
 
 		#expect(expr.callee.cast(PropertyAccessExpr.self).receiver.cast(VariableExprSyntax.self).name.lexeme == "foo")
 		#expect(expr.callee.cast(PropertyAccessExpr.self).property.lexeme == "bar")

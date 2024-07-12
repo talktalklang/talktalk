@@ -24,8 +24,8 @@ public struct BinaryOperatorSyntax: Syntax {
 
 	public var kind: Kind
 
-	public var position: Int
-	public var length: Int
+	public let start: Token
+	public let end: Token
 
 	public var description: String {
 		switch kind {

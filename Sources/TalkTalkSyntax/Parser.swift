@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/8/24.
 //
 public struct ProgramSyntax: Syntax {
-	public let position: Int
-	public let length: Int
+	public let start: Token
+	public let end: Token
 
 	public var decls: [any Decl] = []
 
@@ -96,7 +96,7 @@ struct Parser {
 			)
 		}
 
-		let start = previous.start
+		let start = previous
 
 		guard let identifier = consume(IdentifierSyntax.self) else {
 			return ErrorSyntax(
@@ -107,14 +107,14 @@ struct Parser {
 		}
 
 		let typeDecl: TypeDeclSyntax? = if match(.colon) {
-			{
+			{ () -> TypeDeclSyntax? in
 				guard let name = consume(IdentifierSyntax.self) else {
 					return nil
 				}
 
 				return TypeDeclSyntax(
-					position: previous.start,
-					length: name.length,
+					start: start,
+					end: previous,
 					name: name
 				)
 			}()
@@ -128,8 +128,8 @@ struct Parser {
 		}
 
 		return VarDeclSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			variable: identifier,
 			typeDecl: typeDecl,
 			expr: expr
@@ -139,13 +139,13 @@ struct Parser {
 	mutating func funcDecl() -> any Decl {
 		guard declContext.allowedDecls.contains(.func) else {
 			return ErrorSyntax(
-				token: current,
+				token: previous,
 				expected: .none,
 				message: "Cannot define func from \(declContext)"
 			)
 		}
 
-		let position = previous.start
+		let start = previous
 		let name = consume(IdentifierSyntax.self)!
 
 		consume(.leftParen, "Expected '(' before parameter list")
@@ -154,8 +154,8 @@ struct Parser {
 		let body = withDeclContext(.function) { $0.block() }
 
 		return FunctionDeclSyntax(
-			position: position,
-			length: current.start - position,
+			start: start,
+			end: previous,
 			name: name,
 			parameters: parameters,
 			body: body
@@ -171,7 +171,7 @@ struct Parser {
 			)
 		}
 
-		let position = previous.start
+		let start = previous
 
 		consume(.leftParen, "Expected '(' before parameter list")
 		let parameters = parameterList()
@@ -181,8 +181,8 @@ struct Parser {
 		}
 
 		return InitDeclSyntax(
-			position: position,
-			length: current.start - position,
+			start: start,
+			end: previous,
 			parameters: parameters,
 			body: body
 		)
@@ -197,7 +197,7 @@ struct Parser {
 //			)
 //		}
 
-		let start = previous.start
+		let start = previous
 
 		guard let name = consume(IdentifierSyntax.self) else {
 			return ErrorSyntax(
@@ -209,8 +209,8 @@ struct Parser {
 
 		let body = withDeclContext(.class) { $0.block() }
 		return ClassDeclSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			name: name,
 			body: body
 		)
@@ -233,12 +233,12 @@ struct Parser {
 			return returnStatement()
 		}
 
-		let position = current.start
+		let start = current
 		let expr = parse(precedence: .assignment)
 
 		return ExprStmtSyntax(
-			position: current.start,
-			length: current.start - position,
+			start: start,
+			end: previous,
 			expr: expr
 		)
 	}
@@ -274,15 +274,16 @@ struct Parser {
 	}
 
 	private mutating func parameterList() -> ParameterListSyntax {
+		let start = previous
+
 		if match(.rightParen) {
 			return ParameterListSyntax(
-				position: previous.start,
-				length: 0,
+				start: start,
+				end: previous,
 				parameters: []
 			)
 		}
 
-		let start = current.start
 		var parameters: [IdentifierSyntax] = []
 
 		repeat {
@@ -295,14 +296,14 @@ struct Parser {
 
 		consume(.rightParen, "Expected ')' after parameter list")
 		return ParameterListSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			parameters: parameters
 		)
 	}
 
 	private mutating func block() -> BlockStmtSyntax {
-		let start = current.start
+		let start = current
 
 		skip(.newline) // for brace on next line style that i don't love
 		consume(.leftBrace, "Expected '{' before function body")
@@ -319,14 +320,14 @@ struct Parser {
 		consume(.rightBrace, "Expected '{' after function body")
 
 		return BlockStmtSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			decls: decls
 		)
 	}
 
 	mutating func argumentList(terminator: Token.Kind) -> ArgumentListSyntax {
-		let start = current.start
+		let start = current
 		var arguments: [any Expr] = []
 
 		if !match(terminator) {
@@ -338,46 +339,46 @@ struct Parser {
 		}
 
 		return ArgumentListSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			arguments: arguments
 		)
 	}
 
 	mutating func ifStatement() -> IfStmtSyntax {
-		let start = previous.start
+		let start = previous
 
 		let condition = parse(precedence: .assignment)
 		let body = block()
 
 		return IfStmtSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			condition: condition,
 			body: body
 		)
 	}
 
 	mutating func whileStatement() -> WhileStmtSyntax {
-		let start = previous.start
+		let start = previous
 
 		let condition = parse(precedence: .assignment)
 		let body = block()
 
 		return WhileStmtSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			condition: condition,
 			body: body
 		)
 	}
 
 	mutating func returnStatement() -> ReturnStmtSyntax {
-		let start = previous.start
+		let start = previous
 		let value = parse(precedence: .assignment)
 		return ReturnStmtSyntax(
-			position: start,
-			length: current.start - start,
+			start: start,
+			end: previous,
 			value: value
 		)
 	}

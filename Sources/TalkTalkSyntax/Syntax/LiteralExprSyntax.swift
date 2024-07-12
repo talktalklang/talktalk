@@ -9,8 +9,8 @@ public struct LiteralExprSyntax: Syntax, Expr {
 		case `true`, `false`, `nil`
 	}
 
-	public let position: Int
-	public let length: Int
+	public let start: Token
+	public let end: Token
 	public let kind: Kind
 
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
@@ -42,6 +42,6 @@ extension LiteralExprSyntax: Consumable {
 			return nil
 		}
 
-		return LiteralExprSyntax(position: token.start, length: token.length, kind: kind)
+		return LiteralExprSyntax(start: token, end: token, kind: kind)
 	}
 }

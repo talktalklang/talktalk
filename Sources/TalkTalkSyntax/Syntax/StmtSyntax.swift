@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/8/24.
 //
 public struct StmtSyntax: Syntax {
-	public var position: Int
-	public var length: Int
+	public let start: Token
+	public let end: Token
 
 	public var description: String {
 		"stmt?"

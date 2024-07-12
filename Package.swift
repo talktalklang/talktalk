@@ -35,6 +35,7 @@ let package = Package(
 			dependencies: [
 				"TalkTalk",
 				"TalkTalkSyntax",
+				"TalkTalkTyper",
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),

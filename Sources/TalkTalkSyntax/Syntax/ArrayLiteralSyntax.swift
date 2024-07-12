@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/11/24.
 //
 public struct ArrayLiteralSyntax: Expr, Syntax {
-	public var position: Int
-	public var length: Int
+	public var start: Token
+	public var end: Token
 	public var elements: ArgumentListSyntax
 	
 	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
