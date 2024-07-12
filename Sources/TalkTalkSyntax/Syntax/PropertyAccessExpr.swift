@@ -7,11 +7,14 @@
 public struct PropertyAccessExpr: Expr, Syntax {
 	public let start: Token
 	public let end: Token
-
+	
 	public var receiver: any Expr
 	public var property: IdentifierSyntax
-
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 }

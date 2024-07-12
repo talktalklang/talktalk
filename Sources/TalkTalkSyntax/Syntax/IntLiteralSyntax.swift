@@ -9,8 +9,11 @@ public struct IntLiteralSyntax: Syntax, Expr {
 	public let end: Token
 	public var lexeme: String
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 }
 

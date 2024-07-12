@@ -209,6 +209,29 @@ struct SyntaxTreeTests {
 		#expect(exprStmt.description == "1 + 2")
 	}
 
+	@Test("Function with type") func functionWithType() {
+		let funcDecl = parse("""
+		func foo() -> Int {
+			1 + 2
+		}
+		""", as: FunctionDeclSyntax.self)
+
+		#expect(funcDecl.position == 0)
+		#expect(funcDecl.length == 28)
+
+		#expect(funcDecl.name.position == 5)
+		#expect(funcDecl.name.length == 3)
+		#expect(funcDecl.name.description == "foo")
+
+		#expect(funcDecl.typeDecl?.name.lexeme == "Int")
+
+		#expect(funcDecl.parameters.isEmpty)
+
+		#expect(funcDecl.body.decls.count == 1)
+		#expect(funcDecl.body.position == 18)
+		#expect(funcDecl.body.length == 10)
+	}
+
 	@Test("Gross Function Body Formatting") func functionGrossBody() {
 		let funcDecl = parse("""
 		func foo()

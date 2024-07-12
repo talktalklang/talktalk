@@ -14,8 +14,11 @@ public struct ProgramSyntax: Syntax {
 		decls.map(\.description).joined(separator: "\n")
 	}
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 }
 
@@ -151,6 +154,16 @@ struct Parser {
 		consume(.leftParen, "Expected '(' before parameter list")
 		let parameters = parameterList()
 
+		var typeDecl: TypeDeclSyntax? = nil
+		let typeDeclStart = current
+		if match(.rightArrow), let name = consume(IdentifierSyntax.self) {
+			typeDecl = TypeDeclSyntax(
+				start: typeDeclStart,
+				end: previous,
+				name: name
+			)
+		}
+
 		let body = withDeclContext(.function) { $0.block() }
 
 		return FunctionDeclSyntax(
@@ -158,6 +171,7 @@ struct Parser {
 			end: previous,
 			name: name,
 			parameters: parameters,
+			typeDecl: typeDecl,
 			body: body
 		)
 	}

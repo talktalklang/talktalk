@@ -13,8 +13,11 @@ public struct LiteralExprSyntax: Syntax, Expr {
 	public let end: Token
 	public let kind: Kind
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 
 	public var description: String {

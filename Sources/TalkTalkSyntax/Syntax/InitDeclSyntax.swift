@@ -11,7 +11,10 @@ public struct InitDeclSyntax: Decl, Syntax {
 	public var parameters: ParameterListSyntax
 	public var body: BlockStmtSyntax
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 }

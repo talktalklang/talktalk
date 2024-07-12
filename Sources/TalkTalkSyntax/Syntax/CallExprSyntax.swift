@@ -10,7 +10,10 @@ public struct CallExprSyntax: Syntax, Expr {
 	public let callee: any Expr
 	public let arguments: ArgumentListSyntax
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 }

@@ -10,7 +10,10 @@ public struct WhileStmtSyntax: Syntax, Stmt {
 	public var condition: any Expr
 	public var body: BlockStmtSyntax
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor) -> Visitor.Value {
-		visitor.visit(self)
+	public func accept<Visitor: ASTVisitor>(
+		_ visitor: inout Visitor,
+		context: inout Visitor.Context
+	) -> Visitor.Value {
+		visitor.visit(self, context: &context)
 	}
 }

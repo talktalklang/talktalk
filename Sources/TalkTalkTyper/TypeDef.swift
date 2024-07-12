@@ -11,6 +11,15 @@ public struct TypeDef {
 	public func member(named _: String) -> TypeDef? {
 		nil
 	}
+
+	// TODO: Temporary until we flesh out type defs some more
+	public func returnDef() -> TypeDef {
+		guard let returnName = name.firstMatch(of: #/Function<(\w+)>/#) else {
+			fatalError("No return def for \(name)")
+		}
+
+		return TypeDef(name: String(returnName.output.1), definition: definition)
+	}
 }
 
 // Builtins

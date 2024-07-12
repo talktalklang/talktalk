@@ -23,7 +23,7 @@ public struct Token: Equatable, Sendable {
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,
 		     greater, greaterEqual, less, lessEqual,
-		     and, andAnd, pipe, pipePipe
+		     and, andAnd, pipe, pipePipe, rightArrow
 
 		// Literals
 		case identifier, string, number

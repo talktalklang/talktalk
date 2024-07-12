@@ -1,41 +1,46 @@
+// Allows traversal of the AST
 public protocol ASTVisitor {
+	// What value the visitors should return
 	associatedtype Value
 
-	mutating func visit(_ node: ProgramSyntax) -> Value
+	// Passed to each visit call
+	associatedtype Context
+
+	mutating func visit(_ node: ProgramSyntax, context: inout Context) -> Value
 
 	// Decls
-	mutating func visit(_ node: FunctionDeclSyntax) -> Value
-	mutating func visit(_ node: VarDeclSyntax) -> Value
-	mutating func visit(_ node: ClassDeclSyntax) -> Value
-	mutating func visit(_ node: InitDeclSyntax) -> Value
+	mutating func visit(_ node: FunctionDeclSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: VarDeclSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: ClassDeclSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: InitDeclSyntax, context: inout Context) -> Value
 
 	// Stmts
-	mutating func visit(_ node: ExprStmtSyntax) -> Value
-	mutating func visit(_ node: BlockStmtSyntax) -> Value
-	mutating func visit(_ node: IfStmtSyntax) -> Value
-	mutating func visit(_ node: StmtSyntax) -> Value
-	mutating func visit(_ node: WhileStmtSyntax) -> Value
-	mutating func visit(_ node: ReturnStmtSyntax) -> Value
+	mutating func visit(_ node: ExprStmtSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: BlockStmtSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: IfStmtSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: StmtSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: WhileStmtSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: ReturnStmtSyntax, context: inout Context) -> Value
 
 	// Exprs
-	mutating func visit(_ node: GroupExpr) -> Value
-	mutating func visit(_ node: CallExprSyntax) -> Value
-	mutating func visit(_ node: UnaryExprSyntax) -> Value
-	mutating func visit(_ node: BinaryExprSyntax) -> Value
-	mutating func visit(_ node: IdentifierSyntax) -> Value
-	mutating func visit(_ node: IntLiteralSyntax) -> Value
-	mutating func visit(_ node: StringLiteralSyntax) -> Value
-	mutating func visit(_ node: VariableExprSyntax) -> Value
-	mutating func visit(_ node: AssignmentExpr) -> Value
-	mutating func visit(_ node: LiteralExprSyntax) -> Value
-	mutating func visit(_ node: PropertyAccessExpr) -> Value
-	mutating func visit(_ node: ArrayLiteralSyntax) -> Value
+	mutating func visit(_ node: GroupExpr, context: inout Context) -> Value
+	mutating func visit(_ node: CallExprSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: UnaryExprSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: BinaryExprSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: IdentifierSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: IntLiteralSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: StringLiteralSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: VariableExprSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: AssignmentExpr, context: inout Context) -> Value
+	mutating func visit(_ node: LiteralExprSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: PropertyAccessExpr, context: inout Context) -> Value
+	mutating func visit(_ node: ArrayLiteralSyntax, context: inout Context) -> Value
 
 	// Utility
-	mutating func visit(_ node: UnaryOperator) -> Value
-	mutating func visit(_ node: BinaryOperatorSyntax) -> Value
-	mutating func visit(_ node: ArgumentListSyntax) -> Value
-	mutating func visit(_ node: ParameterListSyntax) -> Value
-	mutating func visit(_ node: ErrorSyntax) -> Value
-	mutating func visit(_ node: TypeDeclSyntax) -> Value
+	mutating func visit(_ node: UnaryOperator, context: inout Context) -> Value
+	mutating func visit(_ node: BinaryOperatorSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: ArgumentListSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: ParameterListSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: ErrorSyntax, context: inout Context) -> Value
+	mutating func visit(_ node: TypeDeclSyntax, context: inout Context) -> Value
 }
