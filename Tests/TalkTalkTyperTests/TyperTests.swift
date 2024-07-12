@@ -50,7 +50,7 @@ struct TyperTests {
 		let results = typer.check()
 		let error = try #require(results.errors.first)
 
-		#expect(error.syntax.position == 16)
-		#expect(error.message.contains("not assignable to String"))
+		#expect(error.syntax.position == 22)
+		#expect(error.message.contains("not assignable to `foo`, expected String"))
 	}
 }
