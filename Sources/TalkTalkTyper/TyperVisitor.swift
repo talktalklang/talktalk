@@ -1,8 +1,8 @@
 import TalkTalkSyntax
 
 public class Results {
-	var errors: [Error] = []
-	var warnings: [String] = []
+	public var errors: [Error] = []
+	public var warnings: [String] = []
 	var typedefs: [Range<Int>: TypeDef] = [:]
 
 	public func typedef(at position: Int) -> TypeDef? {
@@ -45,14 +45,14 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: ProgramSyntax) -> TypeDef? {
 		for decl in node.decls {
-			decl.accept(&self)
+			_ = decl.accept(&self)
 		}
 
 		return nil
 	}
 
 	mutating func visit(_ node: GroupExpr) -> TypeDef? {
-		if let type = visit(node) {
+		if let type = visit(node.expr) {
 			define(node, as: type)
 			return type
 		} else {
@@ -72,7 +72,7 @@ struct TyperVisitor: ASTVisitor {
 			error(node.condition, "must be not bool")
 		}
 
-		visit(node.body)
+		_ = visit(node.body)
 
 		return nil
 	}
@@ -88,10 +88,16 @@ struct TyperVisitor: ASTVisitor {
 	mutating func visit(_ node: VarDeclSyntax) -> TypeDef? {
 		let exprDef = visit(node.expr!)! // TODO: handle no expr case
 
-		if let typeDecl = node.typeDecl, let declDef = visit(typeDecl), !declDef.assignable(from: exprDef) {
+		if let typeDecl = node.typeDecl,
+			 let declDef = visit(typeDecl),
+			 !declDef.assignable(from: exprDef) {
+			print("DECL DEF \(declDef)")
+			print("EXPR DEF \(exprDef)")
 			error(node, "not assignable to \(declDef.name)")
 			return nil
 		}
+
+
 
 		define(node.variable, as: exprDef)
 
@@ -119,13 +125,14 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: CallExprSyntax) -> TypeDef? {
 		let calleeDef = visit(node.callee)
+		print(calleeDef as Any)
 		// This is gonna take some work.
 
 		return nil
 	}
 
 	mutating func visit(_ node: InitDeclSyntax) -> TypeDef? {
-		visit(node.body)
+		_ = visit(node.body)
 
 		return nil  // We can always assume this is the enclosing class
 	}
@@ -139,8 +146,9 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: WhileStmtSyntax) -> TypeDef? {
-		visit(node.condition)
-		visit(node.body)
+		_ = visit(node.condition)
+		_ = visit(node.body)
+		// TODO: Validate condition is bool
 		return nil
 	}
 
@@ -155,7 +163,8 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: ArgumentListSyntax) -> TypeDef? {
 		for argument in node.arguments {
-			visit(argument)
+			_ = visit(argument)
+			// TODO Validate
 		}
 
 		return nil
@@ -181,18 +190,21 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: ReturnStmtSyntax) -> TypeDef? {
-		visit(node.value)
+		_ = visit(node.value)
 		return nil
 	}
 
 	mutating func visit(_ node: ExprStmtSyntax) -> TypeDef? {
-		visit(node.expr)
+		_ = visit(node.expr)
 		return nil // Statements dont have types
 	}
 
 	mutating func visit(_ node: PropertyAccessExpr) -> TypeDef? {
 		let receiverDef = visit(node.receiver)
 		let propertyDef = visit(node.property)
+
+		print(receiverDef as Any)
+		print(propertyDef as Any)
 		// TODO:
 		return nil
 	}
@@ -227,9 +239,6 @@ struct TyperVisitor: ASTVisitor {
 
 			return .int
 		}
-
-		return nil
-
 	}
 
 	mutating func visit(_ node: ErrorSyntax) -> TypeDef? {
@@ -266,7 +275,7 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: FunctionDeclSyntax) -> TypeDef? {
-		visit(node.body)
+		_ = visit(node.body)
 
 		let returnDefs: [TypeDef] = node.body.decls.compactMap { (decl) -> TypeDef? in
 			guard let stmt = decl.as(ReturnStmtSyntax.self) else {

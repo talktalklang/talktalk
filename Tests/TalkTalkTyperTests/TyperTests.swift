@@ -23,4 +23,17 @@ struct TyperTests {
 		let results = typer.check()
 		#expect(results.typedef(at: 5)?.name == "Int")
 	}
+
+	@Test("Errors on bad var decl") func badVarDecl() throws {
+		let typer = Typer(
+			source: """
+			var foo: Int = "bar"
+			"""
+		)
+
+		let results = typer.check()
+		let error = try #require(results.errors.first)
+
+		#expect(error.syntax.position == 4)
+	}
 }
