@@ -33,7 +33,7 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 		print()
 
 		if let def {
-			print("\(def.definition.description) defined on \(def.definition.line):")
+			print("Type set as \(def.definition.description) on \(def.definition.line):")
 			print("\t" + source.components(separatedBy: .newlines)[def.definition.line - 1])
 			let offset = source.inlineOffset(for: def.definition.start.start, line: def.definition.line - 1)
 			print("\t" + String(repeating: " ", count: offset) + "^")
