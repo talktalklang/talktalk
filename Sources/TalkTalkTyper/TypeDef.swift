@@ -8,26 +8,26 @@ public struct TypeDef {
 		return name == other.name
 	}
 
-	public func member(named name: String) -> TypeDef? {
+	public func member(named _: String) -> TypeDef? {
 		nil
 	}
 }
 
 // Builtins
-extension TypeDef {
-	public static func int(from definition: any Syntax) -> TypeDef {
+public extension TypeDef {
+	static func int(from definition: any Syntax) -> TypeDef {
 		TypeDef(name: "Int", definition: definition)
 	}
 
-	public static func string(from definition: any Syntax) -> TypeDef {
+	static func string(from definition: any Syntax) -> TypeDef {
 		TypeDef(name: "String", definition: definition)
 	}
 
-	public static func bool(from definition: any Syntax) -> TypeDef {
+	static func bool(from definition: any Syntax) -> TypeDef {
 		TypeDef(name: "Bool", definition: definition)
 	}
 
-	public static func array(_ elementDef: TypeDef, from definition: any Syntax) -> TypeDef {
+	static func array(_ elementDef: TypeDef, from definition: any Syntax) -> TypeDef {
 		TypeDef(name: "Array<\(elementDef.name)>", definition: definition)
 	}
 }

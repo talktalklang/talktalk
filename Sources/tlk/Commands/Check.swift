@@ -1,11 +1,11 @@
 //
 //  Check.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/11/24.
 //
-import Foundation
 import ArgumentParser
+import Foundation
 import TalkTalkTyper
 
 struct Check: AsyncParsableCommand {
@@ -20,10 +20,7 @@ struct Check: AsyncParsableCommand {
 		}
 
 		let checker = Typer(source: source)
-		print("init'd checker, checkin")
 		let results = checker.check()
-
-		print(results.errors)
 
 		if results.errors.isEmpty {
 			print("OK")

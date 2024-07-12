@@ -1,6 +1,6 @@
-import Testing
 import TalkTalkSyntax
 import TalkTalkTyper
+import Testing
 
 struct TyperTests {
 	@Test("Takes String") func takesString() {

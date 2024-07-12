@@ -40,8 +40,8 @@ public struct Token: Equatable, Sendable {
 		case error(String)
 	}
 
-	let start: Int
-	let length: Int
+	public let start: Int
+	public let length: Int
 	let kind: Kind
 	let line: Int
 	let lexeme: String?

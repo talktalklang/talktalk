@@ -44,6 +44,6 @@ public extension Syntax {
 	}
 
 	var range: Range<Int> {
-		start.start..<(end.start + end.length)
+		start.start ..< (end.start + end.length)
 	}
 }

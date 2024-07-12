@@ -1,20 +1,20 @@
 
 
-public struct ASTFormatter<Root: Syntax>: ASTVisitor {
-	let root: Root
+public struct ASTFormatter: ASTVisitor {
+	let root: any Syntax
 	var indent = 0
 
-	public static func format(_ root: Root) -> String {
+	public static func format(_ root: any Syntax) -> String {
 		var formatter = ASTFormatter(root: root)
 		return root.accept(&formatter)
 	}
 
-	public static func print(_ root: Root) {
+	public static func print(_ root: any Syntax) {
 		var formatter = ASTFormatter(root: root)
 		Swift.print(root.accept(&formatter))
 	}
 
-	public init(root: Root) {
+	public init(root: any Syntax) {
 		self.root = root
 	}
 

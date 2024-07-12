@@ -30,7 +30,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		perform(&copy)
 	}
 
-	public func visit(_ node: TypeDeclSyntax) -> () {
+	public func visit(_ node: TypeDeclSyntax) {
 		describe(node)
 	}
 

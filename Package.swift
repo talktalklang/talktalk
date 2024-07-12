@@ -48,7 +48,7 @@ let package = Package(
 		.target(
 			name: "TalkTalkTyper",
 			dependencies: [
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
 			]
 		),
 		.target(
@@ -91,9 +91,9 @@ let package = Package(
 			name: "TalkTalkTyperTests",
 			dependencies: ["TalkTalkTyper"],
 			swiftSettings: [
-				.enableUpcomingFeature("SwiftTesting")
+				.enableUpcomingFeature("SwiftTesting"),
 			]
-		)
+		),
 	]
 )
 
