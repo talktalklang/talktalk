@@ -33,6 +33,10 @@ struct TyperVisitor: ASTVisitor {
 		results.typedef(at: expr.position)
 	}
 
+	mutating func visit(_ node: any Expr) -> TypeDef? {
+		node.accept(&self)
+	}
+
 	mutating func check() -> Results {
 		results = .init()
 		_ = visit(ast)
@@ -53,6 +57,7 @@ struct TyperVisitor: ASTVisitor {
 			return type
 		} else {
 			error(node, "Unable to determine type")
+			return nil
 		}
 	}
 
@@ -76,12 +81,16 @@ struct TyperVisitor: ASTVisitor {
 		nil
 	}
 
-	mutating func visit(_ node: VarDeclSyntax) -> TypeDef? {
-		let declDef = visit(node.typeDecl)
-		let exprDef = visit(node.expr)
+	mutating func visit(_ node: TypeDeclSyntax) -> TypeDef? {
+		nil
+	}
 
-		if let declDef, !declDef.assignable(from: exprDef) {
-			error(exprDef, "not assignable to \(declDef.name)")
+	mutating func visit(_ node: VarDeclSyntax) -> TypeDef? {
+		let exprDef = visit(node.expr!)! // TODO: handle no expr case
+
+		if let typeDecl = node.typeDecl, let declDef = visit(typeDecl), !declDef.assignable(from: exprDef) {
+			error(node, "not assignable to \(declDef.name)")
+			return nil
 		}
 
 		define(node.variable, as: exprDef)
@@ -123,7 +132,7 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: BlockStmtSyntax) -> TypeDef? {
 		for decl in node.decls {
-			visit(decl)
+			_ = decl.accept(&self)
 		}
 
 		return nil
@@ -157,7 +166,7 @@ struct TyperVisitor: ASTVisitor {
 			return nil
 		}
 
-		let elemDefs = node.elements.arguments.map {
+		let elemDefs = node.elements.arguments.compactMap {
 			visit($0)
 		}
 
@@ -183,15 +192,24 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: PropertyAccessExpr) -> TypeDef? {
 		let receiverDef = visit(node.receiver)
-		let propertyDef = receiverDef.proper
+		let propertyDef = visit(node.property)
+		// TODO:
+		return nil
 	}
 
-	mutating func visit(_ node: LiteralExprSyntax) {
-
+	mutating func visit(_ node: LiteralExprSyntax) -> TypeDef?{
+		switch node.kind {
+		case .nil: TypeDef(name: "Nil")
+		case .true: .bool
+		case .false: .bool
+		}
 	}
 
 	mutating func visit(_ node: UnaryExprSyntax) -> TypeDef? {
-		let exprDef = visit(node.rhs)
+		guard let exprDef = visit(node.rhs) else {
+			error(node.rhs, "could not determine type")
+			return nil
+		}
 
 		switch node.op.kind {
 		case .bang:

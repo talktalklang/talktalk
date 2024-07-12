@@ -1,6 +1,6 @@
 import TalkTalkSyntax
 
-public struct TypeDef {
+public struct TypeDef: Equatable {
 	public var name: String
 
 	public func assignable(from other: TypeDef) -> Bool {

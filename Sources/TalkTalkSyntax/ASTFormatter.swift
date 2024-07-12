@@ -43,6 +43,10 @@ public struct ASTFormatter<Root: Syntax>: ASTVisitor {
 		node.accept(&self)
 	}
 
+	public mutating func visit(_ node: TypeDeclSyntax) -> String {
+		": \(node.name.lexeme)"
+	}
+
 	public mutating func visit(_ node: InitDeclSyntax) -> String {
 		var result = "init(\(visit(node.parameters))) "
 		result += visit(node.body)
