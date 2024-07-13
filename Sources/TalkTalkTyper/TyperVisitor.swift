@@ -269,7 +269,8 @@ struct TyperVisitor: ASTVisitor {
 		}
 
 		if receiverDef.assignable(from: exprDef) {
-			define(node.lhs, as: exprDef)
+			define(node.lhs, as: exprDef, ref: exprDef.definition)
+			define(node.rhs, as: exprDef)
 			return receiverDef
 		} else {
 			error(
@@ -288,11 +289,13 @@ struct TyperVisitor: ASTVisitor {
 	mutating func visit(_ node: CallExprSyntax, context: Context) -> ValueType? {
 		// Handle function calls
 		if let def = visit(node.callee, context: context), let returns = def.returns?.value {
+			define(node.callee, as: returns)
 			return returns
 		}
 
 		// Handle class constructor calls
 		if let def = context.lookup(type: node.callee.description + ".Type") {
+			define(node.callee, as: def)
 			return def.returns!.value
 		}
 
@@ -541,6 +544,7 @@ struct TyperVisitor: ASTVisitor {
 			}
 
 			lastReturnDef = def
+			define(stmt.value, as: def, ref: stmt)
 
 			return def
 		}
@@ -550,12 +554,12 @@ struct TyperVisitor: ASTVisitor {
 		let typedef = ValueType.function(returnDef ?? .void)
 		let def = declDef ?? typedef
 
-		define(node, as: def)
-
 		if context.currentClass != nil {
 			// This only throws when there's no class
+			define(node, as: ValueType.function(def))
 			try! context.define(member: node.name.lexeme, as: def, at: node)
 		} else {
+			define(node, as: ValueType.function(def))
 			context.define(node.name, as: def)
 		}
 
