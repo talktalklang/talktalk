@@ -8,11 +8,11 @@ public struct UnaryOperator: Syntax {
 	public enum Kind {
 		case minus, bang
 	}
-	
+
 	public let start: Token
 	public let end: Token
 	public let kind: Kind
-	
+
 	public var description: String {
 		switch kind {
 		case .minus:
@@ -21,11 +21,11 @@ public struct UnaryOperator: Syntax {
 			"!"
 		}
 	}
-	
+
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
-		context: inout Visitor.Context
+		context: Visitor.Context
 	) -> Visitor.Value {
-		visitor.visit(self, context: &context)
+		visitor.visit(self, context: context)
 	}
 }

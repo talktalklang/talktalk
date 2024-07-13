@@ -18,7 +18,8 @@ public struct Token: Equatable, Sendable {
 		case leftParen, rightParen,
 		     leftBrace, rightBrace,
 		     leftBracket, rightBracket,
-		     comma, dot, minus, plus, semicolon, slash, star, colon
+		     comma, dot, minus, plus, semicolon, slash, star, colon,
+		     questionMark
 
 		// One or two character tokens
 		case bang, bangEqual, equal, equalEqual,

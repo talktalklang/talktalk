@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/8/24.
 //
 public struct ProgramSyntax: Syntax {
+	public static let main = ProgramSyntax(start: .synthetic(.`self`, length: 4), end: .synthetic(.eof, length: 0))
+
 	public let start: Token
 	public let end: Token
 
@@ -16,9 +18,9 @@ public struct ProgramSyntax: Syntax {
 
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
-		context: inout Visitor.Context
+		context: Visitor.Context
 	) -> Visitor.Value {
-		visitor.visit(self, context: &context)
+		visitor.visit(self, context: context)
 	}
 }
 
@@ -118,7 +120,8 @@ struct Parser {
 				return TypeDeclSyntax(
 					start: start,
 					end: previous,
-					name: name
+					name: name,
+					optional: match(.questionMark)
 				)
 			}()
 		} else {
@@ -130,13 +133,28 @@ struct Parser {
 			expr = parse(precedence: .assignment)
 		}
 
-		return VarDeclSyntax(
-			start: start,
-			end: previous,
-			variable: identifier,
-			typeDecl: typeDecl,
-			expr: expr
-		)
+		if declContext == .class {
+			guard let typeDecl else {
+				error("Expected type declaration for \(identifier)", at: previous)
+				return ErrorSyntax(token: identifier.start, expected: .type(TypeDeclSyntax.self), message: "Expected type declaration for \(identifier)")
+			}
+
+			return PropertyDeclSyntax(
+				start: start,
+				end: previous,
+				name: identifier,
+				typeDecl: typeDecl,
+				value: expr
+			)
+		} else {
+			return VarDeclSyntax(
+				start: start,
+				end: previous,
+				variable: identifier,
+				typeDecl: typeDecl,
+				expr: expr
+			)
+		}
 	}
 
 	mutating func funcDecl() -> any Decl {
@@ -154,13 +172,14 @@ struct Parser {
 		consume(.leftParen, "Expected '(' before parameter list")
 		let parameters = parameterList()
 
-		var typeDecl: TypeDeclSyntax? = nil
+		var typeDecl: TypeDeclSyntax?
 		let typeDeclStart = current
 		if match(.rightArrow), let name = consume(IdentifierSyntax.self) {
 			typeDecl = TypeDeclSyntax(
 				start: typeDeclStart,
 				end: previous,
-				name: name
+				name: name,
+				optional: match(.questionMark)
 			)
 		}
 
@@ -203,14 +222,6 @@ struct Parser {
 	}
 
 	mutating func classDecl() -> any Decl {
-//		guard declContext.allowedDecls.contains(.class) else {
-//			return ErrorSyntax(
-//				token: current,
-//				expected: .none,
-//				message: "Cannot define class from \(declContext)"
-//			)
-//		}
-
 		let start = previous
 
 		guard let name = consume(IdentifierSyntax.self) else {
@@ -221,7 +232,10 @@ struct Parser {
 			)
 		}
 
-		let body = withDeclContext(.class) { $0.block() }
+		let body = withDeclContext(.class) {
+			$0.block()
+		}
+
 		return ClassDeclSyntax(
 			start: start,
 			end: previous,
@@ -231,7 +245,9 @@ struct Parser {
 	}
 
 	mutating func statement() -> any Stmt {
-		if match(.leftBrace) {
+		// Check for left brace instead of match so we can consume
+		// it as part of the block() parsing
+		if check(.leftBrace) {
 			return block()
 		}
 

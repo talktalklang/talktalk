@@ -18,7 +18,7 @@ extension String {
 public struct TypeError: Swift.Error, @unchecked Sendable {
 	public let syntax: any Syntax
 	public let message: String
-	public let def: TypeDef?
+	public let definition: TypedValue?
 
 	public func report(in source: String) {
 		let lineIndex = syntax.line - 1
@@ -32,10 +32,10 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 		print(message)
 		print()
 
-		if let def {
-			print("Type set as \(def.definition.description) on \(def.definition.line):")
-			print("\t" + source.components(separatedBy: .newlines)[def.definition.line - 1])
-			let offset = source.inlineOffset(for: def.definition.start.start, line: def.definition.line - 1)
+		if let definition, let ref = definition.ref {
+			print("Type set as \(definition.type.description) on \(ref.line):")
+			print("\t" + source.components(separatedBy: .newlines)[ref.line - 1])
+			let offset = source.inlineOffset(for: ref.start.start, line: ref.line - 1)
 			print("\t" + String(repeating: " ", count: offset) + "^")
 		}
 	}
@@ -46,8 +46,8 @@ public struct Typer {
 
 	public var errors: [TypeError] = []
 
-	public init(source: String) {
-		self.ast = SyntaxTree.parse(source: source)
+	public init(source: String) throws {
+		self.ast = try SyntaxTree.parse(source: source)
 	}
 
 	public func check() -> Results {

@@ -77,6 +77,7 @@ struct Lexer {
 		case "*": make(.star)
 		case "/": make(.slash)
 		case ":": make(.colon)
+		case "?": make(.questionMark)
 		case "-": make(match(">") ? .rightArrow : .minus)
 		case "!": make(match("=") ? .bangEqual : .bang)
 		case "=": make(match("=") ? .equalEqual : .equal)

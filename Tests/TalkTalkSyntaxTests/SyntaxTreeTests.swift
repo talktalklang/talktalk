@@ -13,7 +13,7 @@ struct SyntaxTreeTests {
 		at keypath: PartialKeyPath<R>,
 		as _: T.Type
 	) -> T {
-		let root = SyntaxTree.parse(source: string).decls[0] as! R
+		let root = try! SyntaxTree.parse(source: string).decls[0] as! R
 
 		return root[keyPath: keypath] as! T
 	}
@@ -22,7 +22,7 @@ struct SyntaxTreeTests {
 		_ string: String,
 		as _: T.Type
 	) -> T {
-		let root = SyntaxTree.parse(source: string).decls[0]
+		let root = try! SyntaxTree.parse(source: string).decls[0]
 		return root as! T
 	}
 
@@ -264,8 +264,8 @@ struct SyntaxTreeTests {
 		}
 		""", as: BlockStmtSyntax.self)
 
-		#expect(blockStmt.position == 1)
-		#expect(blockStmt.length == 19)
+		#expect(blockStmt.position == 0)
+		#expect(blockStmt.length == 20)
 
 		let decl = blockStmt.decls[0].cast(VarDeclSyntax.self)
 		#expect(decl.length == 15)
@@ -481,6 +481,43 @@ struct SyntaxTreeTests {
 
 		#expect(expr.name.cast(IdentifierSyntax.self).lexeme == "Person")
 		#expect(expr.body.decls.count == 2)
+	}
+
+	@Test("Class properties") func classProperties() {
+		let expr = parse(
+			"""
+			class Person {
+				var age: Int
+			}
+			""",
+			as: ClassDeclSyntax.self
+		)
+
+		#expect(expr.name.cast(IdentifierSyntax.self).lexeme == "Person")
+		#expect(expr.body.decls.count == 1)
+
+		let prop = expr.body.decls[0].cast(PropertyDeclSyntax.self)
+		#expect(prop.name.lexeme == "age")
+		#expect(prop.typeDecl.name.lexeme == "Int")
+	}
+
+	@Test("Class properties with default value") func classPropertiesWithDefault() {
+		let expr = parse(
+			"""
+			class Person {
+				var age: Int = 123
+			}
+			""",
+			as: ClassDeclSyntax.self
+		)
+
+		#expect(expr.name.cast(IdentifierSyntax.self).lexeme == "Person")
+		#expect(expr.body.decls.count == 1)
+
+		let prop = expr.body.decls[0].cast(PropertyDeclSyntax.self)
+		#expect(prop.name.lexeme == "age")
+		#expect(prop.typeDecl.name.lexeme == "Int")
+		#expect(prop.value!.cast(IntLiteralSyntax.self).lexeme == "123")
 	}
 
 	@Test("Class init") func classInit() {

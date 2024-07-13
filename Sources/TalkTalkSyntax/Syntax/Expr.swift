@@ -7,7 +7,7 @@
 public protocol Expr: Syntax {}
 
 public extension Expr {
-	func accept<Visitor>(_: inout Visitor, context: inout Visitor.Context) -> Visitor.Value where Visitor: ASTVisitor {
+	func accept<Visitor>(_: inout Visitor, context _: Visitor.Context) -> Visitor.Value where Visitor: ASTVisitor {
 		fatalError("Unimplemented visitor")
 	}
 }

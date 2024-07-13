@@ -79,6 +79,7 @@ extension Token.Kind {
 		case .rightBracket: .none
 		case .bof: .none
 		case .rightArrow: .none
+		case .questionMark: .none
 		}
 	}
 }
