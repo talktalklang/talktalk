@@ -19,7 +19,7 @@ struct Format: AsyncParsableCommand {
 			input
 		}
 
-		let tree = SyntaxTree.parse(source: source)
+		let tree = try SyntaxTree.parse(source: source)
 		ASTFormatter.print(tree)
 	}
 }

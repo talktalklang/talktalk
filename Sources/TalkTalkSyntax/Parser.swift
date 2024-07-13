@@ -5,7 +5,9 @@
 //  Created by Pat Nakajima on 7/8/24.
 //
 public struct ProgramSyntax: Syntax {
-	public static let main = ProgramSyntax(start: .synthetic(.`self`, length: 4), end: .synthetic(.eof, length: 0))
+	public static var main: ProgramSyntax {
+		.init(start: .synthetic(.`self`, length: 4), end: .synthetic(.eof, length: 0))
+	}
 
 	public let start: Token
 	public let end: Token

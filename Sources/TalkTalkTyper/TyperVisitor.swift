@@ -108,13 +108,13 @@ struct TyperVisitor: ASTVisitor {
 			currentScope.types[type.name] = type
 		}
 
-		func define(property: String, as type: ValueType, at token: any Syntax) throws {
+		func define(member: String, as type: ValueType, at token: any Syntax) throws {
 			guard currentClass != nil else {
 				throw TypeVisitorError.notInClass
 			}
 
-			currentClass![property] = .init(
-				name: property,
+			currentClass![member] = .init(
+				name: member,
 				type: type,
 				definition: token
 			)
@@ -180,7 +180,7 @@ struct TyperVisitor: ASTVisitor {
 		}
 
 		do {
-			try context.define(property: name, as: type, at: node)
+			try context.define(member: name, as: type, at: node)
 		} catch {
 			return nil
 		}
@@ -287,17 +287,14 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: CallExprSyntax, context: Context) -> ValueType? {
 		// Handle function calls
-		if let def = context.lookup(node.callee) {
-			return def.returns?.value
+		if let def = visit(node.callee, context: context), let returns = def.returns?.value {
+			return returns
 		}
 
 		// Handle class constructor calls
 		if let def = context.lookup(type: node.callee.description + ".Type") {
 			return def.returns!.value
 		}
-
-		// let calleeDef = visit(node.callee)
-		// This is gonna take some work.
 
 		return nil
 	}
@@ -554,7 +551,13 @@ struct TyperVisitor: ASTVisitor {
 		let def = declDef ?? typedef
 
 		define(node, as: def)
-		context.define(node.name, as: def)
+
+		if context.currentClass != nil {
+			// This only throws when there's no class
+			try! context.define(member: node.name.lexeme, as: def, at: node)
+		} else {
+			context.define(node.name, as: def)
+		}
 
 		return def
 	}

@@ -1,2 +1,9 @@
-var a = "bar"
-a = 123
+class Person {
+	func age() {
+		return 123
+	}
+}
+
+var age = Person().age()
+age = "sup"
+

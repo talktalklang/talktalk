@@ -19,7 +19,7 @@ struct Check: AsyncParsableCommand {
 			input
 		}
 
-		let checker = Typer(source: source)
+		let checker = try Typer(source: source)
 		let results = checker.check()
 
 		if results.errors.isEmpty {

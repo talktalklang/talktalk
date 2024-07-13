@@ -196,4 +196,25 @@ struct TyperTests {
 		let propertyDef = try #require(results.typedef(at: 62))
 		#expect(propertyDef.definition.cast(IdentifierSyntax.self).lexeme == "age")
 	}
+
+	@Test("Class methods") func classMethods() throws {
+		let source = """
+		class Person {
+			func age() {
+				return 123
+			}
+		}
+		var age = Person().age()
+		"""
+		let typer = try Typer(source: source)
+
+		let results = typer.check()
+		for error in results.errors {
+			error.report(in: source)
+		}
+
+		let propertyDef = try #require(results.typedef(at: 53))
+		#expect(propertyDef.definition.cast(IdentifierSyntax.self).lexeme == "age")
+		#expect(propertyDef.type.description == "Int")
+	}
 }

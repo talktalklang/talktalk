@@ -130,36 +130,46 @@ public struct ValueType: Equatable, CustomStringConvertible {
 }
 
 public extension ValueType {
-	static let builtins: [ValueType] = [
-		.void,
-		.int,
-		.string,
-		.bool,
-	]
+	static var builtins: [ValueType] {
+		[
+			.void,
+			.int,
+			.string,
+			.bool,
+		]
+	}
 
-	static let void = ValueType(
-		id: 0,
-		name: "Void",
-		definition: ProgramSyntax.main
-	)
+	static var void: ValueType {
+		ValueType(
+			id: 0,
+			name: "Void",
+			definition: ProgramSyntax.main
+		)
+	}
 
-	static let int = ValueType(
-		id: -1,
-		name: "Int",
-		definition: ProgramSyntax.main
-	)
+	static var int: ValueType {
+		ValueType(
+			id: -1,
+			name: "Int",
+			definition: ProgramSyntax.main
+		)
+	}
 
-	static let string = ValueType(
-		id: -2,
-		name: "String",
-		definition: ProgramSyntax.main
-	)
+	static var string: ValueType {
+		ValueType(
+			id: -2,
+			name: "String",
+			definition: ProgramSyntax.main
+		)
+	}
 
-	static let bool = ValueType(
-		id: -3,
-		name: "Bool",
-		definition: ProgramSyntax.main
-	)
+	static var bool: ValueType {
+		ValueType(
+			id: -3,
+			name: "Bool",
+			definition: ProgramSyntax.main
+		)
+	}
 
 	static func array(_ element: ValueType) -> ValueType {
 		ValueType(
@@ -179,9 +189,11 @@ public extension ValueType {
 		)
 	}
 
-	static let `nil` = ValueType(
-		id: -6,
-		name: "Nil",
-		definition: ProgramSyntax.main
-	)
+	static var `nil`: ValueType {
+		ValueType(
+			id: -6,
+			name: "Nil",
+			definition: ProgramSyntax.main
+		)
+	}
 }

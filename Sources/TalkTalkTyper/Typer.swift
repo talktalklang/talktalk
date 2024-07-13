@@ -5,10 +5,10 @@ extension String {
 		var offset = 0
 		for (i, lineText) in components(separatedBy: .newlines).enumerated() {
 			if i == line {
-				return position - offset
+				return position - offset + 1
 			}
 
-			offset += lineText.count
+			offset += lineText.count + 1 // +1 for the newline
 		}
 
 		return 0
@@ -24,7 +24,7 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 		let lineIndex = syntax.line - 1
 
 		let lineText = source.components(separatedBy: .newlines)[lineIndex]
-		let lineOffset = source.inlineOffset(for: syntax.start.start, line: lineIndex)
+		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex)
 
 		print("Problem found on line \(syntax.line):")
 		print("\t" + lineText)
