@@ -1,12 +1,12 @@
 //
 //  TypedValueTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/13/24.
 //
-import Testing
-@testable import TalkTalkTyper
 import TalkTalkSyntax
+@testable import TalkTalkTyper
+import Testing
 
 struct TypedValueTests {
 	@Test("Can find a typed value") func basic() throws {

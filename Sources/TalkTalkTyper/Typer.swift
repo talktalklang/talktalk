@@ -6,7 +6,7 @@ extension String {
 
 		var offset = 0
 		for (i, lineText) in components(separatedBy: .newlines).enumerated() {
-			if i+1 == line {
+			if i + 1 == line {
 				return position - offset + 1
 			}
 
@@ -26,14 +26,14 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 		let lineIndex = syntax.line - 1
 
 		let lineText = source.components(separatedBy: .newlines)[lineIndex]
-		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex+1)
+		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex + 1)
 
 		print("Problem found on line \(syntax.line):")
 
 		// previous line for context
 		if lineIndex > 0 {
-			let lineText = source.components(separatedBy: .newlines)[lineIndex-1]
-			print("\(syntax.line-1)\t|\t\t\(lineText)")
+			let lineText = source.components(separatedBy: .newlines)[lineIndex - 1]
+			print("\(syntax.line - 1)\t|\t\t\(lineText)")
 		}
 
 		print("\(syntax.line)\t|\t\t" + lineText)
@@ -43,7 +43,7 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 			print(" \t|")
 			print(" \t| Type set as \(definition.type.description) on \(ref.definition.line):")
 			print(" \t|")
-			print("\(ref.definition.line)\t|\t\t" + source.components(separatedBy: .newlines)[ref.definition.line-1])
+			print("\(ref.definition.line)\t|\t\t" + source.components(separatedBy: .newlines)[ref.definition.line - 1])
 			let offset = source.inlineOffset(for: ref.definition.position, line: ref.definition.line)
 			print(" \t|\t\t" + String(repeating: " ", count: offset - 1) + "^")
 		}

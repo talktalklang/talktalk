@@ -42,7 +42,7 @@ class Scope {
 struct TyperVisitor: ASTVisitor {
 	var results: Results = .init()
 
-	mutating func define(_ node: any Syntax, as typedef: TypedValue, ref: (any Syntax)? = nil) {
+	mutating func define(_ node: any Syntax, as typedef: TypedValue, ref _: (any Syntax)? = nil) {
 		results.typedefs[node.position ..< node.position + node.length] = typedef
 	}
 
@@ -149,14 +149,15 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: VarDeclSyntax, context: Context) -> TypedValue? {
 		guard let expr = node.expr,
-					let exprDef = visit(expr, context: context) else {
+		      let exprDef = visit(expr, context: context)
+		else {
 			error(node, "unable to determine expression type")
 			return nil
 		} // TODO: handle no expr case
 
 		if let typeDecl = node.typeDecl,
-			 let declDef = visit(typeDecl, context: context),
-			 !declDef.assignable(from: exprDef)
+		   let declDef = visit(typeDecl, context: context),
+		   !declDef.assignable(from: exprDef)
 		{
 			error(node.variable, "not assignable to \(declDef.type.description)")
 			return nil
@@ -206,14 +207,16 @@ struct TyperVisitor: ASTVisitor {
 	mutating func visit(_ node: CallExprSyntax, context: Context) -> TypedValue? {
 		// Handle function calls
 		if let def = visit(node.callee, context: context),
-			 let returns = def.type.returns?.value {
+		   let returns = def.type.returns?.value
+		{
 			define(node.callee, as: TypedValue(type: returns, definition: node))
 			return TypedValue(type: returns, definition: node)
 		}
 
 		// Handle class constructor calls
 		if let def = context.lookup(type: node.callee.description + ".Type"),
-			 let returns = def.returns?.value {
+		   let returns = def.returns?.value
+		{
 			define(node.callee, as: TypedValue(type: returns, definition: node.callee))
 			return returns.bind(node.callee)
 		}
@@ -431,7 +434,8 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: FunctionDeclSyntax, context: Context) -> TypedValue? {
 		let declDef: ValueType? = if let typeDecl = node.typeDecl,
-				let type = visit(typeDecl, context: context) {
+		                             let type = visit(typeDecl, context: context)
+		{
 			ValueType.function(type.type)
 		} else {
 			nil

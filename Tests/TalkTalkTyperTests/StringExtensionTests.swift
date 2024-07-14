@@ -1,11 +1,11 @@
 //
 //  StringExtensionTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/14/24.
 //
-import Testing
 @testable import TalkTalkTyper
+import Testing
 
 struct StringExtensionTests {
 	@Test("can find inline offset") func inlineOffset() {
