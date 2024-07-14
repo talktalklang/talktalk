@@ -217,4 +217,23 @@ struct TyperTests {
 		#expect(propertyDef.definition.cast(IdentifierSyntax.self).lexeme == "age")
 		#expect(propertyDef.type.description == "Int")
 	}
+
+	@Test("If expressions") func ifExpressions() throws {
+		let source = """
+		var name = if true {
+			return "Pat"
+		} else {
+			return "Not Pat"
+		}
+
+		name = 123
+		"""
+		let typer = try Typer(source: source)
+
+		let results = typer.check()
+		let def = try #require(results.typedef(at: 68))
+		#expect(def.definition.cast(IdentifierSyntax.self).lexeme == "name")
+		#expect(def.type.description == "String")
+		#expect(results.errors.count == 1)
+	}
 }

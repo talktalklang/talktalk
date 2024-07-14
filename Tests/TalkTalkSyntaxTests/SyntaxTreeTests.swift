@@ -364,6 +364,36 @@ struct SyntaxTreeTests {
 		""")
 	}
 
+	@Test("If expression") func ifExpression() {
+		let decl = parse(
+			"""
+			var i = if 1 < 2 {
+				3
+			} else {
+				4
+			}
+			""",
+			as: VarDeclSyntax.self
+		)
+
+		let expr = decl.expr!.cast(IfExprSyntax.self)
+
+		#expect(expr.position == 8)
+		#expect(expr.length == 27)
+
+		#expect(expr.condition.description == "1 < 2")
+		#expect(expr.thenBlock.description == """
+		{
+			3
+		}
+		""")
+		#expect(expr.elseBlock.description == """
+		{
+			4
+		}
+		""")
+	}
+
 	@Test("while statement") func whileStatement() {
 		let expr = parse(
 			"""

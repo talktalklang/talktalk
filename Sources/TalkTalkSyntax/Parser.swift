@@ -334,7 +334,7 @@ struct Parser {
 		)
 	}
 
-	private mutating func block() -> BlockStmtSyntax {
+	mutating func block() -> BlockStmtSyntax {
 		let start = current
 
 		skip(.newline) // for brace on next line style that i don't love

@@ -36,6 +36,7 @@ public protocol ASTVisitor {
 	mutating func visit(_ node: LiteralExprSyntax, context: Context) -> Value
 	mutating func visit(_ node: PropertyAccessExpr, context: Context) -> Value
 	mutating func visit(_ node: ArrayLiteralSyntax, context: Context) -> Value
+	mutating func visit(_ node: IfExprSyntax, context: Context) -> Value
 
 	// Utility
 	mutating func visit(_ node: UnaryOperator, context: Context) -> Value

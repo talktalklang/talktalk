@@ -33,6 +33,14 @@ public struct ASTFormatter: ASTVisitor {
 
 	// MARK: Visits
 
+	public mutating func visit(_ node: IfExprSyntax, context: Context) -> String {
+		var result = "if \(visit(node.condition, context: context)) "
+		result += visit(node.thenBlock, context: context)
+		result += " else "
+		result += visit(node.elseBlock, context: context)
+		return result
+	}
+
 	public mutating func visit(_ node: PropertyDeclSyntax, context: Context) -> String {
 		"var \(visit(node.name, context: context))\(visit(node.typeDecl, context: context))"
 	}

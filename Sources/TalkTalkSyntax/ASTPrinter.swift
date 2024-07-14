@@ -35,6 +35,15 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		perform(&copy)
 	}
 
+	public func visit(_ node: IfExprSyntax, context: Context) {
+		describe(node)
+		indenting {
+			$0.visit(node.condition, context: context)
+			$0.visit(node.thenBlock, context: context)
+			$0.visit(node.elseBlock, context: context)
+		}
+	}
+
 	public func visit(_ node: PropertyDeclSyntax, context: Context) {
 		describe(node)
 		indenting {

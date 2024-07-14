@@ -5,6 +5,17 @@ public class Results {
 	public var warnings: [String] = []
 	var typedefs: [Range<Int>: TypedValue] = [:]
 
+	public func typedef(line: Int, column: Int, in source: String) -> TypedValue? {
+		// TODO: optimize
+		for (range, typedef) in typedefs {
+			if range.contains(source.position(line: line, column: column)) {
+				return typedef
+			}
+		}
+
+		return nil
+	}
+
 	public func typedef(at position: Int) -> TypedValue? {
 		// TODO: optimize
 		for (range, typedef) in typedefs {
@@ -53,6 +64,44 @@ struct TyperVisitor: ASTVisitor {
 				message: msg,
 				definition: value
 			)
+		)
+	}
+
+	mutating func returnType(from block: BlockStmtSyntax, context: Context) -> TypedValue? {
+		// TODO: Validate
+		var results: [TypedValue] = []
+		for decl in block.decls {
+			if let typedValue = decl.accept(&self, context: context) {
+				results.append(typedValue)
+			}
+		}
+
+		return results.last
+	}
+
+	mutating func visit(_ node: IfExprSyntax, context: Context) -> TypedValue? {
+		// TODO: Validate this is a bool
+		visit(node.condition, context: context)
+
+
+		guard let lhs = returnType(from: node.thenBlock, context: context) else {
+			error(node.thenBlock, "Unable to determine type")
+			return nil
+		}
+
+		guard let rhs = returnType(from: node.elseBlock, context: context) else {
+			error(node.elseBlock, "Unable to determine type")
+			return nil
+		}
+
+		if lhs.type != rhs.type {
+			error(node, "If expressions must return the same type from both branches")
+			return nil
+		}
+
+		return TypedValue(
+			type: lhs.type,
+			definition: node
 		)
 	}
 
@@ -191,6 +240,7 @@ struct TyperVisitor: ASTVisitor {
 			define(node.rhs, as: exprDef)
 			return receiverDef
 		} else {
+			define(node.lhs, as: receiverDef)
 			error(
 				node.rhs,
 				"\(exprDef.type.description) not assignable to `\(node.lhs.description)`, expected \(receiverDef.type.description)",

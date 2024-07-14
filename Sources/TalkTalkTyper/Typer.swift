@@ -1,22 +1,5 @@
 import TalkTalkSyntax
 
-extension String {
-	func inlineOffset(for position: Int, line: Int) -> Int {
-		assert(line > 0, "Lines start at index 1")
-
-		var offset = 0
-		for (i, lineText) in components(separatedBy: .newlines).enumerated() {
-			if i + 1 == line {
-				return position - offset + 1
-			}
-
-			offset += lineText.count + 1 // +1 for the newline
-		}
-
-		return 0
-	}
-}
-
 public struct TypeError: Swift.Error, @unchecked Sendable {
 	public let syntax: any Syntax
 	public let message: String
@@ -28,7 +11,7 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 		let lineText = source.components(separatedBy: .newlines)[lineIndex]
 		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex + 1)
 
-		print("Problem found on line \(syntax.line):")
+		print("Problem found on line \(syntax.line) at \(syntax.position):")
 
 		// previous line for context
 		if lineIndex > 0 {

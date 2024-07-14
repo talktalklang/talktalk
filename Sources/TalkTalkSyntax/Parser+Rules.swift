@@ -197,6 +197,26 @@ extension Parser {
 		}
 	}
 
+	mutating func ifExpr(_: Bool) -> any Expr {
+		advance() // go past the `if`
+
+		let start = previous
+		let condition = expression()
+		let thenBlock = block()
+
+		consume(.else, "Expected else branch for if expression")
+
+		let elseBlock = block()
+
+		return IfExprSyntax(
+			start: start,
+			end: previous,
+			condition: condition,
+			thenBlock: thenBlock,
+			elseBlock: elseBlock
+		)
+	}
+
 	mutating func literal(_: Bool) -> any Expr {
 		return consume(LiteralExprSyntax.self) ??
 			ErrorSyntax(token: current, expected: .type(LiteralExprSyntax.self), message: "Unreachable?")
