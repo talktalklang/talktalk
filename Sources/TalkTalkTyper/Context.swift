@@ -83,6 +83,21 @@ class Context {
 		)
 	}
 
+	func infer(from type: ValueType, to destination: TypedValue) -> TypedValue? {
+		guard destination.type == .tbd else {
+			return nil
+		}
+
+		let newValue = TypedValue(
+			type: type,
+			definition: destination.definition
+		)
+
+		define(destination.definition, as: newValue)
+
+		return newValue
+	}
+
 	func name(for syntax: any Syntax) -> String {
 		switch syntax {
 		case let syntax as VariableExprSyntax:
@@ -91,6 +106,8 @@ class Context {
 			syntax.lexeme
 		case let syntax as FunctionDeclSyntax:
 			syntax.name.lexeme
+		case let syntax as IntLiteralSyntax:
+			syntax.lexeme
 		default:
 
 			"NO NAME FOR \(syntax)"

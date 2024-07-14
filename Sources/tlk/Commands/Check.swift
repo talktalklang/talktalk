@@ -28,6 +28,8 @@ struct Check: AsyncParsableCommand {
 			for error in results.errors {
 				error.report(in: source)
 			}
+
+			throw ExitCode(1)
 		}
 	}
 }

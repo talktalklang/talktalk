@@ -176,9 +176,7 @@ struct TyperVisitor: ASTVisitor {
 			error(node.condition, "must be not bool")
 		}
 
-		context.withScope {
-			_ = visit(node.body, context: $0)
-		}
+		_ = visit(node.body, context: context)
 
 		return nil
 	}
@@ -271,7 +269,7 @@ struct TyperVisitor: ASTVisitor {
 			return returns.bind(node.callee)
 		}
 
-		return nil
+		return .init(type: .tbd, definition: node)
 	}
 
 	mutating func visit(_ node: InitDeclSyntax, context: Context) -> TypedValue? {
@@ -307,8 +305,12 @@ struct TyperVisitor: ASTVisitor {
 		nil
 	}
 
-	mutating func visit(_: ParameterListSyntax, context _: Context) -> TypedValue? {
+	mutating func visit(_ node: ParameterListSyntax, context: Context) -> TypedValue? {
 		// TODO: handle type decls
+		for parameter in node.parameters {
+			context.define(parameter, as: .tbd)
+		}
+
 		return nil
 	}
 
@@ -443,14 +445,32 @@ struct TyperVisitor: ASTVisitor {
 	}
 
 	mutating func visit(_ node: BinaryExprSyntax, context: Context) -> TypedValue? {
-		guard let lhsDef = visit(node.lhs, context: context) else {
+		guard var lhsDef = visit(node.lhs, context: context) else {
 			error(node.lhs, "unable to determine type")
 			return nil
 		}
 
-		guard let rhsDef = visit(node.rhs, context: context) else {
+		guard var rhsDef = visit(node.rhs, context: context) else {
 			error(node.rhs, "unable to determine type")
 			return nil
+		}
+
+		if lhsDef.type == .tbd, rhsDef.type != .tbd {
+			lhsDef = context.infer(from: rhsDef.type, to: lhsDef)!
+
+			define(
+				node.lhs,
+				as: lhsDef
+			)
+		}
+
+		if rhsDef.type == .tbd, lhsDef.type != .tbd {
+			rhsDef = context.infer(from: lhsDef.type, to: rhsDef)!
+
+			define(
+				node.rhs,
+				as: rhsDef
+			)
 		}
 
 		guard lhsDef.type == rhsDef.type else {
@@ -491,6 +511,7 @@ struct TyperVisitor: ASTVisitor {
 			nil
 		}
 
+		_ = visit(node.parameters, context: context)
 		_ = visit(node.body, context: context)
 
 		var lastReturnDef: ValueType?
@@ -499,21 +520,24 @@ struct TyperVisitor: ASTVisitor {
 				return nil
 			}
 
-			guard let def = visit(stmt, context: context) else {
-				if declDef == nil {
-					error(stmt.value, "could not determine return type")
-				}
+			guard var def = visit(stmt, context: context) else {
+				return TypedValue(type: .tbd, definition: stmt)
+			}
 
-				return nil
+			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
+				if def.type == .tbd,
+					 let returns = declDef.returns?.value,
+					 let inferred = context.infer(from: returns, to: def) {
+					def = inferred
+					define(stmt.value, as: def)
+				} else {
+					error(stmt.value, "Not assignable to \(declDef.returns!.value)")
+					return nil
+				}
 			}
 
 			if let lastReturnDef, !lastReturnDef.assignable(from: def.type) {
 				error(stmt.value, "Function cannot return different types")
-				return nil
-			}
-
-			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
-				error(stmt.value, "Not assignable to \(declDef.returns!.value)")
 				return nil
 			}
 

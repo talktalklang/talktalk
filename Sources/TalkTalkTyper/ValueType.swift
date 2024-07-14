@@ -200,4 +200,12 @@ public extension ValueType {
 			definition: ProgramSyntax.main
 		)
 	}
+
+	static var tbd: ValueType {
+		ValueType(
+			id: -7,
+			name: "TBD",
+			definition: ProgramSyntax.main
+		)
+	}
 }

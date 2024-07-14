@@ -166,6 +166,46 @@ struct TyperTests {
 		#expect(results.typedef(at: 104)?.type.description == "Function -> (Int)")
 	}
 
+	@Test("Function args") func functionArgs() throws {
+		let source = """
+		func id(n) -> Int {
+			return n
+		}
+		"""
+		let typer = try Typer(source: source)
+		let results = typer.check()
+
+		for error in results.errors {
+			error.report(in: source)
+		}
+
+		let ndef = try #require(results.typedef(at: 28))
+
+		#expect(ndef.type == .int)
+	}
+
+	@Test("Function return with args") func functionReturnArgs() throws {
+		let source = """
+		func fib(n) {
+			if (n <= 1) {
+				return n
+			}
+			
+			return fib(n - 2) + fib(n - 1)
+		}
+		"""
+		let typer = try Typer(source: source)
+		let results = typer.check()
+
+		for error in results.errors {
+			error.report(in: source)
+		}
+
+		let ndef = try #require(results.typedef(at: 6))
+
+		#expect(ndef.type == .function(.int))
+	}
+
 	@Test("Classes") func classes() throws {
 		let source = """
 		class Person {}
