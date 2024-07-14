@@ -10,6 +10,17 @@ public struct UnaryExprSyntax: Syntax, Expr {
 	public let op: UnaryOperator
 	public let rhs: any Expr
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(op)
+		hasher.combine(rhs)
+	}
+
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
 		context: Visitor.Context

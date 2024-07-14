@@ -9,6 +9,16 @@ public struct ReturnStmtSyntax: Syntax, Stmt {
 	public let end: Token
 	public var value: any Expr
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(value)
+	}
+
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
 		context: Visitor.Context

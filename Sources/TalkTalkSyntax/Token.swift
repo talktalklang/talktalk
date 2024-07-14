@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/1/24.
 //
-public struct Token: Equatable, Sendable {
+public struct Token: Equatable, Sendable, Hashable {
 	typealias Kinds = Set<Token.Kind>
 
 	static func synthetic(_ kind: Token.Kind, length: Int) -> Token {

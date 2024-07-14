@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/8/24.
 //
-public protocol Syntax: CustomStringConvertible {
+public protocol Syntax: CustomStringConvertible, Hashable {
 	var start: Token { get }
 	var end: Token { get }
 	func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor, context: Visitor.Context) -> Visitor.Value

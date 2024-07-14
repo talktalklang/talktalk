@@ -10,6 +10,16 @@ public struct BlockStmtSyntax: Syntax, Stmt {
 
 	public let decls: [any Decl]
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(decls.map(\.hashValue))
+	}
+
 	public var isEmpty: Bool {
 		decls.isEmpty
 	}

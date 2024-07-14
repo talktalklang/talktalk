@@ -11,6 +11,18 @@ public struct IfExprSyntax: Syntax, Expr {
 	public var thenBlock: BlockStmtSyntax
 	public var elseBlock: BlockStmtSyntax
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(condition)
+		hasher.combine(thenBlock)
+		hasher.combine(elseBlock)
+	}
+
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
 		context: Visitor.Context

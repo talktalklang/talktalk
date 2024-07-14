@@ -3,18 +3,7 @@ import TalkTalkSyntax
 public class Results {
 	public var errors: [TypeError] = []
 	public var warnings: [String] = []
-	var typedefs: [Range<Int>: TypedValue] = [:]
-
-	public func typedef(line: Int, column: Int, in source: String) -> TypedValue? {
-		// TODO: optimize
-		for (range, typedef) in typedefs {
-			if range.contains(source.position(line: line, column: column)) {
-				return typedef
-			}
-		}
-
-		return nil
-	}
+	var typedefs: [Int: TypedValue] = [:]
 
 	public func typedef(at position: Int) -> TypedValue? {
 		// TODO: optimize
@@ -25,6 +14,10 @@ public class Results {
 		}
 
 		return nil
+	}
+
+	func syntax(at position: Int) -> TypedValue {
+		
 	}
 }
 

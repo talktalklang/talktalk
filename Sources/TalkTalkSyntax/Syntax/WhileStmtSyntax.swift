@@ -10,6 +10,17 @@ public struct WhileStmtSyntax: Syntax, Stmt {
 	public var condition: any Expr
 	public var body: BlockStmtSyntax
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(condition)
+		hasher.combine(body)
+	}
+
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
 		context: Visitor.Context

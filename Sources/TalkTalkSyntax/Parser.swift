@@ -14,6 +14,16 @@ public struct ProgramSyntax: Syntax {
 
 	public var decls: [any Decl] = []
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(decls.map(\.hashValue))
+	}
+
 	public var description: String {
 		decls.map(\.description).joined(separator: "\n")
 	}

@@ -11,6 +11,17 @@ public struct PropertyAccessExpr: Expr, Syntax {
 	public var receiver: any Expr
 	public var property: IdentifierSyntax
 
+	public static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(start)
+		hasher.combine(end)
+		hasher.combine(receiver)
+		hasher.combine(property)
+	}
+
 	public func accept<Visitor: ASTVisitor>(
 		_ visitor: inout Visitor,
 		context: Visitor.Context
