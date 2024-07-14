@@ -2,9 +2,11 @@ import TalkTalkSyntax
 
 extension String {
 	func inlineOffset(for position: Int, line: Int) -> Int {
+		assert(line > 0, "Lines start at index 1")
+
 		var offset = 0
 		for (i, lineText) in components(separatedBy: .newlines).enumerated() {
-			if i == line {
+			if i+1 == line {
 				return position - offset + 1
 			}
 
@@ -24,34 +26,47 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 		let lineIndex = syntax.line - 1
 
 		let lineText = source.components(separatedBy: .newlines)[lineIndex]
-		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex)
+		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex+1)
 
 		print("Problem found on line \(syntax.line):")
-		print("\t" + lineText)
-		print("\t" + String(repeating: " ", count: lineOffset - 1) + "^")
-		print(message)
-		print()
+
+		// previous line for context
+		if lineIndex > 0 {
+			let lineText = source.components(separatedBy: .newlines)[lineIndex-1]
+			print("\(syntax.line-1)\t|\t\t\(lineText)")
+		}
+
+		print("\(syntax.line)\t|\t\t" + lineText)
+		print(" \t|\t\t" + String(repeating: " ", count: lineOffset - 1) + "^ \(message)")
 
 		if let definition, let ref = definition.ref {
-			print("Type set as \(definition.type.description) on \(ref.line):")
-			print("\t" + source.components(separatedBy: .newlines)[ref.line - 1])
-			let offset = source.inlineOffset(for: ref.start.start, line: ref.line - 1)
-			print("\t" + String(repeating: " ", count: offset) + "^")
+			print(" \t|")
+			print(" \t| Type set as \(definition.type.description) on \(ref.definition.line):")
+			print(" \t|")
+			print("\(ref.definition.line)\t|\t\t" + source.components(separatedBy: .newlines)[ref.definition.line-1])
+			let offset = source.inlineOffset(for: ref.definition.position, line: ref.definition.line)
+			print(" \t|\t\t" + String(repeating: " ", count: offset - 1) + "^")
 		}
 	}
 }
 
 public struct Typer {
 	let ast: ProgramSyntax
+	let context: Context
 
 	public var errors: [TypeError] = []
 
 	public init(source: String) throws {
 		self.ast = try SyntaxTree.parse(source: source)
+		self.context = Context()
+
+		for builtin in ValueType.builtins {
+			context.define(type: builtin)
+		}
 	}
 
 	public func check() -> Results {
-		var visitor = TyperVisitor(ast: ast)
-		return visitor.check()
+		var visitor = TyperVisitor()
+		return visitor.visit(ast: ast, context: context)
 	}
 }

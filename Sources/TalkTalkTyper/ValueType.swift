@@ -8,7 +8,7 @@ import TalkTalkSyntax
 
 public struct Property {
 	let name: String
-	let type: ValueType
+	let type: TypedValue
 	let definition: any Syntax
 }
 
@@ -126,6 +126,10 @@ public struct ValueType: Equatable, CustomStringConvertible {
 
 	var isCallable: Bool {
 		returns != nil
+	}
+
+	func bind(_ to: any Syntax) -> TypedValue {
+		TypedValue(type: self, definition: to)
 	}
 }
 

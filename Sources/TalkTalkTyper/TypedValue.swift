@@ -1,9 +1,16 @@
 import TalkTalkSyntax
 
+// A TypedValue binds a source location with a type. It also contains
 public struct TypedValue {
 	public var type: ValueType
 	public var definition: any Syntax
-	public var ref: (any Syntax)?
+	@Boxed public var ref: TypedValue?
+
+	init(type: ValueType, definition: any Syntax, ref: TypedValue? = nil) {
+		self.type = type
+		self.definition = definition
+		self._ref = Boxed(value: ref)
+	}
 
 	public func assignable(from other: TypedValue) -> Bool {
 		return type == other.type
