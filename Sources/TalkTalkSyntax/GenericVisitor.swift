@@ -159,45 +159,65 @@ public struct GenericVisitor<Context>: ASTVisitor {
 	public mutating func visit(_ node: AssignmentExpr, context: Context) -> Context {
 		var context = perform(node, context)
 		context = visit(node.lhs, context: context)
+		context = visit(node.rhs, context: context)
+		return context
 	}
 
 	public mutating func visit(_ node: LiteralExprSyntax, context: Context) -> Context {
-		<#code#>
+		perform(node, context)
 	}
 
 	public mutating func visit(_ node: PropertyAccessExpr, context: Context) -> Context {
-		<#code#>
+		var context = perform(node, context)
+		context = visit(node.receiver, context: context)
+		context = visit(node.property, context: context)
+		return context
 	}
 
 	public mutating func visit(_ node: ArrayLiteralSyntax, context: Context) -> Context {
-		<#code#>
+		var context = perform(node, context)
+		context = visit(node.elements, context: context)
+		return context
 	}
 
 	public mutating func visit(_ node: IfExprSyntax, context: Context) -> Context {
-		<#code#>
+		var context = perform(node, context)
+		context = visit(node.condition, context: context)
+		context = visit(node.thenBlock, context: context)
+		context = visit(node.elseBlock, context: context)
+		return context
 	}
 
 	public mutating func visit(_ node: UnaryOperator, context: Context) -> Context {
-		<#code#>
+		perform(node, context)
 	}
 
 	public mutating func visit(_ node: BinaryOperatorSyntax, context: Context) -> Context {
-		<#code#>
+		perform(node, context)
 	}
 
 	public mutating func visit(_ node: ArgumentListSyntax, context: Context) -> Context {
-		<#code#>
+		var context = perform(node, context)
+		for argument in node.arguments {
+			context = visit(argument, context: context)
+		}
+		return context
 	}
 
 	public mutating func visit(_ node: ParameterListSyntax, context: Context) -> Context {
-		<#code#>
+		var context = perform(node, context)
+		for parameter in node.parameters {
+			context = visit(parameter, context: context)
+		}
+		return context
 	}
 
 	public mutating func visit(_ node: ErrorSyntax, context: Context) -> Context {
-		<#code#>
+		perform(node, context)
 	}
 
 	public mutating func visit(_ node: TypeDeclSyntax, context: Context) -> Context {
-		<#code#>
+		var context = perform(node, context)
+		return visit(node.name, context: context)
 	}
 }
