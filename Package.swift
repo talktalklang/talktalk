@@ -20,12 +20,17 @@ let package = Package(
 			targets: ["TalkTalkTyper"]
 		),
 		.library(
+			name: "TalkTalkCompiler",
+			targets: ["TalkTalkCompiler"]
+		),
+		.library(
 			name: "TalkTalkInterpreter",
 			targets: ["TalkTalkInterpreter"]
 		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
+		.package(url: "https://github.com/swiftlang/swift-llvm-bindings", revision:  "46c67a9c1018980b92a869ad58a5ac290e64b9e0")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -41,6 +46,14 @@ let package = Package(
 		),
 		.target(
 			name: "TalkTalkInterpreter"
+		),
+		.target(
+			name: "TalkTalkCompiler",
+			dependencies: [
+				"TalkTalkSyntax",
+				"TalkTalkTyper",
+				"SwiftLLVMBindings"
+			]
 		),
 		.target(
 			name: "TalkTalkSyntax"
@@ -64,6 +77,15 @@ let package = Package(
 			name: "TalkTalkTests",
 			dependencies: [
 				"TalkTalk",
+			],
+			swiftSettings: [
+				.enableUpcomingFeature("SwiftTesting"),
+			]
+		),
+		.testTarget(
+			name: "TalkTalkCompilerTests",
+			dependencies: [
+				"TalkTalkCompiler",
 			],
 			swiftSettings: [
 				.enableUpcomingFeature("SwiftTesting"),

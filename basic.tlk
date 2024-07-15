@@ -1,9 +1,0 @@
-class Person {
-	func age() {
-		return 123
-	}
-}
-
-var age = Person().age()
-age = "sup"
-

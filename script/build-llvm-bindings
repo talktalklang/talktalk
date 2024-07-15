@@ -1,0 +1,16 @@
+#! /bin/sh
+
+mkdir -p tmp/build
+cd tmp/build
+
+git clone --depth=1 https://github.com/llvm/llvm-project
+
+cmake -DCMAKE_BUILD_TYPE=Debug ./llvm-project/llvm
+
+# cmake -G Ninja \
+#       -D CMAKE_BUILD_TYPE=Debug \
+#       -D "CMAKE_Swift_COMPILER=$(which swiftc)" \
+#       -D "LLVM_DIR=$PWD/llvm-project/llvm/cmake/modules" \
+#       -B "$PWD"
+
+# cmake --build "$PWD" --target all
