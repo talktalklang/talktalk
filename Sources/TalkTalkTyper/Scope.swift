@@ -1,6 +1,6 @@
 //
 //  Scope.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/15/24.
 //

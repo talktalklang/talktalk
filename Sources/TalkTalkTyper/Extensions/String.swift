@@ -1,6 +1,6 @@
 //
 //  String.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/14/24.
 //
@@ -9,8 +9,8 @@ extension String {
 		var position = 0
 
 		for (i, lineText) in components(separatedBy: .newlines).enumerated() {
-			if i+1 == line {
-				return position + (column-1)
+			if i + 1 == line {
+				return position + (column - 1)
 			}
 
 			position += lineText.count

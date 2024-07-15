@@ -10,7 +10,7 @@ public struct UnaryExprSyntax: Syntax, Expr {
 	public let op: UnaryOperator
 	public let rhs: any Expr
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

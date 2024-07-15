@@ -9,7 +9,7 @@ public struct ArgumentListSyntax: Syntax {
 	public let end: Token
 	public let arguments: [any Expr]
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

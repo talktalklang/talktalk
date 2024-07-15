@@ -10,7 +10,7 @@ public struct BlockStmtSyntax: Syntax, Stmt {
 
 	public let decls: [any Decl]
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

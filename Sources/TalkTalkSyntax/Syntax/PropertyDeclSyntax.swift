@@ -11,7 +11,7 @@ public struct PropertyDeclSyntax: Syntax, Decl {
 	public var typeDecl: TypeDeclSyntax
 	public var value: (any Expr)?
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

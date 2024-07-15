@@ -9,7 +9,7 @@ public struct GroupExpr: Expr, Syntax {
 	public let end: Token
 	public let expr: any Expr
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

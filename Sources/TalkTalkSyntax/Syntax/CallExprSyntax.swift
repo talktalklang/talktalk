@@ -10,7 +10,7 @@ public struct CallExprSyntax: Syntax, Expr {
 	public let callee: any Expr
 	public let arguments: ArgumentListSyntax
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

@@ -11,7 +11,7 @@ public struct PropertyAccessExpr: Expr, Syntax {
 	public var receiver: any Expr
 	public var property: IdentifierSyntax
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

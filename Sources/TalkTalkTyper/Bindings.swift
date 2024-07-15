@@ -1,6 +1,6 @@
 //
 //  Results.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/15/24.
 //
@@ -17,7 +17,7 @@ public class Bindings {
 	}
 
 	public func define(_ node: any Syntax, as typedValue: TypedValue) {
-		self.typedefs[node.hashValue] = typedValue
+		typedefs[node.hashValue] = typedValue
 	}
 
 	public func typedef(at position: Int) -> TypedValue? {

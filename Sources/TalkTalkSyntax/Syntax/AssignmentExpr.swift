@@ -10,7 +10,7 @@ public struct AssignmentExpr: Syntax, Expr {
 	public let lhs: any Expr
 	public let rhs: any Expr
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

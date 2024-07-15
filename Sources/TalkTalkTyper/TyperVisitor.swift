@@ -479,8 +479,9 @@ struct TyperVisitor: ASTVisitor {
 
 			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
 				if def.type == .tbd,
-					 let returns = declDef.returns?.value,
-					 let inferred = context.infer(from: returns, to: def) {
+				   let returns = declDef.returns?.value,
+				   let inferred = context.infer(from: returns, to: def)
+				{
 					def = inferred
 					define(stmt.value, as: def)
 				} else {

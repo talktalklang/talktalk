@@ -5,7 +5,7 @@ public struct VarDeclSyntax: Decl, Syntax {
 	public var typeDecl: TypeDeclSyntax?
 	public var expr: (any Expr)?
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

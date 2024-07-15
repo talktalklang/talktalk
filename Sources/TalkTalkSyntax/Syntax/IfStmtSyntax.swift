@@ -10,7 +10,7 @@ public struct IfStmtSyntax: Syntax, Stmt {
 	public var condition: any Expr
 	public var body: BlockStmtSyntax
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

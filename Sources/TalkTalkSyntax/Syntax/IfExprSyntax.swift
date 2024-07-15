@@ -1,6 +1,6 @@
 //
 //  IfExprSyntax.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/14/24.
 //
@@ -11,7 +11,7 @@ public struct IfExprSyntax: Syntax, Expr {
 	public var thenBlock: BlockStmtSyntax
 	public var elseBlock: BlockStmtSyntax
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

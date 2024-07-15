@@ -11,7 +11,7 @@ public struct InitDeclSyntax: Decl, Syntax {
 	public var parameters: ParameterListSyntax
 	public var body: BlockStmtSyntax
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

@@ -16,7 +16,7 @@ public struct ErrorSyntax: Syntax, Expr, Decl {
 	public var start: Token { token }
 	public var end: Token { token }
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

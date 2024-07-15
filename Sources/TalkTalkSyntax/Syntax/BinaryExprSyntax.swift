@@ -12,7 +12,7 @@ public struct BinaryExprSyntax: Syntax, Expr {
 	public let start: Token
 	public let end: Token
 
-	public static func ==(lhs: Self, rhs: Self) -> Bool {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 
