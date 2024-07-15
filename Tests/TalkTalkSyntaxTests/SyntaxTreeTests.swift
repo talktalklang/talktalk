@@ -691,4 +691,18 @@ struct SyntaxTreeTests {
 		#expect(expr.length == 9)
 		#expect(expr.description == "[1, 2, 3]")
 	}
+
+	@Test("Can get node from position") func nodeAt() throws {
+		let source = """
+		class Person {
+			func foo() {
+				print("hello")
+			}
+		}
+		"""
+
+		let tree = try SyntaxTree.parse(source: source)
+		let node = try #require(tree.node(at: 38).as(StringLiteralSyntax.self))
+		#expect(node.lexeme == #""hello""#)
+	}
 }

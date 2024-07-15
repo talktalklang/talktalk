@@ -1,57 +1,18 @@
 import TalkTalkSyntax
 
-public class Results {
-	public var errors: [TypeError] = []
-	public var warnings: [String] = []
-	var typedefs: [Int: TypedValue] = [:]
-
-	public func typedef(at position: Int) -> TypedValue? {
-		// TODO: optimize
-		for (range, typedef) in typedefs {
-			if range.contains(position) {
-				return typedef
-			}
-		}
-
-		return nil
-	}
-
-	func syntax(at position: Int) -> TypedValue {
-		
-	}
-}
-
-class Scope {
-	var parent: Scope?
-	var locals: [String: TypedValue] = [:]
-	var types: [String: ValueType] = [:]
-
-	init(parent: Scope? = nil) {
-		self.parent = parent
-	}
-
-	var depth: Int {
-		(parent?.depth ?? -1) + 1
-	}
-
-	func lookup(identifier: String) -> TypedValue? {
-		locals[identifier] ?? parent?.lookup(identifier: identifier)
-	}
-
-	func lookup(type: String) -> ValueType? {
-		types[type] ?? parent?.lookup(type: type)
-	}
-}
-
 struct TyperVisitor: ASTVisitor {
-	var results: Results = .init()
+	var bindings: Bindings = .init(ast: .main)
+
+	init(ast: ProgramSyntax) {
+		self.bindings = .init(ast: ast)
+	}
 
 	mutating func define(_ node: any Syntax, as typedef: TypedValue, ref _: (any Syntax)? = nil) {
-		results.typedefs[node.position ..< node.position + node.length] = typedef
+		bindings.define(node, as: typedef)
 	}
 
 	mutating func error(_ node: any Syntax, _ msg: String, value: TypedValue? = nil) {
-		results.errors.append(
+		bindings.errors.append(
 			.init(
 				syntax: node,
 				message: msg,
@@ -74,8 +35,7 @@ struct TyperVisitor: ASTVisitor {
 
 	mutating func visit(_ node: IfExprSyntax, context: Context) -> TypedValue? {
 		// TODO: Validate this is a bool
-		visit(node.condition, context: context)
-
+		_ = visit(node.condition, context: context)
 
 		guard let lhs = returnType(from: node.thenBlock, context: context) else {
 			error(node.thenBlock, "Unable to determine type")
@@ -102,15 +62,15 @@ struct TyperVisitor: ASTVisitor {
 		node.accept(&self, context: context)
 	}
 
-	mutating func visit(ast: any Syntax, context: Context) -> Results {
-		results = .init()
+	mutating func visit(ast: ProgramSyntax, context: Context) -> Bindings {
+		bindings = .init(ast: ast)
 
 		for builtin in ValueType.builtins {
 			context.define(type: builtin)
 		}
 
 		_ = ast.accept(&self, context: context)
-		return results
+		return bindings
 	}
 
 	// MARK: Visits
@@ -556,7 +516,7 @@ struct TyperVisitor: ASTVisitor {
 			// This only throws when there's no class
 			try! context.define(member: node.name.lexeme, as: typedValue, at: node)
 		} else {
-			define(node, as: typedValue)
+			define(node.name, as: typedValue)
 			context.define(node.name, as: typedValue)
 		}
 

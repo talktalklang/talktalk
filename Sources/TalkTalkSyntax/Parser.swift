@@ -18,6 +18,18 @@ public struct ProgramSyntax: Syntax {
 		lhs.hashValue == rhs.hashValue
 	}
 
+	public func node(at position: Int) -> any Syntax {
+		var result: any Syntax = self
+		var visitor = GenericVisitor { node, _ in
+			if node.range.contains(position), node.range.count < result.range.count {
+				result = node
+			}
+		}
+
+		visitor.visit(self, context: ())
+		return result
+	}
+
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(start)
 		hasher.combine(end)

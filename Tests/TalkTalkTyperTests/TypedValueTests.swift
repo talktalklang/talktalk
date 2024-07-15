@@ -22,7 +22,7 @@ struct TypedValueTests {
 		#expect(typedValue.type == .int)
 		#expect(typedValue.definition.position == 4)
 
-		let error = results.errors[0]
-		error.report(in: source)
+		let error = results.errors.first!
+		#expect(error.message.contains("String not assignable"))
 	}
 }

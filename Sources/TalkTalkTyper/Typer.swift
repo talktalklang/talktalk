@@ -48,8 +48,8 @@ public struct Typer {
 		}
 	}
 
-	public func check() -> Results {
-		var visitor = TyperVisitor()
+	public func check() -> Bindings {
+		var visitor = TyperVisitor(ast: ast)
 		return visitor.visit(ast: ast, context: context)
 	}
 }

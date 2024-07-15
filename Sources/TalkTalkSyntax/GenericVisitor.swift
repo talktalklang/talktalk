@@ -7,6 +7,10 @@
 public struct GenericVisitor<Context>: ASTVisitor {
 	let perform: (any Syntax, Context) -> Context
 
+	public init(perform: @escaping (any Syntax, Context) -> Context) {
+		self.perform = perform
+	}
+
 	// MARK: Visits
 
 	mutating func visit(_ expr: any Syntax, context: Context) -> Context {
