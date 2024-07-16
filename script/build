@@ -1,3 +1,4 @@
 #! /bin/sh
 
+export SWIFT_LLVM_BINDINGS_PATH_TO_LLVM_HEADERS=/opt/homebrew/opt/llvm/include/llvm
 swift build -c release --product tlk

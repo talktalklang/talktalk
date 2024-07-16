@@ -1,5 +1,5 @@
 {
-  "originHash" : "b6ba87c1d12c7572dae5414d075d2ed5c150b43d96c46066e86578b36e6f8874",
+  "originHash" : "beb5d3a925a43c12a4872ea52a07fd222b35a8c33f899339485ce8067f5e717c",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -11,12 +11,12 @@
       }
     },
     {
-      "identity" : "swift-llvm-bindings",
+      "identity" : "swifty-llvm",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-llvm-bindings",
+      "location" : "https://github.com/hylo-lang/Swifty-LLVM",
       "state" : {
-        "branch" : "llvm.org/main",
-        "revision" : "67c6359ecf551337ac7eb07daa66c1a812896008"
+        "branch" : "main",
+        "revision" : "63c93192bea09e87f8d490595e54c5022814429a"
       }
     }
   ],

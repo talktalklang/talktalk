@@ -30,7 +30,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-		.package(url: "https://github.com/swiftlang/swift-llvm-bindings", revision:  "46c67a9c1018980b92a869ad58a5ac290e64b9e0")
+		.package(url: "https://github.com/hylo-lang/Swifty-LLVM", branch: "main")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -52,7 +52,10 @@ let package = Package(
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkTyper",
-				"SwiftLLVMBindings"
+				.product(name: "SwiftyLLVM", package: "Swifty-LLVM")
+			],
+			swiftSettings: [
+				.unsafeFlags(["-warnings-as-errors"])
 			]
 		),
 		.target(

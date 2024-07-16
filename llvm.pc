@@ -1,0 +1,6 @@
+Name: LLVM
+Description: Low-level Virtual Machine compiler framework
+Version: 17.0.6
+URL: http://www.llvm.org/
+Libs: -L/opt/homebrew/opt/llvm@17/lib -L/opt/homebrew/Cellar/zstd/1.5.5/lib -lc++ -lLLVM-17
+Cflags: -I/opt/homebrew/opt/llvm@17/include
