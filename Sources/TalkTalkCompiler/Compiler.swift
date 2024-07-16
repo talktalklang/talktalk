@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/15/24.
 //
-import SwiftyLLVM
+import CLLVM
 
 public struct Compiler {
 	let source: String
@@ -14,8 +14,5 @@ public struct Compiler {
 	}
 
 	public func compile() {
-		var module = SwiftyLLVM.Module("TalkTalk")
-		print(module.type(named: "Person"))
-		print(module)
 	}
 }

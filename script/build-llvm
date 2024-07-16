@@ -1,0 +1,9 @@
+#! /bin/sh
+
+git clone --depth=1 https://github.com/llvm/llvm-project $LLVM_SOURCE_DIR
+mkdir -p $LLVM_BUILD_DIR
+cd $LLVM_BUILD_DIR
+cmake -DCMAKE_BUILD_TYPE=Debug $LLVM_SOURCE_DIR 
+make LLVMCore -j $CPU_NUM
+make LLVMInterpreter -j $CPU_NUM
+make llvm-config -j $CPU_NUM
