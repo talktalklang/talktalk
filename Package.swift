@@ -53,9 +53,6 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkTyper",
 				.product(name: "SwiftyLLVM", package: "Swifty-LLVM")
-			],
-			swiftSettings: [
-				.unsafeFlags(["-warnings-as-errors"])
 			]
 		),
 		.target(
