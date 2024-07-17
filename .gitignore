@@ -9,3 +9,5 @@ DerivedData/
 .netrc
 llvm.pc
 tmp/
+# Sources/CLLVM/LLVM
+Sources/CLLVM/LLVMBuild

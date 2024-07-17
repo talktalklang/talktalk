@@ -17,7 +17,7 @@ public struct StmtSyntax: Syntax {
 	}
 
 	public func accept<Visitor: ASTVisitor>(
-		_ visitor: inout Visitor,
+		_ visitor: Visitor,
 		context: Visitor.Context
 	) -> Visitor.Value {
 		visitor.visit(self, context: context)

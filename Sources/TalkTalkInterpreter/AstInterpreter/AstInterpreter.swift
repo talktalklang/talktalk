@@ -15,7 +15,7 @@ struct AstInterpreter {
 
 	mutating func run(_ statements: [any Stmt], onComplete: ((Value) -> Void)? = nil) {
 		do {
-			for statement in statements {
+			for var statement in statements {
 				try execute(statement: statement)
 				onComplete?(lastExpressionValue)
 			}

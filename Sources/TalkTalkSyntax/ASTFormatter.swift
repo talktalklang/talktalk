@@ -1,21 +1,20 @@
-
-
 public struct ASTFormatter: ASTVisitor {
+
 	public struct Context {}
 
 	let root: any Syntax
 	var indent = 0
 
 	public static func format(_ root: any Syntax) -> String {
-		var formatter = ASTFormatter(root: root)
-		var context = Context()
-		return root.accept(&formatter, context: context)
+		let formatter = ASTFormatter(root: root)
+		let context = Context()
+		return root.accept(formatter, context: context)
 	}
 
 	public static func print(_ root: any Syntax) {
-		var formatter = ASTFormatter(root: root)
-		var context = Context()
-		Swift.print(root.accept(&formatter, context: context))
+		let formatter = ASTFormatter(root: root)
+		let context = Context()
+		Swift.print(root.accept(formatter, context: context))
 	}
 
 	public init(root: any Syntax) {
@@ -33,7 +32,7 @@ public struct ASTFormatter: ASTVisitor {
 
 	// MARK: Visits
 
-	public mutating func visit(_ node: IfExprSyntax, context: Context) -> String {
+	public func visit(_ node: IfExprSyntax, context: Context) -> String {
 		var result = "if \(visit(node.condition, context: context)) "
 		result += visit(node.thenBlock, context: context)
 		result += " else "
@@ -41,11 +40,11 @@ public struct ASTFormatter: ASTVisitor {
 		return result
 	}
 
-	public mutating func visit(_ node: PropertyDeclSyntax, context: Context) -> String {
+	public func visit(_ node: PropertyDeclSyntax, context: Context) -> String {
 		"var \(visit(node.name, context: context))\(visit(node.typeDecl, context: context))"
 	}
 
-	public mutating func visit(_ node: PropertyAccessExpr, context: Context) -> String {
+	public func visit(_ node: PropertyAccessExpr, context: Context) -> String {
 		"\(visit(node.receiver, context: context)).\(visit(node.property, context: context))"
 	}
 
@@ -53,57 +52,57 @@ public struct ASTFormatter: ASTVisitor {
 		node.description
 	}
 
-	public mutating func visit(_ node: UnaryOperator, context _: Context) -> String {
+	public func visit(_ node: UnaryOperator, context _: Context) -> String {
 		node.description
 	}
 
-	public mutating func visit(_ node: any Syntax, context: Context) -> String {
-		node.accept(&self, context: context)
+	public func visit(_ node: any Syntax, context: Context) -> String {
+		node.accept(self, context: context)
 	}
 
-	public mutating func visit(_ node: TypeDeclSyntax, context _: Context) -> String {
+	public func visit(_ node: TypeDeclSyntax, context _: Context) -> String {
 		": \(node.name.lexeme)"
 	}
 
-	public mutating func visit(_ node: InitDeclSyntax, context: Context) -> String {
+	public func visit(_ node: InitDeclSyntax, context: Context) -> String {
 		var result = "init(\(visit(node.parameters, context: context))) "
 		result += visit(node.body, context: context)
 		result += "\n"
 		return result
 	}
 
-	public mutating func visit(_ node: ProgramSyntax, context: Context) -> String {
+	public func visit(_ node: ProgramSyntax, context: Context) -> String {
 		node.decls.map {
 			visit($0, context: context)
 		}.joined(separator: "\n")
 	}
 
-	public mutating func visit(_ node: AssignmentExpr, context: Context) -> String {
+	public func visit(_ node: AssignmentExpr, context: Context) -> String {
 		"\(visit(node.lhs, context: context)) = \(visit(node.rhs, context: context))"
 	}
 
-	public mutating func visit(_ node: IfStmtSyntax, context: Context) -> String {
+	public func visit(_ node: IfStmtSyntax, context: Context) -> String {
 		var result = "if \(visit(node.condition, context: context))) "
 		result += visit(node.body, context: context)
 
 		return result
 	}
 
-	public mutating func visit(_ node: ReturnStmtSyntax, context: Context) -> String {
+	public func visit(_ node: ReturnStmtSyntax, context: Context) -> String {
 		"return \(visit(node.value, context: context))"
 	}
 
-	public mutating func visit(_ node: WhileStmtSyntax, context: Context) -> String {
+	public func visit(_ node: WhileStmtSyntax, context: Context) -> String {
 		var result = "\nwhile \(visit(node.condition, context: context)) "
 		result += visit(node.body, context: context)
 		return result
 	}
 
-	public mutating func visit(_ node: GroupExpr, context: Context) -> String {
+	public func visit(_ node: GroupExpr, context: Context) -> String {
 		"(\(visit(node.expr, context: context))"
 	}
 
-	public mutating func visit(_ node: VarDeclSyntax, context: Context) -> String {
+	public func visit(_ node: VarDeclSyntax, context: Context) -> String {
 		if let expr = node.expr {
 			"var \(visit(node.variable, context: context)) = \(visit(expr, context: context))"
 		} else {
@@ -111,7 +110,7 @@ public struct ASTFormatter: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: CallExprSyntax, context: Context) -> String {
+	public func visit(_ node: CallExprSyntax, context: Context) -> String {
 		var result = visit(node.callee, context: context)
 		result += "("
 		result += visit(node.arguments, context: context)
@@ -119,11 +118,11 @@ public struct ASTFormatter: ASTVisitor {
 		return result
 	}
 
-	public mutating func visit(_ node: ExprStmtSyntax, context: Context) -> String {
+	public func visit(_ node: ExprStmtSyntax, context: Context) -> String {
 		visit(node.expr, context: context)
 	}
 
-	public mutating func visit(_ node: BlockStmtSyntax, context: Context) -> String {
+	public func visit(_ node: BlockStmtSyntax, context: Context) -> String {
 		var result = "{\n"
 		result += node.decls.map { decl in
 			indenting {
@@ -134,43 +133,43 @@ public struct ASTFormatter: ASTVisitor {
 		return result
 	}
 
-	public mutating func visit(_ node: UnaryExprSyntax, context: Context) -> String {
+	public func visit(_ node: UnaryExprSyntax, context: Context) -> String {
 		visit(node.op, context: context) + visit(node.rhs, context: context)
 	}
 
-	public mutating func visit(_ node: BinaryExprSyntax, context: Context) -> String {
+	public func visit(_ node: BinaryExprSyntax, context: Context) -> String {
 		visit(node.lhs, context: context) + visit(node.op, context: context) + visit(node.rhs, context: context)
 	}
 
-	public mutating func visit(_ node: IdentifierSyntax, context _: Context) -> String {
+	public func visit(_ node: IdentifierSyntax, context _: Context) -> String {
 		node.lexeme
 	}
 
-	public mutating func visit(_ node: IntLiteralSyntax, context _: Context) -> String {
+	public func visit(_ node: IntLiteralSyntax, context _: Context) -> String {
 		node.lexeme
 	}
 
-	public mutating func visit(_ node: ArgumentListSyntax, context: Context) -> String {
+	public func visit(_ node: ArgumentListSyntax, context: Context) -> String {
 		node.arguments.map {
 			visit($0, context: context)
 		}.joined(separator: ", ")
 	}
 
-	public mutating func visit(_ node: ArrayLiteralSyntax, context: Context) -> String {
+	public func visit(_ node: ArrayLiteralSyntax, context: Context) -> String {
 		var result = "["
 		result += visit(node.elements, context: context)
 		result += "]"
 		return result
 	}
 
-	public mutating func visit(_ node: ClassDeclSyntax, context: Context) -> String {
+	public func visit(_ node: ClassDeclSyntax, context: Context) -> String {
 		var result = "class \(visit(node.name, context: context))"
 		result += visit(node.body, context: context)
 		result += "\n"
 		return result
 	}
 
-	public mutating func visit(_ node: FunctionDeclSyntax, context: Context) -> String {
+	public func visit(_ node: FunctionDeclSyntax, context: Context) -> String {
 		var result = "func " + visit(node.name, context: context)
 		result += "(\(visit(node.parameters, context: context))) "
 		result += visit(node.body, context: context)
@@ -178,29 +177,29 @@ public struct ASTFormatter: ASTVisitor {
 		return result
 	}
 
-	public mutating func visit(_ node: VariableExprSyntax, context: Context) -> String {
+	public func visit(_ node: VariableExprSyntax, context: Context) -> String {
 		visit(node.name, context: context)
 	}
 
-	public mutating func visit(_ node: ParameterListSyntax, context: Context) -> String {
+	public func visit(_ node: ParameterListSyntax, context: Context) -> String {
 		node.parameters.map {
 			visit($0, context: context)
 		}.joined(separator: ", ")
 	}
 
-	public mutating func visit(_ node: StringLiteralSyntax, context _: Context) -> String {
+	public func visit(_ node: StringLiteralSyntax, context _: Context) -> String {
 		node.lexeme
 	}
 
-	public mutating func visit(_ node: BinaryOperatorSyntax, context _: Context) -> String {
+	public func visit(_ node: BinaryOperatorSyntax, context _: Context) -> String {
 		" " + node.description + " "
 	}
 
-	public mutating func visit(_: StmtSyntax, context _: Context) -> String {
+	public func visit(_: StmtSyntax, context _: Context) -> String {
 		""
 	}
 
-	public mutating func visit(_ node: ErrorSyntax, context _: Context) -> String {
+	public func visit(_ node: ErrorSyntax, context _: Context) -> String {
 		node.description
 	}
 }

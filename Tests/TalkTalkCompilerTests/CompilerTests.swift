@@ -8,8 +8,8 @@ import Testing
 import TalkTalkCompiler
 
 struct CompilerTests {
-	@Test("Can compile") func basic() {
-		let compiler = Compiler(source: "print(1)")
-		compiler.compile()
+	@Test("Can compile") func basic() throws {
+		let compiler = Compiler(source: "1 + 2")
+		try compiler.compile()
 	}
 }

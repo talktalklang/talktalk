@@ -30,6 +30,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
+		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -44,20 +45,6 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "CLLVM",
-			path: "tmp/LLVM/llvm",
-			exclude: [
-				"lib/XRay",
-				"lib/WindowsDriver",
-				"lib/WindowsManifest",
-				"lib/Support/BLAKE3"
-			],
-			sources: [
-				"lib/",
-			],
-			publicHeadersPath: "tmp/LLVM/llvm/include/llvm"
-		),
-		.target(
 			name: "TalkTalkInterpreter"
 		),
 		.target(
@@ -65,9 +52,8 @@ let package = Package(
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkTyper",
-				"CLLVM"
-			],
-			swiftSettings: [.interoperabilityMode(.Cxx)]
+				"C_LLVM"
+			]
 		),
 		.target(
 			name: "TalkTalkSyntax"

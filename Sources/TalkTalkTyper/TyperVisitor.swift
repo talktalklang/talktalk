@@ -1,17 +1,17 @@
 import TalkTalkSyntax
 
-struct TyperVisitor: ASTVisitor {
+class TyperVisitor: ASTVisitor {
 	var bindings: Bindings = .init(ast: .main)
 
 	init(ast: ProgramSyntax) {
 		self.bindings = .init(ast: ast)
 	}
 
-	mutating func define(_ node: any Syntax, as typedef: TypedValue, ref _: (any Syntax)? = nil) {
+	func define(_ node: any Syntax, as typedef: TypedValue, ref _: (any Syntax)? = nil) {
 		bindings.define(node, as: typedef)
 	}
 
-	mutating func error(_ node: any Syntax, _ msg: String, value: TypedValue? = nil) {
+	func error(_ node: any Syntax, _ msg: String, value: TypedValue? = nil) {
 		bindings.errors.append(
 			.init(
 				syntax: node,
@@ -21,11 +21,11 @@ struct TyperVisitor: ASTVisitor {
 		)
 	}
 
-	mutating func returnType(from block: BlockStmtSyntax, context: Context) -> TypedValue? {
+	func returnType(from block: BlockStmtSyntax, context: Context) -> TypedValue? {
 		// TODO: Validate
 		var results: [TypedValue] = []
 		for decl in block.decls {
-			if let typedValue = decl.accept(&self, context: context) {
+			if let typedValue = decl.accept(self, context: context) {
 				results.append(typedValue)
 			}
 		}
@@ -33,7 +33,7 @@ struct TyperVisitor: ASTVisitor {
 		return results.last
 	}
 
-	mutating func visit(_ node: IfExprSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: IfExprSyntax, context: Context) -> TypedValue? {
 		// TODO: Validate this is a bool
 		_ = visit(node.condition, context: context)
 
@@ -58,24 +58,24 @@ struct TyperVisitor: ASTVisitor {
 		)
 	}
 
-	mutating func visit(_ node: any Expr, context: Context) -> TypedValue? {
-		node.accept(&self, context: context)
+	func visit(_ node: any Expr, context: Context) -> TypedValue? {
+		node.accept(self, context: context)
 	}
 
-	mutating func visit(ast: ProgramSyntax, context: Context) -> Bindings {
+	func visit(ast: ProgramSyntax, context: Context) -> Bindings {
 		bindings = .init(ast: ast)
 
 		for builtin in ValueType.builtins {
 			context.define(type: builtin)
 		}
 
-		_ = ast.accept(&self, context: context)
+		_ = ast.accept(self, context: context)
 		return bindings
 	}
 
 	// MARK: Visits
 
-	mutating func visit(_ node: PropertyDeclSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: PropertyDeclSyntax, context: Context) -> TypedValue? {
 		let name = node.name.lexeme
 		guard let type = visit(node.typeDecl, context: context) else {
 			error(node.typeDecl, "could not determine type")
@@ -97,15 +97,15 @@ struct TyperVisitor: ASTVisitor {
 		return .void(node)
 	}
 
-	mutating func visit(_ node: ProgramSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ProgramSyntax, context: Context) -> TypedValue? {
 		for decl in node.decls {
-			_ = decl.accept(&self, context: context)
+			_ = decl.accept(self, context: context)
 		}
 
 		return nil
 	}
 
-	mutating func visit(_ node: GroupExpr, context: Context) -> TypedValue? {
+	func visit(_ node: GroupExpr, context: Context) -> TypedValue? {
 		if let type = visit(node.expr, context: context) {
 			define(node, as: type)
 			return type
@@ -115,11 +115,11 @@ struct TyperVisitor: ASTVisitor {
 		}
 	}
 
-	mutating func visit(_: StmtSyntax, context _: Context) -> TypedValue? {
+	func visit(_: StmtSyntax, context _: Context) -> TypedValue? {
 		nil
 	}
 
-	mutating func visit(_ node: IfStmtSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: IfStmtSyntax, context: Context) -> TypedValue? {
 		guard let condDef = visit(node.condition, context: context) else {
 			error(node, "type not able to be determined")
 			return nil
@@ -134,11 +134,11 @@ struct TyperVisitor: ASTVisitor {
 		return nil
 	}
 
-	mutating func visit(_: UnaryOperator, context _: Context) -> TypedValue? {
+	func visit(_: UnaryOperator, context _: Context) -> TypedValue? {
 		nil
 	}
 
-	mutating func visit(_ node: TypeDeclSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: TypeDeclSyntax, context: Context) -> TypedValue? {
 		guard let type = context.lookup(type: node.name.lexeme) else {
 			error(node, "unknown type")
 			return nil
@@ -147,17 +147,17 @@ struct TyperVisitor: ASTVisitor {
 		return TypedValue(type: type, definition: node)
 	}
 
-	mutating func visit(_ node: VarDeclSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: VarDeclSyntax, context: Context) -> TypedValue? {
 		guard let expr = node.expr,
-		      let exprDef = visit(expr, context: context)
+					let exprDef = visit(expr, context: context)
 		else {
 			error(node, "unable to determine expression type")
 			return nil
 		} // TODO: handle no expr case
 
 		if let typeDecl = node.typeDecl,
-		   let declDef = visit(typeDecl, context: context),
-		   !declDef.assignable(from: exprDef)
+			 let declDef = visit(typeDecl, context: context),
+			 !declDef.assignable(from: exprDef)
 		{
 			error(node.variable, "not assignable to \(declDef.type.description)")
 			return nil
@@ -175,7 +175,7 @@ struct TyperVisitor: ASTVisitor {
 		return .void(node)
 	}
 
-	mutating func visit(_ node: AssignmentExpr, context: Context) -> TypedValue? {
+	func visit(_ node: AssignmentExpr, context: Context) -> TypedValue? {
 		guard let receiverDef = visit(node.lhs, context: context) else {
 			error(node.lhs, "Unable to determine type of `\(node.lhs.description)`")
 			return nil
@@ -205,10 +205,10 @@ struct TyperVisitor: ASTVisitor {
 		}
 	}
 
-	mutating func visit(_ node: CallExprSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: CallExprSyntax, context: Context) -> TypedValue? {
 		// Handle function calls
 		if let def = visit(node.callee, context: context),
-		   let returns = def.type.returns?.value
+			 let returns = def.type.returns?.value
 		{
 			define(node.callee, as: TypedValue(type: returns, definition: node))
 			return TypedValue(type: returns, definition: node)
@@ -216,7 +216,7 @@ struct TyperVisitor: ASTVisitor {
 
 		// Handle class constructor calls
 		if let def = context.lookup(type: node.callee.description + ".Type"),
-		   let returns = def.returns?.value
+			 let returns = def.returns?.value
 		{
 			define(node.callee, as: TypedValue(type: returns, definition: node.callee))
 			return returns.bind(node.callee)
@@ -225,7 +225,7 @@ struct TyperVisitor: ASTVisitor {
 		return .init(type: .tbd, definition: node)
 	}
 
-	mutating func visit(_ node: InitDeclSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: InitDeclSyntax, context: Context) -> TypedValue? {
 		context.withScope {
 			_ = visit(node.body, context: $0)
 		}
@@ -233,17 +233,17 @@ struct TyperVisitor: ASTVisitor {
 		return nil // We can always assume this is the enclosing class
 	}
 
-	mutating func visit(_ node: BlockStmtSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: BlockStmtSyntax, context: Context) -> TypedValue? {
 		context.withScope {
 			for decl in node.decls {
-				_ = decl.accept(&self, context: $0)
+				_ = decl.accept(self, context: $0)
 			}
 		}
 
 		return .void(node)
 	}
 
-	mutating func visit(_ node: WhileStmtSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: WhileStmtSyntax, context: Context) -> TypedValue? {
 		_ = visit(node.condition, context: context)
 
 		context.withScope {
@@ -254,11 +254,11 @@ struct TyperVisitor: ASTVisitor {
 		return nil
 	}
 
-	mutating func visit(_: BinaryOperatorSyntax, context _: Context) -> TypedValue? {
+	func visit(_: BinaryOperatorSyntax, context _: Context) -> TypedValue? {
 		nil
 	}
 
-	mutating func visit(_ node: ParameterListSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ParameterListSyntax, context: Context) -> TypedValue? {
 		// TODO: handle type decls
 		for parameter in node.parameters {
 			context.define(parameter, as: .tbd)
@@ -267,7 +267,7 @@ struct TyperVisitor: ASTVisitor {
 		return nil
 	}
 
-	mutating func visit(_ node: ArgumentListSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ArgumentListSyntax, context: Context) -> TypedValue? {
 		for argument in node.arguments {
 			_ = visit(argument, context: context)
 			// TODO: Validate
@@ -276,7 +276,7 @@ struct TyperVisitor: ASTVisitor {
 		return nil
 	}
 
-	mutating func visit(_ node: ArrayLiteralSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ArrayLiteralSyntax, context: Context) -> TypedValue? {
 		if node.elements.isEmpty {
 			return nil
 		}
@@ -293,20 +293,20 @@ struct TyperVisitor: ASTVisitor {
 		return .array(firstElemDef.type, from: node)
 	}
 
-	mutating func visit(_ node: IdentifierSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: IdentifierSyntax, context: Context) -> TypedValue? {
 		return context.lookup(node)
 	}
 
-	mutating func visit(_ node: ReturnStmtSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ReturnStmtSyntax, context: Context) -> TypedValue? {
 		return visit(node.value, context: context)
 	}
 
-	mutating func visit(_ node: ExprStmtSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ExprStmtSyntax, context: Context) -> TypedValue? {
 		_ = visit(node.expr, context: context)
 		return .void(node) // Statements dont have types... fow now?????
 	}
 
-	mutating func visit(_ node: PropertyAccessExpr, context: Context) -> TypedValue? {
+	func visit(_ node: PropertyAccessExpr, context: Context) -> TypedValue? {
 		guard let receiverDef = visit(node.receiver, context: context) else {
 			error(node.receiver, "could not determine type")
 			return nil
@@ -321,7 +321,7 @@ struct TyperVisitor: ASTVisitor {
 		return nil
 	}
 
-	mutating func visit(_ node: LiteralExprSyntax, context _: Context) -> TypedValue? {
+	func visit(_ node: LiteralExprSyntax, context _: Context) -> TypedValue? {
 		let type: ValueType = switch node.kind {
 		case .nil: .nil
 		case .true: .bool
@@ -332,7 +332,7 @@ struct TyperVisitor: ASTVisitor {
 		return type.bind(node)
 	}
 
-	mutating func visit(_ node: UnaryExprSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: UnaryExprSyntax, context: Context) -> TypedValue? {
 		guard let exprDef = visit(node.rhs, context: context) else {
 			error(node.rhs, "could not determine type")
 			return nil
@@ -360,11 +360,11 @@ struct TyperVisitor: ASTVisitor {
 		}
 	}
 
-	mutating func visit(_ node: ErrorSyntax, context _: Context) -> TypedValue? {
+	func visit(_ node: ErrorSyntax, context _: Context) -> TypedValue? {
 		ValueType(id: -99, name: "Error: \(node.description)", definition: node).bind(node)
 	}
 
-	mutating func visit(_ node: ClassDeclSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: ClassDeclSyntax, context: Context) -> TypedValue? {
 		let properties = context.withClassScope {
 			_ = visit(node.body, context: $0)
 		}
@@ -397,7 +397,7 @@ struct TyperVisitor: ASTVisitor {
 		return classType.bind(node.name)
 	}
 
-	mutating func visit(_ node: BinaryExprSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: BinaryExprSyntax, context: Context) -> TypedValue? {
 		guard var lhsDef = visit(node.lhs, context: context) else {
 			error(node.lhs, "unable to determine type")
 			return nil
@@ -449,15 +449,15 @@ struct TyperVisitor: ASTVisitor {
 		}
 	}
 
-	mutating func visit(_ node: IntLiteralSyntax, context _: Context) -> TypedValue? {
+	func visit(_ node: IntLiteralSyntax, context _: Context) -> TypedValue? {
 		define(node, as: .int(from: node))
 
 		return .int(from: node)
 	}
 
-	mutating func visit(_ node: FunctionDeclSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: FunctionDeclSyntax, context: Context) -> TypedValue? {
 		let declDef: ValueType? = if let typeDecl = node.typeDecl,
-		                             let type = visit(typeDecl, context: context)
+																 let type = visit(typeDecl, context: context)
 		{
 			ValueType.function(type.type)
 		} else {
@@ -479,8 +479,8 @@ struct TyperVisitor: ASTVisitor {
 
 			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
 				if def.type == .tbd,
-				   let returns = declDef.returns?.value,
-				   let inferred = context.infer(from: returns, to: def)
+					 let returns = declDef.returns?.value,
+					 let inferred = context.infer(from: returns, to: def)
 				{
 					def = inferred
 					define(stmt.value, as: def)
@@ -524,11 +524,11 @@ struct TyperVisitor: ASTVisitor {
 		return typedValue
 	}
 
-	mutating func visit(_ node: VariableExprSyntax, context: Context) -> TypedValue? {
+	func visit(_ node: VariableExprSyntax, context: Context) -> TypedValue? {
 		visit(node.name, context: context)
 	}
 
-	mutating func visit(_ node: StringLiteralSyntax, context _: Context) -> TypedValue? {
+	func visit(_ node: StringLiteralSyntax, context _: Context) -> TypedValue? {
 		define(node, as: .string(from: node))
 		return .string(from: node)
 	}

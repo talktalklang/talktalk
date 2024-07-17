@@ -22,7 +22,7 @@ public struct PropertyDeclSyntax: Syntax, Decl {
 		hasher.combine(value?.hashValue)
 	}
 
-	public func accept<Visitor: ASTVisitor>(_ visitor: inout Visitor, context: Visitor.Context) -> Visitor.Value {
+	public func accept<Visitor: ASTVisitor>(_ visitor: Visitor, context: Visitor.Context) -> Visitor.Value {
 		visitor.visit(self, context: context)
 	}
 }

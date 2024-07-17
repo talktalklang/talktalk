@@ -7,9 +7,9 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 	var indent = 0
 
 	public static func print(_ root: Root) {
-		var printer = ASTPrinter(root: root)
-		var context = Context()
-		root.accept(&printer, context: context)
+		let printer = ASTPrinter(root: root)
+		let context = Context()
+		root.accept(printer, context: context)
 	}
 
 	public init(root: Root) {
@@ -56,14 +56,14 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		describe(node)
 	}
 
-	public mutating func visit(_ node: ArrayLiteralSyntax, context: Context) {
+	public func visit(_ node: ArrayLiteralSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.elements, context: context)
 		}
 	}
 
-	public mutating func visit(_ node: PropertyAccessExpr, context: Context) {
+	public func visit(_ node: PropertyAccessExpr, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.receiver, context: context)
@@ -71,7 +71,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: InitDeclSyntax, context: Context) {
+	public func visit(_ node: InitDeclSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.parameters, context: context)
@@ -79,7 +79,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: ClassDeclSyntax, context: Context) {
+	public func visit(_ node: ClassDeclSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.name, context: context)
@@ -87,18 +87,18 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: UnaryOperator, context _: Context) {
+	public func visit(_ node: UnaryOperator, context _: Context) {
 		describe(node)
 		indenting {
 			$0.print(node.description)
 		}
 	}
 
-	public mutating func visit(_ node: any Syntax, context: Context) {
-		node.accept(&self, context: context)
+	public func visit(_ node: any Syntax, context: Context) {
+		node.accept(self, context: context)
 	}
 
-	public mutating func visit(_ node: ProgramSyntax, context: Context) {
+	public func visit(_ node: ProgramSyntax, context: Context) {
 		describe(node)
 		indenting {
 			for decl in node.decls {
@@ -107,14 +107,14 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: LiteralExprSyntax, context _: Context) {
+	public func visit(_ node: LiteralExprSyntax, context _: Context) {
 		describe(node)
 		indenting {
 			$0.print("lexeme: \(node.description)")
 		}
 	}
 
-	public mutating func visit(_ node: AssignmentExpr, context: Context) {
+	public func visit(_ node: AssignmentExpr, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.lhs, context: context)
@@ -122,7 +122,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: IfStmtSyntax, context: Context) {
+	public func visit(_ node: IfStmtSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.condition, context: context)
@@ -130,14 +130,14 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: ReturnStmtSyntax, context: Context) {
+	public func visit(_ node: ReturnStmtSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.value, context: context)
 		}
 	}
 
-	public mutating func visit(_ node: WhileStmtSyntax, context: Context) {
+	public func visit(_ node: WhileStmtSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.condition, context: context)
@@ -145,7 +145,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: GroupExpr, context: Context) {
+	public func visit(_ node: GroupExpr, context: Context) {
 		describe(node)
 
 		indenting {
@@ -153,7 +153,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: VarDeclSyntax, context: Context) {
+	public func visit(_ node: VarDeclSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.variable, context: context)
@@ -163,7 +163,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: CallExprSyntax, context: Context) {
+	public func visit(_ node: CallExprSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.callee, context: context)
@@ -171,14 +171,14 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: ExprStmtSyntax, context: Context) {
+	public func visit(_ node: ExprStmtSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.expr, context: context)
 		}
 	}
 
-	public mutating func visit(_ node: BlockStmtSyntax, context: Context) {
+	public func visit(_ node: BlockStmtSyntax, context: Context) {
 		describe(node)
 		indenting {
 			for decl in node.decls {
@@ -187,7 +187,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: UnaryExprSyntax, context: Context) {
+	public func visit(_ node: UnaryExprSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.op, context: context)
@@ -195,7 +195,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: BinaryExprSyntax, context: Context) {
+	public func visit(_ node: BinaryExprSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.lhs, context: context)
@@ -204,21 +204,21 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: IdentifierSyntax, context _: Context) {
+	public func visit(_ node: IdentifierSyntax, context _: Context) {
 		describe(node)
 		indenting {
 			$0.print("lexeme: \(node.lexeme)")
 		}
 	}
 
-	public mutating func visit(_ node: IntLiteralSyntax, context _: Context) {
+	public func visit(_ node: IntLiteralSyntax, context _: Context) {
 		describe(node)
 		indenting {
 			$0.print("lexeme: \(node.lexeme)")
 		}
 	}
 
-	public mutating func visit(_ node: ArgumentListSyntax, context: Context) {
+	public func visit(_ node: ArgumentListSyntax, context: Context) {
 		describe(node)
 		indenting {
 			for arg in node.arguments {
@@ -227,7 +227,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: FunctionDeclSyntax, context: Context) {
+	public func visit(_ node: FunctionDeclSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.name, context: context)
@@ -236,14 +236,14 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: VariableExprSyntax, context: Context) {
+	public func visit(_ node: VariableExprSyntax, context: Context) {
 		describe(node)
 		indenting {
 			$0.visit(node.name, context: context)
 		}
 	}
 
-	public mutating func visit(_ node: ParameterListSyntax, context: Context) {
+	public func visit(_ node: ParameterListSyntax, context: Context) {
 		describe(node)
 		indenting {
 			for parameter in node.parameters {
@@ -252,20 +252,20 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		}
 	}
 
-	public mutating func visit(_ node: StringLiteralSyntax, context _: Context) {
+	public func visit(_ node: StringLiteralSyntax, context _: Context) {
 		describe(node)
 		indenting {
 			$0.print("lexeme: \(node.lexeme)")
 		}
 	}
 
-	public mutating func visit(_ node: BinaryOperatorSyntax, context _: Context) {
+	public func visit(_ node: BinaryOperatorSyntax, context _: Context) {
 		describe(node)
 	}
 
-	public mutating func visit(_: StmtSyntax, context _: Context) {}
+	public func visit(_: StmtSyntax, context _: Context) {}
 
-	public mutating func visit(_ node: ErrorSyntax, context _: Context) {
+	public func visit(_ node: ErrorSyntax, context _: Context) {
 		describe(node)
 		indenting {
 			$0.print(node.description)

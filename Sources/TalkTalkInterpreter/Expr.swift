@@ -71,7 +71,7 @@ struct VariableExpr: Expr {
 struct AssignExpr: Expr {
 	var id: String
 	let name: Token
-	let value: any Expr
+	var value: any Expr
 
 	func accept<Visitor: ExprVisitor>(visitor: inout Visitor) throws -> Visitor.Value {
 		try visitor.visit(self)
