@@ -27,7 +27,7 @@ class CompilerVisitor: ASTVisitor {
 		return nil
 	}
 
-	func visit(_: FunctionDeclSyntax, context _: LLVM.Module) -> LLVM.Function? {
+	func visit(_: FunctionDeclSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
