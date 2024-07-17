@@ -31,7 +31,7 @@ public struct Token: Equatable, Sendable, Hashable {
 
 		// Keywords
 		case `class`, `else`, `false`, `func`, `init`, `for`, `if`, `nil`,
-		     or, `return`, `super`, `self`, `true`, `var`, `while`
+		     or, `return`, `super`, `self`, `true`, `var`, `while`, `let`
 
 		case newline
 

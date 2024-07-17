@@ -20,7 +20,7 @@ public struct ProgramSyntax: Syntax {
 
 	public func node(at position: Int) -> any Syntax {
 		var result: any Syntax = self
-		var visitor = GenericVisitor { node, _ in
+		let visitor = GenericVisitor { node, _ in
 			if node.range.contains(position), node.range.count < result.range.count {
 				result = node
 			}
@@ -97,6 +97,10 @@ struct Parser {
 	}
 
 	mutating func decl() -> any Decl {
+		if match(.let) {
+			return letDecl()
+		}
+
 		if match(.var) {
 			return varDecl()
 		}
@@ -172,6 +176,71 @@ struct Parser {
 			)
 		} else {
 			return VarDeclSyntax(
+				start: start,
+				end: previous,
+				variable: identifier,
+				typeDecl: typeDecl,
+				expr: expr
+			)
+		}
+	}
+
+	mutating func letDecl() -> any Decl {
+		guard declContext.allowedDecls.contains(.var) else {
+			return ErrorSyntax(
+				token: current,
+				expected: .none,
+				message: "Cannot define vars from \(declContext)"
+			)
+		}
+
+		let start = previous
+
+		guard let identifier = consume(IdentifierSyntax.self) else {
+			return ErrorSyntax(
+				token: current,
+				expected: .token(.identifier),
+				message: "Expected identifier in var declaration"
+			)
+		}
+
+		let typeDecl: TypeDeclSyntax? = if match(.colon) {
+			{ () -> TypeDeclSyntax? in
+				guard let name = consume(IdentifierSyntax.self) else {
+					return nil
+				}
+
+				return TypeDeclSyntax(
+					start: start,
+					end: previous,
+					name: name,
+					optional: match(.questionMark)
+				)
+			}()
+		} else {
+			nil
+		}
+
+		var expr: (any Expr)?
+		if match(.equal) {
+			expr = parse(precedence: .assignment)
+		}
+
+		if declContext == .class {
+			guard let typeDecl else {
+				error("Expected type declaration for \(identifier)", at: previous)
+				return ErrorSyntax(token: identifier.start, expected: .type(TypeDeclSyntax.self), message: "Expected type declaration for \(identifier)")
+			}
+
+			return PropertyDeclSyntax(
+				start: start,
+				end: previous,
+				name: identifier,
+				typeDecl: typeDecl,
+				value: expr
+			)
+		} else {
+			return LetDeclSyntax(
 				start: start,
 				end: previous,
 				variable: identifier,

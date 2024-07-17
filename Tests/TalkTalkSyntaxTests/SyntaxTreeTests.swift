@@ -105,6 +105,20 @@ struct SyntaxTreeTests {
 		#expect(decl.expr!.cast(StringLiteralSyntax.self).lexeme == #""123""#)
 	}
 
+	@Test("let statement") func letStmt() {
+		let decl = parse(
+			"""
+			let foo = "123"
+			""",
+			as: LetDeclSyntax.self
+		)
+
+		#expect(decl.position == 0)
+		#expect(decl.length == 15)
+		#expect(decl.variable.lexeme == "foo")
+		#expect(decl.expr!.cast(StringLiteralSyntax.self).lexeme == #""123""#)
+	}
+
 	@Test("var statement with type") func varStmtWithType() {
 		let decl = parse(
 			"""
