@@ -7,7 +7,7 @@
 import C_LLVM
 
 extension LLVM {
-	class Module {
+	public class Module {
 		let context: Context
 		let ref: LLVMModuleRef
 		let name: String

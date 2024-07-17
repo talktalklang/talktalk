@@ -11,6 +11,7 @@ public protocol ASTVisitor {
 	// Decls
 	func visit(_ node: FunctionDeclSyntax, context: Context) -> Value
 	func visit(_ node: VarDeclSyntax, context: Context) -> Value
+	func visit(_ node: LetDeclSyntax, context: Context) -> Value
 	func visit(_ node: ClassDeclSyntax, context: Context) -> Value
 	func visit(_ node: InitDeclSyntax, context: Context) -> Value
 	func visit(_ node: PropertyDeclSyntax, context: Context) -> Value

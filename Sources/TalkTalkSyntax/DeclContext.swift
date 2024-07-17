@@ -10,13 +10,13 @@ public enum DeclContext {
 	var allowedDecls: Set<Token.Kind> {
 		switch self {
 		case .`init`:
-			[.func, .class, .var]
+			[.func, .class, .var, .let]
 		case .topLevel:
-			[.func, .class, .var]
+			[.func, .class, .var, .let]
 		case .class:
-			[.func, .class, .`init`, .var]
+			[.func, .class, .`init`, .var, .let]
 		case .function:
-			[.func, .class, .var]
+			[.func, .class, .var, .let]
 		}
 	}
 }

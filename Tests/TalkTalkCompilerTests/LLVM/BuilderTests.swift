@@ -13,7 +13,13 @@ struct BuilderTests {
 		let module = LLVM.Module(name: "basic", in: .global)
 		let builder = LLVM.Builder(module: module)
 
-		let mainType = LLVM.FunctionType(context: .global, returning: .void(.global), parameters: [], isVarArg: false)
+		let mainType = LLVM.FunctionType(
+			context: .global,
+			returning: .void(),
+			parameters: [],
+			isVarArg: false
+		)
+
 		let function = builder.addFunction(named: "main", mainType)!
 
 		let int8 = LLVM.IntType(width: 8, context: .global)

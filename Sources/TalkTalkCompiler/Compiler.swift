@@ -18,25 +18,8 @@ public struct Compiler {
 		self.builder = LLVM.Builder(module: module)
 	}
 
-	public func compile() throws {
-		// Initialize LLVM
-		LLVMInitializeNativeTarget()
-		LLVMInitializeNativeAsmPrinter()
-		LLVMInitializeNativeAsmParser()
-
-		let mainType = LLVM.FunctionType(
-			context: .global,
-			returning: .i32(.global),
-			parameters: [],
-			isVarArg: false
-		)
-
-		let function = builder.addFunction(named: "main", mainType)!
-		let blockRef = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
-
-		LLVMPositionBuilderAtEnd(builder.ref, blockRef)
-
-		let visitor = CompilerVisitor(ast: ast, builder: builder, module: module)
+	public func compile() throws -> LLVM.Module {
+		let visitor = CompilerVisitor(builder: builder, module: module)
 		_ = visitor.visit(ast, context: module)
 
 		module.dump()
@@ -48,5 +31,7 @@ public struct Compiler {
 			defer { LLVMDisposeMessage(message) }
 			print(String(cString: message))
 		}
+
+		return module
 	}
 }

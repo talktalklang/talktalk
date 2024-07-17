@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/16/24.
 //
-public struct LetDeclSyntax: Decl, Syntax {
+public struct LetDeclSyntax: Decl, Stmt, Syntax {
 	public let start: Token
 	public let end: Token
 	public var variable: IdentifierSyntax

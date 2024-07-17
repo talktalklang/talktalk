@@ -6,6 +6,6 @@
 //
 import C_LLVM
 
-protocol LLVMType: LLVM.IRValue {
+protocol LLVMType: Hashable {
 	var ref: LLVMTypeRef { get }
 }

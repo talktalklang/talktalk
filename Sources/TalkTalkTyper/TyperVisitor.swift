@@ -175,6 +175,34 @@ class TyperVisitor: ASTVisitor {
 		return .void(node)
 	}
 
+	func visit(_ node: LetDeclSyntax, context: Context) -> TypedValue? {
+		guard let expr = node.expr,
+					let exprDef = visit(expr, context: context)
+		else {
+			error(node, "unable to determine expression type")
+			return nil
+		} // TODO: handle no expr case
+
+		if let typeDecl = node.typeDecl,
+			 let declDef = visit(typeDecl, context: context),
+			 !declDef.assignable(from: exprDef)
+		{
+			error(node.variable, "not assignable to \(declDef.type.description)")
+			return nil
+		}
+
+		let typedValue = TypedValue(
+			type: exprDef.type,
+			definition: node.variable,
+			ref: exprDef
+		)
+
+		define(node.variable, as: typedValue)
+		context.define(node.variable, as: typedValue)
+
+		return .void(node)
+	}
+
 	func visit(_ node: AssignmentExpr, context: Context) -> TypedValue? {
 		guard let receiverDef = visit(node.lhs, context: context) else {
 			error(node.lhs, "Unable to determine type of `\(node.lhs.description)`")

@@ -18,9 +18,14 @@ extension LLVM {
 			self.parameters = parameters
 			self.isVarArg = isVarArg
 
-			var parameterRefs = parameters.map(\.ref).map(Optional.init)
+			var parameterRefs = parameters.map { $0.ref as Optional<LLVMTypeRef> }
 			self.ref = parameterRefs.withUnsafeMutableBufferPointer {
-				LLVMFunctionType(returning.ref, $0.baseAddress, UInt32(parameters.count), LLVMBool(isVarArg ? 1 : 0))
+				LLVMFunctionType(
+					returning.ref,
+					$0.baseAddress,
+					UInt32(parameters.count),
+					LLVMBool(isVarArg ? 1 : 0)
+				)
 			}
 		}
 	}

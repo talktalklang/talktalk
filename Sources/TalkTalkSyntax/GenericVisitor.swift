@@ -42,6 +42,25 @@ public struct GenericVisitor<Context>: ASTVisitor {
 		var context = perform(node, context)
 		context = visit(node.variable, context: context)
 
+		if let typeDecl = node.typeDecl {
+			_ = visit(typeDecl, context: context)
+		}
+
+		if let expr = node.expr {
+			_ = expr.accept(self, context: context)
+		}
+
+		return context
+	}
+
+	public func visit(_ node: LetDeclSyntax, context: Context) -> Context {
+		var context = perform(node, context)
+		context = visit(node.variable, context: context)
+
+		if let typeDecl = node.typeDecl {
+			_ = visit(typeDecl, context: context)
+		}
+
 		if let expr = node.expr {
 			_ = expr.accept(self, context: context)
 		}

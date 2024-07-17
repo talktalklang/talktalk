@@ -7,4 +7,4 @@
 
 // Namespace for LLVM wrappers
 
-enum LLVM {}
+public enum LLVM {}

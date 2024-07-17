@@ -48,13 +48,29 @@ public struct ProgramSyntax: Syntax {
 	}
 }
 
-struct Parser {
+public struct Parser {
 	var errors: [Error] = []
 	var lexer: Lexer
 	var previous: Token
 	var current: Token
 	var parserRepeats: [Int: Int] = [:]
 	var declContext: DeclContext = .topLevel
+
+	public static func parse<T: Syntax>(expr: String) -> T? {
+		let lexer = Lexer(source: expr)
+		var parser = Parser(lexer: lexer)
+		let node = parser.parse().first
+
+		return node?.as(ExprStmtSyntax.self)?.expr.as(T.self)
+	}
+
+	public static func parse(statement: String) -> (any Stmt)? {
+		let lexer = Lexer(source: statement)
+		var parser = Parser(lexer: lexer)
+		let decls = parser.parse()
+
+		return decls.last as? any Stmt
+	}
 
 	init(lexer: Lexer) {
 		self.lexer = lexer
@@ -186,7 +202,7 @@ struct Parser {
 	}
 
 	mutating func letDecl() -> any Decl {
-		guard declContext.allowedDecls.contains(.var) else {
+		guard declContext.allowedDecls.contains(.let) else {
 			return ErrorSyntax(
 				token: current,
 				expected: .none,
