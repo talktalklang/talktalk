@@ -1,5 +1,4 @@
 public struct ASTFormatter: ASTVisitor {
-
 	public struct Context {}
 
 	let root: any Syntax

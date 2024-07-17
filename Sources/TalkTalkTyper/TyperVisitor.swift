@@ -149,15 +149,15 @@ class TyperVisitor: ASTVisitor {
 
 	func visit(_ node: VarDeclSyntax, context: Context) -> TypedValue? {
 		guard let expr = node.expr,
-					let exprDef = visit(expr, context: context)
+		      let exprDef = visit(expr, context: context)
 		else {
 			error(node, "unable to determine expression type")
 			return nil
 		} // TODO: handle no expr case
 
 		if let typeDecl = node.typeDecl,
-			 let declDef = visit(typeDecl, context: context),
-			 !declDef.assignable(from: exprDef)
+		   let declDef = visit(typeDecl, context: context),
+		   !declDef.assignable(from: exprDef)
 		{
 			error(node.variable, "not assignable to \(declDef.type.description)")
 			return nil
@@ -208,7 +208,7 @@ class TyperVisitor: ASTVisitor {
 	func visit(_ node: CallExprSyntax, context: Context) -> TypedValue? {
 		// Handle function calls
 		if let def = visit(node.callee, context: context),
-			 let returns = def.type.returns?.value
+		   let returns = def.type.returns?.value
 		{
 			define(node.callee, as: TypedValue(type: returns, definition: node))
 			return TypedValue(type: returns, definition: node)
@@ -216,7 +216,7 @@ class TyperVisitor: ASTVisitor {
 
 		// Handle class constructor calls
 		if let def = context.lookup(type: node.callee.description + ".Type"),
-			 let returns = def.returns?.value
+		   let returns = def.returns?.value
 		{
 			define(node.callee, as: TypedValue(type: returns, definition: node.callee))
 			return returns.bind(node.callee)
@@ -457,7 +457,7 @@ class TyperVisitor: ASTVisitor {
 
 	func visit(_ node: FunctionDeclSyntax, context: Context) -> TypedValue? {
 		let declDef: ValueType? = if let typeDecl = node.typeDecl,
-																 let type = visit(typeDecl, context: context)
+		                             let type = visit(typeDecl, context: context)
 		{
 			ValueType.function(type.type)
 		} else {
@@ -479,8 +479,8 @@ class TyperVisitor: ASTVisitor {
 
 			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
 				if def.type == .tbd,
-					 let returns = declDef.returns?.value,
-					 let inferred = context.infer(from: returns, to: def)
+				   let returns = declDef.returns?.value,
+				   let inferred = context.infer(from: returns, to: def)
 				{
 					def = inferred
 					define(stmt.value, as: def)

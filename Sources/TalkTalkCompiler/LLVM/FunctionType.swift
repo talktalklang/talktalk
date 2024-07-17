@@ -1,6 +1,6 @@
 //
 //  FunctionType.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/16/24.
 //
@@ -13,7 +13,7 @@ extension LLVM {
 		let isVarArg: Bool
 		let ref: LLVMTypeRef
 
-		init(context: LLVM.Context, returning: any LLVMType, parameters: [any LLVMType], isVarArg: Bool) {
+		init(context _: LLVM.Context, returning: any LLVMType, parameters: [any LLVMType], isVarArg: Bool) {
 			self.returning = returning
 			self.parameters = parameters
 			self.isVarArg = isVarArg

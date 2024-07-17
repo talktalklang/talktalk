@@ -1,13 +1,13 @@
 //
 //  Pointer.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/16/24.
 //
 import C_LLVM
 
 prefix operator *
-prefix func *(rhs: any LLVMType) -> LLVM.PointerType {
+prefix func * (rhs: any LLVMType) -> LLVM.PointerType {
 	LLVM.PointerType(pointee: rhs)
 }
 

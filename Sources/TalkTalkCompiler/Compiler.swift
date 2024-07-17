@@ -13,9 +13,9 @@ public struct Compiler {
 	let builder: LLVM.Builder
 
 	public init(source: String) {
-		ast = try! SyntaxTree.parse(source: source)
-		module = LLVM.Module(name: "main", in: .global)
-		builder = LLVM.Builder(module: module)
+		self.ast = try! SyntaxTree.parse(source: source)
+		self.module = LLVM.Module(name: "main", in: .global)
+		self.builder = LLVM.Builder(module: module)
 	}
 
 	public func compile() throws {

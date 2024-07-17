@@ -30,7 +30,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
+		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main"),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -52,7 +52,7 @@ let package = Package(
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkTyper",
-				"C_LLVM"
+				"C_LLVM",
 			]
 		),
 		.target(
@@ -121,11 +121,11 @@ let package = Package(
 )
 
 #if os(Linux)
-package.dependencies.append(
-	.package(url: "https://github.com/apple/swift-testing", branch: "main")
-)
+	package.dependencies.append(
+		.package(url: "https://github.com/apple/swift-testing", branch: "main")
+	)
 
-for target in package.targets.filter({ $0.isTest }) {
-	target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
-}
+	for target in package.targets.filter({ $0.isTest }) {
+		target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
+	}
 #endif

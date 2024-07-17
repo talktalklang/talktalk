@@ -1,6 +1,6 @@
 //
 //  IntType.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/16/24.
 //

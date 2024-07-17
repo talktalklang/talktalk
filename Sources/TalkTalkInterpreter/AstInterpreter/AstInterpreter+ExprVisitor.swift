@@ -52,59 +52,59 @@ extension AstInterpreter: ExprVisitor {
 		switch expr.op.kind {
 		case .minus:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .number(lhs - rhs)
 			}
 		case .plus:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .number(lhs + rhs)
 			} else if case let .string(lhs) = lhs,
-								case let .string(rhs) = rhs
+			          case let .string(rhs) = rhs
 			{
 				return .string(lhs + rhs)
 			}
 		case .slash:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .number(lhs / rhs)
 			}
 		case .star:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .number(lhs * rhs)
 			}
 		case .equalEqual:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .bool(lhs == rhs)
 			}
 		case .greater:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .bool(lhs > rhs)
 			}
 		case .greaterEqual:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .bool(lhs >= rhs)
 			}
 		case .less:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .bool(lhs < rhs)
 			}
 		case .lessEqual:
 			if case let .number(lhs) = lhs,
-				 case let .number(rhs) = rhs
+			   case let .number(rhs) = rhs
 			{
 				return .bool(lhs <= rhs)
 			}

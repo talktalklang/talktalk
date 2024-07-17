@@ -4,9 +4,9 @@
 //
 //  Created by Pat Nakajima on 7/15/24.
 //
+import C_LLVM
 import TalkTalkSyntax
 import TalkTalkTyper
-import C_LLVM
 
 class CompilerVisitor: ASTVisitor {
 	var ast: ProgramSyntax
@@ -27,23 +27,23 @@ class CompilerVisitor: ASTVisitor {
 		return nil
 	}
 
-	func visit(_ node: FunctionDeclSyntax, context module: LLVM.Module) -> LLVM.Function? {
+	func visit(_: FunctionDeclSyntax, context _: LLVM.Module) -> LLVM.Function? {
 		nil
 	}
 
-	func visit(_ node: VarDeclSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: VarDeclSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: ClassDeclSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: ClassDeclSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: InitDeclSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: InitDeclSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: PropertyDeclSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: PropertyDeclSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
@@ -51,35 +51,35 @@ class CompilerVisitor: ASTVisitor {
 		visit(node.expr, context: module)
 	}
 
-	func visit(_ node: BlockStmtSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: BlockStmtSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: IfStmtSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: IfStmtSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: StmtSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: StmtSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: WhileStmtSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: WhileStmtSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: ReturnStmtSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: ReturnStmtSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: GroupExpr, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: GroupExpr, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: CallExprSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: CallExprSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: UnaryExprSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: UnaryExprSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
@@ -94,7 +94,7 @@ class CompilerVisitor: ASTVisitor {
 		return nil
 	}
 
-	func visit(_ node: IdentifierSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: IdentifierSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
@@ -102,55 +102,55 @@ class CompilerVisitor: ASTVisitor {
 		LLVM.IntType(width: 32, context: module.context).constant(Int(node.lexeme)!)
 	}
 
-	func visit(_ node: StringLiteralSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: StringLiteralSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: VariableExprSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: VariableExprSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: AssignmentExpr, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: AssignmentExpr, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: LiteralExprSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: LiteralExprSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: PropertyAccessExpr, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: PropertyAccessExpr, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: ArrayLiteralSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: ArrayLiteralSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: IfExprSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: IfExprSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: UnaryOperator, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: UnaryOperator, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: BinaryOperatorSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: BinaryOperatorSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: ArgumentListSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: ArgumentListSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: ParameterListSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: ParameterListSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: ErrorSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: ErrorSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 
-	func visit(_ node: TypeDeclSyntax, context module: LLVM.Module) -> LLVM.IRValue? {
+	func visit(_: TypeDeclSyntax, context _: LLVM.Module) -> LLVM.IRValue? {
 		nil
 	}
 }

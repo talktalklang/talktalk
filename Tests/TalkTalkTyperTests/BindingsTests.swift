@@ -1,6 +1,6 @@
-import Testing
 import TalkTalkSyntax
 @testable import TalkTalkTyper
+import Testing
 
 struct BindingsTests {
 	@Test("binds") func binds() throws {

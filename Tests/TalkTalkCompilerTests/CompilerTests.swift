@@ -4,8 +4,8 @@
 //
 //  Created by Pat Nakajima on 7/15/24.
 //
-import Testing
 import TalkTalkCompiler
+import Testing
 
 struct CompilerTests {
 	@Test("Can compile") func basic() throws {

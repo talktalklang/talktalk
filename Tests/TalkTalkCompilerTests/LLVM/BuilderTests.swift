@@ -1,12 +1,12 @@
 //
 //  BuilderTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/16/24.
 //
-import Testing
 import C_LLVM
 @testable import TalkTalkCompiler
+import Testing
 
 struct BuilderTests {
 	@Test("basics") func basics() throws {
