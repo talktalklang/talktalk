@@ -302,6 +302,7 @@ public struct Parser {
 
 	mutating func initDecl() -> any Decl {
 		guard declContext.allowedDecls.contains(.`init`) else {
+			error("Cannot define init from \(declContext)", at: previous)
 			return ErrorSyntax(
 				token: previous,
 				expected: .none,
@@ -365,7 +366,12 @@ public struct Parser {
 		}
 
 		if match(.return) {
-			return returnStatement()
+			if declContext.allowedDecls.contains(.return) {
+				return returnStatement()
+			} else {
+				error("\(declContext) branches cannot return", at: previous)
+				return ErrorSyntax(token: previous, expected: .none, message: "if expression branches cannot return")
+			}
 		}
 
 		let start = current
@@ -486,11 +492,17 @@ public struct Parser {
 		let condition = parse(precedence: .assignment)
 		let body = block()
 
+		var elseBlock: BlockStmtSyntax? = nil
+		if match(.else) {
+			elseBlock = block()
+		}
+
 		return IfStmtSyntax(
 			start: start,
 			end: previous,
 			condition: condition,
-			body: body
+			then: body,
+			else: elseBlock
 		)
 	}
 

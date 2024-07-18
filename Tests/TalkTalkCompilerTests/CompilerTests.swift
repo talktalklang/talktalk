@@ -51,4 +51,83 @@ struct CompilerTests {
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == 10)
 	}
+
+	@Test("Can compile conditionals") func conds() throws {
+		let compiler = Compiler(source: """
+		func foo() {
+			if false {
+				return 123
+			} else {
+				return 456
+			}
+		}
+
+		foo()
+		""")
+
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 456)
+	}
+
+	@Test("Can compile if exprs") func ifExpr() throws {
+		let compiler = Compiler(source: """
+		let val = if true {
+			123
+		} else {
+			456
+		}
+
+		val
+		""")
+
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 123)
+	}
+
+	@Test("Can compile variables") func vars() throws {
+		let compiler = Compiler(source: """
+		var i = 1
+		i = 1 + i
+		i = 1 + i
+		i
+		""")
+
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 3)
+	}
+
+	@Test("Can compile while loop") func whileLoop() throws {
+		let compiler = Compiler(source: """
+		var i = 0
+		while i < 5 {
+			i = i + 1
+		}
+
+		i
+		""")
+
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 4)
+	}
+
+	@Test("can compile fib", .disabled()) func fib() throws {
+		_ = """
+		func fib(n) {
+			if n <= 1 { return n }
+			return fib(n - 2) + fib(n - 1)
+		}
+
+		var i = 0
+		while i < 35 {
+			print(fib(i))
+			i = i + 1
+		}
+		"""
+
+		#expect(Bool(false), "not here yet")
+	}
 }

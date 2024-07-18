@@ -28,13 +28,10 @@ extension LLVM {
 		}
 
 		func unwrap<T>() -> T {
-			switch self {
-			case .value(let value):
-				value as! T
-			case .op(let opcode):
-				opcode as! T
-			case .type(let _type):
-				_type as! T
+			if let result = self.as(T.self) {
+				return result
+			} else {
+				fatalError("Could not unwrap \(self) to \(T.self)")
 			}
 		}
 
@@ -58,5 +55,9 @@ extension LLVM {
 extension LLVMValueRef: LLVM.IRValue {
 	var ref: LLVMValueRef {
 		self
+	}
+
+	var optional: LLVMValueRef? {
+		Optional(self)
 	}
 }

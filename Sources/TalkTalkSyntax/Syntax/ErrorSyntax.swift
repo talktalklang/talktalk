@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/8/24.
 //
-public struct ErrorSyntax: Syntax, Expr, Decl {
+public struct ErrorSyntax: Syntax, Expr, Decl, Stmt {
 	enum Expectation {
 		case type(any Syntax.Type), token(Token.Kind), none
 	}

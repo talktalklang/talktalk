@@ -4,11 +4,11 @@
 //
 //  Created by Pat Nakajima on 7/8/24.
 //
-public struct SyntaxTree {
-	public enum Errors: Swift.Error {
-		case errors([Error])
-	}
+public enum ParserError: Swift.Error {
+	case errors([Error])
+}
 
+public struct SyntaxTree {
 	public var root: [any Syntax]
 
 	public static func parse(source: String) throws -> ProgramSyntax {
@@ -19,7 +19,7 @@ public struct SyntaxTree {
 		let decls = parser.parse()
 
 		if !parser.errors.isEmpty {
-			throw Errors.errors(parser.errors)
+			throw ParserError.errors(parser.errors)
 		}
 
 		return ProgramSyntax(

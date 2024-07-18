@@ -140,7 +140,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		describe(node)
 		indenting {
 			$0.visit(node.condition, context: context)
-			$0.visit(node.body, context: context)
+			$0.visit(node.then, context: context)
 		}
 	}
 

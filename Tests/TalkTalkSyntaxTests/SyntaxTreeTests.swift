@@ -26,6 +26,17 @@ struct SyntaxTreeTests {
 		return root as! T
 	}
 
+	func parseError(_ string: String) -> [TalkTalkSyntax.Error] {
+		do {
+			_ = try SyntaxTree.parse(source: string).decls[0]
+			fatalError("Did not return errors")
+		} catch let ParserError.errors(errors) {
+			return errors
+		} catch {
+			fatalError("Returned unexpected error: \(error)")
+		}
+	}
+
 	@Test("Basic") func basic() throws {
 		let exprStmt = parse(
 			"1",
@@ -38,6 +49,20 @@ struct SyntaxTreeTests {
 		#expect(root.position == 0)
 		#expect(root.length == 1)
 		#expect(root.lexeme == "1")
+	}
+
+	@Test("Bool") func bool() throws {
+		let exprStmt = parse(
+			"true",
+			as: ExprStmtSyntax.self
+		)
+
+		let expr = exprStmt.expr.as(LiteralExprSyntax.self)
+
+		let root = try #require(expr)
+		#expect(root.position == 0)
+		#expect(root.length == 4)
+		#expect(root.kind == .true)
 	}
 
 	@Test("Unary") func unary() throws {
@@ -371,9 +396,37 @@ struct SyntaxTreeTests {
 		#expect(expr.length == 15)
 
 		#expect(expr.condition.description == "1 < 2")
-		#expect(expr.body.description == """
+		#expect(expr.then.description == """
 		{
 			3
+		}
+		""")
+	}
+
+	@Test("If else statement") func ifElseStatement() {
+		let expr = parse(
+			"""
+			if 1 < 2 {
+				print(3)
+			} else {
+				print(4)
+			}
+			""",
+			as: IfStmtSyntax.self
+		)
+
+		#expect(expr.position == 0)
+		#expect(expr.length == 41)
+
+		#expect(expr.condition.description == "1 < 2")
+		#expect(expr.then.description == """
+		{
+			print(3)
+		}
+		""")
+		#expect(expr.else?.description == """
+		{
+			print(4)
 		}
 		""")
 	}
@@ -406,6 +459,20 @@ struct SyntaxTreeTests {
 			4
 		}
 		""")
+	}
+
+	@Test("If expressions cannot return") func ifExpressionRet() {
+		let decl = parseError(
+			"""
+			var i = if 1 < 2 {
+				return 3
+			} else {
+				4
+			}
+			"""
+		)[0]
+
+		#expect(decl.message.contains("cannot return"))
 	}
 
 	@Test("while statement") func whileStatement() {
@@ -588,17 +655,16 @@ struct SyntaxTreeTests {
 		#expect(expr.body.decls[1].cast(FunctionDeclSyntax.self).name.lexeme == "bar")
 	}
 
-	@Test("Error when trying to init all willy nill") func classBadInit() {
-		let expr = parse(
+	@Test("Error when trying to init all willy nilly") func classBadInit() {
+		let error = parseError(
 			"""
 			init() {
 				// This doesn't work
 			}
-			""",
-			as: ErrorSyntax.self
-		)
+			"""
+		)[0]
 
-		#expect(expr.position == 0)
+		#expect(error.message.contains("Cannot define init from top level"))
 	}
 
 	@Test("self") func testSelf() {

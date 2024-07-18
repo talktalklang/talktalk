@@ -112,7 +112,7 @@ public struct GenericVisitor<Context>: ASTVisitor {
 	public func visit(_ node: IfStmtSyntax, context: Context) -> Context {
 		var context = perform(node, context)
 		context = visit(node.condition, context: context)
-		context = visit(node.body, context: context)
+		context = visit(node.then, context: context)
 		return context
 	}
 

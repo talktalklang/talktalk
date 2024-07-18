@@ -95,8 +95,8 @@ public struct ASTFormatter: ASTVisitor {
 	}
 
 	public func visit(_ node: IfStmtSyntax, context: Context) -> String {
-		var result = "if \(visit(node.condition, context: context))) "
-		result += visit(node.body, context: context)
+		var result = "if \(visit(node.condition, context: context)) "
+		result += visit(node.then, context: context)
 
 		return result
 	}

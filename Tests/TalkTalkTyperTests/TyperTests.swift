@@ -86,6 +86,22 @@ struct TyperTests {
 		#expect(fntypedef.type.description == "Function -> (String)")
 	}
 
+	@Test("Basic functions with return type") func functionsRet() throws {
+		let typer = try Typer(
+			source: """
+			func foo() {
+				return 123
+			}
+			"""
+		)
+
+		let results = typer.check()
+		#expect(results.errors.isEmpty)
+
+		let fntypedef = try #require(results.typedef(at: 7))
+		#expect(fntypedef.type.description == "Function -> (Int)")
+	}
+
 	@Test("Basic functions with type decl") func functionsWithType() throws {
 		let typer = try Typer(
 			source: """
@@ -166,6 +182,28 @@ struct TyperTests {
 
 		// Make sure we keep the right return type
 		#expect(results.typedef(at: 104)?.type.description == "Function -> (Int)")
+	}
+
+	@Test("Function with conditional") func functionConditions() throws {
+		let source = """
+		func id() {
+			if false {
+				return 123
+			} else {
+				return 456
+			}
+		}
+		"""
+		let typer = try Typer(source: source)
+		let results = typer.check()
+
+		for error in results.errors {
+			error.report(in: source)
+		}
+
+		let fndef = try #require(results.typedef(at: 6))
+
+		#expect(fndef.returnDef() == .int)
 	}
 
 	@Test("Function args") func functionArgs() throws {
@@ -265,9 +303,9 @@ struct TyperTests {
 	@Test("If expressions") func ifExpressions() throws {
 		let source = """
 		var name = if true {
-			return "Pat"
+			"Pat"
 		} else {
-			return "Not Pat"
+			"Not Pat"
 		}
 
 		name = 123
@@ -275,10 +313,32 @@ struct TyperTests {
 		let typer = try Typer(source: source)
 
 		let results = typer.check()
-		let def = try #require(results.typedef(at: 68))
+		let def = try #require(results.typedef(at: 6))
 		#expect(def.definition.cast(VarDeclSyntax.self).variable.lexeme == "name")
 		#expect(def.type.description == "String")
 		#expect(results.errors.count == 1)
+
+		let ifdef = try #require(results.typedef(at: 12))
+		#expect(ifdef.definition.cast(IfExprSyntax.self).condition.description == "true")
+		#expect(ifdef.type.description == "String")
+	}
+
+	@Test("If statements") func ifStatements() throws {
+		let source = """
+		func foo() {
+			if true {
+				return "Pat"
+			} else {
+				return "Not Pat"
+			}
+		}
+		"""
+		let typer = try Typer(source: source)
+
+		let results = typer.check()
+		let def = try #require(results.typedef(at: 32))
+		#expect(def.type.description == "String")
+		#expect(results.errors.count == 0)
 	}
 
 	@Test("lets cant be re-assigned") func letReassignment() throws {

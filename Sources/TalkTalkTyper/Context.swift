@@ -6,11 +6,34 @@
 //
 import TalkTalkSyntax
 
+class ReturnTracker {
+	var depth: Int
+	var returns: [any Expr] = []
+
+	init(depth: Int, returns: [any Expr] = []) {
+		self.depth = depth
+		self.returns = returns
+	}
+
+	func add(_ stmt: any Expr) {
+		returns.append(stmt)
+	}
+
+	func type(in context: Context) -> ValueType? {
+		if let ret = returns.last {
+			return TyperVisitor(ast: ret).visit(ret, context: context)?.type
+		}
+
+		return nil
+	}
+}
+
 class Context {
 	enum Error: Swift.Error {
 		case notInClass
 	}
 
+	var returns: [ReturnTracker] = []
 	var scopes: [Scope] = [Scope()]
 	var classes: [
 		[String: Property]
@@ -85,6 +108,13 @@ class Context {
 			type: type,
 			definition: token
 		)
+	}
+
+	func withReturnTracking(perform: (Context) -> Void) -> ReturnTracker {
+		let returns = ReturnTracker(depth: returns.count)
+		self.returns.append(returns)
+		perform(self)
+		return self.returns.popLast()!
 	}
 
 	func infer(from type: ValueType, to destination: TypedValue) -> TypedValue? {

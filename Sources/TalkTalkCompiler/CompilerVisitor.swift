@@ -33,6 +33,21 @@ class CompilerVisitor: ASTVisitor {
 		LLVMPositionBuilderAtEnd(builder.ref, blockRef)
 	}
 
+	func map(_ type: ValueType) -> any LLVM.IRType {
+		switch type {
+		case .int:
+			return .i32()
+		case .void:
+			return .void()
+		case .function(type):
+			return map(type.returns?.value ?? .void)
+		default:
+			fatalError()
+		}
+	}
+
+	// MARK: Visitors
+
 	func visit(_ node: ProgramSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
 		var lastReturn: LLVM.IRValueRef?
 		for decl in node.decls {
@@ -48,14 +63,10 @@ class CompilerVisitor: ASTVisitor {
 
 	func visit(_ node: FunctionDeclSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
 		let ret = bindings.type(for: node.name)?.type.returns?.value
-		let returnType: any LLVM.IRType = switch ret {
-		case .int: .i32()
-		default:
-			fatalError()
-		}
+		let returnType: any LLVM.IRType = map(ret!)
 
 		let parameters: [(String, any LLVM.IRType)] = node.parameters.parameters.reduce(into: []) { res, parameter in
-			return switch bindings.type(for: parameter)?.type {
+			switch bindings.type(for: parameter)?.type {
 			case .int: res.append((parameter.lexeme, .i32()))
 			default:
 				fatalError()
@@ -74,26 +85,34 @@ class CompilerVisitor: ASTVisitor {
 		// TODO: validate we're not redeclaring the same function
 		let function = builder.addFunction(named: node.name.lexeme, functionType)!
 
-		let oldFunction = self.currentFunction
-		self.currentFunction = function
+		let oldFunction = currentFunction
+		currentFunction = function
 		let entry = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
 		LLVMPositionBuilderAtEnd(builder.ref, entry)
 
 		for parameter in node.parameters.parameters {
-			function.locals[parameter.lexeme] = .declared
+			function.parameters[parameter.lexeme] = .declared
 		}
 
 		_ = visit(node.body, context: module)
 
-		self.currentFunction = oldFunction
+		currentFunction = oldFunction
 		let block = LLVMGetLastBasicBlock(oldFunction.ref)
 		LLVMPositionBuilderAtEnd(builder.ref, block)
 
 		return .value(function.ref)
 	}
 
-	func visit(_: VarDeclSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: VarDeclSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let value = currentFunction.allocate(name: node.variable.lexeme, for: bindings.type(for: node)!, in: builder)
+
+		currentFunction.locals[node.variable.lexeme] = .allocated(value)
+
+		if let expr = node.expr {
+			value.store(visit(expr, context: module).unwrap(), in: builder)
+		}
+
+		return .void()
 	}
 
 	func visit(_ node: LetDeclSyntax, context: LLVM.Module) -> LLVM.IRValueRef {
@@ -125,35 +144,81 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: BlockStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		var lastReturn: LLVM.IRValueRef? = nil
+
 		for decl in node.decls {
-			_ = visit(decl, context: module)
+			lastReturn = visit(decl, context: module)
+		}
+
+		return lastReturn ?? .void()
+	}
+
+	func visit(_ node: IfStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let condition = LLVMBuildICmp(
+			builder.ref,
+			LLVMIntEQ,
+			visit(node.condition, context: module).unwrap(),
+			LLVM.IntValue.i1(1).ref,
+			""
+		)
+
+		let thenBlock = LLVMAppendBasicBlockInContext(
+			module.context.ref,
+			currentFunction.ref,
+			"then"
+		)
+
+		let elseBlock = LLVMAppendBasicBlockInContext(
+			module.context.ref,
+			currentFunction.ref,
+			"else"
+		)
+
+		LLVMBuildCondBr(
+			builder.ref,
+			condition,
+			thenBlock,
+			elseBlock
+		)
+
+		LLVMPositionBuilderAtEnd(builder.ref, thenBlock)
+		_ = visit(node.then, context: module)
+
+		if let elseExpr = node.else {
+			LLVMPositionBuilderAtEnd(builder.ref, elseBlock)
+			_ = visit(elseExpr, context: module)
 		}
 
 		return .void()
-	}
-
-	func visit(_: IfStmtSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
 	}
 
 	func visit(_: StmtSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
 		.void()
 	}
 
-	func visit(_: WhileStmtSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: WhileStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let condition = LLVMBuildICmp(
+			builder.ref,
+			LLVMIntEQ,
+			visit(node.condition, context: module).unwrap(),
+			LLVM.IntValue.i1(1).ref,
+			""
+		)
+
+		let loopStart = LLVMCreateBasicBlockInContext(module.context.ref, "loop")
+		
 	}
 
 	func visit(_ node: ReturnStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
-		let ret = visit(node.value, context: module)
+		let ret: any LLVM.IRValue = visit(node.value, context: module).unwrap()
 
-		LLVMBuildRet(builder.ref, ret.unwrap())
+		LLVMBuildRet(builder.ref, ret.ref)
 
-		return ret
+		return .value(ret)
 	}
 
-	func visit(_: GroupExpr, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: GroupExpr, context module: LLVM.Module) -> LLVM.IRValueRef {
+		visit(node.expr, context: module)
 	}
 
 	func visit(_ node: CallExprSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
@@ -169,7 +234,7 @@ class CompilerVisitor: ASTVisitor {
 			}
 
 			let ref = args.withUnsafeMutableBufferPointer {
-				return LLVMBuildCall2(
+				LLVMBuildCall2(
 					builder.ref,
 					fn.type.ref,
 					fn.ref,
@@ -235,12 +300,14 @@ class CompilerVisitor: ASTVisitor {
 		.void()
 	}
 
-	func visit(_ node: VariableExprSyntax, context: LLVM.Module) -> LLVM.IRValueRef {
+	func visit(_ node: VariableExprSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
 		let name = node.name
 
 		if case let .defined(val) = currentFunction.locals[name.lexeme] {
 			return .value(val)
-		} else if currentFunction.locals[name.lexeme] == .declared {
+		} else if case let .allocated(value) = currentFunction.locals[name.lexeme] {
+			return .value(LLVMBuildLoad2(builder.ref, value.type.ref, value.ref, name.lexeme))
+		} else if currentFunction.parameters[name.lexeme] == .declared {
 			let paramIndex = currentFunction.type.parameters.firstIndex(where: { $0.0 == name.lexeme })!
 			return .value(LLVMGetParam(currentFunction.ref, UInt32(paramIndex)))
 		}
@@ -248,12 +315,31 @@ class CompilerVisitor: ASTVisitor {
 		fatalError("unknown variable: \(name.lexeme)")
 	}
 
-	func visit(_: AssignmentExpr, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: AssignmentExpr, context module: LLVM.Module) -> LLVM.IRValueRef {
+		switch node.lhs {
+		case let lhs as VariableExprSyntax:
+			let value: any LLVM.IRValue = visit(node.rhs, context: module).unwrap()
+			guard case let .allocated(val) = currentFunction.locals[lhs.name.lexeme] else {
+				fatalError("undefined variable: \(lhs.name.lexeme)")
+			}
+
+			val.store(value, in: builder)
+		default:
+			fatalError("not yet")
+		}
+
+		return .void()
 	}
 
-	func visit(_: LiteralExprSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: LiteralExprSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
+		switch node.kind {
+		case .true:
+			.value(.i1(1).ref)
+		case .false:
+			.value(.i1(0).ref)
+		case .nil:
+			.value(.i1(0).ref)
+		}
 	}
 
 	func visit(_: PropertyAccessExpr, context _: LLVM.Module) -> LLVM.IRValueRef {
@@ -264,8 +350,53 @@ class CompilerVisitor: ASTVisitor {
 		.void()
 	}
 
-	func visit(_: IfExprSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: IfExprSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let condition = LLVMBuildICmp(
+			builder.ref,
+			LLVMIntEQ,
+			visit(node.condition, context: module).unwrap(),
+			LLVM.IntValue.i1(1).ref,
+			""
+		)
+
+		let insertFunction = LLVMGetBasicBlockParent(LLVMGetInsertBlock(builder.ref))!
+
+		let thenBlock = LLVMAppendBasicBlockInContext(module.context.ref, insertFunction, "then")
+		let elseBlock = LLVMAppendBasicBlockInContext(module.context.ref, insertFunction, "else")
+		let mergeBlock = LLVMAppendBasicBlockInContext(module.context.ref, insertFunction, "ifcont")
+
+		LLVMBuildCondBr(builder.ref, condition, thenBlock, elseBlock)
+
+		
+
+		LLVMPositionBuilderAtEnd(builder.ref, thenBlock)
+		let thenValue: any LLVM.IRValue = visit(node.thenBlock, context: module).unwrap()
+		LLVMBuildBr(builder.ref, mergeBlock)
+
+		LLVMPositionBuilderAtEnd(builder.ref, elseBlock)
+		let elseValue: any LLVM.IRValue = visit(node.elseBlock, context: module).unwrap()
+		LLVMBuildBr(builder.ref, mergeBlock)
+
+		LLVMPositionBuilderAtEnd(builder.ref, mergeBlock)
+		let phiRetType = map(bindings.type(for: node)!.type)
+		let phiNode = LLVMBuildPhi(builder.ref, phiRetType.ref, "merge")!
+
+		var values: [LLVMValueRef?] = [thenValue.ref, elseValue.ref]
+		var blocks: [LLVMBasicBlockRef?] = [thenBlock, elseBlock]
+		let count = values.count
+
+		values.withUnsafeMutableBufferPointer { valuesPtr in
+			blocks.withUnsafeMutableBufferPointer { blocksPtr in
+				LLVMAddIncoming(
+					phiNode,
+					valuesPtr.baseAddress,
+					blocksPtr.baseAddress,
+					UInt32(count)
+				)
+			}
+		}
+
+		return .value(phiNode)
 	}
 
 	func visit(_ node: UnaryOperator, context _: LLVM.Module) -> LLVM.IRValueRef {

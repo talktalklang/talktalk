@@ -52,6 +52,10 @@ class TyperVisitor: ASTVisitor {
 			return nil
 		}
 
+		define(node.thenBlock, as: lhs)
+		define(node.elseBlock, as: rhs)
+		define(node, as: TypedValue(type: lhs.type, definition: node, status: .defined))
+
 		return TypedValue(
 			type: lhs.type,
 			definition: node,
@@ -131,7 +135,11 @@ class TyperVisitor: ASTVisitor {
 			error(node.condition, "must be not bool")
 		}
 
-		_ = visit(node.body, context: context)
+		_ = visit(node.then, context: context)
+
+		if let type = context.returns.last?.type(in: context) {
+			define(node.then, as: type.bind(node.then))
+		}
 
 		return nil
 	}
@@ -272,13 +280,15 @@ class TyperVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: BlockStmtSyntax, context: Context) -> TypedValue? {
+		var lastRetType: TypedValue? = nil
+
 		context.withScope {
 			for decl in node.decls {
-				_ = decl.accept(self, context: $0)
+				lastRetType = decl.accept(self, context: $0)
 			}
 		}
 
-		return .void(node)
+		return lastRetType
 	}
 
 	func visit(_ node: WhileStmtSyntax, context: Context) -> TypedValue? {
@@ -336,12 +346,15 @@ class TyperVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: ReturnStmtSyntax, context: Context) -> TypedValue? {
-		return visit(node.value, context: context)
+		let ret = visit(node.value, context: context)
+
+		context.returns.last?.returns.append(node.value)
+
+		return ret
 	}
 
 	func visit(_ node: ExprStmtSyntax, context: Context) -> TypedValue? {
-		_ = visit(node.expr, context: context)
-		return .void(node) // Statements dont have types... fow now?????
+		return visit(node.expr, context: context)
 	}
 
 	func visit(_ node: PropertyAccessExpr, context: Context) -> TypedValue? {
@@ -499,16 +512,22 @@ class TyperVisitor: ASTVisitor {
 		}
 
 		_ = visit(node.parameters, context: context)
-		_ = visit(node.body, context: context)
+
+		let returns = context.withReturnTracking {
+			_ = visit(node.body, context: $0)
+		}
 
 		var lastReturnDef: ValueType?
-		let returnDefs: [TypedValue] = node.body.decls.compactMap { decl -> TypedValue? in
-			guard let stmt = decl.as(ReturnStmtSyntax.self) else {
-				return nil
-			}
+		let returnDefs: [TypedValue] = returns.returns.compactMap { stmt -> TypedValue? in
+			var def = visit(stmt, context: context) ?? TypedValue(type: .tbd, definition: stmt, status: .declared)
 
-			guard var def = visit(stmt, context: context) else {
-				return TypedValue(type: .tbd, definition: stmt, status: .declared)
+			if let lastReturnDef, !lastReturnDef.assignable(from: def.type) {
+				error(stmt, """
+				Function \(node.name.lexeme) cannot return different types
+				Expected: \(lastReturnDef.description)
+				Received: \(def.type.description)
+				""")
+				return nil
 			}
 
 			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
@@ -517,20 +536,20 @@ class TyperVisitor: ASTVisitor {
 				   let inferred = context.infer(from: returns, to: def)
 				{
 					def = inferred
-					define(stmt.value, as: def)
+					define(stmt, as: def)
 				} else {
-					error(stmt.value, "Not assignable to \(declDef.returns!.value)")
+					error(stmt, "Not assignable to \(declDef.returns!.value)")
 					return nil
 				}
 			}
 
 			if let lastReturnDef, !lastReturnDef.assignable(from: def.type) {
-				error(stmt.value, "Function cannot return different types")
+				error(stmt, "Function cannot return different types")
 				return nil
 			}
 
 			lastReturnDef = def.type
-			define(stmt.value, as: def, ref: stmt)
+			define(stmt, as: def, ref: stmt)
 
 			return def
 		}

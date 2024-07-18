@@ -8,7 +8,8 @@ public struct IfStmtSyntax: Syntax, Stmt {
 	public let start: Token
 	public let end: Token
 	public var condition: any Expr
-	public var body: BlockStmtSyntax
+	public var `then`: BlockStmtSyntax
+	public var `else`: BlockStmtSyntax?
 
 	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
@@ -18,7 +19,8 @@ public struct IfStmtSyntax: Syntax, Stmt {
 		hasher.combine(start)
 		hasher.combine(end)
 		hasher.combine(condition)
-		hasher.combine(body)
+		hasher.combine(self.then)
+		hasher.combine(self.else)
 	}
 
 	public func accept<Visitor: ASTVisitor>(
