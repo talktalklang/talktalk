@@ -521,7 +521,7 @@ class TyperVisitor: ASTVisitor {
 		let returnDefs: [TypedValue] = returns.returns.compactMap { stmt -> TypedValue? in
 			var def = visit(stmt, context: context) ?? TypedValue(type: .tbd, definition: stmt, status: .declared)
 
-			if let lastReturnDef, !lastReturnDef.assignable(from: def.type) {
+			if let lastReturnDef, !lastReturnDef.assignable(from: def.type), def.type != .tbd {
 				error(stmt, """
 				Function \(node.name.lexeme) cannot return different types
 				Expected: \(lastReturnDef.description)
@@ -543,7 +543,7 @@ class TyperVisitor: ASTVisitor {
 				}
 			}
 
-			if let lastReturnDef, !lastReturnDef.assignable(from: def.type) {
+			if let lastReturnDef, !lastReturnDef.assignable(from: def.type), def.type != .tbd {
 				error(stmt, "Function cannot return different types")
 				return nil
 			}

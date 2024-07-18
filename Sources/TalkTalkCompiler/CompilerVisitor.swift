@@ -184,8 +184,9 @@ class CompilerVisitor: ASTVisitor {
 		LLVMPositionBuilderAtEnd(builder.ref, thenBlock)
 		_ = visit(node.then, context: module)
 
+		LLVMPositionBuilderAtEnd(builder.ref, elseBlock)
+
 		if let elseExpr = node.else {
-			LLVMPositionBuilderAtEnd(builder.ref, elseBlock)
 			_ = visit(elseExpr, context: module)
 		}
 
@@ -197,6 +198,17 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: WhileStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let currentFn = currentFunction
+
+		let loopConditionBlock = LLVMAppendBasicBlockInContext(module.context.ref, currentFunction.ref, "loopcond")
+		let loopBodyBlock = LLVMAppendBasicBlockInContext(module.context.ref, currentFunction.ref, "loopbody")
+		let loopExitBlock = LLVMAppendBasicBlockInContext(module.context.ref, currentFunction.ref, "loopexit")
+
+		// Jump to the loop condition
+		LLVMBuildBr(builder.ref, loopConditionBlock)
+
+		// Evaluate the condition, if it's true, jump to loop body, else jump to exit
+		LLVMPositionBuilderAtEnd(builder.ref, loopConditionBlock)
 		let condition = LLVMBuildICmp(
 			builder.ref,
 			LLVMIntEQ,
@@ -204,9 +216,18 @@ class CompilerVisitor: ASTVisitor {
 			LLVM.IntValue.i1(1).ref,
 			""
 		)
+		LLVMBuildCondBr(builder.ref, condition, loopBodyBlock, loopExitBlock)
 
-		let loopStart = LLVMCreateBasicBlockInContext(module.context.ref, "loop")
-		
+		// Write the body of the loop
+		LLVMPositionBuilderAtEnd(builder.ref, loopBodyBlock)
+		_ = visit(node.body, context: module)
+		// Jump back to the condition when we're done here
+		LLVMBuildBr(builder.ref, loopConditionBlock)
+
+		// Finally, move the builder to our post loop block where stuff can continue
+		LLVMPositionBuilderAtEnd(builder.ref, loopExitBlock)
+
+		return .void()
 	}
 
 	func visit(_ node: ReturnStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
@@ -269,6 +290,8 @@ class CompilerVisitor: ASTVisitor {
 		case .plus: LLVMBuildAdd(builder.ref, lhs.ref, rhs.ref, "")
 		case .minus: LLVMBuildSub(builder.ref, lhs.ref, rhs.ref, "")
 		case .star: LLVMBuildMul(builder.ref, lhs.ref, rhs.ref, "")
+		case .less: LLVMBuildICmp(builder.ref, LLVMIntSLT, lhs.ref, rhs.ref, "less")
+		case .lessEqual: LLVMBuildICmp(builder.ref, LLVMIntSLE, lhs.ref, rhs.ref, "sle")
 		default:
 			fatalError("unhandled binary op: \(node.op)")
 		}
@@ -366,8 +389,6 @@ class CompilerVisitor: ASTVisitor {
 		let mergeBlock = LLVMAppendBasicBlockInContext(module.context.ref, insertFunction, "ifcont")
 
 		LLVMBuildCondBr(builder.ref, condition, thenBlock, elseBlock)
-
-		
 
 		LLVMPositionBuilderAtEnd(builder.ref, thenBlock)
 		let thenValue: any LLVM.IRValue = visit(node.thenBlock, context: module).unwrap()

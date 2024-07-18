@@ -237,9 +237,7 @@ struct TyperTests {
 		let typer = try Typer(source: source)
 		let results = typer.check()
 
-		for error in results.errors {
-			error.report(in: source)
-		}
+		#expect(results.errors.isEmpty)
 
 		let ndef = try #require(results.typedef(at: 6))
 		#expect(ndef.type == .function(.int))

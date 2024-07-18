@@ -111,23 +111,28 @@ struct CompilerTests {
 
 		let module = try compiler.compile()
 		let result = LLVM.JIT().execute(module: module)
-		#expect(result == 4)
+		#expect(result == 5)
 	}
 
-	@Test("can compile fib", .disabled()) func fib() throws {
-		_ = """
+	@Test("can compile fib") func fib() throws {
+		let compiler = Compiler(source: """
 		func fib(n) {
 			if n <= 1 { return n }
 			return fib(n - 2) + fib(n - 1)
 		}
 
 		var i = 0
-		while i < 35 {
-			print(fib(i))
+		var o = 0
+		while i < 10 {
+			o = fib(i)
 			i = i + 1
 		}
-		"""
 
-		#expect(Bool(false), "not here yet")
+		o
+		""")
+
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 34)
 	}
 }
