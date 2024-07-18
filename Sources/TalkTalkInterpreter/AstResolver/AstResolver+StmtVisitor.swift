@@ -6,15 +6,15 @@
 //
 
 extension AstResolver: StmtVisitor {
-	func visit(_ stmt: PrintStmt) throws {
+	mutating func visit(_ stmt: PrintStmt) throws {
 		try resolve(stmt.expr)
 	}
 
-	func visit(_ stmt: ExpressionStmt) throws {
+	mutating func visit(_ stmt: ExpressionStmt) throws {
 		try resolve(stmt.expr)
 	}
 
-	func visit(_ stmt: VarStmt) throws {
+	mutating func visit(_ stmt: VarStmt) throws {
 		declare(stmt.name)
 
 		if let initializer = stmt.initializer {
@@ -24,13 +24,13 @@ extension AstResolver: StmtVisitor {
 		define(stmt.name)
 	}
 
-	func visit(_ stmt: BlockStmt) throws {
+	mutating func visit(_ stmt: BlockStmt) throws {
 		beginScope()
 		try resolve(stmt.statements)
 		endScope()
 	}
 
-	func visit(_ stmt: IfStmt) throws {
+	mutating func visit(_ stmt: IfStmt) throws {
 		try resolve(stmt.condition)
 		try resolve(stmt.thenStatement)
 
@@ -39,19 +39,19 @@ extension AstResolver: StmtVisitor {
 		}
 	}
 
-	func visit(_ stmt: WhileStmt) throws {
+	mutating func visit(_ stmt: WhileStmt) throws {
 		try resolve(stmt.condition)
 		try resolve(stmt.body)
 	}
 
-	func visit(_ stmt: FunctionStmt) throws {
+	mutating func visit(_ stmt: FunctionStmt) throws {
 		declare(stmt.name)
 		define(stmt.name)
 
 		try resolveFunction(stmt, .function)
 	}
 
-	func visit(_ stmt: ReturnStmt) throws {
+	mutating func visit(_ stmt: ReturnStmt) throws {
 		if currentFunction == .none {
 			TalkTalkInterpreter.error("Can't return from top level code.", token: stmt.token)
 			throw ResolverError.topLevelReturn
@@ -62,7 +62,7 @@ extension AstResolver: StmtVisitor {
 		}
 	}
 
-	func visit(_ stmt: ClassStmt) throws {
+	mutating func visit(_ stmt: ClassStmt) throws {
 		declare(stmt.name)
 		define(stmt.name)
 

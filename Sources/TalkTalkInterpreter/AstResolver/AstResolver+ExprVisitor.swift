@@ -10,16 +10,12 @@ enum ResolverError: Error {
 }
 
 extension AstResolver: ExprVisitor {
-	func visit(_ expr: LiteralExpr) throws {
-		try resolve(expr)
-	}
-
-	func visit(_ expr: BinaryExpr) throws {
+	mutating func visit(_ expr: BinaryExpr) throws {
 		try resolve(expr.lhs)
 		try resolve(expr.rhs)
 	}
 
-	func visit(_ expr: CallExpr) throws {
+	mutating func visit(_ expr: CallExpr) throws {
 		try resolve(expr.callee)
 
 		for argument in expr.arguments {
@@ -27,38 +23,42 @@ extension AstResolver: ExprVisitor {
 		}
 	}
 
-	func visit(_ expr: GroupingExpr) throws {
+	mutating func visit(_ expr: GroupingExpr) throws {
 		try resolve(expr.expr)
 	}
 
-	func visit(_ expr: LogicExpr) throws {
+	mutating func visit(_: LiteralExpr) throws {
+		// Literals don't mention any variables
+	}
+
+	mutating func visit(_ expr: LogicExpr) throws {
 		try resolve(expr.lhs)
 		try resolve(expr.rhs)
 	}
 
-	func visit(_ expr: UnaryExpr) throws {
+	mutating func visit(_ expr: UnaryExpr) throws {
 		try resolve(expr.expr)
 	}
 
-	func visit(_ expr: VariableExpr) throws {
+	mutating func visit(_ expr: VariableExpr) throws {
 		resolveLocal(expr: expr, name: expr.name)
 	}
 
-	func visit(_ expr: AssignExpr) throws {
+	mutating func visit(_ expr: AssignExpr) throws {
 		try resolve(expr.value)
 		resolveLocal(expr: expr, name: expr.name)
 	}
 
-	func visit(_ expr: GetExpr) throws {
+	mutating func visit(_ expr: GetExpr) throws {
 		try resolve(expr.receiver)
 	}
 
-	func visit(_ expr: SetExpr) throws {
+	mutating func visit(_ expr: SetExpr) throws {
 		try resolve(expr.value)
 		try resolve(expr.receiver)
 	}
 
-	func visit(_ expr: SelfExpr) throws {
+	mutating func visit(_ expr: SelfExpr) throws {
 		resolveLocal(expr: expr, name: expr.token)
 	}
 }

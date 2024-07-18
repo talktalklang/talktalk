@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 6/29/24.
 //
-class Scope {
+struct Scope {
 	struct Status: OptionSet {
 		let rawValue: Int
 		static let declared = Status(rawValue: 1 << 0)
@@ -21,16 +21,16 @@ class Scope {
 		storage.index(forKey: token.lexeme) != nil
 	}
 
-	func mark(_ token: Token, as status: Scope.Status) {
+	mutating func mark(_ token: Token, as status: Scope.Status) {
 		storage[token.lexeme, default: Status()].insert(status)
 	}
 
-	func mark(_ name: String, as status: Scope.Status) {
+	mutating func mark(_ name: String, as status: Scope.Status) {
 		storage[name, default: Status()].insert(status)
 	}
 }
 
-class AstResolver {
+struct AstResolver {
 	enum FunctionType {
 		case none, function, method, initializer
 	}
@@ -39,36 +39,30 @@ class AstResolver {
 	var scopes: [Scope] = []
 	var currentFunction: FunctionType = .none
 
-	init(interpreter: AstInterpreter, scopes: [Scope], currentFunction: FunctionType) {
-		self.interpreter = interpreter
-		self.scopes = scopes
-		self.currentFunction = currentFunction
-	}
-
-	func beginScope() {
+	mutating func beginScope() {
 		scopes.append(Scope())
 	}
 
-	func endScope() {
+	mutating func endScope() {
 		_ = scopes.popLast()
 	}
 
-	func declare(_ token: Token) {
+	mutating func declare(_ token: Token) {
 		if scopes.isEmpty { return }
 		scopes[scopes.count - 1].mark(token, as: .declared)
 	}
 
-	func define(_ token: Token) {
+	mutating func define(_ token: Token) {
 		if scopes.isEmpty { return }
 		scopes[scopes.count - 1].mark(token, as: .defined)
 	}
 
-	func define(_ name: String) {
+	mutating func define(_ name: String) {
 		if scopes.isEmpty { return }
 		scopes[scopes.count - 1].mark(name, as: .defined)
 	}
 
-	func resolveLocal(expr: any Expr, name: Token) {
+	mutating func resolveLocal(expr: any Expr, name: Token) {
 		var i = scopes.count - 1
 		while i >= 0 {
 			if scopes[i].contains(name) {
@@ -80,7 +74,7 @@ class AstResolver {
 		}
 	}
 
-	func resolveFunction(_ function: FunctionStmt, _ type: FunctionType) throws {
+	mutating func resolveFunction(_ function: FunctionStmt, _ type: FunctionType) throws {
 		let enclosingFunctionType = currentFunction
 		currentFunction = type
 
@@ -97,11 +91,11 @@ class AstResolver {
 		currentFunction = enclosingFunctionType
 	}
 
-	func resolve(_ statement: any Stmt) throws {
-		try statement.accept(visitor: self)
+	mutating func resolve(_ statement: any Stmt) throws {
+		try statement.accept(visitor: &self)
 	}
 
-	@discardableResult func resolve(_ statements: [any Stmt]) throws -> AstInterpreter {
+	@discardableResult mutating func resolve(_ statements: [any Stmt]) throws -> AstInterpreter {
 		for statement in statements {
 			try resolve(statement)
 		}
@@ -109,11 +103,11 @@ class AstResolver {
 		return interpreter
 	}
 
-	func resolve(_ expression: any Expr) throws {
-		try expression.accept(visitor: self)
+	mutating func resolve(_ expression: any Expr) throws {
+		try expression.accept(visitor: &self)
 	}
 
-	func resolve(_ expressions: [any Expr]) throws {
+	mutating func resolve(_ expressions: [any Expr]) throws {
 		for expression in expressions {
 			try resolve(expression)
 		}
