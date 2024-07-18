@@ -46,4 +46,29 @@ public extension Syntax {
 	var range: Range<Int> {
 		start.start ..< (end.start + end.length)
 	}
+
+	func nodes(at position: Int) -> [any Syntax] {
+		var result: [any Syntax] = []
+		var visitor = GenericVisitor { node, _ in
+			if node.range.contains(position) {
+				result.append(node)
+			}
+		}
+
+		visitor.visit(self, context: ())
+
+		return result.sorted(by: { $0.length < $1.length })
+	}
+
+	func node(at position: Int) -> any Syntax {
+		var result: any Syntax = self
+		var visitor = GenericVisitor { node, _ in
+			if node.range.contains(position), node.range.count < result.range.count {
+				result = node
+			}
+		}
+
+		visitor.visit(self, context: ())
+		return result
+	}
 }

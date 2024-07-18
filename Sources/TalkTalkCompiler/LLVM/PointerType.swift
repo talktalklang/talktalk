@@ -7,19 +7,19 @@
 import C_LLVM
 
 prefix operator *
-prefix func * (rhs: any LLVMType) -> LLVM.PointerType {
+prefix func * (rhs: any LLVM.IRType) -> LLVM.PointerType {
 	LLVM.PointerType(pointee: rhs)
 }
 
 extension LLVM {
-	class PointerType: LLVMType, Hashable {
+	class PointerType: LLVM.IRType, Hashable {
 		static func ==(lhs: PointerType, rhs: PointerType) -> Bool {
 			lhs.ref == rhs.ref
 		}
 
 		let ref: LLVMTypeRef
 
-		init(pointee: any LLVMType) {
+		init(pointee: any LLVM.IRType) {
 			self.ref = LLVMPointerType(pointee.ref, .zero)
 		}
 

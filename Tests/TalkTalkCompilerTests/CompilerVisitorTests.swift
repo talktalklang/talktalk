@@ -1,13 +1,14 @@
 //
 //  CompilerVisitorTests.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/17/24.
 //
 import C_LLVM
-import Testing
-import TalkTalkSyntax
 @testable import TalkTalkCompiler
+import TalkTalkSyntax
+import TalkTalkTyper
+import Testing
 
 struct CompilerVisitorTests {
 	var builder: LLVM.Builder
@@ -15,12 +16,12 @@ struct CompilerVisitorTests {
 
 	init() {
 		self.module = LLVM.Module(in: .global)
-		self.builder = LLVM.Builder(module: self.module)
+		self.builder = LLVM.Builder(module: module)
 	}
 
 	@Test("Int literal IR") func intLiteral() throws {
 		let node: IntLiteralSyntax = Parser.parse(expr: "123")!
-		let visitor = CompilerVisitor(builder: builder, module: module)
+		let visitor = CompilerVisitor(bindings: Typer(ast: node).check(), builder: builder, module: module)
 
 		let result = try #require(visitor.visit(node, context: module)).as(LLVM.IntValue.self)!
 		#expect(result == .i32(123))
@@ -28,7 +29,7 @@ struct CompilerVisitorTests {
 
 	@Test("Add IR") func add() throws {
 		let node: BinaryExprSyntax = Parser.parse(expr: "1 + 2")!
-		let visitor = CompilerVisitor(builder: builder, module: module)
+		let visitor = CompilerVisitor(bindings: Typer(ast: node).check(), builder: builder, module: module)
 
 		let result: any LLVM.IRValue = try #require(visitor.visit(node, context: module)).unwrap()
 		let string = String(cString: LLVMPrintValueToString(result.ref))
@@ -37,7 +38,7 @@ struct CompilerVisitorTests {
 
 	@Test("Sub IR") func sub() throws {
 		let node: BinaryExprSyntax = Parser.parse(expr: "1 - 2")!
-		let visitor = CompilerVisitor(builder: builder, module: module)
+		let visitor = CompilerVisitor(bindings: Typer(ast: node).check(), builder: builder, module: module)
 
 		let result: any LLVM.IRValue = try #require(visitor.visit(node, context: module)).unwrap()
 
@@ -50,7 +51,7 @@ struct CompilerVisitorTests {
 		let foo = 123
 		""")!
 
-		let visitor = CompilerVisitor(builder: builder, module: module)
+		let visitor = CompilerVisitor(bindings: Typer(ast: node).check(), builder: builder, module: module)
 		let result = try #require(visitor.visit(node, context: module))
 
 		#expect(visitor.currentFunction.locals["foo"] == .defined(LLVM.IntValue.i32(123)))
@@ -59,17 +60,23 @@ struct CompilerVisitorTests {
 
 	@Test("function IR") func function() throws {
 		let node = Parser.parse(decl: """
-		func foo() -> Int {
-			return 123
+		func foo(i) -> Int {
+			return i * 2
 		}
 		""")!
 
-		let visitor = CompilerVisitor(builder: builder, module: module)
+		let visitor = CompilerVisitor(bindings: Typer(ast: node).check(), builder: builder, module: module)
 		let result: any LLVM.IRValue = try #require(visitor.visit(node, context: module)).unwrap()
 
 		let string = String(cString: LLVMPrintValueToString(result.ref))
+
 		#expect(string == """
-		
+		define i32 @foo(i32 %0) {
+		entry:
+		  %1 = mul i32 %0, 2
+		  ret i32 %1
+		}
+
 		""")
 	}
 }

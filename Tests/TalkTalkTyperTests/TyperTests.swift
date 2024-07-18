@@ -204,8 +204,10 @@ struct TyperTests {
 		}
 
 		let ndef = try #require(results.typedef(at: 6))
-
 		#expect(ndef.type == .function(.int))
+
+		let paramdef = try #require(results.typedef(at: 9))
+		#expect(paramdef.type == .int)
 	}
 
 	@Test("Classes") func classes() throws {

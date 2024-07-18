@@ -18,31 +18,6 @@ public struct ProgramSyntax: Syntax {
 		lhs.hashValue == rhs.hashValue
 	}
 
-	public func nodes(at position: Int) -> [any Syntax] {
-		var result: [any Syntax] = []
-		let visitor = GenericVisitor { node, _ in
-			if node.range.contains(position) {
-				result.append(node)
-			}
-		}
-
-		visitor.visit(self, context: ())
-
-		return result.sorted(by: { $0.length < $1.length })
-	}
-
-	public func node(at position: Int) -> any Syntax {
-		var result: any Syntax = self
-		let visitor = GenericVisitor { node, _ in
-			if node.range.contains(position), node.range.count < result.range.count {
-				result = node
-			}
-		}
-
-		visitor.visit(self, context: ())
-		return result
-	}
-
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(start)
 		hasher.combine(end)

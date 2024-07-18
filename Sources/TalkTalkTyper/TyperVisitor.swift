@@ -1,9 +1,9 @@
 import TalkTalkSyntax
 
 class TyperVisitor: ASTVisitor {
-	var bindings: Bindings = .init(ast: .main)
+	var bindings: Bindings = .init(ast: ProgramSyntax.main)
 
-	init(ast: ProgramSyntax) {
+	init(ast: any Syntax) {
 		self.bindings = .init(ast: ast)
 	}
 
@@ -63,7 +63,7 @@ class TyperVisitor: ASTVisitor {
 		node.accept(self, context: context)
 	}
 
-	func visit(ast: ProgramSyntax, context: Context) -> Bindings {
+	func visit(ast: any Syntax, context: Context) -> Bindings {
 		bindings = .init(ast: ast)
 
 		for builtin in ValueType.builtins {
@@ -449,19 +449,15 @@ class TyperVisitor: ASTVisitor {
 		if lhsDef.type == .tbd, rhsDef.type != .tbd {
 			lhsDef = context.infer(from: rhsDef.type, to: lhsDef)!
 
-			define(
-				node.lhs,
-				as: lhsDef
-			)
+			context.define(node.lhs, as: lhsDef)
+			define(node.lhs, as: lhsDef)
 		}
 
 		if rhsDef.type == .tbd, lhsDef.type != .tbd {
 			rhsDef = context.infer(from: lhsDef.type, to: rhsDef)!
 
-			define(
-				node.rhs,
-				as: rhsDef
-			)
+			context.define(node.rhs, as: rhsDef)
+			define(node.rhs, as: rhsDef)
 		}
 
 		guard lhsDef.type == rhsDef.type else {
@@ -558,6 +554,14 @@ class TyperVisitor: ASTVisitor {
 		} else {
 			define(node.name, as: typedValue)
 			context.define(node.name, as: typedValue)
+		}
+
+		// Try to fill in parameters
+		for parameter in node.parameters.parameters {
+			if let typedValue = context.lookup(identifier: parameter.lexeme) {
+				define(parameter, as: typedValue.type.bind(parameter, ref: typedValue))
+				context.define(parameter, as: typedValue.type.bind(parameter, ref: typedValue))
+			}
 		}
 
 		return typedValue

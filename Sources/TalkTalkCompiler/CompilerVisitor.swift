@@ -9,11 +9,13 @@ import TalkTalkSyntax
 import TalkTalkTyper
 
 class CompilerVisitor: ASTVisitor {
+	var bindings: Bindings
 	var builder: LLVM.Builder
 	var module: LLVM.Module
 	var currentFunction: LLVM.Function
 
-	init(builder: LLVM.Builder, module: LLVM.Module) {
+	init(bindings: Bindings, builder: LLVM.Builder, module: LLVM.Module) {
+		self.bindings = bindings
 		self.builder = builder
 		self.module = module
 
@@ -44,8 +46,50 @@ class CompilerVisitor: ASTVisitor {
 		return .void()
 	}
 
-	func visit(_: FunctionDeclSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: FunctionDeclSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let ret = bindings.type(for: node.name)?.type.returns?.value
+		let returnType: any LLVM.IRType = switch ret {
+		case .int: .i32()
+		default:
+			fatalError()
+		}
+
+		let parameters: [(String, any LLVM.IRType)] = node.parameters.parameters.reduce(into: []) { res, parameter in
+			return switch bindings.type(for: parameter)?.type {
+			case .int: res.append((parameter.lexeme, .i32()))
+			default:
+				fatalError()
+			}
+		}
+
+		let functionType = LLVM.FunctionType(
+			context: module.context,
+			returning: returnType,
+			parameters: parameters,
+			isVarArg: false // We don't support var args yet
+		)
+
+		module.functionTypes[functionType.ref] = functionType
+
+		// TODO: validate we're not redeclaring the same function
+		let function = builder.addFunction(named: node.name.lexeme, functionType)!
+
+		let oldFunction = self.currentFunction
+		self.currentFunction = function
+		let entry = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
+		LLVMPositionBuilderAtEnd(builder.ref, entry)
+
+		for parameter in node.parameters.parameters {
+			function.locals[parameter.lexeme] = .declared
+		}
+
+		_ = visit(node.body, context: module)
+
+		self.currentFunction = oldFunction
+		let block = LLVMGetLastBasicBlock(oldFunction.ref)
+		LLVMPositionBuilderAtEnd(builder.ref, block)
+
+		return .value(function.ref)
 	}
 
 	func visit(_: VarDeclSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
@@ -80,8 +124,12 @@ class CompilerVisitor: ASTVisitor {
 		visit(node.expr, context: module)
 	}
 
-	func visit(_: BlockStmtSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: BlockStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		for decl in node.decls {
+			_ = visit(decl, context: module)
+		}
+
+		return .void()
 	}
 
 	func visit(_: IfStmtSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
@@ -96,16 +144,45 @@ class CompilerVisitor: ASTVisitor {
 		.void()
 	}
 
-	func visit(_: ReturnStmtSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: ReturnStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		let ret = visit(node.value, context: module)
+
+		LLVMBuildRet(builder.ref, ret.unwrap())
+
+		return ret
 	}
 
 	func visit(_: GroupExpr, context _: LLVM.Module) -> LLVM.IRValueRef {
 		.void()
 	}
 
-	func visit(_: CallExprSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
-		.void()
+	func visit(_ node: CallExprSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		if let callee = node.callee.as(VariableExprSyntax.self) {
+			let fn = module.function(named: callee.name.lexeme)!
+			var args: [LLVMValueRef?] = node.arguments.arguments.map {
+				switch visit($0, context: module) {
+				case let .value(value):
+					value.ref
+				default:
+					fatalError("not yet")
+				}
+			}
+
+			let ref = args.withUnsafeMutableBufferPointer {
+				return LLVMBuildCall2(
+					builder.ref,
+					fn.type.ref,
+					fn.ref,
+					$0.baseAddress,
+					UInt32(node.arguments.count),
+					""
+				)
+			}
+
+			return .value(ref!)
+		}
+
+		return .void()
 	}
 
 	func visit(_ node: UnaryExprSyntax, context: LLVM.Module) -> LLVM.IRValueRef {
@@ -130,8 +207,6 @@ class CompilerVisitor: ASTVisitor {
 		default:
 			fatalError("unhandled binary op: \(node.op)")
 		}
-
-		LLVMDumpValue(ref)
 
 		return .value(ref!)
 	}
@@ -161,7 +236,16 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: VariableExprSyntax, context: LLVM.Module) -> LLVM.IRValueRef {
-		visit(node.name, context: context)
+		let name = node.name
+
+		if case let .defined(val) = currentFunction.locals[name.lexeme] {
+			return .value(val)
+		} else if currentFunction.locals[name.lexeme] == .declared {
+			let paramIndex = currentFunction.type.parameters.firstIndex(where: { $0.0 == name.lexeme })!
+			return .value(LLVMGetParam(currentFunction.ref, UInt32(paramIndex)))
+		}
+
+		fatalError("unknown variable: \(name.lexeme)")
 	}
 
 	func visit(_: AssignmentExpr, context _: LLVM.Module) -> LLVM.IRValueRef {

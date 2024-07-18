@@ -59,6 +59,10 @@ class Context {
 		currentScope.lookup(type: type)
 	}
 
+	func lookup(identifier: String) -> TypedValue? {
+		currentScope.lookup(identifier: identifier)
+	}
+
 	func define(_ syntax: any Syntax, as typedef: TypedValue) {
 		currentScope.locals[name(for: syntax)] = typedef
 	}

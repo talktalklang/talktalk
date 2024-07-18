@@ -51,7 +51,7 @@ struct AstInterpreter {
 	}
 
 	mutating func execute(statement: any Stmt) throws {
-		try statement.accept(visitor: &self)
+		try statement.accept(visitor: self)
 	}
 
 	mutating func resolve(_ expr: any Expr, depth: Int) {
@@ -82,7 +82,7 @@ struct AstInterpreter {
 	}
 
 	mutating func evaluate(_ expr: any Expr) throws -> Value {
-		lastExpressionValue = try expr.accept(visitor: &self)
+		lastExpressionValue = try expr.accept(visitor: self)
 		return lastExpressionValue
 	}
 }

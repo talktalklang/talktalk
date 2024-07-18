@@ -6,6 +6,8 @@
 //
 import C_LLVM
 
-protocol LLVMType: Hashable {
-	var ref: LLVMTypeRef { get }
+extension LLVM {
+	protocol IRType: Hashable {
+		var ref: LLVMTypeRef { get }
+	}
 }

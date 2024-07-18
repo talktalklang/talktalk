@@ -7,7 +7,7 @@
 import C_LLVM
 
 extension LLVM {
-	class VoidType: LLVMType {
+	class VoidType: LLVM.IRType {
 		static func == (lhs: LLVM.VoidType, rhs: LLVM.VoidType) -> Bool {
 			true
 		}
@@ -25,8 +25,8 @@ extension LLVM {
 }
 
 
-extension LLVMType where Self == LLVM.VoidType {
-	static func void(_ context: LLVM.Context = .global) -> any LLVMType {
+extension LLVM.IRType where Self == LLVM.VoidType {
+	static func void(_ context: LLVM.Context = .global) -> any LLVM.IRType {
 		LLVM.VoidType(context: context)
 	}
 }

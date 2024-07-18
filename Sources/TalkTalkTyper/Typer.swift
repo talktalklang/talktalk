@@ -34,10 +34,15 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 }
 
 public struct Typer {
-	let ast: ProgramSyntax
+	let ast: any Syntax
 	let context: Context
 
 	public var errors: [TypeError] = []
+
+	public init(ast: any Syntax) {
+		self.ast = ast
+		self.context = Context()
+	}
 
 	public init(source: String) throws {
 		self.ast = try SyntaxTree.parse(source: source)

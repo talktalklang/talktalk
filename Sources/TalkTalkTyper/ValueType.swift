@@ -23,7 +23,7 @@ public struct ValueType: Equatable, CustomStringConvertible {
 			lhs.value == rhs.value
 		}
 
-		let value: ValueType
+		public let value: ValueType
 
 		init(value: ValueType) {
 			self.value = value
@@ -35,7 +35,7 @@ public struct ValueType: Equatable, CustomStringConvertible {
 			lhs.value == rhs.value
 		}
 
-		let value: ValueType
+		public let value: ValueType
 
 		init(value: ValueType) {
 			self.value = value
@@ -47,7 +47,7 @@ public struct ValueType: Equatable, CustomStringConvertible {
 			lhs.value == rhs.value
 		}
 
-		let value: ValueType
+		public let value: ValueType
 
 		init(value: ValueType) {
 			self.value = value
@@ -128,8 +128,8 @@ public struct ValueType: Equatable, CustomStringConvertible {
 		returns != nil
 	}
 
-	func bind(_ to: any Syntax) -> TypedValue {
-		TypedValue(type: self, definition: to, status: .defined)
+	func bind(_ to: any Syntax, ref: TypedValue? = nil) -> TypedValue {
+		TypedValue(type: self, definition: to, ref: ref, status: .defined)
 	}
 }
 

@@ -27,10 +27,12 @@ enum VariableState: Equatable {
 
 extension LLVM {
 	class Function {
+		let type: FunctionType
 		let ref: LLVMValueRef
 		var locals: [String: VariableState] = [:]
 
-		init(ref: LLVMValueRef) {
+		init(type: FunctionType, ref: LLVMValueRef) {
+			self.type = type
 			self.ref = ref
 		}
 	}

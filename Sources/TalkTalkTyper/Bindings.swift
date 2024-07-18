@@ -7,13 +7,21 @@
 import TalkTalkSyntax
 
 public class Bindings {
-	public var ast: ProgramSyntax
+	public var ast: any Syntax
 	public var errors: [TypeError] = []
 	public var warnings: [String] = []
 	var typedefs: [Int: TypedValue] = [:]
 
-	init(ast: ProgramSyntax) {
+	init(ast: any Syntax) {
 		self.ast = ast
+	}
+
+	public func type(for node: any Syntax) -> TypedValue? {
+		for i in node.range {
+			return typedef(at: i)
+		}
+
+		return nil
 	}
 
 	public func define(_ node: any Syntax, as typedValue: TypedValue) {

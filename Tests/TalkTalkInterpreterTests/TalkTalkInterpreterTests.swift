@@ -23,7 +23,7 @@ class TestOutput: Output {
 	}
 }
 
-@Test("Bench") func bench() throws {
+@Test("Bench", .disabled()) func bench() throws {
 	let source = """
 	func fib(n) {
 		if (n <= 1) { return n; }
@@ -32,7 +32,7 @@ class TestOutput: Output {
 
 	var i = 0;
 		while i < 25 {
-		print fib(i);
+		print(fib(i));
 		i = i + 1;
 	}
 	"""

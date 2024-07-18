@@ -26,7 +26,7 @@ struct BuilderTests {
 		let printfType = LLVM.FunctionType(
 			context: .global,
 			returning: LLVM.IntType(width: 32, context: .global),
-			parameters: [*int8],
+			parameters: [("args", *int8)],
 			isVarArg: true
 		)
 		_ = builder.addFunction(named: "printf", printfType)

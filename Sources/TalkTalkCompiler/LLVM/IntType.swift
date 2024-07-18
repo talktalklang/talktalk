@@ -7,7 +7,7 @@
 import C_LLVM
 
 extension LLVM {
-	class IntType: LLVMType {
+	class IntType: LLVM.IRType {
 		static func ==(lhs: IntType, rhs: IntType) -> Bool {
 			lhs.width == rhs.width
 		}
@@ -50,7 +50,7 @@ extension LLVM {
 	}
 }
 
-extension LLVMType where Self == LLVM.IntType {
+extension LLVM.IRType where Self == LLVM.IntType {
 	static func i1(_ context: LLVM.Context = .global) -> LLVM.IntType {
 		LLVM.IntType(width: 1, context: context)
 	}

@@ -38,4 +38,17 @@ struct CompilerTests {
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == 4)
 	}
+
+	@Test("Can compile functions") func funcs() throws {
+		let compiler = Compiler(source: """
+		func foo(i) {
+			return i * 2
+		}
+
+		foo(3) + foo(2)
+		""")
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 10)
+	}
 }

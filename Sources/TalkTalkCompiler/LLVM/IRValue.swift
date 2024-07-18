@@ -14,7 +14,7 @@ extension LLVM {
 		
 		case value(any IRValue),
 				 op(LLVMOpcode),
-				 type(any LLVMType)
+				 type(any LLVM.IRType)
 
 		func `as`<T>(_ type: T.Type) -> T? {
 			switch self {
