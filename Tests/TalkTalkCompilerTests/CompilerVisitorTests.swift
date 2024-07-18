@@ -30,26 +30,19 @@ struct CompilerVisitorTests {
 		let node: BinaryExprSyntax = Parser.parse(expr: "1 + 2")!
 		let visitor = CompilerVisitor(builder: builder, module: module)
 
-		let result = try #require(visitor.visit(node, context: module))
-
-//		#expect(result.opcode == LLVMAdd)
-//		#expect(result.lhs as! LLVM.IntValue == .i32(1))
-//		#expect(result.rhs as! LLVM.IntValue == .i32(2))
-
-		module.dump()
+		let result: any LLVM.IRValue = try #require(visitor.visit(node, context: module)).unwrap()
+		let string = String(cString: LLVMPrintValueToString(result.ref))
+		#expect(string == "i32 3")
 	}
 
 	@Test("Sub IR") func sub() throws {
 		let node: BinaryExprSyntax = Parser.parse(expr: "1 - 2")!
 		let visitor = CompilerVisitor(builder: builder, module: module)
 
-		let result = try #require(visitor.visit(node, context: module)).as(LLVM.BinaryOperation.self)!
+		let result: any LLVM.IRValue = try #require(visitor.visit(node, context: module)).unwrap()
 
-		#expect(result.opcode == LLVMSub)
-		#expect(result.lhs as! LLVM.IntValue == .i32(1))
-		#expect(result.rhs as! LLVM.IntValue == .i32(2))
-
-		module.dump()
+		let string = String(cString: LLVMPrintValueToString(result.ref))
+		#expect(string == "i32 -1")
 	}
 
 	@Test("let Stmt IR") func letstmt() throws {
@@ -62,7 +55,21 @@ struct CompilerVisitorTests {
 
 		#expect(visitor.currentFunction.locals["foo"] == .defined(LLVM.IntValue.i32(123)))
 		#expect(result == .void())
+	}
 
-		module.dump()
+	@Test("function IR") func function() throws {
+		let node = Parser.parse(decl: """
+		func foo() -> Int {
+			return 123
+		}
+		""")!
+
+		let visitor = CompilerVisitor(builder: builder, module: module)
+		let result: any LLVM.IRValue = try #require(visitor.visit(node, context: module)).unwrap()
+
+		let string = String(cString: LLVMPrintValueToString(result.ref))
+		#expect(string == """
+		
+		""")
 	}
 }

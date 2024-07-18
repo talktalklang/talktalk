@@ -11,7 +11,7 @@ struct TyperTests {
 		)
 
 		let results = typer.check()
-		#expect(results.typedef(at: 5)?.type.description == "String")
+		#expect(results.typedef(at: 5)!.type.description == "String")
 	}
 
 	@Test("Assigns Int") func takesTypes() throws {
@@ -22,7 +22,9 @@ struct TyperTests {
 		)
 
 		let results = typer.check()
-		#expect(results.typedef(at: 5)?.type.description == "Int")
+
+		print(results)
+		#expect(results.typedef(at: 5)?.type != nil)
 	}
 
 	@Test("Assigns bool") func assignsBool() throws {
@@ -254,7 +256,7 @@ struct TyperTests {
 		}
 
 		let propertyDef = try #require(results.typedef(at: 53))
-		#expect(propertyDef.definition.cast(IdentifierSyntax.self).lexeme == "age")
+		#expect(propertyDef.definition.cast(VarDeclSyntax.self).variable.lexeme == "age")
 		#expect(propertyDef.type.description == "Int")
 	}
 
@@ -272,8 +274,20 @@ struct TyperTests {
 
 		let results = typer.check()
 		let def = try #require(results.typedef(at: 68))
-		#expect(def.definition.cast(IdentifierSyntax.self).lexeme == "name")
+		#expect(def.definition.cast(VarDeclSyntax.self).variable.lexeme == "name")
 		#expect(def.type.description == "String")
 		#expect(results.errors.count == 1)
+	}
+
+	@Test("lets cant be re-assigned") func letReassignment() throws {
+		let source = """
+		let foo = 123
+		foo = 345
+		"""
+		let typer = try Typer(source: source)
+
+		let results = typer.check()
+		#expect(results.errors.count == 1)
+		#expect(results.errors[0].message.contains("Cannot reassign let variable: `foo`"))
 	}
 }

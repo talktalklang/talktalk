@@ -129,7 +129,7 @@ public struct ValueType: Equatable, CustomStringConvertible {
 	}
 
 	func bind(_ to: any Syntax) -> TypedValue {
-		TypedValue(type: self, definition: to)
+		TypedValue(type: self, definition: to, status: .defined)
 	}
 }
 

@@ -63,8 +63,8 @@ class Context {
 		currentScope.locals[name(for: syntax)] = typedef
 	}
 
-	func define(_ syntax: any Syntax, as type: ValueType) {
-		currentScope.locals[name(for: syntax)] = TypedValue(type: type, definition: syntax)
+	func define(_ syntax: any Syntax, as type: ValueType, status: TypedValue.Status) {
+		currentScope.locals[name(for: syntax)] = TypedValue(type: type, definition: syntax, status: status)
 	}
 
 	func define(type: ValueType) {
@@ -90,7 +90,8 @@ class Context {
 
 		let newValue = TypedValue(
 			type: type,
-			definition: destination.definition
+			definition: destination.definition,
+			status: .defined
 		)
 
 		define(destination.definition, as: newValue)
@@ -108,6 +109,10 @@ class Context {
 			syntax.name.lexeme
 		case let syntax as IntLiteralSyntax:
 			syntax.lexeme
+		case let syntax as VarDeclSyntax:
+			syntax.variable.lexeme
+		case let syntax as LetDeclSyntax:
+			syntax.variable.lexeme
 		default:
 
 			"NO NAME FOR \(syntax)"

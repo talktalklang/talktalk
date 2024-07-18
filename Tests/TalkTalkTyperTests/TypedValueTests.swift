@@ -20,7 +20,7 @@ struct TypedValueTests {
 
 		let typedValue = scope.lookup(identifier: "a")!
 		#expect(typedValue.type == .int)
-		#expect(typedValue.definition.position == 4)
+		#expect(typedValue.definition.position == 0)
 
 		let error = results.errors.first!
 		#expect(error.message.contains("String not assignable"))

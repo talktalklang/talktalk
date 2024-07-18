@@ -54,7 +54,8 @@ class TyperVisitor: ASTVisitor {
 
 		return TypedValue(
 			type: lhs.type,
-			definition: node
+			definition: node,
+			status: .defined
 		)
 	}
 
@@ -85,7 +86,8 @@ class TyperVisitor: ASTVisitor {
 		let typedValue = TypedValue(
 			type: type.type,
 			definition: node,
-			ref: type
+			ref: type,
+			status: .declared
 		)
 
 		do {
@@ -144,7 +146,7 @@ class TyperVisitor: ASTVisitor {
 			return nil
 		}
 
-		return TypedValue(type: type, definition: node)
+		return TypedValue(type: type, definition: node, status: .declared)
 	}
 
 	func visit(_ node: VarDeclSyntax, context: Context) -> TypedValue? {
@@ -165,12 +167,13 @@ class TyperVisitor: ASTVisitor {
 
 		let typedValue = TypedValue(
 			type: exprDef.type,
-			definition: node.variable,
-			ref: exprDef
+			definition: node,
+			ref: exprDef,
+			status: .defined
 		)
 
-		define(node.variable, as: typedValue)
-		context.define(node.variable, as: typedValue)
+		define(node, as: typedValue)
+		context.define(node, as: typedValue)
 
 		return .void(node)
 	}
@@ -193,8 +196,9 @@ class TyperVisitor: ASTVisitor {
 
 		let typedValue = TypedValue(
 			type: exprDef.type,
-			definition: node.variable,
-			ref: exprDef
+			definition: node,
+			ref: exprDef,
+			status: .defined
 		)
 
 		define(node.variable, as: typedValue)
@@ -214,6 +218,11 @@ class TyperVisitor: ASTVisitor {
 			return nil
 		}
 
+		if let def = receiverDef.definition.as(LetDeclSyntax.self), receiverDef.status == .defined {
+			error(node.rhs, "Cannot reassign let variable: `\(def.variable)`")
+			return nil
+		}
+
 		if receiverDef.assignable(from: exprDef) {
 			define(node.lhs, as: exprDef, ref: exprDef.definition)
 			define(node.rhs, as: exprDef)
@@ -226,7 +235,8 @@ class TyperVisitor: ASTVisitor {
 				value: TypedValue(
 					type: receiverDef.type,
 					definition: node.lhs,
-					ref: context.lookup(node.lhs)
+					ref: context.lookup(node.lhs),
+					status: .declared
 				)
 			)
 			return nil
@@ -238,19 +248,19 @@ class TyperVisitor: ASTVisitor {
 		if let def = visit(node.callee, context: context),
 		   let returns = def.type.returns?.value
 		{
-			define(node.callee, as: TypedValue(type: returns, definition: node))
-			return TypedValue(type: returns, definition: node)
+			define(node.callee, as: TypedValue(type: returns, definition: node, status: .defined))
+			return TypedValue(type: returns, definition: node, status: .defined)
 		}
 
 		// Handle class constructor calls
 		if let def = context.lookup(type: node.callee.description + ".Type"),
 		   let returns = def.returns?.value
 		{
-			define(node.callee, as: TypedValue(type: returns, definition: node.callee))
+			define(node.callee, as: TypedValue(type: returns, definition: node.callee, status: .defined))
 			return returns.bind(node.callee)
 		}
 
-		return .init(type: .tbd, definition: node)
+		return .init(type: .tbd, definition: node, status: .declared)
 	}
 
 	func visit(_ node: InitDeclSyntax, context: Context) -> TypedValue? {
@@ -289,7 +299,7 @@ class TyperVisitor: ASTVisitor {
 	func visit(_ node: ParameterListSyntax, context: Context) -> TypedValue? {
 		// TODO: handle type decls
 		for parameter in node.parameters {
-			context.define(parameter, as: .tbd)
+			context.define(parameter, as: .tbd, status: .declared)
 		}
 
 		return nil
@@ -502,7 +512,7 @@ class TyperVisitor: ASTVisitor {
 			}
 
 			guard var def = visit(stmt, context: context) else {
-				return TypedValue(type: .tbd, definition: stmt)
+				return TypedValue(type: .tbd, definition: stmt, status: .declared)
 			}
 
 			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
@@ -536,7 +546,8 @@ class TyperVisitor: ASTVisitor {
 		let typedValue = TypedValue(
 			type: .function(declDef?.returns?.value ?? typedef),
 			definition: node.name,
-			ref: returnDef
+			ref: returnDef,
+			status: .defined
 		)
 
 		if context.currentClass != nil {

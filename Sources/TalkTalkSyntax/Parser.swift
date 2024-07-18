@@ -18,6 +18,19 @@ public struct ProgramSyntax: Syntax {
 		lhs.hashValue == rhs.hashValue
 	}
 
+	public func nodes(at position: Int) -> [any Syntax] {
+		var result: [any Syntax] = []
+		let visitor = GenericVisitor { node, _ in
+			if node.range.contains(position) {
+				result.append(node)
+			}
+		}
+
+		visitor.visit(self, context: ())
+
+		return result.sorted(by: { $0.length < $1.length })
+	}
+
 	public func node(at position: Int) -> any Syntax {
 		var result: any Syntax = self
 		let visitor = GenericVisitor { node, _ in
@@ -70,6 +83,14 @@ public struct Parser {
 		let decls = parser.parse()
 
 		return decls.last as? any Stmt
+	}
+
+	public static func parse(decl: String) -> (any Decl)? {
+		let lexer = Lexer(source: decl)
+		var parser = Parser(lexer: lexer)
+		let decls = parser.parse()
+
+		return decls.last
 	}
 
 	init(lexer: Lexer) {

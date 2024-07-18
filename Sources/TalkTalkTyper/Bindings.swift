@@ -10,7 +10,7 @@ public class Bindings {
 	public var ast: ProgramSyntax
 	public var errors: [TypeError] = []
 	public var warnings: [String] = []
-	private var typedefs: [Int: TypedValue] = [:]
+	var typedefs: [Int: TypedValue] = [:]
 
 	init(ast: ProgramSyntax) {
 		self.ast = ast
@@ -21,7 +21,12 @@ public class Bindings {
 	}
 
 	public func typedef(at position: Int) -> TypedValue? {
-		let node = ast.node(at: position)
-		return typedefs[node.hashValue]
+		for node in ast.nodes(at: position) {
+			if let typedef = typedefs[node.hashValue] {
+				return typedef
+			}
+		}
+
+		return nil
 	}
 }
