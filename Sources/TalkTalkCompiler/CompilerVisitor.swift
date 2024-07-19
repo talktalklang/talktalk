@@ -38,7 +38,7 @@ class CompilerVisitor: ASTVisitor {
 				LLVMBool(1)
 			)
 		}
-		let printfFunction = LLVMAddFunction(module.ref, "printf", printfType)
+		_ = LLVMAddFunction(module.ref, "printf", printfType)
 
 		let function = builder.addFunction(named: "main", mainType)!
 		let blockRef = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
@@ -239,6 +239,7 @@ class CompilerVisitor: ASTVisitor {
 		// Finally, move the builder to our post loop block where stuff can continue
 		LLVMPositionBuilderAtEnd(builder.ref, loopExitBlock)
 
+		self.currentFunction = currentFn
 		return .void()
 	}
 

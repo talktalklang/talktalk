@@ -240,7 +240,7 @@ public struct GenericVisitor<Context>: ASTVisitor {
 	}
 
 	public func visit(_ node: TypeDeclSyntax, context: Context) -> Context {
-		var context = perform(node, context)
+		let context = perform(node, context)
 		return visit(node.name, context: context)
 	}
 }
