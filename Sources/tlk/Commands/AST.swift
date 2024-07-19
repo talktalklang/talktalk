@@ -24,7 +24,7 @@ struct AST: AsyncParsableCommand {
 			source = input
 		}
 
-		let tree = try SyntaxTree.parse(filename: filename, source: source)
+		let tree = try SyntaxTree.parse(source: .init(path: filename, source: source))
 		ASTPrinter.print(tree)
 	}
 }

@@ -6,6 +6,7 @@
 //
 import ArgumentParser
 import Foundation
+import TalkTalkSyntax
 import TalkTalkTyper
 
 struct Check: AsyncParsableCommand {
@@ -24,14 +25,15 @@ struct Check: AsyncParsableCommand {
 			source = input
 		}
 
-		let checker = try Typer(filename: filename, source: source)
+		let file = SourceFile(path: filename, source: source)
+		let checker = try Typer(source: file)
 		let results = checker.check()
 
 		if results.errors.isEmpty {
 			print("OK")
 		} else {
 			for error in results.errors {
-				error.report(in: source)
+				error.report(in: file)
 			}
 
 			throw ExitCode(1)

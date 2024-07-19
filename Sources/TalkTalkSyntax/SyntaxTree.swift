@@ -11,8 +11,8 @@ public enum ParserError: Swift.Error {
 public struct SyntaxTree {
 	public var root: [any Syntax]
 
-	public static func parse(filename: String, source: String) throws -> ProgramSyntax {
-		let lexer = Lexer(source: source)
+	public static func parse(source: SourceFile) throws -> ProgramSyntax {
+		let lexer = Lexer(source: source.source)
 		var parser = Parser(lexer: lexer)
 
 		let start = parser.current
@@ -23,7 +23,7 @@ public struct SyntaxTree {
 		}
 
 		return ProgramSyntax(
-			filename: filename,
+			source: source,
 			start: start,
 			end: parser.current,
 			decls: decls

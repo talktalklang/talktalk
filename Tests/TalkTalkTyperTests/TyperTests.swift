@@ -3,10 +3,12 @@ import TalkTalkTyper
 import Testing
 
 struct TyperTests {
+	func typer(_ source: String) -> Typer {
+		try! Typer(source: .init(path: "typer test", source: source))
+	}
+
 	@Test("Assigns String") func takesString() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			var foo = "bar"
 			"""
 		)
@@ -16,27 +18,24 @@ struct TyperTests {
 	}
 
 	@Test("Assigns Int") func takesTypes() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			var foo: Int = 42
 			"""
 		)
 
 		let results = typer.check()
 
-		print(results)
 		#expect(results.typedef(at: 5)?.type != nil)
 	}
 
 	@Test("Assigns bool") func assignsBool() throws {
-		let results = try Typer(filename: "typer tests", source: "var foo = true").check()
+		let results = typer("var foo = true").check()
 
 		#expect(results.typedef(at: 5)?.type.description == "Bool")
 	}
 
 	@Test("Errors on undeclared var") func undeclaredVar() throws {
-		let results = try Typer(filename: "typer tests", source: "foo = true").check()
+		let results = typer("foo = true").check()
 
 		#expect(results.errors[0].syntax.position == 0)
 		#expect(results.errors[0].syntax.length == 3)
@@ -44,9 +43,7 @@ struct TyperTests {
 	}
 
 	@Test("Errors on bad var decl") func badVarDecl() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			var foo: Int = "bar"
 			"""
 		)
@@ -59,12 +56,10 @@ struct TyperTests {
 	}
 
 	@Test("Error on bad assignment") func badAssignment() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
-			var foo = "bar"
-			foo = 123
-			"""
+		let typer = typer("""
+				var foo = "bar"
+				foo = 123
+				"""
 		)
 
 		let results = typer.check()
@@ -75,9 +70,7 @@ struct TyperTests {
 	}
 
 	@Test("Basic functions") func functions() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			func foo() {
 				return "bar"
 			}
@@ -92,9 +85,7 @@ struct TyperTests {
 	}
 
 	@Test("Basic functions with return type") func functionsRet() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			func foo() {
 				return 123
 			}
@@ -109,9 +100,7 @@ struct TyperTests {
 	}
 
 	@Test("Basic functions with type decl") func functionsWithType() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			func foo(name) -> String {
 				return name
 			}
@@ -126,9 +115,7 @@ struct TyperTests {
 	}
 
 	@Test("Function tries to return wrong thing") func functionBadReturn() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			func foo() -> String {
 				return 123
 			}
@@ -145,9 +132,7 @@ struct TyperTests {
 	}
 
 	@Test("Function has different return types") func functionBadReturn2() throws {
-		let typer = try Typer(
-			filename: "typer tests",
-			source: """
+		let typer = typer("""
 			func foo() {
 				return 123
 				return "sup"
@@ -178,12 +163,12 @@ struct TyperTests {
 
 		var counter = makeCounter()
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 
 		for error in results.errors {
-			error.report(in: source)
+			error.report(in: typer.file)
 		}
 
 		let fntypedef = try #require(results.typedef(at: 7))
@@ -203,11 +188,11 @@ struct TyperTests {
 			}
 		}
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 		let results = typer.check()
 
 		for error in results.errors {
-			error.report(in: source)
+			error.report(in: typer.file)
 		}
 
 		let fndef = try #require(results.typedef(at: 6))
@@ -221,11 +206,11 @@ struct TyperTests {
 			return n
 		}
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 		let results = typer.check()
 
 		for error in results.errors {
-			error.report(in: source)
+			error.report(in: typer.file)
 		}
 
 		let ndef = try #require(results.typedef(at: 28))
@@ -243,7 +228,7 @@ struct TyperTests {
 			return fib(n - 2) + fib(n - 1)
 		}
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 		let results = typer.check()
 
 		#expect(results.errors.isEmpty)
@@ -260,7 +245,7 @@ struct TyperTests {
 		class Person {}
 		var person = Person()
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 		let instanceDef = try #require(results.typedef(at: 21))
@@ -275,11 +260,11 @@ struct TyperTests {
 		var person = Person()
 		person.age
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 		for error in results.errors {
-			error.report(in: source)
+			error.report(in: typer.file)
 		}
 
 		let propertyDef = try #require(results.typedef(at: source.count - 1))
@@ -295,11 +280,11 @@ struct TyperTests {
 		}
 		var age = Person().age()
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 		for error in results.errors {
-			error.report(in: source)
+			error.report(in: typer.file)
 		}
 
 		let propertyDef = try #require(results.typedef(at: 53))
@@ -317,7 +302,7 @@ struct TyperTests {
 
 		name = 123
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 		let def = try #require(results.typedef(at: 6))
@@ -340,7 +325,7 @@ struct TyperTests {
 			}
 		}
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 		let def = try #require(results.typedef(at: 32))
@@ -353,7 +338,7 @@ struct TyperTests {
 		let foo = 123
 		foo = 345
 		"""
-		let typer = try Typer(filename: "typer tests", source: source)
+		let typer = typer(source)
 
 		let results = typer.check()
 		#expect(results.errors.count == 1)

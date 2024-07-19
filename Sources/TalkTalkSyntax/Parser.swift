@@ -6,10 +6,14 @@
 //
 public struct ProgramSyntax: Syntax {
 	public static var main: ProgramSyntax {
-		.init(filename: "main", start: .synthetic(.`self`, length: 4), end: .synthetic(.eof, length: 0))
+		.init(
+			source: .init(path: "<main>", source: ""),
+			start: .synthetic(.`self`, length: 4),
+			end: .synthetic(.eof, length: 0)
+		)
 	}
 
-	public let filename: String
+	public let source: SourceFile
 	public let start: Token
 	public let end: Token
 

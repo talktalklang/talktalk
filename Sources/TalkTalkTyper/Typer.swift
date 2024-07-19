@@ -5,13 +5,15 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 	public let message: String
 	public let definition: TypedValue?
 
-	public func report(in source: String) {
+	public func report(in file: SourceFile) {
+		let source = file.source
+
 		let lineIndex = syntax.line - 1
 
 		let lineText = source.components(separatedBy: .newlines)[lineIndex]
 		let lineOffset = source.inlineOffset(for: syntax.position, line: lineIndex + 1)
 
-		print("Problem found on line \(syntax.line) at \(syntax.position):")
+		print("Problem found in \(file.path) on line \(syntax.line) at \(syntax.position):")
 
 		// previous line for context
 		if lineIndex > 0 {
@@ -34,19 +36,22 @@ public struct TypeError: Swift.Error, @unchecked Sendable {
 }
 
 public struct Typer {
-	let ast: any Syntax
+	public let ast: any Syntax
 	let context: Context
+	public let file: SourceFile
 
 	public var errors: [TypeError] = []
 
 	public init(ast: any Syntax) {
 		self.ast = ast
 		self.context = Context()
+		self.file = .init(path: "", source: "")
 	}
 
-	public init(filename: String, source: String) throws {
-		self.ast = try SyntaxTree.parse(filename: filename, source: source)
+	public init(source: SourceFile) throws {
+		self.ast = try SyntaxTree.parse(source: source)
 		self.context = Context()
+		self.file = source
 
 		for builtin in ValueType.builtins {
 			context.define(type: builtin)
@@ -54,7 +59,7 @@ public struct Typer {
 	}
 
 	public func check() -> Bindings {
-		var visitor = TyperVisitor(ast: ast)
+		let visitor = TyperVisitor(ast: ast)
 		return visitor.visit(ast: ast, context: context)
 	}
 }

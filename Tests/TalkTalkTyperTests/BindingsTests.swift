@@ -4,7 +4,7 @@ import Testing
 
 struct BindingsTests {
 	@Test("binds") func binds() throws {
-		var visitor = GenericVisitor { node, _ in
+		let visitor = GenericVisitor { node, _ in
 			print(node.hashValue, terminator: " ")
 			print(node.description)
 		}
@@ -13,7 +13,7 @@ struct BindingsTests {
 		let foo = "bar"
 		"""
 
-		let ast = try SyntaxTree.parse(filename: "bindings-test.tlk", source: source)
+		let ast = try SyntaxTree.parse(source: .init(path: "main", source: source))
 		visitor.visit(ast, context: ())
 	}
 }

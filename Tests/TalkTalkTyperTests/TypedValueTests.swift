@@ -14,7 +14,7 @@ struct TypedValueTests {
 		var a = 123
 		a = "hi"
 		"""
-		let typer = try Typer(filename: "typed value tests", source: source)
+		let typer = try Typer(source: .init(path: "main", source: source))
 		let results = typer.check()
 		let scope = typer.context.currentScope
 
