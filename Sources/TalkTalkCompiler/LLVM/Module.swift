@@ -28,7 +28,7 @@ extension LLVM {
 			return nil
 		}
 
-		func dump() {
+		public func dump() {
 			LLVMDumpModule(ref)
 		}
 

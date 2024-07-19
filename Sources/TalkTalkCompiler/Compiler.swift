@@ -33,8 +33,6 @@ public struct Compiler {
 		let visitor = CompilerVisitor(bindings: bindings, builder: builder, module: module)
 		_ = visitor.visit(ast, context: module)
 
-		module.dump()
-
 		var message: UnsafeMutablePointer<Int8>?
 		LLVMVerifyModule(module.ref, LLVMAbortProcessAction, &message)
 

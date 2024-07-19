@@ -26,6 +26,20 @@ class CompilerVisitor: ASTVisitor {
 			isVarArg: false
 		)
 
+		// Let's get print goin
+		var printArgs = [LLVMPointerType(LLVMInt8TypeInContext(module.context.ref), 0)]
+		let printfType = printArgs.withUnsafeMutableBufferPointer {
+			LLVMFunctionType(
+				LLVMPointerType(
+					LLVMInt8TypeInContext(module.context.ref), 0
+				),
+				$0.baseAddress,
+				UInt32(1),
+				LLVMBool(1)
+			)
+		}
+		let printfFunction = LLVMAddFunction(module.ref, "printf", printfType)
+
 		let function = builder.addFunction(named: "main", mainType)!
 		let blockRef = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
 		currentFunction = function

@@ -1,13 +1,15 @@
 func fib(n) {
-	if n <= 1 { return n }
+	if n <= 1 {
+		return n
+	}
 	return fib(n - 2) + fib(n - 1)
 }
 
 var i = 0
 var o = 0
-while i < 45 {
+while i < 40 {
 	o = fib(i)
 	i = i + 1
 }
 
-o
+print(o)

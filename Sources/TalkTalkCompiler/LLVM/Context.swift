@@ -11,7 +11,9 @@ extension LLVM {
 		let ref: LLVMContextRef
 		let isOwned: Bool
 
-		static let global = Context(ref: LLVMGetGlobalContext())
+		static var global: Context {
+			Context(ref: LLVMGetGlobalContext())
+		}
 
 		private init(ref: LLVMContextRef) {
 			self.ref = ref

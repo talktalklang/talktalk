@@ -16,6 +16,6 @@ struct TlkCommand: AsyncParsableCommand {
 		commandName: "tlk",
 		abstract: "The TalkTalk programming lanaguage",
 		version: version,
-		subcommands: [Run.self, Format.self, AST.self, Check.self]
+		subcommands: [Run.self, Format.self, AST.self, Check.self, JIT.self]
 	)
 }
