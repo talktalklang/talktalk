@@ -13,7 +13,7 @@ struct SyntaxTreeTests {
 		at keypath: PartialKeyPath<R>,
 		as _: T.Type
 	) -> T {
-		let root = try! SyntaxTree.parse(source: string).decls[0] as! R
+		let root = try! SyntaxTree.parse(filename: "parser", source: string).decls[0] as! R
 
 		return root[keyPath: keypath] as! T
 	}
@@ -22,13 +22,13 @@ struct SyntaxTreeTests {
 		_ string: String,
 		as _: T.Type
 	) -> T {
-		let root = try! SyntaxTree.parse(source: string).decls[0]
+		let root = try! SyntaxTree.parse(filename: "parser", source: string).decls[0]
 		return root as! T
 	}
 
 	func parseError(_ string: String) -> [TalkTalkSyntax.Error] {
 		do {
-			_ = try SyntaxTree.parse(source: string).decls[0]
+			_ = try SyntaxTree.parse(filename: "parser", source: string).decls[0]
 			fatalError("Did not return errors")
 		} catch let ParserError.errors(errors) {
 			return errors
@@ -781,7 +781,7 @@ struct SyntaxTreeTests {
 		}
 		"""
 
-		let tree = try SyntaxTree.parse(source: source)
+		let tree = try SyntaxTree.parse(filename: "parser", source: source)
 		let node = try #require(tree.node(at: 38).as(StringLiteralSyntax.self))
 		#expect(node.lexeme == #""hello""#)
 	}

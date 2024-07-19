@@ -16,21 +16,18 @@ struct Build: AsyncParsableCommand {
 	var emitIR: Bool = false
 
 	func run() async throws {
-		let source = if FileManager.default.fileExists(atPath: input) {
-			try String(contentsOfFile: input)
-		} else if input == "-" {
-			{
-				var source = ""
-				while let line = readLine() {
-					source += line
-				}
-				return source
-			}()
+		let filename: String
+		let source: String
+
+		if FileManager.default.fileExists(atPath: input) {
+			filename = input
+			source = try String(contentsOfFile: input)
 		} else {
-			input
+			filename = "<stdin>"
+			source = input
 		}
 
-		let compiler = Compiler(source: source)
+		let compiler = Compiler(filename: filename, source: source)
 		let module = try compiler.compile()
 
 		if emitIR {

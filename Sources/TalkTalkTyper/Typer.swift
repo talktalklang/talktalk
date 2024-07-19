@@ -44,8 +44,8 @@ public struct Typer {
 		self.context = Context()
 	}
 
-	public init(source: String) throws {
-		self.ast = try SyntaxTree.parse(source: source)
+	public init(filename: String, source: String) throws {
+		self.ast = try SyntaxTree.parse(filename: filename, source: source)
 		self.context = Context()
 
 		for builtin in ValueType.builtins {

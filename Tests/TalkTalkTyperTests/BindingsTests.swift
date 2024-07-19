@@ -13,7 +13,7 @@ struct BindingsTests {
 		let foo = "bar"
 		"""
 
-		let ast = try SyntaxTree.parse(source: source)
+		let ast = try SyntaxTree.parse(filename: "bindings-test.tlk", source: source)
 		visitor.visit(ast, context: ())
 	}
 }

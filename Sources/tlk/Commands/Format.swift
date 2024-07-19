@@ -13,13 +13,18 @@ struct Format: AsyncParsableCommand {
 	var input: String
 
 	func run() async throws {
-		let source = if FileManager.default.fileExists(atPath: input) {
-			try String(contentsOfFile: input)
+		let filename: String
+		let source: String
+
+		if FileManager.default.fileExists(atPath: input) {
+			filename = input
+			source = try String(contentsOfFile: input)
 		} else {
-			input
+			filename = "<stdin>"
+			source = input
 		}
 
-		let tree = try SyntaxTree.parse(source: source)
+		let tree = try SyntaxTree.parse(filename: filename, source: source)
 		ASTFormatter.print(tree)
 	}
 }

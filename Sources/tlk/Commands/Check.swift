@@ -13,13 +13,18 @@ struct Check: AsyncParsableCommand {
 	var input: String
 
 	func run() async throws {
-		let source = if FileManager.default.fileExists(atPath: input) {
-			try String(contentsOfFile: input)
+		let filename: String
+		let source: String
+
+		if FileManager.default.fileExists(atPath: input) {
+			filename = input
+			source = try String(contentsOfFile: input)
 		} else {
-			input
+			filename = "<stdin>"
+			source = input
 		}
 
-		let checker = try Typer(source: source)
+		let checker = try Typer(filename: filename, source: source)
 		let results = checker.check()
 
 		if results.errors.isEmpty {
