@@ -9,12 +9,28 @@ import C_LLVM
 
 extension LLVM {
 	class FunctionPassManager {
-		let ref: LLVMPassManagerRef
+		let module: Module
 
 		init(module: Module) {
-			self.ref = LLVMCreateFunctionPassManagerForModule(module.ref)
+			self.module = module
+		}
 
+		func run(on function: Function) {
 			let options = LLVMCreatePassBuilderOptions()
+
+			let ref = LLVMCreateFunctionPassManagerForModule(module.ref)
+
+			LLVMPassBuilderOptionsSetLoopUnrolling(ref, .true)
+			LLVMPassBuilderOptionsSetLoopInterleaving(ref, .true)
+
+			LLVMDumpValue(function.ref)
+
+			LLVMInitializeFunctionPassManager(ref)
+
+			LLVMDisposePassBuilderOptions(options)
+			LLVMDisposePassManager(ref)
+
+			LLVMDumpValue(function.ref)
 		}
 	}
 }

@@ -135,4 +135,26 @@ struct CompilerTests {
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == 34)
 	}
+
+	@Test("can compile fib (optimized)") func fibO() throws {
+		let compiler = Compiler(source: """
+		func fib(n) {
+			if n <= 1 { return n }
+			return fib(n - 2) + fib(n - 1)
+		}
+
+		var i = 0
+		var o = 0
+		while i < 10 {
+			o = fib(i)
+			i = i + 1
+		}
+
+		o
+		""")
+
+		let module = try compiler.compile(optimize: true)
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 34)
+	}
 }

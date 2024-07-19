@@ -19,6 +19,7 @@ extension LLVM {
 		func addFunction(named name: String, _ functionType: FunctionType) -> Function? {
 			if let ref = LLVMAddFunction(module.ref, name, functionType.ref) {
 				module.functionTypes[ref] = functionType
+
 				return Function(type: functionType, ref: ref)
 			}
 

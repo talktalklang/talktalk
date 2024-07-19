@@ -12,6 +12,9 @@ struct JIT: AsyncParsableCommand {
 	@Argument(help: "The input to run. Use `-` for stdin.")
 	var input: String
 
+	@Flag(help: "Run module passes")
+	var optimize: Bool = false
+
 	@Flag(name: .customLong("emit-ir"), help: "Just emit the LLVM IR")
 	var emitIR: Bool = false
 
@@ -31,7 +34,7 @@ struct JIT: AsyncParsableCommand {
 		}
 
 		let compiler = Compiler(source: source)
-		let module = try compiler.compile()
+		let module = try compiler.compile(optimize: optimize)
 
 		if emitIR {
 			module.dump()

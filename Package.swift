@@ -31,8 +31,8 @@ let package = Package(
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
 //		.package(url: "https://github.com/llvm-swift/LLVMSwift", branch: "master")
-//		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main"),
-		.package(path: "../C_LLVM")
+		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main"),
+//		.package(path: "../C_LLVM")
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.

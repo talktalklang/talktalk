@@ -23,7 +23,11 @@ public struct Compiler {
 		self.builder = LLVM.Builder(module: module)
 	}
 
-	public func compile() throws -> LLVM.Module {
+	public func compile(optimize: Bool = false) throws -> LLVM.Module {
+		LLVMInitializeNativeTarget()
+		LLVMInitializeNativeAsmParser()
+		LLVMInitializeNativeAsmPrinter()
+
 		let bindings = Typer(ast: ast).check()
 
 		if !bindings.errors.isEmpty {
@@ -34,11 +38,16 @@ public struct Compiler {
 		_ = visitor.visit(ast, context: module)
 
 		var message: UnsafeMutablePointer<Int8>?
-		LLVMVerifyModule(module.ref, LLVMAbortProcessAction, &message)
+		LLVMVerifyModule(module.ref, LLVMPrintMessageAction, &message)
 
-		if let message {
+		if let message, String(cString: message) != "" {
 			defer { LLVMDisposeMessage(message) }
-			print(String(cString: message))
+			print("Error compiling: \(String(cString: message))")
+			exit(1)
+		}
+
+		if optimize {
+			LLVM.ModulePassManager(module: module).run()
 		}
 
 		return module

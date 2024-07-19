@@ -1,6 +1,15 @@
 {
-  "originHash" : "b3af276d1dd539d186c5c8400ee2a32888216d1d582645db415b71f5d63f1a09",
+  "originHash" : "599ed0df25e06ed7a4cdc319e9d8dca3cbc9a9a284aa817aba14ed76fd1bf1a9",
   "pins" : [
+    {
+      "identity" : "c_llvm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nakajima/C_LLVM",
+      "state" : {
+        "branch" : "main",
+        "revision" : "522b1470620ad305a18ecb7bd4d2a215f1030087"
+      }
+    },
     {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",

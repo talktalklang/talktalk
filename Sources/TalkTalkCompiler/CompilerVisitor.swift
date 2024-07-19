@@ -94,8 +94,6 @@ class CompilerVisitor: ASTVisitor {
 			isVarArg: false // We don't support var args yet
 		)
 
-		module.functionTypes[functionType.ref] = functionType
-
 		// TODO: validate we're not redeclaring the same function
 		let function = builder.addFunction(named: node.name.lexeme, functionType)!
 
