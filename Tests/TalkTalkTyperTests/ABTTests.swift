@@ -22,7 +22,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.scope.locals["foo"]!.node.type.description == "String")
+		#expect(decl.scope.locals["foo"]!.type.description == "String")
 	}
 
 	@Test("Binds String with var") func varString() {
@@ -32,7 +32,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.scope.locals["foo"]!.node.type.description == "String")
+		#expect(decl.scope.locals["foo"]!.type.description == "String")
 	}
 
 	@Test("Binds Int with let") func letInt() {
@@ -42,7 +42,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.scope.locals["foo"]!.node.type.description == "Int")
+		#expect(decl.scope.locals["foo"]!.type.description == "Int")
 	}
 
 	@Test("Binds String with var") func varInt() {
@@ -52,7 +52,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.scope.locals["foo"]!.node.type.description == "Int")
+		#expect(decl.scope.locals["foo"]!.type.description == "Int")
 	}
 
 	@Test("Binds Bool with let") func letBool() {
@@ -62,7 +62,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.scope.locals["foo"]!.node.type.description == "Bool")
+		#expect(decl.scope.locals["foo"]!.type.description == "Bool")
 	}
 
 	@Test("Binds String with var") func varBool() {
@@ -72,7 +72,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.scope.locals["foo"]!.node.type.description == "Bool")
+		#expect(decl.scope.locals["foo"]!.type.description == "Bool")
 	}
 
 	@Test("Does not bind when type decl and expr dont agree") func declConflict() {
@@ -113,7 +113,7 @@ struct ABTTests {
 		}
 		""")).visit()
 
-		#expect(abt.scope.locals["foo"]!.node.type.description == "Function -> (Int)")
+		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
 	}
 
 	@Test("Error when function type decl that's not inferred return") func inferFuncBadReturn() throws {
@@ -142,10 +142,10 @@ struct ABTTests {
 		let decl = abt.cast(Program.self).declarations[0]
 
 		let varA = decl.scope.locals["a"]!
-		#expect(varA.inferredType)
-		#expect(varA.node.type.description == "Int")
+		#expect(varA.inferedTypeFrom != nil)
+		#expect(varA.type.description == "Int")
 		#expect(decl.scope.depth == 1)
 
-		#expect(abt.scope.locals["foo"]!.node.type.description == "Function -> (Int)")
+		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
 	}
 }

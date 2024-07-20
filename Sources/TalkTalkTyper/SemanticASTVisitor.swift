@@ -141,7 +141,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 	
 	public func visit(_ node: GroupExpr, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+		visit(node.expr, context: context)
 	}
 	
 	public func visit(_ node: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
@@ -171,8 +171,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 		}
 
 		if var lastReturn, lastReturn.type.description == "Unknown",
-			 let expectedReturn = scope.expectedReturn {
-			scope.inferType(for: &lastReturn, from: expectedReturn)
+			 let expectedReturnVia = scope.expectedReturnVia {
+			scope.inferType(for: &lastReturn, from: expectedReturnVia)
 			return lastReturn
 		}
 
@@ -230,7 +230,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 		let typeDeclNode = handleTypeDecl(binding: scope) { node.typeDecl }
 
 		if let type = typeDeclNode?.type {
-			scope.expectedReturn = type
+			scope.expectedReturnVia = typeDeclNode
 		}
 
 		// Make sure the parameters are declared inside the function body

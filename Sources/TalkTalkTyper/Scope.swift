@@ -18,10 +18,14 @@ public struct Environment {
 
 public class Binding {
 	public var node: any SemanticNode
-	public var inferredType: Bool = false
+	public var inferedTypeFrom: (any SemanticNode)?
 
 	init(node: any SemanticNode) {
 		self.node = node
+	}
+
+	public var type: any SemanticType {
+		inferedTypeFrom?.type ?? node.type
 	}
 }
 
@@ -35,7 +39,7 @@ public class Scope {
 	
 	// If a binding has an expectedReturn, we can maybe use it
 	// instead of Unknown
-	public var expectedReturn: (any SemanticType)?
+	public var expectedReturnVia: (any SemanticNode)?
 
 	public init(
 		parent: Scope? = nil,
@@ -66,13 +70,12 @@ public class Scope {
 		return nil
 	}
 
-	public func inferType(for node: inout any SemanticNode, from type: any SemanticType) {
-		node.type = type
+	public func inferType(for node: inout any SemanticNode, from inferedType: any SemanticNode) {
+		node.type = inferedType.type
 
 		for local in locals.values {
 			if local.node.is(node) {
-				local.node.type = type
-				local.inferredType = true
+				local.inferedTypeFrom = inferedType
 			}
 		}
 	}
