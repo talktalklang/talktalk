@@ -36,6 +36,10 @@ public extension Syntax {
 		start.start
 	}
 
+	var column: Range<Int> {
+		start.column
+	}
+
 	var length: Int {
 		(end.start + end.length) - start.start
 	}

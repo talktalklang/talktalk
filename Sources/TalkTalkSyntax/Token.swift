@@ -8,7 +8,7 @@ public struct Token: Equatable, Sendable, Hashable {
 	typealias Kinds = Set<Token.Kind>
 
 	static func synthetic(_ kind: Token.Kind, length: Int) -> Token {
-		Token(start: 0, length: length, kind: kind, line: 1, lexeme: "\(kind)")
+		Token(start: 0, length: length, kind: kind, line: 1, column: 0..<1, lexeme: "\(kind)")
 	}
 
 	enum Kind: Equatable, Hashable {
@@ -45,13 +45,15 @@ public struct Token: Equatable, Sendable, Hashable {
 	public let length: Int
 	let kind: Kind
 	let line: Int
+	public let column: Range<Int>
 	let lexeme: String?
 
-	init(start: Int, length: Int, kind: Kind, line: Int, lexeme: String?) {
+	init(start: Int, length: Int, kind: Kind, line: Int, column: Range<Int>, lexeme: String?) {
 		self.start = start
 		self.length = length
 		self.kind = kind
 		self.line = line
+		self.column = column
 		self.lexeme = lexeme
 	}
 

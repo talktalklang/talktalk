@@ -7,8 +7,15 @@
 
 import TalkTalkSyntax
 
+public struct SemanticError {
+	public var location: any Syntax
+	public var message: String
+}
+
+// The semantic ast visitor is responsible for converting the AST to a new
+// tree that contains info about types and closures and scopes and whatnot
 public struct SemanticASTVisitor: ASTVisitor {
-	let rootBinding = Binding()
+	public let rootBinding = Binding()
 	let ast: any Syntax
 
 	public init(ast: some Syntax) {
@@ -17,6 +24,14 @@ public struct SemanticASTVisitor: ASTVisitor {
 
 	public func visit() -> any SemanticNode {
 		ast.accept(self, context: rootBinding)
+	}
+
+	func error(_ syntax: any Syntax, _ message: String) {
+		#if DEBUG
+		print("Error at \(syntax.description): \(message)")
+		#endif
+
+		rootBinding.errors.append(.init(location: syntax, message: message))
 	}
 
 	// MARK: Visits
@@ -58,7 +73,16 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 	
 	public func visit(_ node: LiteralExprSyntax, context: Binding) -> any SemanticNode {
-		.placeholder(context)
+		switch node.kind {
+		case .true:
+			Literal(syntax: node, binding: context, type: .bool)
+		case .false:
+			Literal(syntax: node, binding: context, type: .bool)
+		case .nil:
+			// TODO: hmm
+			Literal(syntax: node, binding: context, type: .bool)
+		}
+
 	}
 	
 	public func visit(_ node: AssignmentExpr, context: Binding) -> any SemanticNode {
@@ -70,11 +94,11 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 	
 	public func visit(_ node: StringLiteralSyntax, context: Binding) -> any SemanticNode {
-		.placeholder(context)
+		Literal(syntax: node, binding: context, type: .string)
 	}
 	
 	public func visit(_ node: IntLiteralSyntax, context: Binding) -> any SemanticNode {
-		.placeholder(context)
+		Literal(syntax: node, binding: context, type: .int)
 	}
 	
 	public func visit(_ node: IdentifierSyntax, context: Binding) -> any SemanticNode {
@@ -133,26 +157,54 @@ public struct SemanticASTVisitor: ASTVisitor {
 		.placeholder(context)
 	}
 	
-	public func visit(_ node: LetDeclSyntax, context: Binding) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: LetDeclSyntax, context binding: Binding) -> any SemanticNode {
+		handleVarLet(node, binding: binding)
 	}
 	
-	public func visit(_ node: VarDeclSyntax, context: Binding) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: VarDeclSyntax, context binding: Binding) -> any SemanticNode {
+		handleVarLet(node, binding: binding)
 	}
 	
-	public func visit(_ node: FunctionDeclSyntax, context: Binding) -> Function {
-		.placeholder(context)
+	public func visit(_ node: FunctionDeclSyntax, context: Binding) -> any SemanticNode {
+		// Introduce a new scope
+		let binding = context.child()
+		
+		return .placeholder(context)
 	}
 	
-	public func visit(_ node: ProgramSyntax, context: Binding) -> Program {
-		let binding = Binding(
-			parent: nil,
-			children: [],
-			locals: [:],
-			environment: Environment()
-		)
+	public func visit(_ node: ProgramSyntax, context binding: Binding) -> any SemanticNode {
+		var declarations = node.decls.map {
+			visit($0, context: binding) as! Declaration
+		}
 
-		return Program(syntax: node, binding: binding, declarations: [])
+		return Program(syntax: node, binding: binding, declarations: declarations)
+	}
+
+	// MARK: Helpers
+
+	func handleVarLet(_ node: any VarLetDecl, binding: Binding) -> any SemanticNode {
+		let name = node.variable.lexeme
+
+		let typeDeclNode: (any SemanticNode)? = if let typeDecl = node.typeDecl {
+			visit(typeDecl, context: binding)
+		} else {
+			nil
+		}
+
+		if let expr = node.expr {
+			let exprNode = visit(expr, context: binding)
+
+			// Check to see if there's a type decl. If it doesn't agree with
+			// the expr node, we're in trouble
+			if let typeDeclNode, typeDeclNode.type.assignable(from: exprNode.type) {
+				error(node, "Cannot assign \(exprNode.type) to \(typeDeclNode.type)")
+			}
+
+			binding.bind(name: name, to: exprNode)
+		} else {
+			binding.bind(name: name, to: .unknown(syntax: node, binding: binding))
+		}
+
+		return Declaration(syntax: node, binding: binding)
 	}
 }

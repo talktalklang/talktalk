@@ -10,6 +10,7 @@ struct Lexer {
 	var source: ContiguousArray<Character>
 	var start: Int
 	var current: Int
+	var column = 1
 	var line = 1
 
 	init(source: String) {
@@ -122,6 +123,7 @@ struct Lexer {
 		}
 
 		defer {
+			column = 0
 			line += count
 		}
 
@@ -223,7 +225,8 @@ struct Lexer {
 
 	@discardableResult mutating func advance() -> Character {
 		let previous = current
-		current = current + 1
+		column += 1
+		current += 1
 		return source[previous]
 	}
 
@@ -233,6 +236,7 @@ struct Lexer {
 			length: current - start,
 			kind: kind,
 			line: line,
+			column: (column - (current - start))..<column,
 			lexeme: lexeme ? String(source[start ..< current]) : nil
 		)
 	}

@@ -7,8 +7,15 @@
 
 import TalkTalkSyntax
 
-public protocol Value {
-	
+public protocol SemanticType: Hashable {
+	var name: String { get }
+	func assignable(from other: any SemanticType) -> Bool
+}
+
+public extension SemanticType {
+	static func ==(lhs: Self, rhs: Self) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
 }
 
 public protocol SemanticNode<Node> {
@@ -16,6 +23,7 @@ public protocol SemanticNode<Node> {
 
 	var binding: Binding { get }
 	var syntax: Node { get }
+	var type: any SemanticType { get }
 }
 
 public extension SemanticNode {
@@ -27,6 +35,7 @@ public extension SemanticNode {
 public struct SemanticPlaceholder: SemanticNode {
 	public var binding: Binding
 	public var syntax = ""
+	public var type: any SemanticType = UnknownType()
 }
 
 public extension SemanticNode where Self == SemanticPlaceholder {

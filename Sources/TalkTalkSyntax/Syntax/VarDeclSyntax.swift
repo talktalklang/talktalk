@@ -1,4 +1,4 @@
-public struct VarDeclSyntax: Decl, Syntax {
+public struct VarDeclSyntax: Decl, Syntax, VarLetDecl {
 	public let start: Token
 	public let end: Token
 	public var variable: IdentifierSyntax

@@ -11,4 +11,5 @@ public struct Program: SemanticNode {
 	public var syntax: ProgramSyntax
 	public var binding: Binding
 	public var declarations: [Declaration]
+	public var type: any SemanticType = VoidType()
 }
