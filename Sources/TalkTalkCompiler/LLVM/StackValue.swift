@@ -9,7 +9,7 @@ import C_LLVM
 
 extension LLVM {
 	class StackValue: IRValue {
-		static func ==(lhs: StackValue, rhs: StackValue) -> Bool {
+		static func == (lhs: StackValue, rhs: StackValue) -> Bool {
 			lhs.ref == rhs.ref
 		}
 

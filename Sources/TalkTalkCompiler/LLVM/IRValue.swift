@@ -11,18 +11,18 @@ extension LLVM {
 		static func == (lhs: LLVM.IRValueRef, rhs: LLVM.IRValueRef) -> Bool {
 			lhs.hashValue == rhs.hashValue
 		}
-		
-		case value(any IRValue),
-				 op(LLVMOpcode),
-				 type(any LLVM.IRType)
 
-		func `as`<T>(_ type: T.Type) -> T? {
+		case value(any IRValue),
+		     op(LLVMOpcode),
+		     type(any LLVM.IRType)
+
+		func `as`<T>(_: T.Type) -> T? {
 			switch self {
-			case .value(let value):
+			case let .value(value):
 				value as? T
-			case .op(let opcode):
+			case let .op(opcode):
 				opcode as? T
-			case .type(let _type):
+			case let .type(_type):
 				_type as? T
 			}
 		}
@@ -37,11 +37,11 @@ extension LLVM {
 
 		func hash(into hasher: inout Hasher) {
 			switch self {
-			case .value(let v):
+			case let .value(v):
 				hasher.combine(v)
-			case .type(let t):
+			case let .type(t):
 				hasher.combine(t)
-			case .op(let ref):
+			case let .op(ref):
 				hasher.combine(ref.rawValue)
 			}
 		}

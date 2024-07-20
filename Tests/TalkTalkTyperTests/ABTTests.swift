@@ -1,13 +1,13 @@
 //
-//  ABT.swift
-//  
+//  ABTTests.swift
+//
 //
 //  Created by Pat Nakajima on 7/19/24.
 //
 
-import Testing
 import TalkTalkSyntax
 import TalkTalkTyper
+import Testing
 
 struct ABTTests {
 	func ast(_ string: String) -> ProgramSyntax {
@@ -189,7 +189,7 @@ struct ABTTests {
 		""")).visit()
 
 		#expect(abt.scope.errors.isEmpty)
-		
+
 		#expect(abt.scope.locals["a"]?.type.description == "Int")
 
 		let decl = abt.cast(Program.self).declarations[0].cast(VarLetDeclaration.self)

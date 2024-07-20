@@ -1,6 +1,6 @@
 //
 //  TypedValue.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/18/24.
 //
@@ -28,7 +28,7 @@ extension ValueType {
 
 	@available(*, deprecated, message: "It'd be nicer if more of this was provided by the syntax package")
 	private func parameters(context: LLVM.Context, bindings: Bindings) -> [(String, any LLVM.IRType)] {
-		guard let def = self.definition.as(FunctionDeclSyntax.self) else {
+		guard let def = definition.as(FunctionDeclSyntax.self) else {
 			return []
 		}
 
@@ -37,7 +37,8 @@ extension ValueType {
 			result.append(
 				(
 					parameter.lexeme,
-					bindings.type(for: parameter)!.llvmType(in: context, bindings: bindings))
+					bindings.type(for: parameter)!.llvmType(in: context, bindings: bindings)
+				)
 			)
 		}
 		return result

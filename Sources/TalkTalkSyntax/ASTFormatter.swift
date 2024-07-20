@@ -1,6 +1,6 @@
 public struct ASTFormatter: ASTVisitor {
 	public struct Context {
-		public init() { }
+		public init() {}
 	}
 
 	let root: any Syntax

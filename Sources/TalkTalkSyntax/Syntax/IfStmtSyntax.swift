@@ -8,7 +8,7 @@ public struct IfStmtSyntax: Syntax, Stmt {
 	public let start: Token
 	public let end: Token
 	public var condition: any Expr
-	public var `then`: BlockStmtSyntax
+	public var then: BlockStmtSyntax
 	public var `else`: BlockStmtSyntax?
 
 	public static func == (lhs: Self, rhs: Self) -> Bool {
@@ -19,7 +19,7 @@ public struct IfStmtSyntax: Syntax, Stmt {
 		hasher.combine(start)
 		hasher.combine(end)
 		hasher.combine(condition)
-		hasher.combine(self.then)
+		hasher.combine(then)
 		hasher.combine(self.else)
 	}
 

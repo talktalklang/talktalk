@@ -49,7 +49,7 @@ struct SyntaxTreeTests {
 		#expect(root.position == 0)
 		#expect(root.length == 1)
 		#expect(root.lexeme == "1")
-		#expect(root.start.column == 1..<2)
+		#expect(root.start.column == 1 ..< 2)
 	}
 
 	@Test("Bool") func bool() throws {
@@ -143,7 +143,7 @@ struct SyntaxTreeTests {
 		#expect(decl.length == 15)
 		#expect(decl.variable.lexeme == "foo")
 		#expect(decl.expr!.cast(StringLiteralSyntax.self).lexeme == #""123""#)
-		#expect(decl.expr!.cast(StringLiteralSyntax.self).range == 10..<15)
+		#expect(decl.expr!.cast(StringLiteralSyntax.self).range == 10 ..< 15)
 	}
 
 	@Test("var statement with type") func varStmtWithType() {

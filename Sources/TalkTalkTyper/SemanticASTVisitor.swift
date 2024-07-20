@@ -1,6 +1,6 @@
 //
 //  SemanticASTVisitor.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/19/24.
 //
@@ -43,11 +43,11 @@ public struct SemanticASTVisitor: ASTVisitor {
 
 		return TypeDeclaration(syntax: node, type: type, scope: context)
 	}
-	
-	public func visit(_ node: ErrorSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: ErrorSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
+
 	public func visit(_ node: ParameterListSyntax, context: Scope) -> any SemanticNode {
 		for parameter in node.parameters {
 			// Define the parameters into the scope of the function body. We don't know
@@ -61,19 +61,19 @@ public struct SemanticASTVisitor: ASTVisitor {
 
 		return .void(syntax: node, scope: context)
 	}
-	
-	public func visit(_ node: ArgumentListSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: ArgumentListSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: BinaryOperatorSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: BinaryOperatorSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: UnaryOperator, context: Scope) -> any SemanticNode {
+
+	public func visit(_: UnaryOperator, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
+
 	public func visit(_ node: IfExprSyntax, context scope: Scope) -> any SemanticNode {
 		let condition = visit(node.condition, context: scope)
 
@@ -98,15 +98,15 @@ public struct SemanticASTVisitor: ASTVisitor {
 			alternative: alternative
 		)
 	}
-	
-	public func visit(_ node: ArrayLiteralSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: ArrayLiteralSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: PropertyAccessExpr, context: Scope) -> any SemanticNode {
+
+	public func visit(_: PropertyAccessExpr, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
+
 	public func visit(_ node: LiteralExprSyntax, context: Scope) -> any SemanticNode {
 		switch node.kind {
 		case .true:
@@ -117,9 +117,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 			// TODO: hmm
 			Literal(syntax: node, scope: context, type: .bool)
 		}
-
 	}
-	
+
 	public func visit(_ node: AssignmentExpr, context: Scope) -> any SemanticNode {
 		let lhs = visit(node.lhs, context: context)
 		let rhs = visit(node.rhs, context: context)
@@ -148,7 +147,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 		error(node, "Cannot assign \(rhs) to \(lhs.type)")
 		return .unknown(syntax: node, scope: context)
 	}
-	
+
 	public func visit(_ node: VariableExprSyntax, context scope: Scope) -> any SemanticNode {
 		if let binding = scope.locals[node.name.lexeme] {
 			return binding.node
@@ -157,51 +156,51 @@ public struct SemanticASTVisitor: ASTVisitor {
 		error(node, "Undefined variable: \(node.name)")
 		return .unknown(syntax: node, scope: scope)
 	}
-	
+
 	public func visit(_ node: StringLiteralSyntax, context: Scope) -> any SemanticNode {
 		Literal(syntax: node, scope: context, type: .string)
 	}
-	
+
 	public func visit(_ node: IntLiteralSyntax, context: Scope) -> any SemanticNode {
 		Literal(syntax: node, scope: context, type: .int)
 	}
-	
-	public func visit(_ node: IdentifierSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: IdentifierSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: BinaryExprSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: BinaryExprSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: UnaryExprSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: UnaryExprSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: CallExprSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: CallExprSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
+
 	public func visit(_ node: GroupExpr, context: Scope) -> any SemanticNode {
 		visit(node.expr, context: context)
 	}
-	
-	public func visit(_ node: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: WhileStmtSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: WhileStmtSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: StmtSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: StmtSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: IfStmtSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: IfStmtSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
+
 	public func visit(_ node: BlockStmtSyntax, context scope: Scope) -> any SemanticNode {
 		// Currently just use the last return value as the implicit return of the block.
 		// Eventually it might be nice to require a `return` if there is more than one
@@ -213,38 +212,39 @@ public struct SemanticASTVisitor: ASTVisitor {
 		}
 
 		if var lastReturn, lastReturn.type.description == "Unknown",
-			 let expectedReturnVia = scope.expectedReturnVia {
+		   let expectedReturnVia = scope.expectedReturnVia
+		{
 			scope.inferType(for: &lastReturn, from: expectedReturnVia)
 			return lastReturn
 		}
 
 		return lastReturn ?? .void(syntax: node, scope: scope)
 	}
-	
+
 	public func visit(_ node: ExprStmtSyntax, context: Scope) -> any SemanticNode {
 		visit(node.expr, context: context)
 	}
-	
-	public func visit(_ node: PropertyDeclSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: PropertyDeclSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: InitDeclSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: InitDeclSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
-	public func visit(_ node: ClassDeclSyntax, context: Scope) -> any SemanticNode {
+
+	public func visit(_: ClassDeclSyntax, context: Scope) -> any SemanticNode {
 		.placeholder(context)
 	}
-	
+
 	public func visit(_ node: LetDeclSyntax, context binding: Scope) -> any SemanticNode {
 		handleVarLet(node, binding: binding)
 	}
-	
+
 	public func visit(_ node: VarDeclSyntax, context binding: Scope) -> any SemanticNode {
 		handleVarLet(node, binding: binding)
 	}
-	
+
 	public func visit(_ node: FunctionDeclSyntax, context: Scope) -> any SemanticNode {
 		// Introduce a new scope
 		let innerBinding = context.child()
@@ -261,7 +261,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 
 		return function
 	}
-	
+
 	public func visit(_ node: ProgramSyntax, context scope: Scope) -> any SemanticNode {
 		let declarations = node.decls.compactMap {
 			visit($0, context: scope) as? any Declaration
@@ -316,7 +316,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 		var traits: Set<Binding.Trait> = []
 
 		if let expr = node.expr,
-			 let exprNode = visit(expr, context: binding) as? any Expression {
+		   let exprNode = visit(expr, context: binding) as? any Expression
+		{
 			// Check to see if there's a type decl. If it doesn't agree with
 			// the expr node, we're in trouble
 			if let typeDeclNode, !typeDeclNode.type.assignable(from: exprNode.type) {

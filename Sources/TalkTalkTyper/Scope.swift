@@ -1,5 +1,5 @@
 //
-//  Binding.swift
+//  Scope.swift
 //
 //
 //  Created by Pat Nakajima on 7/19/24.
@@ -7,9 +7,7 @@
 
 import TalkTalkSyntax
 
-public protocol Value {
-	
-}
+public protocol Value {}
 
 public struct Environment {
 	var captures: [String: any Value] = [:]
@@ -52,7 +50,7 @@ public class Scope {
 	public var children: [Scope] = []
 	public var locals: [String: Binding] = [:]
 	public var environment: Environment = .init()
-	
+
 	// If a binding has an expectedReturn, we can maybe use it
 	// instead of Unknown
 	public var expectedReturnVia: (any SemanticNode)?

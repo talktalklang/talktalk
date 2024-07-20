@@ -236,7 +236,7 @@ struct Lexer {
 			length: current - start,
 			kind: kind,
 			line: line,
-			column: (column - (current - start))..<column,
+			column: (column - (current - start)) ..< column,
 			lexeme: lexeme ? String(source[start ..< current]) : nil
 		)
 	}

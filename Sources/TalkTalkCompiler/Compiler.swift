@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/15/24.
 //
 import C_LLVM
-import TalkTalkTyper
 import TalkTalkSyntax
+import TalkTalkTyper
 
 public struct Compiler {
 	enum Error: Swift.Error {

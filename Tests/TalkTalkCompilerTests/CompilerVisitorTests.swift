@@ -102,7 +102,6 @@ struct CompilerVisitorTests {
 		}
 
 		let def = bindings.typedef(at: 16)
-		
 
 		let visitor = CompilerVisitor(bindings: bindings, builder: builder, module: module)
 		_ = visitor.visit(node, context: module)

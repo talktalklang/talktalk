@@ -1,6 +1,6 @@
 //
 //  HeapValue.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/19/24.
 //
@@ -9,7 +9,7 @@ import C_LLVM
 
 extension LLVM {
 	class HeapValue: IRValue {
-		static func ==(lhs: HeapValue, rhs: HeapValue) -> Bool {
+		static func == (lhs: HeapValue, rhs: HeapValue) -> Bool {
 			lhs.ref == rhs.ref
 		}
 

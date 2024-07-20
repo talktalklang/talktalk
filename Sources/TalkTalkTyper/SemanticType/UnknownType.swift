@@ -1,6 +1,6 @@
 //
-//  AnyType.swift
-//  
+//  UnknownType.swift
+//
 //
 //  Created by Pat Nakajima on 7/19/24.
 //
@@ -8,7 +8,7 @@
 public struct UnknownType: SemanticType {
 	public var description = "Unknown"
 
-	public func assignable(from other: any SemanticType) -> Bool {
+	public func assignable(from _: any SemanticType) -> Bool {
 		true
 	}
 }

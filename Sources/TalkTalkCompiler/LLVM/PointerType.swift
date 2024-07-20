@@ -13,7 +13,7 @@ prefix func * (rhs: any LLVM.IRType) -> LLVM.PointerType {
 
 extension LLVM {
 	class PointerType: LLVM.IRType, Hashable {
-		static func ==(lhs: PointerType, rhs: PointerType) -> Bool {
+		static func == (lhs: PointerType, rhs: PointerType) -> Bool {
 			lhs.ref == rhs.ref
 		}
 

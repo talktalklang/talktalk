@@ -57,9 +57,9 @@ struct TyperTests {
 
 	@Test("Error on bad assignment") func badAssignment() throws {
 		let typer = typer("""
-				var foo = "bar"
-				foo = 123
-				"""
+			var foo = "bar"
+			foo = 123
+			"""
 		)
 
 		let results = typer.check()

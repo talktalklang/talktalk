@@ -8,7 +8,7 @@ import C_LLVM
 
 extension LLVM {
 	class FunctionType: IRType {
-		static func ==(lhs: FunctionType, rhs: FunctionType) -> Bool {
+		static func == (lhs: FunctionType, rhs: FunctionType) -> Bool {
 			lhs.ref == rhs.ref
 		}
 

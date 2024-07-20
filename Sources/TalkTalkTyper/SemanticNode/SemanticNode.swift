@@ -1,6 +1,6 @@
 //
 //  SemanticNode.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/19/24.
 //
@@ -13,7 +13,7 @@ public protocol SemanticType: Hashable {
 }
 
 public extension SemanticType {
-	static func ==(lhs: Self, rhs: Self) -> Bool {
+	static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 }
@@ -27,7 +27,7 @@ public protocol SemanticNode<Node> {
 }
 
 public extension SemanticNode {
-	func cast<T: SemanticNode>(_ type: T.Type) -> T {
+	func cast<T: SemanticNode>(_: T.Type) -> T {
 		self as! T
 	}
 

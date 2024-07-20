@@ -1,6 +1,6 @@
 //
 //  VoidType.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/19/24.
 //
@@ -8,7 +8,7 @@
 public struct VoidType: SemanticType {
 	public var description = "Void"
 
-	public func assignable(from other: any SemanticType) -> Bool {
+	public func assignable(from _: any SemanticType) -> Bool {
 		false
 	}
 }

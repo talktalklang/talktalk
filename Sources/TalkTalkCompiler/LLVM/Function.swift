@@ -8,17 +8,17 @@ import C_LLVM
 import TalkTalkTyper
 
 enum VariableState: Equatable {
-	static func ==(lhs: VariableState, rhs: VariableState) -> Bool {
+	static func == (lhs: VariableState, rhs: VariableState) -> Bool {
 		switch lhs {
 		case .declared:
 			if case .declared = rhs {
 				return true
 			}
-		case .defined(let value):
+		case let .defined(value):
 			if case let .defined(other) = rhs {
 				return value.hashValue == other.hashValue
 			}
-		case .allocated(let value):
+		case let .allocated(value):
 			if case let .allocated(other) = rhs {
 				return value.hashValue == other.hashValue
 			}

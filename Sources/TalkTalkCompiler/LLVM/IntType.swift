@@ -8,7 +8,7 @@ import C_LLVM
 
 extension LLVM {
 	class IntType: LLVM.IRType {
-		static func ==(lhs: IntType, rhs: IntType) -> Bool {
+		static func == (lhs: IntType, rhs: IntType) -> Bool {
 			lhs.width == rhs.width
 		}
 
@@ -34,7 +34,7 @@ extension LLVM {
 	}
 
 	class IntValue: LLVM.IRValue {
-		static func ==(lhs: IntValue, rhs: IntValue) -> Bool {
+		static func == (lhs: IntValue, rhs: IntValue) -> Bool {
 			lhs.ref == rhs.ref
 		}
 
