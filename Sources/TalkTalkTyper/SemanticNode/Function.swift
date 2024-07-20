@@ -8,10 +8,11 @@
 import TalkTalkSyntax
 
 public struct FunctionType: SemanticType {
+	public var name: String
 	public var returns: any SemanticType
 
-	public var name: String {
-		"Function -> (\(returns.name))"
+	public var description: String {
+		"Function -> (\(returns.description))"
 	}
 
 	public func assignable(from other: any SemanticType) -> Bool {
@@ -27,12 +28,18 @@ public struct FunctionType: SemanticType {
 	}
 }
 
-public struct Function: SemanticNode {
-	public var syntax: FunctionDeclSyntax
-	public var binding: Binding
+public struct Function: SemanticNode, Declaration {
+	public var syntax: any Decl
+	public var scope: Scope
 	public var prototype: FunctionType
 
 	public var type: any SemanticType {
-		prototype
+		get {
+			prototype
+		}
+
+		set {
+			prototype = newValue as! FunctionType
+		}
 	}
 }

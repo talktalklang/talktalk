@@ -9,5 +9,5 @@ import TalkTalkSyntax
 
 public struct BoundSyntax<Node: Syntax> {
 	public let node: Node
-	public let binding: Binding
+	public let binding: Scope
 }

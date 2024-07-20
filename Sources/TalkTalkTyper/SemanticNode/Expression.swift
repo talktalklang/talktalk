@@ -11,5 +11,5 @@ public struct Expression: SemanticNode {
 	public var type: any SemanticType
 	public let syntax: any Expr
 	public let value: Value
-	public var binding: Binding
+	public var scope: Scope
 }

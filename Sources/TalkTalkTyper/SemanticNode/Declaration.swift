@@ -7,8 +7,8 @@
 
 import TalkTalkSyntax
 
-public struct Declaration: SemanticNode {
-	public var type: any SemanticType = VoidType()
-	public let syntax: any Decl
-	public var binding: Binding
+public protocol Declaration: SemanticNode {
+	var type: any SemanticType { get set }
+	var syntax: any Decl { get }
+	var scope: Scope { get }
 }

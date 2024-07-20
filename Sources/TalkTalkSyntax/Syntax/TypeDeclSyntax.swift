@@ -1,4 +1,4 @@
-public struct TypeDeclSyntax: Syntax {
+public struct TypeDeclSyntax: Syntax, Decl {
 	public let start: Token
 	public let end: Token
 	public let name: IdentifierSyntax

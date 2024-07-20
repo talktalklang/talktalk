@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct StringType: SemanticType {
-	public var name = "String"
+	public var description = "String"
 
 	public func assignable(from other: any SemanticType) -> Bool {
 		other is StringType

@@ -22,7 +22,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.binding.locals["foo"]!.type.name == "String")
+		#expect(decl.scope.locals["foo"]!.node.type.description == "String")
 	}
 
 	@Test("Binds String with var") func varString() {
@@ -32,7 +32,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.binding.locals["foo"]!.type.name == "String")
+		#expect(decl.scope.locals["foo"]!.node.type.description == "String")
 	}
 
 	@Test("Binds Int with let") func letInt() {
@@ -42,7 +42,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.binding.locals["foo"]!.type.name == "Int")
+		#expect(decl.scope.locals["foo"]!.node.type.description == "Int")
 	}
 
 	@Test("Binds String with var") func varInt() {
@@ -52,7 +52,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.binding.locals["foo"]!.type.name == "Int")
+		#expect(decl.scope.locals["foo"]!.node.type.description == "Int")
 	}
 
 	@Test("Binds Bool with let") func letBool() {
@@ -62,7 +62,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.binding.locals["foo"]!.type.name == "Bool")
+		#expect(decl.scope.locals["foo"]!.node.type.description == "Bool")
 	}
 
 	@Test("Binds String with var") func varBool() {
@@ -72,7 +72,7 @@ struct ABTTests {
 
 		let decl = abt.cast(Program.self).declarations[0]
 		#expect(decl.syntax.start.start == 0)
-		#expect(decl.binding.locals["foo"]!.type.name == "Bool")
+		#expect(decl.scope.locals["foo"]!.node.type.description == "Bool")
 	}
 
 	@Test("Does not bind when type decl and expr dont agree") func declConflict() {
@@ -80,8 +80,72 @@ struct ABTTests {
 		var foo: Bool = 123
 		""")).visit()
 
-		#expect(!abt.binding.errors.isEmpty)
-		#expect(abt.binding.errors[0].location.description.contains("foo"))
-		#expect(abt.binding.errors[0].message.contains("Cannot assign"))
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].location.description.contains("foo"))
+		#expect(abt.scope.errors[0].message.contains("Cannot assign"))
+	}
+
+	@Test("Error when trying to assign to wrong type") func badAssign() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		var foo = 123
+		foo = "error"
+		""")).visit()
+
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].location.description.contains("foo"))
+		#expect(abt.scope.errors[0].message.contains("Cannot assign"))
+	}
+
+	@Test("Errors on undeclared var") func undeclaredVar() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		foo = 123
+		""")).visit()
+
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].location.description.contains("foo"))
+		#expect(abt.scope.errors[0].message.contains("Undefined variable"))
+	}
+
+	@Test("Infer function return value") func inferFuncReturn() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func foo() {
+			123
+		}
+		""")).visit()
+
+		let decl = abt.cast(Program.self).declarations[0]
+		#expect(abt.scope.locals["foo"]!.node.type.description == "Function -> (Int)")
+	}
+
+	@Test("Error when function type decl that's not inferred return") func inferFuncBadReturn() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func foo() -> String {
+			123
+		}
+		""")).visit()
+
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].location.description.contains("foo"))
+		#expect(abt.scope.errors[0].message.contains("Cannot return Int"))
+	}
+
+	@Test("Infer parameter type from return val") func inferParamterFromReturnVal() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func foo(a) -> Int {
+			a
+		}
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+
+		#expect(abt.scope.locals["a"] == nil)
+
+		let decl = abt.cast(Program.self).declarations[0]
+
+		let varA = decl.scope.locals["a"]!
+		#expect(varA.inferredType)
+		#expect(varA.node.type.description == "Int")
+
+		#expect(abt.scope.locals["foo"]!.node.type.description == "Function -> (Int)")
 	}
 }

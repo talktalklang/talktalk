@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct SemanticStatement: SemanticNode {
-	public var binding: Binding
+	public var scope: Scope
 	public let syntax: any Stmt
 	public var type: any SemanticType = VoidType()
 }

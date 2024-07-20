@@ -6,7 +6,7 @@
 //
 
 public struct IntType: SemanticType {
-	public var name = "Int"
+	public var description = "Int"
 
 	public func assignable(from other: any SemanticType) -> Bool {
 		other is IntType

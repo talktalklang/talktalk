@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct Program: SemanticNode {
 	public var syntax: ProgramSyntax
-	public var binding: Binding
-	public var declarations: [Declaration]
+	public var scope: Scope
+	public var declarations: [any Declaration]
 	public var type: any SemanticType = VoidType()
 }

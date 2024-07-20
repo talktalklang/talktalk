@@ -6,9 +6,13 @@
 //
 
 public struct UnknownType: SemanticType {
-	public var name = "Unknown"
+	public var description = "Unknown"
 
 	public func assignable(from other: any SemanticType) -> Bool {
 		true
 	}
+}
+
+public extension SemanticType where Self == UnknownType {
+	static var unknown: UnknownType { UnknownType() }
 }

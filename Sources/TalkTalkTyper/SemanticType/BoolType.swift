@@ -6,7 +6,7 @@
 //
 
 public struct BoolType: SemanticType {
-	public var name = "Bool"
+	public var description = "Bool"
 
 	public func assignable(from other: any SemanticType) -> Bool {
 		other is BoolType

@@ -17,17 +17,30 @@ public struct Environment {
 }
 
 public class Binding {
+	public var node: any SemanticNode
+	public var inferredType: Bool = false
+
+	init(node: any SemanticNode) {
+		self.node = node
+	}
+}
+
+public class Scope {
 	public var errors: [SemanticError] = []
 	public var depth: Int = 0
-	public var parent: Binding?
-	public var children: [Binding] = []
-	public var locals: [String: any SemanticNode] = [:]
+	public var parent: Scope?
+	public var children: [Scope] = []
+	public var locals: [String: Binding] = [:]
 	public var environment: Environment = .init()
+	
+	// If a binding has an expectedReturn, we can maybe use it
+	// instead of Unknown
+	public var expectedReturn: (any SemanticType)?
 
 	public init(
-		parent: Binding? = nil,
-		children: [Binding] = [],
-		locals: [String: any SemanticNode] = [:],
+		parent: Scope? = nil,
+		children: [Scope] = [],
+		locals: [String: Binding] = [:],
 		environment: Environment = Environment()
 	) {
 		self.parent = parent
@@ -38,10 +51,10 @@ public class Binding {
 
 	public func nodeAt(line: Int, column: Int) -> (any SemanticNode)? {
 		if let node = locals.values.first(where: {
-			let syntax = ($0.syntax as! any Syntax)
+			let syntax = ($0.node.syntax as! any Syntax)
 			return syntax.line == line && syntax.column.contains(column)
 		}) {
-			return node
+			return node.node
 		}
 
 		for child in children {
@@ -53,17 +66,28 @@ public class Binding {
 		return nil
 	}
 
-	public func bind(name: String, to node: any SemanticNode) {
-		locals[name] = node
+	public func inferType(for node: inout any SemanticNode, from type: any SemanticType) {
+		node.type = type
+
+		for local in locals.values {
+			if local.node.is(node) {
+				local.node.type = type
+				local.inferredType = true
+			}
+		}
 	}
 
-	func append(child: Binding) {
+	public func bind(name: String, to node: any SemanticNode) {
+		locals[name] = .init(node: node)
+	}
+
+	func append(child: Scope) {
 		children.append(child)
 		parent?.append(child: child)
 	}
 
-	func child() -> Binding {
-		let binding = Binding(parent: self)
+	func child() -> Scope {
+		let binding = Scope(parent: self)
 		binding.depth = (parent?.depth ?? 0) + 1
 
 		append(child: binding)
