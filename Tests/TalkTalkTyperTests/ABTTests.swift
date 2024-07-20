@@ -113,7 +113,6 @@ struct ABTTests {
 		}
 		""")).visit()
 
-		let decl = abt.cast(Program.self).declarations[0]
 		#expect(abt.scope.locals["foo"]!.node.type.description == "Function -> (Int)")
 	}
 
@@ -145,6 +144,7 @@ struct ABTTests {
 		let varA = decl.scope.locals["a"]!
 		#expect(varA.inferredType)
 		#expect(varA.node.type.description == "Int")
+		#expect(decl.scope.depth == 1)
 
 		#expect(abt.scope.locals["foo"]!.node.type.description == "Function -> (Int)")
 	}
