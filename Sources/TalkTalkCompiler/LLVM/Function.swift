@@ -42,8 +42,7 @@ extension LLVM {
 			self.ref = ref
 		}
 
-		func allocate(name: String, for type: TypedValue, in builder: Builder) -> StackValue {
-			let type = type.llvmType(in: builder.module.context)
+		func allocate(name: String, for type: any LLVM.IRType, in builder: Builder) -> StackValue {
 			let ref = inEntry(builder: builder) {
 				LLVMBuildAlloca(
 					builder.ref,

@@ -114,6 +114,23 @@ struct CompilerTests {
 		#expect(result == 5)
 	}
 
+	@Test("can compile with proper scopes") func scopes() throws {
+		let compiler = Compiler(filename: "compiler", source: """
+		var i = 123
+
+		func foo() {
+			var i = 345
+			return i
+		}
+
+		i
+		""")
+
+		let module = try compiler.compile()
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 123)
+	}
+
 	@Test("can compile fib") func fib() throws {
 		let compiler = Compiler(filename: "compiler", source: """
 		func fib(n) {
@@ -156,5 +173,29 @@ struct CompilerTests {
 		let module = try compiler.compile(optimize: true)
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == 34)
+	}
+
+	@Test("can compile closures") func closures() throws {
+		let compiler = Compiler(filename: "compiler", source: """
+		// Test closures
+		func makeCounter() {
+			var i = 0
+
+			func count() {
+				i = i + 1
+				i
+			}
+
+			return count
+		}
+
+		var counter = makeCounter()
+		counter()
+		counter()
+		""")
+
+		let module = try compiler.compile(optimize: true)
+		let result = LLVM.JIT().execute(module: module)
+		#expect(result == 2)
 	}
 }

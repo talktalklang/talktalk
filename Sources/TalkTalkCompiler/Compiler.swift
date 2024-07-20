@@ -13,12 +13,21 @@ public struct Compiler {
 		case typeError([TalkTalkTyper.TypeError])
 	}
 
+	let file: SourceFile
 	let ast: ProgramSyntax
 	let module: LLVM.Module
 	let builder: LLVM.Builder
 
 	public init(filename: String, source: String) {
-		self.ast = try! SyntaxTree.parse(source: .init(path: "main", source: source))
+		self.file = SourceFile(path: filename, source: source)
+		self.ast = try! SyntaxTree.parse(source: file)
+		self.module = LLVM.Module(name: "main", in: .global)
+		self.builder = LLVM.Builder(module: module)
+	}
+
+	public init(file: SourceFile) {
+		self.file = file
+		self.ast = try! SyntaxTree.parse(source: file)
 		self.module = LLVM.Module(name: "main", in: .global)
 		self.builder = LLVM.Builder(module: module)
 	}
@@ -28,7 +37,7 @@ public struct Compiler {
 		LLVMInitializeNativeAsmParser()
 		LLVMInitializeNativeAsmPrinter()
 
-		let bindings = Typer(ast: ast).check()
+		let bindings = try Typer(source: file).check()
 
 		if !bindings.errors.isEmpty {
 			throw Error.typeError(bindings.errors)

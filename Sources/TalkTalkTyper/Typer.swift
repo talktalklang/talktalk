@@ -60,6 +60,8 @@ public struct Typer {
 
 	public func check() -> Bindings {
 		let visitor = TyperVisitor(ast: ast)
-		return visitor.visit(ast: ast, context: context)
+		var bindings = visitor.visit(ast: ast, context: context)
+		bindings.file = file
+		return bindings
 	}
 }

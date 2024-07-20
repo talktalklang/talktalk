@@ -34,22 +34,47 @@ class Context {
 	}
 
 	var returns: [ReturnTracker] = []
-	var scopes: [Scope] = [Scope()]
+	var environments: [CaptureEnvironment] = [CaptureEnvironment()]
+	var scopes: [VariableScope] = [VariableScope()]
 	var classes: [
 		[String: Property]
 	] = []
 
-	init(scopes: [Scope] = [Scope()]) {
+	init(scopes: [VariableScope] = [VariableScope()]) {
 		self.scopes = scopes
 	}
 
-	var currentScope: Scope {
+	var currentScope: VariableScope {
 		scopes.last!
+	}
+
+	func needsCapture(for node: any Syntax) -> Bool {
+		if currentScope.lookup(identifier: name(for: node)) != nil {
+			return false
+		}
+
+		var parent = currentScope
+		while let nextParent = parent.parent {
+			if nextParent.lookup(identifier: name(for: node)) != nil {
+				return true
+			}
+
+			parent = nextParent
+		}
+
+		return false
+	}
+
+	func capture(_ node: any Syntax) -> TypedValue {
+		var typedValue = lookup(node, withParents: true)!
+		typedValue.isEscaping = true
+		currentEnvironment.capture(value: typedValue, as: name(for: node))
+		return typedValue
 	}
 
 	// TODO: Handle depth issues
 	func withScope<T>(perform: (Context) -> T) -> T {
-		let scope = Scope(parent: currentScope)
+		let scope = VariableScope(parent: currentScope)
 		scopes.append(scope)
 		return perform(self)
 	}
@@ -74,8 +99,8 @@ class Context {
 		}
 	}
 
-	func lookup(_ syntax: any Syntax) -> TypedValue? {
-		currentScope.lookup(identifier: name(for: syntax))
+	func lookup(_ syntax: any Syntax, withParents: Bool = false) -> TypedValue? {
+		currentScope.lookup(identifier: name(for: syntax), withParents: withParents)
 	}
 
 	func lookup(type: String) -> ValueType? {
@@ -91,7 +116,11 @@ class Context {
 	}
 
 	func define(_ syntax: any Syntax, as type: ValueType, status: TypedValue.Status) {
-		currentScope.locals[name(for: syntax)] = TypedValue(type: type, definition: syntax, status: status)
+		currentScope.locals[name(for: syntax)] = TypedValue(
+			type: type,
+			definition: syntax,
+			status: status
+		)
 	}
 
 	func define(type: ValueType) {
@@ -108,6 +137,17 @@ class Context {
 			type: type,
 			definition: token
 		)
+	}
+
+	func withEnvironment<T>(perform: (CaptureEnvironment) -> T) -> T {
+		let newEnvironment = CaptureEnvironment(parent: currentEnvironment)
+		environments.append(newEnvironment)
+
+		defer {
+			_ = environments.popLast()
+		}
+
+		return perform(newEnvironment)
 	}
 
 	func withReturnTracking(perform: (Context) -> Void) -> ReturnTracker {
@@ -131,6 +171,10 @@ class Context {
 		define(destination.definition, as: newValue)
 
 		return newValue
+	}
+
+	var currentEnvironment: CaptureEnvironment {
+		environments.last!
 	}
 
 	func name(for syntax: any Syntax) -> String {

@@ -7,12 +7,20 @@
 import C_LLVM
 
 extension LLVM {
-	class FunctionType {
+	class FunctionType: IRType {
+		static func ==(lhs: FunctionType, rhs: FunctionType) -> Bool {
+			lhs.ref == rhs.ref
+		}
+
 		let returning: any LLVM.IRType
 		let parameters: [(String, any LLVM.IRType)]
 		let parameterRefs: [LLVMTypeRef?]
 		let isVarArg: Bool
 		let ref: LLVMTypeRef
+
+		func hash(into hasher: inout Hasher) {
+			hasher.combine(ref)
+		}
 
 		init(
 			context _: LLVM.Context,

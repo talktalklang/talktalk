@@ -188,15 +188,15 @@ class TyperVisitor: ASTVisitor {
 
 	func visit(_ node: LetDeclSyntax, context: Context) -> TypedValue? {
 		guard let expr = node.expr,
-					let exprDef = visit(expr, context: context)
+		      let exprDef = visit(expr, context: context)
 		else {
 			error(node, "unable to determine expression type")
 			return nil
 		} // TODO: handle no expr case
 
 		if let typeDecl = node.typeDecl,
-			 let declDef = visit(typeDecl, context: context),
-			 !declDef.assignable(from: exprDef)
+		   let declDef = visit(typeDecl, context: context),
+		   !declDef.assignable(from: exprDef)
 		{
 			error(node.variable, "not assignable to \(declDef.type.description)")
 			return nil
@@ -243,7 +243,7 @@ class TyperVisitor: ASTVisitor {
 				value: TypedValue(
 					type: receiverDef.type,
 					definition: node.lhs,
-					ref: context.lookup(node.lhs),
+					ref: context.lookup(node.lhs, withParents: true),
 					status: .declared
 				)
 			)
@@ -252,6 +252,8 @@ class TyperVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: CallExprSyntax, context: Context) -> TypedValue? {
+		_ = visit(node.arguments, context: context)
+
 		// Handle function calls
 		if let def = visit(node.callee, context: context),
 		   let returns = def.type.returns?.value
@@ -310,6 +312,7 @@ class TyperVisitor: ASTVisitor {
 		// TODO: handle type decls
 		for parameter in node.parameters {
 			context.define(parameter, as: .tbd, status: .declared)
+			define(parameter, as: ValueType.tbd.bind(parameter))
 		}
 
 		return nil
@@ -317,7 +320,7 @@ class TyperVisitor: ASTVisitor {
 
 	func visit(_ node: ArgumentListSyntax, context: Context) -> TypedValue? {
 		for argument in node.arguments {
-			_ = visit(argument, context: context)
+			let typedValue = visit(argument, context: context)
 			// TODO: Validate
 		}
 
@@ -342,11 +345,17 @@ class TyperVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: IdentifierSyntax, context: Context) -> TypedValue? {
-		return context.lookup(node)
+		return context.lookup(node, withParents: true)
 	}
 
 	func visit(_ node: ReturnStmtSyntax, context: Context) -> TypedValue? {
 		let ret = visit(node.value, context: context)
+
+		// If we're returning something that has an environment (a function for example),
+		// we need to capture that environment
+		if let variable = node.value.as(VariableExprSyntax.self), ret?.environment != nil {
+			bindings.capture(variable, context.capture(variable))
+		}
 
 		context.returns.last?.returns.append(node.value)
 
@@ -513,81 +522,88 @@ class TyperVisitor: ASTVisitor {
 
 		_ = visit(node.parameters, context: context)
 
-		let returns = context.withReturnTracking {
-			_ = visit(node.body, context: $0)
-		}
-
-		var lastReturnDef: ValueType?
-		let returnDefs: [TypedValue] = returns.returns.compactMap { stmt -> TypedValue? in
-			var def = visit(stmt, context: context) ?? TypedValue(type: .tbd, definition: stmt, status: .declared)
-
-			if let lastReturnDef, !lastReturnDef.assignable(from: def.type), def.type != .tbd {
-				error(stmt, """
-				Function \(node.name.lexeme) cannot return different types
-				Expected: \(lastReturnDef.description)
-				Received: \(def.type.description)
-				""")
-				return nil
+		return context.withEnvironment { environment in
+			let returns = context.withReturnTracking {
+				_ = visit(node.body, context: $0)
 			}
 
-			if let declDef, !declDef.returns!.value.assignable(from: def.type) {
-				if def.type == .tbd,
-				   let returns = declDef.returns?.value,
-				   let inferred = context.infer(from: returns, to: def)
-				{
-					def = inferred
-					define(stmt, as: def)
-				} else {
-					error(stmt, "Not assignable to \(declDef.returns!.value)")
+			var lastReturnDef: ValueType?
+			let returnDefs: [TypedValue] = returns.returns.compactMap { stmt -> TypedValue? in
+				var def = visit(stmt, context: context) ?? TypedValue(type: .tbd, definition: stmt, status: .declared)
+
+				if let lastReturnDef, !lastReturnDef.assignable(from: def.type), def.type != .tbd {
+					error(stmt, """
+					Function \(node.name.lexeme) cannot return different types
+					Expected: \(lastReturnDef.description)
+					Received: \(def.type.description)
+					""")
 					return nil
+				}
+
+				if let declDef, !declDef.returns!.value.assignable(from: def.type) {
+					if def.type == .tbd,
+					   let returns = declDef.returns?.value,
+					   let inferred = context.infer(from: returns, to: def)
+					{
+						def = inferred
+						define(stmt, as: def)
+					} else {
+						error(stmt, "Not assignable to \(declDef.returns!.value)")
+						return nil
+					}
+				}
+
+				if let lastReturnDef, !lastReturnDef.assignable(from: def.type), def.type != .tbd {
+					error(stmt, "Function cannot return different types")
+					return nil
+				}
+
+				lastReturnDef = def.type
+				define(stmt, as: def, ref: stmt)
+
+				return def
+			}
+
+			let returnDef = returnDefs.first
+
+			let typedef = returnDef?.type ?? .void
+
+			let typedValue = TypedValue(
+				type: .function(declDef?.returns?.value ?? typedef),
+				definition: node.name,
+				ref: returnDef,
+				status: .defined,
+				environment: environment
+			)
+
+			if context.currentClass != nil {
+				define(node, as: typedValue)
+
+				// This only throws when there's no class
+				try! context.define(member: node.name.lexeme, as: typedValue, at: node)
+			} else {
+				define(node.name, as: typedValue)
+				context.define(node.name, as: typedValue)
+			}
+
+			// Try to fill in parameters
+			for parameter in node.parameters.parameters {
+				if let typedValue = context.lookup(parameter, withParents: true) {
+					define(parameter, as: typedValue.type.bind(parameter, ref: typedValue))
+					context.define(parameter, as: typedValue.type.bind(parameter, ref: typedValue))
 				}
 			}
 
-			if let lastReturnDef, !lastReturnDef.assignable(from: def.type), def.type != .tbd {
-				error(stmt, "Function cannot return different types")
-				return nil
-			}
-
-			lastReturnDef = def.type
-			define(stmt, as: def, ref: stmt)
-
-			return def
+			return typedValue
 		}
-
-		let returnDef = returnDefs.first
-
-		let typedef = returnDef?.type ?? .void
-
-		let typedValue = TypedValue(
-			type: .function(declDef?.returns?.value ?? typedef),
-			definition: node.name,
-			ref: returnDef,
-			status: .defined
-		)
-
-		if context.currentClass != nil {
-			define(node, as: typedValue)
-
-			// This only throws when there's no class
-			try! context.define(member: node.name.lexeme, as: typedValue, at: node)
-		} else {
-			define(node.name, as: typedValue)
-			context.define(node.name, as: typedValue)
-		}
-
-		// Try to fill in parameters
-		for parameter in node.parameters.parameters {
-			if let typedValue = context.lookup(identifier: parameter.lexeme) {
-				define(parameter, as: typedValue.type.bind(parameter, ref: typedValue))
-				context.define(parameter, as: typedValue.type.bind(parameter, ref: typedValue))
-			}
-		}
-
-		return typedValue
 	}
 
 	func visit(_ node: VariableExprSyntax, context: Context) -> TypedValue? {
-		visit(node.name, context: context)
+		if context.needsCapture(for: node) {
+			bindings.capture(node, context.capture(node))
+		}
+
+		return visit(node.name, context: context)
 	}
 
 	func visit(_ node: StringLiteralSyntax, context _: Context) -> TypedValue? {

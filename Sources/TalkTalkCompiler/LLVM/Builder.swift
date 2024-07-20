@@ -16,6 +16,8 @@ extension LLVM {
 			self.ref = LLVMCreateBuilderInContext(module.context.ref)
 		}
 
+		// This emits the function declaration code and returns a Function object that
+		// the builder can use to decide where to emit the body
 		func addFunction(named name: String, _ functionType: FunctionType) -> Function? {
 			if let ref = LLVMAddFunction(module.ref, name, functionType.ref) {
 				module.functionTypes[ref] = functionType

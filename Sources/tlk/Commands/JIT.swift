@@ -30,7 +30,7 @@ struct JIT: AsyncParsableCommand {
 			source = input
 		}
 
-		let compiler = Compiler(filename: filename, source: source)
+		let compiler = Compiler(file: .init(path: filename, source: source))
 		let module = try compiler.compile(optimize: optimize)
 
 		if emitIR {

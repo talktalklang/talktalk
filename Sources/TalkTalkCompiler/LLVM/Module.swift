@@ -19,6 +19,14 @@ extension LLVM {
 			self.ref = LLVMModuleCreateWithNameInContext(name, context.ref)
 		}
 
+		func function(from ref: LLVMValueRef) -> Function? {
+			if let type = functionTypes[ref] {
+				return Function(type: type, ref: ref)
+			}
+
+			return nil
+		}
+
 		func function(named name: String) -> Function? {
 			if let fnref = LLVMGetNamedFunction(ref, name) {
 				let type = functionTypes[fnref]!

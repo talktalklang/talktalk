@@ -131,6 +131,24 @@ struct TyperTests {
 		#expect(error.message.contains("Not assignable to String"))
 	}
 
+	@Test("Infer with capture") func inferWithCapture() throws {
+		let source = """
+		var i = 1
+		func foo() {
+			return i * 2
+		}
+		"""
+		let typer = typer(source)
+
+		for error in typer.errors {
+			error.report(in: .init(path: "sup.tlk", source: source))
+		}
+
+		let results = typer.check()
+		let fntypedef = try #require(results.typedef(at: 17))
+		#expect(fntypedef.type.description == "Function -> (Int)")
+	}
+
 	@Test("Function has different return types") func functionBadReturn2() throws {
 		let typer = typer("""
 			func foo() {
@@ -343,5 +361,65 @@ struct TyperTests {
 		let results = typer.check()
 		#expect(results.errors.count == 1)
 		#expect(results.errors[0].message.contains("Cannot reassign let variable: `foo`"))
+	}
+
+	@Test("captures locals") func captures() throws {
+		let source = """
+		func main() {
+			var foo = "sup"
+			func bar() {
+				print(foo)
+			}
+		}
+
+		func fizz() {
+			// No captures here.
+		}
+		"""
+		let typer = typer(source)
+
+		let bindings = typer.check()
+
+		for error in bindings.errors {
+			error.report(in: typer.file)
+		}
+
+		let foodef = bindings.typedef(at: 20)! // the `foo` var decl
+		#expect(foodef.isEscaping)
+
+		let def = bindings.typedef(at: 38)! // the `bar` func
+		#expect(def.environment!.captures.map(\.value).description.contains("foo"))
+	}
+
+	@Test("captures functions") func capturesFuncs() throws {
+		let source = """
+		func main() {
+			var i = 123
+
+			func bar() {
+				i = i + 1
+			}
+
+			return bar
+		}
+		"""
+		let typer = typer(source)
+
+//		i = 19
+//		bar = 35
+
+		let bindings = typer.check()
+
+		for error in bindings.errors {
+			error.report(in: typer.file)
+		}
+
+		let idef = bindings.typedef(at: 19)
+		#expect(idef?.isEscaping == true)
+
+		let bardef = bindings.typedef(at: 35)! // the `bar` func
+
+		#expect(bardef.isEscaping)
+		#expect(bardef.environment!.captures.map(\.value).description.contains("i"))
 	}
 }

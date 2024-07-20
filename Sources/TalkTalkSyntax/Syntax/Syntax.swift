@@ -7,6 +7,7 @@
 public protocol Syntax: CustomStringConvertible, Hashable {
 	var start: Token { get }
 	var end: Token { get }
+
 	func accept<Visitor: ASTVisitor>(_ visitor: Visitor, context: Visitor.Context) -> Visitor.Value
 }
 

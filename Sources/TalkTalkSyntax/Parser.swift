@@ -57,6 +57,10 @@ public struct Parser {
 		return node?.as(ExprStmtSyntax.self)?.expr.as(T.self)
 	}
 
+	public static func parse(file: SourceFile) -> ProgramSyntax {
+		return try! SyntaxTree.parse(source: file)
+	}
+
 	public static func parse(statement: String) -> (any Stmt)? {
 		let lexer = Lexer(source: statement)
 		var parser = Parser(lexer: lexer)

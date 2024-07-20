@@ -79,4 +79,43 @@ struct CompilerVisitorTests {
 
 		""")
 	}
+
+	@Test("Captures") func captures() throws {
+		let source = """
+		var i = 1
+		func foo() -> Int {
+			return i * 2
+		}
+		"""
+		let node = Parser.parse(file: .init(path: "captures", source: source))
+
+		print(node.description)
+
+		let bindings = Typer(ast: node).check()
+		for error in bindings.errors {
+			error.report(in: .init(path: "", source: """
+			var i = 1
+			func foo() -> Int {
+				return i * 2
+			}
+			"""))
+		}
+
+		let def = bindings.typedef(at: 16)
+		
+
+		let visitor = CompilerVisitor(bindings: bindings, builder: builder, module: module)
+		_ = visitor.visit(node, context: module)
+
+		let string = String(cString: LLVMPrintModuleToString(module.ref))
+
+		#expect(string == """
+		define i32 @foo(i32 %0) {
+		entry:
+			%1 = mul i32 %0, 2
+			ret i32 %1
+		}
+
+		""")
+	}
 }

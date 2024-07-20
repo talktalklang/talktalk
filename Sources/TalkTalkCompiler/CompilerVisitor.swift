@@ -13,6 +13,7 @@ class CompilerVisitor: ASTVisitor {
 	var builder: LLVM.Builder
 	var module: LLVM.Module
 	var currentFunction: LLVM.Function
+	var heapValues: [String: LLVM.HeapValue] = [:]
 
 	init(bindings: Bindings, builder: LLVM.Builder, module: LLVM.Module) {
 		self.bindings = bindings
@@ -60,6 +61,18 @@ class CompilerVisitor: ASTVisitor {
 		}
 	}
 
+	func resolveFunction(named name: String, in module: LLVM.Module) -> LLVM.Function? {
+		if let named = module.function(named: name) {
+			return named
+		}
+
+		if let captured = heapValues[name], let functionType = captured.type as? LLVM.FunctionType {
+			return LLVM.Function(type: functionType, ref: captured.ref)
+		}
+
+		return nil
+	}
+
 	// MARK: Visitors
 
 	func visit(_ node: ProgramSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
@@ -76,7 +89,8 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: FunctionDeclSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
-		let ret = bindings.type(for: node.name)?.type.returns?.value
+		let typedef = bindings.type(for: node.name)!
+		let ret = typedef.type.returns?.value
 		let returnType: any LLVM.IRType = map(ret!)
 
 		let parameters: [(String, any LLVM.IRType)] = node.parameters.parameters.reduce(into: []) { res, parameter in
@@ -97,8 +111,24 @@ class CompilerVisitor: ASTVisitor {
 		// TODO: validate we're not redeclaring the same function
 		let function = builder.addFunction(named: node.name.lexeme, functionType)!
 
+		for capture in typedef.environment!.captures {
+			let type = capture.value.value.llvmType(in: module.context, bindings: bindings)
+
+			// TODO: !! handle freeing this !!
+			// TODO: also check to see if it's already allocated
+			let ptr = LLVMBuildMalloc(
+				builder.ref,
+				type.ref,
+				capture.key
+			)!
+
+			heapValues[capture.key] = LLVM.HeapValue(ref: ptr, type: type)
+		}
+
+		//
 		let oldFunction = currentFunction
 		currentFunction = function
+
 		let entry = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
 		LLVMPositionBuilderAtEnd(builder.ref, entry)
 
@@ -112,11 +142,13 @@ class CompilerVisitor: ASTVisitor {
 		let block = LLVMGetLastBasicBlock(oldFunction.ref)
 		LLVMPositionBuilderAtEnd(builder.ref, block)
 
+		oldFunction.locals[node.name.lexeme] = .defined(function.ref)
 		return .value(function.ref)
 	}
 
 	func visit(_ node: VarDeclSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
-		let value = currentFunction.allocate(name: node.variable.lexeme, for: bindings.type(for: node)!, in: builder)
+		let type = bindings.type(for: node)!.llvmType(in: builder.module.context, bindings: bindings)
+		let value = currentFunction.allocate(name: node.variable.lexeme, for: type, in: builder)
 
 		currentFunction.locals[node.variable.lexeme] = .allocated(value)
 
@@ -244,11 +276,8 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: ReturnStmtSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
-		let ret: any LLVM.IRValue = visit(node.value, context: module).unwrap()
-
-		LLVMBuildRet(builder.ref, ret.ref)
-
-		return .value(ret)
+		let retVal: any LLVM.IRValue = visit(node.value, context: module).unwrap()
+		return .value(retVal)
 	}
 
 	func visit(_ node: GroupExpr, context module: LLVM.Module) -> LLVM.IRValueRef {
@@ -256,8 +285,9 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: CallExprSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
+		LLVMDumpModule(module.ref)
 		if let callee = node.callee.as(VariableExprSyntax.self) {
-			let fn = module.function(named: callee.name.lexeme)!
+			let fn = resolveFunction(named: callee.name.lexeme, in: module)!
 			var args: [LLVMValueRef?] = node.arguments.arguments.map {
 				switch visit($0, context: module) {
 				case let .value(value):
@@ -340,9 +370,15 @@ class CompilerVisitor: ASTVisitor {
 		let name = node.name
 
 		if case let .defined(val) = currentFunction.locals[name.lexeme] {
+			// See if we just have the value already defined
 			return .value(val)
 		} else if case let .allocated(value) = currentFunction.locals[name.lexeme] {
+			// See if it's a stack var
 			return .value(LLVMBuildLoad2(builder.ref, value.type.ref, value.ref, name.lexeme))
+		} else if let heapValue = heapValues[name.lexeme] {
+			// See if it's a heap var
+			let load = LLVMBuildLoad2(builder.ref, heapValue.type.ref, heapValue.ref, name.lexeme)!
+			return .value(load)
 		} else if currentFunction.parameters[name.lexeme] == .declared {
 			let paramIndex = currentFunction.type.parameters.firstIndex(where: { $0.0 == name.lexeme })!
 			return .value(LLVMGetParam(currentFunction.ref, UInt32(paramIndex)))
@@ -355,11 +391,18 @@ class CompilerVisitor: ASTVisitor {
 		switch node.lhs {
 		case let lhs as VariableExprSyntax:
 			let value: any LLVM.IRValue = visit(node.rhs, context: module).unwrap()
-			guard case let .allocated(val) = currentFunction.locals[lhs.name.lexeme] else {
-				fatalError("undefined variable: \(lhs.name.lexeme)")
+
+			if case let .allocated(val) = currentFunction.locals[lhs.name.lexeme] {
+				val.store(value, in: builder)
+				return .void()
 			}
 
-			val.store(value, in: builder)
+			if let heapValue = heapValues[lhs.name.lexeme] {
+				heapValue.store(value, in: builder)
+				return .void()
+			}
+
+			fatalError("undefined variable: \(lhs.name.lexeme)")
 		default:
 			fatalError("not yet")
 		}

@@ -10,12 +10,21 @@ public struct TypedValue {
 	public var definition: any Syntax
 	public var status: Status
 	@Boxed public var ref: TypedValue?
+	public var environment: CaptureEnvironment?
+	public var isEscaping: Bool = false
 
-	init(type: ValueType, definition: any Syntax, ref: TypedValue? = nil, status: Status) {
+	init(
+		type: ValueType,
+		definition: any Syntax,
+		ref: TypedValue? = nil,
+		status: Status,
+		environment: CaptureEnvironment? = nil
+	) {
 		self.type = type
 		self.definition = definition
 		self._ref = Boxed(value: ref)
 		self.status = status
+		self.environment = environment
 	}
 
 	public func assignable(from other: TypedValue) -> Bool {

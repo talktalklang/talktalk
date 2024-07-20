@@ -1,5 +1,7 @@
 public struct ASTFormatter: ASTVisitor {
-	public struct Context {}
+	public struct Context {
+		public init() { }
+	}
 
 	let root: any Syntax
 	var indent = 0
