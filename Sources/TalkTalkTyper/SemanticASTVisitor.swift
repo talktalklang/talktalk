@@ -52,7 +52,11 @@ public struct SemanticASTVisitor: ASTVisitor {
 		for parameter in node.parameters {
 			// Define the parameters into the scope of the function body. We don't know
 			// the types yet so they're unknown (TODO: type decls for fn params)
-			context.bind(name: parameter.lexeme, to: .unknown(syntax: parameter, scope: context))
+			context.bind(
+				name: parameter.lexeme,
+				to: .unknown(syntax: parameter, scope: context),
+				traits: [.initialized, .constant]
+			)
 		}
 
 		return .void(syntax: node, scope: context)
@@ -70,8 +74,29 @@ public struct SemanticASTVisitor: ASTVisitor {
 		.placeholder(context)
 	}
 	
-	public func visit(_ node: IfExprSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: IfExprSyntax, context scope: Scope) -> any SemanticNode {
+		let condition = visit(node.condition, context: scope)
+
+		if condition.type.description != "Bool" {
+			error(node.condition, "must be Bool")
+		}
+
+		let consesquence = visit(node.thenBlock, context: scope)
+		let alternative = visit(node.elseBlock, context: scope)
+
+		if !consesquence.type.assignable(from: alternative.type) {
+			error(node, "Both branches of an if expression must match")
+		}
+
+		// TODO: Check consequence and alternative agree, condition is bool
+		return IfExpression(
+			syntax: node,
+			scope: scope,
+			type: consesquence.type,
+			condition: condition,
+			consequence: consesquence,
+			alternative: alternative
+		)
 	}
 	
 	public func visit(_ node: ArrayLiteralSyntax, context: Scope) -> any SemanticNode {
@@ -99,8 +124,25 @@ public struct SemanticASTVisitor: ASTVisitor {
 		let lhs = visit(node.lhs, context: context)
 		let rhs = visit(node.rhs, context: context)
 
+		guard let binding = context.binding(for: lhs) else {
+			error(node.lhs, "Unknown variable")
+			return .unknown(syntax: node, scope: context)
+		}
+
+		if binding.isConstant, binding.isInitialized {
+			error(node.lhs, "Cannot reassign constant")
+		} else if !binding.isInitialized {
+			binding.node.type = lhs.type
+			binding.traits.insert(.initialized)
+			context.bind(
+				name: binding.name,
+				to: rhs,
+				traits: binding.traits
+			)
+		}
+
 		if lhs.type.assignable(from: rhs.type) {
-			return rhs
+			return lhs
 		}
 
 		error(node, "Cannot assign \(rhs) to \(lhs.type)")
@@ -211,7 +253,11 @@ public struct SemanticASTVisitor: ASTVisitor {
 		let function = handleFunction(node, scope: innerBinding)
 
 		// Bind the function by name to the enclosing scope
-		context.bind(name: node.name.lexeme, to: function)
+		context.bind(
+			name: node.name.lexeme,
+			to: function,
+			traits: [.constant, .initialized]
+		)
 
 		return function
 	}
@@ -267,21 +313,51 @@ public struct SemanticASTVisitor: ASTVisitor {
 		let typeDeclNode = handleTypeDecl(binding: binding) { node.typeDecl }
 
 		var type: any SemanticType = UnknownType()
-		if let expr = node.expr {
-			let exprNode = visit(expr, context: binding)
+		var traits: Set<Binding.Trait> = []
 
+		if let expr = node.expr,
+			 let exprNode = visit(expr, context: binding) as? any Expression {
 			// Check to see if there's a type decl. If it doesn't agree with
 			// the expr node, we're in trouble
 			if let typeDeclNode, !typeDeclNode.type.assignable(from: exprNode.type) {
 				error(node, "Cannot assign \(exprNode.type) to \(typeDeclNode.type)")
 			}
 
-			type = exprNode.type
-			binding.bind(name: name, to: exprNode)
-		} else {
-			binding.bind(name: name, to: .unknown(syntax: node, scope: binding))
-		}
+			traits.insert(.initialized)
 
-		return VarLetDeclaration(type: type, syntax: node, scope: binding)
+			if node is LetDeclSyntax {
+				traits.insert(.constant)
+			}
+
+			type = exprNode.type
+			binding.bind(
+				name: name,
+				to: exprNode,
+				traits: traits
+			)
+
+			return VarLetDeclaration(
+				type: type,
+				syntax: node,
+				scope: binding,
+				expression: exprNode
+			)
+		} else {
+			if node is LetDeclSyntax {
+				traits.insert(.constant)
+			}
+
+			binding.bind(
+				name: name,
+				to: typeDeclNode ?? .unknown(syntax: node, scope: binding),
+				traits: traits
+			)
+
+			return VarLetDeclaration(
+				type: type,
+				syntax: node,
+				scope: binding
+			)
+		}
 	}
 }

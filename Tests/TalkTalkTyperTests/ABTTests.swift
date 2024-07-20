@@ -45,6 +45,36 @@ struct ABTTests {
 		#expect(decl.scope.locals["foo"]!.type.description == "Int")
 	}
 
+	@Test("Cannot reassign a `let`") func letReassign() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		let foo = 123
+		foo = 456
+		""")).visit()
+
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].message.contains("Cannot reassign"))
+	}
+
+	@Test("Can assign a let before it's been assigned") func letAssign() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		let foo
+		foo = 456
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+		#expect(abt.scope.locals["foo"]?.type.description == "Int")
+	}
+
+	@Test("Can reassign a var") func varReassign() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		var foo = 123
+		foo = 456
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+		#expect(abt.scope.locals["foo"]?.type.description == "Int")
+	}
+
 	@Test("Binds String with var") func varInt() {
 		let abt = SemanticASTVisitor(ast: ast("""
 		var foo = 123
@@ -147,5 +177,49 @@ struct ABTTests {
 		#expect(decl.scope.depth == 1)
 
 		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
+	}
+
+	@Test("If expression") func ifExpr() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		var a = if false {
+			123
+		} else {
+			456
+		}
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+		
+		#expect(abt.scope.locals["a"]?.type.description == "Int")
+
+		let decl = abt.cast(Program.self).declarations[0].cast(VarLetDeclaration.self)
+		let expression = decl.expression!.cast(IfExpression.self)
+		#expect(expression.type.description == "Int")
+	}
+
+	@Test("If expression with unmatched branches") func ifExprUnmatching() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		var a = if false {
+			123
+		} else {
+			"sup"
+		}
+		""")).visit()
+
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].message.contains("must match"))
+	}
+
+	@Test("If expression w/out boolean condition") func ifExprNonBool() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		var a = if "yo" {
+			123
+		} else {
+			4567
+		}
+		""")).visit()
+
+		#expect(!abt.scope.errors.isEmpty)
+		#expect(abt.scope.errors[0].message.contains("must be Bool"))
 	}
 }

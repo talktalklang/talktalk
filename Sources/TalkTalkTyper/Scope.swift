@@ -17,15 +17,31 @@ public struct Environment {
 }
 
 public class Binding {
+	public enum Trait {
+		case initialized, constant
+	}
+
+	public var name: String
 	public var node: any SemanticNode
+	public var traits: Set<Trait> = []
 	public var inferedTypeFrom: (any SemanticNode)?
 
-	init(node: any SemanticNode) {
+	init(name: String, node: any SemanticNode, traits: Set<Trait> = []) {
+		self.name = name
 		self.node = node
+		self.traits = traits
 	}
 
 	public var type: any SemanticType {
 		inferedTypeFrom?.type ?? node.type
+	}
+
+	public var isInitialized: Bool {
+		traits.contains(.initialized)
+	}
+
+	public var isConstant: Bool {
+		traits.contains(.constant)
 	}
 }
 
@@ -80,8 +96,22 @@ public class Scope {
 		}
 	}
 
-	public func bind(name: String, to node: any SemanticNode) {
-		locals[name] = .init(node: node)
+	public func binding(for node: any SemanticNode) -> Binding? {
+		for local in locals.values {
+			if local.node.is(node) {
+				return local
+			}
+		}
+
+		return parent?.binding(for: node)
+	}
+
+	public func bind(
+		name: String,
+		to node: any SemanticNode,
+		traits: Set<Binding.Trait>
+	) {
+		locals[name] = Binding(name: name, node: node, traits: traits)
 	}
 
 	func append(child: Scope) {

@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct Literal: SemanticNode {
+public struct Literal: SemanticNode, Expression {
 	public var syntax: any Syntax
 	public var scope: Scope
 	public var type: any SemanticType
