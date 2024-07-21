@@ -29,7 +29,7 @@ public struct FunctionType: SemanticType {
 }
 
 public struct Function: SemanticNode, Declaration {
-	public var syntax: any Decl
+	public var syntax: any Syntax
 	public var scope: Scope
 	public var prototype: FunctionType
 

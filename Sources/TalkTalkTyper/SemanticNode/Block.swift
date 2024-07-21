@@ -9,6 +9,6 @@ import TalkTalkSyntax
 
 public struct Block: SemanticNode {
 	public var scope: Scope
-	public var syntax: BlockStmtSyntax
+	public var syntax: any Syntax
 	public var type: any SemanticType
 }

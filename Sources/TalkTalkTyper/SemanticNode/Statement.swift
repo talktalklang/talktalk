@@ -9,6 +9,6 @@ import TalkTalkSyntax
 
 public struct SemanticStatement: SemanticNode {
 	public var scope: Scope
-	public let syntax: any Stmt
+	public let syntax: any Syntax
 	public var type: any SemanticType = VoidType()
 }

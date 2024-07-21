@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct TypeDeclaration: Declaration {
-	public var syntax: any Decl
+	public var syntax: any Syntax
 	public var type: any SemanticType
 	public var scope: Scope
 }

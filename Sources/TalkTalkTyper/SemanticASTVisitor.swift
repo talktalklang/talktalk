@@ -44,8 +44,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 		return TypeDeclaration(syntax: node, type: type, scope: context)
 	}
 
-	public func visit(_: ErrorSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: ErrorSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
 	public func visit(_ node: ParameterListSyntax, context: Scope) -> any SemanticNode {
@@ -62,16 +62,27 @@ public struct SemanticASTVisitor: ASTVisitor {
 		return .void(syntax: node, scope: context)
 	}
 
-	public func visit(_: ArgumentListSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: ArgumentListSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: BinaryOperatorSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: BinaryOperatorSyntax, context: Scope) -> any SemanticNode {
+		let operandTypes: [any SemanticType] = switch node.kind {
+		case .andAnd, .pipePipe:
+			[.bool]
+		default:
+			[.int]
+		}
+
+		return OperatorNode(
+			syntax: node,
+			scope: context,
+			allowedOperandTypes: operandTypes
+		)
 	}
 
-	public func visit(_: UnaryOperator, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: UnaryOperator, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
 	public func visit(_ node: IfExprSyntax, context scope: Scope) -> any SemanticNode {
@@ -99,12 +110,12 @@ public struct SemanticASTVisitor: ASTVisitor {
 		)
 	}
 
-	public func visit(_: ArrayLiteralSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: ArrayLiteralSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: PropertyAccessExpr, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: PropertyAccessExpr, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
 	public func visit(_ node: LiteralExprSyntax, context: Scope) -> any SemanticNode {
@@ -165,40 +176,61 @@ public struct SemanticASTVisitor: ASTVisitor {
 		Literal(syntax: node, scope: context, type: .int)
 	}
 
-	public func visit(_: IdentifierSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: IdentifierSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: BinaryExprSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: BinaryExprSyntax, context scope: Scope) -> any SemanticNode {
+		let rawLHS = visit(node.lhs, context: scope)
+		let rawRHS = visit(node.rhs, context: scope)
+		let op = visit(node.op, context: scope) as! OperatorNode
+
+		let (lhs, rhs) = inferTypes(
+			for: (rawLHS, rawRHS),
+			in: scope,
+			allowed: op.allowedOperandTypes
+		)
+
+		if !checkTypeAgreement(of: lhs, rhs) {
+			error(node, "Binary expression types must match")
+		}
+
+		return BinaryOpExpression(
+			scope: scope,
+			syntax: node,
+			type: lhs.type,
+			lhs: lhs as! Expression,
+			rhs: rhs as! Expression,
+			op: op
+		)
 	}
 
-	public func visit(_: UnaryExprSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: UnaryExprSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: CallExprSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: CallExprSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
 	public func visit(_ node: GroupExpr, context: Scope) -> any SemanticNode {
 		visit(node.expr, context: context)
 	}
 
-	public func visit(_: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: WhileStmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: WhileStmtSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: StmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: StmtSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: IfStmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: IfStmtSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
 	public func visit(_ node: BlockStmtSyntax, context scope: Scope) -> any SemanticNode {
@@ -225,16 +257,16 @@ public struct SemanticASTVisitor: ASTVisitor {
 		visit(node.expr, context: context)
 	}
 
-	public func visit(_: PropertyDeclSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: PropertyDeclSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: InitDeclSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: InitDeclSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
-	public func visit(_: ClassDeclSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(context)
+	public func visit(_ node: ClassDeclSyntax, context: Scope) -> any SemanticNode {
+		.placeholder(node, context)
 	}
 
 	public func visit(_ node: LetDeclSyntax, context binding: Scope) -> any SemanticNode {
@@ -263,8 +295,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: ProgramSyntax, context scope: Scope) -> any SemanticNode {
-		let declarations = node.decls.compactMap {
-			visit($0, context: scope) as? any Declaration
+		let declarations = node.decls.map {
+			visit($0, context: scope)
 		}
 
 		return Program(syntax: node, scope: scope, declarations: declarations)
@@ -360,5 +392,49 @@ public struct SemanticASTVisitor: ASTVisitor {
 				scope: binding
 			)
 		}
+	}
+
+	// TODO: maybe use variadic generics here?
+	func inferTypes(
+		for tuple: (any SemanticNode, any SemanticNode),
+		in scope: Scope,
+		allowed: [any SemanticType]
+	) -> (any SemanticNode, any SemanticNode) {
+		var known: (any SemanticNode)?
+		var nodes = [tuple.0, tuple.1]
+
+		// Do a couple passes
+		for _ in 0..<2 {
+			for (i, node) in nodes.enumerated() {
+				// Set the first known type
+				if known == nil, node.type.isKnown {
+					known = node
+				}
+
+				if let known, !allowed.contains(where: { $0.description == known.type.description }) {
+					error(node.syntax, "type not allowed, allowed types: \(allowed.map(\.description))")
+				}
+
+				if !node.type.isKnown, let known {
+					var node = node
+					scope.inferType(for: &node, from: known)
+					nodes[i] = node
+				}
+			}
+		}
+
+		return (nodes[0], nodes[1])
+	}
+
+	func checkTypeAgreement(of nodes: (any SemanticNode)...) -> Bool {
+		let known = nodes[0].type
+
+		for i in 1..<nodes.count {
+			if !known.assignable(from: nodes[i].type) {
+				return false
+			}
+		}
+
+		return true
 	}
 }

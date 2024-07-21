@@ -9,6 +9,7 @@ import TalkTalkSyntax
 
 public protocol SemanticType: Hashable {
 	var description: String { get }
+	var isKnown: Bool { get }
 	func assignable(from other: any SemanticType) -> Bool
 }
 
@@ -16,13 +17,15 @@ public extension SemanticType {
 	static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
+
+	var isKnown: Bool {
+		true
+	}
 }
 
-public protocol SemanticNode<Node> {
-	associatedtype Node
-
+public protocol SemanticNode {
 	var scope: Scope { get }
-	var syntax: Node { get }
+	var syntax: any Syntax { get }
 	var type: any SemanticType { get set }
 }
 
@@ -40,13 +43,16 @@ public extension SemanticNode {
 
 public struct SemanticPlaceholder: SemanticNode {
 	public var scope: Scope
-	public var syntax = ""
+	public var syntax: any Syntax
 	public var type: any SemanticType = UnknownType()
 }
 
 public extension SemanticNode where Self == SemanticPlaceholder {
 	@available(*, deprecated, message: "WIP")
-	static func placeholder(_ scope: Scope) -> SemanticPlaceholder {
-		SemanticPlaceholder(scope: scope)
+	static func placeholder<T: Syntax>(
+		_ syntax: T,
+		_ scope: Scope
+	) -> SemanticPlaceholder {
+		SemanticPlaceholder(scope: scope, syntax: syntax)
 	}
 }

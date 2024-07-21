@@ -11,6 +11,10 @@ public struct UnknownType: SemanticType {
 	public func assignable(from _: any SemanticType) -> Bool {
 		true
 	}
+
+	public var isKnown: Bool {
+		false
+	}
 }
 
 public extension SemanticType where Self == UnknownType {

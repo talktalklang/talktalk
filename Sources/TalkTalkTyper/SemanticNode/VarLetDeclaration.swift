@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct VarLetDeclaration: Declaration {
 	public var type: any SemanticType
-	public var syntax: any Decl
+	public var syntax: any Syntax
 	public var scope: Scope
 	public var expression: (any Expression)?
 

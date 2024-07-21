@@ -7,30 +7,30 @@
 import TalkTalkCompiler
 import Testing
 
-struct CompilerTests {
+struct ASTWalkerCompilerTests {
 	@Test("Can compile add") func basic() throws {
-		let compiler = Compiler(filename: "compiler", source: "1 + 2")
+		let compiler = ASTCompiler(filename: "compiler", source: "1 + 2")
 		let module = try compiler.compile()
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == 3)
 	}
 
 	@Test("Can compile subtract") func subtract() throws {
-		let compiler = Compiler(filename: "compiler", source: "1 - 2")
+		let compiler = ASTCompiler(filename: "compiler", source: "1 - 2")
 		let module = try compiler.compile()
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == -1)
 	}
 
 	@Test("Can compile mult") func mult() throws {
-		let compiler = Compiler(filename: "compiler", source: "2 * -3")
+		let compiler = ASTCompiler(filename: "compiler", source: "2 * -3")
 		let module = try compiler.compile()
 		let result = LLVM.JIT().execute(module: module)
 		#expect(result == -6)
 	}
 
 	@Test("Can compile lets") func lets() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		let foo = 2 + 3
 		foo - 1
 		""")
@@ -40,7 +40,7 @@ struct CompilerTests {
 	}
 
 	@Test("Can compile functions") func funcs() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		func foo(i) {
 			return i * 2
 		}
@@ -53,7 +53,7 @@ struct CompilerTests {
 	}
 
 	@Test("Can compile conditionals") func conds() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		func foo() {
 			if false {
 				return 123
@@ -71,7 +71,7 @@ struct CompilerTests {
 	}
 
 	@Test("Can compile if exprs") func ifExpr() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		let val = if true {
 			123
 		} else {
@@ -87,7 +87,7 @@ struct CompilerTests {
 	}
 
 	@Test("Can compile variables") func vars() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		var i = 1
 		i = 1 + i
 		i = 1 + i
@@ -100,7 +100,7 @@ struct CompilerTests {
 	}
 
 	@Test("Can compile while loop") func whileLoop() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		var i = 0
 		while i < 5 {
 			i = i + 1
@@ -115,7 +115,7 @@ struct CompilerTests {
 	}
 
 	@Test("can compile with proper scopes") func scopes() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		var i = 123
 
 		func foo() {
@@ -132,7 +132,7 @@ struct CompilerTests {
 	}
 
 	@Test("can compile fib") func fib() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		func fib(n) {
 			if n <= 1 { return n }
 			return fib(n - 2) + fib(n - 1)
@@ -154,7 +154,7 @@ struct CompilerTests {
 	}
 
 	@Test("can compile fib (optimized)") func fibO() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		func fib(n) {
 			if n <= 1 { return n }
 			return fib(n - 2) + fib(n - 1)
@@ -176,7 +176,7 @@ struct CompilerTests {
 	}
 
 	@Test("can compile closures") func closures() throws {
-		let compiler = Compiler(filename: "compiler", source: """
+		let compiler = ASTCompiler(filename: "compiler", source: """
 		// Test closures
 		func makeCounter() {
 			var i = 0

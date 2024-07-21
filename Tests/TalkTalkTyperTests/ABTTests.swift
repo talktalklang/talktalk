@@ -222,4 +222,42 @@ struct ABTTests {
 		#expect(!abt.scope.errors.isEmpty)
 		#expect(abt.scope.errors[0].message.contains("must be Bool"))
 	}
+
+	@Test("Int binary expressions") func intbinary() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		1 + 1
+		""")).visit().cast(Program.self).declarations[0].cast(BinaryOpExpression.self)
+
+		#expect(abt.type.description == "Int")
+		#expect(abt.lhs.type.description == "Int")
+		#expect(abt.rhs.type.description == "Int")
+	}
+
+	@Test("Errors on binary type mismatch") func binarytypeMismatch() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		1 + "sup"
+		""")).visit()
+
+		#expect(abt.scope.errors[0].message.contains("must match"))
+	}
+
+	@Test("Infers types from binary ops") func binarytypeInfer() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func foo(i) {
+			i * 2
+		}
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+		#expect(abt.scope.locals["i"] == nil)
+
+		let decl = abt.cast(Program.self).declarations[0]
+
+		let varI = decl.scope.locals["i"]!
+		#expect(varI.inferedTypeFrom != nil)
+		#expect(varI.type.description == "Int")
+		#expect(decl.scope.depth == 1)
+
+		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
+	}
 }

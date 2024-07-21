@@ -84,7 +84,10 @@ public class Scope {
 		return nil
 	}
 
-	public func inferType(for node: inout any SemanticNode, from inferedType: any SemanticNode) {
+	public func inferType(
+		for node: inout any SemanticNode,
+		from inferedType: any SemanticNode
+	) {
 		node.type = inferedType.type
 
 		for local in locals.values {

@@ -9,6 +9,6 @@ import TalkTalkSyntax
 
 public protocol Declaration: SemanticNode {
 	var type: any SemanticType { get set }
-	var syntax: any Decl { get }
+	var syntax: any Syntax { get }
 	var scope: Scope { get }
 }

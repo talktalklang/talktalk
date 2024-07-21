@@ -8,8 +8,8 @@
 import TalkTalkSyntax
 
 public struct Program: SemanticNode {
-	public var syntax: ProgramSyntax
+	public var syntax: any Syntax
 	public var scope: Scope
-	public var declarations: [any Declaration]
+	public var declarations: [any SemanticNode]
 	public var type: any SemanticType = VoidType()
 }
