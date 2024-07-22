@@ -13,7 +13,7 @@ public struct VoidNode: SemanticNode {
 	public var type: any SemanticType = .void
 }
 
-extension SemanticNode where Self == VoidNode {
+public extension SemanticNode where Self == VoidNode {
 	static func void(syntax: any Syntax, scope: Scope) -> VoidNode {
 		VoidNode(syntax: syntax, scope: scope)
 	}

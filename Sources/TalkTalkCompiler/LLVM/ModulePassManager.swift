@@ -26,8 +26,7 @@ extension LLVM {
 			LLVMGetTargetFromTriple(tripleRef, &targetRef, &targetErr)
 
 			if let targetErr {
-				print(String(cString: targetErr))
-				abort()
+				fatalError(String(cString: targetErr))
 			}
 
 			let cpu = LLVMGetHostCPUName()

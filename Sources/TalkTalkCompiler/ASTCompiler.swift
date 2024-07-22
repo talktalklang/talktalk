@@ -51,8 +51,7 @@ public struct ASTCompiler {
 
 		if let message, String(cString: message) != "" {
 			defer { LLVMDisposeMessage(message) }
-			print("Error compiling: \(String(cString: message))")
-			exit(1)
+			fatalError("Error compiling: \(String(cString: message))")
 		}
 
 		if optimize {

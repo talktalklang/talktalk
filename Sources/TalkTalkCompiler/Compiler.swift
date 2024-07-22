@@ -1,6 +1,6 @@
 //
 //  Compiler.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/21/24.
 //
@@ -13,6 +13,4 @@ public class Compiler {
 	public init(root: any SemanticNode) {
 		self.root = root
 	}
-
-
 }
