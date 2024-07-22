@@ -259,5 +259,9 @@ struct ABTTests {
 		#expect(decl.scope.depth == 1)
 
 		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
+
+		let children = decl.cast(Function.self).body.children
+		#expect(children.count == 1)
+		#expect(children[0].type.description == "Int")
 	}
 }

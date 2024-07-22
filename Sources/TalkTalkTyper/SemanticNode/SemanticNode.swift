@@ -27,6 +27,7 @@ public protocol SemanticNode {
 	var scope: Scope { get }
 	var syntax: any Syntax { get }
 	var type: any SemanticType { get set }
+	func accept<V: ABTVisitor>(_ visitor: V) -> V.Value
 }
 
 public extension SemanticNode {
@@ -35,24 +36,27 @@ public extension SemanticNode {
 	}
 
 	func `is`(_ other: any SemanticNode) -> Bool {
-		let selfSyntax = syntax as! any Syntax
-		let otherSyntax = other.syntax as! any Syntax
+		let selfSyntax = syntax
+		let otherSyntax = other.syntax
 		return selfSyntax.hashValue == otherSyntax.hashValue
 	}
 }
 
-public struct SemanticPlaceholder: SemanticNode {
+public struct TODONode: SemanticNode {
 	public var scope: Scope
 	public var syntax: any Syntax
 	public var type: any SemanticType = UnknownType()
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }
 
-public extension SemanticNode where Self == SemanticPlaceholder {
+public extension SemanticNode where Self == TODONode {
 	@available(*, deprecated, message: "WIP")
-	static func placeholder<T: Syntax>(
+	static func todo<T: Syntax>(
 		_ syntax: T,
 		_ scope: Scope
-	) -> SemanticPlaceholder {
-		SemanticPlaceholder(scope: scope, syntax: syntax)
+	) -> TODONode {
+		TODONode(scope: scope, syntax: syntax)
 	}
 }

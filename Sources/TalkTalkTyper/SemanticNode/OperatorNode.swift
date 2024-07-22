@@ -12,4 +12,8 @@ public struct OperatorNode: SemanticNode, Expression {
 	public var scope: Scope
 	public var type: any SemanticType = OperatorType()
 	public var allowedOperandTypes: [any SemanticType]
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }

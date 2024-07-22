@@ -6,11 +6,26 @@
 //
 
 import TalkTalkTyper
+import TalkTalkSyntax
+import C_LLVM
 
 public class Compiler {
-	let root: any SemanticNode
+	let sourceFile: SourceFile
+	let pipeline: Compiler.Pipeline
+	let module: LLVM.Module
 
-	public init(root: any SemanticNode) {
-		self.root = root
+	public init(sourceFile: SourceFile) {
+		self.sourceFile = sourceFile
+		self.module = LLVM.Module(name: "main", in: .global)
+		self.pipeline = Pipeline(sourceFile: sourceFile)
+	}
+
+	public func compile() -> LLVM.Module {
+		LLVMInitializeNativeTarget()
+		LLVMInitializeNativeAsmParser()
+		LLVMInitializeNativeAsmPrinter()
+
+		pipeline.process(module)
+		return module
 	}
 }

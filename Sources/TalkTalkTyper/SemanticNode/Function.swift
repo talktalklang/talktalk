@@ -32,6 +32,7 @@ public struct Function: SemanticNode, Declaration {
 	public var syntax: any Syntax
 	public var scope: Scope
 	public var prototype: FunctionType
+	public var body: Block
 
 	public var type: any SemanticType {
 		get {
@@ -41,5 +42,9 @@ public struct Function: SemanticNode, Declaration {
 		set {
 			prototype = newValue as! FunctionType
 		}
+	}
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
 	}
 }

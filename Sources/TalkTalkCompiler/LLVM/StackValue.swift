@@ -28,5 +28,9 @@ extension LLVM {
 		func hash(into hasher: inout Hasher) {
 			hasher.combine(ref)
 		}
+
+		func asLLVM<T>() -> T {
+			ref as! T
+		}
 	}
 }

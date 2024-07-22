@@ -15,4 +15,8 @@ public struct IfExpression: Expression {
 	public var condition: any SemanticNode
 	public var consequence: any SemanticNode
 	public var alternative: any SemanticNode
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }

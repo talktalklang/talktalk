@@ -21,10 +21,14 @@ extension LLVM {
 		func hash(into hasher: inout Hasher) {
 			hasher.combine(0)
 		}
+
+		func asLLVM<T>() -> T {
+			ref as! T
+		}
 	}
 }
 
-extension LLVM.IRType where Self == LLVM.VoidType {
+extension LLVM.IR where Self == LLVM.VoidType {
 	static func void(_ context: LLVM.Context = .global) -> any LLVM.IRType {
 		LLVM.VoidType(context: context)
 	}

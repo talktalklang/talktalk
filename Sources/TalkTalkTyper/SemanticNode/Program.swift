@@ -12,4 +12,8 @@ public struct Program: SemanticNode {
 	public var scope: Scope
 	public var declarations: [any SemanticNode]
 	public var type: any SemanticType = VoidType()
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }

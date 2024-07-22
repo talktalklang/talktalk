@@ -55,5 +55,9 @@ extension LLVM {
 				self.ref = ref
 			}
 		}
+
+		func asLLVM<T>() -> T {
+			ref as! T
+		}
 	}
 }

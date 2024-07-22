@@ -22,6 +22,10 @@ extension LLVM {
 			self.ref = LLVMIntTypeInContext(context.ref, UInt32(width))
 		}
 
+		func asLLVM<T>() -> T {
+			ref as! T
+		}
+
 		func constant(_ int: Int) -> IntValue {
 			let constRef = LLVMConstInt(ref, UInt64(bitPattern: Int64(int)), 1)!
 			return IntValue(ref: constRef)
@@ -44,13 +48,17 @@ extension LLVM {
 			self.ref = ref
 		}
 
+		func asLLVM<T>() -> T {
+			ref as! T
+		}
+
 		func hash(into hasher: inout Hasher) {
 			hasher.combine(ref)
 		}
 	}
 }
 
-extension LLVM.IRType where Self == LLVM.IntType {
+extension LLVM.IR where Self == LLVM.IntType {
 	static func i1(_ context: LLVM.Context = .global) -> LLVM.IntType {
 		LLVM.IntType(width: 1, context: context)
 	}

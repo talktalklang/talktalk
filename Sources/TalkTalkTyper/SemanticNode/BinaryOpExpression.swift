@@ -15,4 +15,8 @@ public struct BinaryOpExpression: SemanticNode {
 	public var lhs: any Expression
 	public var rhs: any Expression
 	public var op: OperatorNode
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }

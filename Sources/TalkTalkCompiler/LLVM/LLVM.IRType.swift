@@ -7,7 +7,13 @@
 import C_LLVM
 
 extension LLVM {
-	protocol IRType: Hashable {
+	protocol IRType: IR, Hashable {
 		var ref: LLVMTypeRef { get }
+	}
+}
+
+extension LLVMOpcode: LLVM.IR {
+	public func asLLVM<T>() -> T {
+		self as! T
 	}
 }

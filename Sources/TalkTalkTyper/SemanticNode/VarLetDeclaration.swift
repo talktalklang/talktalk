@@ -16,4 +16,8 @@ public struct VarLetDeclaration: Declaration {
 	// If a variable is used as a return then we can try to update
 	// it using return type info we might have
 	public var isUsedAsReturn: Bool = false
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }

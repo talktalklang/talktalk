@@ -7,10 +7,8 @@
 
 import TalkTalkSyntax
 
-public protocol Value {}
-
 public struct Environment {
-	var captures: [String: any Value] = [:]
+	var captures: [String: any SemanticNode] = [:]
 	public init() {}
 }
 

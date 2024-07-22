@@ -16,14 +16,14 @@ public struct SemanticError {
 // tree that contains info about types and closures and scopes and whatnot
 public struct SemanticASTVisitor: ASTVisitor {
 	public let rootScope = Scope()
-	let ast: any Syntax
+	let ast: ProgramSyntax
 
-	public init(ast: some Syntax) {
+	public init(ast: ProgramSyntax) {
 		self.ast = ast
 	}
 
-	public func visit() -> any SemanticNode {
-		ast.accept(self, context: rootScope)
+	public func visit() -> Program {
+		ast.accept(self, context: rootScope).cast(Program.self)
 	}
 
 	func error(_ syntax: any Syntax, _ message: String) {
@@ -45,7 +45,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: ErrorSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: ParameterListSyntax, context: Scope) -> any SemanticNode {
@@ -63,7 +63,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: ArgumentListSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: BinaryOperatorSyntax, context: Scope) -> any SemanticNode {
@@ -82,7 +82,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: UnaryOperator, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: IfExprSyntax, context scope: Scope) -> any SemanticNode {
@@ -111,11 +111,11 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: ArrayLiteralSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: PropertyAccessExpr, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: LiteralExprSyntax, context: Scope) -> any SemanticNode {
@@ -177,7 +177,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: IdentifierSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: BinaryExprSyntax, context scope: Scope) -> any SemanticNode {
@@ -206,11 +206,11 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: UnaryExprSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: CallExprSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: GroupExpr, context: Scope) -> any SemanticNode {
@@ -218,39 +218,45 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: WhileStmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: StmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: IfStmtSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: BlockStmtSyntax, context scope: Scope) -> any SemanticNode {
 		// Currently just use the last return value as the implicit return of the block.
 		// Eventually it might be nice to require a `return` if there is more than one
 		// decl in the block.
-		var lastReturn: (any SemanticNode)?
+		var decls: [any SemanticNode] = []
 
 		for decl in node.decls {
-			lastReturn = visit(decl, context: scope)
+			decls.append(visit(decl, context: scope))
 		}
 
-		if var lastReturn, lastReturn.type.description == "Unknown",
+		if var lastReturn = decls.last,
+			 lastReturn.type.description == "Unknown",
 		   let expectedReturnVia = scope.expectedReturnVia
 		{
 			scope.inferType(for: &lastReturn, from: expectedReturnVia)
-			return lastReturn
+			decls[decls.count-1] = lastReturn
 		}
 
-		return lastReturn ?? .void(syntax: node, scope: scope)
+		return Block(
+			scope: scope,
+			syntax: node,
+			type: decls.last?.type ?? .void,
+			children: decls
+		)
 	}
 
 	public func visit(_ node: ExprStmtSyntax, context: Scope) -> any SemanticNode {
@@ -258,15 +264,15 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: PropertyDeclSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: InitDeclSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: ClassDeclSyntax, context: Scope) -> any SemanticNode {
-		.placeholder(node, context)
+		.todo(node, context)
 	}
 
 	public func visit(_ node: LetDeclSyntax, context binding: Scope) -> any SemanticNode {
@@ -307,6 +313,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	func handleFunction(_ node: FunctionDeclSyntax, scope: Scope) -> any SemanticNode {
 		let typeDeclNode = handleTypeDecl(binding: scope) { node.typeDecl }
 
+		// Set the scope's expected return value if we have a type decl
 		if let type = typeDeclNode?.type {
 			scope.expectedReturnVia = typeDeclNode
 		}
@@ -328,9 +335,15 @@ public struct SemanticASTVisitor: ASTVisitor {
 			returns: body.type
 		)
 
-		return Function(syntax: node, scope: scope, prototype: functionType)
+		return Function(
+			syntax: node,
+			scope: scope,
+			prototype: functionType,
+			body: body.cast(Block.self)
+		)
 	}
 
+	// Lets us not have this lil conditional check sprinkled everywhere
 	func handleTypeDecl(binding: Scope, _ block: () -> TypeDeclSyntax?) -> (any SemanticNode)? {
 		if let typeDecl = block() {
 			return visit(typeDecl, context: binding)
@@ -339,6 +352,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 		}
 	}
 
+	// The logic for these is basically the same except whether or not
+	// they have `constant` set.
 	func handleVarLet(_ node: any VarLetDecl, binding: Scope) -> any SemanticNode {
 		let name = node.variable.lexeme
 

@@ -47,7 +47,7 @@ extension LLVM {
 		}
 	}
 
-	protocol IRValue: Hashable, Equatable {
+	protocol IRValue: IR, Hashable, Equatable {
 		var ref: LLVMValueRef { get }
 	}
 }
@@ -55,6 +55,10 @@ extension LLVM {
 extension LLVMValueRef: LLVM.IRValue {
 	var ref: LLVMValueRef {
 		self
+	}
+
+	public func asLLVM<T>() -> T {
+		self as! T
 	}
 
 	var optional: LLVMValueRef? {

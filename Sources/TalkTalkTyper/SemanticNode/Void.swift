@@ -11,6 +11,10 @@ public struct VoidNode: SemanticNode {
 	public var syntax: any Syntax
 	public var scope: Scope
 	public var type: any SemanticType = .void
+
+	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
+		visitor.visit(self)
+	}
 }
 
 public extension SemanticNode where Self == VoidNode {
