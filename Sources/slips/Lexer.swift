@@ -1,6 +1,6 @@
 //
 //  Lexer.swift
-//  
+//
 //
 //  Created by Pat Nakajima on 7/22/24.
 //
@@ -37,13 +37,13 @@ public struct Lexer {
 	}
 
 	mutating public func next() -> Token {
-		start = current
-
 		if isAtEnd {
 			return make(.eof)
 		}
 
 		skipWhitespace()
+
+		start = current
 
 		let char = advance()
 		return switch char {
@@ -121,8 +121,8 @@ public struct Lexer {
 	// MARK: Helpers
 
 	mutating func skipWhitespace() {
-		if peek().isWhitespace {
-			while advance().isWhitespace, !isAtEnd {}
+		while peek().isWhitespace, !isAtEnd {
+			advance()
 		}
 	}
 
@@ -138,15 +138,20 @@ public struct Lexer {
 		return source[current]
 	}
 
-	func make(_ kind: Token.Kind) -> Token {
-		Token(kind: kind, start: start, length: current - start, lexeme: String(source[start..<current]))
+	mutating func make(_ kind: Token.Kind) -> Token {
+		Token(
+			kind: kind,
+			start: start,
+			length: current - start,
+			lexeme: String(source[start..<current])
+		)
 	}
 
 	var isAtEnd: Bool {
 		source.count == current
 	}
 
-	func error(_ message: String) -> Token {
+	mutating func error(_ message: String) -> Token {
 		print(message)
 		return make(.error)
 	}
