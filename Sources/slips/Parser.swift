@@ -8,60 +8,125 @@
 public struct Parser {
 	var lexer: Lexer
 	var current: Token
+	var previous: Token!
 	public var errors: [(Token, String)] = []
 
 	public init(_ lexer: Lexer) {
 		var lexer = lexer
-		self.current = lexer.next()
+		self.previous = lexer.next()
+		self.current = previous
 		self.lexer = lexer
 	}
 
-	public mutating func parse() -> Expr {
-		if match(.leftParen) {
+	public mutating func parse() -> [Expr] {
+		var results: [Expr] = []
+		while current.kind != .eof {
+			results.append(expr())
+		}
+		return results
+	}
+
+	mutating func expr() -> Expr {
+		if match(.int) {
+			let int = Int(previous.lexeme)!
+			return LiteralExpr(value: .int(int))
+		} else if match(.string) {
+			let str = String(previous.lexeme.dropFirst().dropLast())
+			return LiteralExpr(value: .string(str))
+		} else if match(.identifier) {
+			return VarExpr(token: previous)
+		} else if match(.true) {
+			return LiteralExpr(value: .bool(true))
+		} else if match(.false) {
+			return LiteralExpr(value: .bool(false))
+		} else if match(.leftParen) {
 			return expression()
-		} else if match(.def) {
-			return defExpr()
-		} else if check(.int) {
-			let int = consume(.int)!
-			return LiteralExpr(value: Int(int.lexeme)!)
 		} else {
-			error(at: current, "Unexpected token: \(current)")
-			return ErrorExpr()
+			advance()
+			return error(at: previous, "Unexpected token: \(previous!)")
 		}
 	}
 
 	mutating func defExpr() -> Expr {
 		guard let name = consume(.identifier) else {
-			error(at: current, "Expected identifier")
-			return ErrorExpr()
+			return error(at: current, "Expected identifier")
 		}
 
-		let expr = parse()
+		let expr = expr()
+
+		_ = consume(.rightParen)
 
 		return DefExpr(name: name, expr: expr)
 	}
 
 	mutating func expression() -> Expr {
-		var symbol: Symbol
-		if let token = consume(.symbol) {
-			symbol = Symbol(token: token)
-		} else {
-			print("No symbol, got \(current) instead")
-			return ErrorExpr()
+		print("expression() , current -> \(current)")
+
+		if match(.def) {
+			return defExpr()
 		}
 
+		if match(.identifier) {
+			return callExpr()
+		}
+
+		if match(.if) {
+			return ifExpr()
+		}
+
+		if match(.plus) {
+			return addExpr()
+		}
+
+		let expr = expr()
+
+		_ = consume(.rightParen)
+
+		return expr
+	}
+
+	mutating func addExpr() -> Expr {
 		var operands: [Expr] = []
+
 		while !check(.rightParen), !check(.eof) {
-			operands.append(parse())
+			operands.append(expr())
 		}
 
 		_ = consume(.rightParen)
 
-		return VariadicExpr(op: symbol, operands: operands)
+		return AddExpr(operands: operands)
+	}
+
+	mutating func callExpr() -> Expr {
+		let op = previous!
+		var operands: [Expr] = []
+
+		while !check(.rightParen), !check(.eof) {
+			operands.append(expr())
+		}
+
+		_ = consume(.rightParen)
+
+		return CallExpr(op: op, args: operands)
+	}
+
+	mutating func ifExpr() -> Expr {
+		let condition = expr()
+		let consequence = expr()
+		let alternative = expr()
+
+		_ = consume(.rightParen)
+
+		return IfExpr(
+			condition: condition,
+			consequence: consequence,
+			alternative: alternative
+		)
 	}
 
 	mutating func advance() {
-		self.current = lexer.next()
+		previous = current
+		current = lexer.next()
 	}
 
 	mutating func consume(_ kind: Token.Kind) -> Token? {
@@ -95,8 +160,8 @@ public struct Parser {
 		current
 	}
 
-	mutating func error(at: Token, _ message: String) {
-		fatalError("Error at \(at): \(message)")
+	mutating func error(at: Token, _ message: String) -> ErrorExpr {
 		errors.append((at, message))
+		return ErrorExpr(message: message)
 	}
 }

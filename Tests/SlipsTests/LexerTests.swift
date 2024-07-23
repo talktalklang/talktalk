@@ -1,7 +1,17 @@
-import Testing
 @testable import Slips
+import Testing
 
 struct LexerTests {
+	@Test("Int") func int() {
+		var lexer = Lexer("1")
+		let tokens = lexer.collect()
+
+		#expect(tokens.map(\.kind) == [
+			.int,
+			.eof,
+		])
+	}
+
 	@Test("Symbols and ints and parens") func symbolsAndInts() async throws {
 		var lexer = Lexer("(<= 10 20)")
 		let tokens = lexer.collect()
@@ -12,7 +22,7 @@ struct LexerTests {
 			.int,
 			.int,
 			.rightParen,
-			.eof
+			.eof,
 		])
 	}
 
@@ -42,12 +52,5 @@ struct LexerTests {
 		let token = lexer.collect()[1]
 		#expect(token.kind == .def)
 		#expect(token.lexeme == "def")
-	}
-
-	@Test("sym") func sym() async throws {
-		var lexer = Lexer("(sym + lhs rhs)")
-		let token = lexer.collect()[1]
-		#expect(token.kind == .sym)
-		#expect(token.lexeme == "sym")
 	}
 }

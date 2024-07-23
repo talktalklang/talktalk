@@ -9,13 +9,13 @@ public struct Token {
 	public enum Kind {
 		// Single char tokens
 		case leftParen, rightParen,
-				 symbol
+		     symbol, plus
 
 		// Multiple char tokens
 		case int, float, string, identifier
 
 		// Keywords
-		case def, sym
+		case def, `true`, `false`, `if`
 
 		case eof
 		case error
@@ -36,7 +36,7 @@ public struct Lexer {
 		self.source = ContiguousArray<Character>(source)
 	}
 
-	mutating public func next() -> Token {
+	public mutating func next() -> Token {
 		if isAtEnd {
 			return make(.eof)
 		}
@@ -49,6 +49,7 @@ public struct Lexer {
 		return switch char {
 		case "(": make(.leftParen)
 		case ")": make(.rightParen)
+		case "+": make(.plus)
 		case "'": string()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
@@ -61,7 +62,7 @@ public struct Lexer {
 		}
 	}
 
-	mutating public func collect() -> [Token] {
+	public mutating func collect() -> [Token] {
 		var result: [Token] = []
 
 		while true {
@@ -82,9 +83,11 @@ public struct Lexer {
 			advance()
 		}
 
-		return switch String(source[start..<current]) {
+		return switch String(source[start ..< current]) {
 		case "def": make(.def)
-		case "sym": make(.sym)
+		case "true": make(.true)
+		case "false": make(.false)
+		case "if": make(.if)
 		default:
 			make(.identifier)
 		}
@@ -107,7 +110,7 @@ public struct Lexer {
 	mutating func number() -> Token {
 		var isFloat = false
 
-		while peek().isNumber || (!isFloat && peek() == "."), !isAtEnd {
+		while !isAtEnd, peek().isNumber || (!isFloat && peek() == ".") {
 			if peek() == "." {
 				isFloat = true
 			}
@@ -121,7 +124,7 @@ public struct Lexer {
 	// MARK: Helpers
 
 	mutating func skipWhitespace() {
-		while peek().isWhitespace, !isAtEnd {
+		while !isAtEnd, peek().isWhitespace {
 			advance()
 		}
 	}
@@ -143,7 +146,7 @@ public struct Lexer {
 			kind: kind,
 			start: start,
 			length: current - start,
-			lexeme: String(source[start..<current])
+			lexeme: String(source[start ..< current])
 		)
 	}
 
