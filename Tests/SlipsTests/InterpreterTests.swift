@@ -34,9 +34,8 @@ struct InterpreterTests {
 
 	@Test("Evaluates if") func ifEval() {
 		#expect(Interpreter("""
-		(def a 1)
-		(def b 2)
-		(if true a b)
+		(if true (def a 1) (def b 2))
+		a
 		""").evaluate() == .int(1))
 	}
 }

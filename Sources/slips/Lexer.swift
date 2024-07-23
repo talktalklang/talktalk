@@ -79,7 +79,7 @@ public struct Lexer {
 	// MARK: Recognizers
 
 	mutating func identifier() -> Token {
-		while peek().isLetter || peek().isNumber || peek() == "-" || peek() == "_" {
+		while !isAtEnd, peek().isLetter || peek().isNumber || peek() == "-" || peek() == "_" {
 			advance()
 		}
 
