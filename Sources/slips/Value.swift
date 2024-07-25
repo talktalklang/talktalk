@@ -31,10 +31,6 @@ public enum Value: Equatable {
 		case .none:
 			return false
 		case .error:
-			guard case let .int(rhs) = rhs else {
-				return false
-			}
-
 			return false
 		case let .fn(fn):
 			guard case let .fn(rhs) = rhs else {
