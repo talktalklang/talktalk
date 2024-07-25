@@ -54,4 +54,12 @@ struct ParserTests {
 		#expect(ast.consequence.description == "1")
 		#expect(ast.alternative.description == "2")
 	}
+
+	@Test("func expr") func funcexpr() {
+		let ast = parse("""
+		(x y in (+ x y))
+		""")[0] as! FuncExpr
+		#expect(ast.params.description == "x y")
+		#expect(ast.description == "(x y in (+ x y))")
+	}
 }

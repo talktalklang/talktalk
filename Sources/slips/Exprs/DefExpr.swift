@@ -9,7 +9,7 @@ public struct DefExpr: Expr {
 	public let name: Token
 	public let expr: any Expr
 
-	public func accept<V: Visitor>(_ visitor: V) -> V.Value {
-		visitor.visit(self)
+	public func accept<V: Visitor>(_ visitor: V, _ scope: Scope) -> V.Value {
+		visitor.visit(self, scope)
 	}
 }

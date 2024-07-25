@@ -9,6 +9,7 @@ public struct Parser {
 	var lexer: Lexer
 	var current: Token
 	var previous: Token!
+	var isInFunction = false
 	public var errors: [(Token, String)] = []
 
 	public init(_ lexer: Lexer) {
@@ -27,24 +28,34 @@ public struct Parser {
 	}
 
 	mutating func expr() -> Expr {
+		if match(.identifier) {
+			return VarExpr(token: previous)
+		}
+
 		if match(.int) {
 			let int = Int(previous.lexeme)!
 			return LiteralExpr(value: .int(int))
-		} else if match(.string) {
+		}
+
+		if match(.string) {
 			let str = String(previous.lexeme.dropFirst().dropLast())
 			return LiteralExpr(value: .string(str))
-		} else if match(.identifier) {
-			return VarExpr(token: previous)
-		} else if match(.true) {
-			return LiteralExpr(value: .bool(true))
-		} else if match(.false) {
-			return LiteralExpr(value: .bool(false))
-		} else if match(.leftParen) {
-			return expression()
-		} else {
-			advance()
-			return error(at: previous, "Unexpected token: \(previous!)")
 		}
+
+		if match(.true) {
+			return LiteralExpr(value: .bool(true))
+		}
+
+		if match(.false) {
+			return LiteralExpr(value: .bool(false))
+		}
+
+		if match(.leftParen) {
+			return expression()
+		}
+
+		advance()
+		return error(at: previous, "Parser: Unexpected token: \(previous!)")
 	}
 
 	mutating func defExpr() -> Expr {
@@ -60,14 +71,12 @@ public struct Parser {
 	}
 
 	mutating func expression() -> Expr {
-		print("expression() , current -> \(current)")
-
 		if match(.def) {
 			return defExpr()
 		}
 
 		if match(.identifier) {
-			return callExpr()
+			return callOrFuncExpr()
 		}
 
 		if match(.if) {
@@ -83,6 +92,40 @@ public struct Parser {
 		_ = consume(.rightParen)
 
 		return expr
+	}
+
+	mutating func callOrFuncExpr() -> Expr {
+		var parameters: [Token] = [previous]
+
+		while match(.identifier) {
+			parameters.append(previous)
+		}
+
+		if match(.in) {
+			return funcExpr(parameters: parameters)
+		}
+
+		// It's not a func, so convert the prior identifiers to var exprs
+		var operands: [any Expr] = parameters[1 ..< parameters.count].map { VarExpr(token: $0) }
+		while !check(.rightParen), !check(.eof) {
+			operands.append(expr())
+		}
+
+		consume(.rightParen)
+
+		return CallExpr(op: parameters[0], args: operands)
+	}
+
+	mutating func funcExpr(parameters: [Token]) -> Expr {
+		var exprs: [Expr] = []
+
+		while !check(.rightParen), !check(.eof) {
+			exprs.append(expr())
+		}
+
+		_ = consume(.rightParen)
+
+		return FuncExpr(params: ParamsExpr(names: parameters.map(\.lexeme)), body: exprs)
 	}
 
 	mutating func addExpr() -> Expr {
@@ -129,7 +172,7 @@ public struct Parser {
 		current = lexer.next()
 	}
 
-	mutating func consume(_ kind: Token.Kind) -> Token? {
+	@discardableResult mutating func consume(_ kind: Token.Kind) -> Token? {
 		if peek().kind == kind {
 			defer {
 				advance()
@@ -138,7 +181,7 @@ public struct Parser {
 			return peek()
 		}
 
-		error(at: peek(), "Expected \(kind), got \(peek())")
+		_ = error(at: peek(), "Expected \(kind), got \(peek())")
 		return nil
 	}
 

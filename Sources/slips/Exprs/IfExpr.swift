@@ -10,7 +10,7 @@ public struct IfExpr: Expr {
 	public let consequence: any Expr
 	public let alternative: any Expr
 
-	public func accept<V>(_ visitor: V) -> V.Value where V: Visitor {
-		visitor.visit(self)
+	public func accept<V>(_ visitor: V, _ scope: Scope) -> V.Value where V: Visitor {
+		visitor.visit(self, scope)
 	}
 }

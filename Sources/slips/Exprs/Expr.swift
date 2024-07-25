@@ -6,7 +6,7 @@
 //
 
 public protocol Expr: CustomStringConvertible {
-	func accept<V: Visitor>(_ visitor: V) -> V.Value
+	func accept<V: Visitor>(_ visitor: V, _ scope: Scope) -> V.Value
 }
 
 public extension Expr {
@@ -15,6 +15,6 @@ public extension Expr {
 	}
 
 	var description: String {
-		accept(Formatter())
+		accept(Formatter(), Scope())
 	}
 }

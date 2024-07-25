@@ -15,7 +15,7 @@ public struct Token {
 		case int, float, string, identifier
 
 		// Keywords
-		case def, `true`, `false`, `if`
+		case def, `true`, `false`, `if`, `in`
 
 		case eof
 		case error
@@ -88,6 +88,7 @@ public struct Lexer {
 		case "true": make(.true)
 		case "false": make(.false)
 		case "if": make(.if)
+		case "in": make(.in)
 		default:
 			make(.identifier)
 		}

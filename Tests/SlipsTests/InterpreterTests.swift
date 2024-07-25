@@ -38,4 +38,11 @@ struct InterpreterTests {
 		a
 		""").evaluate() == .int(1))
 	}
+
+	@Test("Evaluates functions") func functions() {
+		#expect(Interpreter("""
+		(def addtwo (x in (+ x 2)))
+		(addtwo 2)
+		""").evaluate() == .int(4))
+	}
 }

@@ -6,19 +6,58 @@
 //
 
 public enum Value: Equatable {
-	case int(Int), string(String), bool(Bool), none, error(String)
+	case int(Int), string(String), bool(Bool), none, error(String), fn(FuncExpr)
+
+	public static func == (lhs: Value, rhs: Value) -> Bool {
+		switch lhs {
+		case let .int(int):
+			guard case let .int(rhs) = rhs else {
+				return false
+			}
+
+			return int == rhs
+		case let .string(string):
+			guard case let .string(rhs) = rhs else {
+				return false
+			}
+
+			return string == rhs
+		case let .bool(bool):
+			guard case let .bool(rhs) = rhs else {
+				return false
+			}
+
+			return bool == rhs
+		case .none:
+			return false
+		case .error:
+			guard case let .int(rhs) = rhs else {
+				return false
+			}
+
+			return false
+		case let .fn(fn):
+			guard case let .fn(rhs) = rhs else {
+				return false
+			}
+
+			return fn.body.map { $0.accept(Formatter(), Scope()) } == rhs.body.map { $0.accept(Formatter(), Scope()) }
+		}
+	}
 
 	public var isTruthy: Bool {
 		switch self {
-		case let .int(int):
+		case .int:
 			true
-		case let .string(string):
+		case .string:
 			true
 		case let .bool(bool):
 			bool
 		case .none:
 			false
-		case let .error(string):
+		case .error:
+			false
+		case .fn:
 			false
 		}
 	}
