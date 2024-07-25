@@ -6,7 +6,7 @@
 //
 
 public enum Value: Equatable {
-	case int(Int), string(String), bool(Bool), none, error(String), fn(FuncExpr)
+	case int(Int), string(String), bool(Bool), none, error(String), fn(Closure)
 
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch lhs {
@@ -32,12 +32,12 @@ public enum Value: Equatable {
 			return false
 		case .error:
 			return false
-		case let .fn(fn):
+		case let .fn(closure):
 			guard case let .fn(rhs) = rhs else {
 				return false
 			}
 
-			return fn.body.map { $0.accept(Formatter(), Scope()) } == rhs.body.map { $0.accept(Formatter(), Scope()) }
+			return closure.funcExpr.body.accept(Formatter(), Scope()) == rhs.funcExpr.body.accept(Formatter(), Scope())
 		}
 	}
 

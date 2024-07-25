@@ -51,19 +51,16 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> Value {
-		if case let .fn(fn) = scope.lookup(expr.op.lexeme) {
-			let innerScope = Scope(parent: scope)
-
-			for (i, argument) in expr.args.enumerated() {
-				_ = innerScope.define(fn.params.names[i], argument.accept(self, innerScope))
+		if expr.op.kind == .call {
+			if case let .fn(closure) = expr.args[0].accept(self, scope) {
+				return call(closure, args: Array(expr.args[1 ..< expr.args.count]), scope)
+			} else {
+				fatalError("\(expr.args[0].accept(self, scope)) is not callable")
 			}
+		}
 
-			var lastReturn: Value = .none
-			for expr in fn.body {
-				lastReturn = expr.accept(self, innerScope)
-			}
-
-			return lastReturn
+		if case let .fn(closure) = scope.lookup(expr.op.lexeme) {
+			return call(closure, args: expr.args, scope)
 		} else {
 			fatalError("\(expr.op.lexeme) not callable")
 		}
@@ -82,7 +79,7 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: VarExpr, _ scope: Scope) -> Value {
-		scope.locals[expr.name] ?? .none
+		scope.lookup(expr.name)
 	}
 
 	public func visit(_ expr: IfExpr, _ scope: Scope) -> Value {
@@ -95,8 +92,8 @@ public struct Interpreter: Visitor {
 		}
 	}
 
-	public func visit(_ expr: FuncExpr, _: Scope) -> Value {
-		.fn(expr)
+	public func visit(_ expr: FuncExpr, _ scope: Scope) -> Value {
+		.fn(Closure(funcExpr: expr, environment: scope))
 	}
 
 	public func visit(_: ParamsExpr, _: Scope) -> Value {
@@ -104,6 +101,20 @@ public struct Interpreter: Visitor {
 	}
 
 	private
+
+	func call(_ closure: Closure, args: [any Expr], _ scope: Scope) -> Value {
+		let innerScope = Scope(parent: scope)
+
+		for (name, value) in closure.environment.locals {
+			_ = innerScope.define(name, value)
+		}
+
+		for (i, argument) in args.enumerated() {
+			_ = innerScope.define(closure.funcExpr.params.names[i], argument.accept(self, innerScope))
+		}
+
+		return closure.funcExpr.body.accept(self, innerScope)
+	}
 
 	func runtimeError(_ err: String) {
 		fatalError(err)

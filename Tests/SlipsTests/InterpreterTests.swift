@@ -41,8 +41,28 @@ struct InterpreterTests {
 
 	@Test("Evaluates functions") func functions() {
 		#expect(Interpreter("""
-		(def addtwo (x in (+ x 2)))
+		(def addtwo (x in (+ x 3)))
 		(addtwo 2)
+		""").evaluate() == .int(5))
+	}
+
+	@Test("Evaluates calls") func calls() {
+		#expect(Interpreter("""
+		(call (x in (+ x 2)) 2)
 		""").evaluate() == .int(4))
+	}
+
+	@Test("Evaluates nested scopes") func nestedScopes() {
+		#expect(Interpreter("""
+		(
+			def addtwo (x in
+				(y in
+					(+ y x)
+				)
+			)
+		)
+		(def addfour (addtwo 4))
+		(call addfour 2)
+		""").evaluate() == .int(6))
 	}
 }

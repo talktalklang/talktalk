@@ -75,6 +75,10 @@ public struct Parser {
 			return defExpr()
 		}
 
+		if match(.call) {
+			return callExpr()
+		}
+
 		if match(.identifier) {
 			return callOrFuncExpr()
 		}
@@ -117,15 +121,10 @@ public struct Parser {
 	}
 
 	mutating func funcExpr(parameters: [Token]) -> Expr {
-		var exprs: [Expr] = []
-
-		while !check(.rightParen), !check(.eof) {
-			exprs.append(expr())
-		}
-
+		let body = expr()
 		_ = consume(.rightParen)
 
-		return FuncExpr(params: ParamsExpr(names: parameters.map(\.lexeme)), body: exprs)
+		return FuncExpr(params: ParamsExpr(names: parameters.map(\.lexeme)), body: body)
 	}
 
 	mutating func addExpr() -> Expr {

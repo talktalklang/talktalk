@@ -6,7 +6,7 @@
 //
 
 public class Scope {
-	let parent: Scope?
+	var parent: Scope?
 	var locals: [String: Value] = [:]
 
 	init(parent: Scope? = nil) {
@@ -19,6 +19,6 @@ public class Scope {
 	}
 
 	func lookup(_ name: String) -> Value {
-		return locals[name] ?? .none
+		return locals[name] ?? parent?.lookup(name) ?? .none
 	}
 }

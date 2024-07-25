@@ -20,8 +20,8 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: LiteralExpr, _ scope: Scope) -> String {
 		switch expr.value {
-		case let .fn(fn):
-			"fn: \(fn.body.map { $0.accept(self, scope) }.joined(separator: " "))"
+		case let .fn(closure):
+			"fn: \(closure.funcExpr.body.accept(self, scope))"
 		case let .bool(bool):
 			"\(bool)"
 		case let .int(int):
@@ -48,7 +48,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: FuncExpr, _ scope: Scope) -> String {
-		"(\(visit(expr.params, scope)) in \(expr.body.map { $0.accept(self, scope) }.joined(separator: " ")))"
+		"(\(visit(expr.params, scope)) in \(expr.body.accept(self, scope)))"
 	}
 
 	public func visit(_ expr: ParamsExpr, _: Scope) -> String {
