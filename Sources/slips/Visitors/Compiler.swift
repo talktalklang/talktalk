@@ -119,9 +119,9 @@ public struct Compiler: Visitor {
 		if let binding = context.environment.get(expr.name) {
 			switch binding {
 			case let .defined(pointer):
-				return builder.load(pointer: pointer)
+				builder.load(pointer: pointer)
 			case let .parameter(index):
-				return builder.load(parameter: index)
+				builder.load(parameter: index)
 			case let .capture(environment):
 				fatalError("closures not implemented yet")
 			default:

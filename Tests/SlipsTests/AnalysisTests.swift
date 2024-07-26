@@ -13,7 +13,7 @@ struct AnalysisTests {
 		let analyzer = Analyzer()
 		let environment = Analyzer.Environment()
 
-		return Parser.parse(string).map({ $0.accept(analyzer, environment) }).last!
+		return Parser.parse(string).map { $0.accept(analyzer, environment) }.last!
 	}
 
 	@Test("Types literals") func literals() {

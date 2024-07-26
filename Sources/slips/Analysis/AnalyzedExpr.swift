@@ -1,5 +1,5 @@
 //
-//  Expr.swift
+//  AnalyzedExpr.swift
 //
 //
 //  Created by Pat Nakajima on 7/22/24.
@@ -16,7 +16,7 @@ public indirect enum ValueType {
 		switch self {
 		case .int:
 			"int"
-		case .function(let returnType, let args):
+		case let .function(returnType, args):
 			"fn(\(args.joined(separator: ", "))) -> (\(returnType.description))"
 		case .bool:
 			"bool"
@@ -33,4 +33,3 @@ public indirect enum ValueType {
 public protocol AnalyzedExpr: Expr {
 	var type: ValueType { get }
 }
-
