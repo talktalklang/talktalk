@@ -35,7 +35,7 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: AddExpr, _ scope: Scope) -> Value {
-		let operands = expr.operands
+		let operands = [expr.lhs, expr.rhs]
 
 		if operands.count == 0 {
 			return .none

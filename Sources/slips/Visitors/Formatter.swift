@@ -7,7 +7,7 @@
 
 public struct Formatter: Visitor {
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> String {
-		"(\(expr.op.lexeme) \(expr.args.map { $0.accept(self, scope) }.joined(separator: " "))"
+		"(\(expr.op.lexeme) \(expr.args.map { $0.accept(self, scope) }.joined(separator: " ")))"
 	}
 
 	public func visit(_ expr: DefExpr, _ scope: Scope) -> String {
@@ -26,8 +26,6 @@ public struct Formatter: Visitor {
 			"\(bool)"
 		case let .int(int):
 			"\(int)"
-		case let .string(string):
-			"'\(string)'"
 		case .none:
 			"none"
 		case let .error(message):
@@ -40,7 +38,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: AddExpr, _ scope: Scope) -> String {
-		"(+ \(expr.operands.map { $0.accept(self, scope) }.joined(separator: " ")))"
+		"(+ \([expr.lhs, expr.rhs].map { $0.accept(self, scope) }.joined(separator: " ")))"
 	}
 
 	public func visit(_ expr: IfExpr, _ scope: Scope) -> String {

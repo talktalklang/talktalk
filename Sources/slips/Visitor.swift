@@ -6,15 +6,16 @@
 //
 
 public protocol Visitor {
+	associatedtype Context
 	associatedtype Value
 
-	func visit(_ expr: CallExpr, _ scope: Scope) -> Value
-	func visit(_ expr: DefExpr, _ scope: Scope) -> Value
-	func visit(_ expr: ErrorExpr, _ scope: Scope) -> Value
-	func visit(_ expr: LiteralExpr, _ scope: Scope) -> Value
-	func visit(_ expr: VarExpr, _ scope: Scope) -> Value
-	func visit(_ expr: AddExpr, _ scope: Scope) -> Value
-	func visit(_ expr: IfExpr, _ scope: Scope) -> Value
-	func visit(_ expr: FuncExpr, _ scope: Scope) -> Value
-	func visit(_ expr: ParamsExpr, _ scope: Scope) -> Value
+	func visit(_ expr: CallExpr, _ context: Context) -> Value
+	func visit(_ expr: DefExpr, _ context: Context) -> Value
+	func visit(_ expr: ErrorExpr, _ context: Context) -> Value
+	func visit(_ expr: LiteralExpr, _ context: Context) -> Value
+	func visit(_ expr: VarExpr, _ context: Context) -> Value
+	func visit(_ expr: AddExpr, _ context: Context) -> Value
+	func visit(_ expr: IfExpr, _ context: Context) -> Value
+	func visit(_ expr: FuncExpr, _ context: Context) -> Value
+	func visit(_ expr: ParamsExpr, _ context: Context) -> Value
 }

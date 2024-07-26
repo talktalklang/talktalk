@@ -8,7 +8,7 @@
 public struct VarExpr: Expr {
 	public let token: Token
 
-	public func accept<V: Visitor>(_ visitor: V, _ scope: Scope) -> V.Value {
+	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)
 	}
 

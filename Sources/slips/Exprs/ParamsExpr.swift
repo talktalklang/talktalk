@@ -8,7 +8,7 @@
 public struct ParamsExpr: Expr {
 	var names: [String]
 
-	public func accept<V>(_ visitor: V, _ scope: Scope) -> V.Value where V: Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
 		visitor.visit(self, scope)
 	}
 }

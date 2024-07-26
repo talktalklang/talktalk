@@ -14,14 +14,8 @@ struct InterpreterTests {
 		#expect(Interpreter("(2)").evaluate() == .int(2))
 	}
 
-	@Test("Evaluates strings") func strings() {
-		#expect(Interpreter("'sup'").evaluate() == .string("sup"))
-		#expect(Interpreter("('sup')").evaluate() == .string("sup"))
-	}
-
 	@Test("Evaluates add") func add() {
 		#expect(Interpreter("(+ 1 2)").evaluate() == .int(3))
-		#expect(Interpreter("(+ 'fizz' 'buzz')").evaluate() == .string("fizzbuzz"))
 	}
 
 	@Test("Evaluates multiple") func multiple() {

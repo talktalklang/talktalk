@@ -37,7 +37,7 @@ struct ParserTests {
 		#expect(ast.name.lexeme == "sum")
 	}
 
-	@Test("multiple") func multiple() {
+	@Test("multiple statements") func multiple() {
 		let ast = parse("""
 		(1)
 		(2)

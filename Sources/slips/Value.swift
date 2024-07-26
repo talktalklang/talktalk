@@ -6,7 +6,7 @@
 //
 
 public enum Value: Equatable {
-	case int(Int), string(String), bool(Bool), none, error(String), fn(Closure)
+	case int(Int), bool(Bool), none, error(String), fn(Closure)
 
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch lhs {
@@ -16,12 +16,6 @@ public enum Value: Equatable {
 			}
 
 			return int == rhs
-		case let .string(string):
-			guard case let .string(rhs) = rhs else {
-				return false
-			}
-
-			return string == rhs
 		case let .bool(bool):
 			guard case let .bool(rhs) = rhs else {
 				return false
@@ -45,8 +39,6 @@ public enum Value: Equatable {
 		switch self {
 		case .int:
 			true
-		case .string:
-			true
 		case let .bool(bool):
 			bool
 		case .none:
@@ -66,12 +58,6 @@ public enum Value: Equatable {
 			}
 
 			return .int(int + other)
-		case let .string(string):
-			guard case let .string(other) = other else {
-				return .error("Cannot add \(other) to \(self)")
-			}
-
-			return .string(string + other)
 		default:
 			return .error("Cannot add \(other) to \(self)")
 		}

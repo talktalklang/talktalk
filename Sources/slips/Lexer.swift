@@ -12,7 +12,7 @@ public struct Token {
 		     symbol, plus
 
 		// Multiple char tokens
-		case int, float, string, identifier
+		case int, float, identifier
 
 		// Keywords
 		case def, `true`, `false`, `if`, `in`, call
@@ -50,7 +50,6 @@ public struct Lexer {
 		case "(": make(.leftParen)
 		case ")": make(.rightParen)
 		case "+": make(.plus)
-		case "'": string()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
 		default:
@@ -93,12 +92,6 @@ public struct Lexer {
 		default:
 			make(.identifier)
 		}
-	}
-
-	mutating func string() -> Token {
-		while advance() != "'", !isAtEnd {}
-
-		return make(.string)
 	}
 
 	mutating func symbol() -> Token {

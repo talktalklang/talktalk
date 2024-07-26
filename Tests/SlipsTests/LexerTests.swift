@@ -26,13 +26,6 @@ struct LexerTests {
 		])
 	}
 
-	@Test("Strings") func strings() async throws {
-		var lexer = Lexer(#"('sup')"#)
-		let token = lexer.collect()[1]
-		#expect(token.kind == .string)
-		#expect(token.lexeme == "'sup'")
-	}
-
 	@Test("Floats") func floats() async throws {
 		var lexer = Lexer("(1.23)")
 		let token = lexer.collect()[1]

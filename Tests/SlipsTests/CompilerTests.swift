@@ -14,14 +14,15 @@ struct CompilerTests {
 		#expect(Compiler("(2)").run() == .int(2))
 	}
 
-	@Test("Compiles strings") func strings() {
-		#expect(Compiler("'sup'").run() == .string("sup"))
-		#expect(Compiler("('sup')").run() == .string("sup"))
-	}
-
 	@Test("Compiles add") func add() {
 		#expect(Compiler("(+ 1 2)").run() == .int(3))
-		#expect(Compiler("(+ 'fizz' 'buzz')").run() == .string("fizzbuzz"))
+	}
+
+	@Test("Compiles def") func def() {
+		#expect(Compiler("""
+		(def abc (+ 1 2))
+		abc
+		""").run() == .int(3))
 	}
 
 	@Test("Compiles multiple") func multiple() {

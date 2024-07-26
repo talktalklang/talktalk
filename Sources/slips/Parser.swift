@@ -37,11 +37,6 @@ public struct Parser {
 			return LiteralExpr(value: .int(int))
 		}
 
-		if match(.string) {
-			let str = String(previous.lexeme.dropFirst().dropLast())
-			return LiteralExpr(value: .string(str))
-		}
-
 		if match(.true) {
 			return LiteralExpr(value: .bool(true))
 		}
@@ -128,15 +123,12 @@ public struct Parser {
 	}
 
 	mutating func addExpr() -> Expr {
-		var operands: [Expr] = []
-
-		while !check(.rightParen), !check(.eof) {
-			operands.append(expr())
-		}
+		let lhs = expr()
+		let rhs = expr()
 
 		_ = consume(.rightParen)
 
-		return AddExpr(operands: operands)
+		return AddExpr(lhs: lhs, rhs: rhs)
 	}
 
 	mutating func callExpr() -> Expr {
