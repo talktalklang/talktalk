@@ -35,9 +35,9 @@ struct CompilerTests {
 
 	@Test("Compiles if") func ifEval() {
 		#expect(Compiler("""
-		(if true (def a 1) (def b 2))
+		(if false (def a 1) (def a 2))
 		a
-		""").run() == .int(1))
+		""").run() == .int(2))
 	}
 
 	@Test("Compiles functions") func functions() {
