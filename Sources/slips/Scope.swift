@@ -19,6 +19,6 @@ public class Scope {
 	}
 
 	func lookup(_ name: String) -> Value {
-		return locals[name] ?? parent?.lookup(name) ?? .none
+		locals[name] ?? parent?.lookup(name) ?? .none
 	}
 }

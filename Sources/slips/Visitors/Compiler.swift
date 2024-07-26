@@ -107,9 +107,9 @@ public struct Compiler: Visitor {
 	public func visit(_ expr: LiteralExpr, _: Context) -> any LLVM.EmittedValue {
 		switch expr.value {
 		case let .int(int):
-			return builder.emit(constant: LLVM.IntType.i8.constant(int))
+			builder.emit(constant: LLVM.IntType.i8.constant(int))
 		case let .bool(bool):
-			return builder.emit(constant: LLVM.IntType.i1.constant(bool ? 1 : 0))
+			builder.emit(constant: LLVM.IntType.i1.constant(bool ? 1 : 0))
 		default:
 			fatalError()
 		}
@@ -122,7 +122,8 @@ public struct Compiler: Visitor {
 				return builder.load(pointer: pointer)
 			case let .parameter(index):
 				return builder.load(parameter: index)
-			case let .capture(environment):
+			case let .capture(environment, name):
+				return builder.load(capture: binding)
 				fatalError("closures not implemented yet")
 			default:
 				fatalError()

@@ -37,7 +37,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-testing", branch: "main")
 	)
 
-	for target in package.targets.filter({ $0.isTest }) {
+	for target in package.targets.filter(\.isTest) {
 		target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
 	}
 #endif
