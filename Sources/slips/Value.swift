@@ -31,7 +31,7 @@ public enum Value: Equatable {
 				return false
 			}
 
-			return closure.funcExpr.body.accept(Formatter(), Scope()) == rhs.funcExpr.body.accept(Formatter(), Scope())
+			return closure.funcExpr.i == rhs.funcExpr.i
 		}
 	}
 

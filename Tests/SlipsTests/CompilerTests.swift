@@ -46,4 +46,24 @@ struct CompilerTests {
 		(addtwo 2)
 		""").run() == .int(4))
 	}
+
+	@Test("Compiles calls") func calls() {
+		#expect(Compiler("""
+		(call (x in (+ x 2)) 2)
+		""").run() == .int(4))
+	}
+
+	@Test("Evaluates nested scopes") func nestedScopes() {
+		#expect(Compiler("""
+		(
+			def addthis (x in
+				(y in
+					(+ y x)
+				)
+			)
+		)
+		(def addfour (addthis 8))
+		(call addfour 2)
+		""").run() == .int(10))
+	}
 }

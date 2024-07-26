@@ -116,10 +116,14 @@ public struct Parser {
 	}
 
 	mutating func funcExpr(parameters: [Token]) -> Expr {
-		let body = expr()
+		var body: [any Expr] = []
+
+		while !check(.rightParen), !check(.eof) {
+			body.append(expr())
+		}
 		_ = consume(.rightParen)
 
-		return FuncExpr(params: ParamsExpr(names: parameters.map(\.lexeme)), body: body)
+		return FuncExpr(params: ParamsExpr(names: parameters.map(\.lexeme)), body: body, i: previous.start)
 	}
 
 	mutating func addExpr() -> Expr {

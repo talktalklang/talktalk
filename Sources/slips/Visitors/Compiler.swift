@@ -9,10 +9,22 @@ import LLVM
 
 public struct Compiler: Visitor {
 	public class Context {
-		let functionCount: Int = 0
+		var counter: Int = 0
 		var environment: LLVM.Function.Environment = .init()
 
-		init() {}
+		init(counter: Int = 0, environment: LLVM.Function.Environment = .init()) {
+			self.counter = counter
+			self.environment = environment
+		}
+
+		func newEnvironment() -> Context {
+			Context(counter: counter, environment: LLVM.Function.Environment(parent: environment))
+		}
+
+		func nextCount() -> Int {
+			counter += 1
+			return counter
+		}
 	}
 
 	let source: String
@@ -58,7 +70,15 @@ public struct Compiler: Visitor {
 	public func visit(_ expr: CallExpr, _ context: Context) -> any LLVM.EmittedValue {
 		if case let .defined(functionPointer) = context.environment.get(expr.op.lexeme) {
 			return builder.call(functionPointer, with: expr.args.map { $0.accept(self, context) })
+		} else if expr.op.lexeme == "call" {
+			// Get the callable thing
+			let callable = expr.args[0]
+			let emittedCallable = callable.accept(self, context) as! LLVM.EmittedFunctionValue
+
+			let args = expr.args[1 ..< expr.args.count]
+			return builder.call(emittedCallable, with: args.map { $0.accept(self, context) })
 		} else {
+			builder.dump()
 			fatalError("No support for calling anonmous functions yet")
 		}
 	}
@@ -102,6 +122,8 @@ public struct Compiler: Visitor {
 				return builder.load(pointer: pointer)
 			case let .parameter(index):
 				return builder.load(parameter: index)
+			case let .capture(environment):
+				fatalError("closures not implemented yet")
 			default:
 				fatalError()
 			}
@@ -133,12 +155,13 @@ public struct Compiler: Visitor {
 	}
 
 	public func visit(_ expr: FuncExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let name = "fn_\(expr.params.names.joined(separator: "_"))"
+		let name = expr.name
 		let params = expr.params.names.map { _ in LLVM.IntType.i32 }
+		let context = context.newEnvironment()
 
 		let functionType = LLVM.FunctionType(
 			name: name,
-			returnType: .i32,
+			returnType: getTypeOf(expr: expr.body.last!, context: context),
 			parameterTypes: params,
 			isVarArg: false
 		)
@@ -149,8 +172,10 @@ public struct Compiler: Visitor {
 			context.environment.parameter(name, at: i)
 		}
 
-		return builder.define(function) {
-			_ = builder.emit(return: expr.body.accept(self, context))
+		return builder.define(function, parameterNames: expr.params.names) {
+			for expr in expr.body {
+				_ = builder.emit(return: expr.accept(self, context))
+			}
 		}
 	}
 

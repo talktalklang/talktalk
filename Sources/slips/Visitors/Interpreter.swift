@@ -113,7 +113,13 @@ public struct Interpreter: Visitor {
 			_ = innerScope.define(closure.funcExpr.params.names[i], argument.accept(self, innerScope))
 		}
 
-		return closure.funcExpr.body.accept(self, innerScope)
+		var lastReturn: Value = .none
+
+		for expr in closure.funcExpr.body {
+			lastReturn = expr.accept(self, innerScope)
+		}
+
+		return lastReturn
 	}
 
 	func runtimeError(_ err: String) {
