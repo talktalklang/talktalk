@@ -12,6 +12,11 @@ public struct Parser {
 	var isInFunction = false
 	public var errors: [(Token, String)] = []
 
+	public static func parse(_ string: String) -> [any Expr] {
+		var parser = Parser(Lexer(string))
+		return parser.parse()
+	}
+
 	public init(_ lexer: Lexer) {
 		var lexer = lexer
 		self.previous = lexer.next()
@@ -29,20 +34,20 @@ public struct Parser {
 
 	mutating func expr() -> Expr {
 		if match(.identifier) {
-			return VarExpr(token: previous)
+			return VarExprSyntax(token: previous)
 		}
 
 		if match(.int) {
 			let int = Int(previous.lexeme)!
-			return LiteralExpr(value: .int(int))
+			return LiteralExprSyntax(value: .int(int))
 		}
 
 		if match(.true) {
-			return LiteralExpr(value: .bool(true))
+			return LiteralExprSyntax(value: .bool(true))
 		}
 
 		if match(.false) {
-			return LiteralExpr(value: .bool(false))
+			return LiteralExprSyntax(value: .bool(false))
 		}
 
 		if match(.leftParen) {
@@ -62,7 +67,7 @@ public struct Parser {
 
 		_ = consume(.rightParen)
 
-		return DefExpr(name: name, expr: expr)
+		return DefExprSyntax(name: name, value: expr)
 	}
 
 	mutating func expression() -> Expr {
@@ -105,14 +110,14 @@ public struct Parser {
 		}
 
 		// It's not a func, so convert the prior identifiers to var exprs
-		var operands: [any Expr] = parameters[1 ..< parameters.count].map { VarExpr(token: $0) }
+		var operands: [any Expr] = parameters[1 ..< parameters.count].map { VarExprSyntax(token: $0) }
 		while !check(.rightParen), !check(.eof) {
 			operands.append(expr())
 		}
 
 		consume(.rightParen)
 
-		return CallExpr(op: parameters[0], args: operands)
+		return CallExprSyntax(op: parameters[0], args: operands)
 	}
 
 	mutating func funcExpr(parameters: [Token]) -> Expr {
@@ -123,7 +128,7 @@ public struct Parser {
 		}
 		_ = consume(.rightParen)
 
-		return FuncExpr(params: ParamsExpr(names: parameters.map(\.lexeme)), body: body, i: previous.start)
+		return FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme)), body: body, i: previous.start)
 	}
 
 	mutating func addExpr() -> Expr {
@@ -132,7 +137,7 @@ public struct Parser {
 
 		_ = consume(.rightParen)
 
-		return AddExpr(lhs: lhs, rhs: rhs)
+		return AddExprSyntax(lhs: lhs, rhs: rhs)
 	}
 
 	mutating func callExpr() -> Expr {
@@ -145,7 +150,7 @@ public struct Parser {
 
 		_ = consume(.rightParen)
 
-		return CallExpr(op: op, args: operands)
+		return CallExprSyntax(op: op, args: operands)
 	}
 
 	mutating func ifExpr() -> Expr {
@@ -155,7 +160,7 @@ public struct Parser {
 
 		_ = consume(.rightParen)
 
-		return IfExpr(
+		return IfExprSyntax(
 			condition: condition,
 			consequence: consequence,
 			alternative: alternative
@@ -200,6 +205,6 @@ public struct Parser {
 
 	mutating func error(at: Token, _ message: String) -> ErrorExpr {
 		errors.append((at, message))
-		return ErrorExpr(message: message)
+		return ErrorExprSyntax(message: message)
 	}
 }

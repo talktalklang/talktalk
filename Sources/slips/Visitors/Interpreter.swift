@@ -67,7 +67,7 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: DefExpr, _ scope: Scope) -> Value {
-		scope.define(expr.name.lexeme, expr.expr.accept(self, scope))
+		scope.define(expr.name.lexeme, expr.value.accept(self, scope))
 	}
 
 	public func visit(_: ErrorExpr, _: Scope) -> Value {

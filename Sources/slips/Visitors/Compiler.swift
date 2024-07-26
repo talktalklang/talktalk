@@ -84,7 +84,7 @@ public struct Compiler: Visitor {
 	}
 
 	public func visit(_ expr: DefExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let value = expr.expr.accept(self, context)
+		let value = expr.value.accept(self, context)
 
 		switch value {
 		case let value as LLVM.EmittedIntValue:
@@ -122,8 +122,7 @@ public struct Compiler: Visitor {
 				return builder.load(pointer: pointer)
 			case let .parameter(index):
 				return builder.load(parameter: index)
-			case let .capture(environment, name):
-				return builder.load(capture: binding)
+			case let .capture(environment):
 				fatalError("closures not implemented yet")
 			default:
 				fatalError()

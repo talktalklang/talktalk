@@ -62,4 +62,16 @@ struct ParserTests {
 		#expect(ast.params.description == "x y")
 		#expect(ast.description == "(x y in (+ x y))")
 	}
+
+	@Test("func expr can find its captured values") func funcCaptures() {
+		let ast = parse("""
+		(def x (y in (z in (+ y z))))
+		(def add (x 1))
+		(add 2)
+		""")
+
+		let fn = (ast[0] as! DefExpr).value as! FuncExpr
+
+		print("sup")
+	}
 }

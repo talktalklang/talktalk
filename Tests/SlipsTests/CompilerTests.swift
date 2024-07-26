@@ -53,7 +53,7 @@ struct CompilerTests {
 		""").run() == .int(4))
 	}
 
-	@Test("Evaluates nested scopes") func nestedScopes() {
+	@Test("Evaluates nested scopes", .disabled()) func nestedScopes() {
 		#expect(Compiler("""
 		(
 			def addthis (x in

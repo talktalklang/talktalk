@@ -5,13 +5,11 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public protocol VarExpr: Expr {
-	var token: Token { get }
-	var name: String { get }
-}
+public struct AnalyzedVarExpr: AnalyzedExpr, VarExpr {
+	public let type: ValueType
+	let expr: VarExpr
 
-public struct VarExprSyntax: VarExpr {
-	public let token: Token
+	public var token: Token { expr.token }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)

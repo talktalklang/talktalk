@@ -5,17 +5,13 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-public protocol FuncExpr: Expr {
-	var params: ParamsExpr { get }
-	var body: [any Expr] { get }
-	var i: Int { get }
-	var name: String { get }
-}
+public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
+	public let type: ValueType
+	let expr: FuncExpr
 
-public struct FuncExprSyntax: FuncExpr {
-	public let params: ParamsExpr
-	public let body: [any Expr]
-	public let i: Int
+	public var params: ParamsExpr { expr.params }
+	public var body: [any Expr] { expr.body }
+	public var i: Int { expr.i }
 
 	public var name: String {
 		"_fn_\(params.names.joined(separator: "_"))_\(i)"
