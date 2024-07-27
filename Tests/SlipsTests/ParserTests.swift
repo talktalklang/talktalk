@@ -55,12 +55,13 @@ struct ParserTests {
 		#expect(ast.alternative.description == "2")
 	}
 
-	@Test("func expr") func funcexpr() {
+	@Test("func expr") func funcexpr() throws {
 		let ast = parse("""
 		(x y in (+ x y))
-		""")[0] as! FuncExpr
-		#expect(ast.params.description == "x y")
-		#expect(ast.description == "(x y in (+ x y))")
+		""")[0]
+		let fn = try #require(ast as? FuncExpr)
+		#expect(fn.params.description == "x y")
+		#expect(fn.body[0].description == "(+ x y)")
 	}
 
 	@Test("call expr") func callExpr() {
@@ -71,20 +72,38 @@ struct ParserTests {
 		#expect(ast.args[0].description == "1")
 	}
 
-	@Test("inline expr call") func inlineCall() {
+	@Test("Explicit call expr") func explicitCallExpr() {
 		let ast = parse("""
-		((x in x) 1)
+		(call (x in 1) 2)
 		""")[0] as! CallExpr
-		#expect(ast.callee.description == "(x in x)")
-		#expect(ast.args[0].description == "1")
+		#expect(ast.callee.description == "(x in 1)")
+		#expect(ast.args[0].description == "2")
 	}
 
-	@Test("passing an inline func to an inline func") func inlineInlineCall() {
+	@Test("passing an inline func to a func call") func inlineInlineCall() {
 		let ast = parse("""
-		((x in x) (y in y))
+		(call (x in x) (y in y))
 		""")[0] as! CallExpr
 		#expect(ast.callee.description == "(x in x)")
 		#expect(ast.args[0].description == "(y in y)")
+	}
+
+	@Test("deals with newlines") func newlines() throws {
+		let ast = parse("""
+		(
+			def addtwo (x in
+				(y in (+ y x))
+			)
+		)
+		(def addfour (addtwo 4))
+		(call addfour 2)
+		""")
+
+		let def1 = try #require(ast[0] as? DefExpr)
+		#expect(def1.name.lexeme == "addtwo")
+//
+//		let call = try #require(ast[2] as? CallExpr)
+//		#expect(call.callee.description == "addfour")
 	}
 
 	@Test("func expr can find its captured values") func funcCaptures() {

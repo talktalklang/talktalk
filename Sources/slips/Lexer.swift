@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public struct Token {
+public struct Token: CustomDebugStringConvertible {
 	public enum Kind {
 		// Single char tokens
 		case leftParen, rightParen,
@@ -17,6 +17,7 @@ public struct Token {
 		// Keywords
 		case def, `true`, `false`, `if`, `in`, call
 
+		case newline
 		case eof
 		case error
 	}
@@ -25,6 +26,10 @@ public struct Token {
 	public let start: Int
 	public let length: Int
 	public let lexeme: String
+
+	public var debugDescription: String {
+		".\(kind)"
+	}
 }
 
 public struct Lexer {
@@ -34,6 +39,10 @@ public struct Lexer {
 
 	public init(_ source: String) {
 		self.source = ContiguousArray<Character>(source)
+	}
+
+	public mutating func rewind(count: Int) {
+		
 	}
 
 	public mutating func next() -> Token {
@@ -50,6 +59,7 @@ public struct Lexer {
 		case "(": make(.leftParen)
 		case ")": make(.rightParen)
 		case "+": make(.plus)
+		case _ where char.isNewline: newline()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
 		default:
@@ -76,6 +86,11 @@ public struct Lexer {
 	}
 
 	// MARK: Recognizers
+
+	mutating func newline() -> Token {
+		while !isAtEnd, peek().isNewline { advance() }
+		return make(.newline)
+	}
 
 	mutating func identifier() -> Token {
 		while !isAtEnd, peek().isLetter || peek().isNumber || peek() == "-" || peek() == "_" {
@@ -119,13 +134,13 @@ public struct Lexer {
 	// MARK: Helpers
 
 	mutating func skipWhitespace() {
-		while !isAtEnd, peek().isWhitespace {
+		while !isAtEnd, peek().isWhitespace, !peek().isNewline {
 			advance()
 		}
 	}
 
-	func peek() -> Character {
-		source[current]
+	func peek(_ offset: Int = 0) -> Character {
+		source[current + offset]
 	}
 
 	@discardableResult mutating func advance() -> Character {
@@ -141,7 +156,7 @@ public struct Lexer {
 			kind: kind,
 			start: start,
 			length: current - start,
-			lexeme: String(source[start ..< current])
+			lexeme: kind == .eof ? "EOF" : String(source[start ..< current])
 		)
 	}
 

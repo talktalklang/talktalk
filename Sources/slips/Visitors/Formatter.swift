@@ -46,7 +46,12 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: FuncExpr, _ scope: Scope) -> String {
-		"(\(visit(expr.params, scope)) in \(expr.body.map { $0.accept(self, scope) }.joined(separator: " ")))"
+		var parts = "("
+		parts += visit(expr.params, scope)
+		parts += " in "
+		parts += expr.body.map({ $0.accept(self, scope) }).joined(separator: " ")
+		parts += ")"
+		return parts
 	}
 
 	public func visit(_ expr: ParamsExpr, _: Scope) -> String {

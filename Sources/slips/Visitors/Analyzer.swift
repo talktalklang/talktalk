@@ -20,7 +20,7 @@ public struct Analyzer: Visitor {
 	public init() {}
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) -> any AnalyzedExpr {
-		let callee = expr.accept(self, context)
+		let callee = expr.callee.accept(self, context)
 
 		// TODO: Update environment with the types getting passed to these args.
 		let args = expr.args.map { $0.accept(self, context) }

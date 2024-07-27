@@ -10,8 +10,7 @@ public struct Parser {
 	var current: Token
 	var previous: Token!
 
-	// What position in an expression are we? This can matter for calls
-	var exprIndex = 0
+	var exprLength = 0
 
 	public var errors: [(Token, String)] = []
 
@@ -30,7 +29,9 @@ public struct Parser {
 	public mutating func parse() -> [Expr] {
 		var results: [Expr] = []
 		while current.kind != .eof {
+			skip(.newline)
 			results.append(expr())
+			skip(.newline)
 		}
 		return results
 	}
@@ -38,16 +39,23 @@ public struct Parser {
 	public mutating func exprs() -> [any Expr] {
 		var results: [any Expr] = []
 		while !check(.rightParen), !check(.eof) {
+			skip(.newline)
 			results.append(expr())
+			skip(.newline)
 		}
 		return results
 	}
 
 	mutating func expr() -> Expr {
-		exprIndex += 1
+		skip(.newline)
+		self.exprLength += 1
+
+		if match(.def) {
+			return defExpr()
+		}
 
 		if match(.identifier) {
-			return VarExprSyntax(token: previous)
+			return identifier()
 		}
 
 		if match(.int) {
@@ -63,36 +71,6 @@ public struct Parser {
 			return LiteralExprSyntax(value: .bool(false))
 		}
 
-		if match(.leftParen) {
-			self.exprIndex = 0
-			return expression()
-		}
-
-		consume(.rightParen)
-
-		// If we haven't found anything else, move forward (to not infinite loop)
-		// and return an error token.
-		advance()
-		return error(at: previous, "Parser: Unexpected token: \(previous!)")
-	}
-
-	mutating func defExpr() -> Expr {
-		guard let name = consume(.identifier) else {
-			return error(at: current, "Expected identifier")
-		}
-
-		let expr = expr()
-
-		_ = consume(.rightParen)
-
-		return DefExprSyntax(name: name, value: expr)
-	}
-
-	mutating func expression() -> Expr {
-		if match(.def) {
-			return defExpr()
-		}
-
 		if match(.call) {
 			return callExpr()
 		}
@@ -105,88 +83,103 @@ public struct Parser {
 			return addExpr()
 		}
 
-		if match(.identifier) {
-			return callOrFuncExpr()
+		if match(.leftParen) {
+			self.exprLength = 0
+			skip(.newline)
+			let expr = expr()
+			skip(.newline)
+			consume(.rightParen)
+			skip(.newline)
+			return expr
+		}
+
+		// If we haven't found anything else, move forward (to not infinite loop)
+		// and return an error token.
+		advance()
+		return error(at: previous, "Parser: Unexpected token: \(previous!.debugDescription)")
+	}
+
+	mutating func defExpr() -> Expr {
+		guard let name = consume(.identifier) else {
+			return error(at: current, "Expected identifier")
 		}
 
 		let expr = expr()
 
-		_ = consume(.rightParen)
-
-		return expr
+		return DefExprSyntax(name: name, value: expr)
 	}
 
-	mutating func callOrFuncExpr() -> Expr {
+	func upcoming(_ type: Token.Kind) -> Bool {
+		var copy = self
+		while !copy.check(.eof), !copy.check(.rightParen) {
+			if copy.check(type) {
+				return true
+			}
+
+			copy.advance()
+		}
+		return false
+	}
+
+	mutating func identifier() -> Expr {
+		if !upcoming(.in), exprLength != 1 {
+			return VarExprSyntax(token: previous)
+		}
+
+		skip(.newline)
+
 		var parameters: [Token] = [previous]
 
 		while match(.identifier) {
 			parameters.append(previous)
 		}
 
+		skip(.newline)
+
 		if match(.in) {
+			skip(.newline)
 			return funcExpr(parameters: parameters)
 		}
 
-		// It's not a func, so convert the prior identifiers to var exprs
+		// If we started with an identifier and we're not in a function, it's a call. Add
+		// the existing identifiers we've got as arguments, then see if there are any more.
 		let callee = VarExprSyntax(token: parameters[0])
-		var operands: [any Expr] = parameters[1 ..< parameters.count].map { VarExprSyntax(token: $0) }
+		var args: [any Expr] = parameters[1..<parameters.count].map { VarExprSyntax(token: $0) }
+
 		while !check(.rightParen), !check(.eof) {
-			operands.append(expr())
+			args.append(expr())
 		}
 
-		consume(.rightParen)
-
-		return CallExprSyntax(callee: callee, args: operands)
+		return CallExprSyntax(callee: callee, args: args)
 	}
 
 	mutating func funcExpr(parameters: [Token]) -> Expr {
 		var body: [any Expr] = []
 
-		while !check(.rightParen), !check(.eof) {
+		while !check(.eof), !check(.rightParen) {
 			body.append(expr())
 		}
-		_ = consume(.rightParen)
 
-		let funcExpr = FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme)), body: body, i: previous.start)
-
-		// If a func is the first item in an expression and the following
-		// token isn't a right paren, it's call
-		if exprIndex == 1, !check(.rightParen) {
-			let args = exprs()
-			return CallExprSyntax(callee: funcExpr, args: args)
-		}
-
-		return funcExpr
+		return FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme)), body: body, i: previous.start)
 	}
 
 	mutating func addExpr() -> Expr {
 		let lhs = expr()
 		let rhs = expr()
 
-		_ = consume(.rightParen)
-
 		return AddExprSyntax(lhs: lhs, rhs: rhs)
 	}
 
 	mutating func callExpr() -> Expr {
-		let op = previous!
-		var operands: [Expr] = []
-
-		while !check(.rightParen), !check(.eof) {
-			operands.append(expr())
-		}
-
-		_ = consume(.rightParen)
-
-		return CallExprSyntax(callee: VarExprSyntax(token: op), args: operands)
+		let callee = expr()
+		let args = exprs()
+		return CallExprSyntax(callee: callee, args: args)
 	}
 
 	mutating func ifExpr() -> Expr {
 		let condition = expr()
 		let consequence = expr()
 		let alternative = expr()
-
-		_ = consume(.rightParen)
 
 		return IfExprSyntax(
 			condition: condition,
@@ -209,7 +202,7 @@ public struct Parser {
 			return peek()
 		}
 
-		_ = error(at: peek(), "Expected \(kind), got \(peek())")
+		_ = error(at: peek(), "Expected \(kind), got \(peek().debugDescription)")
 		return nil
 	}
 
@@ -225,6 +218,12 @@ public struct Parser {
 		}
 
 		return false
+	}
+
+	mutating func skip(_ kinds: Token.Kind...) {
+		while kinds.contains(peek().kind), current.kind != .eof {
+			advance()
+		}
 	}
 
 	func peek() -> Token {

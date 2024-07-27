@@ -11,12 +11,8 @@ public struct Interpreter: Visitor {
 	public init(_ code: String) {
 		let lexer = Lexer(code)
 		var parser = Parser(lexer)
-
-		if !parser.errors.isEmpty {
-			fatalError(parser.errors.description)
-		}
-
 		self.exprs = parser.parse()
+
 		if !parser.errors.isEmpty {
 			for (_, message) in parser.errors {
 				print(message)
