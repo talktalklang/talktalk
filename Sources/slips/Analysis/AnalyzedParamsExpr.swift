@@ -6,11 +6,11 @@
 //
 
 public struct AnalyzedParam: Param, AnalyzedExpr {
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : AnalyzedVisitor {
+	public func accept<V>(_: V, _: V.Context) -> V.Value where V: AnalyzedVisitor {
 		fatalError("unreachable")
 	}
-	
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {
+
+	public func accept<V>(_: V, _: V.Context) -> V.Value where V: Visitor {
 		fatalError("unreachable")
 	}
 

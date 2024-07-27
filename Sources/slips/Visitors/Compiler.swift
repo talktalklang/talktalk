@@ -123,7 +123,7 @@ public struct Compiler: AnalyzedVisitor {
 				builder.load(pointer: pointer)
 			case let .parameter(index):
 				builder.load(parameter: index)
-			case .capture(_):
+			case .capture:
 				fatalError("closures not implemented yet")
 			}
 

@@ -41,9 +41,7 @@ public struct Lexer {
 		self.source = ContiguousArray<Character>(source)
 	}
 
-	public mutating func rewind(count: Int) {
-		
-	}
+	public mutating func rewind(count _: Int) {}
 
 	public mutating func next() -> Token {
 		if isAtEnd {
@@ -88,7 +86,9 @@ public struct Lexer {
 	// MARK: Recognizers
 
 	mutating func newline() -> Token {
-		while !isAtEnd, peek().isNewline { advance() }
+		while !isAtEnd, peek().isNewline {
+			advance()
+		}
 		return make(.newline)
 	}
 

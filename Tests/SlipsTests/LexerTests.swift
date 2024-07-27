@@ -63,8 +63,8 @@ struct LexerTests {
 
 	@Test("newline collapsing") func newline() async throws {
 		var lexer = Lexer("""
-		
-		
+
+
 		""")
 		let tokens = lexer.collect()
 		#expect(tokens.count == 2)

@@ -48,7 +48,7 @@ public struct Parser {
 
 	mutating func expr() -> Expr {
 		skip(.newline)
-		self.exprLength += 1
+		exprLength += 1
 
 		if match(.def) {
 			return defExpr()
@@ -84,7 +84,7 @@ public struct Parser {
 		}
 
 		if match(.leftParen) {
-			self.exprLength = 0
+			exprLength = 0
 			skip(.newline)
 			let expr = expr()
 			skip(.newline)
@@ -144,7 +144,7 @@ public struct Parser {
 		// If we started with an identifier and we're not in a function, it's a call. Add
 		// the existing identifiers we've got as arguments, then see if there are any more.
 		let callee = VarExprSyntax(token: parameters[0])
-		var args: [any Expr] = parameters[1..<parameters.count].map { VarExprSyntax(token: $0) }
+		var args: [any Expr] = parameters[1 ..< parameters.count].map { VarExprSyntax(token: $0) }
 
 		while !check(.rightParen), !check(.eof) {
 			args.append(expr())

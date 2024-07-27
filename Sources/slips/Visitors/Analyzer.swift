@@ -14,11 +14,11 @@ public struct Analyzer: Visitor {
 		}
 
 		public func lookup(_ name: String) -> (any AnalyzedExpr)? {
-			self.locals[name]
+			locals[name]
 		}
 
 		public func define(local: String, as expr: any AnalyzedExpr) {
-			self.locals[local] = expr
+			locals[local] = expr
 		}
 	}
 
@@ -133,11 +133,11 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any ParamsExpr, _ env: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any ParamsExpr, _: Environment) -> any AnalyzedExpr {
 		AnalyzedParamsExpr(
 			type: .void,
 			expr: expr,
-			namesAnalyzed: expr.names.enumerated().map { (i, param) in
+			namesAnalyzed: expr.names.enumerated().map { i, param in
 				AnalyzedParam(name: param.name, type: .placeholder(i))
 			}
 		)

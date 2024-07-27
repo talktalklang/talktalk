@@ -15,7 +15,7 @@ public protocol ParamsExpr: Expr {
 
 public extension ParamsExpr {
 	subscript(_ index: Int) -> Param {
-		self.names[index]
+		names[index]
 	}
 }
 

@@ -26,7 +26,7 @@ public indirect enum ValueType {
 			"none"
 		case .void:
 			"void"
-		case .placeholder(_):
+		case .placeholder:
 			"placeholder"
 		}
 	}
