@@ -160,7 +160,7 @@ public struct Parser {
 			body.append(expr())
 		}
 
-		return FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme)), body: body, i: previous.start)
+		return FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme).map { ParamSyntax(name: $0) }), body: body, i: previous.start)
 	}
 
 	mutating func addExpr() -> Expr {

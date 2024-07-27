@@ -6,7 +6,7 @@
 //
 
 public struct AnalyzedVarExpr: AnalyzedExpr, VarExpr {
-	public let type: ValueType
+	public var type: ValueType
 	let expr: VarExpr
 
 	public var token: Token { expr.token }
@@ -17,5 +17,9 @@ public struct AnalyzedVarExpr: AnalyzedExpr, VarExpr {
 
 	public var name: String {
 		token.lexeme
+	}
+
+	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
+		visitor.visit(self, scope)
 	}
 }

@@ -6,10 +6,14 @@
 //
 
 public struct AnalyzedErrorExpr: AnalyzedExpr, ErrorExpr {
-	public let type: ValueType
+	public var type: ValueType
 	public var message: String
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
+		visitor.visit(self, scope)
+	}
+
+	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
 		visitor.visit(self, scope)
 	}
 }

@@ -21,7 +21,7 @@ extension Compiler {
 
 		_ = builder.define(main, parameterNames: []) {
 			if let retval = body() as? LLVM.IRValueRef {
-				builder.emit(return: .raw(retval.ref))
+				_ = builder.emit(return: .raw(retval.ref))
 			}
 		}
 	}

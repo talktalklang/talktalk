@@ -6,7 +6,7 @@
 //
 
 public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
-	public let type: ValueType
+	public var type: ValueType
 	let expr: CallExpr
 
 	public var calleeAnalyzed: any AnalyzedExpr
@@ -16,6 +16,10 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public var args: [any Expr] { expr.args }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
+		visitor.visit(self, scope)
+	}
+
+	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
 		visitor.visit(self, scope)
 	}
 }

@@ -7,7 +7,7 @@
 
 import LLVM
 
-public struct Compiler: Visitor {
+public struct Compiler: AnalyzedVisitor {
 	public class Context {
 		var counter: Int = 0
 		var environment: LLVM.Function.Environment = .init()
@@ -42,12 +42,14 @@ public struct Compiler: Visitor {
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
 
+		let analyzed = Analyzer.analyze(parsed)
+
 		let context = Context()
 
 		main(in: builder) {
 			var lastReturn: (any LLVM.IR)?
 
-			for expr in parsed {
+			for expr in analyzed {
 				lastReturn = expr.accept(self, context)
 			}
 
@@ -67,15 +69,14 @@ public struct Compiler: Visitor {
 		}
 	}
 
-	public func visit(_ expr: CallExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedCallExpr, _ context: Context) -> any LLVM.EmittedValue {
 		if case let .defined(functionPointer) = context.environment.get(expr.callee.description) {
-			return builder.call(functionPointer, with: expr.args.map { $0.accept(self, context) })
+			return builder.call(functionPointer, with: expr.argsAnalyzed.map { $0.accept(self, context) })
 		} else if expr.callee.description == "call" {
 			// Get the callable thing
-			let callable = expr.args[0]
+			let callable = expr.argsAnalyzed[0]
 			let emittedCallable = callable.accept(self, context) as! LLVM.EmittedFunctionValue
-
-			let args = expr.args[1 ..< expr.args.count]
+			let args = expr.argsAnalyzed[1 ..< expr.argsAnalyzed.count]
 			return builder.call(emittedCallable, with: args.map { $0.accept(self, context) })
 		} else {
 			builder.dump()
@@ -83,8 +84,8 @@ public struct Compiler: Visitor {
 		}
 	}
 
-	public func visit(_ expr: DefExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let value = expr.value.accept(self, context)
+	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) -> any LLVM.EmittedValue {
+		let value = expr.valueAnalyzed.accept(self, context)
 
 		switch value {
 		case let value as LLVM.EmittedIntValue:
@@ -100,11 +101,11 @@ public struct Compiler: Visitor {
 		return value
 	}
 
-	public func visit(_: ErrorExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_: AnalyzedErrorExpr, _: Context) -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
-	public func visit(_ expr: LiteralExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedLiteralExpr, _: Context) -> any LLVM.EmittedValue {
 		switch expr.value {
 		case let .int(int):
 			builder.emit(constant: LLVM.IntType.i8.constant(int))
@@ -115,17 +116,15 @@ public struct Compiler: Visitor {
 		}
 	}
 
-	public func visit(_ expr: VarExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> any LLVM.EmittedValue {
 		if let binding = context.environment.get(expr.name) {
 			switch binding {
 			case let .defined(pointer):
 				builder.load(pointer: pointer)
 			case let .parameter(index):
 				builder.load(parameter: index)
-			case let .capture(environment):
+			case .capture(_):
 				fatalError("closures not implemented yet")
-			default:
-				fatalError()
 			}
 
 		} else {
@@ -133,9 +132,9 @@ public struct Compiler: Visitor {
 		}
 	}
 
-	public func visit(_ expr: AddExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let lhs = expr.lhs.accept(self, context) as! LLVM.EmittedIntValue
-		let rhs = expr.rhs.accept(self, context) as! LLVM.EmittedIntValue
+	public func visit(_ expr: AnalyzedAddExpr, _ context: Context) -> any LLVM.EmittedValue {
+		let lhs = expr.lhsAnalyzed.accept(self, context) as! LLVM.EmittedIntValue
+		let rhs = expr.rhsAnalyzed.accept(self, context) as! LLVM.EmittedIntValue
 
 		return builder.binaryOperation(
 			.add,
@@ -144,17 +143,17 @@ public struct Compiler: Visitor {
 		)
 	}
 
-	public func visit(_ expr: IfExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedIfExpr, _ context: Context) -> any LLVM.EmittedValue {
 		builder.branch {
-			expr.condition.accept(self, context)
+			expr.conditionAnalyzed.accept(self, context)
 		} consequence: {
-			expr.consequence.accept(self, context)
+			expr.consequenceAnalyzed.accept(self, context)
 		} alternative: {
-			expr.alternative.accept(self, context)
+			expr.alternativeAnalyzed.accept(self, context)
 		}
 	}
 
-	public func visit(_ expr: FuncExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
 		let name = expr.name
 		let params = expr.params.names.map { _ in LLVM.IntType.i32 }
 		let context = context.newEnvironment()
@@ -168,18 +167,18 @@ public struct Compiler: Visitor {
 
 		let function = LLVM.Function(type: functionType, environment: context.environment)
 
-		for (i, name) in expr.params.names.enumerated() {
-			context.environment.parameter(name, at: i)
+		for (i, param) in expr.params.names.enumerated() {
+			context.environment.parameter(param.name, at: i)
 		}
 
-		return builder.define(function, parameterNames: expr.params.names) {
-			for expr in expr.body {
+		return builder.define(function, parameterNames: expr.params.names.map(\.name)) {
+			for expr in expr.bodyAnalyzed {
 				_ = builder.emit(return: expr.accept(self, context))
 			}
 		}
 	}
 
-	public func visit(_: ParamsExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_: AnalyzedParamsExpr, _: Context) -> any LLVM.EmittedValue {
 		fatalError()
 	}
 }

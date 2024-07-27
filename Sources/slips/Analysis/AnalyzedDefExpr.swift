@@ -6,13 +6,19 @@
 //
 
 public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
-	public let type: ValueType
+	public var type: ValueType
 	let expr: DefExpr
 
 	public var name: Token { expr.name }
 	public var value: any Expr { expr.value }
 
+	public var valueAnalyzed: any AnalyzedExpr
+
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
+		visitor.visit(self, scope)
+	}
+
+	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
 		visitor.visit(self, scope)
 	}
 }

@@ -40,7 +40,7 @@ struct AnalysisTests {
 		(x in (+ x x))
 		""")
 
-		#expect(fn.type == .function(.int, ["x"]))
+		#expect(fn.type == .function(.int, [.int("x")]))
 	}
 
 	@Test("Types calls") func funcCalls() {
@@ -50,5 +50,17 @@ struct AnalysisTests {
 		""")
 
 		#expect(res.type == .int)
+	}
+
+	@Test("Types func parameters") func funcParams() throws {
+		let ast = ast("""
+		(x in (+ x 1))
+		""")
+
+		let fn = try #require(ast as? AnalyzedFuncExpr)
+		let param = fn.analyzedParams.namesAnalyzed[0]
+
+		#expect(param.type == .int)
+		#expect(fn.type == .function(.int, [.int("x")]))
 	}
 }

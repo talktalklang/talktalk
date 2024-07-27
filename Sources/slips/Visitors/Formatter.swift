@@ -55,6 +55,6 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: ParamsExpr, _: Scope) -> String {
-		"\(expr.names.joined(separator: " "))"
+		"\(expr.names.map(\.name).joined(separator: " "))"
 	}
 }
