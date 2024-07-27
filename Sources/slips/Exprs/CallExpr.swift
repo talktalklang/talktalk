@@ -6,12 +6,12 @@
 //
 
 public protocol CallExpr: Expr {
-	var op: Token { get }
+	var callee: any Expr { get }
 	var args: [any Expr] { get }
 }
 
 public struct CallExprSyntax: CallExpr {
-	public let op: Token
+	public let callee: any Expr
 	public let args: [Expr]
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {

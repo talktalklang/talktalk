@@ -59,4 +59,10 @@ struct InterpreterTests {
 		(call addfour 2)
 		""").evaluate() == .int(6))
 	}
+
+	@Test("Evaluates inline func expr calls") func inlineCall() {
+		#expect(Interpreter("""
+		(x in (+ x 2) 3)
+		""").evaluate() == .int(5))
+	}
 }

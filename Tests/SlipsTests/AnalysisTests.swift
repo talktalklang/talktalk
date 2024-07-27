@@ -37,10 +37,18 @@ struct AnalysisTests {
 
 	@Test("Types func expr") func funcExpr() {
 		let fn = ast("""
-		(x in (+ x y))
+		(x in (+ x x))
 		""")
 
-		print(fn.type.description)
 		#expect(fn.type == .function(.int, ["x"]))
+	}
+
+	@Test("Types calls") func funcCalls() {
+		let res = ast("""
+		(def foo (x in (+ x x)))
+		(foo 1)
+		""")
+
+		#expect(res.type == .int)
 	}
 }

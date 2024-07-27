@@ -9,7 +9,10 @@ public struct Parser {
 	var lexer: Lexer
 	var current: Token
 	var previous: Token!
-	var isInFunction = false
+
+	// What position in an expression are we? This can matter for calls
+	var exprIndex = 0
+
 	public var errors: [(Token, String)] = []
 
 	public static func parse(_ string: String) -> [any Expr] {
@@ -32,7 +35,17 @@ public struct Parser {
 		return results
 	}
 
+	public mutating func exprs() -> [any Expr] {
+		var results: [any Expr] = []
+		while !check(.rightParen), !check(.eof) {
+			results.append(expr())
+		}
+		return results
+	}
+
 	mutating func expr() -> Expr {
+		exprIndex += 1
+
 		if match(.identifier) {
 			return VarExprSyntax(token: previous)
 		}
@@ -51,9 +64,14 @@ public struct Parser {
 		}
 
 		if match(.leftParen) {
+			self.exprIndex = 0
 			return expression()
 		}
 
+		consume(.rightParen)
+
+		// If we haven't found anything else, move forward (to not infinite loop)
+		// and return an error token.
 		advance()
 		return error(at: previous, "Parser: Unexpected token: \(previous!)")
 	}
@@ -79,16 +97,16 @@ public struct Parser {
 			return callExpr()
 		}
 
-		if match(.identifier) {
-			return callOrFuncExpr()
-		}
-
 		if match(.if) {
 			return ifExpr()
 		}
 
 		if match(.plus) {
 			return addExpr()
+		}
+
+		if match(.identifier) {
+			return callOrFuncExpr()
 		}
 
 		let expr = expr()
@@ -110,6 +128,7 @@ public struct Parser {
 		}
 
 		// It's not a func, so convert the prior identifiers to var exprs
+		let callee = VarExprSyntax(token: parameters[0])
 		var operands: [any Expr] = parameters[1 ..< parameters.count].map { VarExprSyntax(token: $0) }
 		while !check(.rightParen), !check(.eof) {
 			operands.append(expr())
@@ -117,7 +136,7 @@ public struct Parser {
 
 		consume(.rightParen)
 
-		return CallExprSyntax(op: parameters[0], args: operands)
+		return CallExprSyntax(callee: callee, args: operands)
 	}
 
 	mutating func funcExpr(parameters: [Token]) -> Expr {
@@ -128,7 +147,16 @@ public struct Parser {
 		}
 		_ = consume(.rightParen)
 
-		return FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme)), body: body, i: previous.start)
+		let funcExpr = FuncExprSyntax(params: ParamsExprSyntax(names: parameters.map(\.lexeme)), body: body, i: previous.start)
+
+		// If a func is the first item in an expression and the following
+		// token isn't a right paren, it's call
+		if exprIndex == 1, !check(.rightParen) {
+			let args = exprs()
+			return CallExprSyntax(callee: funcExpr, args: args)
+		}
+
+		return funcExpr
 	}
 
 	mutating func addExpr() -> Expr {
@@ -150,7 +178,7 @@ public struct Parser {
 
 		_ = consume(.rightParen)
 
-		return CallExprSyntax(op: op, args: operands)
+		return CallExprSyntax(callee: VarExprSyntax(token: op), args: operands)
 	}
 
 	mutating func ifExpr() -> Expr {

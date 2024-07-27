@@ -9,8 +9,11 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public let type: ValueType
 	let expr: CallExpr
 
-	public var op: Token { expr.op }
-	public var args: [Expr] { expr.args }
+	public var calleeAnalyzed: any AnalyzedExpr
+	public var argsAnalyzed: [any AnalyzedExpr]
+
+	public var callee: any Expr { expr.callee }
+	public var args: [any Expr] { expr.args }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)

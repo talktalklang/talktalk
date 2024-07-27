@@ -19,8 +19,22 @@ public struct Analyzer: Visitor {
 
 	public init() {}
 
-	public func visit(_: any CallExpr, _: Environment) -> any AnalyzedExpr {
-		AnalyzedErrorExpr(type: .error, message: "TODO")
+	public func visit(_ expr: any CallExpr, _ context: Environment) -> any AnalyzedExpr {
+		let callee = expr.accept(self, context)
+
+		// TODO: Update environment with the types getting passed to these args.
+		let args = expr.args.map { $0.accept(self, context) }
+
+		guard case let .function(t, _) = callee.type else {
+			return AnalyzedErrorExpr(type: .function(.void, []), message: "callee not callable")
+		}
+
+		return AnalyzedCallExpr(
+			type: t,
+			expr: expr,
+			calleeAnalyzed: callee,
+			argsAnalyzed: args
+		)
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Environment) -> any AnalyzedExpr {
@@ -31,8 +45,8 @@ public struct Analyzer: Visitor {
 		return AnalyzedDefExpr(type: value.type, expr: expr)
 	}
 
-	public func visit(_: any ErrorExpr, _: Environment) -> any AnalyzedExpr {
-		AnalyzedErrorExpr(type: .error, message: "TODO")
+	public func visit(_ expr: any ErrorExpr, _: Environment) -> any AnalyzedExpr {
+		AnalyzedErrorExpr(type: .error, message: expr.message)
 	}
 
 	public func visit(_ expr: any LiteralExpr, _: Environment) -> any AnalyzedExpr {

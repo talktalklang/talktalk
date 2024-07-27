@@ -68,9 +68,9 @@ public struct Compiler: Visitor {
 	}
 
 	public func visit(_ expr: CallExpr, _ context: Context) -> any LLVM.EmittedValue {
-		if case let .defined(functionPointer) = context.environment.get(expr.op.lexeme) {
+		if case let .defined(functionPointer) = context.environment.get(expr.callee.description) {
 			return builder.call(functionPointer, with: expr.args.map { $0.accept(self, context) })
-		} else if expr.op.lexeme == "call" {
+		} else if expr.callee.description == "call" {
 			// Get the callable thing
 			let callable = expr.args[0]
 			let emittedCallable = callable.accept(self, context) as! LLVM.EmittedFunctionValue

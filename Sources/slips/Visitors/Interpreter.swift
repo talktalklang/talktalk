@@ -51,7 +51,7 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> Value {
-		if expr.op.kind == .call {
+		if expr.callee.description == "call" {
 			if case let .fn(closure) = expr.args[0].accept(self, scope) {
 				return call(closure, args: Array(expr.args[1 ..< expr.args.count]), scope)
 			} else {
@@ -59,10 +59,12 @@ public struct Interpreter: Visitor {
 			}
 		}
 
-		if case let .fn(closure) = scope.lookup(expr.op.lexeme) {
+		let callee = expr.callee.accept(self, scope)
+
+		if case let .fn(closure) = callee {
 			return call(closure, args: expr.args, scope)
 		} else {
-			fatalError("\(expr.op.lexeme) not callable")
+			fatalError("\(expr.callee.description) not callable")
 		}
 	}
 
@@ -70,8 +72,9 @@ public struct Interpreter: Visitor {
 		scope.define(expr.name.lexeme, expr.value.accept(self, scope))
 	}
 
-	public func visit(_: ErrorExpr, _: Scope) -> Value {
-		.none
+	public func visit(_ err: ErrorExpr, _: Scope) -> Value {
+		print(err.message)
+		return .none
 	}
 
 	public func visit(_ expr: LiteralExpr, _: Scope) -> Value {

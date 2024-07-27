@@ -26,7 +26,7 @@ struct ParserTests {
 	@Test("Basic expr") func expr() {
 		if let ast = parse("(+ 1 2)")[0] as? CallExpr {
 			#expect(type(of: ast) == CallExpr.self)
-			#expect(ast.op.lexeme == "+")
+			#expect(ast.callee.description == "+")
 		} else {
 			print("nope")
 		}
@@ -63,6 +63,30 @@ struct ParserTests {
 		#expect(ast.description == "(x y in (+ x y))")
 	}
 
+	@Test("call expr") func callExpr() {
+		let ast = parse("""
+		(x 1)
+		""")[0] as! CallExpr
+		#expect(ast.callee.description == "x")
+		#expect(ast.args[0].description == "1")
+	}
+
+	@Test("inline expr call") func inlineCall() {
+		let ast = parse("""
+		((x in x) 1)
+		""")[0] as! CallExpr
+		#expect(ast.callee.description == "(x in x)")
+		#expect(ast.args[0].description == "1")
+	}
+
+	@Test("passing an inline func to an inline func") func inlineInlineCall() {
+		let ast = parse("""
+		((x in x) (y in y))
+		""")[0] as! CallExpr
+		#expect(ast.callee.description == "(x in x)")
+		#expect(ast.args[0].description == "(y in y)")
+	}
+
 	@Test("func expr can find its captured values") func funcCaptures() {
 		let ast = parse("""
 		(def x (y in (z in (+ y z))))
@@ -71,7 +95,5 @@ struct ParserTests {
 		""")
 
 		let fn = (ast[0] as! DefExpr).value as! FuncExpr
-
-		print("sup")
 	}
 }

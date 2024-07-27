@@ -7,7 +7,7 @@
 
 public struct Formatter: Visitor {
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> String {
-		"(\(expr.op.lexeme) \(expr.args.map { $0.accept(self, scope) }.joined(separator: " ")))"
+		"(\(expr.callee.accept(self, scope))) \(expr.args.map { $0.accept(self, scope) }.joined(separator: " ")))"
 	}
 
 	public func visit(_ expr: DefExpr, _ scope: Scope) -> String {
@@ -15,7 +15,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: ErrorExpr, _: Scope) -> String {
-		"Error: \(expr)"
+		"Error: \(expr.message)"
 	}
 
 	public func visit(_ expr: LiteralExpr, _ scope: Scope) -> String {
