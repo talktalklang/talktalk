@@ -15,8 +15,8 @@ public extension Analyzer {
 
 		public class Binding {
 			public let name: String
-			public let expr: any AnalyzedExpr
-			public var type: ValueType
+			public var expr: any AnalyzedExpr
+			public var type: ValueType { didSet { self.expr.type = type } }
 			public var isCaptured: Bool
 
 			public init(name: String, expr: any AnalyzedExpr, isCaptured: Bool = false) {
@@ -30,11 +30,17 @@ public extension Analyzer {
 		private var parent: Environment?
 		private var locals: [String: Binding]
 		public var captures: [Capture]
+		public var capturedValues: [Binding]
 
 		public init(parent: Environment? = nil) {
 			self.parent = parent
 			self.locals = [:]
 			self.captures = []
+			self.capturedValues = []
+		}
+
+		public var bindings: [Binding] {
+			Array(locals.values)
 		}
 
 		public func infer(_ name: String) -> Binding? {
@@ -59,7 +65,10 @@ public extension Analyzer {
 		}
 
 		public func update(local: String, as type: ValueType) {
-			locals[local]?.type = type
+			if let current = locals[local] {
+				current.type = type
+				locals[local] = current
+			}
 		}
 
 		public func define(local: String, as expr: any AnalyzedExpr) {
@@ -73,6 +82,7 @@ public extension Analyzer {
 		func capture(name: String) -> Capture? {
 			if let local = locals[name] {
 				local.isCaptured = true
+				capturedValues.append(local)
 				return Capture(name: name, binding: local, environment: self)
 			}
 

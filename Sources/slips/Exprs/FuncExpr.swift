@@ -16,9 +16,13 @@ public struct FuncExprSyntax: FuncExpr {
 	public let params: ParamsExpr
 	public let body: [any Expr]
 	public let i: Int
+	public let name: String
 
-	public var name: String {
-		"_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
+	init(params: ParamsExpr, body: [any Expr], i: Int, name: String? = nil) {
+		self.params = params
+		self.body = body
+		self.i = i
+		self.name = name ?? "_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {

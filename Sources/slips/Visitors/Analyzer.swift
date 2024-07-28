@@ -11,12 +11,12 @@ public struct Analyzer: Visitor {
 
 	public init() {}
 
-	static func analyze(_ exprs: [any Expr]) -> [any AnalyzedExpr] {
+	public static func analyze(_ exprs: [any Expr]) -> any AnalyzedExpr {
 		let env = Environment()
 		let analyzer = Analyzer()
-		return exprs.map {
-			$0.accept(analyzer, env)
-		}
+
+		let mainExpr = FuncExprSyntax(params: ParamsExprSyntax(params: []), body: exprs, i: 0, name: "main")
+		return analyzer.visit(mainExpr, env)
 	}
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) -> any AnalyzedExpr {
@@ -25,7 +25,7 @@ public struct Analyzer: Visitor {
 		// TODO: Update environment with the types getting passed to these args.
 		let args = expr.args.map { $0.accept(self, context) }
 
-		guard case let .function(t, _) = callee.type else {
+		guard case let .function(_, t, _) = callee.type else {
 			return AnalyzedErrorExpr(type: .error, message: "callee not callable")
 		}
 
@@ -113,12 +113,12 @@ public struct Analyzer: Visitor {
 		params.infer(from: innerEnvironment)
 
 		return AnalyzedFuncExpr(
-			type: .function(bodyAnalyzed.last?.type ?? .void, params),
+			type: .function(expr.name, bodyAnalyzed.last?.type ?? .void, params),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
 			returnsAnalyzed: bodyAnalyzed.last,
-			captures: innerEnvironment.captures
+			environment: innerEnvironment
 		)
 	}
 
@@ -137,11 +137,19 @@ public struct Analyzer: Visitor {
 	}
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
+		if case .placeholder(_) = type { return }
+
 		for expr in exprs {
 			if var expr = expr as? AnalyzedVarExpr {
 				expr.type = type
 				env.update(local: expr.name, as: type)
+				if let capture = env.captures.first(where: { $0.name == expr.name }) {
+					capture.binding.expr.type = type
+					capture.binding.type = type
+				}
 			}
 		}
+
+
 	}
 }

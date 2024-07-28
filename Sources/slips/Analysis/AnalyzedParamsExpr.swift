@@ -39,7 +39,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public mutating func infer(from env: Analyzer.Environment) {
 		for (i, name) in paramsAnalyzed.enumerated() {
 			if let binding = env.infer(name.name) {
-				paramsAnalyzed[i].type = binding.expr.type
+				paramsAnalyzed[i].type = binding.type
 			}
 		}
 	}

@@ -10,14 +10,14 @@ public indirect enum ValueType {
 		lhs.description == rhs.description
 	}
 
-	case int, function(ValueType, AnalyzedParamsExpr), bool, error, none, void, placeholder(Int)
+	case int, function(String, ValueType, AnalyzedParamsExpr), bool, error, none, void, placeholder(Int)
 
 	public var description: String {
 		switch self {
 		case .int:
 			"int"
-		case let .function(returnType, args):
-			"fn(\(args.params.map(\.name).joined(separator: ", "))) -> (\(returnType.description))"
+		case let .function(name, returnType, args):
+			"fn \(name)(\(args.params.map(\.name).joined(separator: ", "))) -> (\(returnType.description))"
 		case .bool:
 			"bool"
 		case .error:

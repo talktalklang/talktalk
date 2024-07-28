@@ -46,19 +46,7 @@ public struct Compiler: AnalyzedVisitor {
 
 		let context = Context()
 
-		main(in: builder) {
-			var lastReturn: (any LLVM.IR)?
-
-			for expr in analyzed {
-				lastReturn = expr.accept(self, context)
-			}
-
-			if let lastReturnPointer = lastReturn as? any LLVM.StoredPointer {
-				return builder.load(pointer: lastReturnPointer)
-			}
-
-			return lastReturn as! any LLVM.IRValue
-		}
+		_ = analyzed.accept(self, context)
 
 		module.dump()
 
@@ -76,6 +64,8 @@ public struct Compiler: AnalyzedVisitor {
 		switch callee {
 		case let callee as LLVM.EmittedFunctionValue:
 			return builder.call(callee, with: args)
+		case let callee as LLVM.StackValue<LLVM.FunctionType>:
+			return builder.call(callee, with: args)
 		default:
 			fatalError()
 		}
@@ -85,22 +75,19 @@ public struct Compiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) -> any LLVM.EmittedValue {
 		let value = expr.valueAnalyzed.accept(self, context)
+		let variable = context.environment.get(expr.name.lexeme)
 
-		let stored: any LLVM.StoredPointer = switch value {
-		case let value as LLVM.EmittedIntValue:
-			builder.store(stackValue: value, name: expr.name.lexeme)
-		case let value as LLVM.EmittedFunctionValue:
-			builder.store(stackValue: value, name: expr.name.lexeme)
-		case let value as any LLVM.StoredPointer:
-			value
+		switch variable {
+		case let .declared(pointer):
+			_ = builder.store(value, to: pointer)
+			context.environment.define(expr.name.lexeme, as: pointer)
+		case let .defined(pointer):
+			_ = builder.store(value, to: pointer)
+		case .parameter(_):
+			fatalError("not yet")
 		default:
-			fatalError()
+			fatalError("not yet")
 		}
-
-		context.environment.define(
-			expr.name.lexeme,
-			as: stored
-		)
 
 		return value
 	}
@@ -123,11 +110,14 @@ public struct Compiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> any LLVM.EmittedValue {
 		switch context.environment.get(expr.name) {
 		case let .defined(pointer):
-			builder.load(pointer: pointer, name: expr.name)
+			print("<- loading binding: \(expr.name): \(pointer.type)")
+			return builder.load(pointer: pointer, name: expr.name)
 		case let .parameter(index):
-			builder.load(parameter: index)
-		case .capture:
-			fatalError()
+			print("<- loading parameter: \(expr.name): \(index)")
+			return builder.load(parameter: index)
+		case let .declared(pointer):
+			print("<- loading parameter: \(expr.name): \(pointer.type)")
+			fatalError("uninitialized variable: \(expr.name)")
 		default:
 			fatalError()
 		}
@@ -157,17 +147,24 @@ public struct Compiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let functionType = irType(for: expr).as(LLVM.FunctionType.self)
+	public func visit(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
+		let functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
 		let function = LLVM.Function(type: functionType)
+		let context = context.newEnvironment()
 
-		let emittedFunction = builder.define(function, parameterNames: expr.params.params.map(\.name)) {
-			for (i, param) in expr.analyzedParams.paramsAnalyzed.enumerated() {
+		if funcExpr.name == "main" {
+			return main(funcExpr, context)
+		}
+
+		emitEnvironment(funcExpr, context)
+
+		let emittedFunction = builder.define(function, parameterNames: funcExpr.params.params.map(\.name)) {
+			for (i, param) in funcExpr.analyzedParams.paramsAnalyzed.enumerated() {
 				context.environment.parameter(param.name, at: i)
 			}
 
 			var returnValue: (any LLVM.EmittedValue)? = nil
-			for expr in expr.bodyAnalyzed {
+			for expr in funcExpr.bodyAnalyzed {
 				returnValue = expr.accept(self, context)
 			}
 
@@ -178,9 +175,7 @@ public struct Compiler: AnalyzedVisitor {
 			}
 		}
 
-		let pointer = builder.store(stackValue: emittedFunction, name: expr.name)
-
-		return pointer
+		return emittedFunction
 	}
 
 	public func visit(_: AnalyzedParamsExpr, _: Context) -> any LLVM.EmittedValue {
@@ -189,13 +184,56 @@ public struct Compiler: AnalyzedVisitor {
 
 	// MARK: Helpers
 
+	func emitEnvironment(_ funcExpr: AnalyzedFuncExpr, _ context: Context) {
+		// Figure out which of this function's values are captured by children and malloc some heap space
+		// for them.
+		for binding in funcExpr.environment.bindings {
+			print("-> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description)")
+			if binding.isCaptured {
+				let storage = builder.malloca(type: irType(for: binding.type), name: binding.name)
+				context.environment.declare(binding.name, as: storage)
+			} else {
+				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
+				context.environment.declare(binding.name, as: storage)
+			}
+		}
+
+		// Create a closure for this function, moving locals to the stack. For values already on the stack,
+		// just reuse the values.
+		for capture in funcExpr.environment.captures {
+			()
+		}
+	}
+
+	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
+		var functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
+		functionType.name = funcExpr.name
+
+		let main = builder.main(functionType: functionType)
+
+		emitEnvironment(funcExpr, context)
+
+		var lastReturn: (any LLVM.EmittedValue)?
+		for expr in funcExpr.bodyAnalyzed {
+			lastReturn = expr.accept(self, context)
+		}
+
+		if let lastReturn {
+			_ = builder.emit(return: lastReturn)
+		} else {
+			_ = builder.emit(constant: LLVM.IntType.i32.constant(1))
+		}
+
+		return main
+	}
+
 	func irType(for type: ValueType) -> any LLVM.IRType {
 		switch type {
 		case .int:
 			LLVM.IntType.i32
-		case let .function(returns, params):
+		case let .function(name, returns, params):
 			LLVM.FunctionType(
-				name: type.description,
+				name: name,
 				returnType: irType(for: returns),
 				parameterTypes: params.paramsAnalyzed.map { irType(for: $0.type) },
 				isVarArg: false
@@ -216,12 +254,16 @@ public struct Compiler: AnalyzedVisitor {
 				LLVM.VoidType()
 			}
 
-			return LLVM.FunctionType(
+			var functionType = LLVM.FunctionType(
 				name: expr.name,
 				returnType: returnType,
 				parameterTypes: expr.analyzedParams.paramsAnalyzed.map { irType(for: $0.type) },
 				isVarArg: false
 			)
+
+			functionType.name = expr.name
+
+			return functionType
 		default:
 			fatalError()
 		}

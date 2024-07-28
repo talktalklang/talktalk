@@ -12,8 +12,9 @@ struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedExpr {
 		let analyzer = Analyzer()
 		let environment = Analyzer.Environment()
+		let analyzed = Analyzer.analyze(Parser.parse(string))
 
-		return Parser.parse(string).map { $0.accept(analyzer, environment) }.last!
+		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed[0]
 	}
 
 	@Test("Types literals") func literals() {
@@ -26,9 +27,10 @@ struct AnalysisTests {
 		#expect(ast("(+ 1 2)").type == .int)
 	}
 
-	@Test("Types def") func def() {
-		#expect(ast("(def foo 1)").type == .int)
-		#expect(ast("(def foo 1) foo").type == .int)
+	@Test("Types def") func def() throws {
+		let ast = ast("(def foo 1)")
+		let def = try #require(ast as? AnalyzedDefExpr)
+		#expect(def.type == .int)
 	}
 
 	@Test("Types if expr") func ifExpr() {
@@ -40,7 +42,7 @@ struct AnalysisTests {
 		(x in (+ x x))
 		""")
 
-		#expect(fn.type == .function(.int, [.int("x")]))
+		#expect(fn.type == .function("x", .int, [.int("x")]))
 	}
 
 	@Test("Types calls") func funcCalls() {
@@ -61,7 +63,7 @@ struct AnalysisTests {
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.type == .int)
-		#expect(fn.type == .function(.int, [.int("x")]))
+		#expect(fn.type == .function("", .int, [.int("x")]))
 	}
 
 	@Test("Types captures") func funcCaptures() throws {
@@ -74,12 +76,13 @@ struct AnalysisTests {
 
 		#expect(param.name == "x")
 		#expect(param.type == .int)
-		#expect(fn.type == .function(.function(.int, [.int("y")]), [.int("x")]))
+		#expect(fn.type == .function("", .function("", .int, [.int("y")]), [.int("x")]))
+		#expect(fn.environment.capturedValues[0].name == "x")
 
 		let nestedFn = fn.bodyAnalyzed[0] as! AnalyzedFuncExpr
-		#expect(nestedFn.type == .function(.int, [.int("y")]))
+		#expect(nestedFn.type == .function("", .int, [.int("y")]))
 
-		let capture = nestedFn.captures[0]
+		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
 		#expect(capture.binding.expr.type == .int)
 	}
