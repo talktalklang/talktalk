@@ -228,7 +228,7 @@ public struct Compiler: AnalyzedVisitor {
 		// Now that we have the captures list built, we can create the StructType for it. We need this in order
 		// to be able to GEP into it when we're trying to look up values from the environment during variable
 		// resolution (see VarExpr visitor)
-		let type = LLVM.StructType(name: "Capture(\(captures.map(\.0).joined()))", types: captures.map({ $0.1.type }))
+		let type = LLVM.StructType(name: "Capture(\(captures.map(\.0).joined()))", types: captures.map { $0.1.type })
 		for (i, capture) in captures.enumerated() {
 			context.environment.bindings[capture.0] = .capture(i, type)
 		}
@@ -308,8 +308,6 @@ public struct Compiler: AnalyzedVisitor {
 			} else {
 				LLVM.VoidType()
 			}
-
-			if expr.name.contains("fn_y") {}
 
 			var functionType = LLVM.FunctionType(
 				name: expr.name,
