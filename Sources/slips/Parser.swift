@@ -26,8 +26,8 @@ public struct Parser {
 		self.lexer = lexer
 	}
 
+	var results: [Expr] = []
 	public mutating func parse() -> [Expr] {
-		var results: [Expr] = []
 		while current.kind != .eof {
 			skip(.newline)
 			results.append(expr())
@@ -56,6 +56,10 @@ public struct Parser {
 
 		if match(.identifier) {
 			return identifier()
+		}
+
+		if match(.in) {
+			return funcExpr(parameters: [])
 		}
 
 		if match(.int) {
@@ -154,11 +158,17 @@ public struct Parser {
 	}
 
 	mutating func funcExpr(parameters: [Token]) -> Expr {
+		skip(.newline)
+
 		var body: [any Expr] = []
 
 		while !check(.eof), !check(.rightParen) {
+			skip(.newline)
 			body.append(expr())
+			skip(.newline)
 		}
+
+		skip(.newline)
 
 		return FuncExprSyntax(params: ParamsExprSyntax(params: parameters.map(\.lexeme).map { ParamSyntax(name: $0) }), body: body, i: previous.start)
 	}

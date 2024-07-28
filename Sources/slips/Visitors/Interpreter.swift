@@ -27,6 +27,7 @@ public struct Interpreter: Visitor {
 		for expr in exprs {
 			last = expr.accept(self, rootScope)
 		}
+
 		return last
 	}
 
@@ -47,14 +48,6 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> Value {
-		if expr.callee.description == "call" {
-			if case let .fn(closure) = expr.args[0].accept(self, scope) {
-				return call(closure, args: Array(expr.args[1 ..< expr.args.count]), scope)
-			} else {
-				fatalError("\(expr.args[0].accept(self, scope)) is not callable")
-			}
-		}
-
 		let callee = expr.callee.accept(self, scope)
 
 		if case let .fn(closure) = callee {
@@ -92,7 +85,8 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: FuncExpr, _ scope: Scope) -> Value {
-		.fn(Closure(funcExpr: expr, environment: scope))
+		let childScope = Scope(parent: scope)
+		return .fn(Closure(funcExpr: expr, environment: childScope))
 	}
 
 	public func visit(_: ParamsExpr, _: Scope) -> Value {
@@ -106,20 +100,14 @@ public struct Interpreter: Visitor {
 	private
 
 	func call(_ closure: Closure, args: [any Expr], _ scope: Scope) -> Value {
-		let innerScope = Scope(parent: scope)
-
-		for (name, value) in closure.environment.locals {
-			_ = innerScope.define(name, value)
-		}
-
 		for (i, argument) in args.enumerated() {
-			_ = innerScope.define(closure.funcExpr.params.params[i].name, argument.accept(self, innerScope))
+			_ = scope.define(closure.funcExpr.params.params[i].name, argument.accept(self, scope))
 		}
 
 		var lastReturn: Value = .none
 
 		for expr in closure.funcExpr.body {
-			lastReturn = expr.accept(self, innerScope)
+			lastReturn = expr.accept(self, scope)
 		}
 
 		return lastReturn

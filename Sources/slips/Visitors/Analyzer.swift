@@ -25,7 +25,7 @@ public struct Analyzer: Visitor {
 		// TODO: Update environment with the types getting passed to these args.
 		let args = expr.args.map { $0.accept(self, context) }
 
-		guard case let .function(_, t, _) = callee.type else {
+		guard case let .function(_, t, _, _) = callee.type else {
 			return AnalyzedErrorExpr(type: .error, message: "callee not callable")
 		}
 
@@ -66,7 +66,10 @@ public struct Analyzer: Visitor {
 
 	public func visit(_ expr: any VarExpr, _ context: Environment) -> any AnalyzedExpr {
 		if let binding = context.lookup(expr.name) {
-			return AnalyzedVarExpr(type: binding.expr.type, expr: expr)
+			return AnalyzedVarExpr(
+				type: binding.expr.type,
+				expr: expr
+			)
 		}
 
 		return AnalyzedErrorExpr(type: .error, message: "Undefined variable: \(expr.name)")
@@ -113,7 +116,7 @@ public struct Analyzer: Visitor {
 		params.infer(from: innerEnvironment)
 
 		return AnalyzedFuncExpr(
-			type: .function(expr.name, bodyAnalyzed.last?.type ?? .void, params),
+			type: .function(expr.name, bodyAnalyzed.last?.type ?? .void, params, innerEnvironment.captures),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,

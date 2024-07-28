@@ -7,10 +7,18 @@
 
 public extension Analyzer {
 	class Environment {
-		public struct Capture {
+		public struct Capture: CustomStringConvertible {
+			public static func any(_ name: String) -> Capture {
+				Capture(name: name, binding: .init(name: name, expr: AnalyzedLiteralExpr(type: .bool, expr: LiteralExprSyntax(value: .bool(true)))), environment: .init())
+			}
+
 			public let name: String
 			public let binding: Binding
 			public let environment: Environment
+
+			public var description: String {
+				".capture(\(name))"
+			}
 		}
 
 		public class Binding {

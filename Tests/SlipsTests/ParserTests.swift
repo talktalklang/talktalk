@@ -88,6 +88,34 @@ struct ParserTests {
 		#expect(ast.args[0].description == "(y in y)")
 	}
 
+	@Test("Func with no params") func noparams() {
+		let ast = parse("""
+		(in 2)
+		""")[0] as! FuncExpr
+		#expect(ast.params.params.isEmpty)
+		#expect(ast.body[0].description == "2")
+	}
+
+	@Test("Parses counter") func counter() throws {
+		let ast = parse("""
+		(
+			def makeCounter (x in
+				(def count 0)
+				(x in
+					(def count (+ count 1))
+					count
+				)
+			)
+		)
+
+		(def counter (call makeCounter))
+		(call counter)
+		(call counter)
+		""")
+
+		#expect(ast.count == 4)
+	}
+
 	@Test("deals with newlines") func newlines() throws {
 		let ast = parse("""
 		(

@@ -53,7 +53,27 @@ struct CompilerTests {
 		""").run() == .int(4))
 	}
 
-	@Test("Evaluates nested scopes") func nestedScopes() {
+	@Test("Compiles counter") func counter() {
+		#expect(Compiler("""
+		(
+			def makeCounter (in
+				(def count 0)
+				(in
+					(def count (+ count 1))
+					count
+				)
+			)
+		)
+
+		(def mycounter (call makeCounter))
+		(call mycounter)
+		(call mycounter)
+		(call mycounter)
+		(call mycounter)
+		""").run() == .int(4))
+	}
+
+	@Test("Compiles nested scopes") func nestedScopes() {
 		#expect(Compiler("""
 		(
 			def addthis (x in
@@ -63,7 +83,7 @@ struct CompilerTests {
 			)
 		)
 		(def addfour (addthis 8))
-		(call addfour 2)
+		(addfour 2)
 		""").run() == .int(10))
 	}
 }

@@ -15,7 +15,7 @@ extension Compiler {
 			returnType: .i32,
 			parameterTypes: [],
 			isVarArg: false,
-			envStructType: nil
+			captures: nil
 		)
 
 		_ = builder.define(mainType, parameterNames: [], envStruct: nil) {

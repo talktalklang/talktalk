@@ -46,6 +46,46 @@ struct InterpreterTests {
 		""").evaluate() == .int(4))
 	}
 
+	@Test("Evaluates counter") func counter() {
+		#expect(Interpreter("""
+		(
+			def makeCounter (in
+				(def count 0)
+				(in
+					(def count (+ count 1))
+					count
+				)
+			)
+		)
+
+		(def mycounter (call makeCounter))
+		(call mycounter)
+		(call mycounter)
+		(call mycounter)
+		""").evaluate() == .int(3))
+	}
+
+	@Test("Doesn't mutate state between closures") func counter2() {
+		#expect(Interpreter("""
+		(
+			def makeCounter (in
+				(def count 0)
+				(in
+					(def count (+ count 1))
+					count
+				)
+			)
+		)
+
+		(def mycounter (call makeCounter))
+		(call mycounter)
+		(call mycounter)
+		
+		(def urcounter (call makeCounter))
+		(call urcounter)
+		""").evaluate() == .int(1))
+	}
+
 	@Test("Evaluates nested scopes") func nestedScopes() {
 		#expect(Interpreter("""
 		(def addtwo (x in (y in (+ y x))))
