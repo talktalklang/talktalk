@@ -10,8 +10,8 @@ public struct AnalyzedParam: Param, AnalyzedExpr {
 		fatalError("unreachable")
 	}
 
-	public func accept<V>(_: V, _: V.Context) -> V.Value where V: Visitor {
-		fatalError("unreachable")
+	public func accept<V>(_ visitor: V, _ context: V.Context) -> V.Value where V: Visitor {
+		visitor.visit(self, context)
 	}
 
 	public var name: String
@@ -33,8 +33,8 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 
 	public mutating func infer(from env: Analyzer.Environment) {
 		for (i, name) in paramsAnalyzed.enumerated() {
-			if let expr = env.lookup(name.name) {
-				paramsAnalyzed[i].type = expr.type
+			if let binding = env.infer(name.name) {
+				paramsAnalyzed[i].type = binding.expr.type
 			}
 		}
 	}

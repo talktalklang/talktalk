@@ -99,6 +99,10 @@ public struct Interpreter: Visitor {
 		.bool(false)
 	}
 
+	public func visit(_ expr: any Param, _ context: Scope) -> Value {
+		context.lookup(expr.name)
+	}
+
 	private
 
 	func call(_ closure: Closure, args: [any Expr], _ scope: Scope) -> Value {

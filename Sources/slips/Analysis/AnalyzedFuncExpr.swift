@@ -12,6 +12,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: [any AnalyzedExpr]
 	public let returnsAnalyzed: (any AnalyzedExpr)?
+	public let captures: [Analyzer.Environment.Capture]
 
 	public var params: ParamsExpr { expr.params }
 	public var body: [any Expr] { expr.body }

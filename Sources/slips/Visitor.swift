@@ -18,4 +18,5 @@ public protocol Visitor {
 	func visit(_ expr: IfExpr, _ context: Context) -> Value
 	func visit(_ expr: FuncExpr, _ context: Context) -> Value
 	func visit(_ expr: ParamsExpr, _ context: Context) -> Value
+	func visit(_ expr: Param, _ context: Context) -> Value
 }

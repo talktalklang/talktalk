@@ -63,4 +63,24 @@ struct AnalysisTests {
 		#expect(param.type == .int)
 		#expect(fn.type == .function(.int, [.int("x")]))
 	}
+
+	@Test("Types captures") func funcCaptures() throws {
+		let ast = ast("""
+		(x in (y in (+ y x)))
+		""")
+
+		let fn = try #require(ast as? AnalyzedFuncExpr)
+		let param = fn.analyzedParams.paramsAnalyzed[0]
+
+		#expect(param.name == "x")
+		#expect(param.type == .int)
+		#expect(fn.type == .function(.function(.int, [.int("y")]), [.int("x")]))
+
+		let nestedFn = fn.bodyAnalyzed[0] as! AnalyzedFuncExpr
+		#expect(nestedFn.type == .function(.int, [.int("y")]))
+
+		let capture = nestedFn.captures[0]
+		#expect(capture.name == "x")
+		#expect(capture.binding.expr.type == .int)
+	}
 }

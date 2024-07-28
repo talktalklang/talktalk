@@ -6,22 +6,6 @@
 //
 
 public struct Analyzer: Visitor {
-	public class Environment {
-		private var locals: [String: any AnalyzedExpr]
-
-		public init() {
-			self.locals = [:]
-		}
-
-		public func lookup(_ name: String) -> (any AnalyzedExpr)? {
-			locals[name]
-		}
-
-		public func define(local: String, as expr: any AnalyzedExpr) {
-			locals[local] = expr
-		}
-	}
-
 	public typealias Context = Environment
 	public typealias Value = any AnalyzedExpr
 
@@ -81,8 +65,8 @@ public struct Analyzer: Visitor {
 	}
 
 	public func visit(_ expr: any VarExpr, _ context: Environment) -> any AnalyzedExpr {
-		if let value = context.lookup(expr.name) {
-			return AnalyzedVarExpr(type: value.type, expr: expr)
+		if let binding = context.lookup(expr.name) {
+			return AnalyzedVarExpr(type: binding.expr.type, expr: expr)
 		}
 
 		return AnalyzedErrorExpr(type: .error, message: "Undefined variable: \(expr.name)")
@@ -109,28 +93,32 @@ public struct Analyzer: Visitor {
 	}
 
 	public func visit(_ expr: any FuncExpr, _ env: Environment) -> any AnalyzedExpr {
+		let innerEnvironment = env.add()
+
 		// Define our parameters in the environment so they're declared in the body. They're
 		// just placeholders for now.
 		var params = visit(expr.params, env) as! AnalyzedParamsExpr
 		for param in params.paramsAnalyzed {
-			env.define(local: param.name, as: param)
+			innerEnvironment.define(local: param.name, as: param)
 		}
 
+		// Visit the body with the innerEnvironment, finding captures as we go.
 		var bodyAnalyzed: [any AnalyzedExpr] = []
 		for bodyExpr in expr.body {
-			bodyAnalyzed.append(bodyExpr.accept(self, env))
+			bodyAnalyzed.append(bodyExpr.accept(self, innerEnvironment))
 		}
 
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
-		params.infer(from: env)
+		params.infer(from: innerEnvironment)
 
 		return AnalyzedFuncExpr(
 			type: .function(bodyAnalyzed.last?.type ?? .void, params),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
-			returnsAnalyzed: bodyAnalyzed.last
+			returnsAnalyzed: bodyAnalyzed.last,
+			captures: innerEnvironment.captures
 		)
 	}
 
@@ -144,11 +132,15 @@ public struct Analyzer: Visitor {
 		)
 	}
 
+	public func visit(_ expr: any Param, _ context: Environment) -> any AnalyzedExpr {
+		AnalyzedParam(name: expr.name, type: .placeholder(1))
+	}
+
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
 		for expr in exprs {
 			if var expr = expr as? AnalyzedVarExpr {
 				expr.type = type
-				env.define(local: expr.name, as: expr)
+				env.update(local: expr.name, as: type)
 			}
 		}
 	}
