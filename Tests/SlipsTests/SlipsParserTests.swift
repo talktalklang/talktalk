@@ -8,10 +8,10 @@
 import Slips
 import Testing
 
-struct ParserTests {
+struct SlipsParserTests {
 	func parse(_ source: String) -> [Expr] {
-		let lexer = Lexer(source)
-		var parser = Parser(lexer)
+		let lexer = SlipsLexer(source)
+		var parser = SlipsParser(lexer)
 		let result = parser.parse()
 
 		#expect(parser.errors.isEmpty)

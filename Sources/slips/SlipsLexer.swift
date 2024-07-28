@@ -32,7 +32,7 @@ public struct Token: CustomDebugStringConvertible {
 	}
 }
 
-public struct Lexer {
+public struct SlipsLexer {
 	let source: ContiguousArray<Character>
 	var start = 0
 	var current = 0

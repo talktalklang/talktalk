@@ -9,8 +9,8 @@ public struct Interpreter: Visitor {
 	let exprs: [any Expr]
 
 	public init(_ code: String) {
-		let lexer = Lexer(code)
-		var parser = Parser(lexer)
+		let lexer = SlipsLexer(code)
+		var parser = SlipsParser(lexer)
 		self.exprs = parser.parse()
 
 		if !parser.errors.isEmpty {

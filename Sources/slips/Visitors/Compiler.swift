@@ -40,8 +40,8 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func compile() -> LLVM.Module {
-		let lexer = Lexer(source)
-		var parser = Parser(lexer)
+		let lexer = SlipsLexer(source)
+		var parser = SlipsParser(lexer)
 		let parsed = parser.parse()
 
 		let analyzed = Analyzer.analyze(parsed)

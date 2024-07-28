@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public struct Parser {
-	var lexer: Lexer
+public struct SlipsParser {
+	var lexer: SlipsLexer
 	var current: Token
 	var previous: Token!
 
@@ -15,11 +15,11 @@ public struct Parser {
 	public var errors: [(Token, String)] = []
 
 	public static func parse(_ string: String) -> [any Expr] {
-		var parser = Parser(Lexer(string))
+		var parser = SlipsParser(SlipsLexer(string))
 		return parser.parse()
 	}
 
-	public init(_ lexer: Lexer) {
+	public init(_ lexer: SlipsLexer) {
 		var lexer = lexer
 		self.previous = lexer.next()
 		self.current = previous
