@@ -14,7 +14,7 @@ let package = Package(
 		),
 	],
 	dependencies: [
-		.package(path: "/Users/nakajima/apps/LLVM"),
+		.package(path: "../LLVM"),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.

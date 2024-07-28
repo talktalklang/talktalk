@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-public struct AnalyzedParam: Param, AnalyzedExpr {
+public class AnalyzedParam: Param, AnalyzedExpr {
 	public func accept<V>(_: V, _: V.Context) -> V.Value where V: AnalyzedVisitor {
 		fatalError("unreachable")
 	}
@@ -16,6 +16,11 @@ public struct AnalyzedParam: Param, AnalyzedExpr {
 
 	public var name: String
 	public var type: ValueType
+
+	public init(name: String, type: ValueType) {
+		self.name = name
+		self.type = type
+	}
 }
 
 public extension Param where Self == AnalyzedParam {
