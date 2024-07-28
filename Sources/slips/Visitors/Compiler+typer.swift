@@ -9,7 +9,7 @@ import LLVM
 
 extension Compiler {
 	// Try to guess what the "type" of this expression is
-	func getTypeOf(expr: any Expr, context: Context) -> any LLVM.IRType {
+	func getTypeOf(expr _: any Expr, context _: Context) -> any LLVM.IRType {
 		fatalError()
 	}
 }

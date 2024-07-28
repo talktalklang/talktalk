@@ -80,7 +80,7 @@ struct InterpreterTests {
 		(def mycounter (call makeCounter))
 		(call mycounter)
 		(call mycounter)
-		
+
 		(def urcounter (call makeCounter))
 		(call urcounter)
 		""").evaluate() == .int(1))

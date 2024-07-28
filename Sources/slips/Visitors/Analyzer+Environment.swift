@@ -24,7 +24,7 @@ public extension Analyzer {
 		public class Binding {
 			public let name: String
 			public var expr: any AnalyzedExpr
-			public var type: ValueType { didSet { self.expr.type = type } }
+			public var type: ValueType { didSet { expr.type = type } }
 			public var isCaptured: Bool
 
 			public init(name: String, expr: any AnalyzedExpr, isCaptured: Bool = false) {

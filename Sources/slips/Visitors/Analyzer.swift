@@ -135,12 +135,12 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any Param, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any Param, _: Environment) -> any AnalyzedExpr {
 		AnalyzedParam(name: expr.name, type: .placeholder(1))
 	}
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
-		if case .placeholder(_) = type { return }
+		if case .placeholder = type { return }
 
 		for expr in exprs {
 			if var expr = expr as? AnalyzedVarExpr {
@@ -152,7 +152,5 @@ public struct Analyzer: Visitor {
 				}
 			}
 		}
-
-
 	}
 }
