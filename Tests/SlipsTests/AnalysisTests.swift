@@ -10,8 +10,6 @@ import Testing
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedExpr {
-		let analyzer = Analyzer()
-		let environment = Analyzer.Environment()
 		let analyzed = Analyzer.analyze(Parser.parse(string))
 
 		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.last!

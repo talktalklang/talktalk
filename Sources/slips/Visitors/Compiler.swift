@@ -256,7 +256,7 @@ public struct Compiler: AnalyzedVisitor {
 
 		let main = builder.main(functionType: functionType)
 
-		_ = allocateLocals(funcExpr: funcExpr, context: context)
+		allocateLocals(funcExpr: funcExpr, context: context)
 		_ = emitEnvironment(funcExpr, context)
 
 		var lastReturn: (any LLVM.EmittedValue)?

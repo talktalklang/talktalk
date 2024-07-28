@@ -129,18 +129,5 @@ struct ParserTests {
 
 		let def1 = try #require(ast[0] as? DefExpr)
 		#expect(def1.name.lexeme == "addtwo")
-//
-//		let call = try #require(ast[2] as? CallExpr)
-//		#expect(call.callee.description == "addfour")
-	}
-
-	@Test("func expr can find its captured values") func funcCaptures() {
-		let ast = parse("""
-		(def x (y in (z in (+ y z))))
-		(def add (x 1))
-		(add 2)
-		""")
-
-		let fn = (ast[0] as! DefExpr).value as! FuncExpr
 	}
 }
