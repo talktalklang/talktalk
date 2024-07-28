@@ -96,4 +96,38 @@ struct AnalysisTests {
 		#expect(capture.name == "x")
 		#expect(capture.binding.expr.type == .int)
 	}
+
+	@Test("Types counter") func counter() throws {
+		let main = Analyzer.analyze(Parser.parse("""
+		(
+			def makeCounter (in
+				(def count 0)
+				(in
+					(def count (+ count 1))
+					count
+				)
+			)
+		)
+
+		(def mycounter (call makeCounter))
+		(call mycounter)
+		"""))
+
+		let def = try #require(main.cast(AnalyzedFuncExpr.self).bodyAnalyzed[0] as? AnalyzedDefExpr)
+		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
+		#expect(fn.environment.captures.isEmpty)
+
+		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
+		#expect(counterFn.environment.captures.count == 1)
+		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).type == .int)
+
+		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.type else {
+			#expect(Bool(false), "\(counterFn.type)")
+			return
+		}
+
+		#expect(counterReturns.description == "int")
+		#expect(counterCaptures[0].name == "count")
+		#expect(counterParams.params.isEmpty)
+	}
 }

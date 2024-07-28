@@ -9,16 +9,18 @@ import LLVM
 
 public struct Compiler: AnalyzedVisitor {
 	public class Context {
+		var name: String
 		var counter: Int = 0
 		var environment: LLVM.Function.Environment = .init()
 
-		init(counter: Int = 0, environment: LLVM.Function.Environment = .init()) {
+		init(name: String, counter: Int = 0, environment: LLVM.Function.Environment = .init()) {
+			self.name = name
 			self.counter = counter
 			self.environment = environment
 		}
 
-		func newEnvironment() -> Context {
-			Context(counter: counter, environment: LLVM.Function.Environment(parent: environment))
+		func newEnvironment(name: String) -> Context {
+			Context(name: name, counter: counter, environment: LLVM.Function.Environment(parent: environment))
 		}
 
 		func nextCount() -> Int {
@@ -43,7 +45,7 @@ public struct Compiler: AnalyzedVisitor {
 		let parsed = parser.parse()
 
 		let analyzed = Analyzer.analyze(parsed)
-		let context = Context()
+		let context = Context(name: "main")
 		_ = analyzed.accept(self, context)
 
 		if let int = LLVM.JIT().execute(module: module) {
@@ -108,16 +110,16 @@ public struct Compiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> any LLVM.EmittedValue {
 		switch context.environment.get(expr.name) {
 		case let .capture(index, type):
-			print("<- loading capture: \(expr.name): slot \(index) in environment struct")
+			print("<- loading capture in \(context.name): \(expr.name): slot \(index) in environment struct")
 			return builder.load(capture: index, envStructType: type)
 		case let .defined(pointer):
-			print("<- loading defined binding: \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")")
+			print("<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")")
 			return builder.load(pointer: pointer, name: expr.name)
 		case let .parameter(index, _):
-			print("<- loading parameter: \(expr.name): \(index)")
+			print("<- loading parameter in \(context.name): \(expr.name): \(index)")
 			return builder.load(parameter: index)
 		case let .declared(pointer):
-			print("<- loading declared binding: \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")")
+			print("<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")")
 			return builder.load(pointer: pointer, name: expr.name)
 		default:
 			fatalError()
@@ -150,7 +152,7 @@ public struct Compiler: AnalyzedVisitor {
 
 	public func visit(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
 		let functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
-		let context = context.newEnvironment()
+		let context = context.newEnvironment(name: funcExpr.name)
 
 		if funcExpr.name == "main" {
 			return main(funcExpr, context)
@@ -188,9 +190,16 @@ public struct Compiler: AnalyzedVisitor {
 
 	func allocateLocals(funcExpr: AnalyzedFuncExpr, context: Context) {
 		print("-> allocating locals for \(funcExpr.name)")
+
 		// Figure out which of this function's values are captured by children and malloc some heap space
 		// for them.
 		for binding in funcExpr.environment.bindings {
+			// We already have this (probably a capture so just go on to the next one
+			if context.environment.has(binding.name) {
+				print("  -> environment already contains \(binding.name), skipping")
+				continue
+			}
+
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.expr), name: binding.name)
 				print("  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))")

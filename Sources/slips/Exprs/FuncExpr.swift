@@ -22,7 +22,7 @@ public struct FuncExprSyntax: FuncExpr {
 		self.params = params
 		self.body = body
 		self.i = i
-		self.name = name ?? "_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
+		self.name = name ?? "_fn_\(params.params.map(\.name).joined(separator: "_"))_\(body.map(\.description).joined(separator: "_"))_\(i)"
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {

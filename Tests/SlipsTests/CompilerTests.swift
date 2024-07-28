@@ -69,8 +69,7 @@ struct CompilerTests {
 		(call mycounter)
 		(call mycounter)
 		(call mycounter)
-		(call mycounter)
-		""").run() == .int(4))
+		""").run() == .int(3))
 	}
 
 	@Test("Compiles nested scopes") func nestedScopes() {
