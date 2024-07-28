@@ -14,7 +14,7 @@ struct AnalysisTests {
 		let environment = Analyzer.Environment()
 		let analyzed = Analyzer.analyze(Parser.parse(string))
 
-		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed[0]
+		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.last!
 	}
 
 	@Test("Types literals") func literals() {
@@ -42,7 +42,7 @@ struct AnalysisTests {
 		(x in (+ x x))
 		""")
 
-		#expect(fn.type == .function("x", .int, [.int("x")]))
+		#expect(fn.type == .function("_fn_x_12", .int, [.int("x")]))
 	}
 
 	@Test("Types calls") func funcCalls() {
@@ -63,7 +63,7 @@ struct AnalysisTests {
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.type == .int)
-		#expect(fn.type == .function("", .int, [.int("x")]))
+		#expect(fn.type == .function("_fn_x_12", .int, [.int("x")]))
 	}
 
 	@Test("Types captures") func funcCaptures() throws {
@@ -76,11 +76,11 @@ struct AnalysisTests {
 
 		#expect(param.name == "x")
 		#expect(param.type == .int)
-		#expect(fn.type == .function("", .function("", .int, [.int("y")]), [.int("x")]))
+		#expect(fn.type == .function("_fn_x_19", .function("_fn_y_18", .int, [.int("y")]), [.int("x")]))
 		#expect(fn.environment.capturedValues[0].name == "x")
 
 		let nestedFn = fn.bodyAnalyzed[0] as! AnalyzedFuncExpr
-		#expect(nestedFn.type == .function("", .int, [.int("y")]))
+		#expect(nestedFn.type == .function("_fn_y_18", .int, [.int("y")]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")

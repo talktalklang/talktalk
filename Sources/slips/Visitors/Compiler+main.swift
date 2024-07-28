@@ -14,12 +14,11 @@ extension Compiler {
 			name: "main",
 			returnType: .i32,
 			parameterTypes: [],
-			isVarArg: false
+			isVarArg: false,
+			envStructType: nil
 		)
 
-		let main = LLVM.Function(type: mainType)
-
-		_ = builder.define(main, parameterNames: []) {
+		_ = builder.define(mainType, parameterNames: [], envStruct: nil) {
 			if let retval = body() as? LLVM.IRValueRef {
 				_ = builder.emit(return: .raw(retval.ref))
 			}
