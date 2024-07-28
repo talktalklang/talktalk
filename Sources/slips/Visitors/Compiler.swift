@@ -39,7 +39,7 @@ public struct Compiler: AnalyzedVisitor {
 		self.builder = LLVM.Builder(module: module)
 	}
 
-	public func run() -> Slips.Value {
+	public func compile() -> LLVM.Module {
 		let lexer = Lexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
@@ -48,7 +48,11 @@ public struct Compiler: AnalyzedVisitor {
 		let context = Context(name: "main")
 		_ = analyzed.accept(self, context)
 
-		if let int = LLVM.JIT().execute(module: module) {
+		return module
+	}
+
+	public func run() -> Slips.Value {
+		if let int = LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
 			return .error("Nope.")
