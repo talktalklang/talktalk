@@ -58,7 +58,7 @@ struct AnalysisTests {
 		""")
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
-		let param = fn.analyzedParams.namesAnalyzed[0]
+		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.type == .int)
 		#expect(fn.type == .function(.int, [.int("x")]))

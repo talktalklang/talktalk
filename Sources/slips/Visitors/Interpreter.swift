@@ -109,7 +109,7 @@ public struct Interpreter: Visitor {
 		}
 
 		for (i, argument) in args.enumerated() {
-			_ = innerScope.define(closure.funcExpr.params.names[i].name, argument.accept(self, innerScope))
+			_ = innerScope.define(closure.funcExpr.params.params[i].name, argument.accept(self, innerScope))
 		}
 
 		var lastReturn: Value = .none

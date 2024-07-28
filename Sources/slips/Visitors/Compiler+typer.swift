@@ -15,7 +15,7 @@ extension Compiler {
 			let functionType = LLVM.FunctionType(
 				name: expr.name,
 				returnType: getTypeOf(expr: expr.body.last!, context: context),
-				parameterTypes: (0 ..< expr.params.names.count).map { _ in .i32 },
+				parameterTypes: (0 ..< expr.params.params.count).map { _ in .i32 },
 				isVarArg: false
 			)
 

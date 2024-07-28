@@ -11,13 +11,14 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
 
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: [any AnalyzedExpr]
+	public let returnsAnalyzed: (any AnalyzedExpr)?
 
 	public var params: ParamsExpr { expr.params }
 	public var body: [any Expr] { expr.body }
 	public var i: Int { expr.i }
 
 	public var name: String {
-		"_fn_\(params.names.map(\.name).joined(separator: "_"))_\(i)"
+		"_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {

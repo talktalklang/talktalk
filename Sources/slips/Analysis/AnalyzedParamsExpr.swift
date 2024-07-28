@@ -28,13 +28,13 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public var type: ValueType
 	let expr: ParamsExpr
 
-	public var namesAnalyzed: [AnalyzedParam]
-	public var names: [any Param] { expr.names }
+	public var paramsAnalyzed: [AnalyzedParam]
+	public var params: [any Param] { expr.params }
 
 	public mutating func infer(from env: Analyzer.Environment) {
-		for (i, name) in namesAnalyzed.enumerated() {
+		for (i, name) in paramsAnalyzed.enumerated() {
 			if let expr = env.lookup(name.name) {
-				namesAnalyzed[i].type = expr.type
+				paramsAnalyzed[i].type = expr.type
 			}
 		}
 	}
@@ -46,4 +46,14 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
 		visitor.visit(self, scope)
 	}
+}
+
+extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
+	public init(arrayLiteral elements: AnalyzedParam...) {
+		self.expr = ParamsExprSyntax(params: elements.map { ParamSyntax(name: $0.name) })
+		self.paramsAnalyzed = elements
+		self.type = .void
+	}
+
+	public typealias ArrayLiteralElement = AnalyzedParam
 }

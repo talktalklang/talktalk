@@ -17,7 +17,7 @@ extension Compiler {
 			isVarArg: false
 		)
 
-		let main = LLVM.Function(type: mainType, environment: .init())
+		let main = LLVM.Function(type: mainType)
 
 		_ = builder.define(main, parameterNames: []) {
 			if let retval = body() as? LLVM.IRValueRef {

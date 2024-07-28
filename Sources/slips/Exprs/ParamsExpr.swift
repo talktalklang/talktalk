@@ -10,12 +10,12 @@ public protocol Param {
 }
 
 public protocol ParamsExpr: Expr {
-	var names: [any Param] { get }
+	var params: [any Param] { get }
 }
 
 public extension ParamsExpr {
 	subscript(_ index: Int) -> Param {
-		names[index]
+		params[index]
 	}
 }
 
@@ -24,7 +24,7 @@ public struct ParamSyntax: Param {
 }
 
 public struct ParamsExprSyntax: ParamsExpr {
-	public var names: [any Param]
+	public var params: [any Param]
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
 		visitor.visit(self, scope)

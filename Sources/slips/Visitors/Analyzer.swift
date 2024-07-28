@@ -42,7 +42,7 @@ public struct Analyzer: Visitor {
 		let args = expr.args.map { $0.accept(self, context) }
 
 		guard case let .function(t, _) = callee.type else {
-			return AnalyzedErrorExpr(type: .function(.void, []), message: "callee not callable")
+			return AnalyzedErrorExpr(type: .error, message: "callee not callable")
 		}
 
 		return AnalyzedCallExpr(
@@ -112,7 +112,7 @@ public struct Analyzer: Visitor {
 		// Define our parameters in the environment so they're declared in the body. They're
 		// just placeholders for now.
 		var params = visit(expr.params, env) as! AnalyzedParamsExpr
-		for param in params.namesAnalyzed {
+		for param in params.paramsAnalyzed {
 			env.define(local: param.name, as: param)
 		}
 
@@ -126,10 +126,11 @@ public struct Analyzer: Visitor {
 		params.infer(from: env)
 
 		return AnalyzedFuncExpr(
-			type: .function(bodyAnalyzed.last?.type ?? .void, expr.params.names),
+			type: .function(bodyAnalyzed.last?.type ?? .void, params),
 			expr: expr,
 			analyzedParams: params,
-			bodyAnalyzed: bodyAnalyzed
+			bodyAnalyzed: bodyAnalyzed,
+			returnsAnalyzed: bodyAnalyzed.last
 		)
 	}
 
@@ -137,7 +138,7 @@ public struct Analyzer: Visitor {
 		AnalyzedParamsExpr(
 			type: .void,
 			expr: expr,
-			namesAnalyzed: expr.names.enumerated().map { i, param in
+			paramsAnalyzed: expr.params.enumerated().map { i, param in
 				AnalyzedParam(name: param.name, type: .placeholder(i))
 			}
 		)
