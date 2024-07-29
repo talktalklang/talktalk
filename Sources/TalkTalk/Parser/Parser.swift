@@ -181,6 +181,8 @@ public struct Parser {
 	}
 
 	@discardableResult mutating func consume(_ kind: Token.Kind, _ message: String? = nil) -> Token? {
+		checkForInfiniteLoop()
+
 		if peek().kind == kind {
 			defer {
 				advance()
@@ -194,6 +196,8 @@ public struct Parser {
 	}
 
 	@discardableResult mutating func didConsume(_ kind: Token.Kind) -> Bool {
+		checkForInfiniteLoop()
+
 		if peek().kind == kind {
 			defer {
 				advance()
@@ -211,6 +215,8 @@ public struct Parser {
 	}
 
 	mutating func didMatch(_ kind: Token.Kind) -> Bool {
+		checkForInfiniteLoop()
+
 		if peek().kind == kind {
 			defer { advance() }
 
@@ -221,6 +227,8 @@ public struct Parser {
 	}
 
 	mutating func match(_ kind: Token.Kind) -> Token? {
+		checkForInfiniteLoop()
+
 		if peek().kind == kind {
 			defer { advance() }
 

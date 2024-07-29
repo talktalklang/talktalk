@@ -18,6 +18,8 @@ extension Parser {
 		}
 
 		while precedence < current.kind.rule.precedence {
+			checkForInfiniteLoop()
+
 			if let infix = current.kind.rule.infix, lhs != nil {
 				lhs = infix(&self, precedence.canAssign, lhs!)
 				skip(.newline)
