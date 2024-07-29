@@ -9,13 +9,14 @@ public struct Token: CustomDebugStringConvertible {
 	public enum Kind {
 		// Single char tokens
 		case leftParen, rightParen,
-		     symbol, plus
+				 leftBrace, rightBrace,
+		     symbol, plus, equals, comma
 
 		// Multiple char tokens
 		case int, float, identifier
 
 		// Keywords
-		case def, `true`, `false`, `if`, `in`, call
+		case `func`, `true`, `false`, `if`, `in`, call, `else`
 
 		case newline
 		case eof
@@ -32,7 +33,7 @@ public struct Token: CustomDebugStringConvertible {
 	}
 }
 
-public struct SlipsLexer {
+public struct TalkTalkLexer {
 	let source: ContiguousArray<Character>
 	var start = 0
 	var current = 0
@@ -44,11 +45,11 @@ public struct SlipsLexer {
 	public mutating func rewind(count _: Int) {}
 
 	public mutating func next() -> Token {
+		skipWhitespace()
+
 		if isAtEnd {
 			return make(.eof)
 		}
-
-		skipWhitespace()
 
 		start = current
 
@@ -56,7 +57,11 @@ public struct SlipsLexer {
 		return switch char {
 		case "(": make(.leftParen)
 		case ")": make(.rightParen)
+		case "{": make(.leftBrace)
+		case "}": make(.rightBrace)
+		case "=": make(.equals)
 		case "+": make(.plus)
+		case ",": make(.comma)
 		case _ where char.isNewline: newline()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
@@ -98,10 +103,11 @@ public struct SlipsLexer {
 		}
 
 		return switch String(source[start ..< current]) {
-		case "def": make(.def)
+		case "func": make(.func)
 		case "true": make(.true)
 		case "false": make(.false)
 		case "if": make(.if)
+		case "else": make(.else)
 		case "in": make(.in)
 		case "call": make(.call)
 		default:

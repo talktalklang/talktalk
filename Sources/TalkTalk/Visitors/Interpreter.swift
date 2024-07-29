@@ -9,8 +9,8 @@ public struct Interpreter: Visitor {
 	let exprs: [any Expr]
 
 	public init(_ code: String) {
-		let lexer = SlipsLexer(code)
-		var parser = SlipsParser(lexer)
+		let lexer = TalkTalkLexer(code)
+		var parser = Parser(lexer)
 		self.exprs = parser.parse()
 
 		if !parser.errors.isEmpty {
@@ -31,7 +31,7 @@ public struct Interpreter: Visitor {
 		return last
 	}
 
-	public func visit(_ expr: AddExpr, _ scope: Scope) -> Value {
+	public func visit(_ expr: any BinaryExpr, _ scope: Scope) -> Value {
 		let operands = [expr.lhs, expr.rhs]
 
 		if operands.count == 0 {

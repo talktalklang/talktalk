@@ -9,6 +9,12 @@ public struct AnalyzedErrorExpr: AnalyzedExpr, ErrorExpr {
 	public var type: ValueType
 	public var message: String
 
+	public init(type: ValueType, message: String) {
+		self.type = type
+		self.message = message
+		print(message)
+	}
+
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)
 	}

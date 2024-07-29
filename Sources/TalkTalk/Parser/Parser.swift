@@ -5,8 +5,10 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public struct SlipsParser {
-	var lexer: SlipsLexer
+public struct Parser {
+	var parserRepeats: [Int: Int] = [:]
+
+	var lexer: TalkTalkLexer
 	var current: Token
 	var previous: Token!
 
@@ -15,11 +17,11 @@ public struct SlipsParser {
 	public var errors: [(Token, String)] = []
 
 	public static func parse(_ string: String) -> [any Expr] {
-		var parser = SlipsParser(SlipsLexer(string))
+		var parser = Parser(TalkTalkLexer(string))
 		return parser.parse()
 	}
 
-	public init(_ lexer: SlipsLexer) {
+	public init(_ lexer: TalkTalkLexer) {
 		var lexer = lexer
 		self.previous = lexer.next()
 		self.current = previous
@@ -50,67 +52,58 @@ public struct SlipsParser {
 		skip(.newline)
 		exprLength += 1
 
-		if match(.def) {
-			return defExpr()
-		}
-
-		if match(.identifier) {
-			return identifier()
-		}
-
-		if match(.in) {
-			return funcExpr(parameters: [])
-		}
-
-		if match(.int) {
-			let int = Int(previous.lexeme)!
-			return LiteralExprSyntax(value: .int(int))
-		}
-
-		if match(.true) {
-			return LiteralExprSyntax(value: .bool(true))
-		}
-
-		if match(.false) {
-			return LiteralExprSyntax(value: .bool(false))
-		}
-
-		if match(.call) {
-			return callExpr()
-		}
-
-		if match(.if) {
-			return ifExpr()
-		}
-
-		if match(.plus) {
-			return addExpr()
-		}
-
-		if match(.leftParen) {
-			exprLength = 0
-			skip(.newline)
-			let expr = expr()
-			skip(.newline)
-			consume(.rightParen)
-			skip(.newline)
-			return expr
-		}
-
-		// If we haven't found anything else, move forward (to not infinite loop)
-		// and return an error token.
-		advance()
-		return error(at: previous, "Parser: Unexpected token: \(previous!.debugDescription)")
+		return parse(precedence: .assignment)
 	}
 
-	mutating func defExpr() -> Expr {
-		guard let name = consume(.identifier) else {
-			return error(at: current, "Expected identifier")
+	mutating func funcExpr() -> Expr {
+		// Grab the name if there is one
+		let name: Token? = match(.identifier)
+
+		skip(.newline)
+
+		consume(.leftParen, "expected '(' before params")
+
+		// Parse parameter list
+		let params = parameterList()
+
+		skip(.newline)
+
+		guard didConsume(.leftBrace) else {
+			return ErrorExprSyntax(message: "expected '{' before func body")
 		}
 
-		let expr = expr()
+		var body: [any Expr] = []
+		while !check(.eof), !check(.rightBrace) {
+			skip(.newline)
+			body.append(expr())
+			skip(.newline)
+		}
 
-		return DefExprSyntax(name: name, value: expr)
+		consume(.rightBrace, "Expected '}' after func body")
+
+		return FuncExprSyntax(params: params, body: body, i: lexer.current, name: name?.lexeme)
+	}
+
+	mutating func parameterList() -> ParamsExpr {
+		if didMatch(.rightParen) {
+			return ParamsExprSyntax(params: [])
+		}
+
+		var params: [Token] = []
+
+		repeat {
+			skip(.newline)
+			guard let identifier = consume(.identifier) else {
+				break
+			}
+			skip(.newline)
+
+			params.append(identifier)
+		} while didMatch(.comma)
+
+		consume(.rightParen, "Expected ')' after parameter list")
+
+		return ParamsExprSyntax(params: params.map { ParamSyntax(name: $0.lexeme) })
 	}
 
 	func upcoming(_ type: Token.Kind) -> Bool {
@@ -134,15 +127,15 @@ public struct SlipsParser {
 
 		var parameters: [Token] = [previous]
 
-		while match(.identifier) {
+		while didMatch(.identifier) {
 			parameters.append(previous)
 		}
 
 		skip(.newline)
 
-		if match(.in) {
+		if didMatch(.in) {
 			skip(.newline)
-			return funcExpr(parameters: parameters)
+			return funcExpr()
 		}
 
 		// If we started with an identifier and we're not in a function, it's a call. Add
@@ -157,27 +150,11 @@ public struct SlipsParser {
 		return CallExprSyntax(callee: callee, args: args)
 	}
 
-	mutating func funcExpr(parameters: [Token]) -> Expr {
-		skip(.newline)
-
-		var body: [any Expr] = []
-
-		while !check(.eof), !check(.rightParen) {
-			skip(.newline)
-			body.append(expr())
-			skip(.newline)
-		}
-
-		skip(.newline)
-
-		return FuncExprSyntax(params: ParamsExprSyntax(params: parameters.map(\.lexeme).map { ParamSyntax(name: $0) }), body: body, i: previous.start)
-	}
-
 	mutating func addExpr() -> Expr {
 		let lhs = expr()
 		let rhs = expr()
 
-		return AddExprSyntax(lhs: lhs, rhs: rhs)
+		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: .plus)
 	}
 
 	mutating func callExpr() -> Expr {
@@ -203,7 +180,7 @@ public struct SlipsParser {
 		current = lexer.next()
 	}
 
-	@discardableResult mutating func consume(_ kind: Token.Kind) -> Token? {
+	@discardableResult mutating func consume(_ kind: Token.Kind, _ message: String? = nil) -> Token? {
 		if peek().kind == kind {
 			defer {
 				advance()
@@ -212,15 +189,28 @@ public struct SlipsParser {
 			return peek()
 		}
 
-		_ = error(at: peek(), "Expected \(kind), got \(peek().debugDescription)")
+		_ = error(at: peek(), message ?? "Expected \(kind), got \(peek().debugDescription)")
 		return nil
+	}
+
+	@discardableResult mutating func didConsume(_ kind: Token.Kind) -> Bool {
+		if peek().kind == kind {
+			defer {
+				advance()
+			}
+
+			return true
+		}
+
+		_ = error(at: peek(), "Expected \(kind), got \(peek().debugDescription)")
+		return false
 	}
 
 	func check(_ kind: Token.Kind) -> Bool {
 		peek().kind == kind
 	}
 
-	mutating func match(_ kind: Token.Kind) -> Bool {
+	mutating func didMatch(_ kind: Token.Kind) -> Bool {
 		if peek().kind == kind {
 			defer { advance() }
 
@@ -228,6 +218,16 @@ public struct SlipsParser {
 		}
 
 		return false
+	}
+
+	mutating func match(_ kind: Token.Kind) -> Token? {
+		if peek().kind == kind {
+			defer { advance() }
+
+			return peek()
+		}
+
+		return nil
 	}
 
 	mutating func skip(_ kinds: Token.Kind...) {
@@ -242,6 +242,7 @@ public struct SlipsParser {
 
 	mutating func error(at: Token, _ message: String) -> ErrorExpr {
 		errors.append((at, message))
+		print(message)
 		return ErrorExprSyntax(message: message)
 	}
 }

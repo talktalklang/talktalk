@@ -1,6 +1,6 @@
 //
 //  Analyzer.swift
-//  Slips
+//  TalkTalk
 //
 //  Created by Pat Nakajima on 7/26/24.
 //
@@ -8,6 +8,8 @@
 public struct Analyzer: Visitor {
 	public typealias Context = Environment
 	public typealias Value = any AnalyzedExpr
+
+	var errors: [String] = []
 
 	public init() {}
 
@@ -26,6 +28,7 @@ public struct Analyzer: Visitor {
 		let args = expr.args.map { $0.accept(self, context) }
 
 		guard case let .function(_, t, _, _) = callee.type else {
+			print("callee not callable: \(callee)")
 			return AnalyzedErrorExpr(type: .error, message: "callee not callable")
 		}
 
@@ -75,13 +78,13 @@ public struct Analyzer: Visitor {
 		return AnalyzedErrorExpr(type: .error, message: "Undefined variable: \(expr.name)")
 	}
 
-	public func visit(_ expr: any AddExpr, _ env: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any BinaryExpr, _ env: Environment) -> any AnalyzedExpr {
 		let lhs = expr.lhs.accept(self, env)
 		let rhs = expr.rhs.accept(self, env)
 
 		infer(lhs, rhs, as: .int, in: env)
 
-		return AnalyzedAddExpr(type: .int, expr: expr, lhsAnalyzed: lhs, rhsAnalyzed: rhs)
+		return AnalyzedBinaryExpr(type: .int, expr: expr, lhsAnalyzed: lhs, rhsAnalyzed: rhs)
 	}
 
 	public func visit(_ expr: any IfExpr, _ context: Environment) -> any AnalyzedExpr {

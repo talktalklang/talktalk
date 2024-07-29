@@ -37,7 +37,7 @@ public struct Formatter: Visitor {
 		expr.name
 	}
 
-	public func visit(_ expr: AddExpr, _ scope: Scope) -> String {
+	public func visit(_ expr: any BinaryExpr, _ scope: Scope) -> String {
 		"(+ \([expr.lhs, expr.rhs].map { $0.accept(self, scope) }.joined(separator: " ")))"
 	}
 

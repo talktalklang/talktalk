@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import Slips
+import TalkTalk
 import Testing
 
 struct InterpreterTests {

@@ -40,9 +40,13 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func compile() -> LLVM.Module {
-		let lexer = SlipsLexer(source)
-		var parser = SlipsParser(lexer)
+		let lexer = TalkTalkLexer(source)
+		var parser = Parser(lexer)
 		let parsed = parser.parse()
+
+		if !parser.errors.isEmpty {
+			fatalError(parser.errors.description)
+		}
 
 		let analyzed = Analyzer.analyze(parsed)
 		let context = Context(name: "main")
@@ -51,7 +55,7 @@ public struct Compiler: AnalyzedVisitor {
 		return module
 	}
 
-	public func run() -> Slips.Value {
+	public func run() -> TalkTalk.Value {
 		if let int = LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
@@ -96,7 +100,7 @@ public struct Compiler: AnalyzedVisitor {
 		return value
 	}
 
-	public func visit(_: AnalyzedErrorExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_ err: AnalyzedErrorExpr, _: Context) -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
@@ -130,7 +134,7 @@ public struct Compiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedAddExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedBinaryExpr, _ context: Context) -> any LLVM.EmittedValue {
 		let type = switch expr.type {
 		case .int:
 			LLVM.EmittedIntValue.self
