@@ -22,11 +22,11 @@ struct AnalysisTests {
 	}
 
 	@Test("Types add") func add() {
-		#expect(ast("1 + 2)").type == .int)
+		#expect(ast("1 + 2").type == .int)
 	}
 
 	@Test("Types def") func def() throws {
-		let ast = ast("foo = 1)")
+		let ast = ast("foo = 1")
 		let def = try #require(ast as? AnalyzedDefExpr)
 		#expect(def.type == .int)
 	}
