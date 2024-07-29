@@ -4,14 +4,6 @@
 //
 //  Created by Pat Nakajima on 7/28/24.
 //
-
-
-//
-//  Parser.swift
-//
-//
-//  Created by Pat Nakajima on 7/1/24.
-//
 extension Parser {
 	enum Precedence: Int, Comparable {
 		static func < (lhs: Parser.Precedence, rhs: Parser.Precedence) -> Bool {
