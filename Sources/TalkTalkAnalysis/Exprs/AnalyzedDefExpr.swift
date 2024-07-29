@@ -13,6 +13,7 @@ public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 
 	public var name: Token { expr.name }
 	public var value: any Expr { expr.value }
+	public var location: SourceLocation { expr.location }
 
 	public var valueAnalyzed: any AnalyzedExpr
 

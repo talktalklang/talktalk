@@ -15,9 +15,11 @@ public protocol LiteralExpr: Expr {
 
 public struct LiteralExprSyntax: LiteralExpr {
 	public let value: LiteralValue
+	public let location: SourceLocation
 
-	public init(value: LiteralValue) {
+	public init(value: LiteralValue, location: SourceLocation) {
 		self.value = value
+		self.location = location
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {

@@ -31,6 +31,10 @@ public struct Token: CustomDebugStringConvertible {
 	public var debugDescription: String {
 		".\(kind)"
 	}
+
+	public static func synthetic(_ kind: Kind, lexeme: String? = nil ) -> Token {
+		Token(kind: kind, start: 0, length: 0, lexeme: lexeme ?? "\(kind)")
+	}
 }
 
 public struct TalkTalkLexer {

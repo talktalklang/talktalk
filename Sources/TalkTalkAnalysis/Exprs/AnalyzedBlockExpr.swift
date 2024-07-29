@@ -13,6 +13,7 @@ public struct AnalyzedBlockExpr: AnalyzedExpr, BlockExpr {
 
 	public var exprsAnalyzed: [any AnalyzedExpr]
 	public var exprs: [any Expr] { expr.exprs }
+	public var location: SourceLocation { expr.location }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : AnalyzedVisitor {
 		visitor.visit(self, scope)

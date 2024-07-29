@@ -13,6 +13,7 @@ public protocol DefExpr: Expr {
 public struct DefExprSyntax: DefExpr {
 	public let name: Token
 	public let value: any Expr
+	public let location: SourceLocation
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)

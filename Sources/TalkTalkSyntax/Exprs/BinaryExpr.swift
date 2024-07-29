@@ -19,6 +19,7 @@ public struct BinaryExprSyntax: BinaryExpr {
 	public let lhs: any Expr
 	public let rhs: any Expr
 	public let op: BinaryOperator
+	public let location: SourceLocation
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
 		visitor.visit(self, scope)

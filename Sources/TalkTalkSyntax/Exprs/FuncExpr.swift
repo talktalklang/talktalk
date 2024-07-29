@@ -23,12 +23,14 @@ public struct FuncExprSyntax: FuncExpr {
 	public let body: any BlockExpr
 	public let i: Int
 	public let name: String?
+	public let location: SourceLocation
 
-	public init(params: ParamsExpr, body: any BlockExpr, i: Int, name: String? = nil) {
+	public init(params: ParamsExpr, body: any BlockExpr, i: Int, name: String? = nil, location: SourceLocation) {
 		self.params = params
 		self.body = body
 		self.i = i
 		self.name = name // ??
+		self.location = location
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {

@@ -13,13 +13,20 @@ let package = Package(
 		)
 	],
 	dependencies: [
+		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
 //		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
 		.package(path: "../LLVM")
 	],
 	targets: [
 		.executableTarget(
 			name: "talk",
-			dependencies: ["TalkTalk"]
+			dependencies: [
+				"TalkTalk",
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				"TalkTalkCompiler",
+				.product(name: "ArgumentParser", package: "swift-argument-parser"),
+			]
 		),
 		.target(
 			name: "TalkTalkSyntax",

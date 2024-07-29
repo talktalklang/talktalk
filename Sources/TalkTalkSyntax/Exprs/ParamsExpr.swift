@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-public protocol Param {
+public protocol Param: Expr {
 	var name: String { get }
 }
 
@@ -20,18 +20,26 @@ public extension ParamsExpr {
 }
 
 public struct ParamSyntax: Param {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {
+		visitor.visit(self, scope)
+	}
+	
 	public let name: String
+	public var location: SourceLocation
 
-	public init(name: String) {
+	public init(name: String, location: SourceLocation) {
 		self.name = name
+		self.location = location
 	}
 }
 
 public struct ParamsExprSyntax: ParamsExpr {
 	public var params: [any Param]
+	public let location: SourceLocation
 
-	public init(params: [any Param]) {
+	public init(params: [any Param], location: SourceLocation) {
 		self.params = params
+		self.location = location
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {

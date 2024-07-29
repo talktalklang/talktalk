@@ -15,6 +15,7 @@ public struct IfExprSyntax: IfExpr {
 	public let condition: any Expr
 	public let consequence: any BlockExpr
 	public let alternative: any BlockExpr
+	public let location: SourceLocation
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
 		visitor.visit(self, scope)

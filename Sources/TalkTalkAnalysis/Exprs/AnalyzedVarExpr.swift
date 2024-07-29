@@ -12,6 +12,7 @@ public struct AnalyzedVarExpr: AnalyzedExpr, VarExpr {
 	let expr: VarExpr
 
 	public var token: Token { expr.token }
+	public var location: SourceLocation { expr.location }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)

@@ -17,6 +17,7 @@ public struct AnalyzedBinaryExpr: AnalyzedExpr, BinaryExpr {
 	public var lhs: any Expr { expr.lhs }
 	public var rhs: any Expr { expr.rhs }
 	public var op: BinaryOperator { expr.op }
+	public var location: SourceLocation { expr.location }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
 		visitor.visit(self, scope)

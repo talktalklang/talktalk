@@ -6,6 +6,8 @@
 //
 
 public protocol Expr: CustomStringConvertible {
+	var location: SourceLocation { get }
+
 	func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value
 }
 

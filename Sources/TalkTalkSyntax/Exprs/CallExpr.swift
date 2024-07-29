@@ -13,6 +13,7 @@ public protocol CallExpr: Expr {
 public struct CallExprSyntax: CallExpr {
 	public let callee: any Expr
 	public let args: [Expr]
+	public let location: SourceLocation
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)

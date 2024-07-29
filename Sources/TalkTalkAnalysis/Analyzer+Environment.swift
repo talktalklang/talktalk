@@ -17,7 +17,7 @@ public extension Analyzer {
 						name: name,
 						expr: AnalyzedLiteralExpr(
 							type: .bool,
-							expr: LiteralExprSyntax(value: .bool(true))
+							expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)])
 						)
 					),
 					environment: .init()

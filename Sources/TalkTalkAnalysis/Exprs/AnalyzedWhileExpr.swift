@@ -16,6 +16,7 @@ public struct AnalyzedWhileExpr: WhileExpr, AnalyzedExpr {
 
 	public var condition: any Expr { expr.condition }
 	public var body: any BlockExpr { expr.body }
+	public var location: SourceLocation { expr.location }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : AnalyzedVisitor {
 		visitor.visit(self, scope)

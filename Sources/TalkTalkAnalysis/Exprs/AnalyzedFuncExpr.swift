@@ -19,6 +19,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
 	public var params: ParamsExpr { expr.params }
 	public var body: any BlockExpr { expr.body }
 	public var i: Int { expr.i }
+	public var location: SourceLocation { expr.location }
 
 	public var name: String? {
 		expr.name

@@ -17,12 +17,14 @@ public struct Analyzer: Visitor {
 	public static func analyze(_ exprs: [any Expr]) -> any AnalyzedExpr {
 		let env = Environment()
 		let analyzer = Analyzer()
+		let location = exprs.first?.location ?? [.synthetic(.eof)]
 
 		let mainExpr = FuncExprSyntax(
-			params: ParamsExprSyntax(params: []),
-			body: BlockExprSyntax(exprs: exprs),
+			params: ParamsExprSyntax(params: [], location: location),
+			body: BlockExprSyntax(exprs: exprs, location: location),
 			i: 0,
-			name: "main"
+			name: "main",
+			location: location
 		)
 		return analyzer.visit(mainExpr, env)
 	}
@@ -35,7 +37,7 @@ public struct Analyzer: Visitor {
 
 		guard case let .function(_, t, _, _) = callee.type else {
 			print("callee not callable: \(callee)")
-			return AnalyzedErrorExpr(type: .error("callee not callable"), message: "callee not callable")
+			return AnalyzedErrorExpr(type: .error("callee not callable"), expr: ErrorExprSyntax(message: "callee not callable", location: expr.location))
 		}
 
 		return AnalyzedCallExpr(
@@ -55,7 +57,7 @@ public struct Analyzer: Visitor {
 	}
 
 	public func visit(_ expr: any ErrorExpr, _: Environment) -> any AnalyzedExpr {
-		AnalyzedErrorExpr(type: .error(expr.message), message: expr.message)
+		AnalyzedErrorExpr(type: .error(expr.message), expr: expr)
 	}
 
 	public func visit(_ expr: any LiteralExpr, _: Environment) -> any AnalyzedExpr {
@@ -77,7 +79,10 @@ public struct Analyzer: Visitor {
 			)
 		}
 
-		return AnalyzedErrorExpr(type: .error("undefined variable: \(expr.name)"), message: "Undefined variable: \(expr.name)")
+		return AnalyzedErrorExpr(
+			type: .error("undefined variable: \(expr.name)"),
+			expr: ErrorExprSyntax(message: "undefined variable: \(expr.name)", location: expr.location)
+		)
 	}
 
 	public func visit(_ expr: any BinaryExpr, _ env: Environment) -> any AnalyzedExpr {
@@ -139,7 +144,7 @@ public struct Analyzer: Visitor {
 			type: .void,
 			expr: expr,
 			paramsAnalyzed: expr.params.enumerated().map { i, param in
-				AnalyzedParam(name: param.name, type: .placeholder(i))
+				AnalyzedParam(type: .placeholder(i), expr: param)
 			}
 		)
 	}
@@ -162,7 +167,7 @@ public struct Analyzer: Visitor {
 	}
 
 	public func visit(_ expr: any Param, _: Environment) -> any AnalyzedExpr {
-		AnalyzedParam(name: expr.name, type: .placeholder(1))
+		AnalyzedParam(type: .placeholder(1), expr: expr)
 	}
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {

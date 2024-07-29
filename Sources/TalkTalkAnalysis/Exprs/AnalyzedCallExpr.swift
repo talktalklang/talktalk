@@ -16,6 +16,7 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 
 	public var callee: any Expr { expr.callee }
 	public var args: [any Expr] { expr.args }
+	public var location: SourceLocation { expr.location }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)

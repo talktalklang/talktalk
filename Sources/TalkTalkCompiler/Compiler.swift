@@ -231,7 +231,7 @@ public struct Compiler: AnalyzedVisitor {
 	// MARK: Helpers
 
 	func allocateLocals(funcExpr: AnalyzedFuncExpr, context: Context) {
-		print("-> allocating locals for \(funcExpr.name)")
+		print("-> allocating locals for \(funcExpr.name ?? funcExpr.autoname)")
 
 		// Figure out which of this function's values are captured by children and malloc some heap space
 		// for them.
@@ -245,13 +245,13 @@ public struct Compiler: AnalyzedVisitor {
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.expr), name: binding.name)
 				print(
-					"  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting binding in \(funcExpr): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			} else {
 				let storage = builder.alloca(type: irType(for: binding.expr), name: binding.name)
 				print(
-					"  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting binding in \(funcExpr): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			}
@@ -267,7 +267,7 @@ public struct Compiler: AnalyzedVisitor {
 		// just reuse the values.
 		var captures: [(String, any LLVM.StoredPointer)] = []
 		for (_, capture) in funcExpr.environment.captures.enumerated() {
-			print("-> capturing \(capture.name) in \(funcExpr.name)")
+			print("-> capturing \(capture.name) in \(funcExpr)")
 			captures.append((capture.name, context.environment.capture(capture.name, with: builder)))
 		}
 

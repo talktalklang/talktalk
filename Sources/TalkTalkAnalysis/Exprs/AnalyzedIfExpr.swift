@@ -18,6 +18,7 @@ public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
 	public var condition: any Expr { expr.condition }
 	public var consequence: any BlockExpr { expr.consequence }
 	public var alternative: any BlockExpr { expr.alternative }
+	public var location: SourceLocation { expr.location }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
 		visitor.visit(self, scope)

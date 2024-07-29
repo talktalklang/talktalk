@@ -11,9 +11,11 @@ public protocol BlockExpr: Expr {
 
 public struct BlockExprSyntax: BlockExpr {
 	public var exprs: [any Expr]
+	public let location: SourceLocation
 
-	public init(exprs: [any Expr]) {
+	public init(exprs: [any Expr], location: SourceLocation) {
 		self.exprs = exprs
+		self.location = location
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {

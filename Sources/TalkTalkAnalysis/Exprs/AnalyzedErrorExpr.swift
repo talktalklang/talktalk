@@ -9,11 +9,14 @@ import TalkTalkSyntax
 
 public struct AnalyzedErrorExpr: AnalyzedExpr, ErrorExpr {
 	public var type: ValueType
-	public var message: String
+	let expr: any ErrorExpr
 
-	public init(type: ValueType, message: String) {
+	public var message: String { expr.message }
+	public var location: SourceLocation { expr.location }
+
+	public init(type: ValueType, expr: any ErrorExpr) {
 		self.type = type
-		self.message = message
+		self.expr = expr
 		print(message)
 	}
 

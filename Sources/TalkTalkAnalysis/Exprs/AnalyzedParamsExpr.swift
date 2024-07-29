@@ -16,18 +16,21 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 		visitor.visit(self, context)
 	}
 
-	public var name: String
-	public var type: ValueType
+	public var name: String { expr.name }
+	let expr: any Param
 
-	public init(name: String, type: ValueType) {
-		self.name = name
+	public var type: ValueType
+	public var location: SourceLocation { expr.location }
+
+	public init(type: ValueType, expr: any Param) {
+		self.expr = expr
 		self.type = type
 	}
 }
 
 public extension Param where Self == AnalyzedParam {
 	static func int(_ name: String) -> AnalyzedParam {
-		AnalyzedParam(name: name, type: .int)
+		AnalyzedParam(type: .int, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]))
 	}
 }
 
@@ -37,6 +40,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 
 	public var paramsAnalyzed: [AnalyzedParam]
 	public var params: [any Param] { expr.params }
+	public var location: SourceLocation { expr.location }
 
 	public mutating func infer(from env: Analyzer.Environment) {
 		for (i, name) in paramsAnalyzed.enumerated() {
@@ -58,8 +62,11 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
 	public init(arrayLiteral elements: AnalyzedParam...) {
 		self.expr = ParamsExprSyntax(
-			params: elements.map { ParamSyntax(name: $0.name)
-		})
+			params: elements.map {
+				ParamSyntax(name: $0.name, location: [.synthetic(.identifier, lexeme: $0.name)])
+			},
+			location: [.synthetic(.identifier)]
+		)
 		self.paramsAnalyzed = elements
 		self.type = .void
 	}

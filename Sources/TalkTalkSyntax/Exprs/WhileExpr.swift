@@ -13,6 +13,7 @@ public protocol WhileExpr: Expr {
 public struct WhileExprSyntax: WhileExpr {
 	public var condition: any Expr
 	public var body: any BlockExpr
+	public let location: SourceLocation
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {
 		visitor.visit(self, scope)
