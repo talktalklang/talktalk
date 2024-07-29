@@ -1,12 +1,21 @@
 import Foundation
 
 public struct Formatter: Visitor {
-	public struct Context {
-		public init() {}
-	}
+	public struct Context {}
 	public typealias Value = String
 
 	var indent = 0
+
+	public static func format(_ input: String) -> String {
+		let parsed = Parser.parse(input)
+		let formatter = Formatter()
+		let context = Formatter.Context()
+		var result: [String] = []
+		for expr in parsed {
+			result.append(expr.accept(formatter, context))
+		}
+		return result.joined(separator: "\n")
+	}
 
 	public func visit(_ expr: any WhileExpr, _ context: Context) -> String {
 		var result = "while "
@@ -19,7 +28,7 @@ public struct Formatter: Visitor {
 	public func visit(_ expr: any BinaryExpr, _ context: Context) -> String {
 		var result = ""
 		result += expr.lhs.accept(self, context)
-		result += expr.op.rawValue
+		result += " " + expr.op.rawValue + " "
 		result += expr.rhs.accept(self, context)
 		return result
 	}
@@ -37,7 +46,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Context) -> Value {
-		var result = "\(expr.name) = "
+		var result = "\(expr.name.lexeme) = "
 		result += expr.value.accept(self, context)
 		return result
 	}
@@ -57,7 +66,7 @@ public struct Formatter: Visitor {
 		if let name = expr.name {
 			result += " " + name
 		}
-		result += "(" + visit(expr.params, context) + ")"
+		result += "(" + visit(expr.params, context) + ") "
 		result += visit(expr.body, context)
 		return result
 	}
@@ -65,13 +74,13 @@ public struct Formatter: Visitor {
 	public func visit(_ expr: any BlockExpr, _ context: Context) -> Value {
 		var result = "{\n"
 		result += indenting {
-			var result = ""
+			var result: [String] = []
 			for expr in expr.exprs {
-				result += expr.accept($0, context)
+				result.append(expr.accept($0, context))
 			}
-			return result
+			return result.joined(separator: "\n")
 		}
-		result += "}\n"
+		result += "\n}"
 		return result
 	}
 

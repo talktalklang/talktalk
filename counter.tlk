@@ -1,0 +1,11 @@
+makeCounter = func() {
+	count = 0
+	func() {
+		count = count + 1
+		count
+	}
+}
+
+counter = makeCounter()
+counter()
+counter()

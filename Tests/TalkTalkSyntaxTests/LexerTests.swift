@@ -10,6 +10,11 @@ struct TalkTalkLexerTests {
 			.int,
 			.eof,
 		])
+
+		#expect(tokens.map(\.line) == [
+			1,
+			1,
+		])
 	}
 
 	@Test("Symbols and ints and parens") func symbolsAndInts() async throws {
@@ -21,6 +26,13 @@ struct TalkTalkLexerTests {
 			.symbol,
 			.int,
 			.eof,
+		])
+
+		#expect(tokens.map(\.column) == [
+			1,
+			4,
+			6,
+			8,
 		])
 	}
 
@@ -83,7 +95,11 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("func") func function() async throws {
-		var lexer = TalkTalkLexer("func foo() { 10 }")
+		var lexer = TalkTalkLexer("""
+		func foo() {
+			10
+		}
+		""")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [
@@ -92,9 +108,24 @@ struct TalkTalkLexerTests {
 			.leftParen,
 			.rightParen,
 			.leftBrace,
+			.newline,
 			.int,
+			.newline,
 			.rightBrace,
 			.eof
+		])
+
+		#expect(tokens.map(\.line) == [
+			1,
+			1,
+			1,
+			1,
+			1,
+			2,
+			2,
+			3,
+			3,
+			3
 		])
 	}
 

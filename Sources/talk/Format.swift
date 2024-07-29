@@ -1,5 +1,5 @@
 //
-//  AST.swift
+//  Format.swift
 //
 //
 //  Created by Pat Nakajima on 7/11/24.
@@ -8,8 +8,8 @@ import ArgumentParser
 import Foundation
 import TalkTalkSyntax
 
-struct AST: TalkTalkCommand {
-	@Argument(help: "The input to run.")
+struct Format: TalkTalkCommand {
+	@Argument(help: "The input to format.")
 	var input: String
 
 	func run() async throws {
@@ -22,8 +22,7 @@ struct AST: TalkTalkCommand {
 			string
 		}
 
-		let parsed = Parser.parse(source)
-		let formatted = ASTPrinter.format(parsed)
+		let formatted = Formatter.format(source)
 		print(formatted)
 	}
 }

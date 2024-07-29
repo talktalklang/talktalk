@@ -85,8 +85,6 @@ public struct Compiler: AnalyzedVisitor {
 		switch callee {
 		case let callee as LLVM.EmittedFunctionValue:
 			return builder.call(callee, with: args)
-		case let callee as LLVM.FunctionPointer:
-			return builder.call(callee, with: args)
 		default:
 			fatalError()
 		}

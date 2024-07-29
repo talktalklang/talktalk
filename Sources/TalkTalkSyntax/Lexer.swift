@@ -26,6 +26,9 @@ public struct Token: CustomDebugStringConvertible {
 	public let kind: Kind
 	public let start: Int
 	public let length: Int
+	public let line: Int
+	public let column: Int
+
 	public let lexeme: String
 
 	public var debugDescription: String {
@@ -33,14 +36,25 @@ public struct Token: CustomDebugStringConvertible {
 	}
 
 	public static func synthetic(_ kind: Kind, lexeme: String? = nil ) -> Token {
-		Token(kind: kind, start: 0, length: 0, lexeme: lexeme ?? "\(kind)")
+		Token(
+			kind: kind,
+			start: 0,
+			length: 0,
+			line: 0,
+			column: 0,
+			lexeme: lexeme ?? "\(kind)"
+		)
 	}
 }
 
 public struct TalkTalkLexer {
 	let source: ContiguousArray<Character>
+
 	var start = 0
 	var current = 0
+
+	var line = 1
+	var column = 1
 
 	public init(_ source: String) {
 		self.source = ContiguousArray<Character>(source)
@@ -96,9 +110,13 @@ public struct TalkTalkLexer {
 	// MARK: Recognizers
 
 	mutating func newline() -> Token {
+		nextLine()
+
 		while !isAtEnd, peek().isNewline {
 			advance()
+			nextLine()
 		}
+
 		return make(.newline)
 	}
 
@@ -166,6 +184,7 @@ public struct TalkTalkLexer {
 
 	@discardableResult mutating func advance() -> Character {
 		defer {
+			column += 1
 			current += 1
 		}
 
@@ -173,10 +192,13 @@ public struct TalkTalkLexer {
 	}
 
 	mutating func make(_ kind: Token.Kind) -> Token {
-		Token(
+		let length = current - start
+		return Token(
 			kind: kind,
 			start: start,
-			length: current - start,
+			length: length,
+			line: line,
+			column: kind == .eof ? column : column - length,
 			lexeme: kind == .eof ? "EOF" : String(source[start ..< current])
 		)
 	}
@@ -188,5 +210,10 @@ public struct TalkTalkLexer {
 	mutating func error(_ message: String) -> Token {
 		print(message)
 		return make(.error)
+	}
+
+	mutating func nextLine() {
+		line += 1
+		column = 1
 	}
 }
