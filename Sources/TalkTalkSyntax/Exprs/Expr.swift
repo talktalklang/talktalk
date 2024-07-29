@@ -15,6 +15,6 @@ public extension Expr {
 	}
 
 	var description: String {
-		accept(SlipsFormatter(), Scope())
+		accept(Formatter(), Formatter.Context())
 	}
 }

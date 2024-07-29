@@ -1,0 +1,6 @@
+Name: cllvm
+Description: The llvm library
+Version: 18.1.8
+Libs: -L/home/linuxbrew/.linuxbrew/Cellar/llvm/18.1.8/lib  -lLLVM-18 -L/usr/lib -lc++
+Requires.private:
+Cflags: -I/home/linuxbrew/.linuxbrew/Cellar/llvm/18.1.8/include

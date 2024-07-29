@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
-public enum BinaryOperator {
-	case plus, equalEqual, bangEqual
+public enum BinaryOperator: String {
+	case plus = "+", equalEqual = "==", bangEqual = "!="
 }
 
 public protocol BinaryExpr: Expr {

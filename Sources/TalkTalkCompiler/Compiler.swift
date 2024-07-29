@@ -13,14 +13,22 @@ public struct Compiler: AnalyzedVisitor {
 		var counter: Int = 0
 		var environment: LLVM.Function.Environment = .init()
 
-		init(name: String, counter: Int = 0, environment: LLVM.Function.Environment = .init()) {
+		init(
+			name: String,
+			counter: Int = 0,
+			environment: LLVM.Function.Environment = .init()
+		) {
 			self.name = name
 			self.counter = counter
 			self.environment = environment
 		}
 
 		func newEnvironment(name: String) -> Context {
-			Context(name: name, counter: counter, environment: LLVM.Function.Environment(parent: environment))
+			Context(
+				name: name,
+				counter: counter,
+				environment: LLVM.Function.Environment(parent: environment)
+			)
 		}
 
 		func nextCount() -> Int {
@@ -56,11 +64,15 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func run() -> TalkTalk.Value {
+		#if !os(Linux)
 		if let int = LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
 			return .error("Nope.")
 		}
+		#else
+		return .error("JIT not supported on Linux")
+		#endif
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ context: Context) -> any LLVM.EmittedValue {
@@ -118,16 +130,21 @@ public struct Compiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> any LLVM.EmittedValue {
 		switch context.environment.get(expr.name) {
 		case let .capture(index, type):
-			print("<- loading capture in \(context.name): \(expr.name): slot \(index) in environment struct")
+			print(
+				"<- loading capture in \(context.name): \(expr.name): slot \(index) in environment struct")
 			return builder.load(capture: index, envStructType: type)
 		case let .defined(pointer):
-			print("<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")")
+			print(
+				"<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
+			)
 			return builder.load(pointer: pointer, name: expr.name)
 		case let .parameter(index, _):
 			print("<- loading parameter in \(context.name): \(expr.name): \(index)")
 			return builder.load(parameter: index)
 		case let .declared(pointer):
-			print("<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")")
+			print(
+				"<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
+			)
 			return builder.load(pointer: pointer, name: expr.name)
 		default:
 			fatalError()
@@ -135,12 +152,13 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedBinaryExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let type = switch expr.type {
-		case .int:
-			LLVM.EmittedIntValue.self
-		default:
-			fatalError()
-		}
+		let type =
+			switch expr.type {
+			case .int:
+				LLVM.EmittedIntValue.self
+			default:
+				fatalError()
+			}
 
 		let lhs = expr.lhsAnalyzed.accept(self, context).as(type)
 		let rhs = expr.rhsAnalyzed.accept(self, context).as(type)
@@ -168,7 +186,9 @@ public struct Compiler: AnalyzedVisitor {
 
 		let envStruct = emitEnvironment(funcExpr, context)
 
-		let emittedFunction = builder.define(functionType, parameterNames: funcExpr.params.params.map(\.name), envStruct: envStruct) {
+		let emittedFunction = builder.define(
+			functionType, parameterNames: funcExpr.params.params.map(\.name), envStruct: envStruct
+		) {
 			allocateLocals(funcExpr: funcExpr, context: context)
 
 			for (i, param) in funcExpr.analyzedParams.paramsAnalyzed.enumerated() {
@@ -218,11 +238,15 @@ public struct Compiler: AnalyzedVisitor {
 
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.expr), name: binding.name)
-				print("  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))")
+				print(
+					"  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+				)
 				context.environment.declare(binding.name, as: storage)
 			} else {
 				let storage = builder.alloca(type: irType(for: binding.expr), name: binding.name)
-				print("  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))")
+				print(
+					"  -> emitting binding in \(funcExpr.name): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+				)
 				context.environment.declare(binding.name, as: storage)
 			}
 		}
@@ -244,7 +268,8 @@ public struct Compiler: AnalyzedVisitor {
 		// Now that we have the captures list built, we can create the StructType for it. We need this in order
 		// to be able to GEP into it when we're trying to look up values from the environment during variable
 		// resolution (see VarExpr visitor)
-		let type = LLVM.StructType(name: "Capture(\(captures.map(\.0).joined()))", types: captures.map { $0.1.type })
+		let type = LLVM.StructType(
+			name: "Capture(\(captures.map(\.0).joined()))", types: captures.map { $0.1.type })
 		for (i, capture) in captures.enumerated() {
 			context.environment.bindings[capture.0] = .capture(i, type)
 		}
@@ -252,7 +277,9 @@ public struct Compiler: AnalyzedVisitor {
 		return createEnvironmentStruct(type: type, from: captures)
 	}
 
-	func createEnvironmentStruct(type: LLVM.StructType, from captures: [(String, any LLVM.StoredPointer)]) -> LLVM.CapturesStruct {
+	func createEnvironmentStruct(
+		type: LLVM.StructType, from captures: [(String, any LLVM.StoredPointer)]
+	) -> LLVM.CapturesStruct {
 		var offsets: [String: Int] = [:]
 		var capturePointers: [any LLVM.StoredPointer] = []
 		for (i, capture) in captures.enumerated() {
@@ -261,7 +288,8 @@ public struct Compiler: AnalyzedVisitor {
 		}
 
 		let pointer = builder.struct(type: type, values: captures)
-		let value = LLVM.CapturesStruct(type: type, offsets: offsets, captures: capturePointers, ref: pointer.ref)
+		let value = LLVM.CapturesStruct(
+			type: type, offsets: offsets, captures: capturePointers, ref: pointer.ref)
 
 		return value
 	}
@@ -299,7 +327,8 @@ public struct Compiler: AnalyzedVisitor {
 				returnType: irType(for: returns),
 				parameterTypes: params.paramsAnalyzed.map { irType(for: $0.type) },
 				isVarArg: false,
-				captures: LLVM.StructType(name: "\(name)Env", types: captures.map { irType(for: $0.binding.type) })
+				captures: LLVM.StructType(
+					name: "\(name)Env", types: captures.map { irType(for: $0.binding.type) })
 			)
 		default:
 			fatalError()
@@ -319,18 +348,21 @@ public struct Compiler: AnalyzedVisitor {
 
 			return irType(for: returns)
 		case let expr as AnalyzedFuncExpr:
-			let returnType = if let returns = expr.returnsAnalyzed {
-				irType(for: returns)
-			} else {
-				LLVM.VoidType()
-			}
+			let returnType =
+				if let returns = expr.returnsAnalyzed {
+					irType(for: returns)
+				} else {
+					LLVM.VoidType()
+				}
 
 			var functionType = LLVM.FunctionType(
 				name: expr.name ?? expr.autoname,
 				returnType: returnType,
 				parameterTypes: expr.analyzedParams.paramsAnalyzed.map { irType(for: $0.type) },
 				isVarArg: false,
-				captures: LLVM.StructType(name: expr.name ?? expr.autoname, types: expr.environment.captures.map { irType(for: $0.binding.type) })
+				captures: LLVM.StructType(
+					name: expr.name ?? expr.autoname,
+					types: expr.environment.captures.map { irType(for: $0.binding.type) })
 			)
 
 			functionType.name = expr.name ?? expr.autoname

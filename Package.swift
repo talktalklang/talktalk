@@ -5,30 +5,65 @@ import PackageDescription
 
 let package = Package(
 	name: "TalkTalk",
-	platforms: [.macOS(.v14), .iOS(.v13), .tvOS(.v13), .watchOS(.v6), .macCatalyst(.v13)],
+	platforms: [.macOS(.v14), .iOS(.v13)],
 	products: [
-		// Products define the executables and libraries a package produces, making them visible to other packages.
 		.library(
 			name: "TalkTalk",
 			targets: ["TalkTalk"]
-		),
+		)
 	],
 	dependencies: [
-		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main"),
+		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
 	],
 	targets: [
-		// Targets are the basic building blocks of a package, defining a module or a test suite.
-		// Targets can depend on other targets in this package and products from dependencies.
+		.executableTarget(
+			name: "talk",
+			dependencies: ["TalkTalk"]
+		),
+		.target(
+			name: "TalkTalkSyntax",
+			dependencies: []
+		),
+		.target(
+			name: "TalkTalkAnalysis",
+			dependencies: [
+				"TalkTalkSyntax"
+			]
+		),
+		.target(
+			name: "TalkTalkCompiler",
+			dependencies: [
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				.product(name: "LLVM", package: "C_LLVM")
+			]
+		),
 		.target(
 			name: "TalkTalk",
 			dependencies: [
-				.product(name: "LLVM", package: "C_LLVM"),
+				"TalkTalkSyntax",
 			]
 		),
 		.testTarget(
 			name: "TalkTalkTests",
 			dependencies: ["TalkTalk"]
 		),
+		.testTarget(
+			name: "TalkTalkCompilerTests",
+			dependencies: [
+				"TalkTalkCompiler",
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis"
+			]
+		),
+		.testTarget(
+			name: "TalkTalkAnalysisTests",
+			dependencies: ["TalkTalkAnalysis"]
+		),
+		.testTarget(
+			name: "TalkTalkSyntaxTests",
+			dependencies: []
+		)
 	]
 )
 
