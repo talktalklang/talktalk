@@ -38,13 +38,12 @@ public struct ASTPrinter: Visitor {
 		let context = Context()
 		let result = exprs.map { $0.accept(formatter, context) }
 		return result.map { line in
-			// Ignore this block.
 			line.replacing(#/(\t+)(\d+) │ /#, with: {
 				// Tidy indents
 				"\($0.output.2) |\($0.output.1)└ "
 			}).replacing(#/(\t*)(\d+)[\s]*\|/#, with: {
 				// Tidy line numbers
-				$0.output.2.trimmingCharacters(in: .whitespacesAndNewlines).padding(toLength: 4, withPad: " ", startingAt: 0) + "|\($0.output.1 ?? "")"
+				$0.output.2.trimmingCharacters(in: .whitespacesAndNewlines).padding(toLength: 4, withPad: " ", startingAt: 0) + "| \($0.output.1)"
 			})
 
 		}.joined(separator: "\n")
