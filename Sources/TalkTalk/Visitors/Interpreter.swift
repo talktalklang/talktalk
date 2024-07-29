@@ -139,7 +139,7 @@ public struct Interpreter: Visitor {
 
 		var lastReturn: Value = .none
 
-		for expr in closure.funcExpr.body {
+		for expr in closure.funcExpr.body.exprs {
 			lastReturn = expr.accept(self, scope)
 		}
 

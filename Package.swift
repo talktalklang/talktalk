@@ -13,7 +13,8 @@ let package = Package(
 		)
 	],
 	dependencies: [
-		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
+//		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
+		.package(path: "../LLVM")
 	],
 	targets: [
 		.executableTarget(
@@ -35,7 +36,7 @@ let package = Package(
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				.product(name: "LLVM", package: "C_LLVM")
+				.product(name: "LLVM", package: "LLVM")
 			]
 		),
 		.target(
@@ -53,7 +54,8 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",
-				"TalkTalkAnalysis"
+				"TalkTalkAnalysis",
+				.product(name: "LLVM", package: "LLVM")
 			]
 		),
 		.testTarget(
@@ -62,7 +64,7 @@ let package = Package(
 		),
 		.testTarget(
 			name: "TalkTalkSyntaxTests",
-			dependencies: []
+			dependencies: ["TalkTalkSyntax"]
 		)
 	]
 )

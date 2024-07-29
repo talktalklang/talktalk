@@ -83,8 +83,8 @@ struct TalkTalkParserTests {
 		}
 		""")[0] as! IfExpr
 		#expect(ast.condition.description == "true")
-		#expect(ast.consequence.description == "1")
-		#expect(ast.alternative.description == "2")
+		#expect(ast.consequence.exprs[0].description == "1")
+		#expect(ast.alternative.exprs[0].description == "2")
 	}
 
 	@Test("while expr") func whileexpr() {
@@ -105,9 +105,9 @@ struct TalkTalkParserTests {
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
-		#expect(fn.body[0].cast(BinaryExprSyntax.self).lhs.description == "x")
-		#expect(fn.body[0].cast(BinaryExprSyntax.self).rhs.description == "y")
-		#expect(fn.body[0].cast(BinaryExprSyntax.self).op == .plus)
+		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).lhs.description == "x")
+		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).rhs.description == "y")
+		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).op == .plus)
 	}
 
 	@Test("named func expr") func namedfuncexpr() throws {
@@ -118,9 +118,9 @@ struct TalkTalkParserTests {
 		#expect(fn.name == "foo")
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
-		#expect(fn.body[0].cast(BinaryExprSyntax.self).lhs.description == "x")
-		#expect(fn.body[0].cast(BinaryExprSyntax.self).rhs.description == "y")
-		#expect(fn.body[0].cast(BinaryExprSyntax.self).op == .plus)
+		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).lhs.description == "x")
+		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).rhs.description == "y")
+		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).op == .plus)
 	}
 
 	@Test("call expr") func callExpr() {
@@ -144,7 +144,7 @@ struct TalkTalkParserTests {
 		func() { 2 }
 		""")[0] as! FuncExpr
 		#expect(ast.params.params.isEmpty)
-		#expect(ast.body[0].description == "2")
+		#expect(ast.body.exprs[0].description == "2")
 	}
 
 	@Test("Parses counter") func counter() throws {

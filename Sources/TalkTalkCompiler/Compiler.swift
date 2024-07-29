@@ -198,15 +198,12 @@ public struct Compiler: AnalyzedVisitor {
 				context.environment.parameter(param.name, type: irType(for: param.type), at: i)
 			}
 
-			var returnValue: (any LLVM.EmittedValue)? = nil
-			for expr in funcExpr.bodyAnalyzed {
-				returnValue = expr.accept(self, context)
-			}
+			let returnValue = visit(funcExpr.bodyAnalyzed, context)
 
-			if let returnValue {
-				_ = builder.emit(return: returnValue)
-			} else {
+			if returnValue.type.isVoid {
 				builder.emitVoidReturn()
+			} else {
+				_ = builder.emit(return: returnValue)
 			}
 		}
 
@@ -214,7 +211,13 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) -> any LLVM.EmittedValue {
-		fatalError()
+		var returnValue: (any LLVM.EmittedValue)? = nil
+
+		for expr in expr.exprsAnalyzed {
+			returnValue = expr.accept(self, context)
+		}
+
+		return returnValue ?? LLVM.VoidValue()
 	}
 
 	public func visit(_ expr: AnalyzedWhileExpr, _ context: Context) -> any LLVM.EmittedValue {
@@ -307,7 +310,7 @@ public struct Compiler: AnalyzedVisitor {
 		_ = emitEnvironment(funcExpr, context)
 
 		var lastReturn: (any LLVM.EmittedValue)?
-		for expr in funcExpr.bodyAnalyzed {
+		for expr in funcExpr.bodyAnalyzed.exprsAnalyzed {
 			lastReturn = expr.accept(self, context)
 		}
 

@@ -47,7 +47,7 @@ public struct SlipsFormatter: Visitor {
 		var parts = "("
 		parts += visit(expr.params, scope)
 		parts += " in "
-		parts += expr.body.map { $0.accept(self, scope) }.joined(separator: " ")
+		parts += expr.body.exprs.map { $0.accept(self, scope) }.joined(separator: " ")
 		parts += ")"
 		return parts
 	}

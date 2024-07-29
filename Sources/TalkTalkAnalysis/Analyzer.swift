@@ -20,7 +20,7 @@ public struct Analyzer: Visitor {
 
 		let mainExpr = FuncExprSyntax(
 			params: ParamsExprSyntax(params: []),
-			body: exprs,
+			body: BlockExprSyntax(exprs: exprs),
 			i: 0,
 			name: "main"
 		)
@@ -112,21 +112,18 @@ public struct Analyzer: Visitor {
 		}
 
 		// Visit the body with the innerEnvironment, finding captures as we go.
-		var bodyAnalyzed: [any AnalyzedExpr] = []
-		for bodyExpr in expr.body {
-			bodyAnalyzed.append(bodyExpr.accept(self, innerEnvironment))
-		}
+		let bodyAnalyzed = visit(expr.body, innerEnvironment) as! AnalyzedBlockExpr
 
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
 		params.infer(from: innerEnvironment)
 
 		let funcExpr = AnalyzedFuncExpr(
-			type: .function(expr.name ?? expr.autoname, bodyAnalyzed.last?.type ?? .void, params, innerEnvironment.captures),
+			type: .function(expr.name ?? expr.autoname, bodyAnalyzed.type, params, innerEnvironment.captures),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
-			returnsAnalyzed: bodyAnalyzed.last,
+			returnsAnalyzed: bodyAnalyzed.exprsAnalyzed.last,
 			environment: innerEnvironment
 		)
 

@@ -13,7 +13,7 @@ struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedExpr {
 		let analyzed = Analyzer.analyze(Parser.parse(string))
 
-		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.last!
+		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.exprsAnalyzed.last!
 	}
 
 	@Test("Types literals") func literals() {
@@ -107,9 +107,9 @@ struct AnalysisTests {
 			[.int("x")],
 			[]
 		))
-		#expect(fn.environment.capturedValues[0].name == "x")
+		#expect(fn.environment.capturedValues.first?.name == "x")
 
-		let nestedFn = fn.bodyAnalyzed[0] as! AnalyzedFuncExpr
+		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
 		#expect(nestedFn.type == .function("_fn_y_32", .int, [.int("y")], [.any("x")]))
 
 		let capture = nestedFn.environment.captures[0]
@@ -131,7 +131,7 @@ struct AnalysisTests {
 		mycounter()
 		"""))
 
-		let def = try #require(main.cast(AnalyzedFuncExpr.self).bodyAnalyzed[0] as? AnalyzedDefExpr)
+		let def = try #require(main.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0] as? AnalyzedDefExpr)
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.isEmpty)
 
@@ -145,7 +145,7 @@ struct AnalysisTests {
 		}
 
 		#expect(counterReturns.description == "int")
-		#expect(counterCaptures[0].name == "count")
+		#expect(counterCaptures.first?.name == "count")
 		#expect(counterParams.params.isEmpty)
 	}
 }

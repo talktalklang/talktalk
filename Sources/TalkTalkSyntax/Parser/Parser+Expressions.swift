@@ -49,39 +49,45 @@ extension Parser {
 
 	mutating func ifExpr(_: Bool) -> any Expr {
 		_ = consume(.if)
+
 		skip(.newline)
 
 		let condition = parse(precedence: .assignment)
 
-		// TODO: introduce a block parser
-		skip(.newline)
-		consume(.leftBrace)
 		skip(.newline)
 
-		// TODO: allow more than one expr in a consequence
 		let consequence = blockExpr(false)
 
 		skip(.newline)
-		consume(.rightBrace)
-		skip(.newline)
-
 		consume(.else)
-		skip(.newline)
-		consume(.leftBrace)
 		skip(.newline)
 
 		// TODO: make else optional
 		let alternative = blockExpr(false)
-
-		skip(.newline)
-		consume(.rightBrace)
-		skip(.newline)
 
 		return IfExprSyntax(
 			condition: condition,
 			consequence: consequence,
 			alternative: alternative
 		)
+	}
+
+	mutating func funcExpr() -> Expr {
+		// Grab the name if there is one
+		let name: Token? = match(.identifier)
+
+		skip(.newline)
+
+		consume(.leftParen, "expected '(' before params")
+
+		// Parse parameter list
+		let params = parameterList()
+
+		skip(.newline)
+
+		let body = blockExpr(false)
+
+		return FuncExprSyntax(params: params, body: body, i: lexer.current, name: name?.lexeme)
 	}
 
 	mutating func literal(_: Bool) -> any Expr {

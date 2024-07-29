@@ -12,12 +12,12 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
 	let expr: FuncExpr
 
 	public let analyzedParams: AnalyzedParamsExpr
-	public let bodyAnalyzed: [any AnalyzedExpr]
+	public let bodyAnalyzed: AnalyzedBlockExpr
 	public let returnsAnalyzed: (any AnalyzedExpr)?
 	public let environment: Analyzer.Environment
 
 	public var params: ParamsExpr { expr.params }
-	public var body: [any Expr] { expr.body }
+	public var body: any BlockExpr { expr.body }
 	public var i: Int { expr.i }
 
 	public var name: String? {

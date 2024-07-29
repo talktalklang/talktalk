@@ -53,35 +53,6 @@ public struct Parser {
 		return parse(precedence: .assignment)
 	}
 
-	mutating func funcExpr() -> Expr {
-		// Grab the name if there is one
-		let name: Token? = match(.identifier)
-
-		skip(.newline)
-
-		consume(.leftParen, "expected '(' before params")
-
-		// Parse parameter list
-		let params = parameterList()
-
-		skip(.newline)
-
-		guard didConsume(.leftBrace) else {
-			return ErrorExprSyntax(message: "expected '{' before func body")
-		}
-
-		var body: [any Expr] = []
-		while !check(.eof), !check(.rightBrace) {
-			skip(.newline)
-			body.append(expr())
-			skip(.newline)
-		}
-
-		consume(.rightBrace, "Expected '}' after func body")
-
-		return FuncExprSyntax(params: params, body: body, i: lexer.current, name: name?.lexeme)
-	}
-
 	mutating func parameterList() -> ParamsExpr {
 		if didMatch(.rightParen) {
 			return ParamsExprSyntax(params: [])

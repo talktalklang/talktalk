@@ -43,35 +43,60 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any VarExpr, _ context: Context) -> Value {
-		""
+		expr.name
 	}
 
 	public func visit(_ expr: any CallExpr, _ context: Context) -> Value {
-		""
+		var result = expr.callee.accept(self, context)
+		result += "(" + expr.args.map { $0.accept(self, context) }.joined(separator: ", ") + ")"
+		return result
 	}
 
 	public func visit(_ expr: any FuncExpr, _ context: Context) -> Value {
-		""
+		var result = "func"
+		if let name = expr.name {
+			result += " " + name
+		}
+		result += "(" + visit(expr.params, context) + ")"
+		result += visit(expr.body, context)
+		return result
 	}
 
 	public func visit(_ expr: any BlockExpr, _ context: Context) -> Value {
-		""
+		var result = "{\n"
+		result += indenting {
+			var result = ""
+			for expr in expr.exprs {
+				result += expr.accept($0, context)
+			}
+			return result
+		}
+		result += "}\n"
+		return result
 	}
 
 	public func visit(_ expr: any LiteralExpr, _ context: Context) -> Value {
-		""
+		switch expr.value {
+		case .int(let int):
+			"\(int)"
+		case .bool(let bool):
+			"\(bool)"
+		case .none:
+			"none"
+		}
 	}
 
 	public func visit(_ expr: any ParamsExpr, _ context: Context) -> Value {
-		""
+		expr.params.map(\.name).joined(separator: ", ")
 	}
+
 	public func visit(_ expr: any ErrorExpr, _ context: Context) -> Value {
-		""
+		"<error: \(expr.message)>"
 	}
 
 	// MARK: Helpers
 
-	public mutating func indenting(perform: (inout Formatter) -> String) -> String {
+	public func indenting(perform: (inout Formatter) -> String) -> String {
 		var copy = self
 		copy.indent += 1
 		let indentation = String(repeating: "\t", count: copy.indent)

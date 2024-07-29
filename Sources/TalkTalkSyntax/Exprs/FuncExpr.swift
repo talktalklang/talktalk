@@ -7,7 +7,7 @@
 
 public protocol FuncExpr: Expr {
 	var params: ParamsExpr { get }
-	var body: [any Expr] { get }
+	var body: any BlockExpr { get }
 	var i: Int { get }
 	var name: String? { get }
 }
@@ -20,11 +20,11 @@ public extension FuncExpr {
 
 public struct FuncExprSyntax: FuncExpr {
 	public let params: ParamsExpr
-	public let body: [any Expr]
+	public let body: any BlockExpr
 	public let i: Int
 	public let name: String?
 
-	public init(params: ParamsExpr, body: [any Expr], i: Int, name: String? = nil) {
+	public init(params: ParamsExpr, body: any BlockExpr, i: Int, name: String? = nil) {
 		self.params = params
 		self.body = body
 		self.i = i
