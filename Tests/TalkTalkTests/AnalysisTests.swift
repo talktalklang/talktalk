@@ -43,6 +43,15 @@ struct AnalysisTests {
 		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
+	@Test("Types named func expr") func namedfuncExpr() {
+		let fn = ast("""
+		func foo(x) { x + x }
+		foo
+		""")
+
+		#expect(fn.type == .function("foo", .int, [.int("x")], []))
+	}
+
 	@Test("Types calls") func funcCalls() {
 		let res = ast("""
 		foo = func(x) { x + x }

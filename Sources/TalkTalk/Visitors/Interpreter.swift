@@ -86,11 +86,16 @@ public struct Interpreter: Visitor {
 
 	public func visit(_ expr: FuncExpr, _ scope: Scope) -> Value {
 		let childScope = Scope(parent: scope)
+
+		if let name = expr.name {
+			_ = scope.define(name, .fn(Closure(funcExpr: expr, environment: childScope)))
+		}
+
 		return .fn(Closure(funcExpr: expr, environment: childScope))
 	}
 
 	public func visit(_: ParamsExpr, _: Scope) -> Value {
-		.bool(false)
+		fatalError("unreachable")
 	}
 
 	public func visit(_ expr: any Param, _ context: Scope) -> Value {

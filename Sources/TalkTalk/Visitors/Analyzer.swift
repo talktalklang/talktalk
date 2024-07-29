@@ -29,7 +29,7 @@ public struct Analyzer: Visitor {
 
 		guard case let .function(_, t, _, _) = callee.type else {
 			print("callee not callable: \(callee)")
-			return AnalyzedErrorExpr(type: .error, message: "callee not callable")
+			return AnalyzedErrorExpr(type: .error("callee not callable"), message: "callee not callable")
 		}
 
 		return AnalyzedCallExpr(
@@ -49,7 +49,7 @@ public struct Analyzer: Visitor {
 	}
 
 	public func visit(_ expr: any ErrorExpr, _: Environment) -> any AnalyzedExpr {
-		AnalyzedErrorExpr(type: .error, message: expr.message)
+		AnalyzedErrorExpr(type: .error(expr.message), message: expr.message)
 	}
 
 	public func visit(_ expr: any LiteralExpr, _: Environment) -> any AnalyzedExpr {
@@ -61,7 +61,7 @@ public struct Analyzer: Visitor {
 		case .none:
 			AnalyzedLiteralExpr(type: .none, expr: expr)
 		case let .error(string):
-			AnalyzedErrorExpr(type: .error, message: string)
+			AnalyzedErrorExpr(type: .error(string), message: string)
 		case .fn:
 			fatalError("Unreachable")
 		}
@@ -75,7 +75,7 @@ public struct Analyzer: Visitor {
 			)
 		}
 
-		return AnalyzedErrorExpr(type: .error, message: "Undefined variable: \(expr.name)")
+		return AnalyzedErrorExpr(type: .error("undefined variable: \(expr.name)"), message: "Undefined variable: \(expr.name)")
 	}
 
 	public func visit(_ expr: any BinaryExpr, _ env: Environment) -> any AnalyzedExpr {
@@ -118,14 +118,20 @@ public struct Analyzer: Visitor {
 		// has been visited.
 		params.infer(from: innerEnvironment)
 
-		return AnalyzedFuncExpr(
-			type: .function(expr.name, bodyAnalyzed.last?.type ?? .void, params, innerEnvironment.captures),
+		let funcExpr = AnalyzedFuncExpr(
+			type: .function(expr.name ?? expr.autoname, bodyAnalyzed.last?.type ?? .void, params, innerEnvironment.captures),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
 			returnsAnalyzed: bodyAnalyzed.last,
 			environment: innerEnvironment
 		)
+
+		if let name = expr.name {
+			env.define(local: name, as: funcExpr)
+		}
+
+		return funcExpr
 	}
 
 	public func visit(_ expr: any ParamsExpr, _: Environment) -> any AnalyzedExpr {

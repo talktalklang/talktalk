@@ -160,7 +160,7 @@ public struct Compiler: AnalyzedVisitor {
 
 	public func visit(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
 		let functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
-		let context = context.newEnvironment(name: funcExpr.name)
+		let context = context.newEnvironment(name: funcExpr.name ?? funcExpr.autoname)
 
 		if funcExpr.name == "main" {
 			return main(funcExpr, context)
@@ -260,7 +260,7 @@ public struct Compiler: AnalyzedVisitor {
 
 	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
 		var functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
-		functionType.name = funcExpr.name
+		functionType.name = funcExpr.name ?? funcExpr.autoname
 
 		let main = builder.main(functionType: functionType)
 
@@ -318,14 +318,14 @@ public struct Compiler: AnalyzedVisitor {
 			}
 
 			var functionType = LLVM.FunctionType(
-				name: expr.name,
+				name: expr.name ?? expr.autoname,
 				returnType: returnType,
 				parameterTypes: expr.analyzedParams.paramsAnalyzed.map { irType(for: $0.type) },
 				isVarArg: false,
-				captures: LLVM.StructType(name: expr.name, types: expr.environment.captures.map { irType(for: $0.binding.type) })
+				captures: LLVM.StructType(name: expr.name ?? expr.autoname, types: expr.environment.captures.map { irType(for: $0.binding.type) })
 			)
 
-			functionType.name = expr.name
+			functionType.name = expr.name ?? expr.autoname
 
 			return functionType
 		case let expr as AnalyzedVarExpr:

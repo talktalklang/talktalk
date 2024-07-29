@@ -18,7 +18,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
 	public var body: [any Expr] { expr.body }
 	public var i: Int { expr.i }
 
-	public var name: String {
+	public var name: String? {
 		expr.name
 	}
 

@@ -83,6 +83,19 @@ struct TalkTalkParserTests {
 		#expect(fn.body[0].cast(BinaryExprSyntax.self).op == .plus)
 	}
 
+	@Test("named func expr") func namedfuncexpr() throws {
+		let ast = parse("""
+		func foo(x, y) { x + y } 
+		""")[0]
+		let fn = try #require(ast as? FuncExpr)
+		#expect(fn.name == "foo")
+		#expect(fn.params.params[0].name == "x")
+		#expect(fn.params.params[1].name == "y")
+		#expect(fn.body[0].cast(BinaryExprSyntax.self).lhs.description == "x")
+		#expect(fn.body[0].cast(BinaryExprSyntax.self).rhs.description == "y")
+		#expect(fn.body[0].cast(BinaryExprSyntax.self).op == .plus)
+	}
+
 	@Test("call expr") func callExpr() {
 		let ast = parse("""
 		foo(1)

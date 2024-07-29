@@ -42,7 +42,7 @@ struct InterpreterTests {
 
 	@Test("Evaluates counter") func counter() {
 		#expect(Interpreter("""
-		makeCounter = func() {
+		func makeCounter() {
 			count = 0
 			func() {
 				count = count + 1
