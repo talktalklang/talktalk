@@ -10,10 +10,10 @@ public struct Token: CustomDebugStringConvertible {
 		// Single char tokens
 		case leftParen, rightParen,
 				 leftBrace, rightBrace,
-		     symbol, plus, equals, comma
+		     symbol, plus, equals, comma, bang
 
 		// Multiple char tokens
-		case int, float, identifier
+		case int, float, identifier, equalEqual, bangEqual
 
 		// Keywords
 		case `func`, `true`, `false`, `if`, `in`, call, `else`, `while`
@@ -59,7 +59,8 @@ public struct TalkTalkLexer {
 		case ")": make(.rightParen)
 		case "{": make(.leftBrace)
 		case "}": make(.rightBrace)
-		case "=": make(.equals)
+		case "=": make(match("=") ? .equalEqual : .equals)
+		case "!": make(match("=") ? .bangEqual : .bang)
 		case "+": make(.plus)
 		case ",": make(.comma)
 		case _ where char.isNewline: newline()
@@ -144,6 +145,15 @@ public struct TalkTalkLexer {
 		while !isAtEnd, peek().isWhitespace, !peek().isNewline {
 			advance()
 		}
+	}
+
+	mutating func match(_ char: Character) -> Bool {
+		if peek() == char {
+			advance()
+			return true
+		}
+
+		return false
 	}
 
 	func peek(_ offset: Int = 0) -> Character {

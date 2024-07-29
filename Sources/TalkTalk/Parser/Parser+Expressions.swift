@@ -162,8 +162,16 @@ extension Parser {
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
-		let op = consume(.plus)
+		let op: BinaryOperator = switch current.kind {
+		case .bangEqual: .bangEqual
+		case .equalEqual: .equalEqual
+		case .plus: .plus
+		default:
+			fatalError("unreachable")
+		}
+
+		advance()
 		let rhs = parse(precedence: current.kind.rule.precedence + 1)
-		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: .plus)
+		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: op)
 	}
 }

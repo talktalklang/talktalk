@@ -6,7 +6,7 @@
 //
 
 public enum BinaryOperator {
-	case plus
+	case plus, equalEqual, bangEqual
 }
 
 public protocol BinaryExpr: Expr {

@@ -40,6 +40,8 @@ extension Token.Kind {
 		case .while: .init({ $0.whileExpr($1) }, nil, .none)
 
 		// Binary ops
+		case .equalEqual: .init(nil, { $0.binary($1, $2) }, .equality)
+		case .bangEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .plus: .init(nil, { $0.binary($1, $2) }, .term)
 
 		// Literals
@@ -58,6 +60,7 @@ extension Token.Kind {
 		case .in: .none
 		case .call: .none
 		case .comma: .none
+		case .bang: .none
 		}
 	}
 }

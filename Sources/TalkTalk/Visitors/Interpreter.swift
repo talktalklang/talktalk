@@ -32,16 +32,16 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: any BinaryExpr, _ scope: Scope) -> Value {
-		let operands = [expr.lhs, expr.rhs]
+		let lhs = expr.lhs.accept(self, scope)
+		let rhs = expr.rhs.accept(self, scope)
 
-		if operands.count == 0 {
-			return .none
-		}
-
-		var result: Value = operands[0].accept(self, scope)
-
-		for next in operands[1 ..< operands.count] {
-			result = result.add(next.accept(self, scope))
+		let result: Value = switch expr.op {
+		case .plus:
+			lhs.add(rhs)
+		case .equalEqual:
+			.bool(lhs == rhs)
+		case .bangEqual:
+			.bool(lhs != rhs)
 		}
 
 		return result

@@ -29,12 +29,28 @@ struct TalkTalkParserTests {
 		#expect(parse("false")[0].cast(LiteralExprSyntax.self).value == .bool(false))
 	}
 
-	@Test("Basic expr") func binaryexpr() throws {
+	@Test("Plus expr") func binaryexpr() throws {
 		let ast = parse("1 + 2")[0]
 		let expr = try #require(ast as? BinaryExpr)
 		#expect(expr.lhs.description == "1")
 		#expect(expr.rhs.description == "2")
 		#expect(expr.op == .plus)
+	}
+
+	@Test("Equality expr") func equalityexpr() throws {
+		let ast = parse("1 == 2")[0]
+		let expr = try #require(ast as? BinaryExpr)
+		#expect(expr.lhs.description == "1")
+		#expect(expr.rhs.description == "2")
+		#expect(expr.op == .equalEqual)
+	}
+
+	@Test("Not equality expr") func notequalityexpr() throws {
+		let ast = parse("1 != 2")[0]
+		let expr = try #require(ast as? BinaryExpr)
+		#expect(expr.lhs.description == "1")
+		#expect(expr.rhs.description == "2")
+		#expect(expr.op == .bangEqual)
 	}
 
 	@Test("def expr") func def() {

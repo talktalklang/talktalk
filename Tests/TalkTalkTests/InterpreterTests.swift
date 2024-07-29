@@ -26,11 +26,33 @@ struct InterpreterTests {
 		""").evaluate() == .int(3))
 	}
 
+	@Test("Evaluates equality") func equality() {
+		#expect(Interpreter("""
+		1 == 2
+		""").evaluate() == .bool(false))
+	}
+
+	@Test("Evaluates not equal") func notEqual() {
+		#expect(Interpreter("""
+		1 != 2
+		""").evaluate() == .bool(true))
+	}
+
 	@Test("Evaluates if") func ifEval() {
 		#expect(Interpreter("""
 		if false { a = 1 } else { a = 2 }
 		a
 		""").evaluate() == .int(2))
+	}
+
+	@Test("Evaluates while") func whileEval() {
+		#expect(Interpreter("""
+		a = 0
+		while a != 4 {
+			a = a + 1
+		}
+		a
+		""").evaluate() == .int(4))
 	}
 
 	@Test("Evaluates functions") func functions() {
