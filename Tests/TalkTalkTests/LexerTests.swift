@@ -98,6 +98,18 @@ struct TalkTalkLexerTests {
 		])
 	}
 
+	@Test("while") func whilekeyword() {
+		var lexer = TalkTalkLexer("while { }")
+		let tokens = lexer.collect()
+
+		#expect(tokens.map(\.kind) == [
+			.while,
+			.leftBrace,
+			.rightBrace,
+			.eof
+		])
+	}
+
 	@Test("newline collapsing") func newline() async throws {
 		var lexer = TalkTalkLexer("""
 

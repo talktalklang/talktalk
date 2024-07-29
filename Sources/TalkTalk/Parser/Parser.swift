@@ -50,8 +50,6 @@ public struct Parser {
 
 	mutating func expr() -> Expr {
 		skip(.newline)
-		exprLength += 1
-
 		return parse(precedence: .assignment)
 	}
 

@@ -71,6 +71,17 @@ struct TalkTalkParserTests {
 		#expect(ast.alternative.description == "2")
 	}
 
+	@Test("while expr") func whileexpr() {
+		let ast = parse("""
+		while true {
+			123
+			456
+		}
+		""")[0] as! WhileExpr
+		#expect(ast.condition.description == "true")
+		#expect(ast.body.exprs[0].cast(LiteralExprSyntax.self).value == .int(123))
+	}
+
 	@Test("func expr") func funcexpr() throws {
 		let ast = parse("""
 		func(x, y) { x + y } 

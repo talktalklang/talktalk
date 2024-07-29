@@ -100,6 +100,32 @@ extension Parser {
 		return ErrorExprSyntax(message: "Unknown literal: \(previous as Any)")
 	}
 
+	mutating func whileExpr(_ canAssign: Bool) -> any Expr {
+		consume(.while)
+		skip(.newline)
+
+		let condition = parse(precedence: .assignment)
+		let body = blockExpr(canAssign)
+
+		return WhileExprSyntax(condition: condition, body: body)
+	}
+
+	mutating func blockExpr(_: Bool) -> BlockExprSyntax {
+		skip(.newline)
+		consume(.leftBrace, "expected '{' before block body")
+		skip(.newline)
+
+		var body: [any Expr] = []
+		while !check(.eof), !check(.rightBrace) {
+			body.append(expr())
+			skip(.newline)
+		}
+
+		consume(.rightBrace, "expected '}' after block body")
+
+		return BlockExprSyntax(exprs: body)
+	}
+
 	mutating func variable(_ canAssign: Bool) -> any Expr {
 		guard let token = consume(.identifier) else {
 			return ErrorExprSyntax(message: "Expected identifier for variable")

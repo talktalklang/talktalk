@@ -35,6 +35,14 @@ struct AnalysisTests {
 		#expect(ast("if true { 1 } else { 2 }").type == .int)
 	}
 
+	@Test("Types block expr") func blockExpr() {
+		#expect(ast("{ 1 }").type == .int)
+	}
+
+	@Test("Types while expr") func whileExpr() {
+		#expect(ast("while true { 1 }").type == .int)
+	}
+
 	@Test("Types func expr") func funcExpr() {
 		let fn = ast("""
 		func(x) { x + x }

@@ -144,6 +144,23 @@ public struct Analyzer: Visitor {
 		)
 	}
 
+	public func visit(_ expr: any WhileExpr, _ context: Environment) -> any AnalyzedExpr {
+		// TODO: Validate condition is bool
+		let condition = expr.condition.accept(self, context)
+		let body = visit(expr.body, context) as! AnalyzedBlockExpr
+
+		return AnalyzedWhileExpr(type: body.type, expr: expr, conditionAnalyzed: condition, bodyAnalyzed: body)
+	}
+
+	public func visit(_ expr: any BlockExpr, _ context: Environment) -> any AnalyzedExpr {
+		var bodyAnalyzed: [any AnalyzedExpr] = []
+		for bodyExpr in expr.exprs {
+			bodyAnalyzed.append(bodyExpr.accept(self, context))
+		}
+
+		return AnalyzedBlockExpr(type: bodyAnalyzed.last?.type ?? .none, expr: expr, exprsAnalyzed: bodyAnalyzed)
+	}
+
 	public func visit(_ expr: any Param, _: Environment) -> any AnalyzedExpr {
 		AnalyzedParam(name: expr.name, type: .placeholder(1))
 	}

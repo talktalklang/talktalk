@@ -102,7 +102,25 @@ public struct Interpreter: Visitor {
 		context.lookup(expr.name)
 	}
 
-	private
+	public func visit(_ expr: any WhileExpr, _ context: Scope) -> Value {
+		var lastResult: Value = .none
+		while expr.condition.accept(self, context) == .bool(true) {
+			lastResult = visit(expr.body, context)
+		}
+		return lastResult
+	}
+
+	public func visit(_ expr: any BlockExpr, _ context: Scope) -> Value {
+		lastResult(of: expr.exprs, in: context)
+	}
+
+	private func lastResult(of exprs: [any Expr], in context: Scope) -> Value {
+		var lastResult: Value = .none
+		for expr in exprs {
+			lastResult = expr.accept(self, context)
+		}
+		return lastResult
+	}
 
 	func call(_ closure: Closure, args: [any Expr], _ scope: Scope) -> Value {
 		for (i, argument) in args.enumerated() {

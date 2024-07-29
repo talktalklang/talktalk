@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public struct Formatter: Visitor {
+public struct SlipsFormatter: Visitor {
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> String {
 		"(\(expr.callee.accept(self, scope))) \(expr.args.map { $0.accept(self, scope) }.joined(separator: " ")))"
 	}
@@ -60,5 +60,13 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: any Param, _: Scope) -> String {
 		expr.name
+	}
+
+	public func visit(_ expr: any WhileExpr, _ context: Scope) -> String {
+		"(while \(expr.condition.accept(self, context)) (\(visit(expr.body, context))))"
+	}
+
+	public func visit(_ expr: any BlockExpr, _ context: Scope) -> String {
+		expr.exprs.map { $0.accept(self, context) }.joined(separator: " ")
 	}
 }

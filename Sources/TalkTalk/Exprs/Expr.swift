@@ -15,6 +15,6 @@ public extension Expr {
 	}
 
 	var description: String {
-		accept(Formatter(), Scope())
+		accept(SlipsFormatter(), Scope())
 	}
 }

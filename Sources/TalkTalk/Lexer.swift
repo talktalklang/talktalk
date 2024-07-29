@@ -16,7 +16,7 @@ public struct Token: CustomDebugStringConvertible {
 		case int, float, identifier
 
 		// Keywords
-		case `func`, `true`, `false`, `if`, `in`, call, `else`
+		case `func`, `true`, `false`, `if`, `in`, call, `else`, `while`
 
 		case newline
 		case eof
@@ -110,6 +110,7 @@ public struct TalkTalkLexer {
 		case "else": make(.else)
 		case "in": make(.in)
 		case "call": make(.call)
+		case "while": make(.while)
 		default:
 			make(.identifier)
 		}

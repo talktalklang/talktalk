@@ -190,6 +190,14 @@ public struct Compiler: AnalyzedVisitor {
 		return emittedFunction
 	}
 
+	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) -> any LLVM.EmittedValue {
+		fatalError()
+	}
+
+	public func visit(_ expr: AnalyzedWhileExpr, _ context: Context) -> any LLVM.EmittedValue {
+		fatalError()
+	}
+
 	public func visit(_: AnalyzedParamsExpr, _: Context) -> any LLVM.EmittedValue {
 		fatalError()
 	}
