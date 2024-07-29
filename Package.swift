@@ -14,7 +14,7 @@ let package = Package(
 		),
 	],
 	dependencies: [
-		.package(path: "../LLVM"),
+		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main"),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -22,7 +22,7 @@ let package = Package(
 		.target(
 			name: "TalkTalk",
 			dependencies: [
-				.product(name: "LLVM", package: "LLVM"),
+				.product(name: "LLVM", package: "C_LLVM"),
 			]
 		),
 		.testTarget(
