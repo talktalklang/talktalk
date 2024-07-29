@@ -5,11 +5,23 @@
 //  Created by Pat Nakajima on 7/27/24.
 //
 
+import TalkTalkSyntax
+
 public extension Analyzer {
 	class Environment {
 		public struct Capture: CustomStringConvertible {
 			public static func any(_ name: String) -> Capture {
-				Capture(name: name, binding: .init(name: name, expr: AnalyzedLiteralExpr(type: .bool, expr: LiteralExprSyntax(value: .bool(true)))), environment: .init())
+				Capture(
+					name: name,
+					binding: .init(
+						name: name,
+						expr: AnalyzedLiteralExpr(
+							type: .bool,
+							expr: LiteralExprSyntax(value: .bool(true))
+						)
+					),
+					environment: .init()
+				)
 			}
 
 			public let name: String

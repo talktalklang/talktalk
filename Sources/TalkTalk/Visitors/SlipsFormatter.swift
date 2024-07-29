@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkSyntax
+
 public struct SlipsFormatter: Visitor {
 	public func visit(_ expr: CallExpr, _ scope: Scope) -> String {
 		"(\(expr.callee.accept(self, scope))) \(expr.args.map { $0.accept(self, scope) }.joined(separator: " ")))"
@@ -20,16 +22,12 @@ public struct SlipsFormatter: Visitor {
 
 	public func visit(_ expr: LiteralExpr, _ scope: Scope) -> String {
 		switch expr.value {
-		case let .fn(closure):
-			"fn: \(closure.funcExpr.body.map { $0.accept(self, scope) })"
 		case let .bool(bool):
 			"\(bool)"
 		case let .int(int):
 			"\(int)"
 		case .none:
 			"none"
-		case let .error(message):
-			"Error: \(message)"
 		}
 	}
 

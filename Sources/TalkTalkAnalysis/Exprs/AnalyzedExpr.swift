@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkSyntax
+
 public indirect enum ValueType {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
@@ -18,7 +20,7 @@ public indirect enum ValueType {
 			return "int"
 		case let .function(name, returnType, args, captures):
 			let captures = captures.isEmpty ? "" : "[\(captures.map(\.name).joined(separator: ", "))] "
-			return "fn \(name)(\(args.params.map(\.name).joined(separator: ", "))) -> \(captures)(\(returnType.description))"
+			return "fn \(name)(\(args.params.description)) -> \(captures)(\(returnType.description))"
 		case .bool:
 			return "bool"
 		case .error(let msg):

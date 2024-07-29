@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkSyntax
+
 public struct AnalyzedBinaryExpr: AnalyzedExpr, BinaryExpr {
 	public var type: ValueType
 	let expr: any BinaryExpr

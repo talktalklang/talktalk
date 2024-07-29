@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkSyntax
+
 public struct AnalyzedVarExpr: AnalyzedExpr, VarExpr {
 	public var type: ValueType
 	let expr: VarExpr

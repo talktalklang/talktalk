@@ -24,7 +24,7 @@ public struct FuncExprSyntax: FuncExpr {
 	public let i: Int
 	public let name: String?
 
-	init(params: ParamsExpr, body: [any Expr], i: Int, name: String? = nil) {
+	public init(params: ParamsExpr, body: [any Expr], i: Int, name: String? = nil) {
 		self.params = params
 		self.body = body
 		self.i = i

@@ -59,7 +59,7 @@ extension Parser {
 		skip(.newline)
 
 		// TODO: allow more than one expr in a consequence
-		let consequence = parse(precedence: .assignment)
+		let consequence = blockExpr(false)
 
 		skip(.newline)
 		consume(.rightBrace)
@@ -71,13 +71,17 @@ extension Parser {
 		skip(.newline)
 
 		// TODO: make else optional
-		let alternative = parse(precedence: .assignment)
+		let alternative = blockExpr(false)
 
 		skip(.newline)
 		consume(.rightBrace)
 		skip(.newline)
 
-		return IfExprSyntax(condition: condition, consequence: consequence, alternative: alternative)
+		return IfExprSyntax(
+			condition: condition,
+			consequence: consequence,
+			alternative: alternative
+		)
 	}
 
 	mutating func literal(_: Bool) -> any Expr {

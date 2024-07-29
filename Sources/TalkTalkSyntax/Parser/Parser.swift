@@ -163,8 +163,8 @@ public struct Parser {
 
 	mutating func ifExpr() -> Expr {
 		let condition = expr()
-		let consequence = expr()
-		let alternative = expr()
+		let consequence = blockExpr(false)
+		let alternative = blockExpr(false)
 
 		return IfExprSyntax(
 			condition: condition,

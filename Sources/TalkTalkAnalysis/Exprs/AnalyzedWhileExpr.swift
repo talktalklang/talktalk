@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
+import TalkTalkSyntax
+
 public struct AnalyzedWhileExpr: WhileExpr, AnalyzedExpr {
 	public var type: ValueType
 	let expr: WhileExpr
@@ -18,7 +20,7 @@ public struct AnalyzedWhileExpr: WhileExpr, AnalyzedExpr {
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : AnalyzedVisitor {
 		visitor.visit(self, scope)
 	}
-	
+
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {
 		visitor.visit(self, scope)
 	}

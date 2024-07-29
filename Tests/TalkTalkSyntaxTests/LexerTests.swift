@@ -1,4 +1,4 @@
-@testable import TalkTalk
+@testable import TalkTalkSyntax
 import Testing
 
 struct TalkTalkLexerTests {

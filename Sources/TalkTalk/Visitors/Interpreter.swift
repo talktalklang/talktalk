@@ -37,14 +37,15 @@ public struct Interpreter: Visitor {
 		let lhs = expr.lhs.accept(self, scope)
 		let rhs = expr.rhs.accept(self, scope)
 
-		let result: Value = switch expr.op {
-		case .plus:
-			lhs.add(rhs)
-		case .equalEqual:
-			.bool(lhs == rhs)
-		case .bangEqual:
-			.bool(lhs != rhs)
-		}
+		let result: Value =
+			switch expr.op {
+			case .plus:
+				lhs.add(rhs)
+			case .equalEqual:
+				.bool(lhs == rhs)
+			case .bangEqual:
+				.bool(lhs != rhs)
+			}
 
 		return result
 	}
@@ -69,7 +70,14 @@ public struct Interpreter: Visitor {
 	}
 
 	public func visit(_ expr: LiteralExpr, _: Scope) -> Value {
-		expr.value
+		switch expr.value {
+		case let .bool(bool):
+			return .bool(bool)
+		case let .int(int):
+			return .int(int)
+		case .none:
+			return .none
+		}
 	}
 
 	public func visit(_ expr: VarExpr, _ scope: Scope) -> Value {

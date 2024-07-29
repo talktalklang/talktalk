@@ -5,7 +5,8 @@
 //  Created by Pat Nakajima on 7/26/24.
 //
 
-import TalkTalk
+import TalkTalkAnalysis
+import TalkTalkSyntax
 import Testing
 
 struct AnalysisTests {
@@ -125,7 +126,7 @@ struct AnalysisTests {
 				count
 			}
 		}
-		
+
 		mycounter = makeCounter()
 		mycounter()
 		"""))

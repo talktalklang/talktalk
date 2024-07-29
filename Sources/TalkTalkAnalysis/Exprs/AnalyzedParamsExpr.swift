@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
+import TalkTalkSyntax
+
 public class AnalyzedParam: Param, AnalyzedExpr {
 	public func accept<V>(_: V, _: V.Context) -> V.Value where V: AnalyzedVisitor {
 		fatalError("unreachable")
@@ -55,7 +57,9 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 
 extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
 	public init(arrayLiteral elements: AnalyzedParam...) {
-		self.expr = ParamsExprSyntax(params: elements.map { ParamSyntax(name: $0.name) })
+		self.expr = ParamsExprSyntax(
+			params: elements.map { ParamSyntax(name: $0.name)
+		})
 		self.paramsAnalyzed = elements
 		self.type = .void
 	}

@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalk
+import TalkTalkSyntax
 import Testing
 
 struct TalkTalkParserTests {
@@ -100,7 +100,7 @@ struct TalkTalkParserTests {
 
 	@Test("func expr") func funcexpr() throws {
 		let ast = parse("""
-		func(x, y) { x + y } 
+		func(x, y) { x + y }
 		""")[0]
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.params.params[0].name == "x")
@@ -112,7 +112,7 @@ struct TalkTalkParserTests {
 
 	@Test("named func expr") func namedfuncexpr() throws {
 		let ast = parse("""
-		func foo(x, y) { x + y } 
+		func foo(x, y) { x + y }
 		""")[0]
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.name == "foo")

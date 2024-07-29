@@ -7,6 +7,9 @@
 
 import LLVM
 
+import TalkTalkSyntax
+import TalkTalkAnalysis
+
 public struct Compiler: AnalyzedVisitor {
 	public class Context {
 		var name: String
@@ -63,7 +66,7 @@ public struct Compiler: AnalyzedVisitor {
 		return module
 	}
 
-	public func run() -> TalkTalk.Value {
+	public func run() -> Value {
 		#if !os(Linux)
 		if let int = LLVM.JIT().execute(module: compile()) {
 			return .int(int)

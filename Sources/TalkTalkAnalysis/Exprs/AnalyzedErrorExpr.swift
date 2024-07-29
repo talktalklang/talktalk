@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkSyntax
+
 public struct AnalyzedErrorExpr: AnalyzedExpr, ErrorExpr {
 	public var type: ValueType
 	public var message: String

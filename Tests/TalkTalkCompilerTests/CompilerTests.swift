@@ -5,7 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalk
+import TalkTalkCompiler
+import TalkTalkAnalysis
 import Testing
 
 struct CompilerTests {

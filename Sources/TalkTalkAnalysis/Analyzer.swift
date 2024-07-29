@@ -4,6 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/26/24.
 //
+import TalkTalkSyntax
 
 public struct Analyzer: Visitor {
 	public typealias Context = Environment
@@ -17,7 +18,12 @@ public struct Analyzer: Visitor {
 		let env = Environment()
 		let analyzer = Analyzer()
 
-		let mainExpr = FuncExprSyntax(params: ParamsExprSyntax(params: []), body: exprs, i: 0, name: "main")
+		let mainExpr = FuncExprSyntax(
+			params: ParamsExprSyntax(params: []),
+			body: exprs,
+			i: 0,
+			name: "main"
+		)
 		return analyzer.visit(mainExpr, env)
 	}
 
@@ -60,10 +66,6 @@ public struct Analyzer: Visitor {
 			AnalyzedLiteralExpr(type: .bool, expr: expr)
 		case .none:
 			AnalyzedLiteralExpr(type: .none, expr: expr)
-		case let .error(string):
-			AnalyzedErrorExpr(type: .error(string), message: string)
-		case .fn:
-			fatalError("Unreachable")
 		}
 	}
 
@@ -93,8 +95,9 @@ public struct Analyzer: Visitor {
 			type: expr.consequence.accept(self, context).type,
 			expr: expr,
 			conditionAnalyzed: expr.condition.accept(self, context),
-			consequenceAnalyzed: expr.consequence.accept(self, context),
-			alternativeAnalyzed: expr.alternative.accept(self, context)
+			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockExpr,
+			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockExpr
+
 		)
 	}
 
