@@ -7,6 +7,7 @@
 
 import LLVM
 
+import Foundation
 import TalkTalkSyntax
 import TalkTalkAnalysis
 
@@ -85,8 +86,10 @@ public struct Compiler: AnalyzedVisitor {
 		switch callee {
 		case let callee as LLVM.EmittedFunctionValue:
 			return builder.call(callee, with: args)
+		case let callee as LLVM.BuiltinValue:
+			return builder.call(builtin: callee.type.name, with: args)
 		default:
-			fatalError()
+			fatalError("\(callee) not callable")
 		}
 	}
 
@@ -104,6 +107,8 @@ public struct Compiler: AnalyzedVisitor {
 			_ = builder.store(value, to: pointer)
 		case let .capture(index, type):
 			builder.store(capture: value, at: index, as: type)
+		case .builtin(_):
+			fatalError("Cannot assign to a builtin")
 		case .parameter:
 			fatalError("Cannot assign to a param")
 		case .function:
@@ -129,25 +134,31 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> any LLVM.EmittedValue {
-		switch context.environment.get(expr.name) {
+		guard let binding = context.environment.get(expr.name) else {
+			fatalError("undefined variable: \(expr.name)")
+		}
+
+		switch binding {
 		case let .capture(index, type):
-			print(
+			log(
 				"<- loading capture in \(context.name): \(expr.name): slot \(index) in environment struct")
 			return builder.load(capture: index, envStructType: type)
 		case let .defined(pointer):
-			print(
+			log(
 				"<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
 			)
 			return builder.load(pointer: pointer, name: expr.name)
 		case let .parameter(index, _):
-			print("<- loading parameter in \(context.name): \(expr.name): \(index)")
+			log("<- loading parameter in \(context.name): \(expr.name): \(index)")
 			return builder.load(parameter: index)
 		case let .declared(pointer):
-			print(
+			log(
 				"<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
 			)
 			return builder.load(pointer: pointer, name: expr.name)
-		default:
+		case let .builtin(name):
+			return LLVM.BuiltinValue(type: LLVM.BuiltinType(name: name), ref: builder.mainRef)
+		case .function(_):
 			fatalError()
 		}
 	}
@@ -229,26 +240,26 @@ public struct Compiler: AnalyzedVisitor {
 	// MARK: Helpers
 
 	func allocateLocals(funcExpr: AnalyzedFuncExpr, context: Context) {
-		print("-> allocating locals for \(funcExpr.name ?? funcExpr.autoname)")
+		log("-> allocating locals for \(funcExpr.name ?? funcExpr.autoname)")
 
 		// Figure out which of this function's values are captured by children and malloc some heap space
 		// for them.
 		for binding in funcExpr.environment.bindings {
 			// We already have this (probably a capture so just go on to the next one
 			if context.environment.has(binding.name) {
-				print("  -> environment already contains \(binding.name), skipping")
+				log("  -> environment already contains \(binding.name), skipping")
 				continue
 			}
 
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.expr), name: binding.name)
-				print(
+				log(
 					"  -> emitting binding in \(funcExpr): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			} else {
 				let storage = builder.alloca(type: irType(for: binding.expr), name: binding.name)
-				print(
+				log(
 					"  -> emitting binding in \(funcExpr): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
@@ -265,7 +276,7 @@ public struct Compiler: AnalyzedVisitor {
 		// just reuse the values.
 		var captures: [(String, any LLVM.StoredPointer)] = []
 		for (_, capture) in funcExpr.environment.captures.enumerated() {
-			print("-> capturing \(capture.name) in \(funcExpr)")
+			log("-> capturing \(capture.name) in \(funcExpr)")
 			captures.append((capture.name, context.environment.capture(capture.name, with: builder)))
 		}
 
@@ -302,7 +313,7 @@ public struct Compiler: AnalyzedVisitor {
 		var functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
 		functionType.name = funcExpr.name ?? funcExpr.autoname
 
-		let main = builder.main(functionType: functionType)
+		let main = builder.main(functionType: functionType, builtins: Builtins.list)
 
 		allocateLocals(funcExpr: funcExpr, context: context)
 		_ = emitEnvironment(funcExpr, context)
@@ -330,10 +341,12 @@ public struct Compiler: AnalyzedVisitor {
 				name: name,
 				returnType: irType(for: returns),
 				parameterTypes: params.paramsAnalyzed.map { irType(for: $0.type) },
-				isVarArg: false,
+				isVarArg: params.isVarArg,
 				captures: LLVM.StructType(
 					name: "\(name)Env", types: captures.map { irType(for: $0.binding.type) })
 			)
+		case .none:
+			LLVM.VoidType()
 		default:
 			fatalError()
 		}
@@ -379,5 +392,9 @@ public struct Compiler: AnalyzedVisitor {
 		default:
 			fatalError()
 		}
+	}
+
+	func log(_ string: String) {
+		FileHandle.standardError.write(Data((string + "\n").utf8))
 	}
 }

@@ -41,6 +41,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public var paramsAnalyzed: [AnalyzedParam]
 	public var params: [any Param] { expr.params }
 	public var location: SourceLocation { expr.location }
+	public var isVarArg = false
 
 	public mutating func infer(from env: Analyzer.Environment) {
 		for (i, name) in paramsAnalyzed.enumerated() {

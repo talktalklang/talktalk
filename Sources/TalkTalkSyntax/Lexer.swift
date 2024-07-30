@@ -21,6 +21,7 @@ public struct Token: CustomDebugStringConvertible {
 		case newline
 		case eof
 		case error
+		case builtin
 	}
 
 	public let kind: Kind

@@ -38,12 +38,14 @@ public extension Analyzer {
 			public var expr: any AnalyzedExpr
 			public var type: ValueType { didSet { expr.type = type } }
 			public var isCaptured: Bool
+			public var isBuiltin: Bool
 
-			public init(name: String, expr: any AnalyzedExpr, isCaptured: Bool = false) {
+			public init(name: String, expr: any AnalyzedExpr, isCaptured: Bool = false, isBuiltin: Bool = false) {
 				self.name = name
 				self.expr = expr
 				self.type = expr.type
 				self.isCaptured = isCaptured
+				self.isBuiltin = isBuiltin
 			}
 		}
 
@@ -79,6 +81,33 @@ public extension Analyzer {
 			if let capture = capture(name: name) {
 				captures.append(capture)
 				return capture.binding
+			}
+
+			if name == "printf" {
+				// um..
+				return Binding(
+					name: "printf",
+					expr: AnalyzedFuncExpr(
+						type: Builtin.print.type,
+						expr: FuncExprSyntax(
+							params: ParamsExprSyntax(
+								params: [.int("value")],
+								location: [.synthetic(.builtin)]
+							),
+							body: BlockExprSyntax(exprs: [], location: [.synthetic(.builtin)]),
+							i: -1,
+							location: [.synthetic(.builtin)]
+						),
+						analyzedParams: [.int("value")],
+						bodyAnalyzed: AnalyzedBlockExpr(
+							type: .none,
+							expr: BlockExprSyntax(exprs: [], location: [.synthetic(.builtin)]),
+							exprsAnalyzed: []
+						),
+						returnsAnalyzed: nil,
+						environment: .init()
+					)
+				)
 			}
 
 			return nil

@@ -61,6 +61,7 @@ extension Token.Kind {
 		case .call: .none
 		case .comma: .none
 		case .bang: .none
+		case .builtin: .none
 		}
 	}
 }
