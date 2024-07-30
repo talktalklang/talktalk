@@ -124,4 +124,19 @@ struct InterpreterTests {
 		foo.add()
 		""").evaluate() == .int(126))
 	}
+
+	@Test("Evaluates Struct methods with args") func structsMethodsArgs() {
+		#expect(Interpreter("""
+		struct Foo {
+			let age: i32
+
+			func add(i) {
+				age + 3 + i
+			}
+		}
+
+		foo = Foo(age: 123)
+		foo.add(3)
+		""").evaluate() == .int(129))
+	}
 }
