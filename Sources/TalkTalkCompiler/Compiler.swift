@@ -71,6 +71,10 @@ public struct Compiler: AnalyzedVisitor {
 		let context = Context(name: "main")
 		_ = analyzed.accept(self, context)
 
+		if verbose {
+			module.dump()
+		}
+
 		LLVM.ModulePassManager(
 			module: module
 		).run()
@@ -79,14 +83,14 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func run() -> Value {
-		#if !os(Linux)
+		#if os(Linux)
+		return .error("JIT not supported on Linux")
+		#else
 		if let int = LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
 			return .error("Nope.")
 		}
-		#else
-		return .error("JIT not supported on Linux")
 		#endif
 	}
 
@@ -183,10 +187,19 @@ public struct Compiler: AnalyzedVisitor {
 				fatalError()
 			}
 
+		let op: LLVM.BinaryOperator = switch expr.op {
+		case .plus:
+			.add
+		case .equalEqual:
+			.equals
+		case .bangEqual:
+			.notEquals
+		}
+
 		let lhs = expr.lhsAnalyzed.accept(self, context).as(type)
 		let rhs = expr.rhsAnalyzed.accept(self, context).as(type)
 
-		return builder.binaryOperation(.add, lhs, rhs)
+		return builder.binaryOperation(op, lhs, rhs)
 	}
 
 	public func visit(_ expr: AnalyzedIfExpr, _ context: Context) -> any LLVM.EmittedValue {
@@ -241,7 +254,11 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedWhileExpr, _ context: Context) -> any LLVM.EmittedValue {
-		fatalError()
+		builder.branch {
+			expr.conditionAnalyzed.accept(self, context)
+		} repeating: {
+			expr.bodyAnalyzed.accept(self, context)
+		}
 	}
 
 	public func visit(_: AnalyzedParamsExpr, _: Context) -> any LLVM.EmittedValue {

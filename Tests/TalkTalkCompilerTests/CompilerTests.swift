@@ -45,6 +45,16 @@ struct CompilerTests {
 		""").run() == .int(2))
 	}
 
+	@Test("Evaluates while") func whileEval() {
+		#expect(Compiler("""
+		a = 0
+		while a != 4 {
+			a = a + 1
+		}
+		a
+		""", verbose: true).run() == .int(4))
+	}
+
 	@Test("Compiles functions") func functions() {
 		#expect(Compiler("""
 		addtwo = func(x) {
