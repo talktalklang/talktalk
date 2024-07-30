@@ -39,6 +39,11 @@ struct TalkCommand: TalkTalkCommand {
 		commandName: "talk",
 		abstract: "The TalkTalk programming lanaguage",
 		version: version,
-		subcommands: [AST.self, Format.self, Interpret.self]
+		subcommands: [
+			AST.self,
+			Format.self,
+			Interpret.self,
+			JIT.self
+		]
 	)
 }
