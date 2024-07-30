@@ -11,7 +11,7 @@ public protocol AnalyzedVisitor {
 
 	func visit(_ expr: AnalyzedCallExpr, _ context: Context) -> Value
 	func visit(_ expr: AnalyzedDefExpr, _ context: Context) -> Value
-	func visit(_ expr: AnalyzedErrorExpr, _ context: Context) -> Value
+	func visit(_ expr: AnalyzedErrorSyntax, _ context: Context) -> Value
 	func visit(_ expr: AnalyzedLiteralExpr, _ context: Context) -> Value
 	func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> Value
 	func visit(_ expr: AnalyzedBinaryExpr, _ context: Context) -> Value

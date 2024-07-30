@@ -26,9 +26,9 @@ extension Parser {
 			}
 		}
 
-		return lhs ?? ErrorExprSyntax(
-			message: "Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)",
-			location: [previous, current]
+		return lhs ?? SyntaxError(
+			location: [previous, current],
+			message: "Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)"
 		)
 	}
 
@@ -76,7 +76,7 @@ extension Parser {
 		)
 	}
 
-	mutating func funcExpr() -> Expr {
+	mutating func funcExpr() -> FuncExprSyntax {
 		startLocation(at: previous)
 
 		// Grab the name if there is one
@@ -113,7 +113,7 @@ extension Parser {
 			return funcExpr()
 		}
 
-		return ErrorExprSyntax(message: "Unknown literal: \(previous as Any)", location: [previous])
+		return SyntaxError(location: [previous], message: "Unknown literal: \(previous as Any)")
 	}
 
 	mutating func whileExpr(_ canAssign: Bool) -> any Expr {
@@ -126,6 +126,16 @@ extension Parser {
 		let body = blockExpr(canAssign)
 
 		return WhileExprSyntax(condition: condition, body: body, location: endLocation())
+	}
+
+	mutating func structExpr(_: Bool) -> StructExpr {
+		consume(.struct)
+		startLocation(at: previous)
+
+		let name = match(.identifier)
+		let body = declBlock()
+
+		return StructExprSyntax(name: name?.lexeme, body: body, location: endLocation())
 	}
 
 	mutating func blockExpr(_: Bool) -> BlockExprSyntax {
@@ -149,7 +159,7 @@ extension Parser {
 		startLocation()
 
 		guard let token = consume(.identifier) else {
-			return ErrorExprSyntax(message: "Expected identifier for variable", location: [current])
+			return SyntaxError(location: [current], message: "Expected identifier for variable")
 		}
 
 		let lhs = VarExprSyntax(token: token, location: [token])
@@ -159,7 +169,7 @@ extension Parser {
 			let rhs = parse(precedence: .assignment)
 			return DefExprSyntax(name: lhs.token, value: rhs, location: endLocation())
 		} else if check(.equals) {
-			return ErrorExprSyntax(message: "Can't assign", location: endLocation())
+			return SyntaxError(location: endLocation(), message: "Can't assign")
 		}
 
 		return lhs

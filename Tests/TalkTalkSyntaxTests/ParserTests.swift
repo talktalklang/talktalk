@@ -164,4 +164,21 @@ struct TalkTalkParserTests {
 
 		#expect(ast.count == 4)
 	}
+
+	@Test("Parses struct") func structs() throws {
+		let ast = parse("""
+		struct Foo {
+			var age: i32
+		}
+
+		foo = Foo(age: 123)
+		foo.age
+		""")[0] as! StructExpr
+
+		#expect(ast.name == "Foo")
+
+		let varDecl = ast.body.decls[0].cast(VarDeclSyntax.self)
+		#expect(varDecl.name == "age")
+		#expect(varDecl.typeDecl == "i32")
+	}
 }

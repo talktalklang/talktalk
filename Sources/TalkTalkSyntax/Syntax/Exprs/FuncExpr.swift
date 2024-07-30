@@ -18,7 +18,7 @@ public extension FuncExpr {
 	}
 }
 
-public struct FuncExprSyntax: FuncExpr {
+public struct FuncExprSyntax: FuncExpr, Decl {
 	public let params: ParamsExpr
 	public let body: any BlockExpr
 	public let i: Int

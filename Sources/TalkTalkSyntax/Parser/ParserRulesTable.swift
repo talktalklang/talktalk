@@ -46,6 +46,7 @@ extension Token.Kind {
 
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
+		case .struct: .init({ $0.structExpr($1) }, nil, .none)
 		case .func: .init({ $0.literal($1) }, nil, .none)
 		case .true: .init({ $0.literal($1) }, nil, .none)
 		case .int: .init({ $0.literal($1) }, nil, .none)
@@ -62,6 +63,9 @@ extension Token.Kind {
 		case .comma: .none
 		case .bang: .none
 		case .builtin: .none
+		case .var: .none
+		case .let: .none
+		case .colon: .none
 		}
 	}
 }

@@ -7,14 +7,14 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedErrorExpr: AnalyzedExpr, ErrorExpr {
+public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax {
 	public var type: ValueType
-	let expr: any ErrorExpr
+	let expr: any ErrorSyntax
 
 	public var message: String { expr.message }
 	public var location: SourceLocation { expr.location }
 
-	public init(type: ValueType, expr: any ErrorExpr) {
+	public init(type: ValueType, expr: any ErrorSyntax) {
 		self.type = type
 		self.expr = expr
 		print(message)

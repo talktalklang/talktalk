@@ -133,7 +133,7 @@ public struct Compiler: AnalyzedVisitor {
 		return value
 	}
 
-	public func visit(_ err: AnalyzedErrorExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_ err: AnalyzedErrorSyntax, _: Context) -> any LLVM.EmittedValue {
 		fatalError()
 	}
 

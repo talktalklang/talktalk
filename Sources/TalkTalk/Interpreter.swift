@@ -64,11 +64,6 @@ public struct Interpreter: Visitor {
 		scope.define(expr.name.lexeme, expr.value.accept(self, scope))
 	}
 
-	public func visit(_ err: ErrorExpr, _: Scope) -> Value {
-		print(err.message)
-		return .none
-	}
-
 	public func visit(_ expr: LiteralExpr, _: Scope) -> Value {
 		switch expr.value {
 		case let .bool(bool):
@@ -122,6 +117,22 @@ public struct Interpreter: Visitor {
 
 	public func visit(_ expr: any BlockExpr, _ context: Scope) -> Value {
 		lastResult(of: expr.exprs, in: context)
+	}
+
+	public func visit(_ expr: any ErrorSyntax, _ context: Scope) -> Value {
+		fatalError(expr.message)
+	}
+
+	public func visit(_ expr: any StructExpr, _ context: Scope) -> Value {
+		fatalError()
+	}
+
+	public func visit(_ expr: any DeclBlockExpr, _ context: Scope) -> Value {
+		fatalError()
+	}
+
+	public func visit(_ expr: any VarDecl, _ context: Scope) -> Value {
+		fatalError()
 	}
 
 	private func lastResult(of exprs: [any Expr], in context: Scope) -> Value {

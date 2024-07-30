@@ -98,4 +98,15 @@ struct InterpreterTests {
 		urcounter()
 		""").evaluate() == .int(1))
 	}
+
+	@Test("Structs") func structs() {
+		#expect(Interpreter("""
+		struct Foo {
+			let age: Int
+		}
+
+		foo = Foo(age: 123)
+		foo.age
+		""").evaluate() == .int(123))
+	}
 }

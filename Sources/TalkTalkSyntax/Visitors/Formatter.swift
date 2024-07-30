@@ -99,8 +99,37 @@ public struct Formatter: Visitor {
 		expr.params.map(\.name).joined(separator: ", ")
 	}
 
-	public func visit(_ expr: any ErrorExpr, _ context: Context) -> Value {
+	public func visit(_ expr: ErrorSyntax, _ context: Context) -> Value {
 		"<error: \(expr.message)>"
+	}
+
+	public func visit(_ expr: any StructExpr, _ context: Context) -> String {
+		var result = "struct"
+
+		if let name = expr.name {
+			result += name
+		}
+
+		result += " "
+		result += expr.body.accept(self, context)
+		return result
+	}
+
+	public func visit(_ expr: any DeclBlockExpr, _ context: Context) -> String {
+		var result = "{\n"
+		result += indenting {
+			var result: [String] = []
+			for expr in expr.decls {
+				result.append(expr.accept($0, context))
+			}
+			return result.joined(separator: "\n")
+		}
+		result += "\n}"
+		return result
+	}
+
+	public func visit(_ expr: any VarDecl, _ context: Context) -> String {
+		"var \(expr.name): \(expr.typeDecl)"
 	}
 
 	// MARK: Helpers

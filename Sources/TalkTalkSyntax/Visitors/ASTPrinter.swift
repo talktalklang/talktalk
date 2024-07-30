@@ -58,7 +58,7 @@ public struct ASTPrinter: Visitor {
 			}.joined(separator: "\n")
 	}
 
-	func dump(_ expr: any Expr, _ extra: String = "") -> String {
+	func dump(_ expr: any Syntax, _ extra: String = "") -> String {
 		"\(expr.location.start.line) | \(type(of: expr)) ln: \(expr.location.start.line) col: \(expr.location.start.column) \(extra)"
 	}
 
@@ -87,7 +87,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any ErrorExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: ErrorSyntax, _ context: Context) -> String {
 		dump(expr, expr.message)
 	}
 
@@ -149,5 +149,25 @@ public struct ASTPrinter: Visitor {
 
 	@StringBuilder public func visit(_ expr: any Param, _ context: Context) -> String {
 		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: any StructExpr, _ context: Context) -> String {
+		dump(expr)
+		indent {
+			expr.body.accept(self, context)
+		}
+	}
+
+	@StringBuilder public func visit(_ expr: any DeclBlockExpr, _ context: Context) -> String {
+		dump(expr)
+		indent {
+			for decl in expr.decls {
+				decl.accept(self, context)
+			}
+		}
+	}
+
+	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) -> String {
+		dump(expr, "name: \(expr.name), type: \(expr.typeDecl)")
 	}
 }

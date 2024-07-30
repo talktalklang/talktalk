@@ -63,6 +63,18 @@ public struct Parser {
 		return results
 	}
 
+	mutating func decl() -> Decl {
+		if didMatch(.func) {
+			return funcExpr()
+		}
+
+		if didMatch(.var) {
+			return varDecl()
+		}
+
+		return SyntaxError(location: [current], message: "Expected declaration")
+	}
+
 	mutating func expr() -> Expr {
 		skip(.newline)
 		return parse(precedence: .assignment)
@@ -106,65 +118,6 @@ public struct Parser {
 		}
 		return false
 	}
-//
-//	mutating func identifier() -> Expr {
-//		if !upcoming(.in), exprLength != 1 {
-//			return VarExprSyntax(token: previous)
-//		}
-//
-//		skip(.newline)
-//
-//		var parameters: [Token] = [previous]
-//
-//		while didMatch(.identifier) {
-//			parameters.append(previous)
-//		}
-//
-//		skip(.newline)
-//
-//		if didMatch(.in) {
-//			skip(.newline)
-//			return funcExpr()
-//		}
-//
-//		// If we started with an identifier and we're not in a function, it's a call. Add
-//		// the existing identifiers we've got as arguments, then see if there are any more.
-//		let callee = VarExprSyntax(token: parameters[0])
-//		var args: [any Expr] = parameters[1 ..< parameters.count].map { VarExprSyntax(token: $0) }
-//
-//		while !check(.rightParen), !check(.eof) {
-//			args.append(expr())
-//		}
-//
-//		return CallExprSyntax(callee: callee, args: args)
-//	}
-
-//	mutating func addExpr() -> Expr {
-//		startLocation()
-//
-//		let lhs = expr()
-//		let rhs = expr()
-//
-//		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: .plus, location: endLocation())
-//	}
-
-//	mutating func callExpr() -> Expr {
-//		let callee = expr()
-//		let args = exprs()
-//		return CallExprSyntax(callee: callee, args: args)
-//	}
-
-//	mutating func ifExpr() -> Expr {
-//		let condition = expr()
-//		let consequence = blockExpr(false)
-//		let alternative = blockExpr(false)
-//
-//		return IfExprSyntax(
-//			condition: condition,
-//			consequence: consequence,
-//			alternative: alternative
-//		)
-//	}
 
 	mutating func advance() {
 		previous = current
@@ -239,10 +192,10 @@ public struct Parser {
 		current
 	}
 
-	mutating func error(at: Token, _ message: String) -> ErrorExpr {
+	mutating func error(at: Token, _ message: String) -> ErrorSyntax {
 		errors.append((at, message))
 		print(message)
-		return ErrorExprSyntax(message: message, location: [at])
+		return SyntaxError(location: [at], message: message)
 	}
 
 	mutating func startLocation(at token: Token? = nil) {

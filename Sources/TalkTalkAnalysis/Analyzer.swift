@@ -37,7 +37,7 @@ public struct Analyzer: Visitor {
 
 		guard case let .function(_, t, _, _) = callee.type else {
 			print("callee not callable: \(callee)")
-			return AnalyzedErrorExpr(type: .error("callee not callable"), expr: ErrorExprSyntax(message: "callee not callable", location: expr.location))
+			return AnalyzedErrorSyntax(type: .error("callee not callable"), expr: SyntaxError(location: expr.location, message: "callee not callable"))
 		}
 
 		return AnalyzedCallExpr(
@@ -56,8 +56,8 @@ public struct Analyzer: Visitor {
 		return AnalyzedDefExpr(type: value.type, expr: expr, valueAnalyzed: value)
 	}
 
-	public func visit(_ expr: any ErrorExpr, _: Environment) -> any AnalyzedExpr {
-		AnalyzedErrorExpr(type: .error(expr.message), expr: expr)
+	public func visit(_ expr: any ErrorSyntax, _: Environment) -> any AnalyzedExpr {
+		AnalyzedErrorSyntax(type: .error(expr.message), expr: expr)
 	}
 
 	public func visit(_ expr: any LiteralExpr, _: Environment) -> any AnalyzedExpr {
@@ -79,9 +79,9 @@ public struct Analyzer: Visitor {
 			)
 		}
 
-		return AnalyzedErrorExpr(
+		return AnalyzedErrorSyntax(
 			type: .error("undefined variable: \(expr.name)"),
-			expr: ErrorExprSyntax(message: "undefined variable: \(expr.name)", location: expr.location)
+			expr: SyntaxError(location: expr.location, message: "undefined variable: \(expr.name)")
 		)
 	}
 
@@ -168,6 +168,18 @@ public struct Analyzer: Visitor {
 
 	public func visit(_ expr: any Param, _: Environment) -> any AnalyzedExpr {
 		AnalyzedParam(type: .placeholder(1), expr: expr)
+	}
+
+	public func visit(_ expr: any StructExpr, _ context: Environment) -> any AnalyzedExpr {
+		fatalError()
+	}
+
+	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) -> any AnalyzedExpr {
+		fatalError()
+	}
+
+	public func visit(_ expr: any VarDecl, _ context: Environment) -> any AnalyzedExpr {
+		fatalError()
 	}
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
