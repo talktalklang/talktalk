@@ -26,7 +26,7 @@ struct Compile: TalkTalkCommand {
 
 		let module = Compiler(source).compile()
 
-		module.write(to: "out.ll")
+		module.write(to: "out.bc")
 
 		// Write the module to a file
 	}
