@@ -19,6 +19,15 @@ public class Scope {
 	}
 
 	func lookup(_ name: String) -> Value {
-		locals[name] ?? parent?.lookup(name) ?? .none
+		if let local = locals[name] {
+			return local
+		}
+
+		if case let .instance(instance) = locals["self"],
+			 let property = instance.properties[name] {
+			return property
+		}
+
+		return parent?.lookup(name) ?? .error("undefined variable: \(name)")
 	}
 }

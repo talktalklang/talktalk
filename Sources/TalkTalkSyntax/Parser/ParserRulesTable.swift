@@ -67,6 +67,8 @@ extension Token.Kind {
 		case .var: .none
 		case .let: .none
 		case .colon: .none
+		case .self: .none
+		case .Self: .none
 		}
 	}
 }

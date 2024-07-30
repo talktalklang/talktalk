@@ -69,7 +69,11 @@ public struct Parser {
 		}
 
 		if didMatch(.var) {
-			return varDecl()
+			return letVarDecl(.var)
+		}
+
+		if didMatch(.let) {
+			return letVarDecl(.let)
 		}
 
 		return SyntaxError(location: [current], message: "Expected declaration")

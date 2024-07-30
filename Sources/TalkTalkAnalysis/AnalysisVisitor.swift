@@ -20,4 +20,10 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedBlockExpr, _ context: Context) -> Value
 	func visit(_ expr: AnalyzedWhileExpr, _ context: Context) -> Value
 	func visit(_ expr: AnalyzedParamsExpr, _ context: Context) -> Value
+
+	func visit(_ expr: AnalyzedMemberExpr, _ context: Context) -> Value
+	func visit(_ expr: AnalyzedDeclBlock, _ context: Context) -> Value
+	func visit(_ expr: AnalyzedStructExpr, _ context: Context) -> Value
+	func visit(_ expr: AnalyzedVarDecl, _ context: Context) -> Value
+	func visit(_ expr: AnalyzedLetDecl, _ context: Context) -> Value
 }

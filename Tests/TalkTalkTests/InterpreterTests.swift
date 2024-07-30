@@ -99,14 +99,29 @@ struct InterpreterTests {
 		""").evaluate() == .int(1))
 	}
 
-	@Test("Structs") func structs() {
+	@Test("Evaluates Struct properties") func structs() {
 		#expect(Interpreter("""
 		struct Foo {
-			let age: Int
+			let age: i32
 		}
 
 		foo = Foo(age: 123)
 		foo.age
 		""").evaluate() == .int(123))
+	}
+
+	@Test("Evaluates Struct methods") func structsMethods() {
+		#expect(Interpreter("""
+		struct Foo {
+			let age: i32
+
+			func add() {
+				age + 3
+			}
+		}
+
+		foo = Foo(age: 123)
+		foo.add()
+		""").evaluate() == .int(126))
 	}
 }

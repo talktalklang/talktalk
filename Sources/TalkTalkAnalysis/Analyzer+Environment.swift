@@ -7,6 +7,12 @@
 
 import TalkTalkSyntax
 
+public struct LexicalScope {
+	var scope: StructType
+	var type: ValueType
+	var expr: any Expr
+}
+
 public extension Analyzer {
 	class Environment {
 		public struct Capture: CustomStringConvertible {
@@ -18,7 +24,8 @@ public extension Analyzer {
 						expr: AnalyzedLiteralExpr(
 							type: .bool,
 							expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)])
-						)
+						),
+						type: .bool
 					),
 					environment: .init()
 				)
@@ -35,15 +42,15 @@ public extension Analyzer {
 
 		public class Binding {
 			public let name: String
-			public var expr: any AnalyzedExpr
-			public var type: ValueType { didSet { expr.type = type } }
+			public var expr: any Syntax
+			public var type: ValueType
 			public var isCaptured: Bool
 			public var isBuiltin: Bool
 
-			public init(name: String, expr: any AnalyzedExpr, isCaptured: Bool = false, isBuiltin: Bool = false) {
+			public init(name: String, expr: any Syntax, type: ValueType, isCaptured: Bool = false, isBuiltin: Bool = false) {
 				self.name = name
 				self.expr = expr
-				self.type = expr.type
+				self.type = type
 				self.isCaptured = isCaptured
 				self.isBuiltin = isBuiltin
 			}
@@ -51,6 +58,8 @@ public extension Analyzer {
 
 		private var parent: Environment?
 		private var locals: [String: Binding]
+
+		public var lexicalScope: LexicalScope?
 		public var captures: [Capture]
 		public var capturedValues: [Binding]
 
@@ -71,6 +80,15 @@ public extension Analyzer {
 			}
 
 			return parent?.infer(name)
+		}
+
+		public func type(named name: String) -> ValueType {
+			switch name {
+			case "i32": .int
+			case "bool": .bool
+			default:
+				fatalError()
+			}
 		}
 
 		public func lookup(_ name: String) -> Binding? {
@@ -106,8 +124,54 @@ public extension Analyzer {
 						),
 						returnsAnalyzed: nil,
 						environment: .init()
-					)
+					),
+					type: Builtin.print.type
 				)
+			}
+
+			if let scope = getLexicalScope() {
+				if name == "self" {
+					return Binding(
+						name: "self",
+						expr: AnalyzedVarExpr(
+							type: scope.type,
+							expr: VarExprSyntax(
+								token: .synthetic(.self),
+								location: [.synthetic(.self)]
+							)
+						),
+						type: .instance(scope.type)
+					)
+				}
+
+				if name == "Self" {
+					return Binding(
+						name: "Self",
+						expr: AnalyzedVarExpr(
+							type: scope.type,
+							expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)])
+						),
+						type: scope.type
+					)
+				}
+
+				if case let .struct(type) = scope.type {
+					if let method = type.methods[name] {
+						return Binding(
+							name: name,
+							expr: method.expr,
+							type: .instanceValue(scope.type)
+						)
+					}
+
+					if let property = type.properties[name] {
+						return Binding(
+							name: name,
+							expr: property.expr,
+							type: .instanceValue(scope.type)
+						)
+					}
+				}
 			}
 
 			return nil
@@ -121,7 +185,13 @@ public extension Analyzer {
 		}
 
 		public func define(local: String, as expr: any AnalyzedExpr) {
-			locals[local] = Binding(name: local, expr: expr)
+			locals[local] = Binding(name: local, expr: expr, type: expr.type)
+		}
+
+		public func addLexicalScope(scope: StructType, type: ValueType, expr: any Expr) -> Environment {
+			let environment = Environment(parent: self)
+			environment.lexicalScope = LexicalScope(scope: scope, type: type, expr: expr)
+			return environment
 		}
 
 		public func add() -> Environment {
@@ -140,6 +210,14 @@ public extension Analyzer {
 			}
 
 			return nil
+		}
+
+		public func getLexicalScope() -> LexicalScope? {
+			if let lexicalScope {
+				return lexicalScope
+			}
+
+			return parent?.getLexicalScope()
 		}
 	}
 }

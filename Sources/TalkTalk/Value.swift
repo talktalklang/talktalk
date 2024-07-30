@@ -5,8 +5,40 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkAnalysis
+
+public struct StructType {
+	var name: String?
+	var properties: [String: ValueType]
+	var methods: [String: AnalyzedFuncExpr]
+}
+
+public struct StructInstance {
+	var type: StructType
+	var properties: [String: Value]
+
+	public func resolve(property: String) -> Value? {
+		if let value = properties[property] {
+			return value
+		}
+
+		if let funcExpr = type.methods[property] {
+			return .method(funcExpr, self)
+		}
+
+		return nil
+	}
+}
+
 public enum Value: Equatable {
-	case int(Int), bool(Bool), none, error(String), fn(Closure)
+	case int(Int),
+			 bool(Bool),
+			 none,
+			 error(String),
+			 fn(Closure),
+			 method(AnalyzedFuncExpr, StructInstance),
+			 `struct`(StructType),
+			 instance(StructInstance)
 
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch lhs {
@@ -32,12 +64,20 @@ public enum Value: Equatable {
 			}
 
 			return closure.funcExpr.i == rhs.funcExpr.i
+		case .method(_, _):
+			return false
+		case .struct(_), .instance(_):
+			fatalError()
 		}
 	}
 
 	public var isTruthy: Bool {
 		switch self {
 		case .int:
+			true
+		case .method(_):
+			true
+		case .struct(_), .instance(_):
 			true
 		case let .bool(bool):
 			bool

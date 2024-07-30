@@ -32,19 +32,49 @@ public struct Analyzer: Visitor {
 	public func visit(_ expr: any CallExpr, _ context: Environment) -> any AnalyzedExpr {
 		let callee = expr.callee.accept(self, context)
 
-		// TODO: Update environment with the types getting passed to these args.
-		let args = expr.args.map { $0.accept(self, context) }
+		let args = expr.args.map {
+			AnalyzedArgument(label: $0.label, expr: $0.value.accept(self, context))
+		}
 
-		guard case let .function(_, t, _, _) = callee.type else {
-			print("callee not callable: \(callee)")
-			return AnalyzedErrorSyntax(type: .error("callee not callable"), expr: SyntaxError(location: expr.location, message: "callee not callable"))
+		let type: ValueType
+
+		switch callee.type {
+		case let .function(_, t, _, _):
+			type = t
+		case let .struct(t):
+			type = .instance(.struct(t))
+		default:
+			return error(at: callee, "callee not callable: \(callee), has type: \(callee.type)")
 		}
 
 		return AnalyzedCallExpr(
-			type: t,
+			type: type,
 			expr: expr,
 			calleeAnalyzed: callee,
 			argsAnalyzed: args
+		)
+	}
+
+	public func visit(_ expr: any MemberExpr, _ context: Environment) -> any AnalyzedExpr {
+		let receiver = expr.receiver.accept(self, context)
+		let propertyName = expr.property
+
+		var property: Property? = nil
+		switch receiver.type {
+		case let .instance(.struct(instance)):
+			property = instance.properties[propertyName] ?? instance.methods[propertyName]
+		default:
+			return error(at: expr, "Cannot access property \(propertyName) on \(receiver)")
+		}
+
+		guard let property else {
+			return error(at: expr, "No property '\(propertyName)' found for \(receiver)")
+		}
+
+		return AnalyzedMemberExpr(
+			type: property.type,
+			expr: expr,
+			receiverAnalyzed: receiver
 		)
 	}
 
@@ -74,15 +104,12 @@ public struct Analyzer: Visitor {
 	public func visit(_ expr: any VarExpr, _ context: Environment) -> any AnalyzedExpr {
 		if let binding = context.lookup(expr.name) {
 			return AnalyzedVarExpr(
-				type: binding.expr.type,
+				type: binding.type,
 				expr: expr
 			)
 		}
 
-		return AnalyzedErrorSyntax(
-			type: .error("undefined variable: \(expr.name)"),
-			expr: SyntaxError(location: expr.location, message: "undefined variable: \(expr.name)")
-		)
+		return error(at: expr, "undefined variable: \(expr.name)")
 	}
 
 	public func visit(_ expr: any BinaryExpr, _ env: Environment) -> any AnalyzedExpr {
@@ -102,7 +129,6 @@ public struct Analyzer: Visitor {
 			conditionAnalyzed: expr.condition.accept(self, context),
 			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockExpr,
 			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockExpr
-
 		)
 	}
 
@@ -171,15 +197,90 @@ public struct Analyzer: Visitor {
 	}
 
 	public func visit(_ expr: any StructExpr, _ context: Environment) -> any AnalyzedExpr {
-		fatalError()
+		let structType = StructType(name: expr.name, properties: [:], methods: [:])
+		let bodyContext = context.addLexicalScope(scope: structType, type: .struct(structType), expr: expr)
+
+		// Do a first pass over the body decls so we have a basic idea of what's available in
+		// this struct.
+		for decl in expr.body.decls {
+			switch decl {
+			case let decl as VarDecl:
+				structType.properties[decl.name] = Property(
+					name: decl.name,
+					type: context.type(named: decl.typeDecl),
+					expr: decl,
+					isMutable: true
+				)
+			case let decl as LetDecl:
+				structType.properties[decl.name] = Property(
+					name: decl.name,
+					type: context.type(named: decl.typeDecl),
+					expr: decl,
+					isMutable: false
+				)
+			case let decl as FuncExpr:
+				structType.methods[decl.name!] = Property(
+					name: decl.name!,
+					type: .function(decl.name!, .placeholder(2), [], []),
+					expr: decl,
+					isMutable: false
+				)
+			default:
+				fatalError()
+			}
+		}
+
+		// Do a second pass to try to fill in method returns
+		let bodyAnalyzed = visit(expr.body, bodyContext)
+
+		let type: ValueType = .struct(
+			structType
+		)
+
+		let analyzed = AnalyzedStructExpr(
+			type: type,
+			expr: expr,
+			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
+			properties: structType.properties,
+			methods: structType.methods
+		)
+
+		if let name = expr.name {
+			context.define(local: name, as: analyzed)
+		}
+
+		bodyContext.lexicalScope = LexicalScope(scope: structType, type: type, expr: expr)
+
+		return analyzed
 	}
 
 	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) -> any AnalyzedExpr {
-		fatalError()
+		var declsAnalyzed: [any AnalyzedExpr] = []
+
+		// Do a first pass over the body decls so we have a basic idea of what's available in
+		// this struct.
+		for decl in expr.decls {
+			let declAnalyzed = decl.accept(self, context)
+
+			declsAnalyzed.append(declAnalyzed)
+
+			// If we have an updated type for a method, update the struct to know about it.
+			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
+				 let lexicalScope = context.lexicalScope {
+				lexicalScope.scope.methods[funcExpr.name!] = Property(
+					name: funcExpr.name!,
+					type: funcExpr.type,
+					expr: funcExpr,
+					isMutable: false
+				)
+			}
+		}
+
+		return AnalyzedDeclBlock(type: .void, decl: expr, declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl])
 	}
 
 	public func visit(_ expr: any VarDecl, _ context: Environment) -> any AnalyzedExpr {
-		fatalError()
+		AnalyzedVarDecl(type: context.type(named: expr.typeDecl), expr: expr)
 	}
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
@@ -190,10 +291,13 @@ public struct Analyzer: Visitor {
 				expr.type = type
 				env.update(local: expr.name, as: type)
 				if let capture = env.captures.first(where: { $0.name == expr.name }) {
-					capture.binding.expr.type = type
 					capture.binding.type = type
 				}
 			}
 		}
+	}
+
+	public func error(at expr: any Expr, _ message: String) -> AnalyzedErrorSyntax {
+		AnalyzedErrorSyntax(type: .error(message), expr: SyntaxError(location: expr.location, message: message))
 	}
 }

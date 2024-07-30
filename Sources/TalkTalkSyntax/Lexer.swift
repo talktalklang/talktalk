@@ -18,7 +18,7 @@ public struct Token: CustomDebugStringConvertible {
 		case int, float, identifier, equalEqual, bangEqual
 
 		// Keywords
-		case `func`, `true`, `false`, `if`, `in`, call, `else`, `while`, `var`, `let`, `struct`
+		case `func`, `true`, `false`, `if`, `in`, call, `else`, `while`, `var`, `let`, `struct`, `self`, `Self`
 
 		case newline
 		case eof

@@ -7,12 +7,41 @@
 
 import TalkTalkSyntax
 
+public struct Property {
+	public let name: String
+	public let type: ValueType
+	public let expr: any Syntax
+	public let isMutable: Bool
+}
+
+public class StructType {
+	public var name: String?
+	public var properties: [String: Property]
+	public var methods: [String: Property]
+
+	public init(name: String? = nil, properties: [String: Property], methods: [String: Property]) {
+		self.name = name
+		self.properties = properties
+		self.methods = methods
+	}
+}
+
 public indirect enum ValueType {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
 	}
 
-	case int, function(String, ValueType, AnalyzedParamsExpr, [Analyzer.Environment.Capture]), bool, error(String), none, void, placeholder(Int)
+	case int,
+			 // function name, return type, param types, captures
+			 function(String, ValueType, AnalyzedParamsExpr, [Analyzer.Environment.Capture]),
+			 bool,
+			 `struct`(StructType),
+			 instance(ValueType),
+			 instanceValue(ValueType),
+			 error(String),
+			 none,
+			 void,
+			 placeholder(Int)
 
 	public var description: String {
 		switch self {
@@ -29,8 +58,14 @@ public indirect enum ValueType {
 			return "none"
 		case .void:
 			return "void"
+		case let .struct(structType):
+			return "struct \(structType.name ?? "<unnamed>")"
 		case .placeholder:
 			return "placeholder"
+		case let .instance(valueType):
+			return "instance \(valueType.description)"
+		case let .instanceValue(structType):
+			return "struct instance value \(structType)"
 		}
 	}
 }

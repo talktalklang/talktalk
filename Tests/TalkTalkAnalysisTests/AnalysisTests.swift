@@ -114,7 +114,7 @@ struct AnalysisTests {
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
-		#expect(capture.binding.expr.type == .int)
+		#expect(capture.binding.type == .int)
 	}
 
 	@Test("Types counter") func counter() throws {
@@ -147,5 +147,55 @@ struct AnalysisTests {
 		#expect(counterReturns.description == "int")
 		#expect(counterCaptures.first?.name == "count")
 		#expect(counterParams.params.isEmpty)
+	}
+
+	@Test("Types structs") func structs() throws {
+		let ast = ast("""
+		struct Person {
+			let age: i32
+
+			func sup() {
+				345
+			}
+		}
+		""")
+
+		let s = try #require(ast as? AnalyzedStructExpr)
+		#expect(s.name == "Person")
+
+		guard case let .struct(type) = s.type else {
+			#expect(Bool(false), "did not get struct type")
+			return
+		}
+
+		#expect(type.name == "Person")
+		#expect(type.properties["age"]!.type == .int)
+		#expect(type.methods["sup"]!.type == .function("sup", .int, [], []))
+	}
+
+	@Test("Types struct Self/self") func selfSelf() throws {
+		let ast = ast("""
+		struct Person {
+			func typeSup() {
+				Self
+			}
+
+			func sup() {
+				self
+			}
+		}
+		""")
+
+		let s = try #require(ast as? AnalyzedStructExpr)
+		#expect(s.name == "Person")
+
+		guard case let .struct(type) = s.type else {
+			#expect(Bool(false), "did not get struct type")
+			return
+		}
+
+		#expect(type.name == "Person")
+		#expect(type.methods["typeSup"]!.type == .function("typeSup", .struct(type), [], []))
+		#expect(type.methods["sup"]!.type == .function("sup", .instance(.struct(type)), [], []))
 	}
 }

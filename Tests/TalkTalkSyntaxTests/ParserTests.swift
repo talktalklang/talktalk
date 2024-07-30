@@ -128,7 +128,7 @@ struct TalkTalkParserTests {
 		foo(1)
 		""")[0] as! CallExpr
 		#expect(ast.callee.description == "foo")
-		#expect(ast.args[0].description == "1")
+		#expect(ast.args[0].value.description == "1")
 	}
 
 	@Test("passing an inline func to a func call") func inlineInlineCall() {
@@ -136,7 +136,7 @@ struct TalkTalkParserTests {
 		func(x) { x }(func(y) { y })
 		""")[0] as! CallExpr
 		#expect(ast.callee.cast(FuncExprSyntax.self).params.params[0].name == "x")
-		#expect(ast.args[0].cast(FuncExprSyntax.self).params.params[0].name == "y")
+		#expect(ast.args[0].value.cast(FuncExprSyntax.self).params.params[0].name == "y")
 	}
 
 	@Test("Func with no params") func noparams() {
@@ -173,12 +173,55 @@ struct TalkTalkParserTests {
 
 		foo = Foo(age: 123)
 		foo.age
-		""")[0] as! StructExpr
+		""")
 
-		#expect(ast.name == "Foo")
+		let structExpr = ast[0].cast(StructExprSyntax.self)
+		#expect(structExpr.name == "Foo")
 
-		let varDecl = ast.body.decls[0].cast(VarDeclSyntax.self)
+		let varDecl = structExpr.body.decls[0].cast(VarDeclSyntax.self)
 		#expect(varDecl.name == "age")
 		#expect(varDecl.typeDecl == "i32")
+
+		let fooDef = ast[1].cast(DefExprSyntax.self)
+		#expect(fooDef.name.lexeme == "foo")
+
+		let fooInit = fooDef.value.cast(CallExprSyntax.self)
+		#expect(fooInit.callee.description == "Foo")
+		#expect(fooInit.args[0].label == "age")
+		#expect(fooInit.args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
+
+		let fooMember = ast[2].cast(MemberExprSyntax.self)
+		#expect(fooMember.receiver.cast(VarExprSyntax.self).name == "foo")
+		#expect(fooMember.property == "age")
+	}
+
+	@Test("Parses struct with let decl") func structsLet() throws {
+		let ast = parse("""
+		struct Foo {
+			let age: i32
+		}
+
+		foo = Foo(age: 123)
+		foo.age
+		""")
+
+		let structExpr = ast[0].cast(StructExprSyntax.self)
+		#expect(structExpr.name == "Foo")
+
+		let varDecl = structExpr.body.decls[0].cast(LetDeclSyntax.self)
+		#expect(varDecl.name == "age")
+		#expect(varDecl.typeDecl == "i32")
+
+		let fooDef = ast[1].cast(DefExprSyntax.self)
+		#expect(fooDef.name.lexeme == "foo")
+
+		let fooInit = fooDef.value.cast(CallExprSyntax.self)
+		#expect(fooInit.callee.description == "Foo")
+		#expect(fooInit.args[0].label == "age")
+		#expect(fooInit.args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
+
+		let fooMember = ast[2].cast(MemberExprSyntax.self)
+		#expect(fooMember.receiver.cast(VarExprSyntax.self).name == "foo")
+		#expect(fooMember.property == "age")
 	}
 }

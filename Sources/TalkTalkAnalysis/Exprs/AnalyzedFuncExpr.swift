@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr {
+public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var type: ValueType
 	let expr: FuncExpr
 

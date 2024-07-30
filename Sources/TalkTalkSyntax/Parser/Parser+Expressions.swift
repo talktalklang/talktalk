@@ -182,7 +182,7 @@ extension Parser {
 
 		consume(.leftParen) // This is how we got here.
 
-		var args: [Argument] = []
+		var args: [CallArgument] = []
 		if !didMatch(.rightParen) {
 			repeat {
 				var name: String? = nil
@@ -191,13 +191,24 @@ extension Parser {
 					consume(.colon, "expected ':' after argument name")
 				}
 				let value = parse(precedence: .assignment)
-				args.append(Argument(label: name, value: value))
+				args.append(CallArgument(label: name, value: value))
 			} while didMatch(.comma)
 
 			consume(.rightParen, "expected ')' after arguments")
 		}
 
 		return CallExprSyntax(callee: lhs, args: args, location: endLocation())
+	}
+
+	mutating func dot(_ : Bool, _ lhs: any Expr) -> any Expr {
+		startLocation(at: previous)
+		consume(.dot)
+
+		guard let member = consume(.identifier, "expected identifier for property access") else {
+			return error(at: current, "expected identifier for property access")
+		}
+
+		return MemberExprSyntax(receiver: lhs, property: member.lexeme, location: endLocation())
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {

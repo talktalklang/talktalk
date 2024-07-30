@@ -17,6 +17,13 @@ public struct Formatter: Visitor {
 		return result.joined(separator: "\n")
 	}
 
+	public func visit(_ expr: any MemberExpr, _ context: Context) -> String {
+		var result = expr.receiver.accept(self, context)
+		result += "."
+		result += expr.property
+		return result
+	}
+
 	public func visit(_ expr: any WhileExpr, _ context: Context) -> String {
 		var result = "while "
 		result += expr.condition.accept(self, context)

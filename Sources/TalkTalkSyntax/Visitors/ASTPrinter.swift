@@ -68,6 +68,13 @@ public struct ASTPrinter: Visitor {
 		return copy.add(content)
 	}
 
+	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) -> String {
+		dump(expr, "property: \(expr.property)")
+		indent {
+			expr.receiver.accept(self, context)
+		}
+}
+
 	@StringBuilder public func visit(_ expr: any CallExpr, _ context: Context) -> String {
 		dump(expr)
 		indent {

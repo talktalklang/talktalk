@@ -18,6 +18,11 @@ public struct VarExprSyntax: VarExpr {
 		visitor.visit(self, scope)
 	}
 
+	public init(token: Token, location: SourceLocation) {
+		self.token = token
+		self.location = location
+	}
+
 	public var name: String {
 		token.lexeme
 	}

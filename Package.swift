@@ -50,6 +50,7 @@ let package = Package(
 			name: "TalkTalk",
 			dependencies: [
 				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
 			]
 		),
 		.testTarget(

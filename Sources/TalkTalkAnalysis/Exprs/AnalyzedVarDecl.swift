@@ -1,25 +1,22 @@
 //
-//  AnalyzedVarExpr.swift
+//  AnalyzedVarDecl.swift
+//  TalkTalk
 //
-//
-//  Created by Pat Nakajima on 7/22/24.
+//  Created by Pat Nakajima on 7/30/24.
 //
 
 import TalkTalkSyntax
 
-public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
+public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public var type: ValueType
-	let expr: VarExpr
+	let expr: VarDecl
 
-	public var token: Token { expr.token }
+	public var name: String { expr.name }
+	public var typeDecl: String { expr.typeDecl }
 	public var location: SourceLocation { expr.location }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
 		visitor.visit(self, scope)
-	}
-
-	public var name: String {
-		token.lexeme
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
