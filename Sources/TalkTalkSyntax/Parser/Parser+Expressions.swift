@@ -182,10 +182,16 @@ extension Parser {
 
 		consume(.leftParen) // This is how we got here.
 
-		var args: [any Expr] = []
+		var args: [Argument] = []
 		if !didMatch(.rightParen) {
 			repeat {
-				args.append(parse(precedence: .assignment))
+				var name: String? = nil
+				if let nameToken = match(.identifier) {
+					name = nameToken.lexeme
+					consume(.colon, "expected ':' after argument name")
+				}
+				let value = parse(precedence: .assignment)
+				args.append(Argument(label: name, value: value))
 			} while didMatch(.comma)
 
 			consume(.rightParen, "expected ')' after arguments")

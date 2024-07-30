@@ -74,7 +74,7 @@ public struct ASTPrinter: Visitor {
 			expr.callee.accept(self, context)
 			if !expr.args.isEmpty {
 				indent {
-					expr.args.map { $0.accept(self, context) }.joined(separator: "\n")
+					expr.args.map { $0.value.accept(self, context) }.joined(separator: "\n")
 				}
 			}
 		}

@@ -57,7 +57,7 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: any CallExpr, _ context: Context) -> Value {
 		var result = expr.callee.accept(self, context)
-		result += "(" + expr.args.map { $0.accept(self, context) }.joined(separator: ", ") + ")"
+		result += "(" + expr.args.map { $0.value.accept(self, context) }.joined(separator: ", ") + ")"
 		return result
 	}
 

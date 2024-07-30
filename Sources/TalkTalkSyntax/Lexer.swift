@@ -11,7 +11,7 @@ public struct Token: CustomDebugStringConvertible {
 		case leftParen, rightParen,
 				 leftBrace, rightBrace,
 		     symbol, plus, equals, comma, bang,
-				 colon
+				 colon, dot
 
 
 		// Multiple char tokens
@@ -85,6 +85,7 @@ public struct TalkTalkLexer {
 		case "+": make(.plus)
 		case ",": make(.comma)
 		case ":": make(.colon)
+		case ".": make(.dot)
 		case _ where char.isNewline: newline()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()

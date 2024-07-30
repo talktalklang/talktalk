@@ -54,7 +54,7 @@ public struct Interpreter: Visitor {
 		let callee = expr.callee.accept(self, scope)
 
 		if case let .fn(closure) = callee {
-			return call(closure, args: expr.args, scope)
+			return call(closure, args: expr.args.map(\.value), scope)
 		} else {
 			fatalError("\(expr.callee.description) not callable")
 		}
@@ -145,7 +145,10 @@ public struct Interpreter: Visitor {
 
 	func call(_ closure: Closure, args: [any Expr], _ scope: Scope) -> Value {
 		for (i, argument) in args.enumerated() {
-			_ = scope.define(closure.funcExpr.params.params[i].name, argument.accept(self, scope))
+			_ = scope.define(
+				closure.funcExpr.params.params[i].name,
+				argument.accept(self, scope)
+			)
 		}
 
 		var lastReturn: Value = .none

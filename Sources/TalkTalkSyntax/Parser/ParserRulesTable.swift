@@ -43,6 +43,7 @@ extension Token.Kind {
 		case .equalEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .bangEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .plus: .init(nil, { $0.binary($1, $2) }, .term)
+		case .dot: .init(nil, { $0.dot($1, $2) }, .call)
 
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)

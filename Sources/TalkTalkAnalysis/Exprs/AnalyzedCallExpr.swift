@@ -7,15 +7,20 @@
 
 import TalkTalkSyntax
 
+public struct AnalyzedArgument {
+	let name: String?
+	let expr: any AnalyzedExpr
+}
+
 public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public var type: ValueType
 	let expr: CallExpr
 
 	public var calleeAnalyzed: any AnalyzedExpr
-	public var argsAnalyzed: [any AnalyzedExpr]
+	public var argsAnalyzed: [AnalyzedArgument]
 
 	public var callee: any Expr { expr.callee }
-	public var args: [any Expr] { expr.args }
+	public var args: [Argument] { expr.args }
 	public var location: SourceLocation { expr.location }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
