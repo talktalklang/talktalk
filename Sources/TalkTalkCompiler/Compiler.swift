@@ -6,6 +6,7 @@
 //
 
 import LLVM
+import C_LLVM
 
 import Foundation
 import TalkTalkSyntax
@@ -44,14 +45,20 @@ public struct Compiler: AnalyzedVisitor {
 	let source: String
 	let module: LLVM.Module
 	let builder: LLVM.Builder
+	let verbose: Bool
 
-	public init(_ source: String) {
+	public init(_ source: String, verbose: Bool = false) {
 		self.source = source
 		self.module = LLVM.Module(name: "main", in: .global)
 		self.builder = LLVM.Builder(module: module)
+		self.verbose = verbose
 	}
 
 	public func compile() -> LLVM.Module {
+		LLVMInitializeNativeTarget()
+		LLVMInitializeNativeAsmParser()
+		LLVMInitializeNativeAsmPrinter()
+
 		let lexer = TalkTalkLexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
@@ -63,6 +70,10 @@ public struct Compiler: AnalyzedVisitor {
 		let analyzed = Analyzer.analyze(parsed)
 		let context = Context(name: "main")
 		_ = analyzed.accept(self, context)
+
+		LLVM.ModulePassManager(
+			module: module
+		).run()
 
 		return module
 	}
@@ -395,6 +406,8 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	func log(_ string: String) {
-		FileHandle.standardError.write(Data((string + "\n").utf8))
+		if verbose {
+			FileHandle.standardError.write(Data((string + "\n").utf8))
+		}
 	}
 }
