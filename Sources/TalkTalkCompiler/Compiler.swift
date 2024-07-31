@@ -52,7 +52,7 @@ public struct Compiler: AnalyzedVisitor {
 		self.verbose = verbose
 	}
 
-	public func compile() -> LLVM.Module {
+	public func compile(optimize: Bool = false) -> LLVM.Module {
 		LLVMInitializeNativeTarget()
 		LLVMInitializeNativeAsmParser()
 		LLVMInitializeNativeAsmPrinter()
@@ -73,9 +73,11 @@ public struct Compiler: AnalyzedVisitor {
 			module.dump()
 		}
 
-		LLVM.ModulePassManager(
-			module: module
-		).run()
+		if optimize {
+			LLVM.ModulePassManager(
+				module: module
+			).run()
+		}
 
 		return module
 	}
@@ -101,6 +103,8 @@ public struct Compiler: AnalyzedVisitor {
 			return builder.call(callee, with: args)
 		case let callee as LLVM.BuiltinValue:
 			return builder.call(builtin: callee.type.name, with: args)
+		case let callee as LLVM.MetaType:
+			return builder.instantiate(struct: callee.type, with: args)
 		default:
 			fatalError("\(callee) not callable")
 		}
@@ -120,6 +124,9 @@ public struct Compiler: AnalyzedVisitor {
 			_ = builder.store(value, to: pointer)
 		case let .capture(index, type):
 			builder.store(capture: value, at: index, as: type)
+		case let .structType(type):
+
+			fatalError()
 		case .builtin(_):
 			fatalError("Cannot assign to a builtin")
 		case .parameter:
@@ -169,6 +176,8 @@ public struct Compiler: AnalyzedVisitor {
 				"<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
 			)
 			return builder.load(pointer: pointer, name: expr.name)
+		case let .structType(type):
+			return LLVM.MetaType(type: type, ref: builder.mainRef)
 		case let .builtin(name):
 			return LLVM.BuiltinValue(type: LLVM.BuiltinType(name: name), ref: builder.mainRef)
 		case .function(_):
@@ -260,6 +269,20 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedMemberExpr, _ context: Context) -> any LLVM.EmittedValue {
+		switch expr.receiverAnalyzed.accept(self, context) {
+		case let receiver as LLVM.EmittedStructPointerValue:
+			guard case let .instance(.struct(structType)) = expr.receiverAnalyzed.type else {
+				fatalError("cannot access member '\(expr.property)' on non-instance \(expr.receiverAnalyzed.type)")
+			}
+
+			let offset = structType.offset(for: expr.property)
+			let property = structType.properties[expr.property]!
+			return builder.load(from: receiver, index: offset, as: property.type.irType(in: builder))
+		default:
+			()
+		}
+
+
 		fatalError()
 	}
 
@@ -268,7 +291,7 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedStructExpr, _ context: Context) -> any LLVM.EmittedValue {
-		fatalError()
+		return LLVM.VoidValue()
 	}
 
 	public func visit(_ expr: AnalyzedDeclBlock, _ context: Context) -> any LLVM.EmittedValue {

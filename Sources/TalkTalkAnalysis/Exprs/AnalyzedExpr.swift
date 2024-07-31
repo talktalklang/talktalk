@@ -15,14 +15,29 @@ public struct Property {
 }
 
 public class StructType {
-	public var name: String?
-	public var properties: [String: Property]
-	public var methods: [String: Property]
+	public let name: String?
+	public private(set) var properties: [String: Property]
+	public private(set) var methods: [String: Property]
+	public private(set) var propertyOffsets: [String: Int]
 
 	public init(name: String? = nil, properties: [String: Property], methods: [String: Property]) {
 		self.name = name
 		self.properties = properties
 		self.methods = methods
+		self.propertyOffsets = [:]
+	}
+
+	public func offset(for propertyName: String) -> Int {
+		propertyOffsets[propertyName]!
+	}
+
+	public func add(property: Property) {
+		propertyOffsets[property.name] = properties.count
+		properties[property.name] = property
+	}
+
+	public func add(method property: Property) {
+		methods[property.name] = property
 	}
 }
 

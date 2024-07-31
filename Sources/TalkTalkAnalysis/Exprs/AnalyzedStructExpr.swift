@@ -12,8 +12,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	let expr: StructExpr
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
-	public let properties: [String: Property]
-	public let methods: [String: Property]
+	public let structType: StructType
 
 	public var name: String? { expr.name }
 	public var body: DeclBlockExpr { expr.body }

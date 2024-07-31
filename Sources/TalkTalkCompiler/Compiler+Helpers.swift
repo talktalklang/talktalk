@@ -25,13 +25,16 @@ extension Compiler {
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.type), name: binding.name)
 				log(
-					"  -> emitting binding in \(funcExpr): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
+			} else if case let .struct(structType) = binding.type {
+				log("  -> emitting type binding for \(structType.name!)")
+				context.environment.defineType(binding.name, as: structType.toLLVM(in: builder))
 			} else {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(
-					"  -> emitting binding in \(funcExpr): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			}
@@ -54,8 +57,10 @@ extension Compiler {
 		// Now that we have the captures list built, we can create the StructType for it. We need this in order
 		// to be able to GEP into it when we're trying to look up values from the environment during variable
 		// resolution (see VarExpr visitor)
-		let type = LLVM.StructType(
-			name: "Capture(\(captures.map(\.0).joined()))", types: captures.map { $0.1.type })
+		let type = LLVM.CapturesStructType(
+			name: "Capture(\(captures.map(\.0).joined()))",
+			types: captures.map { $0.1.type }
+		)
 		for (i, capture) in captures.enumerated() {
 			context.environment.bindings[capture.0] = .capture(i, type)
 		}
@@ -64,7 +69,8 @@ extension Compiler {
 	}
 
 	func createEnvironmentStruct(
-		type: LLVM.StructType, from captures: [(String, any LLVM.StoredPointer)]
+		type: LLVM.CapturesStructType,
+		from captures: [(String, any LLVM.StoredPointer)]
 	) -> LLVM.CapturesStruct {
 		var offsets: [String: Int] = [:]
 		var capturePointers: [any LLVM.StoredPointer] = []
@@ -73,9 +79,13 @@ extension Compiler {
 			capturePointers.append(capture.1)
 		}
 
-		let pointer = builder.struct(type: type, values: captures)
+		let pointer = builder.capturesStruct(type: type, values: captures)
 		let value = LLVM.CapturesStruct(
-			type: type, offsets: offsets, captures: capturePointers, ref: pointer.ref)
+			type: type,
+			offsets: offsets,
+			captures: capturePointers,
+			ref: pointer.ref
+		)
 
 		return value
 	}
@@ -104,23 +114,7 @@ extension Compiler {
 	}
 
 	func irType(for type: ValueType) -> any LLVM.IRType {
-		switch type {
-		case .int:
-			LLVM.IntType.i32
-		case let .function(name, returns, params, captures):
-			LLVM.FunctionType(
-				name: name,
-				returnType: irType(for: returns),
-				parameterTypes: params.paramsAnalyzed.map { irType(for: $0.type) },
-				isVarArg: params.isVarArg,
-				captures: LLVM.StructType(
-					name: "\(name)Env", types: captures.map { irType(for: $0.binding.type) })
-			)
-		case .none:
-			LLVM.VoidType()
-		default:
-			fatalError()
-		}
+		return type.irType(in: builder)
 	}
 
 	func irType(for expr: AnalyzedExpr) -> any LLVM.IRType {
@@ -148,9 +142,10 @@ extension Compiler {
 				returnType: returnType,
 				parameterTypes: expr.analyzedParams.paramsAnalyzed.map { irType(for: $0.type) },
 				isVarArg: false,
-				captures: LLVM.StructType(
+				captures: LLVM.CapturesStructType(
 					name: expr.name ?? expr.autoname,
-					types: expr.environment.captures.map { irType(for: $0.binding.type) })
+					types: expr.environment.captures.map { irType(for: $0.binding.type) }
+				)
 			)
 
 			functionType.name = expr.name ?? expr.autoname

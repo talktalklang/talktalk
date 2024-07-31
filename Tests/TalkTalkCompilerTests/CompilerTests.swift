@@ -101,6 +101,17 @@ struct CompilerTests {
 		#expect(out.output == "1\n")
 	}
 
+	@Test("Compiles Struct properties") func structs() {
+		#expect(Compiler("""
+		struct Foo {
+			let age: i32
+		}
+
+		foo = Foo(age: 123)
+		foo.age + 4
+		""").run() == .int(127))
+	}
+
 	// helpers
 
 	public func captureOutput<R>(block: () -> R) -> (output: String, error: String, result: R) {

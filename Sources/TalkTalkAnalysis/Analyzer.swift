@@ -205,26 +205,26 @@ public struct Analyzer: Visitor {
 		for decl in expr.body.decls {
 			switch decl {
 			case let decl as VarDecl:
-				structType.properties[decl.name] = Property(
+				structType.add(property: Property(
 					name: decl.name,
 					type: context.type(named: decl.typeDecl),
 					expr: decl,
 					isMutable: true
-				)
+				))
 			case let decl as LetDecl:
-				structType.properties[decl.name] = Property(
+				structType.add(property: Property(
 					name: decl.name,
 					type: context.type(named: decl.typeDecl),
 					expr: decl,
 					isMutable: false
-				)
+				))
 			case let decl as FuncExpr:
-				structType.methods[decl.name!] = Property(
+				structType.add(method: Property(
 					name: decl.name!,
 					type: .function(decl.name!, .placeholder(2), [], []),
 					expr: decl,
 					isMutable: false
-				)
+				))
 			default:
 				fatalError()
 			}
@@ -241,8 +241,7 @@ public struct Analyzer: Visitor {
 			type: type,
 			expr: expr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
-			properties: structType.properties,
-			methods: structType.methods
+			structType: structType
 		)
 
 		if let name = expr.name {
@@ -267,12 +266,12 @@ public struct Analyzer: Visitor {
 			// If we have an updated type for a method, update the struct to know about it.
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
 				 let lexicalScope = context.lexicalScope {
-				lexicalScope.scope.methods[funcExpr.name!] = Property(
+				lexicalScope.scope.add(method: Property(
 					name: funcExpr.name!,
 					type: funcExpr.type,
 					expr: funcExpr,
 					isMutable: false
-				)
+				))
 			}
 		}
 

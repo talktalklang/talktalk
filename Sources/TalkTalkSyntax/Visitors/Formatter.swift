@@ -111,7 +111,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any StructExpr, _ context: Context) -> String {
-		var result = "struct"
+		var result = "struct "
 
 		if let name = expr.name {
 			result += name
