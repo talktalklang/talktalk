@@ -24,7 +24,7 @@ public extension ValueType {
 				)
 			)
 		case let .struct(type):
-			return type.toLLVM(in: builder)
+			return type.toLLVM(in: builder, vtable: nil)
 		case .none:
 			return LLVM.VoidType()
 		case let .instance(type):

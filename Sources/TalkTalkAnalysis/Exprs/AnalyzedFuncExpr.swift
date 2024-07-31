@@ -16,13 +16,20 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public let returnsAnalyzed: (any AnalyzedExpr)?
 	public let environment: Analyzer.Environment
 
+	public var name: String?
 	public var params: ParamsExpr { expr.params }
 	public var body: any BlockExpr { expr.body }
 	public var i: Int { expr.i }
 	public var location: SourceLocation { expr.location }
 
-	public var name: String? {
-		expr.name
+	public init(type: ValueType, expr: FuncExpr, analyzedParams: AnalyzedParamsExpr, bodyAnalyzed: AnalyzedBlockExpr, returnsAnalyzed: (any AnalyzedExpr)?, environment: Analyzer.Environment) {
+		self.name = expr.name
+		self.type = type
+		self.expr = expr
+		self.analyzedParams = analyzedParams
+		self.bodyAnalyzed = bodyAnalyzed
+		self.returnsAnalyzed = returnsAnalyzed
+		self.environment = environment
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {

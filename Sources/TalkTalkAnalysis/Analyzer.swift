@@ -237,18 +237,21 @@ public struct Analyzer: Visitor {
 			structType
 		)
 
+		let lexicalScope = bodyContext.lexicalScope!
+
 		let analyzed = AnalyzedStructExpr(
 			type: type,
 			expr: expr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
-			structType: structType
+			structType: structType,
+			lexicalScope: lexicalScope
 		)
 
 		if let name = expr.name {
 			context.define(local: name, as: analyzed)
 		}
 
-		bodyContext.lexicalScope = LexicalScope(scope: structType, type: type, expr: expr)
+		bodyContext.lexicalScope = lexicalScope
 
 		return analyzed
 	}

@@ -124,7 +124,7 @@ struct CompilerTests {
 
 		foo = Foo(age: 123)
 		foo.add()
-		""").run() == .int(127))
+		""", verbose: true).run() == .int(127))
 	}
 
 	// helpers

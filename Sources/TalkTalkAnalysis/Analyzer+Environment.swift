@@ -7,10 +7,16 @@
 
 import TalkTalkSyntax
 
-public struct LexicalScope {
+public class LexicalScope {
 	var scope: StructType
 	var type: ValueType
 	var expr: any Expr
+
+	init(scope: StructType, type: ValueType, expr: any Expr) {
+		self.scope = scope
+		self.type = type
+		self.expr = expr
+	}
 }
 
 public extension Analyzer {

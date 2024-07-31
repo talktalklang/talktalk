@@ -13,6 +13,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
 	public let structType: StructType
+	public let lexicalScope: LexicalScope
 
 	public var name: String? { expr.name }
 	public var body: DeclBlockExpr { expr.body }

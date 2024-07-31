@@ -5,16 +5,17 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-import LLVM
 import C_LLVM
-import TalkTalkSyntax
+import LLVM
 import TalkTalkAnalysis
+import TalkTalkSyntax
 
 public struct Compiler: AnalyzedVisitor {
 	public class Context {
 		var name: String
 		var counter: Int = 0
 		var environment: LLVM.Function.Environment = .init()
+		var lexicalScope: LexicalScope?
 
 		init(
 			name: String,
@@ -32,6 +33,43 @@ public struct Compiler: AnalyzedVisitor {
 				counter: counter,
 				environment: LLVM.Function.Environment(parent: environment)
 			)
+		}
+
+		func newEnvironment(structType: StructType, in builder: LLVM.Builder) -> Context {
+			let context = Context(
+				name: structType.name!,
+				counter: counter,
+				environment: LLVM.Function.Environment(parent: environment)
+			)
+
+			for (_, property) in structType.properties {
+				context.environment.define(
+					property.name,
+					as: .getter(
+						structType.toLLVM(in: builder, vtable: nil),
+						property.type.irType(in: builder),
+						property.name
+					)
+				)
+			}
+
+			for (_, method) in structType.methods {
+				context.environment.define(
+					method.name,
+					as: .method(
+						structType.toLLVM(in: builder, vtable: nil),
+						MethodType(
+							calleeType: structType.toLLVM(in: builder, vtable: nil),
+							functionType: method.type.irType(in: builder) as! LLVM.FunctionType
+						).functionType,
+						method.name
+					)
+				)
+			}
+
+			context.environment.define("self", as: .self)
+
+			return context
 		}
 
 		func nextCount() -> Int {
@@ -124,10 +162,15 @@ public struct Compiler: AnalyzedVisitor {
 			_ = builder.store(value, to: pointer)
 		case let .capture(index, type):
 			builder.store(capture: value, at: index, as: type)
-		case let .structType(type):
-
+		case let .self:
 			fatalError()
-		case .builtin(_):
+		case let .method(sturctType, functionType, name):
+			fatalError()
+		case let .getter(structType, propertyType, name):
+			fatalError()
+		case let .structType(type):
+			fatalError()
+		case .builtin:
 			fatalError("Cannot assign to a builtin")
 		case .parameter:
 			fatalError("Cannot assign to a param")
@@ -176,11 +219,24 @@ public struct Compiler: AnalyzedVisitor {
 				"<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
 			)
 			return builder.load(pointer: pointer, name: expr.name)
-		case let .structType(type):
-			return LLVM.MetaType(type: type, ref: builder.mainRef)
+		case let .structType(name, type):
+//			return LLVM.MetaType(type: type, ref: builder.mainRef, vtable: )
+		case let .self:
+			// Need to figure out how we're going to access the instance here...
+			fatalError()
+		case let .method(structType, functionType, name):
+			// Need to figure out how we're going to access the instance here...
+			fatalError()
+		case let .getter(structType, propertyType, name):
+			// Get the instance (we pass it in as the first argument to methods)
+			let param = builder.load(parameter: 0)
+			let pointer = LLVM.EmittedStructPointerValue(type: structType, ref: param.ref)
+			let offset = structType.offset(for: name)
+
+			return builder.load(from: pointer, index: offset, as: propertyType)
 		case let .builtin(name):
 			return LLVM.BuiltinValue(type: LLVM.BuiltinType(name: name), ref: builder.mainRef)
-		case .function(_):
+		case .function:
 			fatalError()
 		}
 	}
@@ -230,7 +286,9 @@ public struct Compiler: AnalyzedVisitor {
 		let envStruct = emitEnvironment(funcExpr, context)
 
 		let emittedFunction = builder.define(
-			functionType, parameterNames: funcExpr.params.params.map(\.name), envStruct: envStruct
+			functionType,
+			parameterNames: funcExpr.params.params.map(\.name),
+			envStruct: envStruct
 		) {
 			allocateLocals(funcExpr: funcExpr, context: context)
 
@@ -282,12 +340,18 @@ public struct Compiler: AnalyzedVisitor {
 			}
 
 			if let method = structType.methods[expr.property] {
-				
+				// Get the vtable from the receiver, it's always the last field
+				let vtable = builder.load(from: receiver, index: structType.properties.count - 1, as: LLVM.TypePointer(type: LLVM.IntType.i8))
+
+				// Figure out where in the vtable the function lives
+				let offset = structType.offset(method: method.name)
+
+				// Get the function from the vtable
+				return builder.vtableLookup(vtable.ref, at: offset, as: method.type.irType(in: builder) as! LLVM.FunctionType)
 			}
 		default:
 			()
 		}
-
 
 		fatalError()
 	}
@@ -297,6 +361,51 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedStructExpr, _ context: Context) -> any LLVM.EmittedValue {
+		let structType = expr.structType
+		let context = context.newEnvironment(structType: structType, in: builder)
+
+		for (name, property) in structType.properties {
+			context.environment.define(
+				name,
+				as: .getter(
+					structType.toLLVM(in: builder, vtable: nil),
+					property.type.irType(in: builder),
+					property.name
+				)
+			)
+		}
+
+		// Need to define the methods and build up a method table
+		var emittedMethods: [LLVM.EmittedFunctionValue] = []
+		for (name, property) in structType.methods.sorted(by: { structType.offset(method: $0.key) < structType.offset(method: $1.key) }) {
+			// TODO: Clean all this up
+			let name = "\(structType.name!)_\(name)"
+			var funcExpr = property.expr.cast(AnalyzedFuncExpr.self)
+
+			// Add self to the front of the params list
+			var paramsAnalyzed = funcExpr.analyzedParams
+
+			// TODO: Need to figure out how to make the first arg here a pointer
+			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
+
+			funcExpr.name = name
+
+			let methodFuncExpr = AnalyzedFuncExpr(
+				type: .function(name, funcExpr.returnsAnalyzed?.type ?? .void, paramsAnalyzed, []),
+				expr: funcExpr,
+				analyzedParams: paramsAnalyzed,
+				bodyAnalyzed: funcExpr.bodyAnalyzed,
+				returnsAnalyzed: funcExpr.returnsAnalyzed,
+				environment: funcExpr.environment
+			)
+
+			let emitted = visit(methodFuncExpr, context) as! LLVM.EmittedFunctionValue
+			emittedMethods.append(emitted)
+		}
+
+		let vtable = builder.vtableCreate(emittedMethods, name: "\(structType.name!)_methodTable")
+		let llvmStructType = structType.toLLVM(in: builder, vtable: vtable)
+
 		return LLVM.VoidValue()
 	}
 
