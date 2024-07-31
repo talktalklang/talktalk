@@ -30,7 +30,14 @@ extension Compiler {
 				context.environment.declare(binding.name, as: storage)
 			} else if case let .struct(structType) = binding.type {
 				log("  -> emitting type binding for \(structType.name!)")
-				context.environment.defineType(binding.name, as: structType.toLLVM(in: builder))
+
+				// Need to define the methods and build up a method table
+				for (name, property) in structType.methods {
+					print("\(name): \(property)")
+				}
+
+				let structType = structType.toLLVM(in: builder)
+				context.environment.defineType(binding.name, as: structType)
 			} else {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(

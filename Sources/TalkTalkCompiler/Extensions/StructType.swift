@@ -18,6 +18,7 @@ public extension TalkTalkAnalysis.StructType {
 	func toLLVM(in builder: LLVM.Builder) -> LLVM.StructType {
 		let types = makeLLVMStructTypeList(in: builder)
 		let ref = builder.namedStruct(name: name!, types: types)
+
 		return LLVM.StructType(name: name ?? "<anon struct>", types: types, namedTypeRef: ref)
 	}
 }

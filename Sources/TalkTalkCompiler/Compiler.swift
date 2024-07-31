@@ -275,9 +275,15 @@ public struct Compiler: AnalyzedVisitor {
 				fatalError("cannot access member '\(expr.property)' on non-instance \(expr.receiverAnalyzed.type)")
 			}
 
-			let offset = structType.offset(for: expr.property)
-			let property = structType.properties[expr.property]!
-			return builder.load(from: receiver, index: offset, as: property.type.irType(in: builder))
+			if let property = structType.properties[expr.property] {
+				let offset = structType.offset(for: property.name)
+				let property = structType.properties[expr.property]!
+				return builder.load(from: receiver, index: offset, as: property.type.irType(in: builder))
+			}
+
+			if let method = structType.methods[expr.property] {
+				
+			}
 		default:
 			()
 		}

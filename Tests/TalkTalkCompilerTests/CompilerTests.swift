@@ -112,6 +112,21 @@ struct CompilerTests {
 		""").run() == .int(127))
 	}
 
+	@Test("Compiles Struct methods") func methods() {
+		#expect(Compiler("""
+		struct Foo {
+			let age: i32
+
+			func add() {
+				age + 4
+			}
+		}
+
+		foo = Foo(age: 123)
+		foo.add()
+		""").run() == .int(127))
+	}
+
 	// helpers
 
 	public func captureOutput<R>(block: () -> R) -> (output: String, error: String, result: R) {
