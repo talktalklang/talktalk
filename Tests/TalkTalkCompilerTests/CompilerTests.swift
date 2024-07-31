@@ -52,7 +52,7 @@ struct CompilerTests {
 			a = a + 1
 		}
 		a
-		""", verbose: true).run() == .int(4))
+		""").run() == .int(4))
 	}
 
 	@Test("Compiles functions") func functions() {
