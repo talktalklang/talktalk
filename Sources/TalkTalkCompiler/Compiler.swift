@@ -46,7 +46,7 @@ public struct Compiler: AnalyzedVisitor {
 				context.environment.define(
 					property.name,
 					as: .getter(
-						structType.toLLVM(in: builder, vtable: nil),
+						structType.toLLVM(in: builder),
 						property.type.irType(in: builder),
 						property.name
 					)
@@ -57,9 +57,9 @@ public struct Compiler: AnalyzedVisitor {
 				context.environment.define(
 					method.name,
 					as: .method(
-						structType.toLLVM(in: builder, vtable: nil),
+						structType.toLLVM(in: builder),
 						MethodType(
-							calleeType: structType.toLLVM(in: builder, vtable: nil),
+							calleeType: structType.toLLVM(in: builder),
 							functionType: method.type.irType(in: builder) as! LLVM.FunctionType
 						).functionType,
 						method.name
@@ -142,7 +142,9 @@ public struct Compiler: AnalyzedVisitor {
 		case let callee as LLVM.BuiltinValue:
 			return builder.call(builtin: callee.type.name, with: args)
 		case let callee as LLVM.MetaType:
-			return builder.instantiate(struct: callee.type, with: args)
+			return builder.instantiate(struct: callee.type, with: args, vtable: callee.vtable)
+		case let callee as LLVM.EmittedMethodValue:
+			return builder.call(method: callee, with: args)
 		default:
 			fatalError("\(callee) not callable")
 		}
@@ -162,13 +164,13 @@ public struct Compiler: AnalyzedVisitor {
 			_ = builder.store(value, to: pointer)
 		case let .capture(index, type):
 			builder.store(capture: value, at: index, as: type)
-		case let .self:
+		case .self:
 			fatalError()
-		case let .method(sturctType, functionType, name):
+		case let .method(_, _, _):
 			fatalError()
-		case let .getter(structType, propertyType, name):
+		case let .getter(_, _, _):
 			fatalError()
-		case let .structType(type):
+		case let .structType(_):
 			fatalError()
 		case .builtin:
 			fatalError("Cannot assign to a builtin")
@@ -208,7 +210,7 @@ public struct Compiler: AnalyzedVisitor {
 			return builder.load(capture: index, envStructType: type)
 		case let .defined(pointer):
 			log(
-				"<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
+				"<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "from stack")"
 			)
 			return builder.load(pointer: pointer, name: expr.name)
 		case let .parameter(index, _):
@@ -219,12 +221,13 @@ public struct Compiler: AnalyzedVisitor {
 				"<- loading declared binding in \(context.name): \(expr.name): \(pointer.type) \(pointer.isHeap ? "from heap \(pointer.ref)" : "")"
 			)
 			return builder.load(pointer: pointer, name: expr.name)
-		case let .structType(name, type):
-//			return LLVM.MetaType(type: type, ref: builder.mainRef, vtable: )
-		case let .self:
+		case let .structType(type, ptr):
+			let vtable = builder.vtable(for: type.typeRef(in: builder.context))!
+			return LLVM.MetaType(type: type, ref: ptr, vtable: vtable)
+		case .self:
 			// Need to figure out how we're going to access the instance here...
 			fatalError()
-		case let .method(structType, functionType, name):
+		case let .method(_, _, _):
 			// Need to figure out how we're going to access the instance here...
 			fatalError()
 		case let .getter(structType, propertyType, name):
@@ -233,7 +236,7 @@ public struct Compiler: AnalyzedVisitor {
 			let pointer = LLVM.EmittedStructPointerValue(type: structType, ref: param.ref)
 			let offset = structType.offset(for: name)
 
-			return builder.load(from: pointer, index: offset, as: propertyType)
+			return builder.load(from: pointer, index: offset, as: propertyType, name: "get_\(name)")
 		case let .builtin(name):
 			return LLVM.BuiltinValue(type: LLVM.BuiltinType(name: name), ref: builder.mainRef)
 		case .function:
@@ -336,18 +339,39 @@ public struct Compiler: AnalyzedVisitor {
 			if let property = structType.properties[expr.property] {
 				let offset = structType.offset(for: property.name)
 				let property = structType.properties[expr.property]!
-				return builder.load(from: receiver, index: offset, as: property.type.irType(in: builder))
+				return builder.load(from: receiver, index: offset, as: property.type.irType(in: builder), name: "member_\(property.name)")
 			}
 
 			if let method = structType.methods[expr.property] {
-				// Get the vtable from the receiver, it's always the last field
-				let vtable = builder.load(from: receiver, index: structType.properties.count - 1, as: LLVM.TypePointer(type: LLVM.IntType.i8))
+				// Get the vtable pointer from the receiver, it's always the last field
+//				let vtable = builder.load(
+//					from: receiver,
+//					index: structType.properties.count - 1,
+//					as: LLVM.ArrayType(elementType: LLVM.TypePointer(type: .i8), capacity: structType.methods.count),
+//					name: "vtable_\(structType.name!)"
+//				) as! LLVM.EmittedArrayValue
+
+//				let vtablePtr = LLVMBuildStructGEP2(
+//					builder._ref,
+//					receiver.type.typeRef(in: builder.context),
+//					receiver.ref,
+//					UInt32(structType.properties.count - 1),
+//					"vtable_ptr_\(structType.name!)"
+//				)
+
+				let vtablePtr = LLVMGetNamedGlobal(builder._moduleRef, "\(structType.name!)_methodTable")
 
 				// Figure out where in the vtable the function lives
-				let offset = structType.offset(method: method.name)
+				let offset = structType.offset(method: method.name) - 1
 
 				// Get the function from the vtable
-				return builder.vtableLookup(vtable.ref, at: offset, as: method.type.irType(in: builder) as! LLVM.FunctionType)
+				let type = method.type.irType(in: builder) as! LLVM.FunctionType
+				let methodType = type.asMethod(in: builder.context, on: structType.toLLVM(in: builder))
+				let function = builder.vtableLookup(vtablePtr!, capacity: structType.methods.count, at: offset, as: methodType)
+
+//				let fn = builder.load(from: vtable, at: offset, as: LLVM.TypePointer(type: methodType)) as! LLVM.EmittedFunctionValue
+
+				return LLVM.EmittedMethodValue(function: function, receiver: receiver)
 			}
 		default:
 			()
@@ -368,7 +392,7 @@ public struct Compiler: AnalyzedVisitor {
 			context.environment.define(
 				name,
 				as: .getter(
-					structType.toLLVM(in: builder, vtable: nil),
+					structType.toLLVM(in: builder),
 					property.type.irType(in: builder),
 					property.name
 				)
@@ -404,7 +428,8 @@ public struct Compiler: AnalyzedVisitor {
 		}
 
 		let vtable = builder.vtableCreate(emittedMethods, name: "\(structType.name!)_methodTable")
-		let llvmStructType = structType.toLLVM(in: builder, vtable: vtable)
+		let ref = structType.toLLVM(in: builder).typeRef(in: builder.context)
+		builder.saveVtable(for: ref, as: vtable)
 
 		return LLVM.VoidValue()
 	}

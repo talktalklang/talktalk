@@ -25,18 +25,19 @@ extension Compiler {
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.type), name: binding.name)
 				log(
-					"  -> emitting binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting captured binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			} else if case let .struct(structType) = binding.type {
 				log("  -> emitting type binding and method table for \(structType.name!)")
 
-				let structType = structType.toLLVM(in: builder, vtable: nil)
-				context.environment.defineType(binding.name, as: structType)
+				let structTypeLLVM = structType.toLLVM(in: builder)
+				let globalType = builder.defineGlobal(structType: structTypeLLVM, name: structType.name!)
+				context.environment.defineType(structTypeLLVM, pointer: globalType)
 			} else {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(
-					"  -> emitting binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting stack binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			}

@@ -61,7 +61,7 @@ struct CompilerTests {
 			x + 2
 		}
 		addtwo(2)
-		""").run() == .int(4))
+		""", verbose: true).run() == .int(4))
 	}
 
 	@Test("Compiles counter") func counter() {
@@ -107,7 +107,7 @@ struct CompilerTests {
 			let age: i32
 		}
 
-		foo = Foo(age: 123)
+		foo = Foo(123)
 		foo.age + 4
 		""").run() == .int(127))
 	}
@@ -122,7 +122,7 @@ struct CompilerTests {
 			}
 		}
 
-		foo = Foo(age: 123)
+		foo = Foo(123)
 		foo.add()
 		""", verbose: true).run() == .int(127))
 	}

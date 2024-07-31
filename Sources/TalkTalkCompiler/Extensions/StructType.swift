@@ -15,11 +15,12 @@ public extension TalkTalkAnalysis.StructType {
 		return sorted.map { properties[$0.key]!.type.irType(in: builder) }
 	}
 
-	func toLLVM(in builder: LLVM.Builder, vtable: LLVMValueRef?) -> LLVM.StructType {
+	func toLLVM(in builder: LLVM.Builder) -> LLVM.StructType {
 		let vtablePointerType = LLVM.TypePointer(type: .i8)
 
-		let types = [vtablePointerType] + makeLLVMStructTypeList(in: builder)
+		let types = makeLLVMStructTypeList(in: builder) + [vtablePointerType]
 		let ref = builder.namedStruct(name: name!, types: types)
+		let vtable = builder.vtable(for: ref)
 
 		return LLVM.StructType(
 			name: name ?? "<anon struct>",

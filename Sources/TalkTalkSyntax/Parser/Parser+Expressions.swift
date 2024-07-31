@@ -186,10 +186,16 @@ extension Parser {
 		if !didMatch(.rightParen) {
 			repeat {
 				var name: String? = nil
-				if let nameToken = match(.identifier) {
-					name = nameToken.lexeme
-					consume(.colon, "expected ':' after argument name")
+
+				if let identifier = match(.identifier) {
+					if didMatch(.colon) {
+						name = identifier.lexeme
+					} else {
+						args.append(CallArgument(label: nil, value: VarExprSyntax(token: identifier, location: [identifier])))
+						continue
+					}
 				}
+
 				let value = parse(precedence: .assignment)
 				args.append(CallArgument(label: name, value: value))
 			} while didMatch(.comma)

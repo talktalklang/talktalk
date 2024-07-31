@@ -13,9 +13,7 @@ let package = Package(
 		)
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-//		.package(url: "https://github.com/nakajima/C_LLVM", branch: "main")
-		.package(path: "../LLVM")
+		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0")
 	],
 	targets: [
 		.executableTarget(
@@ -25,7 +23,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
-				.product(name: "ArgumentParser", package: "swift-argument-parser"),
+				.product(name: "ArgumentParser", package: "swift-argument-parser")
 			]
 		),
 		.target(
@@ -43,14 +41,25 @@ let package = Package(
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				.product(name: "LLVM", package: "LLVM")
+				"LLVM"
+			]
+		),
+		.target(
+			name: "LLVM",
+			dependencies: ["C_LLVM"]
+		),
+		.systemLibrary(
+			name: "C_LLVM",
+			pkgConfig: "cllvm",
+			providers: [
+				.brew(["llvm"])
 			]
 		),
 		.target(
 			name: "TalkTalk",
 			dependencies: [
 				"TalkTalkSyntax",
-				"TalkTalkAnalysis",
+				"TalkTalkAnalysis"
 			]
 		),
 		.testTarget(
@@ -63,7 +72,7 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				.product(name: "LLVM", package: "LLVM")
+				"LLVM"
 			]
 		),
 		.testTarget(
@@ -78,11 +87,11 @@ let package = Package(
 )
 
 #if os(Linux)
-	package.dependencies.append(
-		.package(url: "https://github.com/apple/swift-testing", branch: "main")
-	)
+package.dependencies.append(
+	.package(url: "https://github.com/apple/swift-testing", branch: "main")
+)
 
-	for target in package.targets.filter(\.isTest) {
-		target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
-	}
+for target in package.targets.filter(\.isTest) {
+	target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
+}
 #endif
