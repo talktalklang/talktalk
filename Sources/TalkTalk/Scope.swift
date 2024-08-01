@@ -28,6 +28,10 @@ public class Scope {
 			return property
 		}
 
+		if name == "printf" {
+			return .builtin("printf")
+		}
+
 		return parent?.lookup(name) ?? .error("undefined variable: \(name)")
 	}
 }

@@ -49,6 +49,7 @@ public struct Formatter: Visitor {
 		result += expr.condition.accept(self, context)
 		result += " "
 		result += "{\n"
+		result
 		return result
 	}
 
@@ -137,6 +138,10 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: any VarDecl, _ context: Context) -> String {
 		"var \(expr.name): \(expr.typeDecl)"
+	}
+
+	public func visit(_ expr: any ReturnExpr, _ context: Context) -> String {
+		"return \(expr.value?.accept(self, context) ?? "")"
 	}
 
 	// MARK: Helpers

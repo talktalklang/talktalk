@@ -11,7 +11,7 @@ public extension LLVM {
 	struct IntType: IRType, IR, Sendable {
 		public typealias V = IntValue
 
-		let width: Int
+		public let width: Int
 
 		init(width: Int) {
 			self.width = width

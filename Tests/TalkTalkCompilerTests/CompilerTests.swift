@@ -19,6 +19,15 @@ struct CompilerTests {
 		#expect(Compiler("1 + 2").run() == .int(3))
 	}
 
+	@Test("Compiles comparison") func comparison() {
+		let out = captureOutput {
+			_ = Compiler("if 1 < 2 { printf(1) } else { printf(2) }").run()
+			_ = Compiler("if 1 > 2 { printf(1) } else { printf(2) }").run()
+		}.output
+
+		#expect(out == "1\n2\n")
+	}
+
 	@Test("Compiles def") func def() {
 		#expect(Compiler("""
 		abc = 1 + 2
@@ -101,15 +110,30 @@ struct CompilerTests {
 		#expect(out.output == "1\n")
 	}
 
-	@Test("Compiles Struct properties") func structs() {
+	@Test("Compiles Struct property getter") func structs() {
 		#expect(Compiler("""
 		struct Foo {
 			let age: i32
 		}
 
-		foo = Foo(123)
+		foo = Foo(age: 123)
 		foo.age + 4
 		""").run() == .int(127))
+	}
+
+	@Test("Compiles Struct self") func structSelf() {
+		#expect(Compiler("""
+		struct Foo {
+			let age: i32
+		
+			func getAge() {
+				self.age
+			}
+		}
+
+		foo = Foo(age: 123)
+		foo.getAge()
+		""").run() == .int(123))
 	}
 
 	@Test("Compiles Struct methods") func methods() {

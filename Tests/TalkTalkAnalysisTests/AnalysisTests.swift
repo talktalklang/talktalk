@@ -52,6 +52,18 @@ struct AnalysisTests {
 		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
+	@Test("Types recursive func expr") func funcExprRecur() {
+		let fn = ast("""
+		func foo(x) { foo(x) }
+		""")
+
+		#expect(
+			fn
+				.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0]
+				.cast(AnalyzedCallExpr.self).callee.description == "foo"
+		)
+	}
+
 	@Test("Types named func expr") func namedfuncExpr() {
 		let fn = ast("""
 		func foo(x) { x + x }
@@ -196,6 +208,13 @@ struct AnalysisTests {
 
 		#expect(type.name == "Person")
 		#expect(type.methods["typeSup"]!.type == .function("typeSup", .struct(type), [], []))
-		#expect(type.methods["sup"]!.type == .function("sup", .instance(.struct(type)), [], []))
+
+		guard case let .function(name, returns, _, _) = type.methods["sup"]!.type else {
+			#expect(Bool(false))
+			return
+		}
+
+		#expect(name == "sup")
+		#expect(returns == .instance(.struct(type)))
 	}
 }

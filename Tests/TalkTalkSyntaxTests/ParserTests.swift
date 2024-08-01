@@ -37,6 +37,10 @@ struct TalkTalkParserTests {
 		#expect(expr.op == .plus)
 	}
 
+	@Test("Comparison expr") func comparisonexpr() throws {
+		#expect(parse("1 < 2")[0].description == "1 < 2")
+	}
+
 	@Test("Equality expr") func equalityexpr() throws {
 		let ast = parse("1 == 2")[0]
 		let expr = try #require(ast as? BinaryExpr)
@@ -108,6 +112,17 @@ struct TalkTalkParserTests {
 		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).lhs.description == "x")
 		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).rhs.description == "y")
 		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).op == .plus)
+	}
+
+	@Test("return expr") func returnExpr() throws {
+		let ast = parse("""
+		func() {
+			return x
+		}
+		""")[0]
+
+		let fn = try #require(ast as? FuncExpr)
+		#expect(fn.body.exprs[0].cast(ReturnExprSyntax.self).value?.description == "x")
 	}
 
 	@Test("named func expr") func namedfuncexpr() throws {

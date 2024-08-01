@@ -128,6 +128,15 @@ extension Parser {
 		return WhileExprSyntax(condition: condition, body: body, location: endLocation())
 	}
 
+	mutating func returning(_ canAssign: Bool) -> any Expr {
+		startLocation()
+		consume(.return)
+
+		let value = parse(precedence: .none)
+
+		return ReturnExprSyntax(location: endLocation(), value: value)
+	}
+
 	mutating func structExpr(_: Bool) -> StructExpr {
 		consume(.struct)
 		startLocation(at: previous)
@@ -187,13 +196,10 @@ extension Parser {
 			repeat {
 				var name: String? = nil
 
-				if let identifier = match(.identifier) {
-					if didMatch(.colon) {
-						name = identifier.lexeme
-					} else {
-						args.append(CallArgument(label: nil, value: VarExprSyntax(token: identifier, location: [identifier])))
-						continue
-					}
+				if check(.identifier), checkNext(.colon) {
+					let identifier = consume(.identifier)!
+					consume(.colon)
+					name = identifier.lexeme
 				}
 
 				let value = parse(precedence: .assignment)
@@ -224,6 +230,13 @@ extension Parser {
 		case .bangEqual: .bangEqual
 		case .equalEqual: .equalEqual
 		case .plus: .plus
+		case .minus: .minus
+		case .star: .star
+		case .slash: .slash
+		case .less: .less
+		case .lessEqual: .lessEqual
+		case .greater: .greater
+		case .greaterEqual: .greaterEqual
 		default:
 			fatalError("unreachable")
 		}

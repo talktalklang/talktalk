@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import TalkTalkAnalysis
 import LLVM
+import TalkTalkAnalysis
 
 extension Compiler {
 	func allocateLocals(funcExpr: AnalyzedFuncExpr, context: Context) {
@@ -53,6 +53,8 @@ extension Compiler {
 		// just reuse the values.
 		var captures: [(String, any LLVM.StoredPointer)] = []
 		for (_, capture) in funcExpr.environment.captures.enumerated() {
+			if capture.name == "self" { continue }
+
 			log("-> capturing \(capture.name) in \(funcExpr)")
 			captures.append((capture.name, context.environment.capture(capture.name, with: builder)))
 		}
@@ -107,8 +109,15 @@ extension Compiler {
 			lastReturn = expr.accept(self, context)
 		}
 
-		if let lastReturn {
-			_ = builder.emit(return: lastReturn)
+		if let lastReturn, let type = lastReturn.type as? LLVM.IntType {
+			if type.width == 32 {
+				_ = builder.emit(return: lastReturn)
+			} else {
+				let ret = LLVM.IntType.i32.constant(0)
+				let emit = LLVM.EmittedIntValue(type: .i32, ref: ret.valueRef(in: builder.context))
+				_ = builder.emit(return: emit)
+			}
+
 		} else {
 			_ = builder.emit(constant: LLVM.IntType.i32.constant(1))
 		}

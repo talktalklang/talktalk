@@ -18,6 +18,11 @@ struct InterpreterTests {
 		#expect(Interpreter("1 + 2").evaluate() == .int(3))
 	}
 
+	@Test("Evaluates comparison") func comparison() {
+		#expect(Interpreter("1 < 2").evaluate() == .bool(true))
+		#expect(Interpreter("1 > 2").evaluate() == .bool(false))
+	}
+
 	@Test("Evaluates multiple") func multiple() {
 		#expect(Interpreter("""
 		a = 1
@@ -62,6 +67,18 @@ struct InterpreterTests {
 		""").evaluate() == .int(5))
 	}
 
+	@Test("Evaluates return") func returns() {
+		#expect(Interpreter("""
+		func foo() {
+			return 5
+			1
+		}
+
+		foo()
+		""").evaluate() == .int(5))
+	}
+
+
 	@Test("Evaluates counter") func counter() {
 		#expect(Interpreter("""
 		func makeCounter() {
@@ -97,6 +114,22 @@ struct InterpreterTests {
 		urcounter = makeCounter()
 		urcounter()
 		""").evaluate() == .int(1))
+	}
+
+	@Test("Evaluates fib") func fib() {
+		Interpreter("""
+		func fib(n) {
+			if (n <= 1) { return n } else { }
+			return fib(n - 2) + fib(n - 1)
+		}
+
+		i = 0
+		while i < 5 {
+			printf(fib(i))
+			i = i + 1
+		}
+		"""
+		).evaluate()
 	}
 
 	@Test("Evaluates Struct properties") func structs() {

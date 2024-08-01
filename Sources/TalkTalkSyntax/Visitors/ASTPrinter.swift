@@ -177,4 +177,13 @@ public struct ASTPrinter: Visitor {
 	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) -> String {
 		dump(expr, "name: \(expr.name), type: \(expr.typeDecl)")
 	}
+
+	@StringBuilder public func visit(_ expr: any ReturnExpr, _ context: Context) -> String {
+		dump(expr)
+		if let value = expr.value {
+			indent {
+				value.accept(self, context)
+			}
+		}
+	}
 }

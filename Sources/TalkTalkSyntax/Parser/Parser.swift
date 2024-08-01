@@ -162,6 +162,12 @@ public struct Parser {
 		peek().kind == kind
 	}
 
+	func checkNext(_ kind: Token.Kind) -> Bool {
+		var copy = self
+		copy.advance()
+		return copy.check(kind)
+	}
+
 	mutating func didMatch(_ kind: Token.Kind) -> Bool {
 		checkForInfiniteLoop()
 
@@ -198,7 +204,7 @@ public struct Parser {
 
 	mutating func error(at: Token, _ message: String) -> ErrorSyntax {
 		errors.append((at, message))
-		print(message)
+		print(message, "ln: \(at.line) col: \(at.column)")
 		return SyntaxError(location: [at], message: message)
 	}
 

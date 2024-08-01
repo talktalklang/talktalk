@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public class LexicalScope {
-	var scope: StructType
+	public var scope: StructType
 	var type: ValueType
 	var expr: any Expr
 
@@ -136,20 +136,6 @@ public extension Analyzer {
 			}
 
 			if let scope = getLexicalScope() {
-				if name == "self" {
-					return Binding(
-						name: "self",
-						expr: AnalyzedVarExpr(
-							type: scope.type,
-							expr: VarExprSyntax(
-								token: .synthetic(.self),
-								location: [.synthetic(.self)]
-							)
-						),
-						type: .instance(scope.type)
-					)
-				}
-
 				if name == "Self" {
 					return Binding(
 						name: "Self",

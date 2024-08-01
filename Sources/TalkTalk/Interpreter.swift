@@ -65,6 +65,20 @@ public struct Interpreter: AnalyzedVisitor {
 				.bool(lhs == rhs)
 			case .bangEqual:
 				.bool(lhs != rhs)
+			case .less:
+				.bool(lhs < rhs)
+			case .lessEqual:
+				.bool(lhs <= rhs)
+			case .greater:
+				.bool(lhs > rhs)
+			case .greaterEqual:
+				.bool(lhs >= rhs)
+			case .minus:
+				lhs.minus(rhs)
+			case .star:
+				lhs.times(rhs)
+			case .slash:
+				lhs.div(rhs)
 			}
 
 		return result
@@ -74,11 +88,15 @@ public struct Interpreter: AnalyzedVisitor {
 		let callee = expr.calleeAnalyzed.accept(self, scope)
 
 		if case let .fn(closure) = callee {
-			return call(closure, args: expr.argsAnalyzed.map(\.expr), scope)
+			let val = call(closure, args: expr.argsAnalyzed.map(\.expr), scope)
+			return val
 		} else if case let .method(funcExpr, instance) = callee {
 			return call(funcExpr, on: instance, with: expr.argsAnalyzed.map(\.expr))
 		} else if case let .struct(type) = callee {
 			return instantiate(type, with: expr.argsAnalyzed, in: scope)
+		} else if case .builtin(_) = callee {
+			print(expr.argsAnalyzed.map { $0.expr.accept(self, scope) })
+			return .none
 		} else {
 			fatalError("\(callee) not callable")
 		}
@@ -106,10 +124,11 @@ public struct Interpreter: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedIfExpr, _ scope: Scope) -> Value {
 		let condition = expr.conditionAnalyzed.accept(self, scope)
 
-		return if condition.isTruthy {
-			expr.consequenceAnalyzed.accept(self, scope)
+		if condition.isTruthy {
+			let val = expr.consequenceAnalyzed.accept(self, scope)
+			return val
 		} else {
-			expr.alternativeAnalyzed.accept(self, scope)
+			return expr.alternativeAnalyzed.accept(self, scope)
 		}
 	}
 
@@ -169,6 +188,11 @@ public struct Interpreter: AnalyzedVisitor {
 		return retVal
 	}
 
+	public func visit(_ expr: AnalyzedReturnExpr, _ context: Scope) -> Value {
+		let value = expr.valueAnalyzed?.accept(self, context)
+		return .return(value ?? .none)
+	}
+
 	public func visit(_ expr: AnalyzedDeclBlock, _ context: Scope) -> Value {
 		.none
 	}
@@ -185,6 +209,10 @@ public struct Interpreter: AnalyzedVisitor {
 		var lastResult: Value = .none
 		for expr in exprs {
 			lastResult = expr.accept(self, context)
+
+			if case let .return(value) = lastResult {
+				return value
+			}
 		}
 		return lastResult
 	}
@@ -204,6 +232,10 @@ public struct Interpreter: AnalyzedVisitor {
 
 		for expr in funcExpr.bodyAnalyzed.exprsAnalyzed {
 			lastReturn = expr.accept(self, scope)
+
+			if case let .return(value) = lastReturn {
+				return value
+			}
 		}
 
 		return lastReturn
@@ -221,6 +253,10 @@ public struct Interpreter: AnalyzedVisitor {
 
 		for expr in closure.funcExpr.bodyAnalyzed.exprsAnalyzed {
 			lastReturn = expr.accept(self, scope)
+
+			if case let .return(value) = lastReturn {
+				return value
+			}
 		}
 
 		return lastReturn

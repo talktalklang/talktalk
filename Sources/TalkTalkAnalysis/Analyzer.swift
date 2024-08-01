@@ -109,7 +109,7 @@ public struct Analyzer: Visitor {
 			)
 		}
 
-		return error(at: expr, "undefined variable: \(expr.name)")
+		return error(at: expr, "undefined variable: \(expr.name) ln: \(expr.location.start.line) col: \(expr.location.start.column)")
 	}
 
 	public func visit(_ expr: any BinaryExpr, _ env: Environment) -> any AnalyzedExpr {
@@ -142,6 +142,19 @@ public struct Analyzer: Visitor {
 			innerEnvironment.define(local: param.name, as: param)
 		}
 
+		if let name = expr.name {
+			// If it's a named function, define a stub inside the function to allow for recursion
+			let stub = AnalyzedFuncExpr(
+				type: .function(name, .placeholder(0), params, []),
+				expr: expr,
+				analyzedParams: params,
+				bodyAnalyzed: .init(type: .placeholder(0), expr: expr.body, exprsAnalyzed: []),
+				returnsAnalyzed: nil,
+				environment: innerEnvironment
+			)
+			innerEnvironment.define(local: name, as: stub)
+		}
+
 		// Visit the body with the innerEnvironment, finding captures as we go.
 		let bodyAnalyzed = visit(expr.body, innerEnvironment) as! AnalyzedBlockExpr
 
@@ -159,10 +172,16 @@ public struct Analyzer: Visitor {
 		)
 
 		if let name = expr.name {
+			innerEnvironment.define(local: name, as: funcExpr)
 			env.define(local: name, as: funcExpr)
 		}
 
 		return funcExpr
+	}
+
+	public func visit(_ expr: any ReturnExpr, _ env: Environment) -> any AnalyzedExpr {
+		let valueAnalyzed = expr.value?.accept(self, env)
+		return AnalyzedReturnExpr(type: valueAnalyzed?.type ?? .void, expr: expr, valueAnalyzed: valueAnalyzed)
 	}
 
 	public func visit(_ expr: any ParamsExpr, _: Environment) -> any AnalyzedExpr {
@@ -199,6 +218,17 @@ public struct Analyzer: Visitor {
 	public func visit(_ expr: any StructExpr, _ context: Environment) -> any AnalyzedExpr {
 		let structType = StructType(name: expr.name, properties: [:], methods: [:])
 		let bodyContext = context.addLexicalScope(scope: structType, type: .struct(structType), expr: expr)
+
+		bodyContext.define(
+			local: "self",
+			as: AnalyzedVarExpr(
+				type: .instance(.struct(structType)),
+				expr: VarExprSyntax(
+					token: .synthetic(.self),
+					location: [.synthetic(.self)]
+				)
+			)
+		)
 
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.

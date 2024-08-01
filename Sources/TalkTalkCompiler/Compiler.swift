@@ -66,8 +66,6 @@ public struct Compiler: AnalyzedVisitor {
 				)
 			}
 
-			context.environment.define("self", as: .self)
-
 			return context
 		}
 
@@ -161,11 +159,11 @@ public struct Compiler: AnalyzedVisitor {
 			builder.store(capture: value, at: index, as: type)
 		case .self:
 			fatalError()
-		case .method(_, _, _):
+		case .method:
 			fatalError()
-		case .getter(_, _, _):
+		case .getter:
 			fatalError()
-		case .structType(_, _):
+		case .structType:
 			fatalError()
 		case .builtin:
 			fatalError("Cannot assign to a builtin")
@@ -198,6 +196,8 @@ public struct Compiler: AnalyzedVisitor {
 			fatalError("undefined variable: \(expr.name)")
 		}
 
+		// Define self
+
 		switch binding {
 		case let .capture(index, type):
 			log(
@@ -219,10 +219,10 @@ public struct Compiler: AnalyzedVisitor {
 		case let .structType(type, ptr):
 			let vtable = builder.vtable(for: type.typeRef(in: builder.context))!
 			return LLVM.MetaType(type: type, ref: ptr, vtable: vtable)
-		case .self:
-			// Need to figure out how we're going to access the instance here...
-			fatalError()
-		case .method(_, _, _):
+		case let .self(structType):
+			let ptr = builder.load(parameter: 0).ref
+			return LLVM.EmittedStructPointerValue(type: structType, ref: ptr)
+		case .method:
 			// Need to figure out how we're going to access the instance here...
 			fatalError()
 		case let .getter(structType, propertyType, name):
@@ -255,6 +255,20 @@ public struct Compiler: AnalyzedVisitor {
 			.equals
 		case .bangEqual:
 			.notEquals
+		case .less:
+			.less
+		case .lessEqual:
+			.lessEqual
+		case .greater:
+			.greater
+		case .greaterEqual:
+			.greaterEqual
+		case .minus:
+				.minus
+		case .star:
+				.star
+		case .slash:
+				.slash
 		}
 
 		let lhs = expr.lhsAnalyzed.accept(self, context).as(type)
@@ -306,6 +320,10 @@ public struct Compiler: AnalyzedVisitor {
 		return emittedFunction
 	}
 
+	public func visit(_ expr: AnalyzedReturnExpr, _ context: Context) -> any LLVM.EmittedValue {
+		fatalError()
+	}
+
 	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) -> any LLVM.EmittedValue {
 		var returnValue: (any LLVM.EmittedValue)? = nil
 
@@ -352,11 +370,13 @@ public struct Compiler: AnalyzedVisitor {
 
 				return LLVM.EmittedMethodValue(function: function, receiver: receiver)
 			}
+
+			print(receiver)
 		default:
 			()
 		}
 
-		fatalError()
+		fatalError("Could not figure out receiver for: \(expr.description)")
 	}
 
 	public func visit(_: AnalyzedParamsExpr, _: Context) -> any LLVM.EmittedValue {
@@ -378,6 +398,8 @@ public struct Compiler: AnalyzedVisitor {
 			)
 		}
 
+		context.environment.define("self", as: .`self`(structType.toLLVM(in: builder)))
+
 		// Need to define the methods and build up a method table
 		var emittedMethods: [LLVM.EmittedFunctionValue] = []
 		for (name, property) in structType.methods.sorted(by: { structType.offset(method: $0.key) < structType.offset(method: $1.key) }) {
@@ -389,7 +411,7 @@ public struct Compiler: AnalyzedVisitor {
 			var paramsAnalyzed = funcExpr.analyzedParams
 
 			// TODO: Need to figure out how to make the first arg here a pointer
-			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
+//			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
 
 			funcExpr.name = name
 

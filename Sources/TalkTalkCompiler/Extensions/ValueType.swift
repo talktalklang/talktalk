@@ -30,7 +30,7 @@ public extension ValueType {
 		case let .instance(type):
 			return type.irType(in: builder)
 		default:
-			fatalError()
+			fatalError("no ir type for \(self)")
 		}
 	}
 }

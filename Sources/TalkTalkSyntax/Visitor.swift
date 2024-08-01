@@ -26,4 +26,5 @@ public protocol Visitor {
 	func visit(_ expr: VarDecl, _ context: Context) -> Value
 	func visit(_ expr: ErrorSyntax, _ context: Context) -> Value
 	func visit(_ expr: MemberExpr, _ context: Context) -> Value
+	func visit(_ expr: ReturnExpr, _ context: Context) -> Value
 }

@@ -2,18 +2,10 @@ struct Foo {
 	let age: i32
 
 	func add() {
-		printf(3)
 		age + 4
-		printf(4)
 	}
 }
 
-foo = Foo(123)
-
-methodOnItsOwn = foo.add
-
-printf(1)
-bar = methodOnItsOwn()
-printf(2)
-printf(bar)
+foo = Foo(age: 123)
+foo.add()
 

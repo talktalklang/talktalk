@@ -11,14 +11,17 @@ public struct Token: CustomDebugStringConvertible {
 		case leftParen, rightParen,
 				 leftBrace, rightBrace,
 		     symbol, plus, equals, comma, bang,
-				 colon, dot
+				 colon, dot, less, greater, minus, star, slash
 
 
 		// Multiple char tokens
-		case int, float, identifier, equalEqual, bangEqual
+		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual
 
 		// Keywords
-		case `func`, `true`, `false`, `if`, `in`, call, `else`, `while`, `var`, `let`, `struct`, `self`, `Self`
+		case `func`, `true`, `false`, `return`,
+				 `if`, `in`, call, `else`,
+				 `while`, `var`, `let`,
+				 `struct`, `self`, `Self`
 
 		case newline
 		case eof
@@ -86,6 +89,9 @@ public struct TalkTalkLexer {
 		case ",": make(.comma)
 		case ":": make(.colon)
 		case ".": make(.dot)
+		case "-": make(.minus)
+		case "<": make(match("=") ? .lessEqual : .less)
+		case ">": make(match("=") ? .greaterEqual : .greater)
 		case _ where char.isNewline: newline()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
@@ -142,6 +148,7 @@ public struct TalkTalkLexer {
 		case "var": make(.var)
 		case "let": make(.let)
 		case "struct": make(.struct)
+		case "return": make(.return)
 		default:
 			make(.identifier)
 		}

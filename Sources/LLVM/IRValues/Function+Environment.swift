@@ -19,7 +19,7 @@ public extension LLVM.Function {
 
 					 // Struct bindings
 					 structType(LLVM.StructType, LLVMValueRef),
-					 `self`,
+					 `self`(LLVM.StructType),
 					 getter(LLVM.StructType, any LLVM.IRType, String),
 					 method(LLVM.StructType, LLVM.FunctionType, String)
 		}
