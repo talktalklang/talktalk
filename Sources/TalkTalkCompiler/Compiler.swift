@@ -136,6 +136,8 @@ public struct Compiler: AnalyzedVisitor {
 			return builder.call(builtin: callee.type.name, with: args)
 		case let callee as LLVM.MetaType:
 			return builder.instantiate(struct: callee.type, with: args, vtable: callee.vtable)
+		case let callee as LLVM.EmittedStaticMethod:
+			return builder.callStatic(method: callee, with: args)
 		case let callee as LLVM.EmittedMethodValue:
 			return builder.call(method: callee, with: args)
 		default:
@@ -196,8 +198,6 @@ public struct Compiler: AnalyzedVisitor {
 			fatalError("undefined variable: \(expr.name)")
 		}
 
-		// Define self
-
 		switch binding {
 		case let .capture(index, type):
 			log(
@@ -217,8 +217,7 @@ public struct Compiler: AnalyzedVisitor {
 			)
 			return builder.load(pointer: pointer, name: expr.name)
 		case let .structType(type, ptr):
-			let vtable = builder.vtable(for: type.typeRef(in: builder.context))!
-			return LLVM.MetaType(type: type, ref: ptr, vtable: vtable)
+			return LLVM.MetaType(type: type, ref: ptr, vtable: nil)
 		case let .self(structType):
 			let ptr = builder.load(parameter: 0).ref
 			return LLVM.EmittedStructPointerValue(type: structType, ref: ptr)
@@ -308,6 +307,11 @@ public struct Compiler: AnalyzedVisitor {
 				context.environment.parameter(param.name, type: irType(for: param.type), at: i)
 			}
 
+			if let lexicalScope = funcExpr.environment.getLexicalScope() {
+				// Define `self` if we're in a lexial scope
+				context.environment.define("self", as: .self(lexicalScope.scope.toLLVM(in: builder)))
+			}
+
 			let returnValue = visit(funcExpr.bodyAnalyzed, context)
 
 			if returnValue.type.isVoid {
@@ -356,19 +360,29 @@ public struct Compiler: AnalyzedVisitor {
 			}
 
 			if let method = structType.methods[expr.property] {
-				let vtablePtr = builder.vtable(named: "\(structType.name!)_methodTable")
+				// Vtable stuff
+				// let vtablePtr = builder.vtable(named: "\(structType.name!)_methodTable")
+				//
+				// // Figure out where in the vtable the function lives
+				// let offset = structType.offset(method: method.name)
+				//
+				// // Get the function from the vtable
+				// let type = method.type.irType(in: builder) as! LLVM.FunctionType
+				// let methodType = type.asMethod(in: builder.context, on: structType.toLLVM(in: builder))
+				// let function = builder.vtableLookup(vtablePtr, capacity: structType.methods.count, at: offset, as: methodType)
 
-				// Figure out where in the vtable the function lives
-				let offset = structType.offset(method: method.name)
+				// let fn = builder.load(from: vtable, at: offset, as: LLVM.TypePointer(type: methodType)) as! LLVM.EmittedFunctionValue
 
-				// Get the function from the vtable
+				// TODO: Introduce a Method type that can generate this name
+				let name = "\(structType.name!)_\(method.name)"
+				let functionRef = builder.function(named: name)
 				let type = method.type.irType(in: builder) as! LLVM.FunctionType
-				let methodType = type.asMethod(in: builder.context, on: structType.toLLVM(in: builder))
-				let function = builder.vtableLookup(vtablePtr, capacity: structType.methods.count, at: offset, as: methodType)
-
-//				let fn = builder.load(from: vtable, at: offset, as: LLVM.TypePointer(type: methodType)) as! LLVM.EmittedFunctionValue
-
-				return LLVM.EmittedMethodValue(function: function, receiver: receiver)
+				return LLVM.EmittedStaticMethod(
+					name: name,
+					receiver: receiver,
+					type: type.asMethod(in: builder.context, on: structType.toLLVM(in: builder)),
+					ref: functionRef
+				)
 			}
 
 			print(receiver)
@@ -411,7 +425,7 @@ public struct Compiler: AnalyzedVisitor {
 			var paramsAnalyzed = funcExpr.analyzedParams
 
 			// TODO: Need to figure out how to make the first arg here a pointer
-//			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
+			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
 
 			funcExpr.name = name
 
@@ -428,9 +442,9 @@ public struct Compiler: AnalyzedVisitor {
 			emittedMethods.append(emitted)
 		}
 
-		let vtable = builder.vtableCreate(emittedMethods, offsets: structType.methodOffsets, name: "\(structType.name!)_methodTable")
-		let ref = structType.toLLVM(in: builder).typeRef(in: builder.context)
-		builder.saveVtable(for: ref, as: vtable)
+//		let vtable = builder.vtableCreate(emittedMethods, offsets: structType.methodOffsets, name: "\(structType.name!)_methodTable")
+//		let ref = structType.toLLVM(in: builder).typeRef(in: builder.context)
+//		builder.saveVtable(for: ref, as: vtable)
 
 		return LLVM.VoidValue()
 	}

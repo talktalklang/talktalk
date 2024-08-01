@@ -11,9 +11,9 @@ public extension LLVM {
 	struct MetaType: EmittedValue {
 		public var type: LLVM.StructType
 		public var ref: LLVMValueRef
-		public var vtable: LLVMValueRef
+		public var vtable: LLVMValueRef?
 
-		public init(type: LLVM.StructType, ref: LLVMValueRef, vtable: LLVMValueRef) {
+		public init(type: LLVM.StructType, ref: LLVMValueRef, vtable: LLVMValueRef?) {
 			self.type = type
 			self.ref = ref
 			self.vtable = vtable

@@ -118,6 +118,25 @@ public extension LLVM {
 			return EmittedFunctionValue(type: functionType, ref: functionPointerRef)
 		}
 
+		public func callStatic(method: EmittedStaticMethod, with arguments: [any EmittedValue]) -> any EmittedValue {
+			var arguments = arguments
+			arguments.insert(method.receiver, at: 0)
+			var args: [LLVMValueRef?] = arguments.map(\.ref)
+
+			let ref = args.withUnsafeMutableBufferPointer {
+				LLVMBuildCall2(
+					builder,
+					method.type.typeRef(in: context),
+					method.ref,
+					$0.baseAddress,
+					UInt32($0.count),
+					method.name
+				)
+			}!
+
+			return method.type.returnType.emit(ref: ref)
+		}
+
 		// We want to add the receiver as the first argument for methods
 		public func call(method: EmittedMethodValue, with arguments: [any EmittedValue]) -> any EmittedValue {
 			let fnPtr = method.function
@@ -132,8 +151,6 @@ public extension LLVM {
 			arguments.insert(method.receiver, at: 0)
 
 			var args: [LLVMValueRef?] = arguments.map(\.ref)
-
-//			let functionRef = LLVMBuildLoad2(builder, LLVMPointerType(fn.type.typeRef(in: context), 0), fn.ref, fn.type.name)
 
 			let ref = args.withUnsafeMutableBufferPointer {
 				LLVMBuildCall2(
@@ -593,6 +610,10 @@ public extension LLVM {
 			default:
 				fatalError()
 			}
+		}
+
+		public func function(named name: String) -> LLVMValueRef {
+			LLVMGetNamedFunction(module.ref, name)
 		}
 
 		public func emit(constant: Constant<some IRValue, some Any>) -> any EmittedValue {
