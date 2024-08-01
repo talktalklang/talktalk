@@ -17,6 +17,10 @@ public extension LLVM {
 		}
 
 		public func run() {
+			LLVMInitializeNativeTarget()
+			LLVMInitializeNativeAsmParser()
+			LLVMInitializeNativeAsmPrinter()
+
 			let options = LLVMCreatePassBuilderOptions()
 			LLVMPassBuilderOptionsSetLoopUnrolling(options, LLVMBool(1))
 

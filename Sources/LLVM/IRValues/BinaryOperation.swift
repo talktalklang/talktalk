@@ -30,7 +30,7 @@ public extension LLVM {
 
 		public func emit(in builder: Builder) -> any EmittedValue {
 			switch lhs {
-			case let type as EmittedIntValue:
+			case is EmittedIntValue:
 				return intOperation(op, lhs: lhs, rhs: rhs, in: builder)
 			default:
 				fatalError()

@@ -5,7 +5,6 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-import C_LLVM
 import LLVM
 import TalkTalkAnalysis
 import TalkTalkSyntax
@@ -91,10 +90,6 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func compile(optimize: Bool = false) -> LLVM.Module {
-		LLVMInitializeNativeTarget()
-		LLVMInitializeNativeAsmParser()
-		LLVMInitializeNativeAsmPrinter()
-
 		let lexer = TalkTalkLexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
@@ -166,11 +161,11 @@ public struct Compiler: AnalyzedVisitor {
 			builder.store(capture: value, at: index, as: type)
 		case .self:
 			fatalError()
-		case let .method(_, _, _):
+		case .method(_, _, _):
 			fatalError()
-		case let .getter(_, _, _):
+		case .getter(_, _, _):
 			fatalError()
-		case let .structType(_):
+		case .structType(_, _):
 			fatalError()
 		case .builtin:
 			fatalError("Cannot assign to a builtin")
@@ -227,7 +222,7 @@ public struct Compiler: AnalyzedVisitor {
 		case .self:
 			// Need to figure out how we're going to access the instance here...
 			fatalError()
-		case let .method(_, _, _):
+		case .method(_, _, _):
 			// Need to figure out how we're going to access the instance here...
 			fatalError()
 		case let .getter(structType, propertyType, name):
@@ -343,7 +338,7 @@ public struct Compiler: AnalyzedVisitor {
 			}
 
 			if let method = structType.methods[expr.property] {
-				let vtablePtr = LLVMGetNamedGlobal(builder._moduleRef, "\(structType.name!)_methodTable")
+				let vtablePtr = builder.vtable(named: "\(structType.name!)_methodTable")
 
 				// Figure out where in the vtable the function lives
 				let offset = structType.offset(method: method.name)
@@ -351,7 +346,7 @@ public struct Compiler: AnalyzedVisitor {
 				// Get the function from the vtable
 				let type = method.type.irType(in: builder) as! LLVM.FunctionType
 				let methodType = type.asMethod(in: builder.context, on: structType.toLLVM(in: builder))
-				let function = builder.vtableLookup(vtablePtr!, capacity: structType.methods.count, at: offset, as: methodType)
+				let function = builder.vtableLookup(vtablePtr, capacity: structType.methods.count, at: offset, as: methodType)
 
 //				let fn = builder.load(from: vtable, at: offset, as: LLVM.TypePointer(type: methodType)) as! LLVM.EmittedFunctionValue
 

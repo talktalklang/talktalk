@@ -312,12 +312,12 @@ public extension LLVM {
 			return vtable!
 		}
 
-		public func vtableLookup(_ vtable: LLVMValueRef, capacity: Int, at index: Int, as type: LLVM.FunctionType) -> EmittedFunctionValue {
-			let intType = LLVMPointerType(LLVMInt32Type(), 0)
-			let vtableType = LLVMArrayType(intType, UInt32(capacity))
+		public func vtable(named: String) -> LLVMValueRef {
+			LLVMGetNamedGlobal(module.ref, named)
+		}
 
-			var vtable: LLVMValueRef? = vtable
-			var indexValue = LLVMConstInt(LLVMInt32TypeInContext(context.ref), UInt64(0), 0)
+		public func vtableLookup(_ vtable: LLVMValueRef, capacity: Int, at index: Int, as type: LLVM.FunctionType) -> EmittedFunctionValue {
+			let vtable: LLVMValueRef? = vtable
 
 			let fnRef = LLVMBuildStructGEP2(
 				builder,
@@ -449,7 +449,7 @@ public extension LLVM {
 		}
 
 		public func store(_ value: LLVMValueRef, in array: inout LLVMValueRef?, at offset: Int, type: any IRType) {
-			withUnsafeMutablePointer(to: &array) {
+			_ = withUnsafeMutablePointer(to: &array) {
 				LLVMBuildGEP2(builder, type.typeRef(in: context), $0.pointee, $0, UInt32(offset), "arrgep")
 			}
 		}
