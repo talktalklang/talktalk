@@ -127,6 +127,27 @@ struct CompilerTests {
 		""", verbose: true).run() == .int(127))
 	}
 
+	@Test("Compiles multiple struct methods") func multipleMethods() {
+		#expect(Compiler("""
+		struct Foo {
+			func one() {
+				1
+			}
+
+			func two() {
+				2
+			}
+
+			func three() {
+				3
+			}
+		}
+
+		foo = Foo()
+		foo.one() + foo.two() + foo.three()
+		""", verbose: true).run() == .int(6))
+	}
+
 	// helpers
 
 	public func captureOutput<R>(block: () -> R) -> (output: String, error: String, result: R) {

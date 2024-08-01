@@ -343,26 +343,10 @@ public struct Compiler: AnalyzedVisitor {
 			}
 
 			if let method = structType.methods[expr.property] {
-				// Get the vtable pointer from the receiver, it's always the last field
-//				let vtable = builder.load(
-//					from: receiver,
-//					index: structType.properties.count - 1,
-//					as: LLVM.ArrayType(elementType: LLVM.TypePointer(type: .i8), capacity: structType.methods.count),
-//					name: "vtable_\(structType.name!)"
-//				) as! LLVM.EmittedArrayValue
-
-//				let vtablePtr = LLVMBuildStructGEP2(
-//					builder._ref,
-//					receiver.type.typeRef(in: builder.context),
-//					receiver.ref,
-//					UInt32(structType.properties.count - 1),
-//					"vtable_ptr_\(structType.name!)"
-//				)
-
 				let vtablePtr = LLVMGetNamedGlobal(builder._moduleRef, "\(structType.name!)_methodTable")
 
 				// Figure out where in the vtable the function lives
-				let offset = structType.offset(method: method.name) - 1
+				let offset = structType.offset(method: method.name)
 
 				// Get the function from the vtable
 				let type = method.type.irType(in: builder) as! LLVM.FunctionType
@@ -427,7 +411,7 @@ public struct Compiler: AnalyzedVisitor {
 			emittedMethods.append(emitted)
 		}
 
-		let vtable = builder.vtableCreate(emittedMethods, name: "\(structType.name!)_methodTable")
+		let vtable = builder.vtableCreate(emittedMethods, offsets: structType.methodOffsets, name: "\(structType.name!)_methodTable")
 		let ref = structType.toLLVM(in: builder).typeRef(in: builder.context)
 		builder.saveVtable(for: ref, as: vtable)
 

@@ -43,7 +43,10 @@ public class StructType {
 	}
 
 	public func add(method property: Property) {
-		methodOffsets[property.name] = methods.count
+		if methodOffsets[property.name] == nil {
+			methodOffsets[property.name] = methods.count
+		}
+
 		methods[property.name] = property
 	}
 }

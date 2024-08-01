@@ -262,24 +262,52 @@ public extension LLVM {
 			vtables[typeRef]
 		}
 
+		public func vtableGetType(for ref: LLVMValueRef) -> LLVMTypeRef? {
+			for (type, vtable) in vtables {
+				if vtable == ref {
+					return type
+				}
+			}
+
+			return nil
+		}
+
 		public func saveVtable(for typeRef: LLVMTypeRef, as vtable: LLVMValueRef) {
 			vtables[typeRef] = vtable
 		}
 
-		public func vtableCreate(_ array: [EmittedFunctionValue], name: String) -> LLVMValueRef {
-			let intType = LLVMPointerType(LLVMInt32Type(), 0)
-			let vtableType = LLVMArrayType(intType, UInt32(array.count))
-			let vtable = LLVMAddGlobal(module.ref, vtableType, name)
+		public func vtableCreate(_ array: [EmittedFunctionValue], offsets: [String: Int], name: String) -> LLVMValueRef {
+			if let existing = LLVMGetNamedGlobal(module.ref, name) {
+				LLVMDumpValue(existing)
+				fatalError("global already exists with name: \(name)! ")
+			}
 
-			var pointersAsInts: [LLVMValueRef?] = []
+			var types: [LLVMTypeRef?] = array.map {
+				LLVMPointerType($0.type.typeRef(in: context), 0)
+			}
+
+			let vtableStructTypeRef = LLVMStructCreateNamed(context.ref, name)
+
+			types.withUnsafeMutableBufferPointer {
+				LLVMStructSetBody(
+					vtableStructTypeRef,
+					$0.baseAddress,
+					UInt32($0.count),
+					LLVMBool(1)
+				)
+			}
+
+			let vtable = LLVMAddGlobal(module.ref, vtableStructTypeRef, name)
+
+			var fns: [LLVMValueRef?] = []
 			for fn in array {
-				let int = LLVMBuildBitCast(builder, fn.ref, intType, "\(fn.type.name)Ptr")!
-				pointersAsInts.append(int)
+				fns.append(fn.ref)
 			}
 
-			pointersAsInts.withUnsafeMutableBufferPointer {
-				LLVMSetInitializer(vtable, LLVMConstArray(intType, $0.baseAddress, UInt32($0.count)))
-			}
+			let s = LLVMConstNamedStruct(vtableStructTypeRef, &fns, UInt32(fns.count))
+			LLVMSetInitializer(vtable, s)
+
+			vtables[vtableStructTypeRef!] = vtable!
 
 			return vtable!
 		}
@@ -289,21 +317,17 @@ public extension LLVM {
 			let vtableType = LLVMArrayType(intType, UInt32(capacity))
 
 			var vtable: LLVMValueRef? = vtable
-			var indexValue = LLVMConstInt(LLVMInt32TypeInContext(context.ref), UInt64(index), 0)
+			var indexValue = LLVMConstInt(LLVMInt32TypeInContext(context.ref), UInt64(0), 0)
 
-			let int = withUnsafeMutablePointer(to: &vtable){
-				LLVMBuildGEP2(
-					builder,
-					vtableType,
-					$0.pointee,
-					&indexValue,
-					UInt32(index),
-					"gep_\(type.name)"
-				)
-			}
+			let fnRef = LLVMBuildStructGEP2(
+				builder,
+				vtableGetType(for: vtable!),
+				vtable,
+				UInt32(index),
+				"gep_\(type.name)"
+			)!
 
-			let ptr = LLVMBuildBitCast(builder, int, LLVMPointerType(type.typeRef(in: context), 0), "fn_\(type.name)_ptr")!
-			return EmittedFunctionValue(type: type, ref: ptr)
+			return EmittedFunctionValue(type: type, ref: fnRef)
 		}
 
 		public func malloca(type: any LLVM.IRType, name: String) -> any StoredPointer {
