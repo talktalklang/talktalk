@@ -11,7 +11,7 @@ import Testing
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedExpr {
-		let analyzed = Analyzer.analyze(Parser.parse(string))
+		let analyzed = try! Analyzer.analyze(Parser.parse(string))
 
 		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.exprsAnalyzed.last!
 	}
@@ -130,7 +130,7 @@ struct AnalysisTests {
 	}
 
 	@Test("Types counter") func counter() throws {
-		let main = Analyzer.analyze(Parser.parse("""
+		let main = try Analyzer.analyze(Parser.parse("""
 		makeCounter = func() {
 			count = 0
 			func() {

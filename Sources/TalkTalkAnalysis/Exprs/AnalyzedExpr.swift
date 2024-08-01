@@ -98,5 +98,5 @@ public indirect enum ValueType {
 public protocol AnalyzedExpr: Expr {
 	var type: ValueType { get set }
 
-	func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor
+	func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor
 }

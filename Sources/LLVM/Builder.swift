@@ -77,7 +77,7 @@ public extension LLVM {
 			return EmittedType(type: functionType, typeRef: builder)
 		}
 
-		public func define(_ functionType: FunctionType, parameterNames: [String], envStruct: CapturesStruct?, body: () -> Void) -> EmittedFunctionValue {
+		public func define(_ functionType: FunctionType, parameterNames: [String], envStruct: CapturesStruct?, body: () throws -> Void) throws -> EmittedFunctionValue {
 			let functionRef = functionRef(for: functionType)
 			var functionPointerRef = functionRef
 
@@ -107,7 +107,7 @@ public extension LLVM {
 			LLVMPositionBuilderAtEnd(builder, entryBlock)
 
 			// Let the body block add some stuff
-			body()
+			try body()
 
 			// Get the new end of the original function
 			if let originalFunction {

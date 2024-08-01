@@ -19,11 +19,11 @@ public struct AnalyzedBinaryExpr: AnalyzedExpr, BinaryExpr {
 	public var op: BinaryOperator { expr.op }
 	public var location: SourceLocation { expr.location }
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
+		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
+		try visitor.visit(self, scope)
 	}
 }

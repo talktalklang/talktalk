@@ -30,7 +30,7 @@ struct JIT: TalkTalkCommand {
 			string
 		}
 
-		let module = Compiler(source).compile()
+		let module = try Compiler(source).compile()
 		_ = LLVM.JIT().execute(module: module)
 	}
 }

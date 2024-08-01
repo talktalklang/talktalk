@@ -10,21 +10,21 @@ import Testing
 
 struct InterpreterTests {
 	@Test("Evaluates literals") func literals() {
-		#expect(Interpreter("1").evaluate() == .int(1))
-		#expect(Interpreter("(2)").evaluate() == .int(2))
+		try! #expect(Interpreter("1").evaluate() == .int(1))
+		try! #expect(Interpreter("(2)").evaluate() == .int(2))
 	}
 
 	@Test("Evaluates add") func add() {
-		#expect(Interpreter("1 + 2").evaluate() == .int(3))
+		try! #expect(Interpreter("1 + 2").evaluate() == .int(3))
 	}
 
 	@Test("Evaluates comparison") func comparison() {
-		#expect(Interpreter("1 < 2").evaluate() == .bool(true))
-		#expect(Interpreter("1 > 2").evaluate() == .bool(false))
+		try! #expect(Interpreter("1 < 2").evaluate() == .bool(true))
+		try! #expect(Interpreter("1 > 2").evaluate() == .bool(false))
 	}
 
 	@Test("Evaluates multiple") func multiple() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		a = 1
 		b = 2
 		a + b
@@ -32,26 +32,26 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates equality") func equality() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		1 == 2
 		""").evaluate() == .bool(false))
 	}
 
 	@Test("Evaluates not equal") func notEqual() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		1 != 2
 		""").evaluate() == .bool(true))
 	}
 
 	@Test("Evaluates if") func ifEval() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		if false { a = 1 } else { a = 2 }
 		a
 		""").evaluate() == .int(2))
 	}
 
 	@Test("Evaluates while") func whileEval() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		a = 0
 		while a != 4 {
 			a = a + 1
@@ -61,14 +61,14 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates functions") func functions() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		addtwo = func(x) { x + 2 } 
 		addtwo(3)
 		""").evaluate() == .int(5))
 	}
 
 	@Test("Evaluates return") func returns() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		func foo() {
 			return 5
 			1
@@ -80,7 +80,7 @@ struct InterpreterTests {
 
 
 	@Test("Evaluates counter") func counter() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		func makeCounter() {
 			count = 0
 			func() {
@@ -97,7 +97,7 @@ struct InterpreterTests {
 	}
 
 	@Test("Doesn't mutate state between closures") func counter2() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		makeCounter = func() {
 			count = 0
 			func() {
@@ -117,7 +117,7 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates fib") func fib() {
-		Interpreter("""
+		try! Interpreter("""
 			func fib(n) {
 				if (n <= 1) { return n } else { }
 				return fib(n - 2) + fib(n - 1)
@@ -133,7 +133,7 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates Struct properties") func structs() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		struct Foo {
 			let age: i32
 		}
@@ -144,7 +144,7 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates Struct methods") func structsMethods() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		struct Foo {
 			let age: i32
 
@@ -159,7 +159,7 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates Struct methods with args") func structsMethodsArgs() {
-		#expect(Interpreter("""
+		try! #expect(Interpreter("""
 		struct Foo {
 			let age: i32
 

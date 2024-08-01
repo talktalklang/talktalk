@@ -17,11 +17,11 @@ public struct AnalyzedDeclBlock: DeclBlockExpr, AnalyzedDecl {
 	public var decls: [any TalkTalkSyntax.Decl] { decl.decls }
 	public var location: TalkTalkSyntax.SourceLocation { decl.location }
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : TalkTalkSyntax.Visitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : TalkTalkSyntax.Visitor {
+		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : AnalyzedVisitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
+		try visitor.visit(self, scope)
 	}
 }

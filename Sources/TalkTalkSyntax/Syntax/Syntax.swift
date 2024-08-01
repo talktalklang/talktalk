@@ -7,7 +7,7 @@
 
 public protocol Syntax: CustomStringConvertible {
 	var location: SourceLocation { get }
-	func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value
+	func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value
 }
 
 public extension Syntax {
@@ -18,9 +18,9 @@ public extension Syntax {
 	var description: String {
 		switch self {
 		case let syntax as any Expr:
-			syntax.accept(Formatter(), Formatter.Context())
+			try! syntax.accept(Formatter(), Formatter.Context())
 		case let syntax as any Decl:
-			syntax.accept(Formatter(), Formatter.Context())
+			try! syntax.accept(Formatter(), Formatter.Context())
 		default:
 			"No description found for \(self)"
 		}

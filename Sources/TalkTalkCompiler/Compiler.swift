@@ -87,7 +87,7 @@ public struct Compiler: AnalyzedVisitor {
 		self.verbose = verbose
 	}
 
-	public func compile(optimize: Bool = false) -> LLVM.Module {
+	public func compile(optimize: Bool = false) throws -> LLVM.Module {
 		let lexer = TalkTalkLexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
@@ -96,9 +96,9 @@ public struct Compiler: AnalyzedVisitor {
 			fatalError(parser.errors.description)
 		}
 
-		let analyzed = Analyzer.analyze(parsed)
+		let analyzed = try Analyzer.analyze(parsed)
 		let context = Context(name: "main")
-		_ = analyzed.accept(self, context)
+		_ = try analyzed.accept(self, context)
 
 		if verbose {
 			module.dump()
@@ -117,7 +117,7 @@ public struct Compiler: AnalyzedVisitor {
 		#if os(Linux)
 		return .error("JIT not supported on Linux")
 		#else
-		if let int = LLVM.JIT().execute(module: compile()) {
+		if let int = try! LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
 			return .error("Nope.")
@@ -125,9 +125,9 @@ public struct Compiler: AnalyzedVisitor {
 		#endif
 	}
 
-	public func visit(_ expr: AnalyzedCallExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let args = expr.argsAnalyzed.map { $0.expr.accept(self, context) }
-		let callee = expr.calleeAnalyzed.accept(self, context)
+	public func visit(_ expr: AnalyzedCallExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		let args = try expr.argsAnalyzed.map { try $0.expr.accept(self, context) }
+		let callee = try expr.calleeAnalyzed.accept(self, context)
 
 		switch callee {
 		case let callee as LLVM.EmittedFunctionValue:
@@ -145,8 +145,8 @@ public struct Compiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) -> any LLVM.EmittedValue {
-		let value = expr.valueAnalyzed.accept(self, context)
+	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		let value = try expr.valueAnalyzed.accept(self, context)
 		guard let variable = context.environment.get(expr.name.lexeme) else {
 			fatalError("Undefined variable: \(expr.name.lexeme)")
 		}
@@ -178,11 +178,11 @@ public struct Compiler: AnalyzedVisitor {
 		return value
 	}
 
-	public func visit(_ err: AnalyzedErrorSyntax, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_ err: AnalyzedErrorSyntax, _: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
-	public func visit(_ expr: AnalyzedLiteralExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedLiteralExpr, _: Context) throws -> any LLVM.EmittedValue {
 		switch expr.value {
 		case let .int(int):
 			builder.emit(constant: LLVM.IntType.i32.constant(int))
@@ -193,7 +193,7 @@ public struct Compiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		guard let binding = context.environment.get(expr.name) else {
 			fatalError("undefined variable: \(expr.name)")
 		}
@@ -238,7 +238,7 @@ public struct Compiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedBinaryExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedBinaryExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		let type =
 			switch expr.type {
 			case .int:
@@ -270,33 +270,33 @@ public struct Compiler: AnalyzedVisitor {
 				.slash
 		}
 
-		let lhs = expr.lhsAnalyzed.accept(self, context).as(type)
-		let rhs = expr.rhsAnalyzed.accept(self, context).as(type)
+		let lhs = try expr.lhsAnalyzed.accept(self, context).as(type)
+		let rhs = try expr.rhsAnalyzed.accept(self, context).as(type)
 
 		return builder.binaryOperation(op, lhs, rhs)
 	}
 
-	public func visit(_ expr: AnalyzedIfExpr, _ context: Context) -> any LLVM.EmittedValue {
-		builder.branch {
-			expr.conditionAnalyzed.accept(self, context)
+	public func visit(_ expr: AnalyzedIfExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		try builder.branch {
+			try expr.conditionAnalyzed.accept(self, context)
 		} consequence: {
-			expr.consequenceAnalyzed.accept(self, context)
+			try expr.consequenceAnalyzed.accept(self, context)
 		} alternative: {
-			expr.alternativeAnalyzed.accept(self, context)
+			try expr.alternativeAnalyzed.accept(self, context)
 		}
 	}
 
-	public func visit(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ funcExpr: AnalyzedFuncExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		let functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
 		let context = context.newEnvironment(name: funcExpr.name ?? funcExpr.autoname)
 
 		if funcExpr.name == "main" {
-			return main(funcExpr, context)
+			return try main(funcExpr, context)
 		}
 
 		let envStruct = emitEnvironment(funcExpr, context)
 
-		let emittedFunction = builder.define(
+		let emittedFunction = try builder.define(
 			functionType,
 			parameterNames: funcExpr.params.params.map(\.name),
 			envStruct: envStruct
@@ -312,7 +312,7 @@ public struct Compiler: AnalyzedVisitor {
 				context.environment.define("self", as: .self(lexicalScope.scope.toLLVM(in: builder)))
 			}
 
-			let returnValue = visit(funcExpr.bodyAnalyzed, context)
+			let returnValue = try visit(funcExpr.bodyAnalyzed, context)
 
 			if returnValue.type.isVoid {
 				builder.emitVoidReturn()
@@ -324,30 +324,30 @@ public struct Compiler: AnalyzedVisitor {
 		return emittedFunction
 	}
 
-	public func visit(_ expr: AnalyzedReturnExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedReturnExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
-	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		var returnValue: (any LLVM.EmittedValue)? = nil
 
 		for expr in expr.exprsAnalyzed {
-			returnValue = expr.accept(self, context)
+			returnValue = try expr.accept(self, context)
 		}
 
 		return returnValue ?? LLVM.VoidValue()
 	}
 
-	public func visit(_ expr: AnalyzedWhileExpr, _ context: Context) -> any LLVM.EmittedValue {
-		builder.branch {
-			expr.conditionAnalyzed.accept(self, context)
+	public func visit(_ expr: AnalyzedWhileExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		try builder.branch {
+			try expr.conditionAnalyzed.accept(self, context)
 		} repeating: {
-			_ = expr.bodyAnalyzed.accept(self, context)
+			_ = try expr.bodyAnalyzed.accept(self, context)
 		}
 	}
 
-	public func visit(_ expr: AnalyzedMemberExpr, _ context: Context) -> any LLVM.EmittedValue {
-		switch expr.receiverAnalyzed.accept(self, context) {
+	public func visit(_ expr: AnalyzedMemberExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		switch try expr.receiverAnalyzed.accept(self, context) {
 		case let receiver as LLVM.EmittedStructPointerValue:
 			guard case let .instance(.struct(structType)) = expr.receiverAnalyzed.type else {
 				fatalError("cannot access member '\(expr.property)' on non-instance \(expr.receiverAnalyzed.type)")
@@ -393,11 +393,11 @@ public struct Compiler: AnalyzedVisitor {
 		fatalError("Could not figure out receiver for: \(expr.description)")
 	}
 
-	public func visit(_: AnalyzedParamsExpr, _: Context) -> any LLVM.EmittedValue {
+	public func visit(_: AnalyzedParamsExpr, _: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
-	public func visit(_ expr: AnalyzedStructExpr, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedStructExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		let structType = expr.structType
 		let context = context.newEnvironment(structType: structType, in: builder)
 
@@ -438,7 +438,7 @@ public struct Compiler: AnalyzedVisitor {
 				environment: funcExpr.environment
 			)
 
-			let emitted = visit(methodFuncExpr, context) as! LLVM.EmittedFunctionValue
+			let emitted = try visit(methodFuncExpr, context) as! LLVM.EmittedFunctionValue
 			emittedMethods.append(emitted)
 		}
 
@@ -449,15 +449,15 @@ public struct Compiler: AnalyzedVisitor {
 		return LLVM.VoidValue()
 	}
 
-	public func visit(_ expr: AnalyzedDeclBlock, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedDeclBlock, _ context: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
-	public func visit(_ expr: AnalyzedVarDecl, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedVarDecl, _ context: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}
 
-	public func visit(_ expr: AnalyzedLetDecl, _ context: Context) -> any LLVM.EmittedValue {
+	public func visit(_ expr: AnalyzedLetDecl, _ context: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}
 }

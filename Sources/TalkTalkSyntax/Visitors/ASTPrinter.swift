@@ -33,10 +33,10 @@ public struct ASTPrinter: Visitor {
 
 	var indentLevel = 0
 
-	public static func format(_ exprs: [any Expr]) -> String {
+	public static func format(_ exprs: [any Expr]) throws -> String {
 		let formatter = ASTPrinter()
 		let context = Context()
-		let result = exprs.map { $0.accept(formatter, context) }
+		let result = try exprs.map { try $0.accept(formatter, context) }
 		return result.map { line in
 			line.replacing(#/(\t+)(\d+) │ /#, with: {
 				// Tidy indents
@@ -49,8 +49,8 @@ public struct ASTPrinter: Visitor {
 		}.joined(separator: "\n")
 	}
 
-	func add(@StringBuilder _ content: () -> String) -> String {
-		content()
+	func add(@StringBuilder _ content: () throws -> String) -> String {
+		try! content()
 			.components(separatedBy: .newlines)
 			.filter { $0.trimmingCharacters(in: .whitespacesAndNewlines) != "" }
 			.map {
@@ -62,127 +62,127 @@ public struct ASTPrinter: Visitor {
 		"\(expr.location.start.line) | \(type(of: expr)) ln: \(expr.location.start.line) col: \(expr.location.start.column) \(extra)"
 	}
 
-	func indent(@StringBuilder _ content: () -> String) -> String {
+	func indent(@StringBuilder _ content: () throws -> String) -> String {
 		var copy = ASTPrinter()
 		copy.indentLevel = indentLevel + 1
-		return copy.add(content)
+		return try copy.add(content)
 	}
 
-	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
 		dump(expr, "property: \(expr.property)")
-		indent {
-			expr.receiver.accept(self, context)
+		try indent {
+			try expr.receiver.accept(self, context)
 		}
 }
 
-	@StringBuilder public func visit(_ expr: any CallExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any CallExpr, _ context: Context) throws -> String {
 		dump(expr)
-		indent {
-			expr.callee.accept(self, context)
+		try indent {
+			try expr.callee.accept(self, context)
 			if !expr.args.isEmpty {
-				indent {
-					expr.args.map { $0.value.accept(self, context) }.joined(separator: "\n")
+				try indent {
+					try expr.args.map { try $0.value.accept(self, context) }.joined(separator: "\n")
 				}
 			}
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any DefExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any DefExpr, _ context: Context) throws -> String {
 		dump(expr, "name: \(expr.name.lexeme)")
 		indent {
-			expr.value.accept(self, context)
+			try expr.value.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: ErrorSyntax, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: ErrorSyntax, _ context: Context) throws -> String {
 		dump(expr, expr.message)
 	}
 
-	@StringBuilder public func visit(_ expr: any LiteralExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any LiteralExpr, _ context: Context) throws -> String {
 		dump(expr, "value: \(expr.value)")
 	}
 
-	@StringBuilder public func visit(_ expr: any VarExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any VarExpr, _ context: Context) throws -> String {
 		dump(expr, "name: \(expr.name)")
 	}
 
-	@StringBuilder public func visit(_ expr: any BinaryExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any BinaryExpr, _ context: Context) throws -> String {
 		dump(expr, "op: \(expr.op)")
 		indent {
-			expr.lhs.accept(self, context)
-			expr.rhs.accept(self, context)
+			try expr.lhs.accept(self, context)
+			try expr.rhs.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any IfExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any IfExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			expr.condition.accept(self, context)
+			try expr.condition.accept(self, context)
 			indent {
-				expr.consequence.accept(self, context)
-				expr.alternative.accept(self, context)
+				try expr.consequence.accept(self, context)
+				try expr.alternative.accept(self, context)
 			}
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any WhileExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any WhileExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			expr.condition.accept(self, context)
+			try expr.condition.accept(self, context)
 			indent {
-				expr.body.accept(self, context)
+				try expr.body.accept(self, context)
 			}
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any BlockExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any BlockExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			expr.exprs.map { $0.accept(self, context) }.joined(separator: "\n")
+			try expr.exprs.map { try $0.accept(self, context) }.joined(separator: "\n")
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any FuncExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any FuncExpr, _ context: Context) throws -> String {
 		dump(expr, "params: \(expr.params.params.map(\.description))")
-		visit(expr.body, context)
+		try visit(expr.body, context)
 	}
 
-	@StringBuilder public func visit(_ expr: any ParamsExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any ParamsExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			expr.params.map { $0.accept(self, context) }.joined(separator: "\n")
+			try expr.params.map { try $0.accept(self, context) }.joined(separator: "\n")
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any Param, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any Param, _ context: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: any StructExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any StructExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			expr.body.accept(self, context)
+			try expr.body.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any DeclBlockExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any DeclBlockExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for decl in expr.decls {
-				decl.accept(self, context)
+				try decl.accept(self, context)
 			}
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) throws -> String {
 		dump(expr, "name: \(expr.name), type: \(expr.typeDecl)")
 	}
 
-	@StringBuilder public func visit(_ expr: any ReturnExpr, _ context: Context) -> String {
+	@StringBuilder public func visit(_ expr: any ReturnExpr, _ context: Context) throws -> String {
 		dump(expr)
 		if let value = expr.value {
 			indent {
-				value.accept(self, context)
+				try value.accept(self, context)
 			}
 		}
 	}

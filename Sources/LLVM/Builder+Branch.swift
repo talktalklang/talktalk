@@ -9,9 +9,9 @@ import C_LLVM
 
 public extension LLVM.Builder {
 	func branch(
-		condition: () -> any LLVM.EmittedValue,
-		repeating: () -> Void
-	) -> any LLVM.EmittedValue {
+		condition: () throws -> any LLVM.EmittedValue,
+		repeating: () throws -> Void
+	) throws -> any LLVM.EmittedValue {
 		let originalFunction: LLVMValueRef? = if let originalBlock = LLVMGetInsertBlock(builder) {
 			LLVMGetBasicBlockParent(originalBlock)
 		} else {
@@ -30,7 +30,7 @@ public extension LLVM.Builder {
 		let condition = LLVMBuildICmp(
 			builder,
 			LLVMIntEQ,
-			condition().ref,
+			try condition().ref,
 			LLVM.IntType.i1.constant(1).valueRef(in: context),
 			""
 		)
@@ -38,7 +38,7 @@ public extension LLVM.Builder {
 
 		// Write the body of the loop
 		LLVMPositionBuilderAtEnd(builder, loopBodyBlock)
-		repeating()
+		try repeating()
 		// Jump back to the condition when we're done here
 		LLVMBuildBr(builder, loopConditionBlock)
 
@@ -50,10 +50,10 @@ public extension LLVM.Builder {
 	}
 
 	func branch(
-		condition: () -> any LLVM.EmittedValue,
-		consequence: () -> any LLVM.EmittedValue,
-		alternative: (() -> (any LLVM.EmittedValue))? = nil
-	) -> any LLVM.EmittedValue {
+		condition: () throws -> any LLVM.EmittedValue,
+		consequence: () throws -> any LLVM.EmittedValue,
+		alternative: (() throws -> (any LLVM.EmittedValue))? = nil
+	) throws -> any LLVM.EmittedValue {
 		// Get the current position we're at so we can go back there after the function is defined
 		let originalFunction: LLVMValueRef? = if let originalBlock = LLVMGetInsertBlock(builder) {
 			LLVMGetBasicBlockParent(originalBlock)
@@ -64,7 +64,7 @@ public extension LLVM.Builder {
 		let condition = LLVMBuildICmp(
 			builder,
 			LLVMIntEQ,
-			condition().ref,
+			try condition().ref,
 			LLVM.IntType.i1.constant(1).valueRef(in: context),
 			""
 		)
@@ -95,7 +95,7 @@ public extension LLVM.Builder {
 		)
 
 		LLVMPositionBuilderAtEnd(builder, thenBlock)
-		let consequenceEmitted = consequence()
+		let consequenceEmitted = try consequence()
 		LLVMBuildBr(builder, mergeBlock)
 
 		var values: [LLVMValueRef?] = [consequenceEmitted.ref]
@@ -103,7 +103,7 @@ public extension LLVM.Builder {
 
 		LLVMPositionBuilderAtEnd(builder, elseBlock)
 		if let alternative {
-			let alternativeResult = alternative()
+			let alternativeResult = try alternative()
 
 			values.append(alternativeResult.ref)
 			blocks.append(elseBlock)

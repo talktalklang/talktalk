@@ -13,7 +13,7 @@ public struct ReturnExprSyntax: ReturnExpr {
 	public var location: SourceLocation
 	public var value: (any Expr)?
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+		try visitor.visit(self, scope)
 	}
 }

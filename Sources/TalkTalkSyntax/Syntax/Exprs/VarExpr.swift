@@ -14,8 +14,8 @@ public struct VarExprSyntax: VarExpr {
 	public let token: Token
 	public let location: SourceLocation
 
-	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
-		visitor.visit(self, scope)
+	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
+		try visitor.visit(self, scope)
 	}
 
 	public init(token: Token, location: SourceLocation) {

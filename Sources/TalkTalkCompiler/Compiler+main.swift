@@ -9,7 +9,7 @@ import LLVM
 
 extension Compiler {
 	// TODO: This could probably go into the LLVM package?
-	func main(in builder: LLVM.Builder, body: () -> any LLVM.IRValue) {
+	func main(in builder: LLVM.Builder, body: () -> any LLVM.IRValue) throws {
 		let mainType = LLVM.FunctionType(
 			name: "main",
 			returnType: .i32,
@@ -18,7 +18,7 @@ extension Compiler {
 			captures: nil
 		)
 
-		_ = builder.define(mainType, parameterNames: [], envStruct: nil) {
+		_ = try builder.define(mainType, parameterNames: [], envStruct: nil) {
 			if let retval = body() as? LLVM.IRValueRef {
 				_ = builder.emit(return: .raw(retval.ref))
 			}

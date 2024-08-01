@@ -14,7 +14,7 @@ public struct Analyzer: Visitor {
 
 	public init() {}
 
-	public static func analyze(_ exprs: [any Expr]) -> any AnalyzedExpr {
+	public static func analyze(_ exprs: [any Expr]) throws -> any AnalyzedExpr {
 		let env = Environment()
 		let analyzer = Analyzer()
 		let location = exprs.first?.location ?? [.synthetic(.eof)]
@@ -26,14 +26,14 @@ public struct Analyzer: Visitor {
 			name: "main",
 			location: location
 		)
-		return analyzer.visit(mainExpr, env)
+		return try analyzer.visit(mainExpr, env)
 	}
 
-	public func visit(_ expr: any CallExpr, _ context: Environment) -> any AnalyzedExpr {
-		let callee = expr.callee.accept(self, context)
+	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> any AnalyzedExpr {
+		let callee = try expr.callee.accept(self, context)
 
-		let args = expr.args.map {
-			AnalyzedArgument(label: $0.label, expr: $0.value.accept(self, context))
+		let args = try expr.args.map {
+			try AnalyzedArgument(label: $0.label, expr: $0.value.accept(self, context))
 		}
 
 		let type: ValueType
@@ -55,8 +55,8 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any MemberExpr, _ context: Environment) -> any AnalyzedExpr {
-		let receiver = expr.receiver.accept(self, context)
+	public func visit(_ expr: any MemberExpr, _ context: Environment) throws -> any AnalyzedExpr {
+		let receiver = try expr.receiver.accept(self, context)
 		let propertyName = expr.property
 
 		var property: Property? = nil
@@ -78,19 +78,19 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any DefExpr, _ context: Environment) -> any AnalyzedExpr {
-		let value = expr.value.accept(self, context)
+	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> any AnalyzedExpr {
+		let value = try expr.value.accept(self, context)
 
 		context.define(local: expr.name.lexeme, as: value)
 
 		return AnalyzedDefExpr(type: value.type, expr: expr, valueAnalyzed: value)
 	}
 
-	public func visit(_ expr: any ErrorSyntax, _: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any ErrorSyntax, _: Environment) throws -> any AnalyzedExpr {
 		AnalyzedErrorSyntax(type: .error(expr.message), expr: expr)
 	}
 
-	public func visit(_ expr: any LiteralExpr, _: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any LiteralExpr, _: Environment) throws -> any AnalyzedExpr {
 		switch expr.value {
 		case .int:
 			AnalyzedLiteralExpr(type: .int, expr: expr)
@@ -101,7 +101,7 @@ public struct Analyzer: Visitor {
 		}
 	}
 
-	public func visit(_ expr: any VarExpr, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		if let binding = context.lookup(expr.name) {
 			return AnalyzedVarExpr(
 				type: binding.type,
@@ -112,18 +112,18 @@ public struct Analyzer: Visitor {
 		return error(at: expr, "undefined variable: \(expr.name) ln: \(expr.location.start.line) col: \(expr.location.start.column)")
 	}
 
-	public func visit(_ expr: any BinaryExpr, _ env: Environment) -> any AnalyzedExpr {
-		let lhs = expr.lhs.accept(self, env)
-		let rhs = expr.rhs.accept(self, env)
+	public func visit(_ expr: any BinaryExpr, _ env: Environment) throws -> any AnalyzedExpr {
+		let lhs = try expr.lhs.accept(self, env)
+		let rhs = try expr.rhs.accept(self, env)
 
 		infer(lhs, rhs, as: .int, in: env)
 
 		return AnalyzedBinaryExpr(type: .int, expr: expr, lhsAnalyzed: lhs, rhsAnalyzed: rhs)
 	}
 
-	public func visit(_ expr: any IfExpr, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any IfExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		// TODO: Error if the branches don't match or condition isn't a bool
-		AnalyzedIfExpr(
+		try AnalyzedIfExpr(
 			type: expr.consequence.accept(self, context).type,
 			expr: expr,
 			conditionAnalyzed: expr.condition.accept(self, context),
@@ -132,12 +132,12 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any FuncExpr, _ env: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> any AnalyzedExpr {
 		let innerEnvironment = env.add()
 
 		// Define our parameters in the environment so they're declared in the body. They're
 		// just placeholders for now.
-		var params = visit(expr.params, env) as! AnalyzedParamsExpr
+		var params = try visit(expr.params, env) as! AnalyzedParamsExpr
 		for param in params.paramsAnalyzed {
 			innerEnvironment.define(local: param.name, as: param)
 		}
@@ -156,7 +156,7 @@ public struct Analyzer: Visitor {
 		}
 
 		// Visit the body with the innerEnvironment, finding captures as we go.
-		let bodyAnalyzed = visit(expr.body, innerEnvironment) as! AnalyzedBlockExpr
+		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockExpr
 
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
@@ -179,12 +179,12 @@ public struct Analyzer: Visitor {
 		return funcExpr
 	}
 
-	public func visit(_ expr: any ReturnExpr, _ env: Environment) -> any AnalyzedExpr {
-		let valueAnalyzed = expr.value?.accept(self, env)
+	public func visit(_ expr: any ReturnExpr, _ env: Environment) throws -> any AnalyzedExpr {
+		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnExpr(type: valueAnalyzed?.type ?? .void, expr: expr, valueAnalyzed: valueAnalyzed)
 	}
 
-	public func visit(_ expr: any ParamsExpr, _: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any ParamsExpr, _: Environment) throws -> any AnalyzedExpr {
 		AnalyzedParamsExpr(
 			type: .void,
 			expr: expr,
@@ -194,28 +194,28 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any WhileExpr, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any WhileExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		// TODO: Validate condition is bool
-		let condition = expr.condition.accept(self, context)
-		let body = visit(expr.body, context) as! AnalyzedBlockExpr
+		let condition = try expr.condition.accept(self, context)
+		let body = try visit(expr.body, context) as! AnalyzedBlockExpr
 
 		return AnalyzedWhileExpr(type: body.type, expr: expr, conditionAnalyzed: condition, bodyAnalyzed: body)
 	}
 
-	public func visit(_ expr: any BlockExpr, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any BlockExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		var bodyAnalyzed: [any AnalyzedExpr] = []
 		for bodyExpr in expr.exprs {
-			bodyAnalyzed.append(bodyExpr.accept(self, context))
+			try bodyAnalyzed.append(bodyExpr.accept(self, context))
 		}
 
 		return AnalyzedBlockExpr(type: bodyAnalyzed.last?.type ?? .none, expr: expr, exprsAnalyzed: bodyAnalyzed)
 	}
 
-	public func visit(_ expr: any Param, _: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any Param, _: Environment) throws -> any AnalyzedExpr {
 		AnalyzedParam(type: .placeholder(1), expr: expr)
 	}
 
-	public func visit(_ expr: any StructExpr, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		let structType = StructType(name: expr.name, properties: [:], methods: [:])
 		let bodyContext = context.addLexicalScope(scope: structType, type: .struct(structType), expr: expr)
 
@@ -261,7 +261,7 @@ public struct Analyzer: Visitor {
 		}
 
 		// Do a second pass to try to fill in method returns
-		let bodyAnalyzed = visit(expr.body, bodyContext)
+		let bodyAnalyzed = try visit(expr.body, bodyContext)
 
 		let type: ValueType = .struct(
 			structType
@@ -286,13 +286,13 @@ public struct Analyzer: Visitor {
 		return analyzed
 	}
 
-	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		var declsAnalyzed: [any AnalyzedExpr] = []
 
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
 		for decl in expr.decls {
-			let declAnalyzed = decl.accept(self, context)
+			let declAnalyzed = try decl.accept(self, context)
 
 			declsAnalyzed.append(declAnalyzed)
 
@@ -311,7 +311,7 @@ public struct Analyzer: Visitor {
 		return AnalyzedDeclBlock(type: .void, decl: expr, declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl])
 	}
 
-	public func visit(_ expr: any VarDecl, _ context: Environment) -> any AnalyzedExpr {
+	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> any AnalyzedExpr {
 		AnalyzedVarDecl(type: context.type(named: expr.typeDecl), expr: expr)
 	}
 

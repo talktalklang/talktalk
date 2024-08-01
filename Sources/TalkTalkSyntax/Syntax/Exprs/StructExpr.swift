@@ -15,7 +15,7 @@ public struct StructExprSyntax: StructExpr {
 	public var body: any DeclBlockExpr
 	public var location: SourceLocation
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V : Visitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+		try visitor.visit(self, scope)
 	}
 }

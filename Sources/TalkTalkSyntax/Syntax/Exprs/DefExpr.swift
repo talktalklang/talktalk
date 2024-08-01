@@ -15,7 +15,7 @@ public struct DefExprSyntax: DefExpr {
 	public let value: any Expr
 	public let location: SourceLocation
 
-	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) -> V.Value {
-		visitor.visit(self, scope)
+	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
+		try visitor.visit(self, scope)
 	}
 }

@@ -24,7 +24,7 @@ struct Compile: TalkTalkCommand {
 			string
 		}
 
-		let module = Compiler(source).compile(optimize: true)
+		let module = try Compiler(source).compile(optimize: true)
 
 		module.write(to: "out.bc")
 

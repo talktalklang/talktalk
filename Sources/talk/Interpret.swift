@@ -22,6 +22,6 @@ struct Interpret: TalkTalkCommand {
 			string
 		}
 
-		print(Interpreter(source).evaluate())
+		try print(Interpreter(source).evaluate())
 	}
 }

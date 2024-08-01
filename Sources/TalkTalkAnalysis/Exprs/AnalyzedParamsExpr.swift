@@ -12,8 +12,8 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 		fatalError("unreachable")
 	}
 
-	public func accept<V>(_ visitor: V, _ context: V.Context) -> V.Value where V: Visitor {
-		visitor.visit(self, context)
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
+		try visitor.visit(self, context)
 	}
 
 	public var name: String { expr.name }
@@ -51,12 +51,12 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 		}
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: Visitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
+		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) -> V.Value where V: AnalyzedVisitor {
-		visitor.visit(self, scope)
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
+		try visitor.visit(self, scope)
 	}
 }
 

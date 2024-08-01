@@ -23,7 +23,7 @@ struct AST: TalkTalkCommand {
 		}
 
 		let parsed = Parser.parse(source)
-		let formatted = ASTPrinter.format(parsed)
+		let formatted = try ASTPrinter.format(parsed)
 		print(formatted)
 	}
 }

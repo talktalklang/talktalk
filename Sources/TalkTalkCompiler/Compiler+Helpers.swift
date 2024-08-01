@@ -95,7 +95,7 @@ extension Compiler {
 		return value
 	}
 
-	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> any LLVM.EmittedValue {
+	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		var functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
 		functionType.name = funcExpr.name ?? funcExpr.autoname
 
@@ -106,7 +106,7 @@ extension Compiler {
 
 		var lastReturn: (any LLVM.EmittedValue)?
 		for expr in funcExpr.bodyAnalyzed.exprsAnalyzed {
-			lastReturn = expr.accept(self, context)
+			lastReturn = try expr.accept(self, context)
 		}
 
 		if let lastReturn, let type = lastReturn.type as? LLVM.IntType {
