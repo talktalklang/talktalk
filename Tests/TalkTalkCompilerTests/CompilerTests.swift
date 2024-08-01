@@ -133,7 +133,7 @@ struct CompilerTests {
 
 		foo = Foo(age: 123)
 		foo.getAge()
-		""").run() == .int(123))
+		""", verbose: true).run() == .int(123))
 	}
 
 	@Test("Compiles Struct methods") func methods() {

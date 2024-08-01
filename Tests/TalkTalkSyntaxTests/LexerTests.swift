@@ -18,7 +18,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Symbols and ints and parens") func symbolsAndInts() async throws {
-		var lexer = TalkTalkLexer("10 < 20")
+		var lexer = TalkTalkLexer("10 ^ 20")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [

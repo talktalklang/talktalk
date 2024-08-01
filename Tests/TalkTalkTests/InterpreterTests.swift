@@ -118,17 +118,17 @@ struct InterpreterTests {
 
 	@Test("Evaluates fib") func fib() {
 		Interpreter("""
-		func fib(n) {
-			if (n <= 1) { return n } else { }
-			return fib(n - 2) + fib(n - 1)
-		}
+			func fib(n) {
+				if (n <= 1) { return n } else { }
+				return fib(n - 2) + fib(n - 1)
+			}
 
-		i = 0
-		while i < 5 {
-			printf(fib(i))
-			i = i + 1
-		}
-		"""
+			i = 0
+			while i < 5 {
+				printf(fib(i))
+				i = i + 1
+			}
+			"""
 		).evaluate()
 	}
 
