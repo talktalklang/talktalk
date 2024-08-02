@@ -39,11 +39,21 @@ public extension LLVM {
 		}
 
 		public func functionTypeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
-			let newParameterTypes = functionType.parameterTypes + [TypePointer(type: self)]
+			var newParameterTypes = functionType.parameterTypes
+
+			if !captureTypes.isEmpty {
+				newParameterTypes.append(TypePointer(type: self))
+			}
+
+			let newReturnType = if let returnType = functionType.returnType as? ClosureType {
+				TypePointer(type: returnType)
+			} else {
+				functionType.returnType
+			}
 
 			return FunctionType(
 				name: functionType.name,
-				returnType: functionType.returnType,
+				returnType: newReturnType,
 				parameterTypes: newParameterTypes,
 				isVarArg: false,
 				capturedTypes: captureTypes

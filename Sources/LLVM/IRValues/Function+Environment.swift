@@ -86,8 +86,8 @@ public extension LLVM.Function {
 			bindings[structType.name] = .structType(structType, pointer)
 		}
 
-		public func defineFunction(_ name: String, type: LLVM.ClosureType, ref: LLVMValueRef) {
-			bindings[name] = .closure(type, ref)
+		public func defineFunction(_ name: String, type: LLVM.ClosureType, ref: LLVMValueRef?) {
+			bindings[name] = .closure(type, ref!)
 		}
 
 		public func capture(_ name: String, with builder: LLVM.Builder) -> any LLVM.StoredPointer {

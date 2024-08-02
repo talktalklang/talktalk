@@ -10,7 +10,7 @@ import LLVM
 import TalkTalkAnalysis
 
 extension Compiler {
-	func allocateLocals(funcExpr: AnalyzedFuncExpr, context: Context) {
+	func allocateLocals(funcExpr: AnalyzedFuncExpr, closurePointer: LLVM.EmittedClosureValue?, context: Context) {
 		log("-> allocating locals for \(funcExpr.name ?? funcExpr.autoname)")
 
 		// Figure out which of this function's values are captured by children and malloc some heap space
@@ -36,7 +36,7 @@ extension Compiler {
 				context.environment.defineType(structTypeLLVM, pointer: globalType)
 			} else if case .function(_, _, _, _) = binding.type {
 				let type = binding.type.irType(in: builder) as! LLVM.ClosureType
-				context.environment.defineFunction(binding.name, type: type, ref: builder.mainRef)
+				context.environment.defineFunction(binding.name, type: type, ref: closurePointer!.ref)
 			} else if !binding.isParameter {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(
@@ -94,8 +94,9 @@ extension Compiler {
 
 		let main = builder.main(functionType: functionType, builtins: Builtins.list)
 
-		allocateLocals(funcExpr: funcExpr, context: context)
-		_ = captureClosure(funcExpr, context)
+		let closure = captureClosure(funcExpr, context)
+		let closurePointer = builder.createClosurePointer(name: "main", functionType: functionType, captures: [])
+		allocateLocals(funcExpr: funcExpr, closurePointer: closurePointer, context: context)
 
 		var lastReturn: (any LLVM.EmittedValue)?
 		for expr in funcExpr.bodyAnalyzed.exprsAnalyzed {

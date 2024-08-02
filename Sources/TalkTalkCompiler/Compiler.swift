@@ -101,9 +101,9 @@ public struct Compiler: AnalyzedVisitor {
 		let context = Context(name: "main")
 		_ = try analyzed.accept(self, context)
 
-		LLVM.ModulePassManager(
-			module: module
-		).run()
+//		LLVM.ModulePassManager(
+//			module: module
+//		).run()
 
 		if verbose {
 			module.dump()
@@ -326,7 +326,7 @@ public struct Compiler: AnalyzedVisitor {
 			parameterNames: funcExpr.params.params.map(\.name),
 			closurePointer: closurePointer
 		) {
-			allocateLocals(funcExpr: funcExpr, context: context)
+			allocateLocals(funcExpr: funcExpr, closurePointer: closurePointer, context: context)
 			// Update the binding with the ref
 			outerContext.environment.define(funcExpr.name ?? funcExpr.autoname, as: .closure(closurePointer.type, closurePointer.ref))
 

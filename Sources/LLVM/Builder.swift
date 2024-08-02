@@ -216,21 +216,23 @@ public extension LLVM {
 			let fnType = closure.functionType
 			let fnTypeRef = closure.type.functionTypeRef(in: self)
 
-			let fn = functionRef(for: closure.type)
+			let fn = LLVMGetNamedFunction(module.ref, fnType.name)
 			var args: [LLVMValueRef?] = arguments.map(\.ref)
 
-			args.append(closure.ref)
+			if !closure.type.captureTypes.isEmpty {
+				args.append(closure.ref)
+			}
 
-			let ref = args.withUnsafeMutableBufferPointer {
-				LLVMBuildCall2(
+//			let ref = args.withUnsafeMutableBufferPointer {
+				let ref = LLVMBuildCall2(
 					builder,
 					fnTypeRef,
 					fn,
-					$0.baseAddress,
-					UInt32($0.count),
+					&args,
+					UInt32(args.count),
 					"\(fnType.name).call"
-				)
-			}!
+				)!
+//			}!
 
 			return fnType.returnType.emit(ref: ref)
 		}
@@ -719,6 +721,8 @@ public extension LLVM {
 				let gep = LLVMBuildStructGEP2(builder, typeRef, ptr, UInt32(i), "capture.\(name).gep")
 				LLVMBuildStore(builder, pointer.ref, gep)
 			}
+
+			print("-------------> \(functionType.name) closure pointer: ", ptr as Any)
 
 			return EmittedClosureValue(type: closureType, ref: ptr!)
 		}
