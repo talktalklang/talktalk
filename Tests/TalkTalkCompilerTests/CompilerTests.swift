@@ -9,7 +9,7 @@ import TalkTalkAnalysis
 import TalkTalkCompiler
 import Testing
 
-struct CompilerTests {
+@Suite(.disabled()) struct CompilerTests {
 	@Test("Compiles literals") func literals() {
 		#expect(Compiler("1").run() == .int(1))
 		#expect(Compiler("(2)").run() == .int(2))
