@@ -141,7 +141,7 @@ public extension LLVM {
 			var arguments = arguments
 			arguments.insert(method.receiver, at: 0)
 			var args: [LLVMValueRef?] = arguments.map(\.ref)
-			args.append(method.ref)
+//			args.append(method.ref)
 
 			let ref = args.withUnsafeMutableBufferPointer {
 				LLVMBuildCall2(
@@ -598,12 +598,12 @@ public extension LLVM {
 			let returnType = closureType.captureTypes[index]
 
 			// Get the heap value pointer
-			let heapPtr = LLVMBuildLoad2(builder, LLVMPointerType(returnType.typeRef(in: self), 0), ptr, "capture.\(index).heap")
+//			let heapPtr = LLVMBuildLoad2(builder, LLVMPointerType(returnType.typeRef(in: self), 0), ptr, "capture.\(index).heap")
 
 			let valuePtr = LLVMBuildLoad2(
 				builder,
 				returnType.typeRef(in: self),
-				heapPtr,
+				ptr,
 				"capture.\(index).load"
 			)!
 

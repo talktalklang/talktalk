@@ -95,7 +95,7 @@ extension Compiler {
 		let main = builder.main(functionType: functionType, builtins: Builtins.list)
 
 		let closure = captureClosure(funcExpr, context)
-		let closurePointer = builder.createClosurePointer(name: "main", functionType: functionType, captures: [])
+		let closurePointer = builder.createClosurePointer(name: "main", functionType: functionType, captures: closure.captures)
 		allocateLocals(funcExpr: funcExpr, closurePointer: closurePointer, context: context)
 
 		var lastReturn: (any LLVM.EmittedValue)?

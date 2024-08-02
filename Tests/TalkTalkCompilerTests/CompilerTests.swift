@@ -108,8 +108,6 @@ struct CompilerTests {
 		addfour = addthis(4)
 		addfour(2)
 		""", verbose: true).run() == .int(6))
-//		addfour = addthis(4)
-//		addfour(2)
 	}
 
 	@Test("Works with printf") func printTest() {

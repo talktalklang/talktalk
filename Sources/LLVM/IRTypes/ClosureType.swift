@@ -45,6 +45,8 @@ public extension LLVM {
 				newParameterTypes.append(TypePointer(type: self))
 			}
 
+			
+
 			let newReturnType = if let returnType = functionType.returnType as? ClosureType {
 				TypePointer(type: returnType)
 			} else {
@@ -65,8 +67,10 @@ public extension LLVM {
 		}
 
 		public func asMethod(in context: LLVM.Context, on structType: LLVM.StructType) -> ClosureType {
-			let newParameterTypes = [structType] + functionType.parameterTypes
+			var newParameterTypes = functionType.parameterTypes
 			let newName = "\(structType.name)_\(functionType.name)"
+
+			newParameterTypes.insert(TypePointer(type: structType), at: 0)
 
 			let functionType = FunctionType(
 				name: newName,
