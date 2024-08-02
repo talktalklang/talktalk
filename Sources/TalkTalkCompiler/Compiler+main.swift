@@ -18,7 +18,9 @@ extension Compiler {
 			capturedTypes: []
 		)
 
-		_ = try builder.define(mainType, parameterNames: [], closurePointer: nil) { _ in
+		let closure = builder.createClosurePointer(name: "main", functionType: mainType, captures: [])
+
+		_ = try builder.define(mainType, parameterNames: [], closurePointer: closure) {
 			if let retval = body() as? LLVM.IRValueRef {
 				_ = builder.emit(return: .raw(retval.ref))
 			}

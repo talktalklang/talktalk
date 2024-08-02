@@ -11,10 +11,10 @@ public extension LLVM {
 	struct EmittedStaticMethod: EmittedValue {
 		public let name: String
 		public let receiver: EmittedStructPointerValue
-		public let type: LLVM.FunctionType
+		public let type: LLVM.ClosureType
 		public var ref: LLVMValueRef
 
-		public init(name: String, receiver: EmittedStructPointerValue, type: LLVM.FunctionType, ref: LLVMValueRef) {
+		public init(name: String, receiver: EmittedStructPointerValue, type: LLVM.ClosureType, ref: LLVMValueRef) {
 			self.name = name
 			self.receiver = receiver
 			self.type = type

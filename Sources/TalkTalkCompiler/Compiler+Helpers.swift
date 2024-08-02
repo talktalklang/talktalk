@@ -35,14 +35,8 @@ extension Compiler {
 				let globalType = builder.defineGlobal(structType: structTypeLLVM, name: structType.name!)
 				context.environment.defineType(structTypeLLVM, pointer: globalType)
 			} else if case .function(_, _, _, _) = binding.type {
-				let type = binding.type.irType(in: builder)
-				if let functionType = type as? LLVM.Callable {
-					let functionRef = builder.functionRef(for: functionType)
-					context.environment.defineFunction(binding.name, type: functionType, ref: functionRef)
-				} else if let closureType = type as? LLVM.ClosureType {
-					let functionRef = builder.functionRef(for: closureType.functionType)
-
-				}
+				let type = binding.type.irType(in: builder) as! LLVM.ClosureType
+				context.environment.defineFunction(binding.name, type: type, ref: builder.mainRef)
 			} else if !binding.isParameter {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(
@@ -53,11 +47,7 @@ extension Compiler {
 		}
 	}
 
-	func captureClosure(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> LLVM.Closure? {
-		if funcExpr.environment.captures.isEmpty {
-			return nil
-		}
-
+	func captureClosure(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> LLVM.Closure {
 		// Create a closure for this function, moving locals to the heap. For values already on the heap,
 		// just reuse the values.
 		var captures: [(name: String, pointer: any LLVM.StoredPointer)] = []
@@ -99,7 +89,7 @@ extension Compiler {
 //	}
 
 	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) throws -> any LLVM.EmittedValue {
-		var functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
+		var functionType = irType(for: funcExpr).as(LLVM.ClosureType.self).functionType
 		functionType.name = funcExpr.name ?? funcExpr.autoname
 
 		let main = builder.main(functionType: functionType, builtins: Builtins.list)

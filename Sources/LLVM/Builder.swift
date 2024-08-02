@@ -60,7 +60,7 @@ public extension LLVM {
 
 			// Now do the main stuff
 			let typeRef = functionType.typeRef(in: self)
-			let functionRef = LLVMAddFunction(module.ref, functionType.name, typeRef)!
+			let functionRef = LLVMAddFunction(module.ref, "main", typeRef)!
 
 			let entry = LLVMAppendBasicBlock(functionRef, "entry")
 			LLVMPositionBuilderAtEnd(builder, entry)
@@ -80,23 +80,18 @@ public extension LLVM {
 		public func define(
 			_ functionType: FunctionType,
 			parameterNames: [String],
-			closurePointer: LLVM.EmittedClosureValue?,
-			body: (LLVMValueRef) throws -> Void
-		) throws -> any EmittedValue {
-			let functionRef: LLVMValueRef
-			if let closurePointer {
-				let type = LLVM.FunctionType(
-					name: closurePointer.type.functionType.name,
-					returnType: closurePointer.type,
-					parameterTypes: closurePointer.type.functionType.parameterTypes + [closurePointer.type],
-					isVarArg: false,
-					capturedTypes: closurePointer.type.captureTypes
-				)
+			closurePointer: LLVM.EmittedClosureValue,
+			body: () throws -> Void
+		) throws -> EmittedClosureValue {
+//			let type = LLVM.FunctionType(
+//				name: closurePointer.type.functionType.name,
+//				returnType: closurePointer.functionType.returnType,
+//				parameterTypes: closurePointer.type.functionType.parameterTypes + [closurePointer.type],
+//				isVarArg: false,
+//				capturedTypes: closurePointer.type.captureTypes
+//			)
 
-				functionRef = self.functionRef(for: type)
-			} else {
-				functionRef = self.functionRef(for: functionType)
-			}
+			let functionRef = functionRef(for: closurePointer.type)
 
 			// Get the current position we're at so we can go back there after the function is defined
 			let originalBlock = LLVMGetInsertBlock(builder)
@@ -104,7 +99,7 @@ public extension LLVM {
 
 			// Create the entry block for the function
 			let entryBlock = LLVMAppendBasicBlockInContext(context.ref, functionRef, "entry")
-
+			LLVMCountParams(functionRef)
 			for (i, name) in parameterNames.enumerated() {
 				let paramRef = LLVMGetParam(functionRef, UInt32(i))
 				LLVMSetValueName2(paramRef, name, name.count)
@@ -114,7 +109,7 @@ public extension LLVM {
 			LLVMPositionBuilderAtEnd(builder, entryBlock)
 
 			// Let the body block add some stuff
-			try body(functionRef)
+			try body()
 
 			// Get the new end of the original function
 			if let originalFunction {
@@ -122,11 +117,7 @@ public extension LLVM {
 				LLVMPositionBuilderAtEnd(builder, returnToBlock)
 			}
 
-			if let closurePointer {
-				return closurePointer
-			} else {
-				return EmittedStaticFunction(type: functionType, ref: functionRef)
-			}
+			return closurePointer
 		}
 
 		public func callStatic(function: EmittedStaticFunction, with arguments: [any EmittedValue]) -> any EmittedValue {
@@ -150,11 +141,12 @@ public extension LLVM {
 			var arguments = arguments
 			arguments.insert(method.receiver, at: 0)
 			var args: [LLVMValueRef?] = arguments.map(\.ref)
+			args.append(method.ref)
 
 			let ref = args.withUnsafeMutableBufferPointer {
 				LLVMBuildCall2(
 					builder,
-					method.type.typeRef(in: self),
+					method.type.functionType.typeRef(in: self),
 					method.ref,
 					$0.baseAddress,
 					UInt32($0.count),
@@ -162,7 +154,7 @@ public extension LLVM {
 				)
 			}!
 
-			return method.type.returnType.emit(ref: ref)
+			return method.type.functionType.returnType.emit(ref: ref)
 		}
 
 		// We want to add the receiver as the first argument for methods
@@ -222,11 +214,13 @@ public extension LLVM {
 
 		public func call(closure: EmittedClosureValue, with arguments: [any EmittedValue]) -> any EmittedValue {
 			let fnType = closure.functionType
-			let fnTypeRef = fnType.typeRef(in: self)
+			let fnTypeRef = closure.type.functionTypeRef(in: self)
 
-			let fn = LLVMGetNamedFunction(module.ref, fnType.name)
+			let fn = functionRef(for: closure.type)
+			var args: [LLVMValueRef?] = arguments.map(\.ref)
 
-			var args: [LLVMValueRef?] = arguments.map(\.ref) + [closure.ref]
+			args.append(closure.ref)
+
 			let ref = args.withUnsafeMutableBufferPointer {
 				LLVMBuildCall2(
 					builder,
@@ -384,31 +378,14 @@ public extension LLVM {
 		}
 
 		public func malloca(type: any LLVM.IRType, name: String) -> any StoredPointer {
-			let malloca = if let functionType = type as? FunctionType {
-				{
-					// Get the function
-					let fn = LLVMGetNamedFunction(module.ref, functionType.name)!
-
-					// Get a pointer type to the function
-					let functionPointerType = LLVMPointerType(LLVMTypeOf(fn), 0)
-
-					// Allocate the space for the function pointer
-					let malloca = inEntry {
-						LLVMBuildMalloc(builder, functionPointerType, name)!
-					}
-
-					return malloca
-				}()
-			} else {
-				inEntry {
-					LLVMBuildMalloc(builder, type.typeRef(in: self), name)!
-				}
+			let malloca = inEntry {
+				LLVMBuildMalloc(builder, type.typeRef(in: self), name)!
 			}
 
 			// Return the stack value
 			switch type {
-			case let type as LLVM.FunctionType:
-				return HeapValue<LLVM.FunctionType>(type: type, ref: malloca)
+			case let type as LLVM.ClosureType:
+				return HeapValue<LLVM.ClosureType>(type: type, ref: malloca)
 			case let type as LLVM.IntType:
 				return HeapValue<LLVM.IntType>(type: type, ref: malloca)
 			case let type as LLVM.StructType:
@@ -423,28 +400,12 @@ public extension LLVM {
 		}
 
 		public func alloca(type: any LLVM.IRType, name: String) -> any StoredPointer {
-			let alloca = if let functionType = type as? LLVM.FunctionType {
-				{
-					let fn = functionRef(for: functionType)
-
-					// Get a pointer type to the function
-					let functionPointerType = LLVMPointerType(LLVMTypeOf(fn), 0)
-
-					// Allocate the space for the function pointer
-					let alloca = inEntry {
-						LLVMBuildAlloca(builder, functionPointerType, name)!
-					}
-
-					return alloca
-				}()
-			} else {
-				inEntry { LLVMBuildAlloca(builder, type.typeRef(in: self), name)! }
-			}
+			let alloca = inEntry { LLVMBuildAlloca(builder, type.typeRef(in: self), name)! }
 
 			// Return the stack value
 			switch type {
-			case let type as LLVM.FunctionType:
-				return StackValue<LLVM.FunctionType>(type: type, ref: alloca)
+			case let type as LLVM.ClosureType:
+				return StackValue<LLVM.ClosureType>(type: type, ref: alloca)
 			case let type as LLVM.IntType:
 				return StackValue<LLVM.IntType>(type: type, ref: alloca)
 			case let type as LLVM.StructType:
@@ -751,6 +712,7 @@ public extension LLVM {
 
 			let closureType = ClosureType(functionType: functionType, captureTypes: captures.map { $0.pointer.type })
 			let typeRef = closureType.typeRef(in: self)
+			
 			let ptr = LLVMBuildMalloc(builder, typeRef, functionType.name + ".closure.ptr")
 
 			for (i, (name, pointer)) in captures.enumerated() {
@@ -761,12 +723,12 @@ public extension LLVM {
 			return EmittedClosureValue(type: closureType, ref: ptr!)
 		}
 
-		public func functionRef(for functionType: FunctionType) -> LLVMValueRef {
+		public func functionRef(for closureType: ClosureType) -> LLVMValueRef {
 			// Get the function
-			if let fn = LLVMGetNamedFunction(module.ref, functionType.name) {
+			if let fn = LLVMGetNamedFunction(module.ref, closureType.functionType.name) {
 				return fn
 			} else {
-				return LLVMAddFunction(module.ref, functionType.name, functionType.typeRef(in: self))
+				return LLVMAddFunction(module.ref, closureType.functionType.name, closureType.functionTypeRef(in: self))
 			}
 		}
 

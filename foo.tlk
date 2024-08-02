@@ -1,11 +1,7 @@
-struct Foo {
-	let age: i32
+i = 1
+a = func(x) {
+	i + x
+}(2)
+printf(a)
 
-	func add() {
-		age + 4
-	}
-}
-
-foo = Foo(age: 123)
-foo.add()
 

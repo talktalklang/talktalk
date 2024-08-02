@@ -74,23 +74,6 @@ public extension LLVM.Function {
 			bindings[name] = binding
 		}
 
-		public func override(_ name: String, as binding: Binding) -> Bool {
-			if has(name) {
-				bindings[name] = binding
-				return true
-			}
-
-			guard let parent else {
-				return false
-			}
-
-			if parent.override(name, as: binding) {
-				return true
-			}
-
-			fatalError("could not override \(name)!")
-		}
-
 		public func define(_ name: String, as value: any LLVM.StoredPointer) {
 			bindings[name] = .defined(value)
 		}
@@ -103,14 +86,8 @@ public extension LLVM.Function {
 			bindings[structType.name] = .structType(structType, pointer)
 		}
 
-		public func defineFunction(_ name: String, type: any LLVM.Callable, ref: LLVMValueRef) {
-			if let callable = type as? LLVM.FunctionType {
-				bindings[name] = .staticFunction(callable, ref)
-			} else if let callable = type as? LLVM.ClosureType {
-				bindings[name] = .closure(callable, ref)
-			} else {
-				fatalError("\(name) not callable: \(type)")
-			}
+		public func defineFunction(_ name: String, type: LLVM.ClosureType, ref: LLVMValueRef) {
+			bindings[name] = .closure(type, ref)
 		}
 
 		public func capture(_ name: String, with builder: LLVM.Builder) -> any LLVM.StoredPointer {

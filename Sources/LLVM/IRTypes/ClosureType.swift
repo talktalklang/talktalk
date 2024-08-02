@@ -26,7 +26,7 @@ public extension LLVM {
 		}
 
 		public var captureTypes: [any IRType] {
-			Array(structType.types)
+			structType.types
 		}
 
 		public init(functionType: FunctionType, structType: StructType) {
@@ -35,11 +35,38 @@ public extension LLVM {
 		}
 
 		public func typeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
-			builder.capturesStruct(name: functionType.name + ".closure.type", functionType: functionType, types: captureTypes)
+			builder.capturesStruct(name: functionType.name + ".closure.ptr", functionType: functionType, types: captureTypes)
 		}
-		
+
+		public func functionTypeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
+			let newParameterTypes = functionType.parameterTypes + [TypePointer(type: self)]
+
+			return FunctionType(
+				name: functionType.name,
+				returnType: functionType.returnType,
+				parameterTypes: newParameterTypes,
+				isVarArg: false,
+				capturedTypes: captureTypes
+			).typeRef(in: builder)
+		}
+
 		public func emit(ref: LLVMValueRef) -> any LLVM.EmittedValue {
 			EmittedClosureValue(type: self, ref: ref)
+		}
+
+		public func asMethod(in context: LLVM.Context, on structType: LLVM.StructType) -> ClosureType {
+			let newParameterTypes = [structType] + functionType.parameterTypes
+			let newName = "\(structType.name)_\(functionType.name)"
+
+			let functionType = FunctionType(
+				name: newName,
+				returnType: functionType.returnType,
+				parameterTypes: newParameterTypes,
+				isVarArg: false,
+				capturedTypes: []
+			)
+
+			return ClosureType(functionType: functionType, structType: structType)
 		}
 	}
 

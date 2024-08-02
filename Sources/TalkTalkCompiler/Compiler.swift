@@ -60,7 +60,7 @@ public struct Compiler: AnalyzedVisitor {
 						structType.toLLVM(in: builder),
 						MethodType(
 							calleeType: structType.toLLVM(in: builder),
-							functionType: method.type.irType(in: builder) as! LLVM.FunctionType
+							functionType: (method.type.irType(in: builder) as! LLVM.ClosureType).functionType
 						).functionType,
 						method.name
 					)
@@ -100,6 +100,10 @@ public struct Compiler: AnalyzedVisitor {
 		let analyzed = try Analyzer.analyze(parsed)
 		let context = Context(name: "main")
 		_ = try analyzed.accept(self, context)
+
+		LLVM.ModulePassManager(
+			module: module
+		).run()
 
 		if verbose {
 			module.dump()
@@ -240,8 +244,8 @@ public struct Compiler: AnalyzedVisitor {
 			return LLVM.BuiltinValue(type: LLVM.BuiltinType(name: name), ref: builder.mainRef)
 		case let .staticFunction(type, ref):
 			return LLVM.EmittedStaticFunction(type: type, ref: ref)
-		case let .closure(closure):
-			return closure
+		case let .closure(closureType, closureRef):
+			return LLVM.EmittedClosureValue(type: closureType, ref: closureRef)
 		}
 	}
 
@@ -303,6 +307,7 @@ public struct Compiler: AnalyzedVisitor {
 			fatalError()
 		}
 
+		let outerContext = context
 		let context = context.newEnvironment(name: funcExpr.name ?? funcExpr.autoname)
 
 		if funcExpr.name == "main" {
@@ -310,22 +315,20 @@ public struct Compiler: AnalyzedVisitor {
 		}
 
 		let closure = captureClosure(funcExpr, context)
-		let closurePointer: LLVM.EmittedClosureValue?
-
-		if let closure {
-			closurePointer = builder.createClosurePointer(
+		let closurePointer = builder.createClosurePointer(
 				name: functionType.name,
 				functionType: functionType,
 				captures: closure.captures
 			)
-		} else { closurePointer = nil }
 
-		let emittedFunction = try builder.define(
+		_ = try builder.define(
 			functionType,
 			parameterNames: funcExpr.params.params.map(\.name),
 			closurePointer: closurePointer
-		) { functionRef in
+		) {
 			allocateLocals(funcExpr: funcExpr, context: context)
+			// Update the binding with the ref
+			outerContext.environment.define(funcExpr.name ?? funcExpr.autoname, as: .closure(closurePointer.type, closurePointer.ref))
 
 			for (i, param) in funcExpr.analyzedParams.paramsAnalyzed.enumerated() {
 				context.environment.parameter(param.name, type: irType(for: param.type), at: i)
@@ -345,12 +348,7 @@ public struct Compiler: AnalyzedVisitor {
 			}
 		}
 
-		// Update the binding if it's a closure
-		if let closurePointer {
-			context.environment.override(funcExpr.name ?? funcExpr.autoname, as: .closure(closurePointer))
-		}
-
-		return emittedFunction
+		return closurePointer
 	}
 
 	public func visit(_ expr: AnalyzedReturnExpr, _ context: Context) throws -> any LLVM.EmittedValue {
@@ -411,7 +409,7 @@ public struct Compiler: AnalyzedVisitor {
 				// TODO: Introduce a Method type that can generate this name
 				let name = "\(structType.name!)_\(method.name)"
 				let functionRef = builder.function(named: name)
-				let type = method.type.irType(in: builder) as! LLVM.FunctionType
+				let type = method.type.irType(in: builder) as! LLVM.ClosureType
 				return LLVM.EmittedStaticMethod(
 					name: name,
 					receiver: receiver,
@@ -450,7 +448,7 @@ public struct Compiler: AnalyzedVisitor {
 		context.environment.define("self", as: .`self`(structType.toLLVM(in: builder)))
 
 		// Need to define the methods and build up a method table
-		var emittedMethods: [LLVM.EmittedFunctionValue] = []
+		var emittedMethods: [LLVM.EmittedClosureValue] = []
 		for (name, property) in structType.methods.sorted(by: { structType.offset(method: $0.key) < structType.offset(method: $1.key) }) {
 			// TODO: Clean all this up
 			let name = "\(structType.name!)_\(name)"
@@ -473,7 +471,7 @@ public struct Compiler: AnalyzedVisitor {
 				environment: funcExpr.environment
 			)
 
-			let emitted = try visit(methodFuncExpr, context) as! LLVM.EmittedFunctionValue
+			let emitted = try visit(methodFuncExpr, context) as! LLVM.EmittedClosureValue
 			emittedMethods.append(emitted)
 		}
 

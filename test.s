@@ -5,43 +5,36 @@
 _main:                                  ; @main
 	.cfi_startproc
 ; %bb.0:                                ; %entry
-	sub	sp, sp, #32
+	stp	x20, x19, [sp, #-32]!           ; 16-byte Folded Spill
 	stp	x29, x30, [sp, #16]             ; 16-byte Folded Spill
 	.cfi_def_cfa_offset 32
 	.cfi_offset w30, -8
 	.cfi_offset w29, -16
-	mov	x8, #4                          ; =0x4
-	mov	w0, w8
-	mov	x8, #16                         ; =0x10
-                                        ; kill: def $w8 killed $w8 killed $x8
-	str	w8, [sp, #4]                    ; 4-byte Folded Spill
+	.cfi_offset w19, -24
+	.cfi_offset w20, -32
+	mov	w0, #4                          ; =0x4
 	bl	_malloc
-	mov	x9, x0
-	ldr	w0, [sp, #4]                    ; 4-byte Folded Reload
-	str	x9, [sp, #8]                    ; 8-byte Folded Spill
-	mov	w8, #123                        ; =0x7b
-	str	w8, [x9]
+	mov	w8, #1                          ; =0x1
+	mov	x19, x0
+	str	w8, [x0]
+	mov	w0, #8                          ; =0x8
 	bl	_malloc
 	mov	x1, x0
-	ldr	x0, [sp, #8]                    ; 8-byte Folded Reload
-	adrp	x8, __fn_x_27@PAGE
-	add	x8, x8, __fn_x_27@PAGEOFF
-	str	x8, [x1]
-	str	x0, [x1, #8]
-	mov	x8, x1
+	str	x19, [x0]
 	mov	w0, #2                          ; =0x2
-	blr	x8
+	bl	__fn_x_25
 	ldp	x29, x30, [sp, #16]             ; 16-byte Folded Reload
-	add	sp, sp, #32
+	ldp	x20, x19, [sp], #32             ; 16-byte Folded Reload
 	ret
 	.cfi_endproc
                                         ; -- End function
-	.globl	__fn_x_27                       ; -- Begin function _fn_x_27
+	.globl	__fn_x_25                       ; -- Begin function _fn_x_25
 	.p2align	2
-__fn_x_27:                              ; @_fn_x_27
+__fn_x_25:                              ; @_fn_x_25
 	.cfi_startproc
 ; %bb.0:                                ; %entry
-	ldr	w8, [x1, #8]
+	ldr	x8, [x1]
+	ldr	w8, [x8]
 	add	w0, w8, w0
 	ret
 	.cfi_endproc
