@@ -19,7 +19,7 @@ public extension LLVM {
 			self.typeRef = typeRef
 		}
 
-		public func typeRef(in _: LLVM.Context) -> LLVMTypeRef {
+		public func typeRef(in _: LLVM.Builder) -> LLVMTypeRef {
 			typeRef
 		}
 

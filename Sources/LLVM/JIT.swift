@@ -30,7 +30,6 @@ public extension LLVM {
 			var error: UnsafeMutablePointer<Int8>?
 			LLVMCreateExecutionEngineForModule(&engine, module.ref, &error)
 
-
 			// Get the function to execute
 			let function = LLVMGetNamedFunction(module.ref, "main")
 

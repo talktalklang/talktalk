@@ -16,7 +16,7 @@ public extension LLVM {
 			self.name = name
 		}
 
-		public func typeRef(in context: LLVM.Context) -> LLVMTypeRef {
+		public func typeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
 			fatalError("builtin types should not be referenced")
 		}
 

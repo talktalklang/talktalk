@@ -15,10 +15,10 @@ extension Compiler {
 			returnType: .i32,
 			parameterTypes: [],
 			isVarArg: false,
-			captures: nil
+			capturedTypes: []
 		)
 
-		_ = try builder.define(mainType, parameterNames: [], envStruct: nil) {
+		_ = try builder.define(mainType, parameterNames: [], closurePointer: nil) { _ in
 			if let retval = body() as? LLVM.IRValueRef {
 				_ = builder.emit(return: .raw(retval.ref))
 			}

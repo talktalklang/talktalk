@@ -17,8 +17,8 @@ public extension LLVM {
 			self.type = type
 		}
 
-		public func typeRef(in context: LLVM.Context) -> LLVMTypeRef {
-			LLVMPointerType(type.typeRef(in: context), 0)
+		public func typeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
+			LLVMPointerType(type.typeRef(in: builder), 0)
 		}
 
 		public func emit(ref: LLVMValueRef) -> any LLVM.EmittedValue {

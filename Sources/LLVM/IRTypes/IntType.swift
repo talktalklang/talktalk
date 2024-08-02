@@ -17,8 +17,8 @@ public extension LLVM {
 			self.width = width
 		}
 
-		public func typeRef(in context: LLVM.Context) -> LLVMTypeRef {
-			LLVMIntTypeInContext(context.ref, UInt32(width))
+		public func typeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
+			LLVMIntTypeInContext(builder.context.ref, UInt32(width))
 		}
 
 		public func constant(_ value: Int) -> Constant<IntValue, Int> {

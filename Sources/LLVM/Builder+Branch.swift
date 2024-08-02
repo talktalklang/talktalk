@@ -31,7 +31,7 @@ public extension LLVM.Builder {
 			builder,
 			LLVMIntEQ,
 			try condition().ref,
-			LLVM.IntType.i1.constant(1).valueRef(in: context),
+			LLVM.IntType.i1.constant(1).valueRef(in: self),
 			""
 		)
 		LLVMBuildCondBr(builder, condition, loopBodyBlock, loopExitBlock)
@@ -45,7 +45,7 @@ public extension LLVM.Builder {
 		// Finally, move the builder to our post loop block where stuff can continue
 		LLVMPositionBuilderAtEnd(builder, loopExitBlock)
 
-		let ref = LLVM.IntType.i32.constant(0).valueRef(in: context)
+		let ref = LLVM.IntType.i32.constant(0).valueRef(in: self)
 		return LLVM.EmittedIntValue(type: .i32, ref: ref)
 	}
 
@@ -65,7 +65,7 @@ public extension LLVM.Builder {
 			builder,
 			LLVMIntEQ,
 			try condition().ref,
-			LLVM.IntType.i1.constant(1).valueRef(in: context),
+			LLVM.IntType.i1.constant(1).valueRef(in: self),
 			""
 		)
 
@@ -112,7 +112,7 @@ public extension LLVM.Builder {
 		}
 
 		LLVMPositionBuilderAtEnd(builder, mergeBlock)
-		let phiRetType = consequenceEmitted.type.typeRef(in: context)
+		let phiRetType = consequenceEmitted.type.typeRef(in: self)
 		let phiNode = LLVMBuildPhi(builder, phiRetType, "merge")!
 
 		let count = values.count

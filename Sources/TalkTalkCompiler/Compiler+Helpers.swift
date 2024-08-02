@@ -34,7 +34,16 @@ extension Compiler {
 				let structTypeLLVM = structType.toLLVM(in: builder)
 				let globalType = builder.defineGlobal(structType: structTypeLLVM, name: structType.name!)
 				context.environment.defineType(structTypeLLVM, pointer: globalType)
-			} else {
+			} else if case .function(_, _, _, _) = binding.type {
+				let type = binding.type.irType(in: builder)
+				if let functionType = type as? LLVM.Callable {
+					let functionRef = builder.functionRef(for: functionType)
+					context.environment.defineFunction(binding.name, type: functionType, ref: functionRef)
+				} else if let closureType = type as? LLVM.ClosureType {
+					let functionRef = builder.functionRef(for: closureType.functionType)
+
+				}
+			} else if !binding.isParameter {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(
 					"  -> emitting stack binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
@@ -44,14 +53,14 @@ extension Compiler {
 		}
 	}
 
-	func emitEnvironment(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> LLVM.CapturesStruct? {
+	func captureClosure(_ funcExpr: AnalyzedFuncExpr, _ context: Context) -> LLVM.Closure? {
 		if funcExpr.environment.captures.isEmpty {
 			return nil
 		}
 
 		// Create a closure for this function, moving locals to the heap. For values already on the heap,
 		// just reuse the values.
-		var captures: [(String, any LLVM.StoredPointer)] = []
+		var captures: [(name: String, pointer: any LLVM.StoredPointer)] = []
 		for (_, capture) in funcExpr.environment.captures.enumerated() {
 			if capture.name == "self" { continue }
 
@@ -59,41 +68,35 @@ extension Compiler {
 			captures.append((capture.name, context.environment.capture(capture.name, with: builder)))
 		}
 
-		// Now that we have the captures list built, we can create the StructType for it. We need this in order
-		// to be able to GEP into it when we're trying to look up values from the environment during variable
-		// resolution (see VarExpr visitor)
-		let type = LLVM.CapturesStructType(
-			name: "Capture(\(captures.map(\.0).joined()))",
-			types: captures.map { $0.1.type }
-		)
+		let closureType = funcExpr.type.irType(in: builder) as! LLVM.ClosureType
 		for (i, capture) in captures.enumerated() {
-			context.environment.bindings[capture.0] = .capture(i, type)
+			context.environment.bindings[capture.0] = .capture(i, closureType)
 		}
 
-		return createEnvironmentStruct(type: type, from: captures)
+		return LLVM.Closure(type: closureType, functionType: closureType.functionType, captures: captures)
 	}
 
-	func createEnvironmentStruct(
-		type: LLVM.CapturesStructType,
-		from captures: [(String, any LLVM.StoredPointer)]
-	) -> LLVM.CapturesStruct {
-		var offsets: [String: Int] = [:]
-		var capturePointers: [any LLVM.StoredPointer] = []
-		for (i, capture) in captures.enumerated() {
-			offsets[capture.0] = i
-			capturePointers.append(capture.1)
-		}
-
-		let pointer = builder.capturesStruct(type: type, values: captures)
-		let value = LLVM.CapturesStruct(
-			type: type,
-			offsets: offsets,
-			captures: capturePointers,
-			ref: pointer.ref
-		)
-
-		return value
-	}
+//	func createEnvironmentStruct(
+//		type: LLVM.ClosureType,
+//		from captures: [(String, any LLVM.StoredPointer)]
+//	) -> LLVM.Closure {
+//		var offsets: [String: Int] = [:]
+//		var capturePointers: [any LLVM.StoredPointer] = []
+//		for (i, capture) in captures.enumerated() {
+//			offsets[capture.0] = i
+//			capturePointers.append(capture.1)
+//		}
+//
+//		let pointer = builder.capturesStruct(type: type, values: captures)
+//		let value = LLVM.CapturesStruct(
+//			type: type,
+//			offsets: offsets,
+//			captures: capturePointers,
+//			ref: pointer.ref
+//		)
+//
+//		return value
+//	}
 
 	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		var functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
@@ -102,7 +105,7 @@ extension Compiler {
 		let main = builder.main(functionType: functionType, builtins: Builtins.list)
 
 		allocateLocals(funcExpr: funcExpr, context: context)
-		_ = emitEnvironment(funcExpr, context)
+		_ = captureClosure(funcExpr, context)
 
 		var lastReturn: (any LLVM.EmittedValue)?
 		for expr in funcExpr.bodyAnalyzed.exprsAnalyzed {
@@ -114,7 +117,7 @@ extension Compiler {
 				_ = builder.emit(return: lastReturn)
 			} else {
 				let ret = LLVM.IntType.i32.constant(0)
-				let emit = LLVM.EmittedIntValue(type: .i32, ref: ret.valueRef(in: builder.context))
+				let emit = LLVM.EmittedIntValue(type: .i32, ref: ret.valueRef(in: builder))
 				_ = builder.emit(return: emit)
 			}
 
@@ -130,46 +133,7 @@ extension Compiler {
 	}
 
 	func irType(for expr: AnalyzedExpr) -> any LLVM.IRType {
-		switch expr {
-		case _ where expr.type == .int:
-			return LLVM.IntType.i32
-		case let expr as AnalyzedCallExpr:
-			let callee = expr.calleeAnalyzed
-
-			guard case let .function(_, returns, _, _) = callee.type else {
-				fatalError("\(callee.description) not callable")
-			}
-
-			return irType(for: returns)
-		case let expr as AnalyzedFuncExpr:
-			let returnType =
-				if let returns = expr.returnsAnalyzed {
-					irType(for: returns)
-				} else {
-					LLVM.VoidType()
-				}
-
-			var functionType = LLVM.FunctionType(
-				name: expr.name ?? expr.autoname,
-				returnType: returnType,
-				parameterTypes: expr.analyzedParams.paramsAnalyzed.map { irType(for: $0.type) },
-				isVarArg: false,
-				captures: LLVM.CapturesStructType(
-					name: expr.name ?? expr.autoname,
-					types: expr.environment.captures.map { irType(for: $0.binding.type) }
-				)
-			)
-
-			functionType.name = expr.name ?? expr.autoname
-
-			return functionType
-		case let expr as AnalyzedVarExpr:
-			return irType(for: expr.type)
-		case let expr as AnalyzedDefExpr:
-			return irType(for: expr.type)
-		default:
-			fatalError()
-		}
+		expr.type.irType(in: builder)
 	}
 
 	func log(_ string: String) {

@@ -18,8 +18,8 @@ public extension LLVM {
 			self.capacity = capacity
 		}
 
-		public func typeRef(in context: LLVM.Context) -> LLVMTypeRef {
-			LLVMArrayType(elementType.typeRef(in: context), UInt32(capacity))
+		public func typeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
+			LLVMArrayType(elementType.typeRef(in: builder), UInt32(capacity))
 		}
 		
 		public func emit(ref: LLVMValueRef) -> any LLVM.EmittedValue {

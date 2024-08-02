@@ -16,7 +16,7 @@ public extension LLVM {
 	struct RawValueType: IRType {
 		public typealias V = RawValue
 
-		public func typeRef(in _: LLVM.Context) -> LLVMTypeRef {
+		public func typeRef(in _: LLVM.Builder) -> LLVMTypeRef {
 			fatalError()
 		}
 

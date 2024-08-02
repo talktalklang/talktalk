@@ -94,6 +94,20 @@ struct AnalysisTests {
 		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
+	@Test("Compiles functions") func closures() throws {
+		let ast = try Analyzer.analyze(Parser.parse("""
+		i = 1
+		func(x) {
+			i + 2
+		}(2)
+		""")).cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed
+
+		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
+		let expected: ValueType = .function("_fn_x_25", .int, [.int("x")], [.any("i")])
+
+		#expect(result == expected)
+	}
+
 	@Test("Types captures") func funcCaptures() throws {
 		let ast = ast("""
 		func(x) {

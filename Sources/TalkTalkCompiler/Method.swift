@@ -14,18 +14,18 @@ struct MethodType: LLVM.IRType {
 	let calleeType: any LLVM.IRType
 	let functionType: LLVM.FunctionType
 
-	func typeRef(in context: LLVM.Context) -> LLVMTypeRef {
+	func typeRef(in builder: LLVM.Builder) -> LLVMTypeRef {
 		var paramTypes: [LLVMTypeRef?] = [
-			calleeType.typeRef(in: context)
+			calleeType.typeRef(in: builder)
 		]
 
 		for paramType in functionType.parameterTypes {
-			paramTypes.append(paramType.typeRef(in: context))
+			paramTypes.append(paramType.typeRef(in: builder))
 		}
 
 		return paramTypes.withUnsafeMutableBufferPointer {
 			LLVMFunctionType(
-				functionType.typeRef(in: context),
+				functionType.typeRef(in: builder),
 				$0.baseAddress,
 				UInt32($0.count),
 				.zero
@@ -60,7 +60,7 @@ struct Method: LLVM.IRValue, LLVM.EmittedValue {
 			returnType: type.functionType.returnType,
 			parameterTypes: parameterTypes,
 			isVarArg: false,
-			captures: nil
+			capturedTypes: []
 		)
 
 		return builder.call(functionRef: ref, as: functionType, with: &args, returning: functionType.returnType)

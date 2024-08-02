@@ -52,13 +52,15 @@ public extension Analyzer {
 			public var type: ValueType
 			public var isCaptured: Bool
 			public var isBuiltin: Bool
+			public var isParameter: Bool
 
-			public init(name: String, expr: any Syntax, type: ValueType, isCaptured: Bool = false, isBuiltin: Bool = false) {
+			public init(name: String, expr: any Syntax, type: ValueType, isCaptured: Bool = false, isBuiltin: Bool = false, isParameter: Bool = false) {
 				self.name = name
 				self.expr = expr
 				self.type = type
 				self.isCaptured = isCaptured
 				self.isBuiltin = isBuiltin
+				self.isParameter = isParameter
 			}
 		}
 
@@ -178,6 +180,10 @@ public extension Analyzer {
 
 		public func define(local: String, as expr: any AnalyzedExpr) {
 			locals[local] = Binding(name: local, expr: expr, type: expr.type)
+		}
+
+		public func define(parameter: String, as expr: any AnalyzedExpr) {
+			locals[parameter] = Binding(name: parameter, expr: expr, type: expr.type, isParameter: true)
 		}
 
 		public func addLexicalScope(scope: StructType, type: ValueType, expr: any Expr) -> Environment {

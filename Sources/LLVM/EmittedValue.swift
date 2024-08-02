@@ -11,8 +11,6 @@ public extension LLVM {
 	protocol EmittedValue: IRValue, IRValueRef, Emitted where T: IRType {
 		var type: T { get }
 		var ref: LLVMValueRef { get }
-
-//		init(type: T, ref: LLVMValueRef)
 	}
 }
 

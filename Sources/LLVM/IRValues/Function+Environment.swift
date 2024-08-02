@@ -13,9 +13,10 @@ public extension LLVM.Function {
 			case declared(any LLVM.StoredPointer),
 			     defined(any LLVM.StoredPointer),
 			     parameter(Int, any LLVM.IRType),
-			     capture(Int, LLVM.CapturesStructType),
+			     capture(Int, LLVM.ClosureType),
 					 builtin(String),
-			     function(String),
+					 staticFunction(LLVM.FunctionType, LLVMValueRef),
+					 closure(LLVM.ClosureType, LLVMValueRef),
 
 					 // Struct bindings
 					 structType(LLVM.StructType, LLVMValueRef),
@@ -73,6 +74,23 @@ public extension LLVM.Function {
 			bindings[name] = binding
 		}
 
+		public func override(_ name: String, as binding: Binding) -> Bool {
+			if has(name) {
+				bindings[name] = binding
+				return true
+			}
+
+			guard let parent else {
+				return false
+			}
+
+			if parent.override(name, as: binding) {
+				return true
+			}
+
+			fatalError("could not override \(name)!")
+		}
+
 		public func define(_ name: String, as value: any LLVM.StoredPointer) {
 			bindings[name] = .defined(value)
 		}
@@ -85,8 +103,14 @@ public extension LLVM.Function {
 			bindings[structType.name] = .structType(structType, pointer)
 		}
 
-		public func declareFunction(_ name: String) {
-			bindings[name] = .function(name)
+		public func defineFunction(_ name: String, type: any LLVM.Callable, ref: LLVMValueRef) {
+			if let callable = type as? LLVM.FunctionType {
+				bindings[name] = .staticFunction(callable, ref)
+			} else if let callable = type as? LLVM.ClosureType {
+				bindings[name] = .closure(callable, ref)
+			} else {
+				fatalError("\(name) not callable: \(type)")
+			}
 		}
 
 		public func capture(_ name: String, with builder: LLVM.Builder) -> any LLVM.StoredPointer {
@@ -107,8 +131,8 @@ public extension LLVM.Function {
 				// If it's not, we need to move it to the heap and update our own use
 				let heapPointer = builder.malloca(type: pointer.type, name: name)
 				let currentValue = builder.load(pointer: pointer)
-
 				_ = builder.store(currentValue, to: heapPointer)
+
 				define(name, as: heapPointer)
 
 				return heapPointer

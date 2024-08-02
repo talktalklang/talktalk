@@ -139,7 +139,7 @@ public struct Analyzer: Visitor {
 		// just placeholders for now.
 		var params = try visit(expr.params, env) as! AnalyzedParamsExpr
 		for param in params.paramsAnalyzed {
-			innerEnvironment.define(local: param.name, as: param)
+			innerEnvironment.define(parameter: param.name, as: param)
 		}
 
 		if let name = expr.name {

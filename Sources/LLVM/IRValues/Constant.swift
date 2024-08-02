@@ -12,11 +12,11 @@ public extension LLVM {
 		public let value: V
 		public let literal: Value
 
-		public func valueRef(in context: LLVM.Context) -> LLVMValueRef {
+		public func valueRef(in builder: LLVM.Builder) -> LLVMValueRef {
 			switch value {
 			case is IntValue where literal is any BinaryInteger:
 				let int = literal as! Int
-				return LLVMConstInt(type.typeRef(in: context), UInt64(int), .zero)
+				return LLVMConstInt(type.typeRef(in: builder), UInt64(int), .zero)
 			default:
 				fatalError("Not implemented yet.")
 			}

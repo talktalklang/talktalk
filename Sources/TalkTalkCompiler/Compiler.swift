@@ -6,6 +6,7 @@
 //
 
 import LLVM
+import C_LLVM
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
@@ -130,14 +131,16 @@ public struct Compiler: AnalyzedVisitor {
 		let callee = try expr.calleeAnalyzed.accept(self, context)
 
 		switch callee {
-		case let callee as LLVM.EmittedFunctionValue:
-			return builder.call(callee, with: args)
+		case let callee as LLVM.EmittedClosureValue:
+			return builder.call(closure: callee, with: args)
 		case let callee as LLVM.BuiltinValue:
 			return builder.call(builtin: callee.type.name, with: args)
 		case let callee as LLVM.MetaType:
 			return builder.instantiate(struct: callee.type, with: args, vtable: callee.vtable)
 		case let callee as LLVM.EmittedStaticMethod:
 			return builder.callStatic(method: callee, with: args)
+		case let callee as LLVM.EmittedStaticFunction:
+			return builder.callStatic(function: callee, with: args)
 		case let callee as LLVM.EmittedMethodValue:
 			return builder.call(method: callee, with: args)
 		default:
@@ -157,8 +160,12 @@ public struct Compiler: AnalyzedVisitor {
 			context.environment.define(expr.name.lexeme, as: pointer)
 		case let .defined(pointer):
 			_ = builder.store(value, to: pointer)
-		case let .capture(index, type):
-			builder.store(capture: value, at: index, as: type)
+		case let .capture(index, closureType):
+			builder.store(capture: value, at: index, closureType: closureType)
+		case .staticFunction(_, _):
+			()
+		case let .closure(closureValue):
+			()
 		case .self:
 			fatalError()
 		case .method:
@@ -171,8 +178,6 @@ public struct Compiler: AnalyzedVisitor {
 			fatalError("Cannot assign to a builtin")
 		case .parameter:
 			fatalError("Cannot assign to a param")
-		case .function:
-			fatalError("hang on")
 		}
 
 		return value
@@ -202,7 +207,7 @@ public struct Compiler: AnalyzedVisitor {
 		case let .capture(index, type):
 			log(
 				"<- loading capture in \(context.name): \(expr.name): slot \(index) in environment struct")
-			return builder.load(capture: index, envStructType: type)
+			return builder.load(capture: index, closureType: type)
 		case let .defined(pointer):
 			log(
 				"<- loading defined binding in \(context.name): \(expr.name): \(type(of: pointer.type)) \(pointer.isHeap ? "from heap \(pointer.ref)" : "from stack")"
@@ -233,8 +238,10 @@ public struct Compiler: AnalyzedVisitor {
 			return builder.load(from: pointer, index: offset, as: propertyType, name: "get_\(name)")
 		case let .builtin(name):
 			return LLVM.BuiltinValue(type: LLVM.BuiltinType(name: name), ref: builder.mainRef)
-		case .function:
-			fatalError()
+		case let .staticFunction(type, ref):
+			return LLVM.EmittedStaticFunction(type: type, ref: ref)
+		case let .closure(closure):
+			return closure
 		}
 	}
 
@@ -287,20 +294,37 @@ public struct Compiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ funcExpr: AnalyzedFuncExpr, _ context: Context) throws -> any LLVM.EmittedValue {
-		let functionType = irType(for: funcExpr).as(LLVM.FunctionType.self)
+		let type = irType(for: funcExpr)
+		let functionType = if let type = type as? LLVM.FunctionType {
+			type
+		} else if let type = type as? LLVM.ClosureType {
+			type.functionType
+		} else {
+			fatalError()
+		}
+
 		let context = context.newEnvironment(name: funcExpr.name ?? funcExpr.autoname)
 
 		if funcExpr.name == "main" {
 			return try main(funcExpr, context)
 		}
 
-		let envStruct = emitEnvironment(funcExpr, context)
+		let closure = captureClosure(funcExpr, context)
+		let closurePointer: LLVM.EmittedClosureValue?
+
+		if let closure {
+			closurePointer = builder.createClosurePointer(
+				name: functionType.name,
+				functionType: functionType,
+				captures: closure.captures
+			)
+		} else { closurePointer = nil }
 
 		let emittedFunction = try builder.define(
 			functionType,
 			parameterNames: funcExpr.params.params.map(\.name),
-			envStruct: envStruct
-		) {
+			closurePointer: closurePointer
+		) { functionRef in
 			allocateLocals(funcExpr: funcExpr, context: context)
 
 			for (i, param) in funcExpr.analyzedParams.paramsAnalyzed.enumerated() {
@@ -321,11 +345,18 @@ public struct Compiler: AnalyzedVisitor {
 			}
 		}
 
+		// Update the binding if it's a closure
+		if let closurePointer {
+			context.environment.override(funcExpr.name ?? funcExpr.autoname, as: .closure(closurePointer))
+		}
+
 		return emittedFunction
 	}
 
 	public func visit(_ expr: AnalyzedReturnExpr, _ context: Context) throws -> any LLVM.EmittedValue {
-		fatalError()
+		let retval: any LLVM.EmittedValue = try expr.valueAnalyzed?.accept(self, context) ?? LLVM.VoidValue()
+
+		return LLVM.EmittedReturnValue(value: retval)
 	}
 
 	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) throws -> any LLVM.EmittedValue {
@@ -333,6 +364,10 @@ public struct Compiler: AnalyzedVisitor {
 
 		for expr in expr.exprsAnalyzed {
 			returnValue = try expr.accept(self, context)
+
+			if let returnValue = returnValue as? LLVM.EmittedReturnValue {
+				return returnValue.value
+			}
 		}
 
 		return returnValue ?? LLVM.VoidValue()

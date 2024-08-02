@@ -14,15 +14,19 @@ public extension ValueType {
 		case .int:
 			return LLVM.IntType.i32
 		case let .function(name, returns, params, captures):
-			return LLVM.FunctionType(
+			let fnType = LLVM.FunctionType(
 				name: name,
-				returnType: returns.irType(in: builder),
-				parameterTypes: params.paramsAnalyzed.map { $0.type.irType(in: builder) },
-				isVarArg: params.isVarArg,
-				captures: LLVM.CapturesStructType(
-					name: "\(name)Env", types: captures.map { $0.binding.type.irType(in: builder) }
-				)
-			)
+				 returnType: returns.irType(in: builder),
+				 parameterTypes: params.paramsAnalyzed.map { $0.type.irType(in: builder) },
+				 isVarArg: params.isVarArg,
+				 capturedTypes: captures.map { $0.binding.type.irType(in: builder) }
+			 )
+
+			if captures.isEmpty {
+				return fnType
+			}
+
+			return LLVM.ClosureType(functionType: fnType, captureTypes: captures.map { $0.binding.type.irType(in: builder) })
 		case let .struct(type):
 			return type.toLLVM(in: builder)
 		case .none:

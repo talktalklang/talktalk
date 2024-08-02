@@ -66,40 +66,50 @@ struct CompilerTests {
 
 	@Test("Compiles functions") func functions() {
 		#expect(Compiler("""
-		addtwo = func(x) {
+		func(x) {
 			x + 2
-		}
-		addtwo(2)
+		}(2)
 		""", verbose: true).run() == .int(4))
+	}
+
+	@Test("Compiles closures") func closures() {
+		#expect(Compiler("""
+		i = 1
+		func(x) {
+			i + x
+		}(2)
+		""", verbose: true).run() == .int(3))
 	}
 
 	@Test("Compiles counter") func counter() {
 		#expect(Compiler("""
-		makeCounter = func() {
+		makeCounter = func makeCounter() {
 			count = 0
-			func() {
+			func counter() {
 				count = count + 1
 				count
 			}
 		}
 
-		counter = makeCounter()
-		counter()
-		counter()
-		""").run() == .int(2))
+		thecounter = makeCounter()
+		thecounter()
+		thecounter()
+		""", verbose: true).run() == .int(2))
 	}
 
 	@Test("Compiles nested scopes") func nestedScopes() {
 		#expect(Compiler("""
-		addthis = func(x) {
-			func(y) {
+		addthis = func addthis(x) {
+			func inner(y) {
 				x + y
 			}
 		}
 
 		addfour = addthis(4)
 		addfour(2)
-		""").run() == .int(6))
+		""", verbose: true).run() == .int(6))
+//		addfour = addthis(4)
+//		addfour(2)
 	}
 
 	@Test("Works with printf") func printTest() {
@@ -170,6 +180,17 @@ struct CompilerTests {
 		foo = Foo()
 		foo.one() + foo.two() + foo.three()
 		""", verbose: true).run() == .int(6))
+	}
+
+	@Test("Compiles returns") func returns() {
+		#expect(Compiler("""
+		func returning() {
+			return 123
+			456
+		}
+
+		returning()
+		""", verbose: true).run() == .int(123))
 	}
 
 	// helpers

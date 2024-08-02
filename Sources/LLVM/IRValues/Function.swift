@@ -12,7 +12,7 @@ public extension LLVM {
 		public typealias T = FunctionType
 		public let type: FunctionType
 
-		public init(type: FunctionType, captures _: CapturesStruct?) {
+		public init(type: FunctionType) {
 			self.type = type
 		}
 
