@@ -14,6 +14,7 @@ public struct Value: Equatable, Hashable {
 		case pointer = 2
 		case data = 3
 		case none = 4
+		case closure = 5
 	}
 
 	public static var none: Value {
@@ -30,6 +31,10 @@ public struct Value: Equatable, Hashable {
 
 	public static func data(_ offset: UInt64) -> Value {
 		Value(data: offset)
+	}
+
+	public static func closure(_ id: Byte) -> Value {
+		Value(closureID: UInt64(id))
 	}
 
 	var tag: Tag {
@@ -56,9 +61,18 @@ public struct Value: Equatable, Hashable {
 		storage |= (data &<< 4) | UInt64(Tag.data.rawValue)
 	}
 
+	public init(closureID: UInt64) {
+		storage = 0
+		storage |= (closureID &<< 4) | UInt64(Tag.closure.rawValue)
+	}
+
 	public init() {
 		storage = 0
 		storage |= UInt64(Tag.none.rawValue)
+	}
+
+	public var isCallable: Bool {
+		tag == .closure
 	}
 
 	public var intValue: Int64? {
@@ -80,6 +94,11 @@ public struct Value: Equatable, Hashable {
 		guard tag == .data else { return nil }
 		return storage &>> 4
 	}
+
+	public var closureValue: UInt64? {
+		guard tag == .closure else { return nil }
+		return storage &>> 4
+	}
 }
 
 public extension Value {
@@ -99,6 +118,8 @@ extension Value: CustomStringConvertible {
 			".pointer(\(pointerValue!))"
 		case .data:
 			".data(\(dataValue!))"
+		case .closure:
+			"closure"
 		case .none:
 			"none"
 		}

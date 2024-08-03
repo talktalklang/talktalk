@@ -7,9 +7,9 @@
 
 public struct Disassembler {
 	var current = 0
-	let chunk: StaticChunk
+	let chunk: Chunk
 
-	public init(chunk: StaticChunk) {
+	public init(chunk: Chunk) {
 		self.chunk = chunk
 	}
 
@@ -37,6 +37,8 @@ public struct Disassembler {
 		switch opcode {
 		case .constant:
 			return constantInstruction(start: index)
+		case .defClosure:
+			return defClosureInstruction(start: index)
 		case .jump, .jumpUnless:
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
@@ -68,5 +70,12 @@ public struct Disassembler {
 		let slot = chunk.code[current++]
 		let metadata = LocalMetadata(slot: slot)
 		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
+	}
+
+	mutating func defClosureInstruction(start: Int) -> Instruction {
+		let closureSlot = chunk.code[current++]
+		let subchunk = chunk.subchunks[Int(closureSlot)]
+		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalueCount: 0)
+		return Instruction(opcode: .defClosure, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 }

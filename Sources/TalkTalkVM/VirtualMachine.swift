@@ -7,7 +7,11 @@
 
 import TalkTalkBytecode
 
-struct CallFrame {}
+struct CallFrame {
+	var ip: UInt64 = 0
+	var chunk: Chunk
+	var returnTo: UInt64
+}
 
 public struct VirtualMachine: ~Copyable {
 	public enum ExecutionResult {
@@ -22,26 +26,55 @@ public struct VirtualMachine: ~Copyable {
 		}
 	}
 
-	var ip: UInt64 = 0
+	var ip: UInt64 {
+		get {
+			currentFrame.ip
+		}
+
+		set {
+			currentFrame.ip = newValue
+		}
+	}
 
 	// The code to run
-	var chunk: StaticChunk
+	var chunk: Chunk {
+		get {
+			currentFrame.chunk
+		}
+
+		set {
+			currentFrame.chunk = newValue
+		}
+	}
 
 	// The frames stack
 	var frames: Stack<CallFrame>
 
+	// The current call frame
+	var currentFrame: CallFrame {
+		get {
+			frames.peek()
+		}
+
+		set {
+			frames[frames.size-1] = newValue
+		}
+	}
+
 	// The stack
 	var stack: Stack<Value>
 
-	public static func run(chunk: consuming StaticChunk) -> ExecutionResult {
+	public static func run(chunk: Chunk) -> ExecutionResult {
 		var vm = VirtualMachine(chunk: chunk)
 		return vm.run()
 	}
 
-	public init(chunk: consuming StaticChunk) {
-		self.chunk = chunk
-		self.frames = Stack<CallFrame>(capacity: 256)
+	public init(chunk: Chunk) {
 		self.stack = Stack<Value>(capacity: 256)
+		self.frames = Stack<CallFrame>(capacity: 256)
+
+		let frame = CallFrame(chunk: chunk, returnTo: 0)
+		self.frames.push(frame)
 	}
 
 	mutating public func run() -> ExecutionResult {
@@ -54,7 +87,11 @@ public struct VirtualMachine: ~Copyable {
 
 			switch opcode {
 			case .return:
-				return .ok(stack.pop())
+				frames.pop()
+
+				if frames.size == 0 {
+					return .ok(stack.pop())
+				}
 			case .constant:
 				let value = readConstant()
 				stack.push(value)
@@ -150,10 +187,34 @@ public struct VirtualMachine: ~Copyable {
 			case .setLocal:
 				let slot = readByte()
 				stack[Int(slot)] = stack.peek()
+			case .defClosure:
+				// TODO: Capture closure values
+				let slot = readByte()
+				stack.push(.closure(slot))
+			case .call:
+				let callee = stack.pop()
+				if callee.isCallable {
+					call(callee)
+				} else {
+					return runtimeError("\(callee) is not callable")
+				}
 			case .jumpPlaceholder:
 				()
 			}
 		}
+	}
+
+	mutating func call(_ callee: Value) {
+		if let chunkID = callee.closureValue {
+			call(closureID: Int(chunkID))
+		}
+	}
+
+	mutating func call(closureID: Int) {
+		let chunk = chunk.subchunks[closureID]
+		let frame = CallFrame(chunk: chunk, returnTo: ip)
+
+		frames.push(frame)
 	}
 
 	mutating func readConstant() -> Value {

@@ -20,29 +20,35 @@ public class Chunk {
 	// Tracks the code array so we can output line numbers when disassambling
 	public var lines: [UInt32] = []
 
+	// How many arguments should this chunk expect
+	public var arity: Byte = 0
+	public var depth: Byte = 0
+	public var parent: Chunk?
+	public var subchunks: [Chunk] = []
+
 	// Tracks local variable slots
 	public var localsTable: [String: Byte] = [:]
 
 	public init() {}
 
-	public init(staticChunk: StaticChunk) {
-		self.code = staticChunk.code
-		self.constants = staticChunk.constants
-		self.data = staticChunk.data
-		self.lines = staticChunk.lines
+	public init(parent: Chunk, arity: Byte, depth: Byte) {
+		self.parent = parent
+		self.arity = arity
+		self.depth = depth
 	}
 
 	public func disassemble() -> [Instruction] {
-		return StaticChunk(self).disassemble()
+		var disassembler = Disassembler(chunk: self)
+		return disassembler.disassemble()
 	}
 
 	public func dump() {
-		StaticChunk(self).dump()
+		print(disassemble().map(\.description).joined(separator: "\n"))
 	}
 
-	public func finalize() -> StaticChunk {
+	public func finalize() -> Chunk {
 		write(.return, line: 0)
-		return StaticChunk(code: code, constants: constants, data: data, lines: lines)
+		return self
 	}
 
 	public func emit(jump opcode: Opcode, line: UInt32) -> Int {
@@ -75,6 +81,12 @@ public class Chunk {
 
 	public func emit(opcode: Opcode, line: UInt32) {
 		write(byte: opcode.byte, line: line)
+	}
+
+	public func emitClosure(subchunkID: Byte, name: String?, arity: Byte, upvalueCount: Byte, line: UInt32) {
+		// Emit the opcode to define a closure
+		write(.defClosure, line: line)
+		write(byte: subchunkID, line: line)
 	}
 
 	public func emit(opcode: Opcode, local name: String, line: UInt32) {

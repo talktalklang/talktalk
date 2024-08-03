@@ -12,7 +12,7 @@ import TalkTalkSyntax
 import Testing
 
 struct CompilerTests {
-	func compile(_ string: String) -> StaticChunk {
+	func compile(_ string: String) -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)
 		var compiler = Compiler(analyzedExprs: analyzed)
@@ -49,10 +49,10 @@ struct CompilerTests {
 	}
 
 	@Test("Static string") func staticString() {
-		let chunk = Chunk(staticChunk: compile("""
+		let chunk = compile("""
 		"hello "
 		"world"
-		"""))
+		""")
 
 		var string1 = "hello ".utf8CString
 		let pointer1 = string1.withUnsafeMutableBufferPointer { $0 }
@@ -134,6 +134,42 @@ struct CompilerTests {
 
 			// return the result
 			Instruction(opcode: .return, line: 0, offset: 5, metadata: .simple)
+		])
+	}
+
+	@Test("Func expr") func funcExpr() {
+		let chunk = compile("""
+		func() {
+			123
+		}
+		""")
+
+		let subchunk = chunk.subchunks[0]
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .defClosure, line: 1, offset: 0, metadata: .closure(arity: 0, depth: 0)),
+			Instruction(opcode: .return, line: 0, offset: 2, metadata: .simple)
+		])
+
+		#expect(subchunk.disassemble() == [
+			Instruction(opcode: .constant, line: 2, offset: 0, metadata: .constant(.int(123))),
+			Instruction(opcode: .return, line: 3, offset: 2, metadata: .simple)
+		])
+	}
+
+	@Test("Call expr") func callExpr() {
+		let chunk = compile("""
+		func() {
+			123
+		}()
+		""")
+
+		chunk.dump()
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .defClosure, line: 1, offset: 0, metadata: .closure(arity: 0, depth: 0)),
+			Instruction(opcode: .call, line: 3, offset: 2, metadata: .simple),
+			Instruction(opcode: .return, line: 0, offset: 3, metadata: .simple),
 		])
 	}
 }

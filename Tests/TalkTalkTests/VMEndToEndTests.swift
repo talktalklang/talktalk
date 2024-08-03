@@ -13,7 +13,7 @@ import TalkTalkCompiler
 import TalkTalkVM
 
 struct VMEndToEndTests {
-	func compile(_ string: String) -> StaticChunk {
+	func compile(_ string: String) -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)
 		var compiler = Compiler(analyzedExprs: analyzed)
@@ -83,7 +83,26 @@ struct VMEndToEndTests {
 		#expect(run("""
 		a = 10
 		b = 20
-		a + b
+		a = a + b
+		a
+		""") == .int(30))
+	}
+
+	@Test("Basic func/call expr") func funcExpr() {
+		#expect(run("""
+		i = func() {
+			123
+		}()
+
+		i + 1
+		""") == .int(124))
+	}
+
+	@Test("Func arguments") func funcArgs() {
+		#expect(run("""
+		func(i) {
+			i + 20
+		}(10)
 		""") == .int(30))
 	}
 }

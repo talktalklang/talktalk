@@ -13,8 +13,14 @@ public enum Opcode: Byte {
 			 negate,
 			 not,
 
+			 // Callables
+			 call,
+
 			 // Stack operations
 			 pop,
+
+			 // Functions
+			 defClosure,
 
 			 // Local variables
 			 setLocal,

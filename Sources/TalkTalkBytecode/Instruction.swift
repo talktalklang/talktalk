@@ -137,3 +137,26 @@ public extension InstructionMetadata where Self == LocalMetadata {
 		LocalMetadata(slot: slot)
 	}
 }
+
+public struct ClosureMetadata: InstructionMetadata {
+	let name: String?
+	let arity: Byte
+	let depth: Byte
+	let upvalueCount: Byte
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+	
+	public var description: String {
+		var result = if let name { "name: \(name) " } else { "" }
+		result +=	"arity: \(arity) depth: \(depth) upvalueCount: \(upvalueCount)"
+		return result
+	}
+}
+
+public extension InstructionMetadata where Self == ClosureMetadata {
+	static func closure(name: String? = nil, arity: Byte, depth: Byte, upvalueCount: Byte = 0) -> ClosureMetadata {
+		ClosureMetadata(name: name, arity: arity, depth: depth, upvalueCount: upvalueCount)
+	}
+}

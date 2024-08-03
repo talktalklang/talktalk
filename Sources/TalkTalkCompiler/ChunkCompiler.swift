@@ -8,10 +8,20 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 
-public struct CompilerVisitor: AnalyzedVisitor {
+public struct ChunkCompiler: AnalyzedVisitor {
 	public typealias Value = Void
 
-	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {}
+	var scopeDepth = 0
+
+	// MARK: Visitor methods
+
+	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
+		// Put the callee on the stack
+		try expr.calleeAnalyzed.accept(self, chunk)
+
+		// Call the callee
+		chunk.emit(opcode: .call, line: expr.location.line)
+	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {
 		// Put the value onto the stack
@@ -20,7 +30,9 @@ public struct CompilerVisitor: AnalyzedVisitor {
 		chunk.emit(opcode: .setLocal, local: expr.name.lexeme, line: expr.location.line)
 	}
 
-	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {
+		fatalError("unreachable")
+	}
 
 	public func visit(_ expr: AnalyzedUnaryExpr, _ chunk: Chunk) throws {
 		try expr.exprAnalyzed.accept(self, chunk)
@@ -110,7 +122,31 @@ public struct CompilerVisitor: AnalyzedVisitor {
 		try chunk.patchJump(elseJump)
 	}
 
-	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
+		let functionChunk = Chunk(parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
+		let functionCompiler = ChunkCompiler(scopeDepth: scopeDepth + 1)
+
+		// Define the params for this function
+		for parameter in expr.analyzedParams.paramsAnalyzed {
+			functionChunk.emit(opcode: .setLocal, local: parameter.name, line: parameter.location.line)
+		}
+
+		for expr in expr.bodyAnalyzed.exprsAnalyzed {
+			try expr.accept(functionCompiler, functionChunk)
+		}
+
+		functionChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
+
+		let subchunkID = Byte(chunk.subchunks.count)
+		chunk.subchunks.append(functionChunk)
+		chunk.emitClosure(
+			subchunkID: subchunkID,
+			name: expr.name,
+			arity: Byte(expr.params.params.count),
+			upvalueCount: 0,
+			line: expr.location.line
+		)
+	}
 
 	public func visit(_ expr: AnalyzedBlockExpr, _ chunk: Chunk) throws {
 		for expr in expr.exprsAnalyzed {

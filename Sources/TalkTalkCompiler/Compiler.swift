@@ -18,8 +18,8 @@ public struct Compiler {
 		self.chunk = Chunk()
 	}
 
-	public mutating func compile() throws -> StaticChunk {
-		let visitor = CompilerVisitor()
+	public mutating func compile() throws -> Chunk {
+		let visitor = ChunkCompiler()
 
 		for expr in analyzedExprs {
 			try expr.accept(visitor, chunk)
