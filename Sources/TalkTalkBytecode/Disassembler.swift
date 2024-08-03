@@ -7,9 +7,9 @@
 
 public struct Disassembler {
 	var current = 0
-	let chunk: Chunk
+	let chunk: StaticChunk
 
-	public init(chunk: Chunk) {
+	public init(chunk: StaticChunk) {
 		self.chunk = chunk
 	}
 
@@ -37,6 +37,8 @@ public struct Disassembler {
 		switch opcode {
 		case .constant:
 			return constantInstruction(start: index)
+		case .jump, .jumpUnless:
+			return jumpInstruction(opcode: opcode, start: index)
 		default:
 			return Instruction(opcode: opcode, line: chunk.lines[index], offset: index, metadata: .simple)
 		}
@@ -47,5 +49,16 @@ public struct Disassembler {
 		let value = chunk.constants[Int(constant)]
 		let metadata = ConstantMetadata(value: value)
 		return Instruction(opcode: .constant, line: chunk.lines[start], offset: current, metadata: metadata)
+	}
+
+	mutating func jumpInstruction(opcode: Opcode, start: Int) -> Instruction {
+		let placeholderA = chunk.code[current++]
+		let placehodlerB = chunk.code[current++]
+
+		// Get the jump distance as a UIn16 from two bytes
+		var jump = Int(placeholderA << 8)
+		jump |= Int(placehodlerB)
+
+		return Instruction(opcode: opcode, line: chunk.lines[start], offset: current, metadata: .jump(offset: jump))
 	}
 }

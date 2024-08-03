@@ -137,6 +137,17 @@ public struct VirtualMachine: ~Copyable {
 			case .data:
 				let offset = stack.pop()
 				stack.push(offset)
+			case .pop:
+				stack.pop()
+			case .jump:
+				self.ip += readUInt16()
+			case .jumpUnless:
+				let jump = readUInt16()
+				if stack.peek() == .bool(false) {
+					self.ip += jump
+				}
+			case .jumpPlaceholder:
+				()
 			}
 		}
 	}
@@ -147,6 +158,12 @@ public struct VirtualMachine: ~Copyable {
 
 	mutating func readByte() -> Byte {
 		chunk.code[Int(ip++)]
+	}
+
+	mutating func readUInt16() -> UInt64 {
+		var jump = UInt64(readByte() << 8)
+		jump |= UInt64(readByte())
+		return jump
 	}
 
 	func runtimeError(_ message: String) -> ExecutionResult {

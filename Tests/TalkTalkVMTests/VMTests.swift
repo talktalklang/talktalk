@@ -35,8 +35,8 @@ struct VMTests {
 			Instruction(opcode: .add, line: 1, offset: 4, metadata: .simple)
 		])
 
-		let result = VirtualMachine.run(chunk: chunk)
-		#expect(result.get() == .int(30))
+		let result = VirtualMachine.run(chunk: chunk).get()
+		#expect(result == .int(30))
 	}
 
 	@Test func subtract() {

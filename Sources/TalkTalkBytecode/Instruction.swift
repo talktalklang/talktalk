@@ -101,3 +101,21 @@ public extension InstructionMetadata where Self == ConstantMetadata {
 		ConstantMetadata(value: value)
 	}
 }
+
+public struct JumpMetadata: InstructionMetadata {
+	let offset: Int
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		// TODO
+	}
+	
+	public var description: String {
+		"to: \(offset)"
+	}
+}
+
+public extension InstructionMetadata where Self == JumpMetadata {
+	static func jump(offset: Int) -> JumpMetadata {
+		JumpMetadata(offset: offset)
+	}
+}

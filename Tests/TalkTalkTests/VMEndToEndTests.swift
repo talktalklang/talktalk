@@ -68,4 +68,14 @@ struct VMEndToEndTests {
 	@Test("Strings") func strings() {
 		#expect(run(#""hello world""#) == .data(0))
 	}
+
+	@Test("If expr") func ifExpr() {
+		#expect(run("""
+		if false {
+			123
+		} else {
+			456
+		}
+		""") == .int(456))
+	}
 }

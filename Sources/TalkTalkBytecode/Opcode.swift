@@ -13,20 +13,37 @@ public enum Opcode: Byte {
 			 negate,
 			 not,
 
+			 // Stack operations
+			 pop,
+
 			 // Literals
-			 `true`, `false`, none,
+			 `true`,
+			 `false`,
+			 none,
 
 			 // Static data
 			 data,
 
 			 // Equality
-			 equal, notEqual,
+			 equal,
+			 notEqual,
+
+			 // Jumps
+			 jump,
+			 jumpUnless,
+			 jumpPlaceholder,
 
 			 // Comparisons
-			 less, greater, lessEqual, greaterEqual,
+			 less,
+			 greater,
+			 lessEqual,
+			 greaterEqual,
 
 			 // Binary operations
-			 add, subtract, divide, multiply
+			 add,
+			 subtract,
+			 divide,
+			 multiply
 }
 
 extension Opcode {

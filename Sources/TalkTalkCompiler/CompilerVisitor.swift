@@ -68,11 +68,44 @@ public struct CompilerVisitor: AnalyzedVisitor {
 		chunk.emit(opcode: opcode, line: expr.location.line)
 	}
 
-	public func visit(_ expr: AnalyzedIfExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedIfExpr, _ chunk: Chunk) throws {
+		// Emit the condition
+		try expr.conditionAnalyzed.accept(self, chunk)
+
+		// Emit the jumpUnless opcode, and keep track of where we are in the code. We need this location
+		// so we can go back and patch the locations after emitting the else stuff.
+		let thenJumpLocation = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
+
+		// Pop the condition off the stack
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+
+		// Emit the consequence block
+		try expr.consequenceAnalyzed.accept(self, chunk)
+
+		// Emit the else jump, right after the consequence block. This is where we'll skip to if the condition
+		// is false. If the condition was true, once the consequence block was evaluated, we'll jump to past
+		// the alternative block.
+		let elseJump = chunk.emit(jump: .jump, line: expr.alternativeAnalyzed.location.line)
+
+		// Fill in the initial placeholder bytes now that we know how big the consequence block was
+		try chunk.patchJump(thenJumpLocation)
+		// Pop the condition off the stack (TODO: why again?)
+		chunk.emit(opcode: .pop, line: expr.conditionAnalyzed.location.line)
+
+		// Emit the alternative block
+		try expr.alternativeAnalyzed.accept(self, chunk)
+
+		// Fill in the else jump so we know how far to skip if the condition was true
+		try chunk.patchJump(elseJump)
+	}
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {}
 
-	public func visit(_ expr: AnalyzedBlockExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedBlockExpr, _ chunk: Chunk) throws {
+		for expr in expr.exprsAnalyzed {
+			try expr.accept(self, chunk)
+		}
+	}
 
 	public func visit(_ expr: AnalyzedWhileExpr, _ chunk: Chunk) throws {}
 
