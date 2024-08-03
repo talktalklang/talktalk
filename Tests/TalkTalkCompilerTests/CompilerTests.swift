@@ -172,4 +172,36 @@ struct CompilerTests {
 			Instruction(opcode: .return, line: 0, offset: 3, metadata: .simple),
 		])
 	}
+
+	@Test("Non-capturing upvalue") func upvalue() {
+		let chunk = compile("""
+		a = 123
+		b = 456
+		func() {
+			a
+			b
+		}
+		""")
+
+		let result = chunk.disassemble()
+		let expected = [
+			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0)),
+			Instruction(opcode: .constant, line: 2, offset: 4, metadata: .constant(.int(456))),
+			Instruction(opcode: .setLocal, line: 2, offset: 6, metadata: .local(slot: 1)),
+			Instruction(opcode: .defClosure, line: 3, offset: 8, metadata: .closure(arity: 0, depth: 0)),
+			Instruction(opcode: .return, line: 0, offset: 10, metadata: .simple),
+		]
+
+		#expect(result == expected)
+
+		let subchunk = chunk.subchunks[0]
+		let subexpected = [
+			Instruction(opcode: .getUpvalue, line: 4, offset: 0, metadata: .upvalue(slot: 0)),
+			Instruction(opcode: .getUpvalue, line: 5, offset: 2, metadata: .upvalue(slot: 1)),
+			Instruction(opcode: .return, line: 6, offset: 6, metadata: .simple),
+		]
+
+		#expect(subchunk.disassemble() == subexpected)
+	}
 }

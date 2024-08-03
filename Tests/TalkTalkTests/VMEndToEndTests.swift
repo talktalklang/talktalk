@@ -105,4 +105,15 @@ struct VMEndToEndTests {
 		}(10)
 		""") == .int(30))
 	}
+
+	@Test("Get var from enlosing scope") func enclosing() {
+		#expect(run("""
+		a = 10
+		b = 20
+		func() {
+			c = 30
+			a + b + c
+		}()
+		""") == .int(60))
+	}
 }

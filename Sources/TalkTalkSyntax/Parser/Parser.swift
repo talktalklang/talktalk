@@ -85,10 +85,10 @@ public struct Parser {
 	}
 
 	mutating func parameterList() -> ParamsExpr {
-		startLocation(at: previous)
+		let i = startLocation(at: previous)
 
 		if didMatch(.rightParen) {
-			return ParamsExprSyntax(params: [], location: endLocation())
+			return ParamsExprSyntax(params: [], location: endLocation(i))
 		}
 
 		var params: [Token] = []
@@ -107,7 +107,7 @@ public struct Parser {
 
 		return ParamsExprSyntax(
 			params: params.map { ParamSyntax(name: $0.lexeme, location: [$0]) },
-			location: endLocation()
+			location: endLocation(i)
 		)
 	}
 
@@ -208,14 +208,20 @@ public struct Parser {
 		return SyntaxError(location: [at], message: message)
 	}
 
-	mutating func startLocation(at token: Token? = nil) {
-		locationStack.push(token ?? current)
+	mutating func startLocation(at token: Token? = nil) -> Int {
+		defer {
+			locationStack.push(token ?? current)
+		}
+
+		return locationStack.locations.count
 	}
 
-	mutating func endLocation() -> SourceLocation {
+	mutating func endLocation(_ stackSize: Int) -> SourceLocation {
 		guard let start = locationStack.pop() else {
 			fatalError("Did not start location!")
 		}
+
+		assert(locationStack.locations.count == stackSize, "Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
 
 		return SourceLocation(start: start, end: current)
 	}

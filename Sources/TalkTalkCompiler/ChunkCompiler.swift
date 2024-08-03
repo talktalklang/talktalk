@@ -8,14 +8,37 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 
-public struct ChunkCompiler: AnalyzedVisitor {
+public class ChunkCompiler: AnalyzedVisitor {
 	public typealias Value = Void
 
-	var scopeDepth = 0
+	// Tracks how deep we are in frames
+	let scopeDepth: Int
+
+	// If this is a subchunk it has a parent compiler. We use this to resolve upvalues
+	public var parent: ChunkCompiler?
+
+	// Tracks local variable slots
+	public var localsTable: [String: Byte] = [:]
+
+	// Tracks which locals have been captured
+	public var captures: [String] = []
+
+	// Tracks how many upvalues we currently have
+	public var upvalues: [(index: Byte, isLocal: Bool)] = []
+
+	public init(scopeDepth: Int = 0, parent: ChunkCompiler? = nil) {
+		self.scopeDepth = scopeDepth
+		self.parent = parent
+	}
 
 	// MARK: Visitor methods
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
+		// Put the function args on the stack
+		for arg in expr.argsAnalyzed {
+			try arg.expr.accept(self, chunk)
+		}
+
 		// Put the callee on the stack
 		try expr.calleeAnalyzed.accept(self, chunk)
 
@@ -27,7 +50,12 @@ public struct ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
-		chunk.emit(opcode: .setLocal, local: expr.name.lexeme, line: expr.location.line)
+		let name = expr.name.lexeme
+		let local = localsTable[name, default: Byte(localsTable.count)]
+		localsTable[name] = local
+
+		chunk.emit(opcode: .setLocal, line: expr.location.line)
+		chunk.emit(byte: local, line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {
@@ -64,11 +92,12 @@ public struct ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedVarExpr, _ chunk: Chunk) throws {
-		guard chunk.localsTable[expr.name] != nil else {
+		guard let (opcode, slot) = resolveVariable(named: expr.name) else {
 			throw CompilerError.unknownLocal(expr.name)
 		}
 
-		chunk.emit(opcode: .getLocal, local: expr.name, line: expr.location.line)
+		chunk.emit(opcode: opcode, line: expr.location.line)
+		chunk.emit(byte: slot, line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedBinaryExpr, _ chunk: Chunk) throws {
@@ -124,11 +153,12 @@ public struct ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
 		let functionChunk = Chunk(parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
-		let functionCompiler = ChunkCompiler(scopeDepth: scopeDepth + 1)
+		let functionCompiler = ChunkCompiler(scopeDepth: scopeDepth + 1, parent: self)
 
 		// Define the params for this function
-		for parameter in expr.analyzedParams.paramsAnalyzed {
-			functionChunk.emit(opcode: .setLocal, local: parameter.name, line: parameter.location.line)
+		for (i, parameter) in expr.analyzedParams.paramsAnalyzed.enumerated() {
+			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
+			functionChunk.emit(byte: Byte(i), line: parameter.location.line)
 		}
 
 		for expr in expr.bodyAnalyzed.exprsAnalyzed {
@@ -169,4 +199,68 @@ public struct ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {}
 
 	public func visit(_ expr: AnalyzedLetDecl, _ chunk: Chunk) throws {}
+
+	// MARK: Helpers
+
+	// Lookup the variable by name. If we've got it in our locals, just return the slot
+	// for that variable. If we don't, search parent chunks to see if they've got it. If
+	// they do, we've got an upvalue.
+	public func resolveVariable(named name: String) -> (Opcode, Byte)? {
+		if let slot = resolveLocal(named: name) {
+			return (.getLocal, slot)
+		}
+
+		if let slot = resolveUpvalue(named: name) {
+			return (.getUpvalue, slot)
+		}
+
+		return nil
+	}
+
+	// Just look up the var in our locals
+	public func resolveLocal(named name: String) -> Byte? {
+		localsTable[name]
+	}
+
+	// Search parent chunks for the variable
+	private func resolveUpvalue(named name: String) -> Byte? {
+		guard let parent else { return nil }
+
+		// If our immediate parent has the variable, we return an upvalue.
+		if let local = parent.resolveLocal(named: name) {
+			// Since it's in the immediate parent, we mark the upvalue as captured.
+			parent.captures.append(name)
+			return addUpvalue(local, isLocal: true)
+		}
+
+		// Check for upvalues in the parent. We don't need to mark the upvalue where it's found
+		// as captured since the immediate child of the owning scope will handle that in its
+		// resolveUpvalue call.
+		if let local = parent.resolveUpvalue(named: name) {
+			return addUpvalue(local, isLocal: false)
+		}
+
+		return nil
+	}
+
+	private func addUpvalue(_ index: Byte, isLocal: Bool) -> Byte {
+//		for (int i = 0; i < upvalueCount; i++) {
+//			Upvalue* upvalue = &compiler->upvalues[i];
+//			if (upvalue->index == index && upvalue->isLocal == isLocal) {
+//				return i;
+//			}
+//		}
+
+		// If we've already got it, return it
+		for (i, upvalue) in upvalues.enumerated() {
+			if upvalue.index == index, upvalue.isLocal {
+				return Byte(i)
+			}
+		}
+
+		// Otherwise add a new one
+		upvalues.append((index: index, isLocal: isLocal))
+
+		return Byte(upvalues.count)
+	}
 }

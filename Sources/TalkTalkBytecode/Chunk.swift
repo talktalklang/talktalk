@@ -24,10 +24,8 @@ public class Chunk {
 	public var arity: Byte = 0
 	public var depth: Byte = 0
 	public var parent: Chunk?
+	public var upvalueCount: Byte = 0
 	public var subchunks: [Chunk] = []
-
-	// Tracks local variable slots
-	public var localsTable: [String: Byte] = [:]
 
 	public init() {}
 
@@ -83,18 +81,14 @@ public class Chunk {
 		write(byte: opcode.byte, line: line)
 	}
 
+	public func emit(byte: Byte, line: UInt32) {
+		write(byte: byte, line: line)
+	}
+
 	public func emitClosure(subchunkID: Byte, name: String?, arity: Byte, upvalueCount: Byte, line: UInt32) {
 		// Emit the opcode to define a closure
 		write(.defClosure, line: line)
 		write(byte: subchunkID, line: line)
-	}
-
-	public func emit(opcode: Opcode, local name: String, line: UInt32) {
-		let local = localsTable[name, default: Byte(localsTable.count)]
-		localsTable[name] = local
-
-		write(opcode, line: line)
-		write(byte: local, line: line)
 	}
 
 	public func emit(constant value: Value, line: UInt32) {

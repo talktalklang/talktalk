@@ -43,6 +43,8 @@ public struct Disassembler {
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
 			return localInstruction(opcode: opcode, start: index)
+		case .getUpvalue:
+			return upvalueInstruction(opcode: opcode, start: index)
 		default:
 			return Instruction(opcode: opcode, line: chunk.lines[index], offset: index, metadata: .simple)
 		}
@@ -77,5 +79,11 @@ public struct Disassembler {
 		let subchunk = chunk.subchunks[Int(closureSlot)]
 		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalueCount: 0)
 		return Instruction(opcode: .defClosure, line: chunk.lines[start], offset: start, metadata: metadata)
+	}
+
+	mutating func upvalueInstruction(opcode: Opcode, start: Int) -> Instruction {
+		let slot = chunk.code[current++]
+		let metadata = UpvalueMetadata(slot: slot)
+		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 }

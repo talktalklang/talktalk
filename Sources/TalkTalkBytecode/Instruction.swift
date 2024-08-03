@@ -160,3 +160,21 @@ public extension InstructionMetadata where Self == ClosureMetadata {
 		ClosureMetadata(name: name, arity: arity, depth: depth, upvalueCount: upvalueCount)
 	}
 }
+
+public struct UpvalueMetadata: InstructionMetadata {
+	public let slot: Byte
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+
+	public var description: String {
+		"local: \(slot)"
+	}
+}
+
+public extension InstructionMetadata where Self == UpvalueMetadata {
+	static func upvalue(slot: Byte) -> UpvalueMetadata {
+		UpvalueMetadata(slot: slot)
+	}
+}

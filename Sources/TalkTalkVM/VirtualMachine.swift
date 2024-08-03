@@ -187,6 +187,9 @@ public struct VirtualMachine: ~Copyable {
 			case .setLocal:
 				let slot = readByte()
 				stack[Int(slot)] = stack.peek()
+			case .getUpvalue:
+				let slot = readByte()
+				
 			case .defClosure:
 				// TODO: Capture closure values
 				let slot = readByte()
@@ -211,6 +214,7 @@ public struct VirtualMachine: ~Copyable {
 	}
 
 	mutating func call(closureID: Int) {
+		// Find the called chunk from the closure id
 		let chunk = chunk.subchunks[closureID]
 		let frame = CallFrame(chunk: chunk, returnTo: ip)
 

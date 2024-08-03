@@ -51,17 +51,17 @@ extension Parser {
 	// MARK: Nonary/Unary ops
 
 	mutating func unary(_: Bool) -> any Expr {
-		startLocation()
+		let i = startLocation()
 		advance()
 
 		let op = previous!
 		let expr = parse(precedence: .unary)
 
-		return UnaryExprSyntax(op: op.kind, expr: expr, location: endLocation())
+		return UnaryExprSyntax(op: op.kind, expr: expr, location: endLocation(i))
 	}
 
 	mutating func ifExpr(_: Bool) -> any Expr {
-		startLocation()
+		let i = startLocation()
 
 		_ = consume(.if)
 
@@ -84,12 +84,12 @@ extension Parser {
 			condition: condition,
 			consequence: consequence,
 			alternative: alternative,
-			location: endLocation()
+			location: endLocation(i)
 		)
 	}
 
 	mutating func funcExpr() -> FuncExprSyntax {
-		startLocation(at: previous)
+		let i = startLocation(at: previous)
 
 		// Grab the name if there is one
 		let name: Token? = match(.identifier)
@@ -105,7 +105,7 @@ extension Parser {
 
 		let body = blockExpr(false)
 
-		return FuncExprSyntax(params: params, body: body, i: lexer.current, name: name?.lexeme, location: endLocation())
+		return FuncExprSyntax(params: params, body: body, i: lexer.current, name: name?.lexeme, location: endLocation(i))
 	}
 
 	mutating func literal(_: Bool) -> any Expr {
@@ -134,7 +134,7 @@ extension Parser {
 	}
 
 	mutating func whileExpr(_ canAssign: Bool) -> any Expr {
-		startLocation()
+		let i = startLocation()
 
 		consume(.while)
 		skip(.newline)
@@ -142,31 +142,31 @@ extension Parser {
 		let condition = parse(precedence: .assignment)
 		let body = blockExpr(canAssign)
 
-		return WhileExprSyntax(condition: condition, body: body, location: endLocation())
+		return WhileExprSyntax(condition: condition, body: body, location: endLocation(i))
 	}
 
 	mutating func returning(_ canAssign: Bool) -> any Expr {
-		startLocation()
+		let i = startLocation()
 		consume(.return)
 
 		let value = parse(precedence: .none)
 
-		return ReturnExprSyntax(location: endLocation(), value: value)
+		return ReturnExprSyntax(location: endLocation(i), value: value)
 	}
 
 	mutating func structExpr(_: Bool) -> StructExpr {
 		consume(.struct)
-		startLocation(at: previous)
+		let i = startLocation(at: previous)
 
 		let name = match(.identifier)
 		let body = declBlock()
 
-		return StructExprSyntax(name: name?.lexeme, body: body, location: endLocation())
+		return StructExprSyntax(name: name?.lexeme, body: body, location: endLocation(i))
 	}
 
 	mutating func blockExpr(_: Bool) -> BlockExprSyntax {
+		let i = startLocation()
 		skip(.newline)
-		startLocation()
 		consume(.leftBrace, "expected '{' before block body")
 		skip(.newline)
 
@@ -178,24 +178,25 @@ extension Parser {
 
 		consume(.rightBrace, "expected '}' after block body")
 
-		return BlockExprSyntax(exprs: body, location: endLocation())
+		return BlockExprSyntax(exprs: body, location: endLocation(i))
 	}
 
 	mutating func variable(_ canAssign: Bool) -> any Expr {
-		startLocation()
+		let i = startLocation()
 
 		guard let token = consume(.identifier) else {
 			return SyntaxError(location: [current], message: "Expected identifier for variable")
 		}
 
-		let lhs = VarExprSyntax(token: token, location: [token])
+		let lhs = VarExprSyntax(token: token, location: endLocation(i))
 
 		if check(.equals), canAssign {
+			let i = startLocation(at: lhs.token)
 			consume(.equals)
 			let rhs = parse(precedence: .assignment)
-			return DefExprSyntax(name: lhs.token, value: rhs, location: endLocation())
+			return DefExprSyntax(name: lhs.token, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
-			return SyntaxError(location: endLocation(), message: "Can't assign")
+			return SyntaxError(location: endLocation(i), message: "Can't assign")
 		}
 
 		return lhs
@@ -204,7 +205,7 @@ extension Parser {
 	// MARK: Binary ops
 
 	mutating func call(_: Bool, _ lhs: any Expr) -> any Expr {
-		startLocation()
+		let i = startLocation()
 
 		consume(.leftParen) // This is how we got here.
 
@@ -226,22 +227,22 @@ extension Parser {
 			consume(.rightParen, "expected ')' after arguments")
 		}
 
-		return CallExprSyntax(callee: lhs, args: args, location: endLocation())
+		return CallExprSyntax(callee: lhs, args: args, location: endLocation(i))
 	}
 
 	mutating func dot(_ : Bool, _ lhs: any Expr) -> any Expr {
-		startLocation(at: previous)
+		let i = startLocation(at: previous)
 		consume(.dot)
 
 		guard let member = consume(.identifier, "expected identifier for property access") else {
 			return error(at: current, "expected identifier for property access")
 		}
 
-		return MemberExprSyntax(receiver: lhs, property: member.lexeme, location: endLocation())
+		return MemberExprSyntax(receiver: lhs, property: member.lexeme, location: endLocation(i))
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
-		startLocation(at: lhs.location.start)
+		let i = startLocation(at: lhs.location.start)
 
 		let op: BinaryOperator = switch current.kind {
 		case .bangEqual: .bangEqual
@@ -260,6 +261,6 @@ extension Parser {
 
 		advance()
 		let rhs = parse(precedence: current.kind.rule.precedence + 1)
-		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: op, location: endLocation())
+		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
 	}
 }
