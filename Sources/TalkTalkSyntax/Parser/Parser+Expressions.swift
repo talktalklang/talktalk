@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
+import Foundation
+
 extension Parser {
 	// The key to our chris pratt parser.
 	mutating func parse(precedence: Precedence) -> any Expr {
@@ -47,6 +49,16 @@ extension Parser {
 	}
 
 	// MARK: Nonary/Unary ops
+
+	mutating func unary(_: Bool) -> any Expr {
+		startLocation()
+		advance()
+
+		let op = previous!
+		let expr = parse(precedence: .unary)
+
+		return UnaryExprSyntax(op: op.kind, expr: expr, location: endLocation())
+	}
 
 	mutating func ifExpr(_: Bool) -> any Expr {
 		startLocation()
@@ -103,6 +115,11 @@ extension Parser {
 
 		if didMatch(.false) {
 			return LiteralExprSyntax(value: .bool(false), location: [previous])
+		}
+
+		if didMatch(.string) {
+			let string = previous.lexeme.split(separator: "")[1..<previous.lexeme.count-1].joined(separator: "")
+			return LiteralExprSyntax(value: .string(string), location: [previous])
 		}
 
 		if didMatch(.int) {

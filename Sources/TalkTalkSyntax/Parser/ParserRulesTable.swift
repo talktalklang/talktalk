@@ -34,6 +34,9 @@ extension Token.Kind {
 		case .leftBrace: .init({ $0.blockExpr($1) }, nil, .none)
 		case .rightBrace: .none
 
+		// unary
+		case .bang: .init({ $0.unary($1) }, nil, .factor)
+
 		// prefix ops
 		case .if: .init({ $0.ifExpr($1) }, nil, .none)
 		case .identifier: .init({ $0.variable($1) }, nil, .none)
@@ -43,7 +46,8 @@ extension Token.Kind {
 		// Binary ops
 		case .equalEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .bangEqual: .init(nil, { $0.binary($1, $2) }, .equality)
-		case .plus, .minus: .init(nil, { $0.binary($1, $2) }, .term)
+		case .plus: .init(nil, { $0.binary($1, $2) }, .term)
+		case .minus: .init({ $0.unary($1) }, { $0.binary($1, $2) }, .term)
 		case .star, .slash: .init(nil, { $0.binary($1, $2) }, .factor)
 		case .less,
 				 .lessEqual,
@@ -58,6 +62,7 @@ extension Token.Kind {
 		case .true: .init({ $0.literal($1) }, nil, .none)
 		case .int: .init({ $0.literal($1) }, nil, .none)
 		case .float: .init({ $0.literal($1) }, nil, .none)
+		case .string: .init({ $0.literal($1) }, nil, .none)
 
 		case .else: .none
 		case .equals: .none
@@ -68,14 +73,12 @@ extension Token.Kind {
 		case .in: .none
 		case .call: .none
 		case .comma: .none
-		case .bang: .none
 		case .builtin: .none
 		case .var: .none
 		case .let: .none
 		case .colon: .none
 		case .self: .none
 		case .Self: .none
-		case .return: .none
 		}
 	}
 }

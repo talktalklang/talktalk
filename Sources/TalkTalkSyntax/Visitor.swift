@@ -13,6 +13,7 @@ public protocol Visitor {
 	func visit(_ expr: DefExpr, _ context: Context) throws -> Value
 	func visit(_ expr: LiteralExpr, _ context: Context) throws -> Value
 	func visit(_ expr: VarExpr, _ context: Context) throws -> Value
+	func visit(_ expr: UnaryExpr, _ context: Context) throws -> Value
 	func visit(_ expr: BinaryExpr, _ context: Context) throws -> Value
 	func visit(_ expr: IfExpr, _ context: Context) throws -> Value
 	func visit(_ expr: WhileExpr, _ context: Context) throws -> Value

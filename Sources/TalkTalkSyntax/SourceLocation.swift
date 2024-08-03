@@ -8,6 +8,10 @@
 public struct SourceLocation {
 	public let start: Token
 	public let end: Token
+
+	public var line: UInt32 {
+		UInt32(start.line)
+	}
 }
 
 extension SourceLocation: ExpressibleByArrayLiteral {

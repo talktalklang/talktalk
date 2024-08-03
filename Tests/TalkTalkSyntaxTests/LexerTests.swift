@@ -36,6 +36,15 @@ struct TalkTalkLexerTests {
 		])
 	}
 
+	@Test("Strings") func strings() throws {
+		var lexer = TalkTalkLexer(#""hello world""#)
+		let tokens = lexer.collect()
+		#expect(tokens.map(\.kind) == [
+			.string,
+			.eof,
+		])
+	}
+
 	@Test("Floats") func floats() async throws {
 		var lexer = TalkTalkLexer("1.23")
 		let token = lexer.collect()[0]

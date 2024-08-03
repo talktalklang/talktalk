@@ -43,8 +43,8 @@ struct TalkCommand: TalkTalkCommand {
 			AST.self,
 			Format.self,
 			Interpret.self,
-			JIT.self,
-			Compile.self
+			JITExperimental.self,
+			LLVMCompile.self
 		]
 	)
 }

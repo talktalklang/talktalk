@@ -65,22 +65,29 @@ public struct ASTPrinter: Visitor {
 	func indent(@StringBuilder _ content: () throws -> String) -> String {
 		var copy = ASTPrinter()
 		copy.indentLevel = indentLevel + 1
-		return try copy.add(content)
+		return copy.add(content)
+	}
+
+	@StringBuilder public func visit(_ expr: any UnaryExpr, _ context: Context) throws -> String {
+		dump(expr, "op: \(expr.op)")
+		indent {
+			try expr.expr.accept(self, context)
+		}
 	}
 
 	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
 		dump(expr, "property: \(expr.property)")
-		try indent {
+		indent {
 			try expr.receiver.accept(self, context)
 		}
 }
 
 	@StringBuilder public func visit(_ expr: any CallExpr, _ context: Context) throws -> String {
 		dump(expr)
-		try indent {
+		indent {
 			try expr.callee.accept(self, context)
 			if !expr.args.isEmpty {
-				try indent {
+				indent {
 					try expr.args.map { try $0.value.accept(self, context) }.joined(separator: "\n")
 				}
 			}

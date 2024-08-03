@@ -63,6 +63,10 @@ public struct Formatter: Visitor {
 		expr.name
 	}
 
+	public func visit(_ expr: any UnaryExpr, _ context: Context) throws -> String {
+		try "\(expr.op)" + expr.expr.accept(self, context)
+	}
+
 	public func visit(_ expr: any CallExpr, _ context: Context) throws -> Value {
 		var result = try expr.callee.accept(self, context)
 		result += "(" + expr.args.map { try! $0.value.accept(self, context) }.joined(separator: ", ") + ")"
@@ -98,6 +102,10 @@ public struct Formatter: Visitor {
 			"\(int)"
 		case .bool(let bool):
 			"\(bool)"
+		case .string(let string):
+			"""
+			"\(string)"
+			"""
 		case .none:
 			"none"
 		}

@@ -45,6 +45,17 @@ public struct Interpreter: AnalyzedVisitor {
 		return last
 	}
 
+	public func visit(_ expr: AnalyzedUnaryExpr, _ context: Scope) throws -> Value {
+		switch expr.op {
+		case .bang:
+			try expr.exprAnalyzed.accept(self, context).negate()
+		case .minus:
+			try expr.exprAnalyzed.accept(self, context).negate()
+		default:
+			fatalError("unreachable")
+		}
+	}
+
 	public func visit(_ expr: AnalyzedMemberExpr, _ context: Scope) throws -> Value {
 		guard case let .instance(instance) = try expr.receiverAnalyzed.accept(self, context) else {
 			fatalError("not an instance")
@@ -116,6 +127,8 @@ public struct Interpreter: AnalyzedVisitor {
 			return .bool(bool)
 		case let .int(int):
 			return .int(int)
+		case let .string(string):
+			return .string(string)
 		case .none:
 			return .none
 		}

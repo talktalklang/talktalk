@@ -32,19 +32,20 @@ public struct StructInstance {
 
 public indirect enum Value: Equatable, Comparable {
 	case int(Int),
-			 bool(Bool),
-			 none,
-			 error(String),
-			 fn(Closure),
-			 method(AnalyzedFuncExpr, StructInstance),
-			 `struct`(StructType),
-			 instance(StructInstance),
-			 `return`(Value),
-			 builtin(String)
+	     bool(Bool),
+			 string(String),
+	     none,
+	     error(String),
+	     fn(Closure),
+	     method(AnalyzedFuncExpr, StructInstance),
+	     `struct`(StructType),
+	     instance(StructInstance),
+	     `return`(Value),
+	     builtin(String)
 
 	public static func < (lhs: Value, rhs: Value) -> Bool {
 		switch lhs {
-		case .int(let int):
+		case let .int(int):
 			guard case let .int(rhs) = rhs else {
 				fatalError()
 			}
@@ -56,37 +57,28 @@ public indirect enum Value: Equatable, Comparable {
 	}
 
 	public static func == (lhs: Value, rhs: Value) -> Bool {
-		switch lhs {
+		switch (lhs, rhs) {
+		case let (.string(lhs), .string(rhs)):
+			return lhs == rhs
+		case let (.int(lhs), .int(rhs)):
+			return lhs == rhs
+		case let (.bool(lhs), .bool(rhs)):
+			return lhs == rhs
+		case let (.fn(lhs), .fn(rhs)):
+			return lhs.funcExpr.i == rhs.funcExpr.i
+		default:
+			return false
+		}
+	}
+
+	public func negate() -> Value {
+		switch self {
 		case let .int(int):
-			guard case let .int(rhs) = rhs else {
-				return false
-			}
-
-			return int == rhs
+			.int(-int)
 		case let .bool(bool):
-			guard case let .bool(rhs) = rhs else {
-				return false
-			}
-
-			return bool == rhs
-		case .none:
-			return false
-		case .error:
-			return false
-		case let .fn(closure):
-			guard case let .fn(rhs) = rhs else {
-				return false
-			}
-
-			return closure.funcExpr.i == rhs.funcExpr.i
-		case .method(_, _):
-			return false
-		case .struct(_), .instance(_):
-			fatalError()
-		case .return(_):
-			fatalError()
-		case .builtin(_):
-			fatalError()
+			.bool(!bool)
+		default:
+			.error("Cannot negate \(self)")
 		}
 	}
 
@@ -94,11 +86,13 @@ public indirect enum Value: Equatable, Comparable {
 		switch self {
 		case .int:
 			true
-		case .method(_, _):
+		case .string(_):
 			true
-		case .struct(_), .instance(_):
+		case .method:
 			true
-		case .builtin(_):
+		case .struct(_), .instance:
+			true
+		case .builtin:
 			true
 		case let .bool(bool):
 			bool
@@ -108,7 +102,7 @@ public indirect enum Value: Equatable, Comparable {
 			false
 		case .fn:
 			false
-		case .return(_):
+		case .return:
 			fatalError()
 		}
 	}

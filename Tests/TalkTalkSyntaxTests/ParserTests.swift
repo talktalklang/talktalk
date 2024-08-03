@@ -27,6 +27,7 @@ struct TalkTalkParserTests {
 		#expect(parse("1")[0].cast(LiteralExprSyntax.self).value == .int(1))
 		#expect(parse("true")[0].cast(LiteralExprSyntax.self).value == .bool(true))
 		#expect(parse("false")[0].cast(LiteralExprSyntax.self).value == .bool(false))
+		#expect(parse(#""hello world""#)[0].cast(LiteralExprSyntax.self).value == .string("hello world"))
 	}
 
 	@Test("Plus expr") func binaryexpr() throws {
@@ -238,5 +239,17 @@ struct TalkTalkParserTests {
 		let fooMember = ast[2].cast(MemberExprSyntax.self)
 		#expect(fooMember.receiver.cast(VarExprSyntax.self).name == "foo")
 		#expect(fooMember.property == "age")
+	}
+
+	@Test("Parses bang") func bang() throws {
+		let expr = try #require(parse("!hello")[0] as? UnaryExpr)
+		#expect(expr.op == .bang)
+		#expect(expr.expr.cast(VarExprSyntax.self).name == "hello")
+	}
+
+	@Test("Parses negative") func negative() throws {
+		let expr = try #require(parse("-123")[0] as? UnaryExpr)
+		#expect(expr.op == .minus)
+		#expect(expr.expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 }

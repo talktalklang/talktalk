@@ -6,7 +6,7 @@
 //
 
 public enum LiteralValue: Equatable {
-	case int(Int), bool(Bool), none
+	case int(Int), bool(Bool), string(String), none
 }
 
 public protocol LiteralExpr: Expr {

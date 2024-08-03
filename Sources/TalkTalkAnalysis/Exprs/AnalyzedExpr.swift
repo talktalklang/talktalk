@@ -57,6 +57,7 @@ public indirect enum ValueType {
 	}
 
 	case int,
+			 string,
 			 // function name, return type, param types, captures
 			 function(String, ValueType, AnalyzedParamsExpr, [Analyzer.Environment.Capture]),
 			 bool,
@@ -91,6 +92,8 @@ public indirect enum ValueType {
 			return "instance \(valueType.description)"
 		case let .instanceValue(structType):
 			return "struct instance value \(structType)"
+		case .string:
+			return "string"
 		}
 	}
 }

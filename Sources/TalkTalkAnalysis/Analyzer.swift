@@ -14,6 +14,13 @@ public struct Analyzer: Visitor {
 
 	public init() {}
 
+	public static func analyzedExprs(_ exprs: [any Expr]) throws -> [any AnalyzedExpr] {
+		let env = Environment()
+		let analyzer = Analyzer()
+
+		return try exprs.map { try $0.accept(analyzer, env) }
+	}
+
 	public static func analyze(_ exprs: [any Expr]) throws -> any AnalyzedExpr {
 		let env = Environment()
 		let analyzer = Analyzer()
@@ -27,6 +34,20 @@ public struct Analyzer: Visitor {
 			location: location
 		)
 		return try analyzer.visit(mainExpr, env)
+	}
+
+	public func visit(_ expr: any UnaryExpr, _ context: Environment) throws -> any AnalyzedExpr {
+		let exprAnalyzed = try expr.expr.accept(self, context)
+
+		switch expr.op {
+		case .bang:
+
+			return AnalyzedUnaryExpr(type: .bool, exprAnalyzed: exprAnalyzed, wrapped: expr)
+		case .minus:
+			return AnalyzedUnaryExpr(type: .int, exprAnalyzed: exprAnalyzed, wrapped: expr)
+		default:
+			fatalError("unreachable")
+		}
 	}
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> any AnalyzedExpr {
@@ -98,6 +119,8 @@ public struct Analyzer: Visitor {
 			AnalyzedLiteralExpr(type: .bool, expr: expr)
 		case .none:
 			AnalyzedLiteralExpr(type: .none, expr: expr)
+		case .string(let string):
+			AnalyzedLiteralExpr(type: .string, expr: expr)
 		}
 	}
 

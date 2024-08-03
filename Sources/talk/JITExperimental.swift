@@ -1,16 +1,22 @@
 //
-//  Compile.swift
+//  JIT.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 7/29/24.
 //
+
+//
+//  AST.swift
+//
+//
+//  Created by Pat Nakajima on 7/11/24.
+//
 import ArgumentParser
 import Foundation
-import TalkTalkCompiler
+import TalkTalkLLVMExperimental
 import LLVM
-import C_LLVM
 
-struct Compile: TalkTalkCommand {
+struct JITExperimental: TalkTalkCommand {
 	@Argument(help: "The input to run.")
 	var input: String
 
@@ -24,10 +30,7 @@ struct Compile: TalkTalkCommand {
 			string
 		}
 
-		let module = try Compiler(source).compile(optimize: true)
-
-		module.write(to: "out.bc")
-
-		// Write the module to a file
+		let module = try Compiler(source).compile()
+		_ = LLVM.JIT().execute(module: module)
 	}
 }

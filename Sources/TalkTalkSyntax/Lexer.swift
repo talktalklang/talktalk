@@ -15,7 +15,7 @@ public struct Token: CustomDebugStringConvertible {
 
 
 		// Multiple char tokens
-		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual
+		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string
 
 		// Keywords
 		case `func`, `true`, `false`, `return`,
@@ -92,6 +92,7 @@ public struct TalkTalkLexer {
 		case "-": make(.minus)
 		case "<": make(match("=") ? .lessEqual : .less)
 		case ">": make(match("=") ? .greaterEqual : .greater)
+		case "\"": string()
 		case _ where char.isNewline: newline()
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
@@ -119,6 +120,16 @@ public struct TalkTalkLexer {
 	}
 
 	// MARK: Recognizers
+
+	mutating func string() -> Token {
+		while !isAtEnd, peek() != "\"" {
+			advance()
+		}
+
+		advance()
+
+		return make(.string)
+	}
 
 	mutating func newline() -> Token {
 		nextLine()

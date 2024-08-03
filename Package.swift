@@ -22,7 +22,7 @@ let package = Package(
 				"TalkTalk",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				"TalkTalkCompiler",
+				"TalkTalkLLVMExperimental",
 				.product(name: "ArgumentParser", package: "swift-argument-parser")
 			]
 		),
@@ -37,7 +37,7 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "TalkTalkCompiler",
+			name: "TalkTalkLLVMExperimental",
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
@@ -59,12 +59,48 @@ let package = Package(
 			name: "TalkTalk",
 			dependencies: [
 				"TalkTalkSyntax",
-				"TalkTalkAnalysis"
+				"TalkTalkAnalysis",
+				"TalkTalkCompiler",
+				"TalkTalkBytecode",
+				"TalkTalkVM"
 			]
+		),
+		.target(
+			name: "TalkTalkCompiler",
+			dependencies: [
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				"TalkTalkBytecode"
+			]
+		),
+		.target(
+			name: "TalkTalkVM",
+			dependencies: [
+				"TalkTalkCompiler",
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				"TalkTalkBytecode"
+			]
+		),
+		.target(
+			name: "TalkTalkBytecode"
 		),
 		.testTarget(
 			name: "TalkTalkTests",
 			dependencies: ["TalkTalk"]
+		),
+		.testTarget(
+			name: "TalkTalkBytecodeTests",
+			dependencies: ["TalkTalkBytecode"]
+		),
+		.testTarget(
+			name: "TalkTalkLLVMExperimentalTests",
+			dependencies: [
+				"TalkTalkLLVMExperimental",
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				"LLVM"
+			]
 		),
 		.testTarget(
 			name: "TalkTalkCompilerTests",
@@ -72,7 +108,15 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				"LLVM"
+			]
+		),
+		.testTarget(
+			name: "TalkTalkVMTests",
+			dependencies: [
+				"TalkTalkVM",
+				"TalkTalkCompiler",
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
 			]
 		),
 		.testTarget(
