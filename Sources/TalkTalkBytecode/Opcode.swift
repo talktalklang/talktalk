@@ -16,6 +16,10 @@ public enum Opcode: Byte {
 			 // Stack operations
 			 pop,
 
+			 // Local variables
+			 setLocal,
+			 getLocal,
+
 			 // Literals
 			 `true`,
 			 `false`,

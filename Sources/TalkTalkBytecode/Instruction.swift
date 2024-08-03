@@ -106,7 +106,7 @@ public struct JumpMetadata: InstructionMetadata {
 	let offset: Int
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		// TODO
+		fatalError("TODO")
 	}
 	
 	public var description: String {
@@ -117,5 +117,23 @@ public struct JumpMetadata: InstructionMetadata {
 public extension InstructionMetadata where Self == JumpMetadata {
 	static func jump(offset: Int) -> JumpMetadata {
 		JumpMetadata(offset: offset)
+	}
+}
+
+public struct LocalMetadata: InstructionMetadata {
+	public let slot: Byte
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+	
+	public var description: String {
+		"local: \(slot)"
+	}
+}
+
+public extension InstructionMetadata where Self == LocalMetadata {
+	static func local(slot: Byte) -> LocalMetadata {
+		LocalMetadata(slot: slot)
 	}
 }

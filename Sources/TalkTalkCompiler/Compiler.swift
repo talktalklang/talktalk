@@ -18,7 +18,7 @@ public struct Compiler {
 		self.chunk = Chunk()
 	}
 
-	public mutating func compile() throws -> Chunk {
+	public mutating func compile() throws -> StaticChunk {
 		let visitor = CompilerVisitor()
 
 		for expr in analyzedExprs {
@@ -26,7 +26,6 @@ public struct Compiler {
 		}
 
 		// Always emit a `return` since we start with a frame
-		chunk.emit(opcode: .return, line: 0)
-		return chunk
+		return chunk.finalize()
 	}
 }

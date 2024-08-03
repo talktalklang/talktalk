@@ -13,7 +13,7 @@ import TalkTalkCompiler
 import TalkTalkVM
 
 struct VMEndToEndTests {
-	func compile(_ string: String) -> Chunk {
+	func compile(_ string: String) -> StaticChunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)
 		var compiler = Compiler(analyzedExprs: analyzed)
@@ -21,7 +21,7 @@ struct VMEndToEndTests {
 	}
 
 	func run(_ string: String) -> TalkTalkBytecode.Value {
-		let chunk = compile(string).finalize()
+		let chunk = compile(string)
 		return VirtualMachine.run(chunk: chunk).get()
 	}
 
@@ -77,5 +77,13 @@ struct VMEndToEndTests {
 			456
 		}
 		""") == .int(456))
+	}
+
+	@Test("Var expr") func varExpr() {
+		#expect(run("""
+		a = 10
+		b = 20
+		a + b
+		""") == .int(30))
 	}
 }

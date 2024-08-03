@@ -39,6 +39,8 @@ public struct Disassembler {
 			return constantInstruction(start: index)
 		case .jump, .jumpUnless:
 			return jumpInstruction(opcode: opcode, start: index)
+		case .setLocal, .getLocal:
+			return localInstruction(opcode: opcode, start: index)
 		default:
 			return Instruction(opcode: opcode, line: chunk.lines[index], offset: index, metadata: .simple)
 		}
@@ -48,7 +50,7 @@ public struct Disassembler {
 		let constant = chunk.code[current++]
 		let value = chunk.constants[Int(constant)]
 		let metadata = ConstantMetadata(value: value)
-		return Instruction(opcode: .constant, line: chunk.lines[start], offset: current, metadata: metadata)
+		return Instruction(opcode: .constant, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 
 	mutating func jumpInstruction(opcode: Opcode, start: Int) -> Instruction {
@@ -60,5 +62,11 @@ public struct Disassembler {
 		jump |= Int(placehodlerB)
 
 		return Instruction(opcode: opcode, line: chunk.lines[start], offset: current, metadata: .jump(offset: jump))
+	}
+
+	mutating func localInstruction(opcode: Opcode, start: Int) -> Instruction {
+		let slot = chunk.code[current++]
+		let metadata = LocalMetadata(slot: slot)
+		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 }

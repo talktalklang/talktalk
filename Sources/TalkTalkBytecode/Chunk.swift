@@ -5,15 +5,27 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
+// A Chunk represents a basic unit of code for a function. Function definitions
+// each have a chunk.
 public class Chunk {
+	// The main code that the VM runs. It's a mix of opcodes and opcode operands
 	public var code: [Byte] = []
+
+	// Constant values emitted from literals found in the source
 	public var constants: [Value] = []
+
+	// Larger blobs of data like strings from literals found in the source
 	public var data: [Byte] = []
+
+	// Tracks the code array so we can output line numbers when disassambling
 	public var lines: [UInt32] = []
+
+	// Tracks local variable slots
+	public var localsTable: [String: Byte] = [:]
 
 	public init() {}
 
-	internal init(staticChunk: StaticChunk) {
+	public init(staticChunk: StaticChunk) {
 		self.code = staticChunk.code
 		self.constants = staticChunk.constants
 		self.data = staticChunk.data
@@ -63,6 +75,14 @@ public class Chunk {
 
 	public func emit(opcode: Opcode, line: UInt32) {
 		write(byte: opcode.byte, line: line)
+	}
+
+	public func emit(opcode: Opcode, local name: String, line: UInt32) {
+		let local = localsTable[name, default: Byte(localsTable.count)]
+		localsTable[name] = local
+
+		write(opcode, line: line)
+		write(byte: local, line: line)
 	}
 
 	public func emit(constant value: Value, line: UInt32) {

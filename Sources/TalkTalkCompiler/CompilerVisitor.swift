@@ -13,7 +13,12 @@ public struct CompilerVisitor: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {}
 
-	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {
+		// Put the value onto the stack
+		try expr.valueAnalyzed.accept(self, chunk)
+
+		chunk.emit(opcode: .setLocal, local: expr.name.lexeme, line: expr.location.line)
+	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {}
 
@@ -46,7 +51,13 @@ public struct CompilerVisitor: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedVarExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedVarExpr, _ chunk: Chunk) throws {
+		guard chunk.localsTable[expr.name] != nil else {
+			throw CompilerError.unknownLocal(expr.name)
+		}
+
+		chunk.emit(opcode: .getLocal, local: expr.name, line: expr.location.line)
+	}
 
 	public func visit(_ expr: AnalyzedBinaryExpr, _ chunk: Chunk) throws {
 		let opcode: Opcode = switch expr.op {

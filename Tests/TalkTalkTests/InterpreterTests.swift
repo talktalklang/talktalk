@@ -117,7 +117,7 @@ struct InterpreterTests {
 	}
 
 	@Test("Evaluates fib") func fib() {
-		let res = try! Interpreter("""
+		_ = try! Interpreter("""
 			func fib(n) {
 				if (n <= 1) { return n } else { }
 				return fib(n - 2) + fib(n - 1)

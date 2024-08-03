@@ -7,9 +7,7 @@
 
 import TalkTalkBytecode
 
-struct CallFrame {
-
-}
+struct CallFrame {}
 
 public struct VirtualMachine: ~Copyable {
 	public enum ExecutionResult {
@@ -146,6 +144,12 @@ public struct VirtualMachine: ~Copyable {
 				if stack.peek() == .bool(false) {
 					self.ip += jump
 				}
+			case .getLocal:
+				let slot = readByte()
+				stack.push(stack[Int(slot)])
+			case .setLocal:
+				let slot = readByte()
+				stack[Int(slot)] = stack.peek()
 			case .jumpPlaceholder:
 				()
 			}

@@ -12,7 +12,7 @@ import TalkTalkSyntax
 import Testing
 
 struct CompilerTests {
-	func compile(_ string: String) -> Chunk {
+	func compile(_ string: String) -> StaticChunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)
 		var compiler = Compiler(analyzedExprs: analyzed)
@@ -49,10 +49,10 @@ struct CompilerTests {
 	}
 
 	@Test("Static string") func staticString() {
-		let chunk = compile("""
+		let chunk = Chunk(staticChunk: compile("""
 		"hello "
 		"world"
-		""")
+		"""))
 
 		var string1 = "hello ".utf8CString
 		let pointer1 = string1.withUnsafeMutableBufferPointer { $0 }
@@ -70,6 +70,39 @@ struct CompilerTests {
 		]
 
 		#expect(result == expected)
+	}
+
+	@Test("Def expr") func defExpr() {
+		let chunk = compile("""
+		i = 123
+		""")
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0)),
+			Instruction(opcode: .return, line: 0, offset: 4, metadata: .simple)
+		])
+	}
+
+	@Test("Var expr") func varExpr() {
+		let chunk = compile("""
+		x = 123
+		x
+		y = 456
+		y
+		""")
+
+		chunk.dump()
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0)),
+			Instruction(opcode: .getLocal, line: 2, offset: 4, metadata: .local(slot: 0)),
+			Instruction(opcode: .constant, line: 3, offset: 6, metadata: .constant(.int(456))),
+			Instruction(opcode: .setLocal, line: 3, offset: 8, metadata: .local(slot: 1)),
+			Instruction(opcode: .getLocal, line: 4, offset: 10, metadata: .local(slot: 1)),
+			Instruction(opcode: .return, line: 0, offset: 12, metadata: .simple)
+		])
 	}
 
 	@Test("If expr") func ifExpr() {
