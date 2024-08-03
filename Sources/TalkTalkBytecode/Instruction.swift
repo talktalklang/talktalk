@@ -76,7 +76,7 @@ public struct ConstantMetadata: InstructionMetadata {
 	}
 
 	public var description: String {
-		"\(value.result)"
+		"\(value)"
 	}
 }
 

@@ -22,15 +22,15 @@ struct VMEndToEndTests {
 
 	func run(_ string: String) -> TalkTalkBytecode.Value {
 		let chunk = compile(string).finalize()
-		return VirtualMachine.run(chunk: chunk)
+		return VirtualMachine.run(chunk: chunk).get()
 	}
 
 	@Test("Adds") func adds() {
-		#expect(run("1 + 2") == 3)
+		#expect(run("1 + 2") == .int(3))
 	}
 
 	@Test("Subtracts") func subtracts() {
-		#expect(run("2 - 1") == 1)
+		#expect(run("2 - 1") == .int(1))
 	}
 
 	@Test("Comparison") func comparison() {

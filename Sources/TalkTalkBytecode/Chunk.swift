@@ -36,7 +36,7 @@ public class Chunk {
 	public func emit(data constantData: [Byte], line: UInt32) {
 		let start = UInt64(data.count)
 		data.append(contentsOf: constantData)
-		emit(constant: start, line: line)
+		emit(constant: .data(start), line: line)
 	}
 
 	private func write(constant value: Value) -> Byte {

@@ -12,6 +12,18 @@ struct CallFrame {
 }
 
 public struct VirtualMachine: ~Copyable {
+	public enum ExecutionResult {
+		case ok(Value), error(String)
+
+		public func get() -> Value {
+			if case let .ok(value) = self {
+				return value
+			} else {
+				fatalError("Cannot get none ok execution result")
+			}
+		}
+	}
+
 	var ip: UInt64 = 0
 
 	// The code to run
@@ -23,7 +35,7 @@ public struct VirtualMachine: ~Copyable {
 	// The stack
 	var stack: Stack<Value>
 
-	public static func run(chunk: consuming StaticChunk) -> Value {
+	public static func run(chunk: consuming StaticChunk) -> ExecutionResult {
 		var vm = VirtualMachine(chunk: chunk)
 		return vm.run()
 	}
@@ -31,10 +43,10 @@ public struct VirtualMachine: ~Copyable {
 	public init(chunk: consuming StaticChunk) {
 		self.chunk = chunk
 		self.frames = Stack<CallFrame>(capacity: 256)
-		self.stack = Stack<UInt64>(capacity: 256)
+		self.stack = Stack<Value>(capacity: 256)
 	}
 
-	mutating public func run() -> Value {
+	mutating public func run() -> ExecutionResult {
 		while true {
 			let byte = readByte()
 
@@ -44,7 +56,7 @@ public struct VirtualMachine: ~Copyable {
 
 			switch opcode {
 			case .return:
-				return stack.pop()
+				return .ok(stack.pop())
 			case .constant:
 				let value = readConstant()
 				stack.push(value)
@@ -55,9 +67,17 @@ public struct VirtualMachine: ~Copyable {
 			case .none:
 				stack.push(.none)
 			case .negate:
-				stack.push(UInt64(bitPattern: -stack.pop().asInt))
+				let value = stack.pop()
+				if let intValue = value.intValue {
+					stack.push(.int(-intValue))
+				} else {
+					return runtimeError("Cannot negate \(value)")
+				}
 			case .not:
-				stack.push(.bool(!stack.pop().asBool))
+				let value = stack.pop()
+				if let bool = value.boolValue {
+					stack.push(.bool(!bool))
+				}
 			case .equal:
 				let lhs = stack.pop()
 				let rhs = stack.pop()
@@ -67,36 +87,52 @@ public struct VirtualMachine: ~Copyable {
 				let rhs = stack.pop()
 				stack.push(.bool(lhs != rhs))
 			case .add:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
-				stack.push(lhs + rhs)
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot add none int operands")
+				}
+				stack.push(.int(lhs + rhs))
 			case .subtract:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
-				stack.push(lhs - rhs)
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot subtract none int operands")
+				}
+				stack.push(.int(lhs - rhs))
 			case .divide:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
-				stack.push(lhs / rhs)
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot divide none int operands")
+				}
+				stack.push(.int(lhs / rhs))
 			case .multiply:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
-				stack.push(lhs * rhs)
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot multiply none int operands")
+				}
+				stack.push(.int(lhs * rhs))
 			case .less:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot compare none int operands")
+				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot compare none int operands")
+				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot compare none int operands")
+				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
-				let lhs = stack.pop()
-				let rhs = stack.pop()
+				guard let lhs = stack.pop().intValue,
+							let rhs = stack.pop().intValue else {
+					return runtimeError("Cannot compare none int operands")
+				}
 				stack.push(.bool(lhs >= rhs))
 			case .data:
 				let offset = stack.pop()
@@ -111,5 +147,9 @@ public struct VirtualMachine: ~Copyable {
 
 	mutating func readByte() -> Byte {
 		chunk.code[Int(ip++)]
+	}
+
+	func runtimeError(_ message: String) -> ExecutionResult {
+		.error(message)
 	}
 }

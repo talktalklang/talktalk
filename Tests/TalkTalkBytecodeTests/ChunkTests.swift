@@ -20,7 +20,7 @@ struct ChunkTests {
 
 	@Test("Emit constant") func emitConstant() {
 		let chunk = Chunk()
-		chunk.emit(constant: 123, line: 1)
+		chunk.emit(constant: .int(123), line: 1)
 
 		#expect(chunk.code == [
 			Opcode.constant.rawValue,
@@ -28,7 +28,7 @@ struct ChunkTests {
 		])
 
 		#expect(chunk.constants == [
-			123
+			.int(123)
 		])
 	}
 }

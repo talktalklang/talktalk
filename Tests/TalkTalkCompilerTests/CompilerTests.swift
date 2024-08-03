@@ -28,7 +28,7 @@ struct CompilerTests {
 		let chunk = compile("123")
 
 		let instructions = [
-			Instruction(opcode: .constant, line: 1, offset: 0, metadata: ConstantMetadata(value: 123)),
+			Instruction(opcode: .constant, line: 1, offset: 0, metadata: ConstantMetadata(value: .int(123))),
 			Instruction(opcode: .return, line: 0, offset: 2, metadata: .simple)
 		]
 
@@ -39,8 +39,8 @@ struct CompilerTests {
 		let chunk = compile("10 + 20")
 
 		let instructions = [
-			Instruction(opcode: .constant, line: 1, offset: 0, metadata: ConstantMetadata(value: 20)),
-			Instruction(opcode: .constant, line: 1, offset: 2, metadata: ConstantMetadata(value: 10)),
+			Instruction(opcode: .constant, line: 1, offset: 0, metadata: ConstantMetadata(value: .int(20))),
+			Instruction(opcode: .constant, line: 1, offset: 2, metadata: ConstantMetadata(value: .int(10))),
 			Instruction(opcode: .add, line: 1, offset: 4, metadata: .simple),
 			Instruction(opcode: .return, line: 0, offset: 5, metadata: .simple)
 		]

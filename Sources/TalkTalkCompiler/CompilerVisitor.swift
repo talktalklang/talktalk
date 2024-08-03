@@ -33,7 +33,7 @@ public struct CompilerVisitor: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedLiteralExpr, _ chunk: Chunk) throws {
 		switch expr.value {
 		case .int(let int):
-			chunk.emit(constant: UInt64(int), line: expr.location.line)
+			chunk.emit(constant: .int(Int64(int)), line: expr.location.line)
 		case .bool(let bool):
 			chunk.emit(opcode: bool ? .true : .false, line: expr.location.line)
 		case .string(let string):

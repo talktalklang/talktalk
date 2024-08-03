@@ -10,7 +10,7 @@ import TalkTalkBytecode
 
 struct ValueTests {
 	@Test("What are bits") func bits() {
-		#expect(Value(0).bits == [
+		#expect(Value.int(0).bits == [
 			0,0,0,0,0,0,0,0,
 			0,0,0,0,0,0,0,0,
 			0,0,0,0,0,0,0,0,
@@ -18,17 +18,21 @@ struct ValueTests {
 		])
 	}
 
+	@Test("Memory size") func memorySize() {
+		#expect(MemoryLayout<Value>.size == 8)
+	}
+
 	@Test("Ints") func ints() {
 		let value = Value.int(123)
-		#expect(value.result == .int(123))
+		#expect(value.intValue == 123)
 	}
 
 	@Test("Bools") func bools() {
-		#expect(Value.bool(true) == .bool(true))
-		#expect(Value.bool(false) == .bool(false))
+		#expect(Value.bool(true).boolValue == true)
+		#expect(Value.bool(false).boolValue == false)
 	}
 
 	@Test("Data") func data() {
-		#expect(Value.data(123).asData == 123)
+		#expect(Value.data(123).dataValue == 123)
 	}
 }
