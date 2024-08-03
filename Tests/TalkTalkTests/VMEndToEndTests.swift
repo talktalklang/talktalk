@@ -64,4 +64,8 @@ struct VMEndToEndTests {
 		#expect(run("!true") == .bool(false))
 		#expect(run("!false") == .bool(true))
 	}
+
+	@Test("Strings") func strings() {
+		#expect(run(#""hello world""#) == .data(0))
+	}
 }

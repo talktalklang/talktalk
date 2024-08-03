@@ -69,10 +69,6 @@ struct CompilerTests {
 			Instruction(opcode: .return, line: 0, offset: 4, metadata: .simple)
 		]
 
-		print(result.map(\.description).joined(separator: "\n"))
-		print("----")
-		print(expected.map(\.description).joined(separator: "\n"))
-
 		#expect(result == expected)
 	}
 }

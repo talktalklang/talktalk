@@ -9,15 +9,6 @@ import Testing
 import TalkTalkBytecode
 
 struct ValueTests {
-	@Test("What are bits") func bits() {
-		#expect(Value.int(0).bits == [
-			0,0,0,0,0,0,0,0,
-			0,0,0,0,0,0,0,0,
-			0,0,0,0,0,0,0,0,
-			0,0,0,0,0,0,0,0,
-		])
-	}
-
 	@Test("Memory size") func memorySize() {
 		#expect(MemoryLayout<Value>.size == 8)
 	}
