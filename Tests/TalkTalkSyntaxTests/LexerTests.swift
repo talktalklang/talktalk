@@ -53,10 +53,10 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Identifier") func identifier() async throws {
-		var lexer = TalkTalkLexer("foo")
+		var lexer = TalkTalkLexer("foo12")
 		let token = lexer.collect()[0]
 		#expect(token.kind == .identifier)
-		#expect(token.lexeme == "foo")
+		#expect(token.lexeme == "foo12")
 	}
 
 	@Test("eof") func eof() async throws {

@@ -108,11 +108,11 @@ struct VMEndToEndTests {
 
 	@Test("Get var from enlosing scope") func enclosing() {
 		#expect(run("""
-		a = 10
-		b = 20
+		a10 = 10
+		b20 = 20
 		func() {
-			c = 30
-			a + b + c
+			c30 = 30
+			a10 + b20 + c30
 		}()
 		""") == .int(60))
 	}
@@ -135,6 +135,7 @@ struct VMEndToEndTests {
 				count = count + 1
 				count
 			}
+			increment
 		}
 
 		mycounter = makeCounter()

@@ -5,8 +5,20 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-public struct Value: Equatable, Hashable {
+public class Value: Equatable, Hashable {
+	public static func == (lhs: Value, rhs: Value) -> Bool {
+		lhs.storage == rhs.storage
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(storage)
+	}
+
 	private var storage: UInt64
+
+	public var asUInt64: UInt64 {
+		storage
+	}
 
 	enum Tag: UInt8 {
 		case int = 0

@@ -7,13 +7,6 @@
 
 import TalkTalkBytecode
 
-struct CallFrame {
-	var ip: UInt64 = 0
-	var chunk: Chunk
-	var returnTo: UInt64
-	var stackOffset: Int
-}
-
 public struct VirtualMachine: ~Copyable {
 	public enum ExecutionResult {
 		case ok(Value), error(String)
@@ -40,13 +33,7 @@ public struct VirtualMachine: ~Copyable {
 
 	// The code to run
 	var chunk: Chunk {
-		get {
-			currentFrame.chunk
-		}
-
-		set {
-			currentFrame.chunk = newValue
-		}
+		currentFrame.closure.chunk
 	}
 
 	// The frames stack
@@ -66,6 +53,15 @@ public struct VirtualMachine: ~Copyable {
 	// The stack
 	var stack: Stack<Value>
 
+	// Closure storage
+	var closures: [UInt64: Closure] = [:]
+
+	// Upvalue linked list
+	var openUpvalues: Upvalue?
+
+	// So we can retain stuff
+	var memory: [Value] = []
+
 	public static func run(chunk: Chunk) -> ExecutionResult {
 		var vm = VirtualMachine(chunk: chunk)
 		return vm.run()
@@ -75,20 +71,23 @@ public struct VirtualMachine: ~Copyable {
 		self.stack = Stack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
-		let frame = CallFrame(chunk: chunk, returnTo: 0, stackOffset: 0)
+		stack.push(.none)
+
+		// FIXME:
+		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0)
 		frames.push(frame)
 	}
 
 	public mutating func run() -> ExecutionResult {
 		while true {
-			#if DEBUG
-			var disassembler = Disassembler(chunk: chunk)
-			disassembler.current = Int(ip)
-			if let instruction = disassembler.next() {
-				dumpStack()
-				print(instruction.description)
-			}
-			#endif
+//			#if DEBUG
+//			var disassembler = Disassembler(chunk: chunk)
+//			disassembler.current = Int(ip)
+//			if let instruction = disassembler.next() {
+//				dumpStack()
+//				print(instruction.description)
+//			}
+//			#endif
 
 			let byte = readByte()
 
@@ -101,20 +100,22 @@ public struct VirtualMachine: ~Copyable {
 				// Remove the result from the stack temporarily while we clean it up
 				let result = stack.pop()
 
+				// TODO: Close upvalues
+
 				let calledFrame = frames.pop()
 
 				// Pop off values created on the stack by the called frame
-				while stack.size > calledFrame.stackOffset {
+				while stack.size > calledFrame.stackOffset+1 {
 					stack.pop()
 				}
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
-					// Make sure we didn't leak anything
-					if stack.size != 0 {
+					// Make sure we didn't leak anything, we should only have the main program
+					// on the stack.
+					if stack.size != 1 {
 						print("stack size expected to be 0, got: \(stack.size)")
 						dumpStack()
-						assertionFailure("")
 					}
 
 					return .ok(result)
@@ -155,57 +156,60 @@ public struct VirtualMachine: ~Copyable {
 				let rhs = stack.pop()
 				stack.push(.bool(lhs != rhs))
 			case .add:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhsValue = stack.pop()
+				let rhsValue = stack.pop()
+
+				guard let lhs = lhsValue.intValue,
+							let rhs = rhsValue.intValue
 				else {
-					return runtimeError("Cannot add none int operands")
+					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
 				stack.push(.int(lhs + rhs))
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot subtract none int operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot divide none int operands")
 				}
 				stack.push(.int(lhs / rhs))
 			case .multiply:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot multiply none int operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+							let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
@@ -230,12 +234,42 @@ public struct VirtualMachine: ~Copyable {
 				stack[Int(slot) + currentFrame.stackOffset] = stack.peek()
 			case .getUpvalue:
 				let slot = readByte()
-				let backtrack = -(currentFrame.stackOffset + Int(chunk.upvalueCount))
-				let offset = backtrack + Int(slot)
-				stack.push(stack.peek(offset: -offset))
-			case .defClosure:
-				// TODO: Capture closure values
+				let value = currentFrame.closure.upvalues[Int(slot)].value
+				stack.push(value)
+			case .setUpvalue:
 				let slot = readByte()
+				let upvalue = currentFrame.closure.upvalues[Int(slot)]
+				upvalue.value = stack.peek()
+			case .defClosure:
+				// Read which subchunk this closure points to
+				let slot = readByte()
+
+				// Load the subchunk TODO: We could probably just store the index in the closure?
+				let subchunk = chunk.getChunk(at: Int(slot))
+
+				// Capture upvalues
+				var upvalues: [Upvalue] = []
+				for _ in 0..<subchunk.upvalueCount {
+					let isLocal = readByte() == 1
+					let index = readByte()
+
+					if isLocal {
+						// If the upvalue is local, that means it is defined in the current call frame. That
+						// means we want to capture the value.
+						let value = stack[currentFrame.stackOffset + Int(index)]
+						let upvalue = captureUpvalue(value: value)
+						upvalues.append(upvalue)
+					} else {
+						// If it's not local, that means it's already been captured and the current call frame's
+						// knowledge of the value is an upvalue as well.
+						upvalues.append(currentFrame.closure.upvalues[Int(index)])
+					}
+				}
+
+				// Store the closure TODO: gc these when they're not needed anymore
+				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
+
+				// Push the closure Value onto the stack
 				stack.push(.closure(slot))
 			case .call:
 				let callee = stack.pop()
@@ -263,16 +297,18 @@ public struct VirtualMachine: ~Copyable {
 		// FIXME: ok function values are just offsets into subchunks, which is a problem because when a function returns, the subchunks change. we need a way to access subchunks of subchunks when they are return values
 
 		let frame = CallFrame(
-			chunk: chunk,
+			closure: closures[UInt64(closureID)]!,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity)
+			stackOffset: stack.size - Int(chunk.arity) - 1
 		)
 
 		frames.push(frame)
 	}
 
 	mutating func readConstant() -> Value {
-		chunk.constants[Int(readByte())]
+		let value = chunk.constants[Int(readByte())]
+		memory.append(value)
+		return value
 	}
 
 	mutating func readByte() -> Byte {
@@ -285,6 +321,31 @@ public struct VirtualMachine: ~Copyable {
 		return jump
 	}
 
+	mutating func captureUpvalue(value: Value) -> Upvalue {
+		var previousUpvalue: Upvalue? = nil
+		var upvalue = openUpvalues
+
+		while upvalue != nil, upvalue!.value.asUInt64 > value.asUInt64 {
+			previousUpvalue = upvalue
+			upvalue = upvalue!.next
+		}
+
+		if let upvalue, upvalue.value == value {
+			return upvalue
+		}
+
+		let createdUpvalue = Upvalue(value: value)
+		createdUpvalue.next = upvalue
+
+		if let previousUpvalue {
+			previousUpvalue.next = createdUpvalue
+		} else {
+			self.openUpvalues = createdUpvalue
+		}
+
+		return createdUpvalue
+	}
+
 	func runtimeError(_ message: String) -> ExecutionResult {
 		.error(message)
 	}
@@ -293,7 +354,11 @@ public struct VirtualMachine: ~Copyable {
 		if stack.isEmpty { return }
 		print("       ", terminator: "")
 		for slot in stack.entries() {
-			print("[ \(slot.disassemble(in: chunk)) ]", terminator: "")
+			if frames.size == 0 {
+				print("[ \(slot.description) ]", terminator: "")
+			} else {
+				print("[ \(slot.disassemble(in: chunk)) ]", terminator: "")
+			}
 		}
 		print()
 	}

@@ -27,7 +27,7 @@ public enum Opcode: Byte {
 			 getLocal,
 
 			 // Upvalues (captures)
-			 getUpvalue,
+			 getUpvalue, setUpvalue,
 
 			 // Literals
 			 `true`,

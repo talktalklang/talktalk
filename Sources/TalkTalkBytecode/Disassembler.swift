@@ -70,20 +70,29 @@ public struct Disassembler {
 
 	mutating func localInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
-		let metadata = LocalMetadata(slot: slot)
+		let metadata = LocalMetadata(slot: slot, name: chunk.localNames[Int(slot)])
 		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 
 	mutating func defClosureInstruction(start: Int) -> Instruction {
 		let closureSlot = chunk.code[current++]
 		let subchunk = chunk.getChunk(at: Int(closureSlot))
-		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalueCount: 0)
+
+		var upvalues: [ClosureMetadata.Upvalue] = []
+		for _ in 0..<subchunk.upvalueCount {
+			let isLocal = chunk.code[current++] == 1
+			let index = chunk.code[current++]
+
+			upvalues.append(ClosureMetadata.Upvalue(isLocal: isLocal, index: index))
+		}
+
+		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
 		return Instruction(opcode: .defClosure, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 
 	mutating func upvalueInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
-		let metadata = UpvalueMetadata(slot: slot)
+		let metadata = UpvalueMetadata(slot: slot, name: chunk.upvalueNames[Int(slot)])
 		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
 	}
 }

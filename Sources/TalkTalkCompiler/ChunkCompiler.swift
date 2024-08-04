@@ -15,6 +15,10 @@ public struct Variable {
 	var isCaptured: Bool
 	var getter: Opcode
 	var setter: Opcode
+
+	static func reserved(depth: Int) -> Variable {
+		Variable(name: "__reserved__", slot: 0, depth: depth, isCaptured: false, getter: .getLocal, setter: .setLocal)
+	}
 }
 
 public class ChunkCompiler: AnalyzedVisitor {
@@ -27,13 +31,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public var parent: ChunkCompiler?
 
 	// Tracks local variable slots
-	public var locals: [Variable] = []
+	public var locals: [Variable]
 
 	// Tracks which locals have been captured
 	public var captures: [String] = []
 
 	// Track which locals have been created in this scope
-	public var localsCount = 0
+	public var localsCount = 1
 
 	// Tracks how many upvalues we currently have
 	public var upvalues: [(index: Byte, isLocal: Bool)] = []
@@ -41,6 +45,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public init(scopeDepth: Int = 0, parent: ChunkCompiler? = nil) {
 		self.scopeDepth = scopeDepth
 		self.parent = parent
+		self.locals = [.reserved(depth: scopeDepth)]
 	}
 
 	public func endScope(chunk: Chunk) {
@@ -71,6 +76,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
+		if expr.name.lexeme == "count" {
+			
+		}
+
 		let variable = resolveVariable(
 			named: expr.name.lexeme,
 			chunk: chunk
@@ -78,10 +87,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		chunk.emit(opcode: variable.setter, line: expr.location.line)
 		chunk.emit(byte: variable.slot, line: expr.location.line)
+
+		if variable.setter == .setUpvalue {
+			chunk.emit(opcode: .pop, line: expr.location.line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {
-		fatalError("unreachable")
+		fatalError("unreachable: \(expr.message)")
 	}
 
 	public func visit(_ expr: AnalyzedUnaryExpr, _ chunk: Chunk) throws {
@@ -208,8 +221,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 //		let subchunkID = Byte(chunk.subchunks.count)
 //		chunk.subchunks.append(functionChunk)
+		let line = UInt32(expr.location.line)
 		let subchunkID = chunk.addChunk(functionChunk)
-		chunk.emitClosure(subchunkID: Byte(subchunkID), line: UInt32(expr.location.line))
+		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
+
+		for upvalue in functionCompiler.upvalues {
+			chunk.emit(byte: upvalue.isLocal ? 1 : 0, line: line)
+			chunk.emit(byte: upvalue.index, line: line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedBlockExpr, _ chunk: Chunk) throws {
@@ -258,7 +277,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				depth: scopeDepth,
 				isCaptured: false,
 				getter: .getUpvalue,
-				setter: .setLocal // TODO: add set upvalue
+				setter: .setUpvalue
 			)
 		}
 
@@ -327,6 +346,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		upvalues.append((index: index, isLocal: isLocal))
 		chunk.upvalueNames.append(name)
 
-		return Byte(upvalues.count)
+		return Byte(upvalues.count - 1)
 	}
 }

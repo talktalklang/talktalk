@@ -122,27 +122,45 @@ public extension InstructionMetadata where Self == JumpMetadata {
 
 public struct LocalMetadata: InstructionMetadata {
 	public let slot: Byte
+	public let name: String
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
 	}
 	
 	public var description: String {
-		"local: \(slot)"
+		"slot: \(slot), name: \(name)"
 	}
 }
 
 public extension InstructionMetadata where Self == LocalMetadata {
-	static func local(slot: Byte) -> LocalMetadata {
-		LocalMetadata(slot: slot)
+	static func local(slot: Byte, name: String) -> LocalMetadata {
+		LocalMetadata(slot: slot, name: name)
 	}
 }
 
-public struct ClosureMetadata: InstructionMetadata {
+public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
+	public struct Upvalue: Equatable, Hashable {
+		var isLocal: Bool
+		var index: Byte
+
+		public static func capturing(_ index: Byte) -> Upvalue {
+			Upvalue(isLocal: true, index: index)
+		}
+
+		public static func inherited(_ index: Byte) -> Upvalue {
+			Upvalue(isLocal: false, index: index)
+		}
+
+		public var description: String {
+			"isLocal: \(isLocal) i: \(index)"
+		}
+	}
+
 	let name: String?
 	let arity: Byte
 	let depth: Byte
-	let upvalueCount: Byte
+	let upvalues: [Upvalue]
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -150,14 +168,14 @@ public struct ClosureMetadata: InstructionMetadata {
 	
 	public var description: String {
 		var result = if let name { "name: \(name) " } else { "" }
-		result +=	"arity: \(arity) depth: \(depth) upvalueCount: \(upvalueCount)"
+		result +=	"arity: \(arity) depth: \(depth) upvalues: [\(upvalues.map(\.description).joined(separator: ", "))]"
 		return result
 	}
 }
 
 public extension InstructionMetadata where Self == ClosureMetadata {
-	static func closure(name: String? = nil, arity: Byte, depth: Byte, upvalueCount: Byte = 0) -> ClosureMetadata {
-		ClosureMetadata(name: name, arity: arity, depth: depth, upvalueCount: upvalueCount)
+	static func closure(name: String? = nil, arity: Byte, depth: Byte, upvalues: [ClosureMetadata.Upvalue] = []) -> ClosureMetadata {
+		ClosureMetadata(name: name, arity: arity, depth: depth, upvalues: upvalues)
 	}
 }
 
@@ -181,18 +199,19 @@ public extension InstructionMetadata where Self == CallMetadata {
 
 public struct UpvalueMetadata: InstructionMetadata {
 	public let slot: Byte
+	public let name: String
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
 	}
 
 	public var description: String {
-		"local: \(slot)"
+		"local: \(slot), name: \(name)"
 	}
 }
 
 public extension InstructionMetadata where Self == UpvalueMetadata {
-	static func upvalue(slot: Byte) -> UpvalueMetadata {
-		UpvalueMetadata(slot: slot)
+	static func upvalue(slot: Byte, name: String) -> UpvalueMetadata {
+		UpvalueMetadata(slot: slot, name: name)
 	}
 }

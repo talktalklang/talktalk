@@ -11,8 +11,7 @@ class Upvalue {
 	var value: Value
 	var next: Upvalue?
 
-	init(value: Value, next: Upvalue? = nil) {
+	init(value: Value) {
 		self.value = value
-		self.next = next
 	}
 }

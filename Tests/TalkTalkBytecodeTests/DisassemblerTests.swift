@@ -20,7 +20,7 @@ struct DisassemblerTests {
 
 	@Test("Disassembles constant opcodes") func constant() {
 		let chunk = Chunk(name: "main")
-		chunk.emit(constant: Value(int: 123), line: 1)
+		chunk.emit(constant: .int(123), line: 1)
 		chunk.emit(opcode: .return, line: 2)
 
 		#expect(chunk.disassemble() == [

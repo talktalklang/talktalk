@@ -79,7 +79,7 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0)),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0, name: "i")),
 			Instruction(opcode: .return, line: 0, offset: 4, metadata: .simple)
 		])
 	}
@@ -96,11 +96,11 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0)),
-			Instruction(opcode: .getLocal, line: 2, offset: 4, metadata: .local(slot: 0)),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0, name: "x")),
+			Instruction(opcode: .getLocal, line: 2, offset: 4, metadata: .local(slot: 0, name: "x")),
 			Instruction(opcode: .constant, line: 3, offset: 6, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, line: 3, offset: 8, metadata: .local(slot: 1)),
-			Instruction(opcode: .getLocal, line: 4, offset: 10, metadata: .local(slot: 1)),
+			Instruction(opcode: .setLocal, line: 3, offset: 8, metadata: .local(slot: 1, name: "y")),
+			Instruction(opcode: .getLocal, line: 4, offset: 10, metadata: .local(slot: 1, name: "y")),
 			Instruction(opcode: .return, line: 0, offset: 12, metadata: .simple)
 		])
 	}
@@ -144,7 +144,7 @@ struct CompilerTests {
 		}
 		""")
 
-		let subchunk = chunk.subchunks[0]
+		let subchunk = chunk.getChunk(at: 0)
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .defClosure, line: 1, offset: 0, metadata: .closure(arity: 0, depth: 0)),
@@ -174,6 +174,7 @@ struct CompilerTests {
 	}
 
 	@Test("Non-capturing upvalue") func upvalue() {
+		// Using two locals in this test to make sure slot indexes get updated correctly
 		let chunk = compile("""
 		a = 123
 		b = 456
@@ -186,21 +187,66 @@ struct CompilerTests {
 		let result = chunk.disassemble()
 		let expected = [
 			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0)),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0, name: "a")),
 			Instruction(opcode: .constant, line: 2, offset: 4, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, line: 2, offset: 6, metadata: .local(slot: 1)),
-			Instruction(opcode: .defClosure, line: 3, offset: 8, metadata: .closure(arity: 0, depth: 0)),
+			Instruction(opcode: .setLocal, line: 2, offset: 6, metadata: .local(slot: 1, name: "b")),
+			Instruction(opcode: .defClosure, line: 3, offset: 8, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(0), .capturing(1)])),
 			Instruction(opcode: .return, line: 0, offset: 10, metadata: .simple),
 		]
 
 		#expect(result == expected)
 
-		let subchunk = chunk.subchunks[0]
+		let subchunk = chunk.getChunk(at: 0)
 		let subexpected = [
-			Instruction(opcode: .getUpvalue, line: 4, offset: 0, metadata: .upvalue(slot: 0)),
-			Instruction(opcode: .getUpvalue, line: 5, offset: 2, metadata: .upvalue(slot: 1)),
+			Instruction(opcode: .getUpvalue, line: 4, offset: 0, metadata: .upvalue(slot: 1, name: "a")),
+			Instruction(opcode: .getUpvalue, line: 5, offset: 2, metadata: .upvalue(slot: 2, name: "b")),
 			Instruction(opcode: .return, line: 6, offset: 6, metadata: .simple),
 		]
+
+		#expect(subchunk.disassemble() == subexpected)
+	}
+
+	@Test("Cleans up locals") func cleansUpLocals() {
+		let chunk = compile("""
+		a = 123
+		func() {
+			b = 456
+			a + b
+		}
+		""")
+
+		let result = chunk.disassemble()
+		let expected = [
+			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0, name: "a")),
+			Instruction(opcode: .defClosure, line: 2, offset: 4, metadata: .closure(arity: 0, depth: 0, upvalues: [])),
+			Instruction(opcode: .return, line: 0, offset: 6, metadata: .simple),
+		]
+
+		#expect(result == expected)
+
+		let subchunk = chunk.getChunk(at: 0)
+
+		#expect(subchunk.upvalueCount == 1)
+
+		let subexpected = [
+			// Define 'b'
+			Instruction(opcode: .constant, line: 3, offset: 0, metadata: .constant(.int(456))),
+			Instruction(opcode: .setLocal, line: 3, offset: 2, metadata: .local(slot: 0, name: "b")),
+
+			// Get 'b' to add to a
+			Instruction(opcode: .getLocal, line: 4, offset: 4, metadata: .local(slot: 0, name: "b")),
+			// Get 'a' from upvalue
+			Instruction(opcode: .getUpvalue, line: 4, offset: 6, metadata: .upvalue(slot: 0, name: "a")),
+			// Do the addition
+			Instruction(opcode: .add, line: 4, offset: 8, metadata: .simple),
+
+			Instruction(opcode: .return, line: 5, offset: 9, metadata: .simple),
+		]
+
+		subchunk.dump()
+		print("--")
+		print(subexpected.map(\.description).joined(separator: "\n"))
 
 		#expect(subchunk.disassemble() == subexpected)
 	}

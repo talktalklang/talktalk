@@ -27,7 +27,7 @@ public class Chunk {
 	public var depth: Byte = 0
 	public var parent: Chunk?
 
-	public var localsCount: Byte = 0
+	public var localsCount: Byte = 1
 
 	// How many upvalues does this chunk refer to
 	public var upvalueCount: Byte = 0
@@ -36,7 +36,7 @@ public class Chunk {
 	private var subchunks: [Chunk] = []
 
 	// For debugging names used in this chunk
-	public var localNames: [String] = []
+	public var localNames: [String] = ["__reserved__"]
 	public var upvalueNames: [String] = []
 
 	public init(name: String) {
