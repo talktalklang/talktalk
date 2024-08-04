@@ -141,6 +141,10 @@ public extension InstructionMetadata where Self == LocalMetadata {
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 	public struct Upvalue: Equatable, Hashable {
+		public static func ==(lhs: Upvalue, rhs: Upvalue) -> Bool {
+			lhs.isLocal == rhs.isLocal && lhs.index == rhs.index
+		}
+
 		var isLocal: Bool
 		var index: Byte
 

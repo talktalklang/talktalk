@@ -187,19 +187,19 @@ struct CompilerTests {
 		let result = chunk.disassemble()
 		let expected = [
 			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0, name: "a")),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 1, name: "a")),
 			Instruction(opcode: .constant, line: 2, offset: 4, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, line: 2, offset: 6, metadata: .local(slot: 1, name: "b")),
-			Instruction(opcode: .defClosure, line: 3, offset: 8, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(0), .capturing(1)])),
-			Instruction(opcode: .return, line: 0, offset: 10, metadata: .simple),
+			Instruction(opcode: .setLocal, line: 2, offset: 6, metadata: .local(slot: 2, name: "b")),
+			Instruction(opcode: .defClosure, line: 3, offset: 8, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(1), .capturing(2)])),
+			Instruction(opcode: .return, line: 0, offset: 14, metadata: .simple),
 		]
 
 		#expect(result == expected)
 
 		let subchunk = chunk.getChunk(at: 0)
 		let subexpected = [
-			Instruction(opcode: .getUpvalue, line: 4, offset: 0, metadata: .upvalue(slot: 1, name: "a")),
-			Instruction(opcode: .getUpvalue, line: 5, offset: 2, metadata: .upvalue(slot: 2, name: "b")),
+			Instruction(opcode: .getUpvalue, line: 4, offset: 0, metadata: .upvalue(slot: 0, name: "a")),
+			Instruction(opcode: .getUpvalue, line: 5, offset: 2, metadata: .upvalue(slot: 1, name: "b")),
 			Instruction(opcode: .return, line: 6, offset: 6, metadata: .simple),
 		]
 
@@ -218,8 +218,8 @@ struct CompilerTests {
 		let result = chunk.disassemble()
 		let expected = [
 			Instruction(opcode: .constant, line: 1, offset: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 0, name: "a")),
-			Instruction(opcode: .defClosure, line: 2, offset: 4, metadata: .closure(arity: 0, depth: 0, upvalues: [])),
+			Instruction(opcode: .setLocal, line: 1, offset: 2, metadata: .local(slot: 1, name: "a")),
+			Instruction(opcode: .defClosure, line: 2, offset: 4, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
 			Instruction(opcode: .return, line: 0, offset: 6, metadata: .simple),
 		]
 
@@ -232,10 +232,10 @@ struct CompilerTests {
 		let subexpected = [
 			// Define 'b'
 			Instruction(opcode: .constant, line: 3, offset: 0, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, line: 3, offset: 2, metadata: .local(slot: 0, name: "b")),
+			Instruction(opcode: .setLocal, line: 3, offset: 2, metadata: .local(slot: 1, name: "b")),
 
 			// Get 'b' to add to a
-			Instruction(opcode: .getLocal, line: 4, offset: 4, metadata: .local(slot: 0, name: "b")),
+			Instruction(opcode: .getLocal, line: 4, offset: 4, metadata: .local(slot: 1, name: "b")),
 			// Get 'a' from upvalue
 			Instruction(opcode: .getUpvalue, line: 4, offset: 6, metadata: .upvalue(slot: 0, name: "a")),
 			// Do the addition
@@ -243,10 +243,6 @@ struct CompilerTests {
 
 			Instruction(opcode: .return, line: 5, offset: 9, metadata: .simple),
 		]
-
-		subchunk.dump()
-		print("--")
-		print(subexpected.map(\.description).joined(separator: "\n"))
 
 		#expect(subchunk.disassemble() == subexpected)
 	}
