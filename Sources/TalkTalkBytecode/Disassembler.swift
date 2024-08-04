@@ -46,7 +46,7 @@ public struct Disassembler {
 		case .getUpvalue:
 			return upvalueInstruction(opcode: opcode, start: index)
 		default:
-			return Instruction(opcode: opcode, line: chunk.lines[index], offset: index, metadata: .simple)
+			return Instruction(opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
 	}
 
@@ -54,7 +54,7 @@ public struct Disassembler {
 		let constant = chunk.code[current++]
 		let value = chunk.constants[Int(constant)]
 		let metadata = ConstantMetadata(value: value)
-		return Instruction(opcode: .constant, line: chunk.lines[start], offset: start, metadata: metadata)
+		return Instruction(opcode: .constant, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func jumpInstruction(opcode: Opcode, start: Int) -> Instruction {
@@ -65,13 +65,13 @@ public struct Disassembler {
 		var jump = Int(placeholderA << 8)
 		jump |= Int(placehodlerB)
 
-		return Instruction(opcode: opcode, line: chunk.lines[start], offset: current, metadata: .jump(offset: jump))
+		return Instruction(opcode: opcode, offset: current, line: chunk.lines[start], metadata: .jump(offset: jump))
 	}
 
 	mutating func localInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
 		let metadata = LocalMetadata(slot: slot, name: chunk.localNames[Int(slot)])
-		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
+		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func defClosureInstruction(start: Int) -> Instruction {
@@ -87,12 +87,12 @@ public struct Disassembler {
 		}
 
 		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
-		return Instruction(opcode: .defClosure, line: chunk.lines[start], offset: start, metadata: metadata)
+		return Instruction(opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func upvalueInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
 		let metadata = UpvalueMetadata(slot: slot, name: chunk.upvalueNames[Int(slot)])
-		return Instruction(opcode: opcode, line: chunk.lines[start], offset: start, metadata: metadata)
+		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 }

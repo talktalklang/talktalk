@@ -17,7 +17,7 @@ public struct Instruction {
 	public let opcode: Opcode
 	public let metadata: any InstructionMetadata
 
-	public init(opcode: Opcode, line: UInt32, offset: Int, metadata: any InstructionMetadata) {
+	public init(opcode: Opcode, offset: Int, line: UInt32, metadata: any InstructionMetadata) {
 		self.line = line
 		self.opcode = opcode
 		self.offset = offset

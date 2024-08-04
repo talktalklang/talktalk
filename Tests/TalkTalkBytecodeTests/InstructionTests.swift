@@ -10,6 +10,6 @@ import TalkTalkBytecode
 
 struct InstructionTests {
 	@Test("Constant") func constant() {
-		_ = Instruction(opcode: .constant, line: 0, offset: 1, metadata: .simple)
+		_ = Instruction(opcode: .constant, offset: 1, line: 0, metadata: .simple)
 	}
 }
