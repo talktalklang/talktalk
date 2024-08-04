@@ -23,12 +23,21 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Tracks which locals have been captured
 	public var captures: [String] = []
 
+	// Track which locals have been created in this scope
+	public var localsCount = 0
+
 	// Tracks how many upvalues we currently have
 	public var upvalues: [(index: Byte, isLocal: Bool)] = []
 
 	public init(scopeDepth: Int = 0, parent: ChunkCompiler? = nil) {
 		self.scopeDepth = scopeDepth
 		self.parent = parent
+	}
+
+	public func endScope(chunk: Chunk) {
+		for (_, _) in localsTable {
+			chunk.emit(opcode: .pop, line: 0)
+		}
 	}
 
 	// MARK: Visitor methods
@@ -53,6 +62,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let name = expr.name.lexeme
 		let local = localsTable[name, default: Byte(localsTable.count)]
 		localsTable[name] = local
+		localsCount++
 
 		chunk.emit(opcode: .setLocal, line: expr.location.line)
 		chunk.emit(byte: local, line: expr.location.line)
@@ -157,6 +167,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Define the params for this function
 		for (i, parameter) in expr.analyzedParams.paramsAnalyzed.enumerated() {
+			functionCompiler.localsTable[parameter.name] = Byte(i)
 			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
 			functionChunk.emit(byte: Byte(i), line: parameter.location.line)
 		}
@@ -165,17 +176,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try expr.accept(functionCompiler, functionChunk)
 		}
 
+		// We always want to emit a return at the end of a function
 		functionChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
+
+		// Store the upvalue count
+		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
 		let subchunkID = Byte(chunk.subchunks.count)
 		chunk.subchunks.append(functionChunk)
-		chunk.emitClosure(
-			subchunkID: subchunkID,
-			name: expr.name,
-			arity: Byte(expr.params.params.count),
-			upvalueCount: 0,
-			line: expr.location.line
-		)
+		chunk.emitClosure(subchunkID: subchunkID, line: UInt32(expr.location.line))
 	}
 
 	public func visit(_ expr: AnalyzedBlockExpr, _ chunk: Chunk) throws {

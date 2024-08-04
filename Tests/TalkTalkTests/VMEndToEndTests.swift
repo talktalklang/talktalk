@@ -116,4 +116,30 @@ struct VMEndToEndTests {
 		}()
 		""") == .int(60))
 	}
+
+	@Test("Modify var from enclosing scope") func modifyEnclosing() {
+		#expect(run("""
+		a = 10
+		func() {
+			a = 20
+		}()
+		a
+		""") == .int(10))
+	}
+
+	@Test("Works with counter", .disabled("Disabled while i look at memory stuff")) func counter() {
+		#expect(run("""
+		makeCounter = func() {
+			count = 0
+			func() {
+				count = count + 1
+				count
+			}
+		}
+
+		mycounter = makeCounter()
+		mycounter()
+		mycounter()
+		""") == .int(2))
+	}
 }

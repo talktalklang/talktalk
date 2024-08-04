@@ -11,7 +11,9 @@ struct CallFrame {
 	var ip: UInt64 = 0
 	var chunk: Chunk
 	var returnTo: UInt64
+	var stackOffset: Int
 }
+
 
 public struct VirtualMachine: ~Copyable {
 	public enum ExecutionResult {
@@ -21,7 +23,7 @@ public struct VirtualMachine: ~Copyable {
 			if case let .ok(value) = self {
 				return value
 			} else {
-				fatalError("Cannot get none ok execution result")
+				fatalError("Cannot get none execution result")
 			}
 		}
 	}
@@ -73,7 +75,7 @@ public struct VirtualMachine: ~Copyable {
 		self.stack = Stack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
-		let frame = CallFrame(chunk: chunk, returnTo: 0)
+		let frame = CallFrame(chunk: chunk, returnTo: 0, stackOffset: 0)
 		self.frames.push(frame)
 	}
 
@@ -87,11 +89,33 @@ public struct VirtualMachine: ~Copyable {
 
 			switch opcode {
 			case .return:
-				frames.pop()
+				let calledFrame = frames.pop()
 
-				if frames.size == 0 {
-					return .ok(stack.pop())
+				// Remove the result from the stack temporarily while we clean it up
+				let result = stack.pop()
+
+				// Pop off values created on the stack by the called frame
+				while stack.size > calledFrame.stackOffset {
+					stack.pop()
 				}
+
+				// If there are no frames left, we're done.
+				if frames.size == 0 {
+					// Make sure we didn't leak anything
+					if stack.size != 0 {
+						print("stack size expected to be 0, got: \(stack.size)")
+						dumpStack()
+						assertionFailure("")
+					}
+
+					return .ok(result)
+				}
+
+				// Push the result back onto the stack
+				stack.push(result)
+
+				// Return to where we called from
+				self.ip = calledFrame.returnTo
 			case .constant:
 				let value = readConstant()
 				stack.push(value)
@@ -183,13 +207,15 @@ public struct VirtualMachine: ~Copyable {
 				}
 			case .getLocal:
 				let slot = readByte()
-				stack.push(stack[Int(slot)])
+				stack.push(stack[Int(slot) + currentFrame.stackOffset])
 			case .setLocal:
 				let slot = readByte()
-				stack[Int(slot)] = stack.peek()
+				stack[Int(slot) + currentFrame.stackOffset] = stack.peek()
 			case .getUpvalue:
 				let slot = readByte()
-				
+				let backtrack = -(currentFrame.stackOffset + Int(chunk.upvalueCount))
+				let offset = backtrack + Int(slot)
+				stack.push(stack.peek(offset: -offset))
 			case .defClosure:
 				// TODO: Capture closure values
 				let slot = readByte()
@@ -216,7 +242,11 @@ public struct VirtualMachine: ~Copyable {
 	mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
 		let chunk = chunk.subchunks[closureID]
-		let frame = CallFrame(chunk: chunk, returnTo: ip)
+		let frame = CallFrame(
+			chunk: chunk,
+			returnTo: ip,
+			stackOffset: stack.size - Int(chunk.arity)
+		)
 
 		frames.push(frame)
 	}
@@ -237,5 +267,14 @@ public struct VirtualMachine: ~Copyable {
 
 	func runtimeError(_ message: String) -> ExecutionResult {
 		.error(message)
+	}
+
+	mutating func dumpStack() {
+		if stack.isEmpty { return }
+		print(String(repeating: " ", count: 9), terminator: "")
+		for slot in stack.entries() {
+			print("[ \(slot.description) ]", terminator: "")
+		}
+		print()
 	}
 }
