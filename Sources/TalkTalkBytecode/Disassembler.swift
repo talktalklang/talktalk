@@ -6,7 +6,7 @@
 //
 
 public struct Disassembler {
-	var current = 0
+	public var current = 0
 	let chunk: Chunk
 
 	public init(chunk: Chunk) {
@@ -23,7 +23,7 @@ public struct Disassembler {
 		return result
 	}
 
-	mutating func next() -> Instruction? {
+	mutating public func next() -> Instruction? {
 		if current == chunk.code.count {
 			return nil
 		}
@@ -76,7 +76,7 @@ public struct Disassembler {
 
 	mutating func defClosureInstruction(start: Int) -> Instruction {
 		let closureSlot = chunk.code[current++]
-		let subchunk = chunk.subchunks[Int(closureSlot)]
+		let subchunk = chunk.getChunk(at: Int(closureSlot))
 		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalueCount: 0)
 		return Instruction(opcode: .defClosure, line: chunk.lines[start], offset: start, metadata: metadata)
 	}

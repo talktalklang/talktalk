@@ -15,7 +15,7 @@ public struct Compiler {
 
 	public init(analyzedExprs: [any AnalyzedExpr]) {
 		self.analyzedExprs = analyzedExprs
-		self.chunk = Chunk()
+		self.chunk = Chunk(name: "main")
 	}
 
 	public mutating func compile() throws -> Chunk {

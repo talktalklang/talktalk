@@ -161,6 +161,24 @@ public extension InstructionMetadata where Self == ClosureMetadata {
 	}
 }
 
+public struct CallMetadata: InstructionMetadata {
+	public let name: String
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+
+	public var description: String {
+		"name: \(name)"
+	}
+}
+
+public extension InstructionMetadata where Self == CallMetadata {
+	static func call(name: String) -> CallMetadata {
+		CallMetadata(name: name)
+	}
+}
+
 public struct UpvalueMetadata: InstructionMetadata {
 	public let slot: Byte
 

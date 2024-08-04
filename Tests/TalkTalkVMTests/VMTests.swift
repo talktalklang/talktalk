@@ -11,7 +11,7 @@ import TalkTalkBytecode
 
 struct VMTests {
 	func chunk(_ instructions: [Instruction]) -> Chunk {
-		var chunk = Chunk()
+		var chunk = Chunk(name: "main")
 		for instruction in instructions {
 			instruction.emit(into: &chunk)
 		}

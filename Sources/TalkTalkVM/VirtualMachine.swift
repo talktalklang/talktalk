@@ -14,16 +14,16 @@ struct CallFrame {
 	var stackOffset: Int
 }
 
-
 public struct VirtualMachine: ~Copyable {
 	public enum ExecutionResult {
 		case ok(Value), error(String)
 
 		public func get() -> Value {
-			if case let .ok(value) = self {
+			switch self {
+			case .ok(let value):
 				return value
-			} else {
-				fatalError("Cannot get none execution result")
+			case .error(let string):
+				fatalError("Execution error: \(string)")
 			}
 		}
 	}
@@ -59,7 +59,7 @@ public struct VirtualMachine: ~Copyable {
 		}
 
 		set {
-			frames[frames.size-1] = newValue
+			frames[frames.size - 1] = newValue
 		}
 	}
 
@@ -76,11 +76,20 @@ public struct VirtualMachine: ~Copyable {
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		let frame = CallFrame(chunk: chunk, returnTo: 0, stackOffset: 0)
-		self.frames.push(frame)
+		frames.push(frame)
 	}
 
-	mutating public func run() -> ExecutionResult {
+	public mutating func run() -> ExecutionResult {
 		while true {
+			#if DEBUG
+			var disassembler = Disassembler(chunk: chunk)
+			disassembler.current = Int(ip)
+			if let instruction = disassembler.next() {
+				dumpStack()
+				print(instruction.description)
+			}
+			#endif
+
 			let byte = readByte()
 
 			guard let opcode = Opcode(rawValue: byte) else {
@@ -89,10 +98,10 @@ public struct VirtualMachine: ~Copyable {
 
 			switch opcode {
 			case .return:
-				let calledFrame = frames.pop()
-
 				// Remove the result from the stack temporarily while we clean it up
 				let result = stack.pop()
+
+				let calledFrame = frames.pop()
 
 				// Pop off values created on the stack by the called frame
 				while stack.size > calledFrame.stackOffset {
@@ -115,7 +124,7 @@ public struct VirtualMachine: ~Copyable {
 				stack.push(result)
 
 				// Return to where we called from
-				self.ip = calledFrame.returnTo
+				ip = calledFrame.returnTo
 			case .constant:
 				let value = readConstant()
 				stack.push(value)
@@ -147,49 +156,57 @@ public struct VirtualMachine: ~Copyable {
 				stack.push(.bool(lhs != rhs))
 			case .add:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot add none int operands")
 				}
 				stack.push(.int(lhs + rhs))
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot subtract none int operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot divide none int operands")
 				}
 				stack.push(.int(lhs / rhs))
 			case .multiply:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot multiply none int operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue else {
+				      let rhs = stack.pop().intValue
+				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs >= rhs))
@@ -199,11 +216,11 @@ public struct VirtualMachine: ~Copyable {
 			case .pop:
 				stack.pop()
 			case .jump:
-				self.ip += readUInt16()
+				ip += readUInt16()
 			case .jumpUnless:
 				let jump = readUInt16()
 				if stack.peek() == .bool(false) {
-					self.ip += jump
+					ip += jump
 				}
 			case .getLocal:
 				let slot = readByte()
@@ -241,7 +258,10 @@ public struct VirtualMachine: ~Copyable {
 
 	mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
-		let chunk = chunk.subchunks[closureID]
+		let chunk = chunk.getChunk(at: closureID)
+
+		// FIXME: ok function values are just offsets into subchunks, which is a problem because when a function returns, the subchunks change. we need a way to access subchunks of subchunks when they are return values
+
 		let frame = CallFrame(
 			chunk: chunk,
 			returnTo: ip,
@@ -271,9 +291,9 @@ public struct VirtualMachine: ~Copyable {
 
 	mutating func dumpStack() {
 		if stack.isEmpty { return }
-		print(String(repeating: " ", count: 9), terminator: "")
+		print("       ", terminator: "")
 		for slot in stack.entries() {
-			print("[ \(slot.description) ]", terminator: "")
+			print("[ \(slot.disassemble(in: chunk)) ]", terminator: "")
 		}
 		print()
 	}

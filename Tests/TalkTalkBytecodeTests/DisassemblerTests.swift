@@ -10,7 +10,7 @@ import TalkTalkBytecode
 
 struct DisassemblerTests {
 	@Test("Disassembles simple opcodes") func simple() {
-		let chunk = Chunk()
+		let chunk = Chunk(name: "main")
 		chunk.emit(opcode: .true, line: 1)
 
 		#expect(chunk.disassemble() == [
@@ -19,7 +19,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("Disassembles constant opcodes") func constant() {
-		let chunk = Chunk()
+		let chunk = Chunk(name: "main")
 		chunk.emit(constant: Value(int: 123), line: 1)
 		chunk.emit(opcode: .return, line: 2)
 

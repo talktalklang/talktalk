@@ -127,11 +127,11 @@ struct VMEndToEndTests {
 		""") == .int(10))
 	}
 
-	@Test("Works with counter", .disabled("Disabled while i look at memory stuff")) func counter() {
+	@Test("Works with counter") func counter() {
 		#expect(run("""
-		makeCounter = func() {
+		func makeCounter() {
 			count = 0
-			func() {
+			func increment() {
 				count = count + 1
 				count
 			}

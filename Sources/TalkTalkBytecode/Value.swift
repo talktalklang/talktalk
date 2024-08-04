@@ -37,6 +37,10 @@ public struct Value: Equatable, Hashable {
 		Value(closureID: UInt64(id))
 	}
 
+	public static func pointer(_ addr: UInt64) -> Value {
+		Value(pointer: addr)
+	}
+
 	var tag: Tag {
 		return Tag(rawValue: UInt8(storage & 0xF))!
 	}
@@ -98,6 +102,15 @@ public struct Value: Equatable, Hashable {
 	public var closureValue: UInt64? {
 		guard tag == .closure else { return nil }
 		return storage &>> 4
+	}
+
+	public func disassemble(in chunk: Chunk) -> String {
+		switch tag {
+		case .closure:
+			"closure(\(chunk.getChunk(at: Int(closureValue!)).name))"
+		default:
+			description
+		}
 	}
 }
 

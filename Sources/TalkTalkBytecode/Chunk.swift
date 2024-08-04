@@ -8,6 +8,8 @@
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
 public class Chunk {
+	public let name: String
+
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
 	public var code: [Byte] = []
 
@@ -24,12 +26,25 @@ public class Chunk {
 	public var arity: Byte = 0
 	public var depth: Byte = 0
 	public var parent: Chunk?
+
+	public var localsCount: Byte = 0
+
+	// How many upvalues does this chunk refer to
 	public var upvalueCount: Byte = 0
-	public var subchunks: [Chunk] = []
 
-	public init() {}
+	// Other callable chunks
+	private var subchunks: [Chunk] = []
 
-	public init(parent: Chunk, arity: Byte, depth: Byte) {
+	// For debugging names used in this chunk
+	public var localNames: [String] = []
+	public var upvalueNames: [String] = []
+
+	public init(name: String) {
+		self.name = name
+	}
+
+	public init(name: String, parent: Chunk, arity: Byte, depth: Byte) {
+		self.name = name
 		self.parent = parent
 		self.arity = arity
 		self.depth = depth
@@ -41,7 +56,31 @@ public class Chunk {
 	}
 
 	public func dump() {
+		print("\(name) locals: \(localsCount), upvalues: \(upvalueCount)")
 		print(disassemble().map(\.description).joined(separator: "\n"))
+		for subchunk in subchunks {
+			subchunk.dump()
+		}
+	}
+
+	public func addChunk(_ chunk: Chunk) -> Int {
+		if let parent {
+			return parent.addChunk(chunk)
+		}
+
+		defer {
+			subchunks.append(chunk)
+		}
+
+		return subchunks.count
+	}
+
+	public func getChunk(at index: Int) -> Chunk {
+		if let parent {
+			return parent.getChunk(at: index)
+		}
+
+		return subchunks[index]
 	}
 
 	public func finalize() -> Chunk {
