@@ -5,23 +5,23 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import Testing
-import TalkTalkSyntax
-import TalkTalkBytecode
 import TalkTalkAnalysis
+import TalkTalkBytecode
 import TalkTalkCompiler
+import TalkTalkSyntax
 import TalkTalkVM
+import Testing
 
 struct VMEndToEndTests {
-	func compile(_ string: String) -> Chunk {
+	func compile(_ string: String) throws -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)
 		var compiler = Compiler(analyzedExprs: analyzed)
-		return try! compiler.compile()
+		return try compiler.compile()
 	}
 
 	func run(_ string: String) -> TalkTalkBytecode.Value {
-		let chunk = compile(string)
+		let chunk = try! compile(string)
 		return VirtualMachine.run(chunk: chunk).get()
 	}
 
@@ -142,5 +142,17 @@ struct VMEndToEndTests {
 		mycounter()
 		mycounter()
 		""") == .int(2))
+	}
+
+	@Test("Doesn't leak out of closures") func closureLeak() throws {
+		#expect(throws: CompilerError.self) {
+			try compile("""
+			func() {
+			 a = 123
+			}
+
+			a
+			""")
+		}
 	}
 }

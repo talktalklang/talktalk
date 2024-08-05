@@ -11,6 +11,15 @@ public struct VirtualMachine: ~Copyable {
 	public enum ExecutionResult {
 		case ok(Value), error(String)
 
+		public func error() -> String? {
+			switch self {
+			case .ok(let value):
+				return nil
+			case .error(let string):
+				return string
+			}
+		}
+
 		public func get() -> Value {
 			switch self {
 			case .ok(let value):

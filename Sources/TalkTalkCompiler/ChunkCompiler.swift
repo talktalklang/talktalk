@@ -94,7 +94,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {
-		fatalError("unreachable: \(expr.message)")
+		throw CompilerError.analysisError(expr.message)
 	}
 
 	public func visit(_ expr: AnalyzedUnaryExpr, _ chunk: Chunk) throws {
