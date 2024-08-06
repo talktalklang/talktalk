@@ -6,7 +6,7 @@
 //
 
 struct Response<Result: Encodable>: Encodable {
-	let id: RequestID
+	let id: RequestID?
 	let result: Result
 	let jsonrpc = "2.0"
 }

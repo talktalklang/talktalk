@@ -27,6 +27,8 @@ public struct LSP {
 	let newline = Character("\n").unicodeScalars.first!.value
 	let cr = Character("\r").unicodeScalars.first!.value
 
+	let stdout = FileHandle.standardOutput
+
 	public init() {}
 
 	public func start() {
@@ -84,7 +86,7 @@ public struct LSP {
 		"Message"
 	}
 
-	func respond<T: Encodable>(to id: RequestID, with response: T) {
+	func respond<T: Encodable>(to id: RequestID?, with response: T) {
 		do {
 			let response = Response(id: id, result: response)
 			let content = try encoder.encode(response)
@@ -93,8 +95,7 @@ public struct LSP {
 			data.append(content)
 			let dataString = String(data: data, encoding: .utf8)!
 			try? data.append(to: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log"))
-
-			print(dataString)
+			try stdout.write(contentsOf: data)
 		} catch {
 			log("error generating response: \(error)")
 		}

@@ -41,6 +41,6 @@ struct Request: Equatable, Codable {
 		case object(MessageParams), array([MessageParams])
 	}
 
-	var id: RequestID
+	var id: RequestID?
 	var method: String
 }
