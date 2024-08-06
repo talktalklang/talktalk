@@ -7,4 +7,3 @@ struct Person {
 }
 
 person = Person()
-person.
