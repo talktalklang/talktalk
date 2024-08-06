@@ -8,7 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
-struct Completer: AnalyzedVisitor {
+struct Completer {
 	var source: String
 	var lastSuccessfulExprs: [any AnalyzedExpr] = []
 
@@ -77,49 +77,4 @@ struct Completer: AnalyzedVisitor {
 
 		return result
 	}
-
-	// MARK: Visitor stuff
-
-	public typealias Value = Void
-	public class Context {
-		var results: [CompletionItem] = []
-	}
-
-	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Context) throws {}
-
-	public func visit(_ expr: AnalyzedCallExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedErrorSyntax, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedLiteralExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedVarExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedBinaryExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedUnaryExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedIfExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedFuncExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedBlockExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedWhileExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedParamsExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedReturnExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedMemberExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedDeclBlock, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedStructExpr, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedVarDecl, _ context: Context) throws -> Value {}
-
-	public func visit(_ expr: AnalyzedLetDecl, _ context: Context) throws -> Value {}
 }
