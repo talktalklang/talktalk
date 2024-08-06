@@ -10,13 +10,13 @@ public extension Parser {
 		let i = startLocation(at: previous)
 
 		guard let name = consume(.identifier, "expected identifier after var")?.lexeme else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var")
+			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
 
 		consume(.colon, "expected ':' after name")
 
 		guard let typeDecl = consume(.identifier)?.lexeme else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var")
+			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .type)
 		}
 
 		return VarDeclSyntax(name: name, typeDecl: typeDecl, location: endLocation(i))
@@ -26,13 +26,13 @@ public extension Parser {
 		let i = startLocation(at: previous)
 
 		guard let name = consume(.identifier, "expected identifier after var")?.lexeme else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var")
+			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
 
 		consume(.colon, "expected ':' after name")
 
 		guard let typeDecl = consume(.identifier)?.lexeme else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var")
+			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .type)
 		}
 
 		if kind == .let {

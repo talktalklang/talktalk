@@ -13,6 +13,7 @@ public protocol VarExpr: Expr {
 public struct VarExprSyntax: VarExpr {
 	public let token: Token
 	public let location: SourceLocation
+	public var children: [any Syntax] { [] }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)

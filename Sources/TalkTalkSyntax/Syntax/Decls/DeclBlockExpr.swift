@@ -12,6 +12,7 @@ public protocol DeclBlockExpr: Expr {
 public struct DeclBlockExprSyntax: DeclBlockExpr {
 	public var decls: [any Decl]
 	public let location: SourceLocation
+	public var children: [any Syntax] { decls }
 
 	public init(decls: [any Decl], location: SourceLocation) {
 		self.decls = decls

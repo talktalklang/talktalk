@@ -29,7 +29,8 @@ public extension Analyzer {
 						name: name,
 						expr: AnalyzedLiteralExpr(
 							type: .bool,
-							expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)])
+							expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)]),
+							environment: .init()
 						),
 						type: .bool
 					),
@@ -128,7 +129,8 @@ public extension Analyzer {
 						bodyAnalyzed: AnalyzedBlockExpr(
 							type: .none,
 							expr: BlockExprSyntax(exprs: [], location: [.synthetic(.builtin)]),
-							exprsAnalyzed: []
+							exprsAnalyzed: [],
+							environment: self
 						),
 						returnsAnalyzed: nil,
 						environment: .init()
@@ -143,7 +145,8 @@ public extension Analyzer {
 						name: "Self",
 						expr: AnalyzedVarExpr(
 							type: scope.type,
-							expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)])
+							expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
+							environment: self
 						),
 						type: scope.type
 					)

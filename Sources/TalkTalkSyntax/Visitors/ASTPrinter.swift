@@ -101,6 +101,10 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
+	@StringBuilder public func visit(_ expr: any IdentifierExpr, _ context: Context) throws -> String {
+		dump(expr, "name: \(expr.name)")
+	}
+
 	@StringBuilder public func visit(_ expr: ErrorSyntax, _ context: Context) throws -> String {
 		dump(expr, expr.message)
 	}

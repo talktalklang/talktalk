@@ -59,8 +59,8 @@ public struct TalkTalkLexer {
 	var start = 0
 	var current = 0
 
-	var line = 1
-	var column = 1
+	var line = 0
+	var column = 0
 
 	public init(_ source: String) {
 		self.source = ContiguousArray<Character>(source)
@@ -240,6 +240,6 @@ public struct TalkTalkLexer {
 
 	mutating func nextLine() {
 		line += 1
-		column = 1
+		column = 0
 	}
 }

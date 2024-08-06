@@ -12,7 +12,7 @@ import TalkTalkSyntax
 import TalkTalkVM
 import Testing
 
-struct VMEndToEndTests {
+actor VMEndToEndTests {
 	func compile(_ string: String) throws -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)

@@ -118,15 +118,17 @@ public struct Compiler: AnalyzedVisitor {
 		return module
 	}
 
-	public func run() -> Value {
+	public func run() -> TalkTalkAnalysis.Value {
 		#if os(Linux)
 		return .error("JIT not supported on Linux")
-		#else
+		#elseif EXPERIMENTAL_LLVM_ENABLED
 		if let int = try! LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
 			return .error("Nope.")
 		}
+		#else
+		return .error("Nope")
 		#endif
 	}
 
@@ -154,6 +156,10 @@ public struct Compiler: AnalyzedVisitor {
 		default:
 			fatalError("\(callee) not callable")
 		}
+	}
+
+	public func visit(_ expr: TalkTalkAnalysis.AnalyzedIdentifierExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		fatalError()
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) throws -> any LLVM.EmittedValue {
@@ -462,7 +468,7 @@ public struct Compiler: AnalyzedVisitor {
 			var paramsAnalyzed = funcExpr.analyzedParams
 
 			// TODO: Need to figure out how to make the first arg here a pointer
-			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
+			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"), environment: paramsAnalyzed.environment)] + funcExpr.analyzedParams.paramsAnalyzed
 
 			funcExpr.name = name
 

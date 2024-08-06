@@ -48,9 +48,19 @@ public struct Formatter: Visitor {
 		var result = "if "
 		result += try expr.condition.accept(self, context)
 		result += " "
-		result += "{\n"
-		result
+		result += try indenting {
+			try expr.consequence.accept($0, context)
+		}
+		result += " else "
+		result += try indenting {
+			try expr.alternative.accept($0, context)
+		}
+
 		return result
+	}
+
+	public func visit(_ expr: any IdentifierExpr, _ context: Context) throws -> String {
+		"\(expr.name)"
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Context) throws -> Value {

@@ -1,0 +1,4 @@
+person = "Pat"
+pet = "dog"
+
+func foo() {}

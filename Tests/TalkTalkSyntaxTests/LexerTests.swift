@@ -12,8 +12,8 @@ struct TalkTalkLexerTests {
 		])
 
 		#expect(tokens.map(\.line) == [
-			1,
-			1,
+			0,
+			0,
 		])
 	}
 
@@ -29,10 +29,10 @@ struct TalkTalkLexerTests {
 		])
 
 		#expect(tokens.map(\.column) == [
-			1,
-			4,
-			6,
-			8,
+			0,
+			3,
+			5,
+			7,
 		])
 	}
 
@@ -125,16 +125,16 @@ struct TalkTalkLexerTests {
 		])
 
 		#expect(tokens.map(\.line) == [
-			1,
-			1,
-			1,
+			0,
+			0,
+			0,
+			0,
+			0,
 			1,
 			1,
 			2,
 			2,
-			3,
-			3,
-			3
+			2
 		])
 	}
 

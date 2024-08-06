@@ -24,9 +24,8 @@ public struct Parser {
 	var current: Token
 	var previous: Token!
 
+	// The location stack is used for tracking source locations while parsing
 	var locationStack: SourceLocationStack = .init()
-
-	var exprLength = 0
 
 	public var errors: [(Token, String)] = []
 
@@ -76,7 +75,7 @@ public struct Parser {
 			return letVarDecl(.let)
 		}
 
-		return SyntaxError(location: [current], message: "Expected declaration")
+		return SyntaxError(location: [current], message: "Expected declaration", expectation: .decl)
 	}
 
 	mutating func expr() -> Expr {
@@ -139,7 +138,7 @@ public struct Parser {
 			return peek()
 		}
 
-		_ = error(at: peek(), message ?? "Expected \(kind), got \(peek().debugDescription)")
+		_ = error(at: peek(), message ?? "Expected \(kind), got \(peek().debugDescription)", expectation: .guess(from: kind))
 		return nil
 	}
 
@@ -154,7 +153,7 @@ public struct Parser {
 			return true
 		}
 
-		_ = error(at: peek(), "Expected \(kind), got \(peek().debugDescription)")
+		_ = error(at: peek(), "Expected \(kind), got \(peek().debugDescription)", expectation: .guess(from: kind))
 		return false
 	}
 
@@ -202,10 +201,10 @@ public struct Parser {
 		current
 	}
 
-	mutating func error(at: Token, _ message: String) -> ErrorSyntax {
+	mutating func error(at: Token, _ message: String, expectation: ParseExpectation) -> ErrorSyntax {
 		errors.append((at, message))
 		print(message, "ln: \(at.line) col: \(at.column)")
-		return SyntaxError(location: [at], message: message)
+		return SyntaxError(location: [at], message: message, expectation: expectation)
 	}
 
 	mutating func startLocation(at token: Token? = nil) -> Int {
