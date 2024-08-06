@@ -6,9 +6,19 @@
 //
 
 import Foundation
-import OSLog
 
-private let logger = Logger(subsystem: "talktalk", category: "lsp")
+#if os(Linux)
+extension URL {
+	static var homeDirectory: URL {
+		let home = ProcessInfo.processInfo.environment["HOME"]!
+		return URL(fileURLWithPath: home)
+	}
+
+	func appending(path: String) -> URL {
+		self.appendingPathComponent(path)
+	}
+}
+#endif
 
 public struct LSP {
 	let decoder = JSONDecoder()
@@ -20,7 +30,7 @@ public struct LSP {
 	public init() {}
 
 	public func start() {
-		logger.error("starting talktalk lsp")
+		log("starting talktalk lsp")
 		let file = FileHandle.standardInput
 
 		while true {
@@ -42,7 +52,7 @@ public struct LSP {
 			i += 3 // Skip the \n\r\n
 
 			if i > data.count {
-				logger.error("i less than data.count")
+				log("i less than data.count")
 				continue
 			}
 
@@ -52,19 +62,19 @@ public struct LSP {
 			do {
 				message = try decoder.decode(Request.self, from: body)
 			} catch {
-				logger.error("Error parsing json: \(error, privacy: .public)")
+				log("Error parsing json: \(error)")
 				continue
 			}
 
 			let msg = "\(message)"
-			logger.error("\(msg, privacy: .public)")
+			log("\(msg)")
 
 			switch message.method {
 			case "initialize":
 				let response = InitializeResult()
 				respond(to: message.id, with: response)
 			default:
-				logger.error("unknown method: \(message.method)")
+				log("unknown method: \(message.method)")
 			}
 
 		}
@@ -86,8 +96,13 @@ public struct LSP {
 
 			print(dataString)
 		} catch {
-			logger.error("error generating response: \(error)")
+			log("error generating response: \(error)")
 		}
+	}
+
+	func log(_ msg: String) {
+		try! Data(msg.utf8).append(to: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log"))
+		try! Data("\n".utf8).append(to: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log"))
 	}
 }
 

@@ -8,3 +8,4 @@ DerivedData/
 .netrc
 .swiftpm/
 cllvm.pc
+lsp.log
