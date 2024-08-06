@@ -1,0 +1,10 @@
+func foo() {
+	"sup"
+}
+
+struct Person {
+	func greet() {}
+}
+
+person = Person()
+

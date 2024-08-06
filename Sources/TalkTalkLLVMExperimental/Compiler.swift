@@ -118,15 +118,17 @@ public struct Compiler: AnalyzedVisitor {
 		return module
 	}
 
-	public func run() -> Value {
+	public func run() -> TalkTalkAnalysis.Value {
 		#if os(Linux)
 		return .error("JIT not supported on Linux")
-		#else
+		#elseif EXPERIMENTAL_LLVM_ENABLED
 		if let int = try! LLVM.JIT().execute(module: compile()) {
 			return .int(int)
 		} else {
 			return .error("Nope.")
 		}
+		#else
+		return .error("Nope")
 		#endif
 	}
 

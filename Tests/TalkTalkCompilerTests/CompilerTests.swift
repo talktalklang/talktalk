@@ -11,7 +11,7 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 import Testing
 
-struct CompilerTests {
+actor CompilerTests {
 	func compile(_ string: String) -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! Analyzer.analyzedExprs(parsed)
@@ -83,6 +83,8 @@ struct CompilerTests {
 			Instruction(opcode: .return, offset: 4, line: 0, metadata: .simple)
 		])
 	}
+
+
 
 	@Test("Var expr") func varExpr() {
 		let chunk = compile("""
