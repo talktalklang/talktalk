@@ -5,6 +5,3 @@ func foo() {
 struct Person {
 	func greet() {}
 }
-
-person = Person()
-

@@ -13,7 +13,7 @@ struct ServerInfo: Encodable {
 struct ServerCapabilities: Encodable {
 	let positionEncoding = "utf-8"
 
-	let serverInfo: ServerInfo
+	let serverInfo: ServerInfo = .init()
 
 	let textDocumentSync: TextDocumentSyncOptions = .init(change: .full)
 //	let completionProvider: CompletionOptions = .init()
