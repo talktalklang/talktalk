@@ -49,21 +49,15 @@ struct Completer {
 		var result: [CompletionItem] = []
 		let matches = matching(position: position, exprs: lastSuccessfulExprs)
 
-		Log.info("completions matches: \(matches) out of \(lastSuccessfulExprs)")
-
 		for match in matches {
-			Log.info("match: \(match)")
 			if let errorSyntax = match.as(AnalyzedErrorSyntax.self) {
 				let text = errorSyntax.location.start.lexeme
-
-				Log.info("text: \(text)")
-
 				for binding in errorSyntax.environment.bindings {
 					if binding.name.starts(with: text) {
 						let kind: CompletionItemKind = switch binding.type {
-						case .function(let string, let valueType, let analyzedParamsExpr, let array):
+						case .function(_, _, _, _):
 							.function
-						case .struct(let structType):
+						case .struct(_):
 							.constant
 						default:
 							.variable

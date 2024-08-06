@@ -22,5 +22,5 @@ struct ServerCapabilities: Encodable {
 //	let typeDefinitionProvider = true
 //	let implementationProvider = true
 //	let documentRangeFormattingProvider = true
-//	let documentFormattingProvider = true
+	let documentFormattingProvider = true
 }

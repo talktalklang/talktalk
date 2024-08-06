@@ -1,4 +1,6 @@
 person = "Pat"
 pet = "dog"
 
-func foo() {}
+func foo() {
+
+}

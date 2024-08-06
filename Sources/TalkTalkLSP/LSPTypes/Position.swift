@@ -7,12 +7,12 @@
 
 import TalkTalkSyntax
 
-struct Range {
+struct Range: Encodable {
 	let start: Position
 	let end: Position
 }
 
-struct Position: Decodable {
+struct Position: Codable {
 	let line: Int
 	let character: Int
 }

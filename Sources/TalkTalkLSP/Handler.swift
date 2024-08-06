@@ -9,7 +9,7 @@ struct Handler {
 	let stdout = FileHandle.standardOutput
 
 	// Keep track of our files
-	var sources: [String: String] = [:]
+	var sources: [String: SourceDocument] = [:]
 
 	// Keep track of how many empty responses we get. If it goes to 10 we should just exit.
 	var emptyResponseCount: Int = 0
@@ -47,6 +47,8 @@ struct Handler {
 
 		let body = data[i..<data.count]
 
+//		Log.info(String(data: body, encoding: .utf8) ?? "Could not get body string.")
+
 		let request: Request
 		do {
 			request = try decoder.decode(Request.self, from: body)
@@ -55,15 +57,9 @@ struct Handler {
 			return
 		}
 
-		let msg = "\(request)"
-		Log.info("\(msg)")
+		Log.info("[request] method: \(request.method), id: \(request.id as Any)")
 
-		guard let method = Method(rawValue: request.method) else {
-			Log.error("unknown method: \(request.method)")
-			return
-		}
-
-		switch method {
+		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
 		case .initialized:
@@ -72,6 +68,8 @@ struct Handler {
 			TextDocumentDidChange(request: request).handle(&self)
 		case .textDocumentCompletion:
 			TextDocumentCompletion(request: request).handle(&self)
+		case .textDocumentFormatting:
+			TextDocumentFormatting(request: request).handle(&self)
 		case .shutdown:
 			Log.info("shutting down!")
 			exit(0)

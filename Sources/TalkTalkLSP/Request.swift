@@ -46,7 +46,7 @@ struct Request: Equatable, Decodable {
 	}
 
 	var id: RequestID?
-	var method: String
+	var method: Method
 	var params: (any Decodable)?
 
 	enum CodingKeys: CodingKey {
@@ -56,17 +56,15 @@ struct Request: Equatable, Decodable {
 	init(from decoder: any Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		self.id = try container.decodeIfPresent(RequestID.self, forKey: .id)
-		self.method = try container.decode(String.self, forKey: .method)
-		self.params = switch Method(rawValue: self.method) {
-		case .initialize:
-			nil
-		case .initialized:
-			nil
+		self.method = try container.decode(Method.self, forKey: .method)
+		self.params = switch method {
 		case .textDocumentCompletion:
 			try container.decode(TextDocumentCompletionRequest.self, forKey: .params)
 		case .textDocumentDidChange:
 			try container.decode(TextDocumentDidChangeRequest.self, forKey: .params)
-		default:
+		case .textDocumentFormatting:
+			try container.decode(TextDocumentFormattingRequest.self, forKey: .params)
+		case .initialize, .initialized, .shutdown:
 			nil
 		}
 	}

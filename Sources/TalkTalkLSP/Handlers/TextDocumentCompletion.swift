@@ -18,7 +18,7 @@ struct TextDocumentCompletion {
 		}
 
 		// TODO: probably don't need to new up one of these for every request
-		let completer = Completer(source: source)
+		let completer = Completer(source: source.text)
 
 		do {
 			let completionItems = try completer.completions(at: params.position)
