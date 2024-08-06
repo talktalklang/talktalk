@@ -14,8 +14,11 @@ public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 	public var name: Token { expr.name }
 	public var value: any Expr { expr.value }
 	public var location: SourceLocation { expr.location }
+	public var children: [any Syntax] { expr.children }
 
 	public var valueAnalyzed: any AnalyzedExpr
+	public var analyzedChildren: [any AnalyzedExpr] { [valueAnalyzed] }
+	public let environment: Analyzer.Environment
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)

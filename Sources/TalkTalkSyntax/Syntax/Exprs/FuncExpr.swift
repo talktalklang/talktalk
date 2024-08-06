@@ -24,6 +24,7 @@ public struct FuncExprSyntax: FuncExpr, Decl {
 	public let i: Int
 	public let name: String?
 	public let location: SourceLocation
+	public var children: [any Syntax] { [params, body] }
 
 	public init(params: ParamsExpr, body: any BlockExpr, i: Int, name: String? = nil, location: SourceLocation) {
 		self.params = params

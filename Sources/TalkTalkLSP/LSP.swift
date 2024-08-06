@@ -8,25 +8,19 @@
 import Foundation
 
 public struct LSP {
+	var handler = Handler()
+
 	public init() {}
 
-	public func start() {
-		log("starting talktalk lsp")
+	public mutating func start() {
+		Log.info("starting talktalk lsp")
+
 		let file = FileHandle.standardInput
 
 		while true {
 			let data = file.availableData
-			Handler().handle(data: data)
+			handler.handle(data: data)
 		}
-	}
-
-	public func accept(string: String) -> String {
-		"Message"
-	}
-
-	func log(_ msg: String) {
-		try! Data(msg.utf8).append(to: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log"))
-		try! Data("\n".utf8).append(to: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log"))
 	}
 }
 

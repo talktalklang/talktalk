@@ -12,6 +12,7 @@ public protocol BlockExpr: Expr {
 public struct BlockExprSyntax: BlockExpr {
 	public var exprs: [any Expr]
 	public let location: SourceLocation
+	public var children: [any Syntax] { exprs }
 
 	public init(exprs: [any Expr], location: SourceLocation) {
 		self.exprs = exprs

@@ -14,11 +14,14 @@ public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
 	public var conditionAnalyzed: any AnalyzedExpr
 	public var consequenceAnalyzed: AnalyzedBlockExpr
 	public var alternativeAnalyzed: AnalyzedBlockExpr
+	public let environment: Analyzer.Environment
+	public var analyzedChildren: [any AnalyzedExpr] { [conditionAnalyzed, consequenceAnalyzed, alternativeAnalyzed] }
 
 	public var condition: any Expr { expr.condition }
 	public var consequence: any BlockExpr { expr.consequence }
 	public var alternative: any BlockExpr { expr.alternative }
 	public var location: SourceLocation { expr.location }
+	public var children: [any Syntax] { expr.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)

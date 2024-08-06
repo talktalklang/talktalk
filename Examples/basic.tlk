@@ -1,9 +1,4 @@
-func foo() {
-	"sup"
-}
+person = "Pat"
+pet = "dog"
 
-struct Person {
-	func greet() {}
-}
-
-person = Person()
+func foo() {}

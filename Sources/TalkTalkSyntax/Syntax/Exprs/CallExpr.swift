@@ -19,6 +19,7 @@ public struct CallExprSyntax: CallExpr {
 	public let callee: any Expr
 	public let args: [CallArgument]
 	public let location: SourceLocation
+	public var children: [any Syntax] { [callee] + args.map(\.value) }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)

@@ -36,15 +36,19 @@ public struct Analyzer: Visitor {
 		return try analyzer.visit(mainExpr, env)
 	}
 
+	public func visit(_ expr: any IdentifierExpr, _ context: Environment) throws -> any AnalyzedExpr {
+		AnalyzedIdentifierExpr(type: .placeholder(0), expr: expr, environment: context)
+	}
+
 	public func visit(_ expr: any UnaryExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		let exprAnalyzed = try expr.expr.accept(self, context)
 
 		switch expr.op {
 		case .bang:
 
-			return AnalyzedUnaryExpr(type: .bool, exprAnalyzed: exprAnalyzed, wrapped: expr)
+			return AnalyzedUnaryExpr(type: .bool, exprAnalyzed: exprAnalyzed, environment: context, wrapped: expr)
 		case .minus:
-			return AnalyzedUnaryExpr(type: .int, exprAnalyzed: exprAnalyzed, wrapped: expr)
+			return AnalyzedUnaryExpr(type: .int, exprAnalyzed: exprAnalyzed, environment: context, wrapped: expr)
 		default:
 			fatalError("unreachable")
 		}
@@ -65,14 +69,19 @@ public struct Analyzer: Visitor {
 		case let .struct(t):
 			type = .instance(.struct(t))
 		default:
-			return error(at: callee, "callee not callable: \(callee), has type: \(callee.type)")
+			return error(
+				at: callee, "callee not callable: \(callee), has type: \(callee.type)",
+				environment: context,
+				expectation: .decl
+			)
 		}
 
 		return AnalyzedCallExpr(
 			type: type,
 			expr: expr,
 			calleeAnalyzed: callee,
-			argsAnalyzed: args
+			argsAnalyzed: args,
+			environment: context
 		)
 	}
 
@@ -85,16 +94,26 @@ public struct Analyzer: Visitor {
 		case let .instance(.struct(instance)):
 			property = instance.properties[propertyName] ?? instance.methods[propertyName]
 		default:
-			return error(at: expr, "Cannot access property \(propertyName) on \(receiver)")
+			return error(
+				at: expr, "Cannot access property \(propertyName) on \(receiver)",
+				environment: context,
+				expectation: .member
+			)
 		}
 
 		guard let property else {
-			return error(at: expr, "No property '\(propertyName)' found for \(receiver)")
+			return error(
+				at: expr,
+				"No property '\(propertyName)' found for \(receiver)",
+				environment: context,
+				expectation: .member
+			)
 		}
 
 		return AnalyzedMemberExpr(
 			type: property.type,
 			expr: expr,
+			environment: context,
 			receiverAnalyzed: receiver
 		)
 	}
@@ -104,23 +123,23 @@ public struct Analyzer: Visitor {
 
 		context.define(local: expr.name.lexeme, as: value)
 
-		return AnalyzedDefExpr(type: value.type, expr: expr, valueAnalyzed: value)
+		return AnalyzedDefExpr(type: value.type, expr: expr, valueAnalyzed: value, environment: context)
 	}
 
-	public func visit(_ expr: any ErrorSyntax, _: Environment) throws -> any AnalyzedExpr {
-		AnalyzedErrorSyntax(type: .error(expr.message), expr: expr)
+	public func visit(_ expr: any ErrorSyntax, _ context: Environment) throws -> any AnalyzedExpr {
+		AnalyzedErrorSyntax(type: .error(expr.message), expr: expr, environment: context)
 	}
 
-	public func visit(_ expr: any LiteralExpr, _: Environment) throws -> any AnalyzedExpr {
+	public func visit(_ expr: any LiteralExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		switch expr.value {
 		case .int:
-			AnalyzedLiteralExpr(type: .int, expr: expr)
+			AnalyzedLiteralExpr(type: .int, expr: expr, environment: context)
 		case .bool:
-			AnalyzedLiteralExpr(type: .bool, expr: expr)
+			AnalyzedLiteralExpr(type: .bool, expr: expr, environment: context)
 		case .none:
-			AnalyzedLiteralExpr(type: .none, expr: expr)
-		case .string(let string):
-			AnalyzedLiteralExpr(type: .string, expr: expr)
+			AnalyzedLiteralExpr(type: .none, expr: expr, environment: context)
+		case .string(_):
+			AnalyzedLiteralExpr(type: .string, expr: expr, environment: context)
 		}
 	}
 
@@ -128,11 +147,16 @@ public struct Analyzer: Visitor {
 		if let binding = context.lookup(expr.name) {
 			return AnalyzedVarExpr(
 				type: binding.type,
-				expr: expr
+				expr: expr,
+				environment: context
 			)
 		}
 
-		return error(at: expr, "undefined variable: \(expr.name) ln: \(expr.location.start.line) col: \(expr.location.start.column)")
+		return error(
+			at: expr, "undefined variable: \(expr.name) ln: \(expr.location.start.line) col: \(expr.location.start.column)",
+			environment: context,
+			expectation: .variable
+		)
 	}
 
 	public func visit(_ expr: any BinaryExpr, _ env: Environment) throws -> any AnalyzedExpr {
@@ -141,7 +165,7 @@ public struct Analyzer: Visitor {
 
 		infer(lhs, rhs, as: .int, in: env)
 
-		return AnalyzedBinaryExpr(type: .int, expr: expr, lhsAnalyzed: lhs, rhsAnalyzed: rhs)
+		return AnalyzedBinaryExpr(type: .int, expr: expr, lhsAnalyzed: lhs, rhsAnalyzed: rhs, environment: env)
 	}
 
 	public func visit(_ expr: any IfExpr, _ context: Environment) throws -> any AnalyzedExpr {
@@ -151,7 +175,8 @@ public struct Analyzer: Visitor {
 			expr: expr,
 			conditionAnalyzed: expr.condition.accept(self, context),
 			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockExpr,
-			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockExpr
+			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockExpr,
+			environment: context
 		)
 	}
 
@@ -171,7 +196,7 @@ public struct Analyzer: Visitor {
 				type: .function(name, .placeholder(0), params, []),
 				expr: expr,
 				analyzedParams: params,
-				bodyAnalyzed: .init(type: .placeholder(0), expr: expr.body, exprsAnalyzed: []),
+				bodyAnalyzed: .init(type: .placeholder(0), expr: expr.body, exprsAnalyzed: [], environment: env),
 				returnsAnalyzed: nil,
 				environment: innerEnvironment
 			)
@@ -204,16 +229,17 @@ public struct Analyzer: Visitor {
 
 	public func visit(_ expr: any ReturnExpr, _ env: Environment) throws -> any AnalyzedExpr {
 		let valueAnalyzed = try expr.value?.accept(self, env)
-		return AnalyzedReturnExpr(type: valueAnalyzed?.type ?? .void, expr: expr, valueAnalyzed: valueAnalyzed)
+		return AnalyzedReturnExpr(type: valueAnalyzed?.type ?? .void, environment: env, expr: expr, valueAnalyzed: valueAnalyzed)
 	}
 
-	public func visit(_ expr: any ParamsExpr, _: Environment) throws -> any AnalyzedExpr {
+	public func visit(_ expr: any ParamsExpr, _ context: Environment) throws -> any AnalyzedExpr {
 		AnalyzedParamsExpr(
 			type: .void,
 			expr: expr,
 			paramsAnalyzed: expr.params.enumerated().map { i, param in
-				AnalyzedParam(type: .placeholder(i), expr: param)
-			}
+				AnalyzedParam(type: .placeholder(i), expr: param, environment: context)
+			},
+			environment: context
 		)
 	}
 
@@ -222,7 +248,7 @@ public struct Analyzer: Visitor {
 		let condition = try expr.condition.accept(self, context)
 		let body = try visit(expr.body, context) as! AnalyzedBlockExpr
 
-		return AnalyzedWhileExpr(type: body.type, expr: expr, conditionAnalyzed: condition, bodyAnalyzed: body)
+		return AnalyzedWhileExpr(type: body.type, expr: expr, conditionAnalyzed: condition, bodyAnalyzed: body, environment: context)
 	}
 
 	public func visit(_ expr: any BlockExpr, _ context: Environment) throws -> any AnalyzedExpr {
@@ -231,11 +257,11 @@ public struct Analyzer: Visitor {
 			try bodyAnalyzed.append(bodyExpr.accept(self, context))
 		}
 
-		return AnalyzedBlockExpr(type: bodyAnalyzed.last?.type ?? .none, expr: expr, exprsAnalyzed: bodyAnalyzed)
+		return AnalyzedBlockExpr(type: bodyAnalyzed.last?.type ?? .none, expr: expr, exprsAnalyzed: bodyAnalyzed, environment: context)
 	}
 
-	public func visit(_ expr: any Param, _: Environment) throws -> any AnalyzedExpr {
-		AnalyzedParam(type: .placeholder(1), expr: expr)
+	public func visit(_ expr: any Param, _ context: Environment) throws -> any AnalyzedExpr {
+		AnalyzedParam(type: .placeholder(1), expr: expr, environment: context)
 	}
 
 	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedExpr {
@@ -249,7 +275,8 @@ public struct Analyzer: Visitor {
 				expr: VarExprSyntax(
 					token: .synthetic(.self),
 					location: [.synthetic(.self)]
-				)
+				),
+				environment: context
 			)
 		)
 
@@ -297,7 +324,8 @@ public struct Analyzer: Visitor {
 			expr: expr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
 			structType: structType,
-			lexicalScope: lexicalScope
+			lexicalScope: lexicalScope,
+			environment: context
 		)
 
 		if let name = expr.name {
@@ -331,11 +359,11 @@ public struct Analyzer: Visitor {
 			}
 		}
 
-		return AnalyzedDeclBlock(type: .void, decl: expr, declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl])
+		return AnalyzedDeclBlock(type: .void, decl: expr, declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl], environment: context)
 	}
 
 	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> any AnalyzedExpr {
-		AnalyzedVarDecl(type: context.type(named: expr.typeDecl), expr: expr)
+		AnalyzedVarDecl(type: context.type(named: expr.typeDecl), expr: expr, environment: context)
 	}
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
@@ -352,7 +380,11 @@ public struct Analyzer: Visitor {
 		}
 	}
 
-	public func error(at expr: any Expr, _ message: String) -> AnalyzedErrorSyntax {
-		AnalyzedErrorSyntax(type: .error(message), expr: SyntaxError(location: expr.location, message: message))
+	public func error(at expr: any Expr, _ message: String, environment: Analyzer.Environment, expectation: ParseExpectation) -> AnalyzedErrorSyntax {
+		AnalyzedErrorSyntax(
+			type: .error(message),
+			expr: SyntaxError(location: expr.location, message: message, expectation: expectation),
+			environment: environment
+		)
 	}
 }

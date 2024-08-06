@@ -36,11 +36,38 @@ enum RequestID: Equatable, Codable {
 	}
 }
 
-struct Request: Equatable, Codable {
+struct Request: Equatable, Decodable {
+	static func == (lhs: Request, rhs: Request) -> Bool {
+		lhs.id == rhs.id && lhs.method == rhs.method
+	}
+	
 	enum Params: Equatable {
 		case object(MessageParams), array([MessageParams])
 	}
 
 	var id: RequestID?
 	var method: String
+	var params: (any Decodable)?
+
+	enum CodingKeys: CodingKey {
+		case id, method, params
+	}
+
+	init(from decoder: any Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.id = try container.decodeIfPresent(RequestID.self, forKey: .id)
+		self.method = try container.decode(String.self, forKey: .method)
+		self.params = switch Method(rawValue: self.method) {
+		case .initialize:
+			nil
+		case .initialized:
+			nil
+		case .textDocumentCompletion:
+			try container.decode(TextDocumentCompletionRequest.self, forKey: .params)
+		case .textDocumentDidChange:
+			try container.decode(TextDocumentDidChangeRequest.self, forKey: .params)
+		default:
+			nil
+		}
+	}
 }

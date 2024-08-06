@@ -30,7 +30,8 @@ extension Parser {
 
 		return lhs ?? SyntaxError(
 			location: [previous, current],
-			message: "Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)"
+			message: "Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)",
+			expectation: .expr
 		)
 	}
 
@@ -130,7 +131,7 @@ extension Parser {
 			return funcExpr()
 		}
 
-		return SyntaxError(location: [previous], message: "Unknown literal: \(previous as Any)")
+		return SyntaxError(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
 	mutating func whileExpr(_ canAssign: Bool) -> any Expr {
@@ -185,7 +186,7 @@ extension Parser {
 		let i = startLocation()
 
 		guard let token = consume(.identifier) else {
-			return SyntaxError(location: [current], message: "Expected identifier for variable")
+			return SyntaxError(location: [current], message: "Expected identifier for variable", expectation: .variable)
 		}
 
 		let lhs = VarExprSyntax(token: token, location: endLocation(i))
@@ -194,9 +195,9 @@ extension Parser {
 			let i = startLocation(at: lhs.token)
 			consume(.equals)
 			let rhs = parse(precedence: .assignment)
-			return DefExprSyntax(name: lhs.token, value: rhs, location: endLocation(i))
+			return DefExprSyntax(name: lhs.token, nameSyntax: IdentifierExprSyntax(name: token.lexeme, location: [token]), value: rhs, location: endLocation(i))
 		} else if check(.equals) {
-			return SyntaxError(location: endLocation(i), message: "Can't assign")
+			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
 		return lhs
@@ -235,7 +236,7 @@ extension Parser {
 		consume(.dot)
 
 		guard let member = consume(.identifier, "expected identifier for property access") else {
-			return error(at: current, "expected identifier for property access")
+			return error(at: current, "expected identifier for property access", expectation: .member)
 		}
 
 		return MemberExprSyntax(receiver: lhs, property: member.lexeme, location: endLocation(i))

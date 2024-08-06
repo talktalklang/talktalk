@@ -18,10 +18,13 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 
 	public var calleeAnalyzed: any AnalyzedExpr
 	public var argsAnalyzed: [AnalyzedArgument]
+	public var analyzedChildren: [any AnalyzedExpr] { [calleeAnalyzed] + argsAnalyzed.map(\.expr) }
+	public let environment: Analyzer.Environment
 
 	public var callee: any Expr { expr.callee }
 	public var args: [CallArgument] { expr.args }
 	public var location: SourceLocation { expr.location }
+	public var children: [any Syntax] { expr.children }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)

@@ -158,6 +158,10 @@ public struct Compiler: AnalyzedVisitor {
 		}
 	}
 
+	public func visit(_ expr: TalkTalkAnalysis.AnalyzedIdentifierExpr, _ context: Context) throws -> any LLVM.EmittedValue {
+		fatalError()
+	}
+
 	public func visit(_ expr: AnalyzedDefExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		let value = try expr.valueAnalyzed.accept(self, context)
 		guard let variable = context.environment.get(expr.name.lexeme) else {
@@ -464,7 +468,7 @@ public struct Compiler: AnalyzedVisitor {
 			var paramsAnalyzed = funcExpr.analyzedParams
 
 			// TODO: Need to figure out how to make the first arg here a pointer
-			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"))] + funcExpr.analyzedParams.paramsAnalyzed
+			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"), environment: paramsAnalyzed.environment)] + funcExpr.analyzedParams.paramsAnalyzed
 
 			funcExpr.name = name
 

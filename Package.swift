@@ -68,7 +68,8 @@ let package = Package(
 		.target(
 			name: "TalkTalkLSP",
 			dependencies: [
-				"TalkTalkBytecode"
+				"TalkTalkBytecode",
+				"TalkTalkAnalysis"
 			]
 		),
 		.target(
@@ -112,7 +113,9 @@ let package = Package(
 			name: "TalkTalkLSPTests",
 			dependencies: [
 				"TalkTalkLSP",
-				"TalkTalkBytecode"
+				"TalkTalkBytecode",
+				"TalkTalkAnalysis",
+				"TalkTalkSyntax"
 			]
 		),
 		.testTarget(

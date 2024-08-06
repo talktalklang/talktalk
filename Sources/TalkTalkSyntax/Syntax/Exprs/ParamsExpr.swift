@@ -26,6 +26,7 @@ public struct ParamSyntax: Param {
 	
 	public let name: String
 	public var location: SourceLocation
+	public var children: [any Syntax] { [] }
 
 	public init(name: String, location: SourceLocation) {
 		self.name = name
@@ -36,6 +37,7 @@ public struct ParamSyntax: Param {
 public struct ParamsExprSyntax: ParamsExpr {
 	public var params: [any Param]
 	public let location: SourceLocation
+	public var children: [any Syntax] { params }
 
 	public init(params: [any Param], location: SourceLocation) {
 		self.params = params

@@ -16,6 +16,7 @@ public protocol LiteralExpr: Expr {
 public struct LiteralExprSyntax: LiteralExpr {
 	public let value: LiteralValue
 	public let location: SourceLocation
+	public var children: [any Syntax] { [] }
 
 	public init(value: LiteralValue, location: SourceLocation) {
 		self.value = value

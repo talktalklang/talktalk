@@ -15,12 +15,16 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public let bodyAnalyzed: AnalyzedBlockExpr
 	public let returnsAnalyzed: (any AnalyzedExpr)?
 	public let environment: Analyzer.Environment
+	public var analyzedChildren: [any AnalyzedExpr] {
+		[bodyAnalyzed]
+	}
 
 	public var name: String?
 	public var params: ParamsExpr { expr.params }
 	public var body: any BlockExpr { expr.body }
 	public var i: Int { expr.i }
 	public var location: SourceLocation { expr.location }
+	public var children: [any Syntax] { expr.children }
 
 	public init(type: ValueType, expr: FuncExpr, analyzedParams: AnalyzedParamsExpr, bodyAnalyzed: AnalyzedBlockExpr, returnsAnalyzed: (any AnalyzedExpr)?, environment: Analyzer.Environment) {
 		self.name = expr.name

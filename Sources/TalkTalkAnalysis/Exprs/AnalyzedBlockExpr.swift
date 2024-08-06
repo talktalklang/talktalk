@@ -12,8 +12,12 @@ public struct AnalyzedBlockExpr: AnalyzedExpr, BlockExpr {
 	let expr: any BlockExpr
 
 	public var exprsAnalyzed: [any AnalyzedExpr]
+	public var analyzedChildren: [any AnalyzedExpr] { exprsAnalyzed }
+	public let environment: Analyzer.Environment
+
 	public var exprs: [any Expr] { expr.exprs }
 	public var location: SourceLocation { expr.location }
+	public var children: [any Syntax] { expr.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
 		try visitor.visit(self, scope)

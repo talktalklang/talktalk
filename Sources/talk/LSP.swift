@@ -9,6 +9,7 @@ import TalkTalkLSP
 
 struct LSP: TalkTalkCommand {
 	func run() async throws {
-		TalkTalkLSP.LSP().start()
+		var lsp = TalkTalkLSP.LSP()
+		lsp.start()
 	}
 }
