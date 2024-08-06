@@ -16,7 +16,7 @@ struct ServerCapabilities: Encodable {
 	let serverInfo: ServerInfo = .init()
 
 	let textDocumentSync: TextDocumentSyncOptions = .init(change: .full)
-//	let completionProvider: CompletionOptions = .init()
+	let completionProvider: CompletionOptions = .init()
 //	let hoverProvider = true
 //	let declarationProvider = true
 //	let typeDefinitionProvider = true
