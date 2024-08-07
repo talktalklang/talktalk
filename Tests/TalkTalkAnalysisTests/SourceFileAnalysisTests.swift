@@ -10,10 +10,8 @@ import TalkTalkSyntax
 import Testing
 
 actor AnalysisTests {
-	func ast(_ string: String) -> any AnalyzedExpr {
-		let analyzed = try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init())
-
-		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.exprsAnalyzed.last!
+	func ast(_ string: String) -> any AnalyzedSyntax {
+		try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init()).last!
 	}
 
 	@Test("Types literals") func literals() {
@@ -103,7 +101,7 @@ actor AnalysisTests {
 	"""), in: .init())
 
 		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
-		let expected: ValueType = .function("_fn_x_25", .int, [.int("x")], [.any("i")])
+		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], [.any("i")])
 
 		#expect(result == expected)
 	}

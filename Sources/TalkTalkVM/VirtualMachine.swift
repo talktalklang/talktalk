@@ -30,6 +30,8 @@ public struct VirtualMachine: ~Copyable {
 		}
 	}
 
+	var module: Module
+
 	var ip: UInt64 {
 		get {
 			currentFrame.ip
@@ -71,12 +73,15 @@ public struct VirtualMachine: ~Copyable {
 	// So we can retain stuff
 	var memory: [Value] = []
 
-	public static func run(chunk: Chunk) -> ExecutionResult {
-		var vm = VirtualMachine(chunk: chunk)
+	public static func run(module: Module) -> ExecutionResult {
+		var vm = VirtualMachine(module: module)
 		return vm.run()
 	}
 
-	public init(chunk: Chunk) {
+	public init(module: Module) {
+		self.module = module
+		let chunk = module.main
+
 		self.stack = Stack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
@@ -288,9 +293,15 @@ public struct VirtualMachine: ~Copyable {
 					return runtimeError("\(callee) is not callable")
 				}
 			case .getGlobal:
-				fatalError()
+				let slot = readByte()
+				if let global = module.globals[slot] {
+					stack.push(global)
+				} else {
+					return runtimeError("No global found at slot: \(slot)")
+				}
 			case .setGlobal:
-				fatalError()
+				let slot = readByte()
+				module.globals[slot] = stack.peek()
 			case .jumpPlaceholder:
 				()
 			}

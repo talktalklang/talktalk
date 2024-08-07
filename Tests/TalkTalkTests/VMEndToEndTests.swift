@@ -13,16 +13,15 @@ import TalkTalkVM
 import Testing
 
 actor VMEndToEndTests {
-	func compile(_ string: String) throws -> Chunk {
-		let parsed = Parser.parse(string)
-		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
-		var compiler = SourceFileCompiler(name: "main", analyzedSyntax: analyzed)
-		return try compiler.compile(in: .init(name: "E2E", analysisModule: .empty("E2E")))
+	func compile(_ string: String) throws -> Module {
+		let analysisModule = try ModuleAnalyzer(name: "E2E", files: [.tmp(string)]).analyze()
+		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
+		return try compiler.compile()
 	}
 
 	func run(_ string: String) -> TalkTalkBytecode.Value {
-		let chunk = try! compile(string)
-		return VirtualMachine.run(chunk: chunk).get()
+		let module = try! compile(string)
+		return VirtualMachine.run(module: module).get()
 	}
 
 	@Test("Adds") func adds() {
@@ -124,7 +123,7 @@ actor VMEndToEndTests {
 			a = 20
 		}()
 		a
-		""") == .int(10))
+		""") == .int(20))
 	}
 
 	@Test("Works with counter") func counter() {

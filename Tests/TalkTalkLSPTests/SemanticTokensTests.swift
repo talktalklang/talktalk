@@ -22,9 +22,8 @@ actor SemanticTokensTests {
 		print("hi")
 		"""
 
-		let analyzed = try SourceFileAnalyzer.analyze(Parser.parse(string), in: .init())
 		let visitor = SemanticTokensVisitor()
-		let tokens = RelativeSemanticToken.generate(from: try analyzed.flatMap { try $0.accept(visitor, .topLevel) })
+		let tokens = RelativeSemanticToken.generate(from: try Parser.parse(string).flatMap { try $0.accept(visitor, .topLevel) })
 
 		#expect(tokens == [
 			RelativeSemanticToken(lineDelta: 1, startDelta: 0, length: 6, tokenType: .variable, modifiers: [], lexeme: "person"),

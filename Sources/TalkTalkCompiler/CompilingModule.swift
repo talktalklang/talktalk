@@ -31,13 +31,16 @@ public class CompilingModule {
 	}
 
 	public func finalize() -> Module {
-		var module = Module(name: name)
+		var chunks: [Chunk] = []
 
 		// Go through the list of compiled chunks, sort by offset, add to the real module
 		for (_, chunk) in compiledChunks.sorted(by: { $0.key < $1.key }) {
-			module.add(chunk: chunk)
+			chunks.append(chunk)
 		}
 
+		let main = chunks.first ?? Chunk(name: "main")
+		var module = Module(name: name, main: main)
+		module.chunks = chunks
 		return module
 	}
 

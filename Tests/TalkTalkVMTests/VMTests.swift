@@ -24,7 +24,7 @@ actor VMTests {
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123)))
 		])
 
-		let result = VirtualMachine.run(chunk: chunk)
+		let result = VirtualMachine.run(module: .main(chunk))
 		#expect(result.get() == .int(123))
 	}
 
@@ -35,7 +35,7 @@ actor VMTests {
 			Instruction(opcode: .add, offset: 4, line: 1, metadata: .simple)
 		])
 
-		let result = VirtualMachine.run(chunk: chunk).get()
+		let result = VirtualMachine.run(module: .main(chunk)).get()
 		#expect(result == .int(30))
 	}
 
@@ -46,7 +46,7 @@ actor VMTests {
 			Instruction(opcode: .subtract, offset: 4, line: 1, metadata: .simple)
 		])
 
-		let result = VirtualMachine.run(chunk: chunk)
+		let result = VirtualMachine.run(module: .main(chunk))
 		#expect(result.get() == .int(15))
 	}
 
@@ -57,7 +57,7 @@ actor VMTests {
 			Instruction(opcode: .divide, offset: 4, line: 1, metadata: .simple)
 		])
 
-		let result = VirtualMachine.run(chunk: chunk)
+		let result = VirtualMachine.run(module: .main(chunk))
 		#expect(result.get() == .int(2))
 	}
 
@@ -68,7 +68,7 @@ actor VMTests {
 			Instruction(opcode: .multiply, offset: 4, line: 1, metadata: .simple)
 		])
 
-		let result = VirtualMachine.run(chunk: chunk)
+		let result = VirtualMachine.run(module: .main(chunk))
 		#expect(result.get() == .int(200))
 	}
 }

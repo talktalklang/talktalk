@@ -19,7 +19,7 @@ public struct ModuleCompiler {
 	}
 
 	public func compile() throws -> Module {
-		var module = CompilingModule(name: name, analysisModule: analysisModule)
+		let module = CompilingModule(name: name, analysisModule: analysisModule)
 
 		for file in analysisModule.analyzedFiles {
 			module.register(file: file)
