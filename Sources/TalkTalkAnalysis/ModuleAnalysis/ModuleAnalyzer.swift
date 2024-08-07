@@ -10,21 +10,24 @@ import TalkTalkSyntax
 public struct ModuleAnalyzer {
 	let name: String
 	let files: [ParsedSourceFile]
+	let environment: Environment
+	let visitor: SourceFileAnalyzer
 
 	public init(name: String, files: [ParsedSourceFile]) {
 		self.name = name
 		self.files = files
+		self.environment = Environment(isModuleScope: true)
+		self.visitor = SourceFileAnalyzer()
 	}
 
 	public func analyze() throws -> AnalysisModule {
 		var analysisModule = AnalysisModule(name: name, files: files)
-		let environment = Environment(isModuleScope: true)
 
 		// Find all the top level stuff this module has to offer
 		for file in files {
 			analysisModule.globals.merge(
 				// TODO: Actually handle case where names clash
-				try analyze(file: file, in: environment),
+				try analyze(file: file),
 				uniquingKeysWith: { $1 }
 			)
 		}
@@ -38,22 +41,31 @@ public struct ModuleAnalyzer {
 		// get picked up. TODO: There's gotta be a better way.
 		for file in files {
 			analysisModule.globals.merge(
-				try analyze(file: file, in: environment),
+				try analyze(file: file),
 				uniquingKeysWith: { $1 }
 			)
+		}
+
+		// Once we've got globals established, we can go through and actually analyze
+		// all the files for the module. TODO: Also establish imports.
+		//
+		// We also need to make sure the files are in the correct order.
+		analysisModule.analyzedFiles = try files.map {
+			try AnalyzedSourceFile(path: $0.path, syntax: $0.syntax.map {
+				try $0.accept(visitor, environment)
+			})
 		}
 
 		return analysisModule
 	}
 
 	// Get the top level stuff from this file since that's where globals live.
-	private func analyze(file: ParsedSourceFile, in environment: Environment) throws -> [String: ModuleGlobal] {
+	private func analyze(file: ParsedSourceFile) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
-		let visitor = SourceFileAnalyzer()
 
 		// Do a first pass over the file to find everything
 		for syntax in file.syntax {
-			let analyzed = try analyze(syntax: syntax, visitor: visitor, in: environment)
+			let analyzed = try analyze(syntax: syntax)
 
 			// TODO: Handle case where names clash
 			result.merge(analyzed, uniquingKeysWith: { $1 })
@@ -62,7 +74,7 @@ public struct ModuleAnalyzer {
 		return result
 	}
 
-	private func analyze(syntax: any Syntax, visitor: SourceFileAnalyzer, in environment: Environment) throws -> [String: ModuleGlobal] {
+	private func analyze(syntax: any Syntax) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
 
 		switch syntax {

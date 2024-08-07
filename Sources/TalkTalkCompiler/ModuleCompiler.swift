@@ -11,14 +11,21 @@ import TalkTalkSyntax
 
 public struct ModuleCompiler {
 	let name: String
-	let files: [ParsedSourceFile]
+	let analysisModule: AnalysisModule
 
-	public init(name: String, files: [ParsedSourceFile]) {
+	public init(name: String, analysisModule: AnalysisModule) {
 		self.name = name
-		self.files = files
+		self.analysisModule = analysisModule
 	}
 
 	public func compile() throws -> Module {
-		Module(name: name)
+		var module = CompilingModule(name: name, analysisModule: analysisModule)
+
+		for file in analysisModule.analyzedFiles {
+			module.register(file: file)
+			try module.compile(file: file)
+		}
+
+		return module.finalize()
 	}
 }

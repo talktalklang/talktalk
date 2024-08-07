@@ -8,24 +8,13 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 
-public struct Variable {
-	var name: String
-	var slot: Byte
-	var depth: Int
-	var isCaptured: Bool
-	var getter: Opcode
-	var setter: Opcode
-
-	static func reserved(depth: Int) -> Variable {
-		Variable(name: "__reserved__", slot: 0, depth: depth, isCaptured: false, getter: .getLocal, setter: .setLocal)
-	}
-}
-
 public class ChunkCompiler: AnalyzedVisitor {
 	public typealias Value = Void
 
 	// Tracks how deep we are in frames
 	let scopeDepth: Int
+
+	var module: CompilingModule
 
 	// If this is a subchunk it has a parent compiler. We use this to resolve upvalues
 	public var parent: ChunkCompiler?
@@ -42,14 +31,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Tracks how many upvalues we currently have
 	public var upvalues: [(index: Byte, isLocal: Bool)] = []
 
-	public init(scopeDepth: Int = 0, parent: ChunkCompiler? = nil) {
+	public init(module: CompilingModule, scopeDepth: Int = 0, parent: ChunkCompiler? = nil) {
+		self.module = module
 		self.scopeDepth = scopeDepth
 		self.parent = parent
 		self.locals = [.reserved(depth: scopeDepth)]
 	}
 
 	public func endScope(chunk: Chunk) {
-		for i in 0..<locals.count {
+		for i in 0 ..< locals.count {
 			let local = locals[locals.count - i - 1]
 			if local.depth <= scopeDepth { break }
 
@@ -59,13 +49,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// MARK: Visitor methods
 
-	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Chunk) throws -> Void {
+	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Chunk) throws {}
 
-	}
-
-	public func visit(_ expr: AnalyzedImportStmt, _ context: Chunk) throws -> Void {
-
-}
+	public func visit(_ expr: AnalyzedImportStmt, _ context: Chunk) throws {}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
 		// Put the function args on the stack
@@ -84,9 +70,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
-		if expr.name.lexeme == "count" {
-
-		}
+		if expr.name.lexeme == "count" {}
 
 		let variable = resolveVariable(
 			named: expr.name.lexeme,
@@ -199,7 +183,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
 		let functionChunk = Chunk(name: expr.name?.lexeme ?? expr.autoname, parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
-		let functionCompiler = ChunkCompiler(scopeDepth: scopeDepth + 1, parent: self)
+		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		if let name = expr.name {
 			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
@@ -289,6 +273,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 			)
 		}
 
+		if let slot = resolveGlobal(named: name) {
+			return Variable(
+				name: name,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getGlobal,
+				setter: .setGlobal
+			)
+		}
+
 		return nil
 	}
 
@@ -317,6 +312,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// resolveUpvalue call.
 		if let local = parent.resolveUpvalue(named: name, chunk: chunk) {
 			return addUpvalue(local, isLocal: false, name: name, chunk: chunk)
+		}
+
+		return nil
+	}
+
+	// Check the CompilingModule for a global.
+	private func resolveGlobal(named name: String) -> Byte? {
+		if let offset = module.globalOffset(for: name) {
+			return Byte(offset)
 		}
 
 		return nil

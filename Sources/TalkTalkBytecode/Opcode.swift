@@ -29,6 +29,9 @@ public enum Opcode: Byte {
 			 // Upvalues (captures)
 			 getUpvalue, setUpvalue,
 
+			 // Global variables
+			 getGlobal, setGlobal,
+
 			 // Literals
 			 `true`,
 			 `false`,

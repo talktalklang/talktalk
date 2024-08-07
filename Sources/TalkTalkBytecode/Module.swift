@@ -21,4 +21,8 @@ public struct Module {
 	public init(name: String) {
 		self.name = name
 	}
+
+	public mutating func add(chunk: Chunk) {
+		chunks.append(chunk)
+	}
 }

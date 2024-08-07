@@ -18,14 +18,12 @@ public struct Interpreter: AnalyzedVisitor {
 		case returning(Value)
 	}
 
-	let main: AnalyzedFuncExpr
+	let parsed: [any AnalyzedSyntax]
 
 	public init(_ code: String) {
 		let lexer = TalkTalkLexer(code)
 		var parser = Parser(lexer)
-		let parsed = parser.parse()
-
-		self.main = try! SourceFileAnalyzer.analyze(parsed, in: .init()).cast(AnalyzedFuncExpr.self)
+		self.parsed = try! SourceFileAnalyzer.analyze(parser.parse(), in: .init())
 
 		if !parser.errors.isEmpty {
 			for (_, message) in parser.errors {
@@ -38,7 +36,7 @@ public struct Interpreter: AnalyzedVisitor {
 		var last: Value = .none
 		let rootScope = Scope()
 
-		for expr in main.bodyAnalyzed.exprsAnalyzed {
+		for expr in self.parsed {
 			last = try expr.accept(self, rootScope)
 		}
 

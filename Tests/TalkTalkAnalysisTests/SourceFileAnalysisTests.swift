@@ -100,7 +100,7 @@ actor AnalysisTests {
 		func(x) {
 			i + 2
 		}(2)
-		"""), in: .init()).cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed
+	"""), in: .init())
 
 		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
 		let expected: ValueType = .function("_fn_x_25", .int, [.int("x")], [.any("i")])
@@ -157,7 +157,7 @@ actor AnalysisTests {
 		mycounter()
 		"""), in: .init())
 
-		let def = try #require(main.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0] as? AnalyzedDefExpr)
+		let def = try #require(main[0] as? AnalyzedDefExpr)
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.isEmpty)
 

@@ -18,21 +18,21 @@ public struct SourceFileAnalyzer: Visitor {
 		let parsed = Parser.parse(text)
 		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 
-		func collect(expr: any AnalyzedSyntax) -> [ErrorSyntax] {
+		func collect(syntaxes: [any AnalyzedSyntax]) -> [ErrorSyntax] {
 			var result: [ErrorSyntax] = []
 
-			if let expr = expr as? ErrorSyntax {
-				result.append(expr)
-			}
+			for syntax in syntaxes {
+				if let err = syntax as? ErrorSyntax {
+					result.append(err)
+				}
 
-			for child in expr.analyzedChildren {
-				result.append(contentsOf: collect(expr: child))
+				result.append(contentsOf: collect(syntaxes: syntax.analyzedChildren))
 			}
 
 			return result
 		}
 
-		return collect(expr: analyzed)
+		return collect(syntaxes: analyzed)
 	}
 
 	public static func analyzedExprs(_ exprs: [any Syntax], in environment: Environment) throws -> [any AnalyzedSyntax] {
@@ -41,20 +41,9 @@ public struct SourceFileAnalyzer: Visitor {
 		return try exprs.map { try $0.accept(analyzer, environment) }
 	}
 
-	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws -> SourceFileAnalyzer.Value {
+	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws -> [SourceFileAnalyzer.Value] {
 		let analyzer = SourceFileAnalyzer()
-		let location = exprs.first?.location ?? [.synthetic(.eof)]
-		let name: Token = .synthetic(.identifier, lexeme: "main")
-
-		let mainExpr = FuncExprSyntax(
-			funcToken: .synthetic(.func),
-			params: ParamsExprSyntax(params: [], location: location),
-			body: BlockExprSyntax(exprs: exprs, location: location),
-			i: 0,
-			name: name,
-			location: location
-		)
-		return try analyzer.visit(mainExpr, environment)
+		return try exprs.map { try $0.accept(analyzer, environment) }
 	}
 
 	public func visit(_ expr: any ImportStmt, _ context: Environment) -> SourceFileAnalyzer.Value {

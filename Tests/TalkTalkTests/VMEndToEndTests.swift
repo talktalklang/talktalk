@@ -16,8 +16,8 @@ actor VMEndToEndTests {
 	func compile(_ string: String) throws -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
-		var compiler = Compiler(analyzedExprs: analyzed)
-		return try compiler.compile()
+		var compiler = SourceFileCompiler(name: "main", analyzedSyntax: analyzed)
+		return try compiler.compile(in: .init(name: "E2E", analysisModule: .empty("E2E")))
 	}
 
 	func run(_ string: String) -> TalkTalkBytecode.Value {

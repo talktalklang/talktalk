@@ -287,6 +287,10 @@ public struct VirtualMachine: ~Copyable {
 				} else {
 					return runtimeError("\(callee) is not callable")
 				}
+			case .getGlobal:
+				fatalError()
+			case .setGlobal:
+				fatalError()
 			case .jumpPlaceholder:
 				()
 			}

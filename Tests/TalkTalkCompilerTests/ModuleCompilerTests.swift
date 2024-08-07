@@ -12,8 +12,9 @@ import TalkTalkSyntax
 import Testing
 
 actor ModuleCompilerTests {
-	func compile(files: [ParsedSourceFile]) -> Module {
-		try! ModuleCompiler(name: "CompilerTests", files: files).compile()
+	func compile(_ files: [ParsedSourceFile]) -> Module {
+		let analyzed = try! ModuleAnalyzer(name: "CompilerTests", files: files).analyze()
+		return try! ModuleCompiler(name: "CompilerTests", analysisModule: analyzed).compile()
 	}
 
 	@Test("Can compile a module") func basic() {
@@ -30,8 +31,10 @@ actor ModuleCompilerTests {
 			""")
 		]
 
-		let module = compile(files: files)
+		let module = compile(files)
 		#expect(module.name == "CompilerTests")
 		#expect(module.chunks.count == 2)
+
+		
 	}
 }

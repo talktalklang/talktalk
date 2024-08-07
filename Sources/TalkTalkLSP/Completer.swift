@@ -25,7 +25,7 @@ struct Completer {
 		do {
 			let environment: Environment = .init() // TODO: use module environment
 			let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
-			lastSuccessfulExprs = [analyzed]
+			lastSuccessfulExprs = analyzed
 		} catch {
 			Log.error("Error analyzing: \(error)")
 		}

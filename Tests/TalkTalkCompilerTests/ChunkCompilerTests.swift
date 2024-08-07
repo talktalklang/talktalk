@@ -15,8 +15,8 @@ actor CompilerTests {
 	func compile(_ string: String) -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
-		var compiler = Compiler(analyzedExprs: analyzed)
-		return try! compiler.compile()
+		var compiler = SourceFileCompiler(name: "sup", analyzedSyntax: analyzed)
+		return try! compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: .empty("CompilerTests")))
 	}
 
 	@Test("Empty program") func empty() {
