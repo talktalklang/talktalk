@@ -11,7 +11,7 @@ import Testing
 
 actor AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedExpr {
-		let analyzed = try! Analyzer.analyze(Parser.parse(string))
+		let analyzed = try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init())
 
 		return (analyzed as! AnalyzedFuncExpr).bodyAnalyzed.exprsAnalyzed.last!
 	}
@@ -95,12 +95,12 @@ actor AnalysisTests {
 	}
 
 	@Test("Compiles functions") func closures() throws {
-		let ast = try Analyzer.analyze(Parser.parse("""
+		let ast = try SourceFileAnalyzer.analyze(Parser.parse("""
 		i = 1
 		func(x) {
 			i + 2
 		}(2)
-		""")).cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed
+		"""), in: .init()).cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed
 
 		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
 		let expected: ValueType = .function("_fn_x_25", .int, [.int("x")], [.any("i")])
@@ -144,7 +144,7 @@ actor AnalysisTests {
 	}
 
 	@Test("Types counter") func counter() throws {
-		let main = try Analyzer.analyze(Parser.parse("""
+		let main = try SourceFileAnalyzer.analyze(Parser.parse("""
 		makeCounter = func() {
 			count = 0
 			func() {
@@ -155,7 +155,7 @@ actor AnalysisTests {
 
 		mycounter = makeCounter()
 		mycounter()
-		"""))
+		"""), in: .init())
 
 		let def = try #require(main.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0] as? AnalyzedDefExpr)
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))

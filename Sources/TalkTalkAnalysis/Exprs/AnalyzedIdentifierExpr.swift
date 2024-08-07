@@ -18,7 +18,7 @@ public struct AnalyzedIdentifierExpr: AnalyzedExpr, IdentifierExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public var name: String { expr.name }
 	public var location: SourceLocation { expr.location }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 	public var children: [any Syntax] { expr.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : TalkTalkSyntax.Visitor {

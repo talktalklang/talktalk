@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedImportStmt: ImportStmt, AnalyzedStmt {
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
-	public var environment: Analyzer.Environment
+	public var environment: Environment
 	public var type: ValueType
 
 	var stmt: any ImportStmt

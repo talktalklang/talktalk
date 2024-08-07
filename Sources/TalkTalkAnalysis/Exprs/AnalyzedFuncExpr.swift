@@ -14,7 +14,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: AnalyzedBlockExpr
 	public let returnsAnalyzed: (any AnalyzedExpr)?
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[bodyAnalyzed]
 	}
@@ -27,7 +27,14 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 
-	public init(type: ValueType, expr: FuncExpr, analyzedParams: AnalyzedParamsExpr, bodyAnalyzed: AnalyzedBlockExpr, returnsAnalyzed: (any AnalyzedExpr)?, environment: Analyzer.Environment) {
+	public init(
+		type: ValueType,
+		expr: FuncExpr,
+		analyzedParams: AnalyzedParamsExpr,
+		bodyAnalyzed: AnalyzedBlockExpr,
+		returnsAnalyzed: (any AnalyzedExpr)?,
+		environment: Environment
+	) {
 		self.name = expr.name
 		self.type = type
 		self.expr = expr

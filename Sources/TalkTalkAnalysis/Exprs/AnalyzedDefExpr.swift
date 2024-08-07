@@ -18,7 +18,7 @@ public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 
 	public var valueAnalyzed: any AnalyzedExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [valueAnalyzed] }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)

@@ -25,7 +25,7 @@ public struct Interpreter: AnalyzedVisitor {
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
 
-		self.main = try! Analyzer.analyze(parsed).cast(AnalyzedFuncExpr.self)
+		self.main = try! SourceFileAnalyzer.analyze(parsed, in: .init()).cast(AnalyzedFuncExpr.self)
 
 		if !parser.errors.isEmpty {
 			for (_, message) in parser.errors {

@@ -19,13 +19,13 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 	public var name: String { expr.name }
 	let expr: any Param
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	public var type: ValueType
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 
-	public init(type: ValueType, expr: any Param, environment: Analyzer.Environment) {
+	public init(type: ValueType, expr: any Param, environment: Environment) {
 		self.expr = expr
 		self.type = type
 		self.environment = environment
@@ -44,7 +44,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 
 	public var analyzedChildren: [any AnalyzedSyntax] { paramsAnalyzed }
 	public var paramsAnalyzed: [AnalyzedParam]
-	public var environment: Analyzer.Environment
+	public var environment: Environment
 
 	public var params: [any Param] { expr.params }
 	public var location: SourceLocation { expr.location }
@@ -52,7 +52,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 
 	public var isVarArg = false
 
-	public mutating func infer(from env: Analyzer.Environment) {
+	public mutating func infer(from env: Environment) {
 		for (i, name) in paramsAnalyzed.enumerated() {
 			if let binding = env.infer(name.name) {
 				paramsAnalyzed[i].type = binding.type
@@ -85,6 +85,8 @@ extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
 			.init()
 		}
 	}
+
+	public var isEmpty: Bool { params.isEmpty }
 
 	public typealias ArrayLiteralElement = AnalyzedParam
 }

@@ -6,7 +6,7 @@
 //
 import TalkTalkSyntax
 
-public struct Analyzer: Visitor {
+public struct SourceFileAnalyzer: Visitor {
 	public typealias Context = Environment
 	public typealias Value = any AnalyzedSyntax
 
@@ -14,9 +14,9 @@ public struct Analyzer: Visitor {
 
 	public init() {}
 
-	public static func diagnostics(text: String) throws -> [ErrorSyntax] {
+	public static func diagnostics(text: String, environment: Environment) throws -> [ErrorSyntax] {
 		let parsed = Parser.parse(text)
-		let analyzed = try Analyzer.analyze(parsed)
+		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 
 		func collect(expr: any AnalyzedSyntax) -> [ErrorSyntax] {
 			var result: [ErrorSyntax] = []
@@ -35,16 +35,14 @@ public struct Analyzer: Visitor {
 		return collect(expr: analyzed)
 	}
 
-	public static func analyzedExprs(_ exprs: [any Syntax]) throws -> [any AnalyzedSyntax] {
-		let env = Environment()
-		let analyzer = Analyzer()
+	public static func analyzedExprs(_ exprs: [any Syntax], in environment: Environment) throws -> [any AnalyzedSyntax] {
+		let analyzer = SourceFileAnalyzer()
 
-		return try exprs.map { try $0.accept(analyzer, env) }
+		return try exprs.map { try $0.accept(analyzer, environment) }
 	}
 
-	public static func analyze(_ exprs: [any Syntax]) throws -> Analyzer.Value {
-		let env = Environment()
-		let analyzer = Analyzer()
+	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws -> SourceFileAnalyzer.Value {
+		let analyzer = SourceFileAnalyzer()
 		let location = exprs.first?.location ?? [.synthetic(.eof)]
 		let name: Token = .synthetic(.identifier, lexeme: "main")
 
@@ -56,18 +54,18 @@ public struct Analyzer: Visitor {
 			name: name,
 			location: location
 		)
-		return try analyzer.visit(mainExpr, env)
+		return try analyzer.visit(mainExpr, environment)
 	}
 
-	public func visit(_ expr: any ImportStmt, _ context: Environment) -> Analyzer.Value {
+	public func visit(_ expr: any ImportStmt, _ context: Environment) -> SourceFileAnalyzer.Value {
 		AnalyzedImportStmt(environment: context, type: .none, stmt: expr)
 	}
 
-	public func visit(_ expr: any IdentifierExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any IdentifierExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedIdentifierExpr(type: .placeholder(0), expr: expr, environment: context)
 	}
 
-	public func visit(_ expr: any UnaryExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any UnaryExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let exprAnalyzed = try expr.expr.accept(self, context)
 
 		switch expr.op {
@@ -91,7 +89,7 @@ public struct Analyzer: Visitor {
 		}
 	}
 
-	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let callee = try expr.callee.accept(self, context)
 
 		let args = try expr.args.map {
@@ -126,7 +124,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any MemberExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any MemberExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let receiver = try expr.receiver.accept(self, context)
 		let propertyName = expr.property
 
@@ -160,7 +158,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
 
 
@@ -169,11 +167,11 @@ public struct Analyzer: Visitor {
 		return AnalyzedDefExpr(type: value.type, expr: expr, valueAnalyzed: value, environment: context)
 	}
 
-	public func visit(_ expr: any ErrorSyntax, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any ErrorSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedErrorSyntax(type: .error(expr.message), expr: expr, environment: context)
 	}
 
-	public func visit(_ expr: any LiteralExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any LiteralExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		switch expr.value {
 		case .int:
 			AnalyzedLiteralExpr(type: .int, expr: expr, environment: context)
@@ -186,7 +184,7 @@ public struct Analyzer: Visitor {
 		}
 	}
 
-	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		if let binding = context.lookup(expr.name) {
 			return AnalyzedVarExpr(
 				type: binding.type,
@@ -202,7 +200,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any BinaryExpr, _ env: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any BinaryExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
@@ -212,7 +210,7 @@ public struct Analyzer: Visitor {
 		return AnalyzedBinaryExpr(type: .int, expr: expr, lhsAnalyzed: lhs, rhsAnalyzed: rhs, environment: env)
 	}
 
-	public func visit(_ expr: any IfExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any IfExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		// TODO: Error if the branches don't match or condition isn't a bool
 		try AnalyzedIfExpr(
 			type: expr.consequence.accept(self, context).type,
@@ -224,7 +222,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let innerEnvironment = env.add()
 
 		// Define our parameters in the environment so they're declared in the body. They're
@@ -271,7 +269,7 @@ public struct Analyzer: Visitor {
 		return funcExpr
 	}
 
-	public func visit(_ expr: any ReturnExpr, _ env: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any ReturnExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnExpr(
 			type: valueAnalyzed?.type ?? .void,
@@ -281,7 +279,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any ParamsExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any ParamsExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParamsExpr(
 			type: .void,
 			expr: expr,
@@ -292,7 +290,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any WhileExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any WhileExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		// TODO: Validate condition is bool
 		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
 		let body = try visit(expr.body, context) as! AnalyzedBlockExpr
@@ -306,7 +304,7 @@ public struct Analyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any BlockExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any BlockExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var bodyAnalyzed: [any AnalyzedExpr] = []
 		for bodyExpr in expr.exprs {
 			try bodyAnalyzed.append(bodyExpr.accept(self, context) as! any AnalyzedExpr)
@@ -315,11 +313,11 @@ public struct Analyzer: Visitor {
 		return AnalyzedBlockExpr(type: bodyAnalyzed.last?.type ?? .none, expr: expr, exprsAnalyzed: bodyAnalyzed, environment: context)
 	}
 
-	public func visit(_ expr: any Param, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any Param, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParam(type: .placeholder(1), expr: expr, environment: context)
 	}
 
-	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let structType = StructType(name: expr.name, properties: [:], methods: [:])
 		let bodyContext = context.addLexicalScope(scope: structType, type: .struct(structType), expr: expr)
 
@@ -392,7 +390,7 @@ public struct Analyzer: Visitor {
 		return analyzed
 	}
 
-	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var declsAnalyzed: [any AnalyzedExpr] = []
 
 		// Do a first pass over the body decls so we have a basic idea of what's available in
@@ -417,7 +415,7 @@ public struct Analyzer: Visitor {
 		return AnalyzedDeclBlock(type: .void, decl: expr, declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl], environment: context)
 	}
 
-	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> Analyzer.Value {
+	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedVarDecl(type: context.type(named: expr.typeDecl), expr: expr, environment: context)
 	}
 
@@ -435,7 +433,7 @@ public struct Analyzer: Visitor {
 		}
 	}
 
-	public func error(at expr: any Syntax, _ message: String, environment: Analyzer.Environment, expectation: ParseExpectation) -> AnalyzedErrorSyntax {
+	public func error(at expr: any Syntax, _ message: String, environment: Environment, expectation: ParseExpectation) -> AnalyzedErrorSyntax {
 		AnalyzedErrorSyntax(
 			type: .error(message),
 			expr: SyntaxError(location: expr.location, message: message, expectation: expectation),

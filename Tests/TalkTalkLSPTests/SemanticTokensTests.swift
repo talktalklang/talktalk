@@ -10,7 +10,7 @@ import TalkTalkSyntax
 import TalkTalkAnalysis
 @testable import TalkTalkLSP
 
-struct SemanticTokensTests {
+actor SemanticTokensTests {
 	@Test("Finds tokens") func basic() throws {
 		let string = """
 
@@ -22,7 +22,7 @@ struct SemanticTokensTests {
 		print("hi")
 		"""
 
-		let analyzed = try Analyzer.analyze(Parser.parse(string))
+		let analyzed = try SourceFileAnalyzer.analyze(Parser.parse(string), in: .init())
 		let visitor = SemanticTokensVisitor()
 		let tokens = RelativeSemanticToken.generate(from: try analyzed.accept(visitor, .topLevel))
 

@@ -11,7 +11,7 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public var type: ValueType
 	let expr: MemberExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	public let receiverAnalyzed: any AnalyzedExpr
 

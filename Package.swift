@@ -32,7 +32,8 @@ let package = Package(
 		.target(
 			name: "TalkTalkAnalysis",
 			dependencies: [
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
+				"TalkTalkBytecode"
 			]
 		),
 	//	.target(

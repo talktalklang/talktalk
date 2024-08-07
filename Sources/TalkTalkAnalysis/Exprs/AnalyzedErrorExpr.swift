@@ -11,18 +11,17 @@ public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax {
 	public var type: ValueType
 	let expr: any ErrorSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	public var message: String { expr.message }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 	public var expectation: ParseExpectation { expr.expectation }
 
-	public init(type: ValueType, expr: any ErrorSyntax, environment: Analyzer.Environment) {
+	public init(type: ValueType, expr: any ErrorSyntax, environment: Environment) {
 		self.type = type
 		self.expr = expr
 		self.environment = environment
-		print(message)
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {

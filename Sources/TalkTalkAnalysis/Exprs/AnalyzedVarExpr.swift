@@ -11,7 +11,7 @@ public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	public var type: ValueType
 	let expr: VarExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	public var token: Token { expr.token }
 	public var location: SourceLocation { expr.location }

@@ -8,7 +8,7 @@
 import Testing
 import TalkTalkBytecode
 
-struct DisassemblerTests {
+actor DisassemblerTests {
 	@Test("Disassembles simple opcodes") func simple() {
 		let chunk = Chunk(name: "main")
 		chunk.emit(opcode: .true, line: 1)

@@ -19,7 +19,8 @@ struct TextDocumentDiagnostic: Decodable {
 		}
 
 		do {
-			let errorSyntaxes = try Analyzer.diagnostics(text: source.text)
+			let environment = Environment() // TODO: Use module environment
+			let errorSyntaxes = try SourceFileAnalyzer.diagnostics(text: source.text, environment: environment)
 			let diagnostics = errorSyntaxes.compactMap { syntax in
 				let start = syntax.location.start
 				let end = syntax.location.end

@@ -1,7 +1,7 @@
 @testable import TalkTalkSyntax
 import Testing
 
-struct TalkTalkLexerTests {
+actor TalkTalkLexerTests {
 	@Test("Int") func int() {
 		var lexer = TalkTalkLexer("1")
 		let tokens = lexer.collect()

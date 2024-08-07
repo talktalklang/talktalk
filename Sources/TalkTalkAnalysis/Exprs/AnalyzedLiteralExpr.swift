@@ -11,7 +11,7 @@ public struct AnalyzedLiteralExpr: AnalyzedExpr, LiteralExpr {
 	public var type: ValueType
 	let expr: LiteralExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	public var value: LiteralValue { expr.value }
 	public var location: SourceLocation { expr.location }

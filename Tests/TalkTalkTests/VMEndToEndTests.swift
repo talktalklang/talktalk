@@ -15,7 +15,7 @@ import Testing
 actor VMEndToEndTests {
 	func compile(_ string: String) throws -> Chunk {
 		let parsed = Parser.parse(string)
-		let analyzed = try! Analyzer.analyzedExprs(parsed)
+		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
 		var compiler = Compiler(analyzedExprs: analyzed)
 		return try compiler.compile()
 	}

@@ -12,7 +12,7 @@ public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
 	}
-	public let environment: Analyzer.Environment
+	public let environment: Environment
 
 	let expr: any ReturnExpr
 
