@@ -43,6 +43,8 @@ struct TalkTalkLexerTests {
 			.string,
 			.eof,
 		])
+
+		#expect(tokens[0].length == 13)
 	}
 
 	@Test("Floats") func floats() async throws {

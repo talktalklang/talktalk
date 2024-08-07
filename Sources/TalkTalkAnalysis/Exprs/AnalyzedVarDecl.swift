@@ -13,8 +13,10 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public var analyzedChildren: [any AnalyzedExpr] { [] }
 	public let environment: Analyzer.Environment
 
+	public var token: Token { expr.token }
 	public var name: String { expr.name }
 	public var typeDecl: String { expr.typeDecl }
+	public var typeDeclToken: Token { expr.typeDeclToken }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

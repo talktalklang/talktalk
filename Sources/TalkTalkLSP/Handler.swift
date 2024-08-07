@@ -47,13 +47,14 @@ struct Handler {
 
 		let body = data[i..<data.count]
 
-//		Log.info(String(data: body, encoding: .utf8) ?? "Could not get body string.")
+		Log.info(String(data: body, encoding: .utf8) ?? "Could not get body string.")
 
 		let request: Request
 		do {
 			request = try decoder.decode(Request.self, from: body)
 		} catch {
-			Log.error("Error parsing json: \(error)")
+			Log.error("Error parsing JSON: \(error)")
+			Log.error(String(data: body, encoding: .utf8) ?? "<no string>")
 			return
 		}
 
@@ -63,18 +64,37 @@ struct Handler {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
 		case .initialized:
-			() // We don't do anything for this message yet.
+			()
+		case .textDocumentDidOpen:
+			TextDocumentDidOpen(request: request).handle(&self)
 		case .textDocumentDidChange:
 			TextDocumentDidChange(request: request).handle(&self)
 		case .textDocumentCompletion:
 			TextDocumentCompletion(request: request).handle(&self)
 		case .textDocumentFormatting:
 			TextDocumentFormatting(request: request).handle(&self)
+		case .textDocumentDiagnostic:
+			TextDocumentDiagnostic(request: request).handle(&self)
+		case .textDocumentSemanticTokensFull:
+			TextDocumentSemanticTokensFull(request: request).handle(&self)
+		case .workspaceSemanticTokensRefresh:
+			()
 		case .shutdown:
 			Log.info("shutting down!")
 			exit(0)
 		}
+	}
 
+	func request<T: Encodable>(_ request: T) {
+		do {
+			let content = try encoder.encode(request)
+			let contentLength = content.count
+			var data = Data("Content-Length: \(contentLength)\r\n\r\n".utf8)
+			data.append(content)
+			try stdout.write(contentsOf: data)
+		} catch {
+			Log.error("Error issuing server request")
+		}
 	}
 
 	func respond<T: Encodable>(to id: RequestID?, with response: T) {

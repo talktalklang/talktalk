@@ -318,9 +318,9 @@ public struct Compiler: AnalyzedVisitor {
 		}
 
 		let outerContext = context
-		let context = context.newEnvironment(name: funcExpr.name ?? funcExpr.autoname)
+		let context = context.newEnvironment(name: funcExpr.name?.lexeme ?? funcExpr.autoname)
 
-		if funcExpr.name == "main" {
+		if funcExpr.name?.lexeme == "main" {
 			return try main(funcExpr, context)
 		}
 
@@ -338,7 +338,7 @@ public struct Compiler: AnalyzedVisitor {
 		) {
 			allocateLocals(funcExpr: funcExpr, closurePointer: closurePointer, context: context)
 			// Update the binding with the ref
-			outerContext.environment.define(funcExpr.name ?? funcExpr.autoname, as: .closure(closurePointer.type, closurePointer.ref))
+			outerContext.environment.define(funcExpr.name?.lexeme ?? funcExpr.autoname, as: .closure(closurePointer.type, closurePointer.ref))
 
 			for (i, param) in funcExpr.analyzedParams.paramsAnalyzed.enumerated() {
 				context.environment.parameter(param.name, type: irType(for: param.type), at: i)
@@ -470,7 +470,7 @@ public struct Compiler: AnalyzedVisitor {
 			// TODO: Need to figure out how to make the first arg here a pointer
 			paramsAnalyzed.paramsAnalyzed = [AnalyzedParam(type: .struct(structType), expr: .int("self"), environment: paramsAnalyzed.environment)] + funcExpr.analyzedParams.paramsAnalyzed
 
-			funcExpr.name = name
+//			funcExpr.name?.lexeme = name
 
 			let methodFuncExpr = AnalyzedFuncExpr(
 				type: .function(name, funcExpr.returnsAnalyzed?.type ?? .void, paramsAnalyzed, []),

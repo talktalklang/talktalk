@@ -12,6 +12,10 @@ public struct SourceLocation {
 	public var line: UInt32 {
 		UInt32(start.line)
 	}
+
+	public var range: Range<Int> {
+		start.start..<(end.start + end.length)
+	}
 }
 
 extension SourceLocation: ExpressibleByArrayLiteral {

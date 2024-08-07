@@ -1,6 +1,14 @@
 person = "Pat"
 pet = "dog"
 
-func foo() {
+struct Person {
+	func greet() {
+		print("sup")
+	}
+}
 
+func foo() {
+	func bar() {
+		"fizz"
+	}
 }

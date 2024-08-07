@@ -19,7 +19,8 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		[bodyAnalyzed]
 	}
 
-	public var name: String?
+	public var name: Token?
+	public var funcToken: Token { expr.funcToken }
 	public var params: ParamsExpr { expr.params }
 	public var body: any BlockExpr { expr.body }
 	public var i: Int { expr.i }

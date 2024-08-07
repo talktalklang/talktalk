@@ -6,10 +6,12 @@
 //
 
 public protocol ReturnExpr: Expr {
+	var returnToken: Token { get }
 	var value: (any Expr)? { get }
 }
 
 public struct ReturnExprSyntax: ReturnExpr {
+	public var returnToken: Token
 	public var location: SourceLocation
 	public var value: (any Expr)?
 	public var children: [any Syntax] {

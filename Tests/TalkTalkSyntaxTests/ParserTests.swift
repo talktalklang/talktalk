@@ -131,7 +131,7 @@ struct TalkTalkParserTests {
 		func foo(x, y) { x + y }
 		""")[0]
 		let fn = try #require(ast as? FuncExpr)
-		#expect(fn.name == "foo")
+		#expect(fn.name?.lexeme == "foo")
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
 		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).lhs.description == "x")

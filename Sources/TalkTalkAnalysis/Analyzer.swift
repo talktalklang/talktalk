@@ -14,6 +14,27 @@ public struct Analyzer: Visitor {
 
 	public init() {}
 
+	public static func diagnostics(text: String) throws -> [ErrorSyntax] {
+		let parsed = Parser.parse(text)
+		let analyzed = try Analyzer.analyze(parsed)
+
+		func collect(expr: any AnalyzedExpr) -> [ErrorSyntax] {
+			var result: [ErrorSyntax] = []
+
+			if let expr = expr as? ErrorSyntax {
+				result.append(expr)
+			}
+
+			for child in expr.analyzedChildren {
+				result.append(contentsOf: collect(expr: child))
+			}
+
+			return result
+		}
+
+		return collect(expr: analyzed)
+	}
+
 	public static func analyzedExprs(_ exprs: [any Expr]) throws -> [any AnalyzedExpr] {
 		let env = Environment()
 		let analyzer = Analyzer()
@@ -25,12 +46,14 @@ public struct Analyzer: Visitor {
 		let env = Environment()
 		let analyzer = Analyzer()
 		let location = exprs.first?.location ?? [.synthetic(.eof)]
+		var name: Token = .synthetic(.identifier, lexeme: "main")
 
 		let mainExpr = FuncExprSyntax(
+			funcToken: .synthetic(.func),
 			params: ParamsExprSyntax(params: [], location: location),
 			body: BlockExprSyntax(exprs: exprs, location: location),
 			i: 0,
-			name: "main",
+			name: name,
 			location: location
 		)
 		return try analyzer.visit(mainExpr, env)
@@ -193,14 +216,14 @@ public struct Analyzer: Visitor {
 		if let name = expr.name {
 			// If it's a named function, define a stub inside the function to allow for recursion
 			let stub = AnalyzedFuncExpr(
-				type: .function(name, .placeholder(0), params, []),
+				type: .function(name.lexeme, .placeholder(0), params, []),
 				expr: expr,
 				analyzedParams: params,
 				bodyAnalyzed: .init(type: .placeholder(0), expr: expr.body, exprsAnalyzed: [], environment: env),
 				returnsAnalyzed: nil,
 				environment: innerEnvironment
 			)
-			innerEnvironment.define(local: name, as: stub)
+			innerEnvironment.define(local: name.lexeme, as: stub)
 		}
 
 		// Visit the body with the innerEnvironment, finding captures as we go.
@@ -211,7 +234,7 @@ public struct Analyzer: Visitor {
 		params.infer(from: innerEnvironment)
 
 		let funcExpr = AnalyzedFuncExpr(
-			type: .function(expr.name ?? expr.autoname, bodyAnalyzed.type, params, innerEnvironment.captures),
+			type: .function(expr.name?.lexeme ?? expr.autoname, bodyAnalyzed.type, params, innerEnvironment.captures),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
@@ -220,8 +243,8 @@ public struct Analyzer: Visitor {
 		)
 
 		if let name = expr.name {
-			innerEnvironment.define(local: name, as: funcExpr)
-			env.define(local: name, as: funcExpr)
+			innerEnvironment.define(local: name.lexeme, as: funcExpr)
+			env.define(local: name.lexeme, as: funcExpr)
 		}
 
 		return funcExpr
@@ -300,8 +323,8 @@ public struct Analyzer: Visitor {
 				))
 			case let decl as FuncExpr:
 				structType.add(method: Property(
-					name: decl.name!,
-					type: .function(decl.name!, .placeholder(2), [], []),
+					name: decl.name!.lexeme,
+					type: .function(decl.name!.lexeme, .placeholder(2), [], []),
 					expr: decl,
 					isMutable: false
 				))
@@ -351,7 +374,7 @@ public struct Analyzer: Visitor {
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
 				 let lexicalScope = context.lexicalScope {
 				lexicalScope.scope.add(method: Property(
-					name: funcExpr.name!,
+					name: funcExpr.name!.lexeme,
 					type: funcExpr.type,
 					expr: funcExpr,
 					isMutable: false

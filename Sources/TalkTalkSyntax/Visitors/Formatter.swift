@@ -114,13 +114,13 @@ public struct Formatter: Visitor {
 	public func visit(_ expr: any FuncExpr, _ context: Context) throws -> Value {
 		var result = ""
 
-		if let lastType = context.lastType, !(lastType is FuncExpr) {
+		if let lastType = context.lastType, !(lastType is FuncExpr), !(lastType is StructExpr) {
 			result += "\n"
 		}
 
 		result += "func"
 		if let name = expr.name {
-			result += " " + name
+			result += " " + name.lexeme
 		}
 		result += try "(" + visit(expr.params, context) + ") "
 		result += try visit(expr.body, context)
@@ -176,16 +176,15 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any StructExpr, _ context: Context) throws -> String {
-		var result = "struct "
+		var result = "\nstruct "
 
 		if let name = expr.name {
 			result += name
 		}
 
+		context.lastType = expr
 		result += " "
 		result += try expr.body.accept(self, context)
-
-		context.lastType = expr
 
 		return result
 	}
@@ -222,7 +221,7 @@ public struct Formatter: Visitor {
 	public func indenting(perform: (inout Formatter) throws -> String) rethrows -> String {
 		var copy = self
 		copy.indent += 1
-		let indentation = String(repeating: "\t", count: copy.indent)
+		let indentation = String(repeating: "\t", count: 1)
 		return try perform(&copy).components(separatedBy: .newlines).map {
 			indentation + $0
 		}.joined(separator: "\n")

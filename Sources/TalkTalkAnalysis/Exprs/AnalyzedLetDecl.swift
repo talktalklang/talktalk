@@ -14,7 +14,9 @@ public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public let environment: Analyzer.Environment
 
 	public var name: String { expr.name }
+	public var token: Token { expr.token }
 	public var typeDecl: String { expr.typeDecl }
+	public var typeDeclToken: Token { expr.typeDeclToken }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

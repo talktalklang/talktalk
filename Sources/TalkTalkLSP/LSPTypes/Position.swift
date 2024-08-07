@@ -7,17 +7,17 @@
 
 import TalkTalkSyntax
 
-struct Range: Encodable {
-	let start: Position
-	let end: Position
+public struct Range: Codable {
+	public let start: Position
+	public let end: Position
 }
 
-struct Position: Codable {
-	let line: Int
-	let character: Int
+public struct Position: Codable {
+	public let line: Int
+	public let character: Int
 }
 
-extension TalkTalkSyntax.SourceLocation {
+public extension TalkTalkSyntax.SourceLocation {
 	func contains(_ position: Position) -> Bool {
 		position.line >= start.line && position.line <= end.line
 	}

@@ -58,13 +58,19 @@ struct Request: Equatable, Decodable {
 		self.id = try container.decodeIfPresent(RequestID.self, forKey: .id)
 		self.method = try container.decode(Method.self, forKey: .method)
 		self.params = switch method {
+		case .textDocumentDidOpen:
+			try container.decode(TextDocumentDidOpenRequest.self, forKey: .params)
 		case .textDocumentCompletion:
 			try container.decode(TextDocumentCompletionRequest.self, forKey: .params)
 		case .textDocumentDidChange:
 			try container.decode(TextDocumentDidChangeRequest.self, forKey: .params)
+		case .textDocumentDiagnostic:
+			try container.decode(TextDocumentDiagnosticRequest.self, forKey: .params)
 		case .textDocumentFormatting:
 			try container.decode(TextDocumentFormattingRequest.self, forKey: .params)
-		case .initialize, .initialized, .shutdown:
+		case .textDocumentSemanticTokensFull:
+			try container.decode(TextDocumentSemanticTokensFullRequest.self, forKey: .params)
+		case .initialize, .initialized, .shutdown, .workspaceSemanticTokensRefresh:
 			nil
 		}
 	}

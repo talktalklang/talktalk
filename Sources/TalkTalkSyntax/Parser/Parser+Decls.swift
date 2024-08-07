@@ -7,6 +7,7 @@
 
 public extension Parser {
 	mutating func varDecl() -> Decl {
+		let token = previous!
 		let i = startLocation(at: previous)
 
 		guard let name = consume(.identifier, "expected identifier after var")?.lexeme else {
@@ -15,19 +16,23 @@ public extension Parser {
 
 		consume(.colon, "expected ':' after name")
 
-		guard let typeDecl = consume(.identifier)?.lexeme else {
+		guard let typeDecl = consume(.identifier) else {
 			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .type)
 		}
 
-		return VarDeclSyntax(name: name, typeDecl: typeDecl, location: endLocation(i))
+		return VarDeclSyntax(token: token, name: name, typeDecl: typeDecl.lexeme, typeDeclToken: typeDecl, location: endLocation(i))
 	}
 
 	mutating func letVarDecl(_ kind: Token.Kind) -> Decl {
+		let token = previous!
+
 		let i = startLocation(at: previous)
 
-		guard let name = consume(.identifier, "expected identifier after var")?.lexeme else {
+		guard let nameToken = consume(.identifier, "expected identifier after var") else {
 			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
+
+		let name = nameToken.lexeme
 
 		consume(.colon, "expected ':' after name")
 
@@ -36,9 +41,9 @@ public extension Parser {
 		}
 
 		if kind == .let {
-			return LetDeclSyntax(name: name, typeDecl: typeDecl, location: endLocation(i))
+			return LetDeclSyntax(token: token, name: name, typeDecl: typeDecl, typeDeclToken: nameToken, location: endLocation(i))
 		} else {
-			return VarDeclSyntax(name: name, typeDecl: typeDecl, location: endLocation(i))
+			return VarDeclSyntax(token: token, name: name, typeDecl: typeDecl, typeDeclToken: nameToken, location: endLocation(i))
 		}
 	}
 

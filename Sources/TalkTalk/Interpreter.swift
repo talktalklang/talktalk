@@ -157,7 +157,7 @@ public struct Interpreter: AnalyzedVisitor {
 		let childScope = Scope(parent: scope)
 
 		if let name = expr.name {
-			_ = scope.define(name, .fn(Closure(funcExpr: expr, environment: childScope)))
+			_ = scope.define(name.lexeme, .fn(Closure(funcExpr: expr, environment: childScope)))
 		}
 
 		return .fn(Closure(funcExpr: expr, environment: childScope))
@@ -196,7 +196,7 @@ public struct Interpreter: AnalyzedVisitor {
 
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
 			if let funcExpr = decl as? AnalyzedFuncExpr {
-				type.methods[funcExpr.name!] = funcExpr
+				type.methods[funcExpr.name!.lexeme] = funcExpr
 			}
 		}
 

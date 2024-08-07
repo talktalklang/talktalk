@@ -8,4 +8,5 @@
 struct TextDocument: Decodable {
 	let uri: String
 	let version: Int?
+	let text: String?
 }

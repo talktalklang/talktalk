@@ -6,11 +6,13 @@
 //
 
 public protocol WhileExpr: Expr {
+	var whileToken: Token { get }
 	var condition: any Expr { get }
 	var body: any BlockExpr { get }
 }
 
 public struct WhileExprSyntax: WhileExpr {
+	public var whileToken: Token
 	public var condition: any Expr
 	public var body: any BlockExpr
 	public let location: SourceLocation

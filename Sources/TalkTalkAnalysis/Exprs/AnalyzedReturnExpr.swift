@@ -16,6 +16,7 @@ public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
 
 	let expr: any ReturnExpr
 
+	public var returnToken: Token { expr.returnToken }
 	public var value: (any Expr)? { expr.value }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }

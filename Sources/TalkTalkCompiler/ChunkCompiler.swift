@@ -194,11 +194,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
-		let functionChunk = Chunk(name: expr.name ?? expr.autoname, parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
+		let functionChunk = Chunk(name: expr.name?.lexeme ?? expr.autoname, parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
 		let functionCompiler = ChunkCompiler(scopeDepth: scopeDepth + 1, parent: self)
 
 		if let name = expr.name {
-			_ = defineLocal(name: name, compiler: self, chunk: chunk)
+			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
 		}
 
 		// Define the params for this function

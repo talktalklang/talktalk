@@ -17,6 +17,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	public var analyzedChildren: [any AnalyzedExpr] { [bodyAnalyzed] }
 	public let environment: Analyzer.Environment
 
+	public var structToken: Token { expr.structToken }
 	public var name: String? { expr.name }
 	public var body: DeclBlockExpr { expr.body }
 	public var location: SourceLocation { expr.location }

@@ -11,7 +11,7 @@ import TalkTalkAnalysis
 
 extension Compiler {
 	func allocateLocals(funcExpr: AnalyzedFuncExpr, closurePointer: LLVM.EmittedClosureValue?, context: Context) {
-		log("-> allocating locals for \(funcExpr.name ?? funcExpr.autoname)")
+		log("-> allocating locals for \(funcExpr.name?.lexeme ?? funcExpr.autoname)")
 
 		// Figure out which of this function's values are captured by children and malloc some heap space
 		// for them.
@@ -25,7 +25,7 @@ extension Compiler {
 			if binding.isCaptured {
 				let storage = builder.malloca(type: irType(for: binding.type), name: binding.name)
 				log(
-					"  -> emitting captured binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting captured binding in \(funcExpr.name?.lexeme ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			} else if case let .struct(structType) = binding.type {
@@ -40,7 +40,7 @@ extension Compiler {
 			} else if !binding.isParameter {
 				let storage = builder.alloca(type: irType(for: binding.type), name: binding.name)
 				log(
-					"  -> emitting stack binding in \(funcExpr.name ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
+					"  -> emitting stack binding in \(funcExpr.name?.lexeme ?? "<unnamed func>"): \(binding.name) \(binding.expr.description) (\(storage.ref))"
 				)
 				context.environment.declare(binding.name, as: storage)
 			}
@@ -90,7 +90,7 @@ extension Compiler {
 
 	func main(_ funcExpr: AnalyzedFuncExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		var functionType = irType(for: funcExpr).as(LLVM.ClosureType.self).functionType
-		functionType.name = funcExpr.name ?? funcExpr.autoname
+		functionType.name = funcExpr.name?.lexeme ?? funcExpr.autoname
 
 		let main = builder.main(functionType: functionType, builtins: Builtins.list)
 

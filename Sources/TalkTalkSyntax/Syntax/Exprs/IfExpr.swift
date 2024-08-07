@@ -6,12 +6,16 @@
 //
 
 public protocol IfExpr: Expr {
+	var ifToken: Token { get }
+	var elseToken: Token? { get }
 	var condition: any Expr { get }
 	var consequence: any BlockExpr { get }
 	var alternative: any BlockExpr { get }
 }
 
 public struct IfExprSyntax: IfExpr {
+	public var ifToken: Token
+	public var elseToken: Token?
 	public let condition: any Expr
 	public let consequence: any BlockExpr
 	public let alternative: any BlockExpr

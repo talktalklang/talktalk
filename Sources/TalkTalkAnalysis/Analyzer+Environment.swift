@@ -117,6 +117,7 @@ public extension Analyzer {
 					expr: AnalyzedFuncExpr(
 						type: Builtin.print.type,
 						expr: FuncExprSyntax(
+							funcToken: .synthetic(.func),
 							params: ParamsExprSyntax(
 								params: [.int("value")],
 								location: [.synthetic(.builtin)]

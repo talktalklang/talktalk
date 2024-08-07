@@ -6,13 +6,17 @@
 //
 
 public protocol VarDecl: Decl {
+	var token: Token { get }
 	var name: String { get }
 	var typeDecl: String { get }
+	var typeDeclToken: Token { get }
 }
 
 public struct VarDeclSyntax: VarDecl {
+	public var token: Token
 	public var name: String
 	public var typeDecl: String
+	public var typeDeclToken: Token
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }
 

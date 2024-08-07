@@ -20,7 +20,7 @@ struct TextDocumentFormatting {
 			return nil
 		}
 
-		return SourceDocument(uri: uri, text: string)
+		return SourceDocument(version: nil, uri: uri, text: string)
 	}
 
 	func handle(_ handler: inout Handler) {

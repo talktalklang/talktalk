@@ -64,7 +64,9 @@ extension Parser {
 	mutating func ifExpr(_: Bool) -> any Expr {
 		let i = startLocation()
 
-		_ = consume(.if)
+		guard let ifToken = consume(.if) else {
+			return error(at: current, "unreachable", expectation: .none)
+		}
 
 		skip(.newline)
 
@@ -75,13 +77,15 @@ extension Parser {
 		let consequence = blockExpr(false)
 
 		skip(.newline)
-		consume(.else)
+		let elseToken = consume(.else)
 		skip(.newline)
 
 		// TODO: make else optional
 		let alternative = blockExpr(false)
 
 		return IfExprSyntax(
+			ifToken: ifToken,
+			elseToken: elseToken,
 			condition: condition,
 			consequence: consequence,
 			alternative: alternative,
@@ -90,6 +94,7 @@ extension Parser {
 	}
 
 	mutating func funcExpr() -> FuncExprSyntax {
+		let funcToken = previous!
 		let i = startLocation(at: previous)
 
 		// Grab the name if there is one
@@ -106,7 +111,7 @@ extension Parser {
 
 		let body = blockExpr(false)
 
-		return FuncExprSyntax(params: params, body: body, i: lexer.current, name: name?.lexeme, location: endLocation(i))
+		return FuncExprSyntax(funcToken: funcToken, params: params, body: body, i: lexer.current, name: name, location: endLocation(i))
 	}
 
 	mutating func literal(_: Bool) -> any Expr {
@@ -137,32 +142,35 @@ extension Parser {
 	mutating func whileExpr(_ canAssign: Bool) -> any Expr {
 		let i = startLocation()
 
-		consume(.while)
+		guard let whileToken = consume(.while) else {
+			return error(at: current, "unreachable", expectation: .none)
+		}
+
 		skip(.newline)
 
 		let condition = parse(precedence: .assignment)
 		let body = blockExpr(canAssign)
 
-		return WhileExprSyntax(condition: condition, body: body, location: endLocation(i))
+		return WhileExprSyntax(whileToken: whileToken, condition: condition, body: body, location: endLocation(i))
 	}
 
 	mutating func returning(_ canAssign: Bool) -> any Expr {
 		let i = startLocation()
-		consume(.return)
 
+		let returnToken = consume(.return)!
 		let value = parse(precedence: .none)
 
-		return ReturnExprSyntax(location: endLocation(i), value: value)
+		return ReturnExprSyntax(returnToken: returnToken, location: endLocation(i), value: value)
 	}
 
 	mutating func structExpr(_: Bool) -> StructExpr {
-		consume(.struct)
+		let structToken = consume(.struct)!
 		let i = startLocation(at: previous)
 
 		let name = match(.identifier)
 		let body = declBlock()
 
-		return StructExprSyntax(name: name?.lexeme, body: body, location: endLocation(i))
+		return StructExprSyntax(structToken: structToken, name: name?.lexeme, body: body, location: endLocation(i))
 	}
 
 	mutating func blockExpr(_: Bool) -> BlockExprSyntax {

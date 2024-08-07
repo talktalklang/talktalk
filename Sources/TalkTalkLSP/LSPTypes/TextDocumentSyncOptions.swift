@@ -7,4 +7,5 @@
 
 struct TextDocumentSyncOptions: Encodable {
 	let change: TextDocumentSyncKind
+	let openClose = true
 }

@@ -16,6 +16,7 @@ public struct AnalyzedWhileExpr: WhileExpr, AnalyzedExpr {
 	public var analyzedChildren: [any AnalyzedExpr] { [conditionAnalyzed, bodyAnalyzed] }
 	public let environment: Analyzer.Environment
 
+	public var whileToken: Token { expr.whileToken }
 	public var condition: any Expr { expr.condition }
 	public var body: any BlockExpr { expr.body }
 	public var location: SourceLocation { expr.location }
