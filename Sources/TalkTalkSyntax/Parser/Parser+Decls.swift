@@ -53,7 +53,7 @@ public extension Parser {
 
 		let i = startLocation(at: previous)
 
-		var decls: [any Decl] = []
+		var decls: [any Syntax] = []
 
 		while !check(.eof), !check(.rightBrace) {
 			skip(.newline)

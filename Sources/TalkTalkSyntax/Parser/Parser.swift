@@ -41,12 +41,13 @@ public struct Parser {
 		self.lexer = lexer
 	}
 
-	var results: [any Syntax] = []
 	public mutating func parse() -> [any Syntax] {
-		var results: [any Expr] = []
+		var results: [any Syntax] = []
 		while current.kind != .eof {
 			skip(.newline)
-			results.append(expr())
+
+			results.append(decl())
+
 			skip(.newline)
 		}
 		return results
@@ -62,11 +63,7 @@ public struct Parser {
 		return results
 	}
 
-	mutating func decl() -> Decl {
-		if didMatch(.func) {
-			return funcExpr()
-		}
-
+	mutating func decl() -> any Syntax {
 		if didMatch(.var) {
 			return letVarDecl(.var)
 		}
@@ -75,12 +72,20 @@ public struct Parser {
 			return letVarDecl(.let)
 		}
 
-		return SyntaxError(location: [current], message: "Expected declaration", expectation: .decl)
+		return stmt()
 	}
 
 	mutating func expr() -> Expr {
 		skip(.newline)
 		return parse(precedence: .assignment)
+	}
+
+	mutating func stmt() -> any Syntax {
+		if didMatch(.import) {
+			return importStmt()
+		}
+
+		return expr()
 	}
 
 	mutating func parameterList() -> ParamsExpr {

@@ -15,7 +15,7 @@ public struct AnalyzedBlockExpr: AnalyzedExpr, BlockExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { exprsAnalyzed }
 	public let environment: Analyzer.Environment
 
-	public var exprs: [any Expr] { expr.exprs }
+	public var exprs: [any Syntax] { expr.exprs }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

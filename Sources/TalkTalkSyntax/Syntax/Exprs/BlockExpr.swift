@@ -6,15 +6,15 @@
 //
 
 public protocol BlockExpr: Expr {
-	var exprs: [any Expr] { get }
+	var exprs: [any Syntax] { get }
 }
 
 public struct BlockExprSyntax: BlockExpr {
-	public var exprs: [any Expr]
+	public var exprs: [any Syntax]
 	public let location: SourceLocation
 	public var children: [any Syntax] { exprs }
 
-	public init(exprs: [any Expr], location: SourceLocation) {
+	public init(exprs: [any Syntax], location: SourceLocation) {
 		self.exprs = exprs
 		self.location = location
 	}

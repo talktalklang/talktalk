@@ -33,7 +33,7 @@ public struct ASTPrinter: Visitor {
 
 	var indentLevel = 0
 
-	public static func format(_ exprs: [any Expr]) throws -> String {
+	public static func format(_ exprs: [any Syntax]) throws -> String {
 		let formatter = ASTPrinter()
 		let context = Context()
 		let result = try exprs.map { try $0.accept(formatter, context) }

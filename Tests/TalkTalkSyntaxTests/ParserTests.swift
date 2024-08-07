@@ -9,7 +9,7 @@ import TalkTalkSyntax
 import Testing
 
 struct TalkTalkParserTests {
-	func parse(_ source: String) -> [Expr] {
+	func parse(_ source: String) -> [Syntax] {
 		let lexer = TalkTalkLexer(source)
 		var parser = Parser(lexer)
 		let result = parser.parse()

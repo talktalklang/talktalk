@@ -6,15 +6,15 @@
 //
 
 public protocol DeclBlockExpr: Expr {
-	var decls: [any Decl] { get }
+	var decls: [any Syntax] { get }
 }
 
 public struct DeclBlockExprSyntax: DeclBlockExpr {
-	public var decls: [any Decl]
+	public var decls: [any Syntax]
 	public let location: SourceLocation
 	public var children: [any Syntax] { decls }
 
-	public init(decls: [any Decl], location: SourceLocation) {
+	public init(decls: [any Syntax], location: SourceLocation) {
 		self.decls = decls
 		self.location = location
 	}

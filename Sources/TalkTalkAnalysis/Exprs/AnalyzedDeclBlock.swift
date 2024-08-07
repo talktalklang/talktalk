@@ -16,7 +16,7 @@ public struct AnalyzedDeclBlock: DeclBlockExpr, AnalyzedDecl {
 	public var analyzedChildren: [any AnalyzedSyntax] { declsAnalyzed }
 	public let environment: Analyzer.Environment
 
-	public var decls: [any TalkTalkSyntax.Decl] { decl.decls }
+	public var decls: [any TalkTalkSyntax.Syntax] { decl.decls }
 	public var location: TalkTalkSyntax.SourceLocation { decl.location }
 	public var children: [any Syntax] { decl.children }
 

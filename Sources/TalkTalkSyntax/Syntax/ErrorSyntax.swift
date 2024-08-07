@@ -8,7 +8,7 @@
 // This is sorta leaking semantic info into the syntax package but also the parser knows
 // a bunch of stuff that we probably don't want to leak _out_ of the syntax package?
 public enum ParseExpectation {
-	case decl, expr, identifier, none, type, variable, member
+	case decl, expr, identifier, none, type, variable, member, moduleName
 
 	static func guess(from kind: Token.Kind) -> ParseExpectation {
 		switch kind {

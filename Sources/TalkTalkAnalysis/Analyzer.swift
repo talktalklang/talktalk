@@ -35,14 +35,14 @@ public struct Analyzer: Visitor {
 		return collect(expr: analyzed)
 	}
 
-	public static func analyzedExprs(_ exprs: [any Expr]) throws -> [any AnalyzedSyntax] {
+	public static func analyzedExprs(_ exprs: [any Syntax]) throws -> [any AnalyzedSyntax] {
 		let env = Environment()
 		let analyzer = Analyzer()
 
 		return try exprs.map { try $0.accept(analyzer, env) }
 	}
 
-	public static func analyze(_ exprs: [any Expr]) throws -> Analyzer.Value {
+	public static func analyze(_ exprs: [any Syntax]) throws -> Analyzer.Value {
 		let env = Environment()
 		let analyzer = Analyzer()
 		let location = exprs.first?.location ?? [.synthetic(.eof)]
