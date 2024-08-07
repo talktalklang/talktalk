@@ -29,4 +29,5 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedStructExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedVarDecl, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedLetDecl, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedImportStmt, _ context: Context) throws -> Value
 }

@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedUnaryExpr: AnalyzedExpr, UnaryExpr {
 	public var type: ValueType
 	public var exprAnalyzed: any AnalyzedExpr
-	public var analyzedChildren: [any AnalyzedExpr] { [exprAnalyzed] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [exprAnalyzed] }
 	public let environment: Analyzer.Environment
 
 	let wrapped: UnaryExpr

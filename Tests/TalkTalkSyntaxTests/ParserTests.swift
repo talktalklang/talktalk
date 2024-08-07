@@ -23,6 +23,15 @@ struct TalkTalkParserTests {
 		return result
 	}
 
+	@Test("Imports") func imports() throws {
+		let parsed = parse("""
+		import Test
+		""")[0].cast(ImportStmtSyntax.self)
+
+		#expect(parsed.token.lexeme == "import")
+		#expect(parsed.module.name == "Test")
+	}
+
 	@Test("Literals") func literals() throws {
 		#expect(parse("1")[0].cast(LiteralExprSyntax.self).value == .int(1))
 		#expect(parse("true")[0].cast(LiteralExprSyntax.self).value == .bool(true))

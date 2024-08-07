@@ -21,7 +21,7 @@ public struct Token: CustomDebugStringConvertible {
 		case `func`, `true`, `false`, `return`,
 				 `if`, `in`, call, `else`,
 				 `while`, `var`, `let`,
-				 `struct`, `self`, `Self`
+				 `struct`, `self`, `Self`, `import`
 
 		case newline
 		case eof
@@ -160,6 +160,7 @@ public struct TalkTalkLexer {
 		case "let": make(.let)
 		case "struct": make(.struct)
 		case "return": make(.return)
+		case "import": make(.import)
 		default:
 			make(.identifier)
 		}

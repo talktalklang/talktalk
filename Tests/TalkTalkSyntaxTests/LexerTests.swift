@@ -17,6 +17,16 @@ struct TalkTalkLexerTests {
 		])
 	}
 
+	@Test("Import") func importing() {
+		var lexer = TalkTalkLexer("import Test")
+		let tokens = lexer.collect()
+		#expect(tokens.map(\.kind) == [
+			.import,
+			.identifier,
+			.eof
+		])
+	}
+
 	@Test("Symbols and ints and parens") func symbolsAndInts() async throws {
 		var lexer = TalkTalkLexer("10 ^ 20")
 		let tokens = lexer.collect()

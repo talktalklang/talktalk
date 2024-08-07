@@ -29,4 +29,6 @@ public protocol Visitor {
 	func visit(_ expr: ErrorSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: MemberExpr, _ context: Context) throws -> Value
 	func visit(_ expr: ReturnExpr, _ context: Context) throws -> Value
+
+	func visit(_ expr: ImportStmt, _ context: Context) throws -> Value
 }

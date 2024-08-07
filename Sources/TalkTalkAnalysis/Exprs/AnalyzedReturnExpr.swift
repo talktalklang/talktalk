@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
 	public var type: ValueType
-	public var analyzedChildren: [any AnalyzedExpr] {
+	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
 	}
 	public let environment: Analyzer.Environment
@@ -20,7 +20,7 @@ public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
 	public var value: (any Expr)? { expr.value }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
-	
+
 	public var valueAnalyzed: (any AnalyzedExpr)?
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {

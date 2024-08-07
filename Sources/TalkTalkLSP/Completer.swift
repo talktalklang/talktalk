@@ -10,7 +10,7 @@ import TalkTalkSyntax
 
 struct Completer {
 	var source: String
-	var lastSuccessfulExprs: [any AnalyzedExpr] = []
+	var lastSuccessfulExprs: [any AnalyzedSyntax] = []
 
 	public init(source: String) {
 		self.source = source
@@ -30,8 +30,8 @@ struct Completer {
 		}
 	}
 
-	func matching(position: Position, exprs: [any AnalyzedExpr]) -> [any AnalyzedExpr] {
-		var result: [any AnalyzedExpr] = []
+	func matching(position: Position, exprs: [any AnalyzedSyntax]) -> [any AnalyzedSyntax] {
+		var result: [any AnalyzedSyntax] = []
 		for expr in exprs {
 			if expr.location.contains(position) {
 				result.append(expr)

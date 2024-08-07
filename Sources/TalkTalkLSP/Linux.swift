@@ -1,4 +1,4 @@
-#if os(Linux)
+#if false && os(Linux)
 	import Foundation
 	public extension URL {
 		static var homeDirectory: URL {

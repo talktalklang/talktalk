@@ -53,6 +53,10 @@ struct SemanticTokensVisitor: Visitor {
 		return results
 	}
 
+	public func visit(_ expr: any ImportStmt, _ context: Context) throws -> [RawSemanticToken] {
+	[make(.keyword, from: expr.token)]
+}
+
 	func visit(_ expr: DefExpr, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [
 			RawSemanticToken(

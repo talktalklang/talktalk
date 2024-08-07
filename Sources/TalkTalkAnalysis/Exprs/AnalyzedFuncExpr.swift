@@ -15,7 +15,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public let bodyAnalyzed: AnalyzedBlockExpr
 	public let returnsAnalyzed: (any AnalyzedExpr)?
 	public let environment: Analyzer.Environment
-	public var analyzedChildren: [any AnalyzedExpr] {
+	public var analyzedChildren: [any AnalyzedSyntax] {
 		[bodyAnalyzed]
 	}
 

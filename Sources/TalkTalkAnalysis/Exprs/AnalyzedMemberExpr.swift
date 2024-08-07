@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public var type: ValueType
 	let expr: MemberExpr
-	public var analyzedChildren: [any AnalyzedExpr] { [receiverAnalyzed] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] }
 	public let environment: Analyzer.Environment
 
 	public let receiverAnalyzed: any AnalyzedExpr
@@ -19,7 +19,7 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public var property: String { expr.property }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
-	
+
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)
 	}

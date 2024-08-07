@@ -35,25 +35,25 @@ let package = Package(
 				"TalkTalkSyntax"
 			]
 		),
-		.target(
-			name: "TalkTalkLLVMExperimental",
-			dependencies: [
-				"TalkTalkSyntax",
-				"TalkTalkAnalysis",
-				"LLVM"
-			]
-		),
-		.target(
-			name: "LLVM",
-			dependencies: ["C_LLVM"]
-		),
-		.systemLibrary(
-			name: "C_LLVM",
-			pkgConfig: "cllvm",
-			providers: [
-				.brew(["llvm"])
-			]
-		),
+	//	.target(
+	//		name: "TalkTalkLLVMExperimental",
+	//		dependencies: [
+	//			"TalkTalkSyntax",
+	//			"TalkTalkAnalysis",
+	//			"LLVM"
+	//		]
+	//	),
+	//	.target(
+	//		name: "LLVM",
+	//		dependencies: ["C_LLVM"]
+	//	),
+	//	.systemLibrary(
+	//		name: "C_LLVM",
+	//		pkgConfig: "cllvm",
+	//		providers: [
+	//			.brew(["llvm"])
+	//		]
+	//	),
 		.target(
 			name: "TalkTalk",
 			dependencies: [
@@ -100,15 +100,15 @@ let package = Package(
 			name: "TalkTalkBytecodeTests",
 			dependencies: ["TalkTalkBytecode"]
 		),
-		.testTarget(
-			name: "TalkTalkLLVMExperimentalTests",
-			dependencies: [
-				"TalkTalkLLVMExperimental",
-				"TalkTalkSyntax",
-				"TalkTalkAnalysis",
-				"LLVM"
-			]
-		),
+	//	.testTarget(
+	//		name: "TalkTalkLLVMExperimentalTests",
+	//		dependencies: [
+	//			"TalkTalkLLVMExperimental",
+	//			"TalkTalkSyntax",
+	//			"TalkTalkAnalysis",
+	//			"LLVM"
+	//		]
+	//	),
 		.testTarget(
 			name: "TalkTalkLSPTests",
 			dependencies: [

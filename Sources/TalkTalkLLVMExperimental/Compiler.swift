@@ -132,6 +132,10 @@ public struct Compiler: AnalyzedVisitor {
 		#endif
 	}
 
+	public func visit(_ expr: AnalyzedImportStmt, _ context: Context) throws -> any LLVM.EmittedValue {
+		fatalError()
+	}
+
 	public func visit(_ expr: AnalyzedUnaryExpr, _ context: Context) throws -> any LLVM.EmittedValue {
 		fatalError()
 	}

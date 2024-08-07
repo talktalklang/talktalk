@@ -11,9 +11,9 @@ import TalkTalkAnalysis
 public struct Compiler {
 	public var number = 0
 	public var chunk: Chunk
-	public let analyzedExprs: [any AnalyzedExpr]
+	public let analyzedExprs: [any AnalyzedSyntax]
 
-	public init(analyzedExprs: [any AnalyzedExpr]) {
+	public init(analyzedExprs: [any AnalyzedSyntax]) {
 		self.analyzedExprs = analyzedExprs
 		self.chunk = Chunk(name: "main")
 	}

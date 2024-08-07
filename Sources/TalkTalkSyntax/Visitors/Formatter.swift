@@ -21,6 +21,10 @@ public struct Formatter: Visitor {
 		return result.joined(separator: "\n")
 	}
 
+	public func visit(_ expr: any ImportStmt, _ context: Context) throws -> String {
+		"import \(expr.module.name)"
+	}
+
 	public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
 		var result = try expr.receiver.accept(self, context)
 		result += "."
@@ -104,7 +108,8 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: any CallExpr, _ context: Context) throws -> Value {
 		var result = try expr.callee.accept(self, context)
-		result += "(" + expr.args.map { try! $0.value.accept(self, context) }.joined(separator: ", ") + ")"
+		result +=
+			"(" + expr.args.map { try! $0.value.accept(self, context) }.joined(separator: ", ") + ")"
 
 		context.lastType = expr
 

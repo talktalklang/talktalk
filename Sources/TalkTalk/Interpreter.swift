@@ -45,6 +45,10 @@ public struct Interpreter: AnalyzedVisitor {
 		return last
 	}
 
+	public func visit(_ expr: AnalyzedImportStmt, _ context: Scope) throws -> Value {
+		.none
+	}
+
 	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Scope) throws -> Value {
 		.none
 	}
@@ -234,7 +238,9 @@ public struct Interpreter: AnalyzedVisitor {
 		return lastResult
 	}
 
-	func call(_ funcExpr: AnalyzedFuncExpr, on instance: StructInstance, with args: [any AnalyzedExpr]) throws -> Value {
+	func call(
+		_ funcExpr: AnalyzedFuncExpr, on instance: StructInstance, with args: [any AnalyzedExpr]
+	) throws -> Value {
 		let scope = Scope()
 		_ = scope.define("self", .instance(instance))
 
@@ -279,7 +285,9 @@ public struct Interpreter: AnalyzedVisitor {
 		return lastReturn
 	}
 
-	func instantiate(_ type: StructType, with args: [AnalyzedArgument], in context: Scope) throws -> Value {
+	func instantiate(_ type: StructType, with args: [AnalyzedArgument], in context: Scope) throws
+		-> Value
+	{
 		var instance = StructInstance(type: type, properties: [:])
 
 		for arg in args {

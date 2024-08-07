@@ -13,7 +13,7 @@ public struct AnalyzedBinaryExpr: AnalyzedExpr, BinaryExpr {
 
 	public let lhsAnalyzed: any AnalyzedExpr
 	public let rhsAnalyzed: any AnalyzedExpr
-	public var analyzedChildren: [any AnalyzedExpr] { [lhsAnalyzed, rhsAnalyzed] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [lhsAnalyzed, rhsAnalyzed] }
 	public let environment: Analyzer.Environment
 
 	public var lhs: any Expr { expr.lhs }

@@ -38,13 +38,19 @@ public struct ASTPrinter: Visitor {
 		let context = Context()
 		let result = try exprs.map { try $0.accept(formatter, context) }
 		return result.map { line in
-			line.replacing(#/(\t+)(\d+) │ /#, with: {
-				// Tidy indents
-				"\($0.output.2) |\($0.output.1)└ "
-			}).replacing(#/(\t*)(\d+)[\s]*\|/#, with: {
-				// Tidy line numbers
-				$0.output.2.trimmingCharacters(in: .whitespacesAndNewlines).padding(toLength: 4, withPad: " ", startingAt: 0) + "| \($0.output.1)"
-			})
+			line.replacing(
+				#/(\t+)(\d+) │ /#,
+				with: {
+					// Tidy indents
+					"\($0.output.2) |\($0.output.1)└ "
+				}
+			).replacing(
+				#/(\t*)(\d+)[\s]*\|/#,
+				with: {
+					// Tidy line numbers
+					$0.output.2.trimmingCharacters(in: .whitespacesAndNewlines).padding(
+						toLength: 4, withPad: " ", startingAt: 0) + "| \($0.output.1)"
+				})
 
 		}.joined(separator: "\n")
 	}
@@ -68,6 +74,10 @@ public struct ASTPrinter: Visitor {
 		return copy.add(content)
 	}
 
+	@StringBuilder public func visit(_ expr: any ImportStmt, _ context: Context) throws -> String {
+		dump(expr, "module: \(expr.module.name)")
+	}
+
 	@StringBuilder public func visit(_ expr: any UnaryExpr, _ context: Context) throws -> String {
 		dump(expr, "op: \(expr.op)")
 		indent {
@@ -80,7 +90,7 @@ public struct ASTPrinter: Visitor {
 		indent {
 			try expr.receiver.accept(self, context)
 		}
-}
+	}
 
 	@StringBuilder public func visit(_ expr: any CallExpr, _ context: Context) throws -> String {
 		dump(expr)
@@ -101,7 +111,8 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any IdentifierExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any IdentifierExpr, _ context: Context) throws -> String
+	{
 		dump(expr, "name: \(expr.name)")
 	}
 

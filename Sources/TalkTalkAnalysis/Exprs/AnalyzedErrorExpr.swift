@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax {
 	public var type: ValueType
 	let expr: any ErrorSyntax
-	public var analyzedChildren: [any AnalyzedExpr] { [] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Analyzer.Environment
 
 	public var message: String { expr.message }

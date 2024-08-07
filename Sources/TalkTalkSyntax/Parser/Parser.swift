@@ -29,7 +29,7 @@ public struct Parser {
 
 	public var errors: [(Token, String)] = []
 
-	public static func parse(_ string: String) -> [any Expr] {
+	public static func parse(_ string: String) -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(string))
 		return parser.parse()
 	}
@@ -41,8 +41,8 @@ public struct Parser {
 		self.lexer = lexer
 	}
 
-	var results: [Expr] = []
-	public mutating func parse() -> [Expr] {
+	var results: [any Syntax] = []
+	public mutating func parse() -> [any Syntax] {
 		var results: [any Expr] = []
 		while current.kind != .eof {
 			skip(.newline)

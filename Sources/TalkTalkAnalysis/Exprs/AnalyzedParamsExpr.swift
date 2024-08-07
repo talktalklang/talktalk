@@ -18,7 +18,7 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 
 	public var name: String { expr.name }
 	let expr: any Param
-	public var analyzedChildren: [any AnalyzedExpr] { [] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Analyzer.Environment
 
 	public var type: ValueType
@@ -42,7 +42,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public var type: ValueType
 	let expr: ParamsExpr
 
-	public var analyzedChildren: [any AnalyzedExpr] { paramsAnalyzed }
+	public var analyzedChildren: [any AnalyzedSyntax] { paramsAnalyzed }
 	public var paramsAnalyzed: [AnalyzedParam]
 	public var environment: Analyzer.Environment
 

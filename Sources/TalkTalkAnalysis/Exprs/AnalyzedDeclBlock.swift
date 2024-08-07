@@ -9,11 +9,11 @@ import TalkTalkSyntax
 
 public struct AnalyzedDeclBlock: DeclBlockExpr, AnalyzedDecl {
 	public var type: ValueType
-	
+
 	let decl: DeclBlockExpr
 
 	public var declsAnalyzed: [any AnalyzedDecl]
-	public var analyzedChildren: [any AnalyzedExpr] { declsAnalyzed }
+	public var analyzedChildren: [any AnalyzedSyntax] { declsAnalyzed }
 	public let environment: Analyzer.Environment
 
 	public var decls: [any TalkTalkSyntax.Decl] { decl.decls }

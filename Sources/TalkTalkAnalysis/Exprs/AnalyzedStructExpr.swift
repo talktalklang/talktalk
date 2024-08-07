@@ -14,7 +14,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	public let bodyAnalyzed: AnalyzedDeclBlock
 	public let structType: StructType
 	public let lexicalScope: LexicalScope
-	public var analyzedChildren: [any AnalyzedExpr] { [bodyAnalyzed] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [bodyAnalyzed] }
 	public let environment: Analyzer.Environment
 
 	public var structToken: Token { expr.structToken }

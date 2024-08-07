@@ -60,8 +60,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// MARK: Visitor methods
 
 	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Chunk) throws -> Void {
-		
+
 	}
+
+	public func visit(_ expr: AnalyzedImportStmt, _ context: Chunk) throws -> Void {
+
+}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
 		// Put the function args on the stack
@@ -81,7 +85,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try expr.valueAnalyzed.accept(self, chunk)
 
 		if expr.name.lexeme == "count" {
-			
+
 		}
 
 		let variable = resolveVariable(
