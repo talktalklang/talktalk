@@ -157,7 +157,7 @@ actor AnalysisTests {
 
 		let def = try #require(main[0] as? AnalyzedDefExpr)
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
-		#expect(fn.environment.captures.isEmpty)
+		#expect(fn.environment.captures.count == 0)
 
 		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
 		#expect(counterFn.environment.captures.count == 1)
