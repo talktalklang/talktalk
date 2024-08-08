@@ -60,10 +60,10 @@ public class Environment {
 			return capture.binding
 		}
 
-		if name == "printf" {
+		if name == "print" {
 			// um..
 			return Binding(
-				name: "printf",
+				name: "print",
 				expr: AnalyzedFuncExpr(
 					type: Builtin.print.type,
 					expr: FuncExprSyntax(

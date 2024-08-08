@@ -22,7 +22,6 @@ public struct ModuleCompiler {
 		let module = CompilingModule(name: name, analysisModule: analysisModule)
 
 		for file in analysisModule.analyzedFiles {
-			module.register(file: file)
 			try module.compile(file: file)
 		}
 

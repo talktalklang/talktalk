@@ -42,7 +42,11 @@ public struct Disassembler {
 		case .jump, .jumpUnless:
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
-			return localInstruction(opcode: opcode, start: index)
+			return variableInstruction(opcode: opcode, start: index, type: .local)
+		case .setGlobal, .getGlobal:
+			return variableInstruction(opcode: opcode, start: index, type: .global)
+		case .setBuiltin, .getBuiltin:
+			return variableInstruction(opcode: opcode, start: index, type: .builtin)
 		case .getUpvalue:
 			return upvalueInstruction(opcode: opcode, start: index)
 		default:
@@ -68,9 +72,19 @@ public struct Disassembler {
 		return Instruction(opcode: opcode, offset: current, line: chunk.lines[start], metadata: .jump(offset: jump))
 	}
 
-	mutating func localInstruction(opcode: Opcode, start: Int) -> Instruction {
+	mutating func variableInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) -> Instruction {
 		let slot = chunk.code[current++]
-		let metadata = LocalMetadata(slot: slot, name: chunk.localNames[Int(slot)])
+
+		let name = switch type {
+		case .local:
+			chunk.localNames[Int(slot)]
+		case .global:
+			"slot: \(slot)"
+		case .builtin:
+			"builtin"
+		}
+
+		let metadata = VariableMetadata(slot: slot, name: name, type: type)
 		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 

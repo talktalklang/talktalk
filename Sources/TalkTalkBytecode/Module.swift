@@ -23,11 +23,6 @@ public struct Module {
 	// A list of globals used during execution
 	public var globals: [Byte: Value] = [:]
 
-	// A helper for when we just want to run a chunk
-	public static func main(_ chunk: Chunk) -> Module {
-		Module(name: "main", main: chunk)
-	}
-
 	public init(name: String, main: Chunk) {
 		self.name = name
 		self.main = main

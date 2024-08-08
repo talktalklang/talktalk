@@ -125,7 +125,7 @@ actor InterpreterTests {
 
 			i = 0
 			while i < 5 {
-				printf(fib(i))
+				print(fib(i))
 				i = i + 1
 			}
 			"""

@@ -292,6 +292,9 @@ public struct VirtualMachine: ~Copyable {
 				} else {
 					return runtimeError("\(callee) is not callable")
 				}
+			case .callChunkID:
+				let slot = readByte()
+				call(chunkID: Int(slot))
 			case .getGlobal:
 				let slot = readByte()
 				if let global = module.globals[slot] {
@@ -302,6 +305,11 @@ public struct VirtualMachine: ~Copyable {
 			case .setGlobal:
 				let slot = readByte()
 				module.globals[slot] = stack.peek()
+			case .getBuiltin:
+				let slot = readByte()
+				stack.push(.builtin(slot))
+			case .setBuiltin:
+				return runtimeError("Cannot set built in")
 			case .jumpPlaceholder:
 				()
 			}
@@ -311,14 +319,16 @@ public struct VirtualMachine: ~Copyable {
 	mutating func call(_ callee: Value) {
 		if let chunkID = callee.closureValue {
 			call(closureID: Int(chunkID))
+		} else if let builtin = callee.builtinValue {
+			call(builtin: Int(builtin))
+		} else if let moduleFunction = callee.moduleFunctionValue {
+			call(moduleFunction: Int(moduleFunction))
 		}
 	}
 
 	mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
 		let chunk = chunk.getChunk(at: closureID)
-
-		// FIXME: ok function values are just offsets into subchunks, which is a problem because when a function returns, the subchunks change. we need a way to access subchunks of subchunks when they are return values
 
 		let frame = CallFrame(
 			closure: closures[UInt64(closureID)]!,
@@ -327,6 +337,43 @@ public struct VirtualMachine: ~Copyable {
 		)
 
 		frames.push(frame)
+	}
+
+	mutating func call(chunkID: Int) {
+		let chunk = chunk.getChunk(at: chunkID)
+		let closure = Closure(chunk: chunk, upvalues: [])
+
+		let frame = CallFrame(
+			closure: closure,
+			returnTo: ip,
+			stackOffset: stack.size - Int(chunk.arity) - 1
+		)
+
+		frames.push(frame)
+	}
+
+	mutating func call(moduleFunction: Int) {
+		let chunk = module.chunks[moduleFunction]
+		let closure = Closure(chunk: chunk, upvalues: [])
+
+		let frame = CallFrame(
+			closure: closure,
+			returnTo: ip,
+			stackOffset: stack.size - Int(chunk.arity) - 1
+		)
+
+		frames.push(frame)
+	}
+
+	mutating func call(builtin: Int) {
+		guard let builtin = Builtin(rawValue: builtin) else {
+			fatalError("no builtin at index: \(builtin)")
+		}
+
+		switch builtin {
+		case .print:
+			print(stack.peek())
+		}
 	}
 
 	mutating func readConstant() -> Value {

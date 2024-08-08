@@ -9,7 +9,7 @@ import TalkTalkSyntax
 import TalkTalkBytecode
 
 public struct ModuleGlobal {
-	let name: String
+	public let name: String
 	let syntax: any Syntax
 	public let type: ValueType
 }

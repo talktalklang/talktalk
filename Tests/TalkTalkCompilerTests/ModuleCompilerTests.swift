@@ -20,6 +20,8 @@ actor ModuleCompilerTests {
 	@Test("Can compile a module") func basic() {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
+			func fizz() {}
+
 			func foo() {
 				bar()
 			}
@@ -33,8 +35,10 @@ actor ModuleCompilerTests {
 
 		let module = compile(files)
 		#expect(module.name == "CompilerTests")
-		#expect(module.chunks.count == 2)
 
-		
+		#expect(module.chunks.map(\.name).sorted() == ["fizz", "foo", "bar"].sorted())
+
+		// We want each global function to have its own chunk in the module
+		#expect(module.chunks.count == 3)
 	}
 }

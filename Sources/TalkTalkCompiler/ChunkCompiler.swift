@@ -70,8 +70,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
-		if expr.name.lexeme == "count" {}
-
 		let variable = resolveVariable(
 			named: expr.name.lexeme,
 			chunk: chunk
@@ -281,6 +279,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 				isCaptured: false,
 				getter: .getGlobal,
 				setter: .setGlobal
+			)
+		}
+
+		if let slot = Builtin.list.firstIndex(where: { $0.name == name }) {
+			return Variable(
+				name: name,
+				slot: Byte(slot),
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getBuiltin,
+				setter: .setBuiltin
 			)
 		}
 

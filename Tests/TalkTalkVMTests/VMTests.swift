@@ -7,6 +7,7 @@
 
 import Testing
 import TalkTalkVM
+import TalkTalkCompiler
 import TalkTalkBytecode
 
 actor VMTests {

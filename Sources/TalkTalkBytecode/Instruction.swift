@@ -120,9 +120,14 @@ public extension InstructionMetadata where Self == JumpMetadata {
 	}
 }
 
-public struct LocalMetadata: InstructionMetadata {
+public struct VariableMetadata: InstructionMetadata {
+	public enum VariableType {
+		case local, global, builtin
+	}
+
 	public let slot: Byte
 	public let name: String
+	public let type: VariableType
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -133,9 +138,17 @@ public struct LocalMetadata: InstructionMetadata {
 	}
 }
 
-public extension InstructionMetadata where Self == LocalMetadata {
-	static func local(slot: Byte, name: String) -> LocalMetadata {
-		LocalMetadata(slot: slot, name: name)
+public extension InstructionMetadata where Self == VariableMetadata {
+	static func local(slot: Byte, name: String) -> VariableMetadata {
+		VariableMetadata(slot: slot, name: name, type: .local)
+	}
+
+	static func global(slot: Byte, name: String) -> VariableMetadata {
+		VariableMetadata(slot: slot, name: name, type: .global)
+	}
+
+	static func builtin(slot: Byte, name: String) -> VariableMetadata {
+		VariableMetadata(slot: slot, name: name, type: .builtin)
 	}
 }
 

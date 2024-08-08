@@ -4,6 +4,7 @@
 //
 //  Created by Pat Nakajima on 8/2/24.
 //
+import Foundation
 
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
@@ -58,8 +59,8 @@ public class Chunk {
 	}
 
 	public func dump() {
-		print("\(name) locals: \(localsCount), upvalues: \(upvalueCount)")
-		print(disassemble().map(\.description).joined(separator: "\n"))
+		FileHandle.standardError.write(Data("\(name) locals: \(localsCount), upvalues: \(upvalueCount)\n".utf8))
+		FileHandle.standardError.write(Data((disassemble().map(\.description).joined(separator: "\n")  + "\n").utf8))
 		for subchunk in subchunks {
 			subchunk.dump()
 		}
@@ -83,6 +84,18 @@ public class Chunk {
 		}
 
 		return subchunks[index]
+	}
+
+	public func getSubchunks(named names: Set<String>) -> [Chunk] {
+		var result: [Chunk] = []
+
+		for (i, subchunk) in subchunks.enumerated() {
+			if names.contains(subchunk.name) {
+				result.append(subchunk)
+			}
+		}
+
+		return result
 	}
 
 	public func finalize() -> Chunk {

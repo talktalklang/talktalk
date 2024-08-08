@@ -14,7 +14,7 @@ public enum Opcode: Byte {
 			 not,
 
 			 // Callables
-			 call,
+			 call, callChunkID,
 
 			 // Stack operations
 			 pop,
@@ -31,6 +31,9 @@ public enum Opcode: Byte {
 
 			 // Global variables
 			 getGlobal, setGlobal,
+
+			 // Builtin functions
+			 getBuiltin, setBuiltin,
 
 			 // Literals
 			 `true`,

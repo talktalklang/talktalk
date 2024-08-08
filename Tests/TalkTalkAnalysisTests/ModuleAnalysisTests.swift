@@ -17,6 +17,8 @@ actor ModuleAnalysisTests {
 	@Test("Analyzes module") func basic() throws {
 		let analysisModule = analyze(
 			.tmp("""
+			func fizz() {}
+
 			func foo() {
 				bar()
 			}
@@ -29,7 +31,7 @@ actor ModuleAnalysisTests {
 		)
 
 		#expect(analysisModule.name == "ModuleAnalysisTests")
-		#expect(analysisModule.globals.count == 2)
+		#expect(analysisModule.globals.count == 3)
 
 		// First make sure we can get a super basic function with no dependencies
 		let bar = try #require(analysisModule.global(named: "bar"))

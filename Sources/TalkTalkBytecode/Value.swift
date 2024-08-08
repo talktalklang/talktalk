@@ -27,6 +27,8 @@ public class Value: Equatable, Hashable {
 		case data = 3
 		case none = 4
 		case closure = 5
+		case builtin = 6
+		case moduleFunction = 7
 	}
 
 	public static var none: Value {
@@ -51,6 +53,14 @@ public class Value: Equatable, Hashable {
 
 	public static func pointer(_ addr: UInt64) -> Value {
 		Value(pointer: addr)
+	}
+
+	public static func builtin(_ id: Byte) -> Value {
+		Value(builtin: UInt64(id))
+	}
+
+	public static func moduleFunction(_ id: Byte) -> Value {
+		Value(moduleFunction: UInt64(id))
 	}
 
 	var tag: Tag {
@@ -82,13 +92,23 @@ public class Value: Equatable, Hashable {
 		storage |= (closureID &<< 4) | UInt64(Tag.closure.rawValue)
 	}
 
+	public init(builtin: UInt64) {
+		storage = 0
+		storage |= (builtin &<< 4) | UInt64(Tag.builtin.rawValue)
+	}
+
+	public init(moduleFunction: UInt64) {
+		storage = 0
+		storage |= (moduleFunction &<< 4) | UInt64(Tag.moduleFunction.rawValue)
+	}
+
 	public init() {
 		storage = 0
 		storage |= UInt64(Tag.none.rawValue)
 	}
 
 	public var isCallable: Bool {
-		tag == .closure
+		tag == .closure || tag == .builtin || tag == .moduleFunction
 	}
 
 	public var intValue: Int64? {
@@ -113,6 +133,16 @@ public class Value: Equatable, Hashable {
 
 	public var closureValue: UInt64? {
 		guard tag == .closure else { return nil }
+		return storage &>> 4
+	}
+
+	public var builtinValue: UInt64? {
+		guard tag == .builtin else { return nil }
+		return storage &>> 4
+	}
+
+	public var moduleFunctionValue: UInt64? {
+		guard tag == .moduleFunction else { return nil }
 		return storage &>> 4
 	}
 
@@ -145,6 +175,10 @@ extension Value: CustomStringConvertible {
 			".data(\(dataValue!))"
 		case .closure:
 			"closure"
+		case .builtin:
+			"builtin"
+		case .moduleFunction:
+			"module function"
 		case .none:
 			"none"
 		}

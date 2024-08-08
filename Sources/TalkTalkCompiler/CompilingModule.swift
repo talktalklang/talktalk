@@ -24,36 +24,60 @@ public class CompilingModule {
 	// for a global before it's been resolved.
 	var globalOffsets: [String: Int] = [:]
 
+	var fileChunks: [Chunk] = []
+
 	public init(name: String, analysisModule: AnalysisModule) {
 		self.name = name
 		self.analysisModule = analysisModule
-		self.globalOffsets[name] = 0
+
+		// Reserve offsets for globals {
+		for (i, (_, global)) in analysisModule.globals.enumerated() {
+			globalOffsets[global.name] = i
+		}
 	}
 
 	public func finalize() -> Module {
-		var chunks: [Chunk] = []
+		var chunks: [Chunk] = Array(repeating: Chunk(name: "_"), count: analysisModule.globals.count)
 
-		// Go through the list of compiled chunks, sort by offset, add to the real module
-		for (_, chunk) in compiledChunks.sorted(by: { $0.key < $1.key }) {
-			chunks.append(chunk)
+		// Go through the list of global chunks, sort by offset, add to the real module
+		for (i, chunk) in compiledChunks.sorted(by: { $0.key < $1.key }) {
+			chunks[i] = chunk
 		}
 
-		let main = chunks.first ?? Chunk(name: "main")
+		let main = if let main = chunks.first(where: { $0.name == "main" }) {
+			main
+		} else {
+			synthesizeMain()
+		}
+
 		var module = Module(name: name, main: main)
 		module.chunks = chunks
-		return module
-	}
 
-	public func register(file: AnalyzedSourceFile) {
-		globalOffsets[file.path] = globalOffsets.count
+		// Prepulate globals with moduleFunction values
+		for (i, _) in module.chunks.enumerated() {
+			module.globals[Byte(i)] = .moduleFunction(Byte(i))
+		}
+
+		return module
 	}
 
 	public func compile(file: AnalyzedSourceFile) throws {
 		var compiler = SourceFileCompiler(name: file.path, analyzedSyntax: file.syntax)
 		let chunk = try compiler.compile(in: self)
 
-		let offset = globalOffset(for: chunk.name) ?? 0
-		compiledChunks[offset] = chunk
+		// Go through the compiled chunk's subchunks and pull global chunks out to the top level
+		let globalNames = Set(analysisModule.globals.values.map(\.name))
+		let hoistedChunks = chunk.getSubchunks(named: globalNames)
+
+		for chunk in hoistedChunks {
+			guard let offset = globalOffsets[chunk.name] else {
+				fatalError("trying to hoist unknown function")
+			}
+
+			compiledChunks[offset] = chunk
+		}
+
+		fileChunks.append(chunk)
 	}
 
 	// Get an offset for a global by name. If we already have it (it's been compiled) then just
@@ -61,17 +85,20 @@ public class CompilingModule {
 	//
 	// If the analysis says that we don't have a global by this name, return nil.
 	public func globalOffset(for name: String) -> Int? {
-		if let offset = globalOffsets[name] {
-			return offset
+		return globalOffsets[name]
+	}
+
+	func synthesizeMain() -> Chunk {
+		let main = Chunk(name: "main")
+
+		for (i, fileChunk) in fileChunks.enumerated() {
+			let offset = main.addChunk(fileChunk)
+			main.emit(opcode: .callChunkID, line: UInt32(i))
+			main.emit(byte: Byte(offset), line: UInt32(i))
 		}
 
-		if analysisModule.globals[name] == nil {
-			return nil
-		}
+		main.emit(opcode: .return, line: UInt32(fileChunks.count))
 
-		let offset = globalOffsets.count
-		globalOffsets[name] = offset
-
-		return offset
+		return main
 	}
 }
