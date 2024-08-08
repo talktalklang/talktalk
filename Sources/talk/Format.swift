@@ -9,19 +9,15 @@ import Foundation
 import TalkTalkSyntax
 
 struct Format: TalkTalkCommand {
+	static let configuration = CommandConfiguration(
+		abstract: "Format the given input"
+	)
+
 	@Argument(help: "The input to format.")
 	var input: String
 
 	func run() async throws {
-		let source = switch try get(input: input) {
-		case .path(let string):
-			string
-		case .stdin:
-			fatalError("not yet")
-		case .string(let string):
-			string
-		}
-
+		let source = try get(input: input).text
 		let formatted = Formatter.format(source)
 		print(formatted)
 	}

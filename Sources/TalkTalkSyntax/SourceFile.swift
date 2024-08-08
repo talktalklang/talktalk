@@ -14,4 +14,9 @@ public struct SourceFile {
 	public static func tmp(_ text: String) -> SourceFile {
 		SourceFile(path: "/tmp/\(UUID().uuidString)", text: text)
 	}
+
+	public init(path: String, text: String) {
+		self.path = path
+		self.text = text
+	}
 }

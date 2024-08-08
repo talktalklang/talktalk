@@ -9,19 +9,15 @@ import Foundation
 import TalkTalkSyntax
 
 struct AST: TalkTalkCommand {
+	static let configuration = CommandConfiguration(
+		abstract: "Print the AST for the given input"
+	)
+
 	@Argument(help: "The input to run.")
 	var input: String
 
 	func run() async throws {
-		let source = switch try get(input: input) {
-		case .path(let string):
-			string
-		case .stdin:
-			fatalError("not yet")
-		case .string(let string):
-			string
-		}
-
+		let source = try get(input: input).text
 		let parsed = Parser.parse(source)
 		let formatted = try ASTPrinter.format(parsed)
 		print(formatted)

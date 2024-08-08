@@ -6,16 +6,17 @@
 //
 
 import Foundation
+import TalkTalkSyntax
 import ArgumentParser
 
 enum ProgramInput {
-	case path(String), string(String), stdin
+	case path(SourceFile), string(String), stdin
 }
 
 protocol TalkTalkCommand: AsyncParsableCommand {}
 
 extension TalkTalkCommand {
-	func get(input: String) throws -> ProgramInput {
+	func get(input: String) throws -> SourceFile {
 		let filename: String
 		let source: String
 
@@ -27,7 +28,7 @@ extension TalkTalkCommand {
 			source = input
 		}
 
-		return .string(source)
+		return SourceFile(path: filename, text: source)
 	}
 }
 

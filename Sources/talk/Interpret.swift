@@ -9,19 +9,15 @@ import TalkTalk
 import ArgumentParser
 
 struct Interpret: TalkTalkCommand {
+	static let configuration = CommandConfiguration(
+		abstract: "Run the given input in the tree walking interpreter"
+	)
+
 	@Argument(help: "The input to format.")
 	var input: String
 
 	func run() async throws {
-		let source = switch try get(input: input) {
-		case .path(let string):
-			string
-		case .stdin:
-			fatalError("not yet")
-		case .string(let string):
-			string
-		}
-
+		let source = try get(input: input).text
 		try print(Interpreter(source).evaluate())
 	}
 }
