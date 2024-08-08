@@ -10,6 +10,6 @@ import TalkTalkBytecode
 public extension Module {
 	// A helper for when we just want to run a chunk
 	static func main(_ chunk: Chunk) -> Module {
-		Module(name: "main", main: chunk)
+		Module(name: "main", main: chunk, symbols: [:])
 	}
 }

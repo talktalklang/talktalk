@@ -8,16 +8,22 @@
 import TalkTalkSyntax
 
 public struct ModuleAnalyzer {
+	enum Error: Swift.Error {
+		case moduleNotFound(String)
+	}
+
 	let name: String
 	let files: [ParsedSourceFile]
 	let environment: Environment
 	let visitor: SourceFileAnalyzer
+	let moduleEnvironment: [String: AnalysisModule]
 
-	public init(name: String, files: [ParsedSourceFile]) {
+	public init(name: String, files: [ParsedSourceFile], moduleEnvironment: [String: AnalysisModule]) {
 		self.name = name
 		self.files = files
 		self.environment = Environment(isModuleScope: true)
 		self.visitor = SourceFileAnalyzer()
+		self.moduleEnvironment = moduleEnvironment
 	}
 
 	public func analyze() throws -> AnalysisModule {
@@ -27,7 +33,7 @@ public struct ModuleAnalyzer {
 		for file in files {
 			analysisModule.globals.merge(
 				// TODO: Actually handle case where names clash
-				try analyze(file: file),
+				try analyze(file: file, in: analysisModule),
 				uniquingKeysWith: { $1 }
 			)
 		}
@@ -41,8 +47,21 @@ public struct ModuleAnalyzer {
 		// get picked up. TODO: There's gotta be a better way.
 		for file in files {
 			analysisModule.globals.merge(
-				try analyze(file: file),
+				try analyze(file: file, in: analysisModule),
 				uniquingKeysWith: { $1 }
+			)
+		}
+
+		for (name, binding) in environment.importedSymbols {
+			guard let module = binding.externalModule else {
+				fatalError("could not get module for symbol `\(name)`")
+			}
+
+			analysisModule.globals[name] = ModuleGlobal(
+				name: name,
+				syntax: binding.expr,
+				type: binding.type,
+				source: .external(module)
 			)
 		}
 
@@ -60,12 +79,12 @@ public struct ModuleAnalyzer {
 	}
 
 	// Get the top level stuff from this file since that's where globals live.
-	private func analyze(file: ParsedSourceFile) throws -> [String: ModuleGlobal] {
+	private func analyze(file: ParsedSourceFile, in module: AnalysisModule) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
 
 		// Do a first pass over the file to find everything
 		for syntax in file.syntax {
-			let analyzed = try analyze(syntax: syntax)
+			let analyzed = try analyze(syntax: syntax, in: module)
 
 			// TODO: Handle case where names clash
 			result.merge(analyzed, uniquingKeysWith: { $1 })
@@ -74,7 +93,7 @@ public struct ModuleAnalyzer {
 		return result
 	}
 
-	private func analyze(syntax: any Syntax) throws -> [String: ModuleGlobal] {
+	private func analyze(syntax: any Syntax, in module: AnalysisModule) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
 
 		switch syntax {
@@ -82,12 +101,28 @@ public struct ModuleAnalyzer {
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
 				let analyzed = try visitor.visit(syntax, environment)
-				result[name.lexeme] = ModuleGlobal(name: name.lexeme, syntax: syntax, type: analyzed.type)
+				result[name.lexeme] = ModuleGlobal(
+					name: name.lexeme,
+					syntax: syntax,
+					type: analyzed.type,
+					source: .module
+				)
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
 			let analyzed = try visitor.visit(syntax, environment)
-			result[syntax.name.lexeme] = ModuleGlobal(name: syntax.name.lexeme, syntax: syntax, type: analyzed.type)
+			result[syntax.name.lexeme] = ModuleGlobal(
+				name: syntax.name.lexeme,
+				syntax: syntax,
+				type: analyzed.type,
+				source: .module
+			)
+		case let syntax as ImportStmt:
+			guard let module = moduleEnvironment[syntax.module.name] else {
+				throw Error.moduleNotFound("\(syntax.module.name) module not found")
+			}
+
+			environment.importModule(module)
 		default:
 			()
 		}

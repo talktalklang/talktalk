@@ -15,7 +15,7 @@ public struct Module {
 	public var chunks: [Chunk] = []
 
 	// A list of symbols this module exports
-	public var symbols: [Symbol] = []
+	public var symbols: [Symbol: Int]
 
 	// A list of modules this module imports
 	public var imports: [Module] = []
@@ -23,9 +23,10 @@ public struct Module {
 	// A list of globals used during execution
 	public var globals: [Byte: Value] = [:]
 
-	public init(name: String, main: Chunk) {
+	public init(name: String, main: Chunk, symbols: [Symbol: Int]) {
 		self.name = name
 		self.main = main
+		self.symbols = symbols
 	}
 
 	public mutating func add(chunk: Chunk) {

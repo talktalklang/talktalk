@@ -16,7 +16,7 @@ actor CompilerTests {
 		let parsed = Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
 		var compiler = SourceFileCompiler(name: "sup", analyzedSyntax: analyzed)
-		return try! compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: .empty("CompilerTests")))
+		return try! compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: .empty("CompilerTests"), moduleEnvironment: [:]))
 	}
 
 	@Test("Empty program") func empty() {

@@ -16,13 +16,20 @@ public class Environment {
 	public var lexicalScope: LexicalScope?
 	public var captures: [Capture]
 	public var capturedValues: [Binding]
+	public var importedModules: [AnalysisModule]
+	public var importedSymbols: [String: Binding] = [:]
 
-	public init(isModuleScope: Bool = false, parent: Environment? = nil) {
+	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
 		self.parent = parent
 		self.locals = [:]
 		self.captures = []
 		self.capturedValues = []
+		self.importedModules = importedModules
+	}
+
+	public func importModule(_ analysisModule: AnalysisModule) {
+		importedModules.append(analysisModule)
 	}
 
 	public var bindings: [Binding] {
@@ -122,6 +129,21 @@ public class Environment {
 			}
 		}
 
+		for module in importedModules {
+			if let global = module.global(named: name) {
+				let binding = Binding(
+					name: name,
+					expr: global.syntax,
+					type: global.type,
+					externalModule: module
+				)
+
+				importBinding(named: name, binding: binding)
+
+				return binding
+			}
+		}
+
 		return nil
 	}
 
@@ -162,6 +184,17 @@ public class Environment {
 		}
 
 		return nil
+	}
+
+	func importBinding(named name: String, binding: Binding) {
+		if let parent {
+			parent.importBinding(named: name, binding: binding)
+			return
+		}
+
+		assert(isModuleScope, "trying to import binding into non-module scope environment")
+
+		importedSymbols[name] = binding
 	}
 
 	func global(named name: String) -> Binding? {

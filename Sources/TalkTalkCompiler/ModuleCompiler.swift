@@ -12,14 +12,20 @@ import TalkTalkSyntax
 public struct ModuleCompiler {
 	let name: String
 	let analysisModule: AnalysisModule
+	let moduleEnvironment: [String: Module]
 
-	public init(name: String, analysisModule: AnalysisModule) {
+	public init(
+		name: String,
+		analysisModule: AnalysisModule,
+		moduleEnvironment: [String: Module] = [:]
+	) {
 		self.name = name
 		self.analysisModule = analysisModule
+		self.moduleEnvironment = moduleEnvironment
 	}
 
 	public func compile() throws -> Module {
-		let module = CompilingModule(name: name, analysisModule: analysisModule)
+		let module = CompilingModule(name: name, analysisModule: analysisModule, moduleEnvironment: moduleEnvironment)
 
 		for file in analysisModule.analyzedFiles {
 			try module.compile(file: file)

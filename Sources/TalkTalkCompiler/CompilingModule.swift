@@ -22,17 +22,20 @@ public class CompilingModule {
 
 	// Stores globals with their offsets. This is useful for allowing us to calculate an offset
 	// for a global before it's been resolved.
-	var globalOffsets: [String: Int] = [:]
+	var symbols: [Symbol: Int] = [:]
 
 	var fileChunks: [Chunk] = []
 
-	public init(name: String, analysisModule: AnalysisModule) {
+	let moduleEnvironment: [String: Module]
+
+	public init(name: String, analysisModule: AnalysisModule, moduleEnvironment: [String: Module]) {
 		self.name = name
 		self.analysisModule = analysisModule
+		self.moduleEnvironment = moduleEnvironment
 
-		// Reserve offsets for globals {
+		// Reserve offsets for globals
 		for (i, (_, global)) in analysisModule.globals.enumerated() {
-			globalOffsets[global.name] = i
+			symbols[.function(global.name)] = i
 		}
 	}
 
@@ -44,13 +47,32 @@ public class CompilingModule {
 			chunks[i] = chunk
 		}
 
+		// Copy chunks for imported functions into our module (at some point it'd be nice to just be able to call into those
+		// but we'll get there..)
+		for (name, global) in analysisModule.globals where global.isImport {
+			guard case let .external(analysis) = global.source else {
+				fatalError("attempted to import symbol from non-external module")
+			}
+
+			guard let module = moduleEnvironment[analysis.name], let moduleOffset = module.symbols[.function(name)] else {
+				fatalError("\(analysis.name) not found in module environment")
+			}
+
+			guard let offset = globalOffset(for: name) else {
+				fatalError("no offset registered for imported symbol: \(name)")
+			}
+
+
+			chunks[offset] = module.chunks[moduleOffset]
+		}
+
 		let main = if let main = chunks.first(where: { $0.name == "main" }) {
 			main
 		} else {
 			synthesizeMain()
 		}
 
-		var module = Module(name: name, main: main)
+		var module = Module(name: name, main: main, symbols: symbols)
 		module.chunks = chunks
 
 		// Prepulate globals with moduleFunction values
@@ -70,7 +92,7 @@ public class CompilingModule {
 		let hoistedChunks = chunk.getSubchunks(named: globalNames)
 
 		for chunk in hoistedChunks {
-			guard let offset = globalOffsets[chunk.name] else {
+			guard let offset = symbols[.function(chunk.name)] else {
 				fatalError("trying to hoist unknown function")
 			}
 
@@ -85,7 +107,7 @@ public class CompilingModule {
 	//
 	// If the analysis says that we don't have a global by this name, return nil.
 	public func globalOffset(for name: String) -> Int? {
-		return globalOffsets[name]
+		return symbols[.function(name)]
 	}
 
 	func synthesizeMain() -> Chunk {

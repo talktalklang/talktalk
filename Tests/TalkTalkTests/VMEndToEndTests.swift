@@ -5,12 +5,12 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
+import Foundation
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkSyntax
 import TalkTalkVM
-import Foundation
 import Testing
 
 actor VMEndToEndTests {
@@ -19,9 +19,21 @@ actor VMEndToEndTests {
 	}
 
 	func compile(_ strings: [String]) throws -> Module {
-		let analysisModule = try ModuleAnalyzer(name: "E2E", files: strings.map { .tmp($0) }).analyze()
+		let analysisModule = try ModuleAnalyzer(name: "E2E", files: strings.map { .tmp($0) }, moduleEnvironment: [:]).analyze()
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
 		return try compiler.compile()
+	}
+
+	func compile(
+		name: String,
+		_ files: [ParsedSourceFile],
+		analysisEnvironment: [String: AnalysisModule] = [:],
+		moduleEnvironment: [String: Module] = [:]
+	) -> (Module, AnalysisModule) {
+		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
+		let analyzed = try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis).analyze()
+		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile()
+		return (module, analyzed)
 	}
 
 	func run(_ strings: String...) -> TalkTalkBytecode.Value {
@@ -168,6 +180,34 @@ actor VMEndToEndTests {
 				"func bar() { 123 }",
 				"func fizz() { foo() }"
 			)
+		}
+
+		#expect(out.output == ".int(123)\n")
+	}
+
+	@Test("Can run functions across modules") func crossModule() throws {
+		let (moduleA, analysisA) = compile(name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
+		let (moduleB, _) = compile(
+			name: "B",
+			[
+				.tmp(
+					"""
+					import A
+
+					func bar() {
+						print(foo())
+					}
+
+					bar()
+					"""
+				)
+			],
+			analysisEnvironment: ["A": analysisA],
+			moduleEnvironment: ["A": moduleA]
+		)
+
+		let out = captureOutput {
+			VirtualMachine.run(module: moduleB)
 		}
 
 		#expect(out.output == ".int(123)\n")
