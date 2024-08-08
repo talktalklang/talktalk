@@ -36,25 +36,6 @@ let package = Package(
 				"TalkTalkBytecode"
 			]
 		),
-	//	.target(
-	//		name: "TalkTalkLLVMExperimental",
-	//		dependencies: [
-	//			"TalkTalkSyntax",
-	//			"TalkTalkAnalysis",
-	//			"LLVM"
-	//		]
-	//	),
-	//	.target(
-	//		name: "LLVM",
-	//		dependencies: ["C_LLVM"]
-	//	),
-	//	.systemLibrary(
-	//		name: "C_LLVM",
-	//		pkgConfig: "cllvm",
-	//		providers: [
-	//			.brew(["llvm"])
-	//		]
-	//	),
 		.target(
 			name: "TalkTalk",
 			dependencies: [
@@ -99,7 +80,12 @@ let package = Package(
 		),
 		.testTarget(
 			name: "TalkTalkBytecodeTests",
-			dependencies: ["TalkTalkBytecode"]
+			dependencies: [
+				"TalkTalkBytecode",
+				"TalkTalkSyntax",
+				"TalkTalkCompiler",
+				"TalkTalkAnalysis"
+			]
 		),
 	//	.testTarget(
 	//		name: "TalkTalkLLVMExperimentalTests",
