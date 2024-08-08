@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-public struct Module {
+public struct Module: Equatable {
 	// The name of the module. P straightforward.
 	public let name: String
 

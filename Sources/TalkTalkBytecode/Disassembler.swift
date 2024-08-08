@@ -49,6 +49,8 @@ public struct Disassembler {
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .setBuiltin, .getBuiltin:
 			return variableInstruction(opcode: opcode, start: index, type: .builtin)
+		case .callChunkID:
+			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getUpvalue:
 			return upvalueInstruction(opcode: opcode, start: index)
 		default:

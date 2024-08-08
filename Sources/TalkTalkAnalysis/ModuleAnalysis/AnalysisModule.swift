@@ -9,6 +9,42 @@ import Foundation
 import TalkTalkSyntax
 import TalkTalkBytecode
 
+public struct SerializedAnalysisModule: Codable {
+	public let name: String
+	public let files: [String]
+	public let values: [String: SerializedModuleGlobal]
+	public let functions: [String: SerializedModuleGlobal]
+
+	static func serialize(_ global: ModuleGlobal) -> SerializedModuleGlobal {
+		let source: SerializedModuleGlobal.SerializedModuleSource = if case let .external(module) = global.source {
+			.external(module.name)
+		} else {
+			.module
+		}
+
+		return SerializedModuleGlobal(
+			name: global.name,
+			type: global.type,
+			globalType: global is ModuleValue ? .value : .function,
+			source: source
+		)
+	}
+
+	public init(analysisModule: AnalysisModule) {
+		self.name = analysisModule.name
+		self.files = analysisModule.files.map(\.path)
+		self.values = analysisModule.values.reduce(into: [:]) { res, value in
+			let (name, global) = value
+			res[name] = SerializedAnalysisModule.serialize(global)
+		}
+
+		self.functions = analysisModule.functions.reduce(into: [:]) { res, value in
+			let (name, global) = value
+			res[name] = SerializedAnalysisModule.serialize(global)
+		}
+	}
+}
+
 public struct AnalysisModule {
 	public let name: String
 
@@ -24,7 +60,7 @@ public struct AnalysisModule {
 	public var functions: [String: ModuleFunction] = [:]
 
 	// A list of modules this module imports
-	public var imports: [String: ModuleGlobal] = [:]
+//	public var imports: [String: ModuleGlobal] = [:]
 
 	public func moduleValue(named name: String) -> ModuleValue? {
 		values[name]

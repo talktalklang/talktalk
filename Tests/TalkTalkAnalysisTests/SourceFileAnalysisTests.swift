@@ -101,7 +101,7 @@ actor AnalysisTests {
 	"""), in: .init())
 
 		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
-		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], [.any("i")])
+		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
 
 		#expect(result == expected)
 	}
@@ -126,7 +126,7 @@ actor AnalysisTests {
 				"_fn_y_32",
 				.int,
 				[.int("y")],
-				[.any("x")]
+				["x"]
 			),
 			[.int("x")],
 			[]
@@ -134,7 +134,7 @@ actor AnalysisTests {
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
-		#expect(nestedFn.type == .function("_fn_y_32", .int, [.int("y")], [.any("x")]))
+		#expect(nestedFn.type == .function("_fn_y_32", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
@@ -169,8 +169,8 @@ actor AnalysisTests {
 		}
 
 		#expect(counterReturns.description == "int")
-		#expect(counterCaptures.first?.name == "count")
-		#expect(counterParams.params.isEmpty)
+		#expect(counterCaptures.first == "count")
+		#expect(counterParams.isEmpty)
 	}
 
 	@Test("Types structs") func structs() throws {
@@ -187,12 +187,15 @@ actor AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Person")
 
-		guard case let .struct(type) = s.type else {
+		guard case let .struct(name) = s.type else {
 			#expect(Bool(false), "did not get struct type")
 			return
 		}
 
-		#expect(type.name == "Person")
+		let stype = s.environment.lookupStruct(named: "Person")
+		let type = try #require(stype)
+		#expect(name == "Person")
+		#expect(type.properties["age"]!.type == .int)
 		#expect(type.properties["age"]!.type == .int)
 		#expect(type.methods["sup"]!.type == .function("sup", .int, [], []))
 	}
@@ -213,13 +216,14 @@ actor AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Person")
 
-		guard case let .struct(type) = s.type else {
+		guard case let .struct(name) = s.type else {
 			#expect(Bool(false), "did not get struct type")
 			return
 		}
 
-		#expect(type.name == "Person")
-		#expect(type.methods["typeSup"]!.type == .function("typeSup", .struct(type), [], []))
+		let type = try #require(s.environment.lookupStruct(named: name))
+		#expect(name == "Person")
+		#expect(type.methods["typeSup"]!.type == .function("typeSup", .struct("Person"), [], []))
 
 		guard case let .function(name, returns, _, _) = type.methods["sup"]!.type else {
 			#expect(Bool(false))
@@ -227,6 +231,6 @@ actor AnalysisTests {
 		}
 
 		#expect(name == "sup")
-		#expect(returns == .instance(.struct(type)))
+		#expect(returns == .instance(.struct("Person")))
 	}
 }

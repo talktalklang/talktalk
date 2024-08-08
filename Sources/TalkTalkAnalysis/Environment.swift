@@ -12,6 +12,7 @@ import TalkTalkSyntax
 public class Environment {
 	private var parent: Environment?
 	private var locals: [String: Binding]
+	private var structTypes: [String: StructType] = [:]
 
 	public var isModuleScope: Bool
 	public var lexicalScope: LexicalScope?
@@ -111,8 +112,8 @@ public class Environment {
 				)
 			}
 
-			if case let .struct(type) = scope.type {
-				if let method = type.methods[name] {
+			if case .struct(_) = scope.type {
+				if let method = scope.scope.methods[name] {
 					return Binding(
 						name: name,
 						expr: method.expr,
@@ -120,7 +121,7 @@ public class Environment {
 					)
 				}
 
-				if let property = type.properties[name] {
+				if let property = scope.scope.properties[name] {
 					return Binding(
 						name: name,
 						expr: property.expr,
@@ -161,11 +162,27 @@ public class Environment {
 		return nil
 	}
 
+	public func lookupStruct(named name: String) -> StructType? {
+		if let type = structTypes[name] {
+			return type
+		}
+
+		if let type = parent?.lookupStruct(named: name) {
+			return type
+		}
+
+		return nil
+	}
+
 	public func update(local: String, as type: ValueType) {
 		if let current = locals[local] {
 			current.type = type
 			locals[local] = current
 		}
+	}
+
+	public func define(struct name: String, as type: StructType) {
+		structTypes[name] = type
 	}
 
 	public func define(local: String, as expr: any AnalyzedExpr) {

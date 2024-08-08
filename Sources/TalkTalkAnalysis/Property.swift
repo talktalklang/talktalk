@@ -7,6 +7,12 @@
 
 import TalkTalkSyntax
 
+public struct SerializedProperty: Codable {
+	public let name: String
+	public let type: ValueType
+	public let isMutable: Bool
+}
+
 public struct Property {
 	public let name: String
 	public let type: ValueType

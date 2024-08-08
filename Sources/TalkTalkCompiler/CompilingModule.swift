@@ -131,6 +131,8 @@ public class CompilingModule {
 		return symbols[.value(name)]
 	}
 
+	// If a function named "main" isn't provided, we generate one that just runs all of the files
+	// that were compiled in the module.
 	func synthesizeMain() -> Chunk {
 		let main = Chunk(name: "main")
 

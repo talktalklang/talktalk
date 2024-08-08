@@ -5,6 +5,14 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+public struct SerializedStructType: Codable {
+	let name: String?
+	var properties: [String: SerializedProperty]
+	var methods: [String: SerializedProperty]
+	var propertyOffsets: [String: Int]
+	var methodOffsets: [String: Int]
+}
+
 public class StructType {
 	public let name: String?
 	public private(set) var properties: [String: Property]

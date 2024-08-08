@@ -5,17 +5,28 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-public indirect enum ValueType {
+public indirect enum ValueType: Codable {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
+	}
+
+	public enum Param: Codable {
+		case int(String)
+
+		var description: String {
+			switch self {
+			case .int(let name):
+				".int(\(name))"
+			}
+		}
 	}
 
 	case int,
 			 string,
 			 // function name, return type, param types, captures
-			 function(String, ValueType, AnalyzedParamsExpr, [Environment.Capture]),
+			 function(String, ValueType, [Param], [String]),
 			 bool,
-			 `struct`(StructType),
+			 `struct`(String),
 			 instance(ValueType),
 			 instanceValue(ValueType),
 			 error(String),
@@ -28,8 +39,8 @@ public indirect enum ValueType {
 		case .int:
 			return "int"
 		case let .function(name, returnType, args, captures):
-			let captures = captures.isEmpty ? "" : "[\(captures.map(\.name).joined(separator: ", "))] "
-			return "fn \(name)(\(args.params.description)) -> \(captures)(\(returnType.description))"
+			let captures = captures.isEmpty ? "" : "[\(captures.joined(separator: ", "))] "
+			return "fn \(name)(\(args.map(\.description).joined(separator: ", "))) -> \(captures)(\(returnType.description))"
 		case .bool:
 			return "bool"
 		case .error(let msg):
@@ -39,7 +50,7 @@ public indirect enum ValueType {
 		case .void:
 			return "void"
 		case let .struct(structType):
-			return "struct \(structType.name ?? "<unnamed>")"
+			return "struct \(structType)"
 		case .placeholder:
 			return "placeholder"
 		case let .instance(valueType):

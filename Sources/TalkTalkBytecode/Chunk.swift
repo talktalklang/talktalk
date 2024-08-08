@@ -8,7 +8,12 @@ import Foundation
 
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
-public class Chunk {
+public class Chunk: Codable {
+	public enum CodingKeys: CodingKey {
+		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
+		case name, code, lines, constants, data, arity, depth, localsCount, upvalueCount, subchunks, localNames, upvalueNames
+	}
+
 	public let name: String
 
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
@@ -61,7 +66,7 @@ public class Chunk {
 	@discardableResult public func dump() -> String {
 		var result = "\(name) locals: \(localsCount), upvalues: \(upvalueCount)\n"
 		result += disassemble().map(\.description).joined(separator: "\n")
-		
+
 		for subchunk in subchunks {
 			result += subchunk.dump()
 		}
@@ -184,4 +189,36 @@ public class Chunk {
 
 		return (Byte(a), Byte(b))
 	}
+}
+
+extension Chunk: Equatable {
+	public static func == (lhs: Chunk, rhs: Chunk) -> Bool {
+		let keypaths: [PartialKeyPath<Chunk>] = [
+			\.name,
+			\.code,
+			\.constants,
+			\.lines,
+			\.arity,
+			\.upvalueCount
+		]
+
+		for keypath in keypaths {
+			let lhs = lhs[keyPath: keypath]
+			let rhs = rhs[keyPath: keypath]
+
+			guard let lhs = lhs as? any Equatable else {
+				return false
+			}
+
+			if !lhs.equals(rhs) {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
+fileprivate extension Equatable {
+	func equals(_ any: some Any) -> Bool { self == any as? Self }
 }

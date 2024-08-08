@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-public class Value: Equatable, Hashable {
+public class Value: Equatable, Hashable, Codable {
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		lhs.storage == rhs.storage
 	}

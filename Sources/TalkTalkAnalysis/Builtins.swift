@@ -16,8 +16,6 @@ public struct Builtin {
 	}
 
 	public static var print: Builtin {
-		var paramsExpr: AnalyzedParamsExpr = [.int("value")]
-		paramsExpr.isVarArg = true
-		return Builtin(name: "print", type: .function("print", .int, paramsExpr, []))
+		return Builtin(name: "print", type: .function("print", .int, [.int("value")], []))
 	}
 }

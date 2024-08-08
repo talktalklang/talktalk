@@ -119,8 +119,12 @@ public struct SourceFileAnalyzer: Visitor {
 
 		var property: Property? = nil
 		switch receiver.type {
-		case let .instance(.struct(instance)):
-			property = instance.properties[propertyName] ?? instance.methods[propertyName]
+		case let .instance(.struct(name)):
+			guard let structType = context.lookupStruct(named: name) else {
+				return error(at: expr, "Could not find struct named \(name)", environment: context, expectation: .identifier)
+			}
+
+			property = structType.properties[propertyName] ?? structType.methods[propertyName]
 		default:
 			return error(
 				at: expr, "Cannot access property \(propertyName) on \(receiver)",
@@ -224,7 +228,7 @@ public struct SourceFileAnalyzer: Visitor {
 		if let name = expr.name {
 			// If it's a named function, define a stub inside the function to allow for recursion
 			let stub = AnalyzedFuncExpr(
-				type: .function(name.lexeme, .placeholder(0), params, []),
+				type: .function(name.lexeme, .placeholder(0), params.params.map { .int($0.name) }, []),
 				expr: expr,
 				analyzedParams: params,
 				bodyAnalyzed: .init(type: .placeholder(0), expr: expr.body, exprsAnalyzed: [], environment: env),
@@ -242,7 +246,7 @@ public struct SourceFileAnalyzer: Visitor {
 		params.infer(from: innerEnvironment)
 
 		let funcExpr = AnalyzedFuncExpr(
-			type: .function(expr.name?.lexeme ?? expr.autoname, bodyAnalyzed.type, params, innerEnvironment.captures),
+			type: .function(expr.name?.lexeme ?? expr.autoname, bodyAnalyzed.type, params.params.map { .int($0.name) }, innerEnvironment.captures.map(\.name)),
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
@@ -308,12 +312,12 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let structType = StructType(name: expr.name, properties: [:], methods: [:])
-		let bodyContext = context.addLexicalScope(scope: structType, type: .struct(structType), expr: expr)
+		let bodyContext = context.addLexicalScope(scope: structType, type: .struct(expr.name ?? expr.description), expr: expr)
 
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				type: .instance(.struct(structType)),
+				type: .instance(.struct(expr.name ?? expr.description)),
 				expr: VarExprSyntax(
 					token: .synthetic(.self),
 					location: [.synthetic(.self)]
@@ -321,6 +325,9 @@ public struct SourceFileAnalyzer: Visitor {
 				environment: context
 			)
 		)
+
+		context.define(struct: expr.name ?? expr.description, as: structType)
+		bodyContext.define(struct: expr.name ?? expr.description, as: structType)
 
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
@@ -356,7 +363,7 @@ public struct SourceFileAnalyzer: Visitor {
 		let bodyAnalyzed = try visit(expr.body, bodyContext)
 
 		let type: ValueType = .struct(
-			structType
+			structType.name ?? expr.description
 		)
 
 		let lexicalScope = bodyContext.lexicalScope!

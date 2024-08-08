@@ -8,6 +8,21 @@
 import TalkTalkSyntax
 import TalkTalkBytecode
 
+public struct SerializedModuleGlobal: Codable {
+	enum GlobalType: Codable {
+		case function, value
+	}
+
+	enum SerializedModuleSource: Codable {
+		case module, external(String)
+	}
+
+	let name: String
+	let type: ValueType
+	let globalType: GlobalType
+	let source: SerializedModuleSource
+}
+
 public struct ModuleValue: ModuleGlobal {
 	public let name: String
 	public let syntax: any Syntax
