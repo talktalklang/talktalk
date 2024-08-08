@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 // An Environment represents the type environment for some scope
@@ -17,7 +18,7 @@ public class Environment {
 	public var captures: [Capture]
 	public var capturedValues: [Binding]
 	public var importedModules: [AnalysisModule]
-	public var importedSymbols: [String: Binding] = [:]
+	public var importedSymbols: [Symbol: Binding] = [:]
 
 	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
@@ -130,18 +131,31 @@ public class Environment {
 		}
 
 		for module in importedModules {
-			if let global = module.global(named: name) {
-				let binding = Binding(
-					name: name,
-					expr: global.syntax,
-					type: global.type,
-					externalModule: module
-				)
+			var symbol: Symbol?
+			var global: (any ModuleGlobal)?
 
-				importBinding(named: name, binding: binding)
-
-				return binding
+			if let value = module.moduleValue(named: name) {
+				symbol = .value(name)
+				global = value
+			} else if let function = module.moduleFunction(named: name) {
+				symbol = .function(name)
+				global = function
 			}
+
+			guard let symbol, let global else {
+				return nil
+			}
+
+			let binding = Binding(
+				name: name,
+				expr: global.syntax,
+				type: global.type,
+				externalModule: module
+			)
+
+			importBinding(as: symbol, binding: binding)
+
+			return binding
 		}
 
 		return nil
@@ -186,15 +200,15 @@ public class Environment {
 		return nil
 	}
 
-	func importBinding(named name: String, binding: Binding) {
+	func importBinding(as symbol: Symbol, binding: Binding) {
 		if let parent {
-			parent.importBinding(named: name, binding: binding)
+			parent.importBinding(as: symbol, binding: binding)
 			return
 		}
 
 		assert(isModuleScope, "trying to import binding into non-module scope environment")
 
-		importedSymbols[name] = binding
+		importedSymbols[symbol] = binding
 	}
 
 	func global(named name: String) -> Binding? {

@@ -29,8 +29,11 @@ public enum Opcode: Byte {
 			 // Upvalues (captures)
 			 getUpvalue, setUpvalue,
 
-			 // Global variables
-			 getGlobal, setGlobal,
+			 // Module functions
+			 getModuleFunction, setModuleFunction,
+
+			 // Module global values
+			 getModuleValue, setModuleValue,
 
 			 // Builtin functions
 			 getBuiltin, setBuiltin,

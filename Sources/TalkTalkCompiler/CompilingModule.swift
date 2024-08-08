@@ -24,8 +24,14 @@ public class CompilingModule {
 	// for a global before it's been resolved.
 	var symbols: [Symbol: Int] = [:]
 
+	// The chunks created for each file being compiled. We can use these to synthesize a main function
+	// if none exists.
 	var fileChunks: [Chunk] = []
 
+	//
+	var valueInitializers: [Symbol: Chunk] = [:]
+
+	// The available modules for import
 	let moduleEnvironment: [String: Module]
 
 	public init(name: String, analysisModule: AnalysisModule, moduleEnvironment: [String: Module]) {
@@ -33,14 +39,19 @@ public class CompilingModule {
 		self.analysisModule = analysisModule
 		self.moduleEnvironment = moduleEnvironment
 
-		// Reserve offsets for globals
-		for (i, (_, global)) in analysisModule.globals.enumerated() {
+		// Reserve offsets for module functions
+		for (i, (_, global)) in analysisModule.functions.enumerated() {
 			symbols[.function(global.name)] = i
+		}
+
+		// Reserve offsets for module values
+		for (i, (_, global)) in analysisModule.values.enumerated() {
+			symbols[.value(global.name)] = i + analysisModule.functions.count
 		}
 	}
 
 	public func finalize() -> Module {
-		var chunks: [Chunk] = Array(repeating: Chunk(name: "_"), count: analysisModule.globals.count)
+		var chunks: [Chunk] = Array(repeating: Chunk(name: "_"), count: analysisModule.functions.count)
 
 		// Go through the list of global chunks, sort by offset, add to the real module
 		for (i, chunk) in compiledChunks.sorted(by: { $0.key < $1.key }) {
@@ -49,7 +60,7 @@ public class CompilingModule {
 
 		// Copy chunks for imported functions into our module (at some point it'd be nice to just be able to call into those
 		// but we'll get there..)
-		for (name, global) in analysisModule.globals where global.isImport {
+		for (name, global) in analysisModule.functions where global.isImport {
 			guard case let .external(analysis) = global.source else {
 				fatalError("attempted to import symbol from non-external module")
 			}
@@ -58,10 +69,9 @@ public class CompilingModule {
 				fatalError("\(analysis.name) not found in module environment")
 			}
 
-			guard let offset = globalOffset(for: name) else {
+			guard let offset = moduleFunctionOffset(for: name) else {
 				fatalError("no offset registered for imported symbol: \(name)")
 			}
-
 
 			chunks[offset] = module.chunks[moduleOffset]
 		}
@@ -73,11 +83,18 @@ public class CompilingModule {
 		}
 
 		var module = Module(name: name, main: main, symbols: symbols)
+
+		// Set the module level function chunks
 		module.chunks = chunks
 
-		// Prepulate globals with moduleFunction values
+		// Set offets for moduleFunction values
 		for (i, _) in module.chunks.enumerated() {
-			module.globals[Byte(i)] = .moduleFunction(Byte(i))
+			module.functions[Byte(i)] = .moduleFunction(Byte(i))
+		}
+
+		// Copy lazy value initializers
+		for (name, chunk) in valueInitializers {
+			module.valueInitializers[Byte(symbols[name]!)] = chunk
 		}
 
 		return module
@@ -88,7 +105,7 @@ public class CompilingModule {
 		let chunk = try compiler.compile(in: self)
 
 		// Go through the compiled chunk's subchunks and pull global chunks out to the top level
-		let globalNames = Set(analysisModule.globals.values.map(\.name))
+		let globalNames = Set(analysisModule.functions.values.map(\.name))
 		let hoistedChunks = chunk.getSubchunks(named: globalNames)
 
 		for chunk in hoistedChunks {
@@ -106,8 +123,12 @@ public class CompilingModule {
 	// return what we have. Otherwise, figure out what the offset will be and return that.
 	//
 	// If the analysis says that we don't have a global by this name, return nil.
-	public func globalOffset(for name: String) -> Int? {
+	public func moduleFunctionOffset(for name: String) -> Int? {
 		return symbols[.function(name)]
+	}
+
+	public func moduleValueOffset(for name: String) -> Int? {
+		return symbols[.value(name)]
 	}
 
 	func synthesizeMain() -> Chunk {

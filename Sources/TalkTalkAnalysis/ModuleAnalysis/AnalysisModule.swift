@@ -17,14 +17,25 @@ public struct AnalysisModule {
 	// The list of analyzed files for this module (this is built up by the module analyzer)
 	public var analyzedFiles: [AnalyzedSourceFile] = []
 
-	// The list of globals in this module
-	public var globals: [String: ModuleGlobal] = [:]
+	// The list of global values in this module
+	public var values: [String: ModuleValue] = [:]
+
+	// The list of top level functions in this module
+	public var functions: [String: ModuleFunction] = [:]
 
 	// A list of modules this module imports
 	public var imports: [String: ModuleGlobal] = [:]
 
-	public func global(named name: String) -> ModuleGlobal? {
-		globals[name]
+	public func moduleValue(named name: String) -> ModuleValue? {
+		values[name]
+	}
+
+	public func moduleFunction(named name: String) -> ModuleFunction? {
+		functions[name]
+	}
+
+	public func moduleGlobal(named name: String) -> (any ModuleGlobal)? {
+		moduleFunction(named: name) ?? moduleValue(named: name)
 	}
 }
 

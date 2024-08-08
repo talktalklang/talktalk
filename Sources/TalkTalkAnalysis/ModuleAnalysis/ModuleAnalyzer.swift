@@ -31,11 +31,15 @@ public struct ModuleAnalyzer {
 
 		// Find all the top level stuff this module has to offer
 		for file in files {
-			analysisModule.globals.merge(
-				// TODO: Actually handle case where names clash
-				try analyze(file: file, in: analysisModule),
-				uniquingKeysWith: { $1 }
-			)
+			for (name, global) in try analyze(file: file, in: analysisModule) {
+				if let global = global as? ModuleValue {
+					analysisModule.values[name] = global
+				} else if let global = global as? ModuleFunction {
+					analysisModule.functions[name] = global
+				} else {
+					fatalError()
+				}
+			}
 		}
 
 		// Mark any found bindings as global
@@ -46,10 +50,15 @@ public struct ModuleAnalyzer {
 		// Do a second pass so things that were defined in other files can
 		// get picked up. TODO: There's gotta be a better way.
 		for file in files {
-			analysisModule.globals.merge(
-				try analyze(file: file, in: analysisModule),
-				uniquingKeysWith: { $1 }
-			)
+			for (name, global) in try analyze(file: file, in: analysisModule) {
+				if let global = global as? ModuleValue {
+					analysisModule.values[name] = global
+				} else if let global = global as? ModuleFunction {
+					analysisModule.functions[name] = global
+				} else {
+					fatalError()
+				}
+			}
 		}
 
 		for (name, binding) in environment.importedSymbols {
@@ -57,12 +66,21 @@ public struct ModuleAnalyzer {
 				fatalError("could not get module for symbol `\(name)`")
 			}
 
-			analysisModule.globals[name] = ModuleGlobal(
-				name: name,
-				syntax: binding.expr,
-				type: binding.type,
-				source: .external(module)
-			)
+			if case let .function(name) = name {
+				analysisModule.functions[name] = ModuleFunction(
+					name: name,
+					syntax: binding.expr,
+					type: binding.type,
+					source: .external(module)
+				)
+			} else if case let .value(name) = name {
+				analysisModule.values[name] = ModuleValue(
+					name: name,
+					syntax: binding.expr,
+					type: binding.type,
+					source: .external(module)
+				)
+			}
 		}
 
 		// Once we've got globals established, we can go through and actually analyze
@@ -101,7 +119,7 @@ public struct ModuleAnalyzer {
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
 				let analyzed = try visitor.visit(syntax, environment)
-				result[name.lexeme] = ModuleGlobal(
+				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					syntax: syntax,
 					type: analyzed.type,
@@ -111,7 +129,8 @@ public struct ModuleAnalyzer {
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
 			let analyzed = try visitor.visit(syntax, environment)
-			result[syntax.name.lexeme] = ModuleGlobal(
+
+			result[syntax.name.lexeme] = ModuleValue(
 				name: syntax.name.lexeme,
 				syntax: syntax,
 				type: analyzed.type,

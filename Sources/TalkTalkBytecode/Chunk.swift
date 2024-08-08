@@ -58,12 +58,18 @@ public class Chunk {
 		return disassembler.disassemble()
 	}
 
-	public func dump() {
-		FileHandle.standardError.write(Data("\(name) locals: \(localsCount), upvalues: \(upvalueCount)\n".utf8))
-		FileHandle.standardError.write(Data((disassemble().map(\.description).joined(separator: "\n")  + "\n").utf8))
+	@discardableResult public func dump() -> String {
+		var result = "\(name) locals: \(localsCount), upvalues: \(upvalueCount)\n"
+		result += disassemble().map(\.description).joined(separator: "\n")
+		
 		for subchunk in subchunks {
-			subchunk.dump()
+			result += subchunk.dump()
 		}
+
+		result += "\n"
+
+		FileHandle.standardError.write(Data(result.utf8))
+		return result
 	}
 
 	public func addChunk(_ chunk: Chunk) -> Int {

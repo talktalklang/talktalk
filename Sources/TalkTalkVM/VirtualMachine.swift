@@ -85,7 +85,8 @@ public struct VirtualMachine: ~Copyable {
 		self.stack = Stack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
-		stack.push(.none)
+		// Reserving this space
+		stack.push(.int(Int64.max))
 
 		// FIXME:
 		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0)
@@ -295,16 +296,34 @@ public struct VirtualMachine: ~Copyable {
 			case .callChunkID:
 				let slot = readByte()
 				call(chunkID: Int(slot))
-			case .getGlobal:
+			case .getModuleFunction:
 				let slot = readByte()
-				if let global = module.globals[slot] {
+				if let global = module.functions[slot] {
 					stack.push(global)
+				} else {
+					return runtimeError("No module function at slot: \(slot)")
+				}
+			case .setModuleFunction:
+				return runtimeError("cannot set module functions")
+			case .getModuleValue:
+				let slot = readByte()
+				if let global = module.values[slot] {
+					stack.push(global)
+				} else if let initializer = module.valueInitializers[slot] {
+					// If we don't have the global already, we lazily initialize it by running its initializer
+					call(inline: initializer)
+
+					// Remove the initializer since it should only be called once
+					module.valueInitializers.removeValue(forKey: slot)
 				} else {
 					return runtimeError("No global found at slot: \(slot)")
 				}
-			case .setGlobal:
+			case .setModuleValue:
 				let slot = readByte()
-				module.globals[slot] = stack.peek()
+				module.values[slot] = stack.peek()
+
+				// Remove the lazy initializer for this value since we've already initialized it
+				module.valueInitializers.removeValue(forKey: slot)
 			case .getBuiltin:
 				let slot = readByte()
 				stack.push(.builtin(slot))
@@ -324,6 +343,19 @@ public struct VirtualMachine: ~Copyable {
 		} else if let moduleFunction = callee.moduleFunctionValue {
 			call(moduleFunction: Int(moduleFunction))
 		}
+	}
+
+	mutating func call(inline: Chunk) {
+		let frame = CallFrame(
+			closure: .init(
+				chunk: inline,
+				upvalues: []
+			),
+			returnTo: ip,
+			stackOffset: stack.size - 1
+		)
+
+		frames.push(frame)
 	}
 
 	mutating func call(closureID: Int) {
@@ -421,16 +453,17 @@ public struct VirtualMachine: ~Copyable {
 		.error(message)
 	}
 
-	mutating func dumpStack() {
-		if stack.isEmpty { return }
-		print("       ", terminator: "")
+	@discardableResult mutating func dumpStack() -> String {
+		if stack.isEmpty { return "" }
+		var result = "       "
 		for slot in stack.entries() {
 			if frames.size == 0 {
-				print("[ \(slot.description) ]", terminator: "")
+				result += "[ \(slot.description) ]"
 			} else {
-				print("[ \(slot.disassemble(in: chunk)) ]", terminator: "")
+				result += "[ \(slot.disassemble(in: chunk)) ]"
 			}
 		}
-		print()
+		print(result)
+		return result
 	}
 }

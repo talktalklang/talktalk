@@ -24,7 +24,7 @@ actor ModuleCompilerTests {
 		return (module, analyzed)
 	}
 
-	@Test("Can compile a module") func basic() {
+	@Test("Can compile module functions") func basic() {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
 			func fizz() {}
@@ -49,7 +49,30 @@ actor ModuleCompilerTests {
 		#expect(module.chunks.count == 3)
 	}
 
-	@Test("Can import a module") func importing() {
+	@Test("Can compile module global values") func globalValues() throws {
+		let files: [ParsedSourceFile] = [
+			.tmp("""
+			fizz = 123
+			"""),
+			.tmp("""
+			func bar() {
+				fizz
+			}
+			""")
+		]
+
+		let (module, _) = compile(name: "CompilerTests", files)
+		#expect(module.name == "CompilerTests")
+
+		#expect(module.chunks.map(\.name).sorted() == ["bar"].sorted())
+		#expect(module.chunks.count == 1)
+		print(module.symbols)
+
+		let fizzSlot = try #require(module.symbols[.value("fizz")])
+		#expect(module.valueInitializers[Byte(fizzSlot)] != nil)
+	}
+
+	@Test("Can import module functions") func importing() {
 		let (moduleA, analysisA) = compile(
 			name: "A",
 			[

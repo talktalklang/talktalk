@@ -43,7 +43,9 @@ public struct Disassembler {
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
 			return variableInstruction(opcode: opcode, start: index, type: .local)
-		case .setGlobal, .getGlobal:
+		case .getModuleFunction, .setModuleFunction:
+			return variableInstruction(opcode: opcode, start: index, type: .global)
+		case .getModuleValue, .setModuleValue:
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .setBuiltin, .getBuiltin:
 			return variableInstruction(opcode: opcode, start: index, type: .builtin)

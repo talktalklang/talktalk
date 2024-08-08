@@ -6,5 +6,5 @@
 //
 
 public enum Symbol: Hashable {
-	case function(String)
+	case function(String), value(String)
 }

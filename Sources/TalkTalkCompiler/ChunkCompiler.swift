@@ -78,6 +78,33 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(opcode: variable.setter, line: expr.location.line)
 		chunk.emit(byte: variable.slot, line: expr.location.line)
 
+		// If this is a global module value, we want to evaluate it lazily. This is nice because
+		// it doesn't incur startup overhead as well as lets us not worry so much about the order
+		// in which files are evaluated.
+		//
+		// We save a lil chunk that initializes the value along with the module that can get called
+		// when the global is referenced to set the initial value.
+		if variable.setter == .setModuleValue {
+			let initializerChunk = Chunk(name: "$init_\(variable.name)")
+			let initializerCompiler = ChunkCompiler(module: module)
+
+			// Emit actual value initialization into the chunk
+			try expr.valueAnalyzed.accept(initializerCompiler, initializerChunk)
+
+			// Set the module value so it can be used going forward
+			initializerChunk.emit(opcode: .setModuleValue, line: expr.location.line)
+			initializerChunk.emit(byte: variable.slot, line: expr.location.line)
+
+			// Return the actual value
+			initializerChunk.emit(opcode: .getModuleValue, line: expr.location.line)
+			initializerChunk.emit(byte: variable.slot, line: expr.location.line)
+
+			// Return from the initialization chunk
+			initializerChunk.emit(opcode: .return, line: expr.location.line)
+
+			module.valueInitializers[.value(variable.name)] = initializerChunk
+		}
+
 		if variable.setter == .setUpvalue {
 			chunk.emit(opcode: .pop, line: expr.location.line)
 		}
@@ -271,14 +298,25 @@ public class ChunkCompiler: AnalyzedVisitor {
 			)
 		}
 
-		if let slot = resolveGlobal(named: name) {
+		if let slot = resolveModuleFunction(named: name) {
 			return Variable(
 				name: name,
 				slot: slot,
 				depth: scopeDepth,
 				isCaptured: false,
-				getter: .getGlobal,
-				setter: .setGlobal
+				getter: .getModuleFunction,
+				setter: .setModuleFunction
+			)
+		}
+
+		if let slot = resolveModuleValue(named: name) {
+			return Variable(
+				name: name,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getModuleValue,
+				setter: .setModuleValue
 			)
 		}
 
@@ -327,8 +365,16 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	// Check the CompilingModule for a global.
-	private func resolveGlobal(named name: String) -> Byte? {
-		if let offset = module.globalOffset(for: name) {
+	private func resolveModuleFunction(named name: String) -> Byte? {
+		if let offset = module.moduleFunctionOffset(for: name) {
+			return Byte(offset)
+		}
+
+		return nil
+	}
+
+	private func resolveModuleValue(named name: String) -> Byte? {
+		if let offset = module.moduleValueOffset(for: name) {
 			return Byte(offset)
 		}
 

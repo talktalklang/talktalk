@@ -20,8 +20,13 @@ public struct Module {
 	// A list of modules this module imports
 	public var imports: [Module] = []
 
-	// A list of globals used during execution
-	public var globals: [Byte: Value] = [:]
+	// If a global value hasn't been used yet, its initializer goes into
+	// here so it can be initialized lazily
+	public var valueInitializers: [Byte: Chunk] = [:]
+
+	// Lists of global values used during execution
+	public var values: [Byte: Value] = [:]
+	public var functions: [Byte: Value] = [:]
 
 	public init(name: String, main: Chunk, symbols: [Symbol: Int]) {
 		self.name = name

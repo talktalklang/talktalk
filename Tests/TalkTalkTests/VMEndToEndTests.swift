@@ -185,6 +185,18 @@ actor VMEndToEndTests {
 		#expect(out.output == ".int(123)\n")
 	}
 
+	@Test("Can use values across files") func crossFileValues() throws {
+		let out = captureOutput {
+			run(
+				"print(fizz)",
+				"print(fizz)",
+				"fizz = 123"
+			)
+		}
+
+		#expect(out.output == ".int(123)\n.int(123)\n")
+	}
+
 	@Test("Can run functions across modules") func crossModule() throws {
 		let (moduleA, analysisA) = compile(name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
 		let (moduleB, _) = compile(
