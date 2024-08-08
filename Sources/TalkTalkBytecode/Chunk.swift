@@ -95,7 +95,7 @@ public class Chunk {
 	public func getSubchunks(named names: Set<String>) -> [Chunk] {
 		var result: [Chunk] = []
 
-		for (i, subchunk) in subchunks.enumerated() {
+		for (_, subchunk) in subchunks.enumerated() {
 			if names.contains(subchunk.name) {
 				result.append(subchunk)
 			}

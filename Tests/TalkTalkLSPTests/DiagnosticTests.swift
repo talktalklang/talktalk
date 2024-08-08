@@ -9,7 +9,7 @@ import TalkTalkLSP
 
 actor DiagnosticTests {
 	@Test("Gets diagnostics") func gets() {
-		let source = """
+		_ = """
 		1 + a
 		"""
 

@@ -10,7 +10,7 @@ public enum Object: Equatable, Hashable {
 
 	public static func ==(lhs: Object, rhs: Object) -> Bool {
 		switch (lhs, rhs) {
-		case (.string(let lhs), .string(let rhs)):
+		case (.string(_), .string(_)):
 			return false // TODO: Fix me
 		}
 	}

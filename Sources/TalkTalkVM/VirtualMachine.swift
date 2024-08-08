@@ -13,7 +13,7 @@ public struct VirtualMachine: ~Copyable {
 
 		public func error() -> String? {
 			switch self {
-			case .ok(let value):
+			case .ok(_):
 				return nil
 			case .error(let string):
 				return string
