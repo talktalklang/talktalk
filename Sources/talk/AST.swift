@@ -13,7 +13,7 @@ struct AST: TalkTalkCommand {
 		abstract: "Print the AST for the given input"
 	)
 
-	@Argument(help: "The input to run.")
+	@Argument(help: "The input to parse.", completion: .file(extensions: [".tlk"]))
 	var input: String
 
 	func run() async throws {

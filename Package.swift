@@ -65,6 +65,15 @@ let package = Package(
 			]
 		),
 		.target(
+			name: "TalkTalkDriver",
+			dependencies: [
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				"TalkTalkCompiler",
+				"TalkTalkBytecode"
+			]
+		),
+		.target(
 			name: "TalkTalkVM",
 			dependencies: [
 				"TalkTalkCompiler",

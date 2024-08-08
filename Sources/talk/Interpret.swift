@@ -13,7 +13,7 @@ struct Interpret: TalkTalkCommand {
 		abstract: "Run the given input in the tree walking interpreter"
 	)
 
-	@Argument(help: "The input to format.")
+	@Argument(help: "The input to interpret.", completion: .file(extensions: [".tlk"]))
 	var input: String
 
 	func run() async throws {
