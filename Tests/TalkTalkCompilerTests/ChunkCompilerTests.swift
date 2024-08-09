@@ -274,13 +274,12 @@ actor CompilerTests {
 		Person(age: 123).age
 		""", inModule: true)
 
-		chunk.dump()
-
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
 			Instruction(opcode: .getStruct, offset: 2, line: 4, metadata: .struct(slot: 0)),
 			Instruction(opcode: .call, offset: 4, line: 4, metadata: .simple),
-			Instruction(opcode: .getProperty, offset: 6, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .getProperty, offset: 5, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .return, offset: 7, line: 0, metadata: .simple)
 		])
 	}
 }

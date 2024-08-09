@@ -1,11 +1,7 @@
 struct Array {
-	var count: i32
+	var count: int
 
-	func getCount() {
-		return count
+	init(count) {
+
 	}
-}
-
-func newArray() {
-	return Array(count: 1)
 }

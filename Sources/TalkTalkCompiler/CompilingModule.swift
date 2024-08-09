@@ -111,10 +111,10 @@ public class CompilingModule {
 			module.valueInitializers[Byte(symbols[name]!)] = chunk
 		}
 
-		// Copy struct types
-//		for case (.struct(name), structType) in structs {
-//
-//		}
+		// Copy struct types, sorting by their index in the symbols table
+		for case let (.struct(_), structType) in structs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+			module.structs.append(structType)
+		}
 
 		return module
 	}

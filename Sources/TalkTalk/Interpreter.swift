@@ -211,6 +211,10 @@ public struct Interpreter: AnalyzedVisitor {
 		return retVal
 	}
 
+	public func visit(_ expr: AnalyzedInitDecl, _ context: Scope) throws -> Value {
+		fatalError("TODO")
+	}
+
 	public func visit(_ expr: AnalyzedReturnExpr, _ context: Scope) throws -> Value {
 		let value = try expr.valueAnalyzed?.accept(self, context)
 		throw Return.returning(value ?? .none)

@@ -72,6 +72,10 @@ public struct Parser {
 			return letVarDecl(.let)
 		}
 
+		if didMatch(.initialize) {
+			return _init()
+		}
+
 		return stmt()
 	}
 
@@ -95,7 +99,7 @@ public struct Parser {
 			return ParamsExprSyntax(params: [], location: endLocation(i))
 		}
 
-		var params: [Token] = []
+		var params: [ParamSyntax] = []
 
 		repeat {
 			skip(.newline)
@@ -103,14 +107,19 @@ public struct Parser {
 				break
 			}
 			skip(.newline)
+			var type: IdentifierExpr? = nil
+			if didMatch(.colon), let typeID = consume(.identifier) {
+				type = IdentifierExprSyntax(name: typeID.lexeme, location: [typeID])
+			}
+			skip(.newline)
 
-			params.append(identifier)
+			params.append(ParamSyntax(name: identifier.lexeme, type: type, location: [identifier]))
 		} while didMatch(.comma)
 
 		consume(.rightParen, "Expected ')' after parameter list")
 
 		return ParamsExprSyntax(
-			params: params.map { ParamSyntax(name: $0.lexeme, location: [$0]) },
+			params: params,
 			location: endLocation(i)
 		)
 	}

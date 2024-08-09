@@ -13,7 +13,7 @@ public protocol Syntax: CustomStringConvertible {
 	var children: [any Syntax] { get }
 
 	// Let this node be visited by visitors
-	func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value
+	func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value
 }
 
 public extension Syntax {

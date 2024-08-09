@@ -47,6 +47,26 @@ public extension Parser {
 		}
 	}
 
+	mutating func _init() -> Decl {
+		let i = startLocation(at: previous!)
+		let initToken = previous!
+		skip(.newline)
+		consume(.leftParen, "expected '(' before params")
+
+		// Parse parameter list
+		skip(.newline)
+		let params = parameterList()
+		skip(.newline)
+	
+		let body = blockExpr(false)
+		return InitDeclSyntax(
+			initToken: initToken,
+			parameters: params,
+			body: body,
+			location: endLocation(i)
+		)
+	}
+
 	mutating func declBlock() -> DeclBlockExprSyntax {
 		consume(.leftBrace, "expected '{' before block")
 		skip(.newline)

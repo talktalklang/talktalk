@@ -14,6 +14,7 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public let environment: Environment
 
 	public let receiverAnalyzed: any AnalyzedExpr
+	public let propertyAnalyzed: Property
 
 	public var receiver: any Expr { expr.receiver }
 	public var property: String { expr.property }

@@ -22,4 +22,8 @@ public struct CallFrame {
 	var closure: Closure
 	var returnTo: UInt64
 	var stackOffset: Int
+
+	// Store instances created in this call frame
+	// TODO: We're gonna need to figure out how they can move between frames?
+	var instances: [StructInstance] = []
 }

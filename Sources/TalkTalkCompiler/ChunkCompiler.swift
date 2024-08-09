@@ -206,6 +206,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(elseJump)
 	}
 
+	public func visit(_ expr: AnalyzedInitDecl, _ context: Chunk) throws -> Void {
+		fatalError("TODO")
+	}
+
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
 		let functionChunk = Chunk(name: expr.name?.lexeme ?? expr.autoname, parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
@@ -266,13 +270,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Emit the getter
 		chunk.emit(opcode: .getProperty, line: expr.location.line)
+		chunk.emit(byte: Byte(expr.propertyAnalyzed.slot), line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedDeclBlock, _ chunk: Chunk) throws {}
 
 	public func visit(_ expr: AnalyzedStructExpr, _ chunk: Chunk) throws {
 		let name = expr.name ?? "<struct\(module.structs.count)>"
-		module.structs[.struct(name)] = Struct(name: name)
+		module.structs[.struct(name)] = Struct(name: name, propertyCount: expr.structType.properties.count)
 	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {}

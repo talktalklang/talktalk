@@ -25,11 +25,13 @@ public struct ParamSyntax: Param {
 	}
 	
 	public let name: String
+	public let type: (any IdentifierExpr)?
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }
 
-	public init(name: String, location: SourceLocation) {
+	public init(name: String, type: (any IdentifierExpr)? = nil, location: SourceLocation) {
 		self.name = name
+		self.type = type
 		self.location = location
 	}
 }

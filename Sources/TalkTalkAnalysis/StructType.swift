@@ -17,6 +17,8 @@ public class StructType {
 	public let name: String?
 	public private(set) var properties: [String: Property]
 	public private(set) var methods: [String: Property]
+	public private(set) var initializers: [String: Property]
+	public private(set) var initializerOffsets: [String: Int]
 	public private(set) var propertyOffsets: [String: Int]
 	public private(set) var methodOffsets: [String: Int]
 
@@ -26,14 +28,16 @@ public class StructType {
 		self.methods = methods
 		self.propertyOffsets = [:]
 		self.methodOffsets = [:]
+		self.initializers = [:]
+		self.initializerOffsets = [:]
 	}
 
 	public func offset(for propertyName: String) -> Int {
-		propertyOffsets[propertyName]!
+		properties[propertyName]!.slot
 	}
 
 	public func offset(method propertyName: String) -> Int {
-		methodOffsets[propertyName]!
+		methods[propertyName]!.slot
 	}
 
 	public func add(property: Property) {
@@ -47,5 +51,13 @@ public class StructType {
 		}
 
 		methods[property.name] = property
+	}
+
+	public func add(initializer property: Property) {
+		if initializerOffsets[property.name] == nil {
+			initializerOffsets[property.name] = initializers.count
+		}
+
+		initializers[property.name] = property
 	}
 }

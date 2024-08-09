@@ -146,8 +146,8 @@ public struct SourceFileAnalyzer: Visitor {
 			type: property.type,
 			expr: expr,
 			environment: context,
-			receiverAnalyzed: receiver as! any AnalyzedExpr
-
+			receiverAnalyzed: receiver as! any AnalyzedExpr,
+			propertyAnalyzed: property
 		)
 	}
 
@@ -262,6 +262,19 @@ public struct SourceFileAnalyzer: Visitor {
 		return funcExpr
 	}
 
+	public func visit(_ expr: any InitDecl, _ context: Environment) throws -> any AnalyzedSyntax {
+		let paramsAnalyzed = try expr.parameters.accept(self, context)
+		let bodyAnalyzed = try expr.body.accept(self, context)
+
+		return AnalyzedInitDecl(
+			wrapped: expr,
+			type: .struct(context.lexicalScope!.scope.name!),
+			environment: context,
+			parametersAnalyzed: paramsAnalyzed as! AnalyzedParamsExpr,
+			bodyAnalyzed: bodyAnalyzed as! AnalyzedBlockExpr
+		)
+	}
+
 	public func visit(_ expr: any ReturnExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnExpr(
@@ -334,14 +347,17 @@ public struct SourceFileAnalyzer: Visitor {
 		for decl in expr.body.decls {
 			switch decl {
 			case let decl as VarDecl:
-				structType.add(property: Property(
+				let property = Property(
+					slot: structType.properties.count,
 					name: decl.name,
 					type: context.type(named: decl.typeDecl),
 					expr: decl,
 					isMutable: true
-				))
+				)
+				structType.add(property: property)
 			case let decl as LetDecl:
 				structType.add(property: Property(
+					slot: structType.properties.count,
 					name: decl.name,
 					type: context.type(named: decl.typeDecl),
 					expr: decl,
@@ -349,8 +365,17 @@ public struct SourceFileAnalyzer: Visitor {
 				))
 			case let decl as FuncExpr:
 				structType.add(method: Property(
+					slot: structType.methods.count,
 					name: decl.name!.lexeme,
 					type: .function(decl.name!.lexeme, .placeholder(2), [], []),
+					expr: decl,
+					isMutable: false
+				))
+			case let decl as InitDecl:
+				structType.add(initializer: .init(
+					slot: structType.methods.count,
+					name: "init",
+					type: .function("init", .placeholder(2), [], []),
 					expr: decl,
 					isMutable: false
 				))
@@ -399,7 +424,10 @@ public struct SourceFileAnalyzer: Visitor {
 			// If we have an updated type for a method, update the struct to know about it.
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
 				 let lexicalScope = context.lexicalScope {
+				let existing = lexicalScope.scope.methods[funcExpr.name!.lexeme]!
+
 				lexicalScope.scope.add(method: Property(
+					slot: existing.slot,
 					name: funcExpr.name!.lexeme,
 					type: funcExpr.type,
 					expr: funcExpr,

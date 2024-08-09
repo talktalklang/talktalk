@@ -80,6 +80,7 @@ extension Token.Kind {
 		case .self: .none
 		case .Self: .none
 		case .import: .none
+		case .initialize: .none
 		}
 	}
 }

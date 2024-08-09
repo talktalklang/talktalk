@@ -86,7 +86,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Context) throws -> Value {
-		var result = "\(expr.name.lexeme) = "
+		var result = "\(try expr.receiver.accept(self, context)) = "
 		result += try expr.value.accept(self, context)
 
 		context.lastType = expr
@@ -128,6 +128,18 @@ public struct Formatter: Visitor {
 			result += " " + name.lexeme
 		}
 		result += try "(" + visit(expr.params, context) + ") "
+		result += try visit(expr.body, context)
+
+		context.lastType = expr
+
+		return result
+	}
+
+	public func visit(_ expr: any InitDecl, _ context: Context) throws -> String {
+		var result = ""
+
+		result += "init"
+		result += try "(" + visit(expr.parameters, context) + ") "
 		result += try visit(expr.body, context)
 
 		context.lastType = expr

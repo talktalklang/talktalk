@@ -203,7 +203,7 @@ extension Parser {
 			let i = startLocation(at: lhs.token)
 			consume(.equals)
 			let rhs = parse(precedence: .assignment)
-			return DefExprSyntax(name: lhs.token, nameSyntax: IdentifierExprSyntax(name: token.lexeme, location: [token]), value: rhs, location: endLocation(i))
+			return DefExprSyntax(receiver: lhs, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
 			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
@@ -239,12 +239,21 @@ extension Parser {
 		return CallExprSyntax(callee: lhs, args: args, location: endLocation(i))
 	}
 
-	mutating func dot(_ : Bool, _ lhs: any Expr) -> any Expr {
+	mutating func dot(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: previous)
 		consume(.dot)
 
 		guard let member = consume(.identifier, "expected identifier for property access") else {
 			return error(at: current, "expected identifier for property access", expectation: .member)
+		}
+
+		if check(.equals), canAssign {
+			consume(.equals)
+			let rhs = parse(precedence: .assignment)
+			let member = MemberExprSyntax(receiver: lhs, property: member.lexeme, location: [member])
+			return DefExprSyntax(receiver: member, value: rhs, location: endLocation(i))
+		} else if check(.equals) {
+			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
 		return MemberExprSyntax(receiver: lhs, property: member.lexeme, location: endLocation(i))

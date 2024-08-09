@@ -39,7 +39,7 @@ struct TextDocumentSemanticTokensFull {
 
 struct SemanticTokensVisitor: Visitor {
 	enum Context {
-		case topLevel, `struct`, condition, callee
+		case topLevel, `struct`, condition, callee, initializer
 	}
 
 	typealias Value = [RawSemanticToken]
@@ -59,17 +59,7 @@ struct SemanticTokensVisitor: Visitor {
 }
 
 	func visit(_ expr: DefExpr, _ context: Context) throws -> [RawSemanticToken] {
-		var result = [
-			RawSemanticToken(
-				lexeme: expr.name.lexeme,
-				line: expr.name.line,
-				startChar: expr.name.column,
-				length: expr.name.length,
-				tokenType: .variable,
-				modifiers: [.definition]
-			)
-		]
-
+		var result = try expr.receiver.accept(self, context)
 		try result.append(contentsOf:	expr.value.accept(self, context))
 
 		return result
@@ -205,6 +195,13 @@ struct SemanticTokensVisitor: Visitor {
 	func visit(_ expr: StructExpr, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.structToken)]
 		try result.append(contentsOf: expr.body.accept(self, .struct))
+		return result
+	}
+
+	func visit(_ expr: any InitDecl, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.keyword, from: expr.initToken)]
+		try result.append(contentsOf: visit(expr.parameters, .initializer))
+		try result.append(contentsOf: expr.body.accept(self, .initializer))
 		return result
 	}
 

@@ -8,12 +8,14 @@
 import TalkTalkSyntax
 
 public struct SerializedProperty: Codable {
+	public let slot: Int
 	public let name: String
 	public let type: ValueType
 	public let isMutable: Bool
 }
 
 public struct Property {
+	public let slot: Int
 	public let name: String
 	public let type: ValueType
 	public let expr: any Syntax

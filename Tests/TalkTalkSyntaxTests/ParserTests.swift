@@ -69,7 +69,7 @@ actor TalkTalkParserTests {
 
 	@Test("def expr") func def() {
 		let ast = parse("foo = 123")[0] as! DefExpr
-		#expect(ast.name.lexeme == "foo")
+		#expect(ast.receiver.cast(VarExprSyntax.self).name == "foo")
 		#expect(ast.value.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 
@@ -84,7 +84,7 @@ actor TalkTalkParserTests {
 		(2)
 		sum = 1 + 2
 		""")[2] as! DefExpr
-		#expect(ast.name.lexeme == "sum")
+		#expect(ast.receiver.cast(VarExprSyntax.self).name == "sum")
 		#expect(ast.value.cast(BinaryExprSyntax.self).op == .plus)
 	}
 
@@ -208,7 +208,7 @@ actor TalkTalkParserTests {
 		#expect(varDecl.typeDecl == "i32")
 
 		let fooDef = ast[1].cast(DefExprSyntax.self)
-		#expect(fooDef.name.lexeme == "foo")
+		#expect(fooDef.receiver.cast(VarExprSyntax.self).name == "foo")
 
 		let fooInit = fooDef.value.cast(CallExprSyntax.self)
 		#expect(fooInit.callee.description == "Foo")
@@ -224,6 +224,10 @@ actor TalkTalkParserTests {
 		let ast = parse("""
 		struct Foo {
 			let age: i32
+
+			init(age: i32) {
+				self.age = age
+			}
 		}
 
 		foo = Foo(age: 123)
@@ -238,7 +242,7 @@ actor TalkTalkParserTests {
 		#expect(varDecl.typeDecl == "i32")
 
 		let fooDef = ast[1].cast(DefExprSyntax.self)
-		#expect(fooDef.name.lexeme == "foo")
+		#expect(fooDef.receiver.cast(VarExprSyntax.self).name == "foo")
 
 		let fooInit = fooDef.value.cast(CallExprSyntax.self)
 		#expect(fooInit.callee.description == "Foo")

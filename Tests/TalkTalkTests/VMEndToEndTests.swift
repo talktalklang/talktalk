@@ -225,6 +225,32 @@ actor VMEndToEndTests {
 		#expect(out.output == ".int(123)\n")
 	}
 
+	@Test("Struct properties") func structProperties() throws {
+		let (module, _) = compile(
+			name: "A",
+			[
+				.tmp(
+					"""
+					struct Person {
+						var age: int
+
+						init(age) {
+							self.age = age
+						}
+					}
+
+					person = Person(age: 123)
+					person.age
+					"""
+				)
+			]
+		)
+
+		module.main?.dump()
+
+		#expect(VirtualMachine.run(module: module).get() == .int(123))
+	}
+
 	// MARK: helpers
 
 	public func captureOutput<R>(block: () -> R) -> (output: String, error: String, result: R) {

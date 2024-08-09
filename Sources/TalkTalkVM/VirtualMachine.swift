@@ -331,13 +331,25 @@ public struct VirtualMachine: ~Copyable {
 			case .setBuiltin:
 				return runtimeError("Cannot set built in")
 			case .getStruct:
-				()
+				let slot = readByte()
+				stack.push(.struct(slot))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
-				()
+				let slot = readByte()
+				let peek = stack.peek()
+				guard let receiver = peek.instanceValue else {
+					return runtimeError("Receiver is not a struct")
+				}
+
+				let instance = currentFrame.instances[Int(receiver)]
+				guard let value = instance.fields[Int(slot)] else {
+					fatalError("No value in slot: \(slot)")
+				}
+
+				stack.push(value)
 			case .setProperty:
-				()
+				_ = readByte()
 			case .jumpPlaceholder:
 				()
 			}
@@ -351,7 +363,28 @@ public struct VirtualMachine: ~Copyable {
 			call(builtin: Int(builtin))
 		} else if let moduleFunction = callee.moduleFunctionValue {
 			call(moduleFunction: Int(moduleFunction))
+		} else if let structValue = callee.structValue {
+			call(structValue: Int(structValue))
+		} else {
+			fatalError("\(callee) not callable")
 		}
+	}
+
+	mutating func call(structValue: Int) {
+		// Get the struct we're gonna be using
+		let structType = module.structs[structValue]
+
+		// Figure out where in the instances "memory" the instance will live
+		let instanceID = currentFrame.instances.count
+
+		// Create the instance Value
+		let instance = Value.instance(structType: Byte(structValue), data: UInt64(instanceID))
+
+		// Store the instance value
+		currentFrame.instances.append(StructInstance(type: .struct(Byte(structValue)), fieldCount: structType.propertyCount))
+
+		// Push the instance value to the stack
+		stack.push(instance)
 	}
 
 	mutating func call(inline: Chunk) {

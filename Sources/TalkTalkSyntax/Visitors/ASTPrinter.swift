@@ -85,6 +85,14 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
+	@StringBuilder public func visit(_ expr: any InitDecl, _ context: Context) throws -> String {
+		dump(expr)
+		indent {
+			try expr.parameters.accept(self, context)
+			try expr.body.accept(self, context)
+		}
+	}
+
 	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
 		dump(expr, "property: \(expr.property)")
 		indent {
@@ -105,8 +113,9 @@ public struct ASTPrinter: Visitor {
 	}
 
 	@StringBuilder public func visit(_ expr: any DefExpr, _ context: Context) throws -> String {
-		dump(expr, "name: \(expr.name.lexeme)")
+		dump(expr)
 		indent {
+			try expr.receiver.accept(self, context)
 			try expr.value.accept(self, context)
 		}
 	}
