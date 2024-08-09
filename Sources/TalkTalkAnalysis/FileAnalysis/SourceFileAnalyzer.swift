@@ -153,11 +153,16 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
+		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
+
+		switch expr.receiver {
+		case let receiver as any VarExpr:
+			context.define(local: receiver.name, as: value)
+		default: ()
+		}
 
 
-		context.define(local: expr.name.lexeme, as: value)
-
-		return AnalyzedDefExpr(type: value.type, expr: expr, valueAnalyzed: value, environment: context)
+		return AnalyzedDefExpr(type: value.type, expr: expr, receiverAnalyzed: receiver, valueAnalyzed: value, environment: context)
 	}
 
 	public func visit(_ expr: any ErrorSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {

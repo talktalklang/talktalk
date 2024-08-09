@@ -128,12 +128,14 @@ public struct ModuleAnalyzer {
 			// Def exprs also get added as globals at the top level
 			let analyzed = try visitor.visit(syntax, environment)
 
-			result[syntax.name.lexeme] = ModuleValue(
-				name: syntax.name.lexeme,
-				syntax: syntax,
-				type: analyzed.type,
-				source: .module
-			)
+			if let syntax = syntax.receiver as? VarExprSyntax {
+				result[syntax.name] = ModuleValue(
+					name: syntax.name,
+					syntax: syntax,
+					type: analyzed.type,
+					source: .module
+				)
+			}
 		case let syntax as ImportStmt:
 			guard let module = moduleEnvironment[syntax.module.name] else {
 				throw Error.moduleNotFound("\(syntax.module.name) module not found")

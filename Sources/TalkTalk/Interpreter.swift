@@ -124,7 +124,7 @@ public struct Interpreter: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ scope: Scope) throws -> Value {
-		try scope.define(expr.name.lexeme, expr.valueAnalyzed.accept(self, scope))
+		try scope.define(expr.receiver.cast(VarExprSyntax.self).name, expr.valueAnalyzed.accept(self, scope))
 	}
 
 	public func visit(_ expr: AnalyzedLiteralExpr, _: Scope) throws -> Value {

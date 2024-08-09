@@ -8,11 +8,13 @@
 import TalkTalkSyntax
 
 public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
+	public var value: any Expr { expr.value }
+	
 	public var type: ValueType
 	let expr: DefExpr
 
-	public var name: Token { expr.name }
-	public var value: any Expr { expr.value }
+	public var receiver: any Expr { expr.value }
+	public var receiverAnalyzed: any Expr
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

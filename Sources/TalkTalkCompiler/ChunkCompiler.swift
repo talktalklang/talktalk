@@ -7,6 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkBytecode
+import TalkTalkSyntax
 
 public class ChunkCompiler: AnalyzedVisitor {
 	public typealias Value = Void
@@ -70,10 +71,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
-		let variable = resolveVariable(
-			named: expr.name.lexeme,
+		var variable = resolveVariable(
+			receiver: expr.receiverAnalyzed,
 			chunk: chunk
-		) ?? defineLocal(name: expr.name.lexeme, compiler: self, chunk: chunk)
+		)
+
+		if variable == nil, let receiver = expr.receiverAnalyzed.as(AnalyzedVarExpr.self) {
+			variable = defineLocal(name: receiver.name, compiler: self, chunk: chunk)
+		}
+
+		guard let variable else {
+			throw CompilerError.unknownIdentifier(expr.description)
+		}
 
 		chunk.emit(opcode: variable.setter, line: expr.location.line)
 		chunk.emit(byte: variable.slot, line: expr.location.line)
@@ -145,7 +154,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedVarExpr, _ chunk: Chunk) throws {
 		guard let variable = resolveVariable(
-			named: expr.name,
+			receiver: expr,
 			chunk: chunk
 		) else {
 			throw CompilerError.unknownIdentifier(expr.name)
@@ -289,70 +298,83 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Lookup the variable by name. If we've got it in our locals, just return the slot
 	// for that variable. If we don't, search parent chunks to see if they've got it. If
 	// they do, we've got an upvalue.
-	public func resolveVariable(named name: String, chunk: Chunk) -> Variable? {
-		if let slot = resolveLocal(named: name) {
-			return Variable(
-				name: name,
-				slot: slot,
-				depth: scopeDepth,
-				isCaptured: false,
-				getter: .getLocal,
-				setter: .setLocal
-			)
-		}
+	public func resolveVariable(receiver: any Syntax, chunk: Chunk) -> Variable? {
+		if let syntax = receiver as? VarExpr {
+			let name = syntax.name
 
-		if let slot = resolveUpvalue(named: name, chunk: chunk) {
-			return Variable(
-				name: name,
-				slot: slot,
-				depth: scopeDepth,
-				isCaptured: false,
-				getter: .getUpvalue,
-				setter: .setUpvalue
-			)
-		}
+			if let slot = resolveLocal(named: name) {
+				return Variable(
+					name: name,
+					slot: slot,
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getLocal,
+					setter: .setLocal
+				)
+			}
 
-		if let slot = resolveModuleFunction(named: name) {
-			return Variable(
-				name: name,
-				slot: slot,
-				depth: scopeDepth,
-				isCaptured: false,
-				getter: .getModuleFunction,
-				setter: .setModuleFunction
-			)
-		}
+			if let slot = resolveUpvalue(named: name, chunk: chunk) {
+				return Variable(
+					name: name,
+					slot: slot,
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getUpvalue,
+					setter: .setUpvalue
+				)
+			}
 
-		if let slot = resolveModuleValue(named: name) {
-			return Variable(
-				name: name,
-				slot: slot,
-				depth: scopeDepth,
-				isCaptured: false,
-				getter: .getModuleValue,
-				setter: .setModuleValue
-			)
-		}
+			if let slot = resolveModuleFunction(named: name) {
+				return Variable(
+					name: name,
+					slot: slot,
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getModuleFunction,
+					setter: .setModuleFunction
+				)
+			}
 
-		if let slot = resolveStruct(named: name) {
-			return Variable(
-				name: name,
-				slot: slot,
-				depth: scopeDepth,
-				isCaptured: false,
-				getter: .getStruct,
-				setter: .setStruct
-			)
-		}
+			if let slot = resolveModuleValue(named: name) {
+				return Variable(
+					name: name,
+					slot: slot,
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getModuleValue,
+					setter: .setModuleValue
+				)
+			}
 
-		if let slot = Builtin.list.firstIndex(where: { $0.name == name }) {
+			if let slot = resolveStruct(named: name) {
+				return Variable(
+					name: name,
+					slot: slot,
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getStruct,
+					setter: .setStruct
+				)
+			}
+
+			if let slot = Builtin.list.firstIndex(where: { $0.name == name }) {
+				return Variable(
+					name: name,
+					slot: Byte(slot),
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getBuiltin,
+					setter: .setBuiltin
+				)
+			}
+		} else if let syntax = receiver as? AnalyzedMemberExpr {
 			return Variable(
-				name: name,
-				slot: Byte(slot),
+				name: syntax.property,
+				slot: Byte(syntax.environment.lexicalScope!.scope.offset(method: syntax.property)),
 				depth: scopeDepth,
 				isCaptured: false,
-				getter: .getBuiltin,
-				setter: .setBuiltin
+				getter: .getProperty,
+				setter: .setProperty
 			)
 		}
 
