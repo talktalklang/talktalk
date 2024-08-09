@@ -12,7 +12,7 @@ public struct SerializedModule: Codable {
 	public let analysis: SerializedAnalysisModule
 
 	// The main chunk for this module
-	public var main: Chunk
+	public var main: Chunk?
 
 	// The list of chunks in this module
 	public var chunks: [Chunk]

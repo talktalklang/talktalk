@@ -51,7 +51,7 @@ public class Environment {
 		case "i32": .int
 		case "bool": .bool
 		default:
-			fatalError()
+			fatalError("unknown type: \(name)")
 		}
 	}
 

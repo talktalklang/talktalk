@@ -80,7 +80,9 @@ public struct VirtualMachine: ~Copyable {
 
 	public init(module: Module) {
 		self.module = module
-		let chunk = module.main
+		guard let chunk = module.main else {
+			fatalError("no entrypoint found for module")
+		}
 
 		self.stack = Stack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
@@ -88,7 +90,6 @@ public struct VirtualMachine: ~Copyable {
 		// Reserving this space
 		stack.push(.int(Int64.max))
 
-		// FIXME:
 		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0)
 		frames.push(frame)
 	}

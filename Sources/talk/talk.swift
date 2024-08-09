@@ -44,7 +44,8 @@ struct TalkCommand: TalkTalkCommand {
 			AST.self,
 			Format.self,
 			Interpret.self,
-			LSP.self
+			LSP.self,
+			Compile.self
 		]
 	)
 }

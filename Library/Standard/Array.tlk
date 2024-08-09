@@ -1,0 +1,11 @@
+struct Array {
+	var count: i32
+
+	func getCount() {
+		return count
+	}
+}
+
+func newArray() {
+	return Array(count: 1)
+}

@@ -23,6 +23,7 @@ let package = Package(
 				"TalkTalk",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
+				"TalkTalkDriver",
 				.product(name: "ArgumentParser", package: "swift-argument-parser")
 			]
 		),

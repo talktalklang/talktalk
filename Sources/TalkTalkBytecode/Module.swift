@@ -9,7 +9,7 @@ public struct Module: Equatable {
 	// The name of the module. P straightforward.
 	public let name: String
 
-	public var main: Chunk
+	public var main: Chunk?
 
 	// The list of chunks in this module
 	public var chunks: [Chunk] = []
@@ -28,7 +28,7 @@ public struct Module: Equatable {
 	public var values: [Byte: Value] = [:]
 	public var functions: [Byte: Value] = [:]
 
-	public init(name: String, main: Chunk, symbols: [Symbol: Int]) {
+	public init(name: String, main: Chunk? = nil, symbols: [Symbol: Int]) {
 		self.name = name
 		self.main = main
 		self.symbols = symbols

@@ -50,7 +50,7 @@ public class CompilingModule {
 		}
 	}
 
-	public func finalize() -> Module {
+	public func finalize(mode: CompilationMode) -> Module {
 		var chunks: [Chunk] = Array(repeating: Chunk(name: "_"), count: analysisModule.functions.count)
 
 		// Go through the list of global chunks, sort by offset, add to the real module
@@ -76,10 +76,16 @@ public class CompilingModule {
 			chunks[offset] = module.chunks[moduleOffset]
 		}
 
-		let main = if let main = chunks.first(where: { $0.name == "main" }) {
-			main
-		} else {
-			synthesizeMain()
+		var main: Chunk? = nil
+
+		if mode == .executable {
+			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then
+			// we can use that. Otherwise synthesize one out of the files in the module.
+			if let existingMain = chunks.first(where: { $0.name == "main" }) {
+				main = existingMain
+			} else {
+				main = synthesizeMain()
+			}
 		}
 
 		var module = Module(name: name, main: main, symbols: symbols)

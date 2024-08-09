@@ -24,13 +24,13 @@ public struct ModuleCompiler {
 		self.moduleEnvironment = moduleEnvironment
 	}
 
-	public func compile() throws -> Module {
+	public func compile(mode: CompilationMode) throws -> Module {
 		let module = CompilingModule(name: name, analysisModule: analysisModule, moduleEnvironment: moduleEnvironment)
 
 		for file in analysisModule.analyzedFiles {
 			try module.compile(file: file)
 		}
 
-		return module.finalize()
+		return module.finalize(mode: mode)
 	}
 }

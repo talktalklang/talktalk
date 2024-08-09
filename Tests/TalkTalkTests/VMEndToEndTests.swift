@@ -21,7 +21,7 @@ actor VMEndToEndTests {
 	func compile(_ strings: [String]) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(name: "E2E", files: strings.map { .tmp($0) }, moduleEnvironment: [:]).analyze()
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
-		return try compiler.compile()
+		return try compiler.compile(mode: .executable)
 	}
 
 	func compile(
@@ -32,7 +32,7 @@ actor VMEndToEndTests {
 	) -> (Module, AnalysisModule) {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
 		let analyzed = try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis).analyze()
-		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile()
+		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
 		return (module, analyzed)
 	}
 
