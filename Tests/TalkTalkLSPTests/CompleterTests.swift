@@ -10,7 +10,8 @@ import TalkTalkSyntax
 import TalkTalkAnalysis
 import Testing
 
-actor CompleterTests {
+@MainActor
+struct CompleterTests {
 	func complete(_ string: String) -> Completer {
 		return Completer(source: string)
 	}

@@ -8,7 +8,8 @@
 import TalkTalk
 import Testing
 
-actor InterpreterTests {
+@MainActor
+struct InterpreterTests {
 	@Test("Evaluates literals") func literals() {
 		try! #expect(Interpreter("1").evaluate() == .int(1))
 		try! #expect(Interpreter("(2)").evaluate() == .int(2))

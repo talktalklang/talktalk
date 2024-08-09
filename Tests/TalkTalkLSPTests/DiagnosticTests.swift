@@ -7,7 +7,8 @@
 import Testing
 import TalkTalkLSP
 
-actor DiagnosticTests {
+@MainActor
+struct DiagnosticTests {
 	@Test("Gets diagnostics") func gets() {
 		_ = """
 		1 + a

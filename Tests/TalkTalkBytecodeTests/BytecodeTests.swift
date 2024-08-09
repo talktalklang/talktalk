@@ -8,7 +8,8 @@
 import Testing
 import TalkTalkBytecode
 
-actor BytecodeTests {
+@MainActor
+struct BytecodeTests {
 	@Test func basic() {
 		#expect(Opcode.constant.rawValue == Byte(1))
 	}

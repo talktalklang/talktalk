@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-public struct SourceLocation {
+public struct SourceLocation: Sendable {
 	public let start: Token
 	public let end: Token
 

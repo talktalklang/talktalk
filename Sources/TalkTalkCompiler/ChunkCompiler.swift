@@ -50,9 +50,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// MARK: Visitor methods
 
-	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Chunk) throws {}
+	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Chunk) throws {
+		// This gets handled by VarExpr
+	}
 
-	public func visit(_ expr: AnalyzedImportStmt, _ context: Chunk) throws {}
+	public func visit(_ expr: AnalyzedImportStmt, _ context: Chunk) throws {
+		// This is just an analysis thing
+	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
 		// Put the function args on the stack
@@ -232,10 +236,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Define the actual params for this initializer
 		for parameter in expr.parametersAnalyzed.paramsAnalyzed {
 			_ = defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
-
-//			initChunk.emit(opcode: .setLocal, line: parameter.location.line)
-//			initChunk.emit(byte: Byte(i + 1), line: parameter.location.line)
-//			initChunk.emit(opcode: .pop, line: parameter.location.line)
 		}
 
 		// Emit the init body
@@ -245,10 +245,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// End the scope, which pops locals
 		initCompiler.endScope(chunk: initChunk)
-
-//		// Leave the instance on top of the stack to be returned
-//		initChunk.emit(opcode: .getLocal, line: UInt32(expr.location.end.line))
-//		initChunk.emit(byte: 0, line: UInt32(expr.location.end.line))
 
 		// We always want to emit a return at the end of a function
 		initChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
@@ -287,8 +283,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Store the upvalues count
 		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
-//		let subchunkID = Byte(chunk.subchunks.count)
-//		chunk.subchunks.append(functionChunk)
 		let line = UInt32(expr.location.line)
 		let subchunkID = chunk.addChunk(functionChunk)
 		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
@@ -318,6 +312,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
+		try expr.receiverAnalyzed.accept(self, chunk)
+
 		// Emit the getter
 		chunk.emit(opcode: .getProperty, line: expr.location.line)
 
@@ -326,7 +322,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(byte: Byte(slot), line: expr.location.line)
 
 		// Put the receiver on the stack
-//		try expr.receiverAnalyzed.accept(self, chunk)
+//
 //		chunk.emit(byte: Byte(expr.receiverAnalyzed), line: expr.location.line)
 	}
 

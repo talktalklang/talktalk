@@ -30,7 +30,11 @@ struct TextDocumentFormatting {
 			return
 		}
 
-		let formatted = Formatter.format(source.text)
-		handler.respond(to: request.id, with: [TextEdit(range: source.range, newText: formatted)])
+		do {
+			let formatted = try Formatter.format(source.text)
+			handler.respond(to: request.id, with: [TextEdit(range: source.range, newText: formatted)])
+		} catch {
+			Log.error("Error formatting: \(error)")
+		}
 	}
 }

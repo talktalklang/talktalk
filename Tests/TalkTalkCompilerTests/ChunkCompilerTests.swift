@@ -11,9 +11,10 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 import Testing
 
-actor CompilerTests {
+@MainActor
+struct CompilerTests {
 	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
-		let parsed = Parser.parse(string)
+		let parsed = try Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
 		let analysisModule = inModule ? try! ModuleAnalyzer(name: "CompilerTests", files: [.tmp(string)], moduleEnvironment: [:]).analyze() : .empty("CompilerTests")
 		var compiler = SourceFileCompiler(name: "sup", analyzedSyntax: analyzed)

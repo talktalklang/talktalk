@@ -8,7 +8,8 @@
 import Testing
 import TalkTalkBytecode
 
-actor ChunkTests {
+@MainActor
+struct ChunkTests {
 	@Test("Opcode") func opcode() {
 		let chunk = Chunk(name: "main")
 		chunk.emit(opcode: .true, line: 1)

@@ -18,7 +18,7 @@ struct AST: TalkTalkCommand {
 
 	func run() async throws {
 		let source = try get(input: input).text
-		let parsed = Parser.parse(source)
+		let parsed = try Parser.parse(source)
 		let formatted = try ASTPrinter.format(parsed)
 		print(formatted)
 	}

@@ -10,7 +10,8 @@ import TalkTalkSyntax
 import TalkTalkAnalysis
 @testable import TalkTalkLSP
 
-actor SemanticTokensTests {
+@MainActor
+struct SemanticTokensTests {
 	@Test("Finds tokens") func basic() throws {
 		let string = """
 

@@ -8,7 +8,8 @@
 import Testing
 import TalkTalkBytecode
 
-actor ValueTests {
+@MainActor
+struct ValueTests {
 	@Test("Memory size") func memorySize() {
 		#expect(MemoryLayout<Value>.size == 8)
 	}

@@ -13,7 +13,8 @@ import TalkTalkAnalysis
 import Foundation
 import MessagePack
 
-actor ModuleTests {
+@MainActor
+struct ModuleTests {
 	func compile(
 		name: String,
 		_ files: [ParsedSourceFile],

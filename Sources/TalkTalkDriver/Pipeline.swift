@@ -18,8 +18,8 @@ struct Pipeline {
 			try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
 		}
 
-		let parsedSourceFiles = sourceFiles.map {
-			ParsedSourceFile(path: $0.path, syntax: Parser.parse($0.text))
+		let parsedSourceFiles = try sourceFiles.map {
+			try ParsedSourceFile(path: $0.path, syntax: Parser.parse($0.text))
 		}
 
 		let analysisModule = try ModuleAnalyzer(

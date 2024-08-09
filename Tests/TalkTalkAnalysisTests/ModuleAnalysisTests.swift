@@ -9,7 +9,7 @@ import Testing
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
-actor ModuleAnalysisTests {
+struct ModuleAnalysisTests {
 	func analyze(name: String, moduleEnvironment: [String: AnalysisModule] = [:], _ files: ParsedSourceFile...) -> AnalysisModule {
 		try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: moduleEnvironment).analyze()
 	}

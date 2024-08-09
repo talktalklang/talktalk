@@ -18,6 +18,10 @@ struct SourceLocationStack {
 }
 
 public struct Parser {
+	enum ParseError: Error {
+		case couldNotParse([(Token, String)])
+	}
+
 	var parserRepeats: [Int: Int] = [:]
 
 	var lexer: TalkTalkLexer
@@ -29,8 +33,13 @@ public struct Parser {
 
 	public var errors: [(Token, String)] = []
 
-	public static func parse(_ string: String) -> [any Syntax] {
+	public static func parse(_ string: String, allowErrors: Bool = false) throws -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(string))
+
+		guard parser.errors.isEmpty || allowErrors else {
+			throw ParseError.couldNotParse(parser.errors)
+		}
+
 		return parser.parse()
 	}
 

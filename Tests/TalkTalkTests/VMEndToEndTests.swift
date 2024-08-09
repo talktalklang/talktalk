@@ -13,7 +13,8 @@ import TalkTalkSyntax
 import TalkTalkVM
 import Testing
 
-actor VMEndToEndTests {
+@MainActor
+struct VMEndToEndTests {
 	func compile(_ strings: String...) throws -> Module {
 		try compile(strings)
 	}
@@ -39,6 +40,11 @@ actor VMEndToEndTests {
 	func run(_ strings: String...) -> TalkTalkBytecode.Value {
 		let module = try! compile(strings)
 		return VirtualMachine.run(module: module).get()
+	}
+
+	func runAsync(_ strings: String...) {
+		let module = try! compile(strings)
+		_ = VirtualMachine.run(module: module)
 	}
 
 	@Test("Adds") func adds() {
@@ -173,8 +179,8 @@ actor VMEndToEndTests {
 	}
 
 	@Test("Can run functions across files") func crossFile() throws {
-		let out = captureOutput {
-			run(
+		let out = OutputCapture.run {
+			runAsync(
 				"print(fizz())",
 				"func foo() { bar() }",
 				"func bar() { 123 }",
@@ -182,19 +188,19 @@ actor VMEndToEndTests {
 			)
 		}
 
-		#expect(out.output == ".int(123)\n")
+		#expect(out.stdout == ".int(123)\n")
 	}
 
 	@Test("Can use values across files") func crossFileValues() throws {
-		let out = captureOutput {
-			run(
+		let out = OutputCapture.run {
+			runAsync(
 				"print(fizz)",
 				"print(fizz)",
 				"fizz = 123"
 			)
 		}
 
-		#expect(out.output == ".int(123)\n.int(123)\n")
+		#expect(out.stdout == ".int(123)\n.int(123)\n")
 	}
 
 	@Test("Can run functions across modules") func crossModule() throws {
@@ -245,60 +251,5 @@ actor VMEndToEndTests {
 		)
 
 		#expect(VirtualMachine.run(module: module).get() == .int(123))
-	}
-
-	// MARK: helpers
-
-	public func captureOutput<R>(block: () -> R) -> (output: String, error: String, result: R) {
-		// Create pipes for capturing stdout and stderr
-		var stdoutPipe = [Int32](repeating: 0, count: 2)
-		var stderrPipe = [Int32](repeating: 0, count: 2)
-		pipe(&stdoutPipe)
-		pipe(&stderrPipe)
-
-		// Save original stdout and stderr
-		let originalStdout = dup(STDOUT_FILENO)
-		let originalStderr = dup(STDERR_FILENO)
-
-		// Redirect stdout and stderr to the pipes
-		dup2(stdoutPipe[1], STDOUT_FILENO)
-		dup2(stderrPipe[1], STDERR_FILENO)
-		close(stdoutPipe[1])
-		close(stderrPipe[1])
-
-		// Execute the block and capture the result
-		let result = block()
-
-		// Restore original stdout and stderr
-		dup2(originalStdout, STDOUT_FILENO)
-		dup2(originalStderr, STDERR_FILENO)
-		close(originalStdout)
-		close(originalStderr)
-
-		// Read captured output
-		let stdoutData = readData(from: stdoutPipe[0])
-		let stderrData = readData(from: stderrPipe[0])
-
-		// Convert data to strings
-		let stdoutOutput = String(data: stdoutData, encoding: .utf8) ?? ""
-		let stderrOutput = String(data: stderrData, encoding: .utf8) ?? ""
-
-		return (output: stdoutOutput, error: stderrOutput, result: result)
-	}
-
-	private func readData(from fd: Int32) -> Data {
-		var data = Data()
-		let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 1024)
-		defer { buffer.deallocate() }
-
-		while true {
-			let count = read(fd, buffer, 1024)
-			if count <= 0 {
-				break
-			}
-			data.append(buffer, count: count)
-		}
-
-		return data
 	}
 }

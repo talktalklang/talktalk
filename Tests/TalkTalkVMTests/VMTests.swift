@@ -10,7 +10,7 @@ import TalkTalkVM
 import TalkTalkCompiler
 import TalkTalkBytecode
 
-actor VMTests {
+struct VMTests {
 	func chunk(_ instructions: [Instruction]) -> Chunk {
 		var chunk = Chunk(name: "main")
 		for instruction in instructions {

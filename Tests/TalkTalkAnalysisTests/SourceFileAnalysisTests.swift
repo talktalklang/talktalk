@@ -9,7 +9,7 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 import Testing
 
-actor AnalysisTests {
+struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
 		try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init()).last!
 	}

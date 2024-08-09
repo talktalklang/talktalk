@@ -11,7 +11,7 @@ import TalkTalkCompiler
 import TalkTalkSyntax
 import Testing
 
-actor ModuleCompilerTests {
+struct ModuleCompilerTests {
 	func compile(
 		name: String,
 		_ files: [ParsedSourceFile],
@@ -123,12 +123,10 @@ actor ModuleCompilerTests {
 		let initChunk = structDef.methods[0]
 
 		#expect(initChunk.disassemble() == [
-			Instruction(opcode: .setLocal, offset: 0, line: 4, metadata: .local(slot: 1, name: "self")),
-			Instruction(opcode: .setLocal, offset: 2, line: 4, metadata: .local(slot: 2, name: "age")),
-			Instruction(opcode: .getLocal, offset: 4, line: 4, metadata: .local(slot: 2, name: "age")),
-			Instruction(opcode: .getLocal, offset: 6, line: 4, metadata: .local(slot: 1, name: "self")),
-			Instruction(opcode: .setProperty, offset: 8, line: 4, metadata: .property(slot: 0)),
-			Instruction(opcode: .return, offset: 10, line: 4, metadata: .simple)
+			Instruction(opcode: .getLocal, offset: 0, line: 4, metadata: .local(slot: 1, name: "age")),
+			Instruction(opcode: .getLocal, offset: 2, line: 4, metadata: .local(slot: 0, name: "__reserved__")),
+			Instruction(opcode: .setProperty, offset: 4, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .return, offset: 6, line: 6, metadata: .simple)
 		])
 	}
 }

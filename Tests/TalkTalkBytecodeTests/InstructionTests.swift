@@ -8,7 +8,8 @@
 import Testing
 import TalkTalkBytecode
 
-actor InstructionTests {
+@MainActor
+struct InstructionTests {
 	@Test("Constant") func constant() {
 		_ = Instruction(opcode: .constant, offset: 1, line: 0, metadata: .simple)
 	}

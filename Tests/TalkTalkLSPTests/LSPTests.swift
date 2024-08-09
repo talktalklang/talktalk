@@ -9,7 +9,8 @@ import Foundation
 import Testing
 @testable import TalkTalkLSP
 
-actor LSPTests {
+@MainActor
+struct LSPTests {
 	@Test("String parsing") func inOut() async throws {
 		_ = try String(contentsOf: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log"), encoding: .utf8)
 

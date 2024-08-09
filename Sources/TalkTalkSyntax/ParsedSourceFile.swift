@@ -12,7 +12,7 @@ public struct ParsedSourceFile {
 	public let syntax: [any Syntax]
 
 	public static func tmp(_ text: String) -> ParsedSourceFile {
-		ParsedSourceFile(path: "/tmp/\(UUID().uuidString)", syntax: Parser.parse(text))
+		ParsedSourceFile(path: "/tmp/\(UUID().uuidString)", syntax: try! Parser.parse(text))
 	}
 
 	public init(path: String, syntax: [any Syntax]) {

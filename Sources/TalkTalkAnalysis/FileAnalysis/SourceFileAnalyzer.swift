@@ -15,7 +15,7 @@ public struct SourceFileAnalyzer: Visitor {
 	public init() {}
 
 	public static func diagnostics(text: String, environment: Environment) throws -> [ErrorSyntax] {
-		let parsed = Parser.parse(text)
+		let parsed = try Parser.parse(text, allowErrors: true)
 		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 
 		func collect(syntaxes: [any AnalyzedSyntax]) -> [ErrorSyntax] {
