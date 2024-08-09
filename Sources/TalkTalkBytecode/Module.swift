@@ -14,6 +14,9 @@ public struct Module: Equatable {
 	// The list of chunks in this module
 	public var chunks: [Chunk] = []
 
+	// The list of top level structs in this module
+	public var structs: [Struct] = []
+
 	// A list of symbols this module exports
 	public var symbols: [Symbol: Int]
 

@@ -47,6 +47,10 @@ public struct Disassembler {
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getModuleValue, .setModuleValue:
 			return variableInstruction(opcode: opcode, start: index, type: .global)
+		case .getStruct, .setStruct:
+			return variableInstruction(opcode: opcode, start: index, type: .struct)
+		case .getProperty, .setProperty:
+			return variableInstruction(opcode: opcode, start: index, type: .property)
 		case .setBuiltin, .getBuiltin:
 			return variableInstruction(opcode: opcode, start: index, type: .builtin)
 		case .callChunkID:
@@ -86,6 +90,10 @@ public struct Disassembler {
 			"slot: \(slot)"
 		case .builtin:
 			"builtin"
+		case .struct:
+			"slot: \(slot)"
+		case .property:
+			"slot: \(slot)"
 		}
 
 		let metadata = VariableMetadata(slot: slot, name: name, type: type)

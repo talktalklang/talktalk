@@ -28,8 +28,11 @@ public class CompilingModule {
 	// if none exists.
 	var fileChunks: [Chunk] = []
 
-	//
+	// Lazy initializers for globals
 	var valueInitializers: [Symbol: Chunk] = [:]
+
+	// Top level structs for this module
+	var structs: [Symbol: Struct] = [:]
 
 	// The available modules for import
 	let moduleEnvironment: [String: Module]
@@ -40,13 +43,18 @@ public class CompilingModule {
 		self.moduleEnvironment = moduleEnvironment
 
 		// Reserve offsets for module functions
-		for (i, (_, global)) in analysisModule.functions.enumerated() {
+		for (i, (_, global)) in analysisModule.functions.sorted(by: { $0.key < $1.key }).enumerated() {
 			symbols[.function(global.name)] = i
 		}
 
 		// Reserve offsets for module values
-		for (i, (_, global)) in analysisModule.values.enumerated() {
-			symbols[.value(global.name)] = i + analysisModule.functions.count
+		for (i, (_, global)) in analysisModule.values.sorted(by: { $0.key < $1.key }).enumerated() {
+			symbols[.value(global.name)] = i
+		}
+
+		// Reserve offsets for struct values
+		for (i, (_, structT)) in analysisModule.structs.sorted(by: { $0.key < $1.key }).enumerated() {
+			symbols[.struct(structT.name)] = i
 		}
 	}
 
@@ -102,6 +110,11 @@ public class CompilingModule {
 		for (name, chunk) in valueInitializers {
 			module.valueInitializers[Byte(symbols[name]!)] = chunk
 		}
+
+		// Copy struct types
+//		for case (.struct(name), structType) in structs {
+//
+//		}
 
 		return module
 	}

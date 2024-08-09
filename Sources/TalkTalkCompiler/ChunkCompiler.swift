@@ -148,7 +148,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			named: expr.name,
 			chunk: chunk
 		) else {
-			throw CompilerError.unknownLocal(expr.name)
+			throw CompilerError.unknownIdentifier(expr.name)
 		}
 
 		chunk.emit(opcode: variable.getter, line: expr.location.line)
@@ -260,11 +260,20 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedReturnExpr, _ chunk: Chunk) throws {}
 
-	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
+		// Put the receiver on the stack
+		try expr.receiverAnalyzed.accept(self, chunk)
+
+		// Emit the getter
+		chunk.emit(opcode: .getProperty, line: expr.location.line)
+	}
 
 	public func visit(_ expr: AnalyzedDeclBlock, _ chunk: Chunk) throws {}
 
-	public func visit(_ expr: AnalyzedStructExpr, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedStructExpr, _ chunk: Chunk) throws {
+		let name = expr.name ?? "<struct\(module.structs.count)>"
+		module.structs[.struct(name)] = Struct(name: name)
+	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {}
 
@@ -320,6 +329,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 			)
 		}
 
+		if let slot = resolveStruct(named: name) {
+			return Variable(
+				name: name,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getStruct,
+				setter: .setStruct
+			)
+		}
+
 		if let slot = Builtin.list.firstIndex(where: { $0.name == name }) {
 			return Variable(
 				name: name,
@@ -364,7 +384,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return nil
 	}
 
-	// Check the CompilingModule for a global.
+	// Check the CompilingModule for a global function.
 	private func resolveModuleFunction(named name: String) -> Byte? {
 		if let offset = module.moduleFunctionOffset(for: name) {
 			return Byte(offset)
@@ -373,8 +393,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return nil
 	}
 
+	// Check CompilingModule for a global value
 	private func resolveModuleValue(named name: String) -> Byte? {
 		if let offset = module.moduleValueOffset(for: name) {
+			return Byte(offset)
+		}
+
+		return nil
+	}
+
+	// Check CompilationModule for a global struct
+	private func resolveStruct(named name: String) -> Byte? {
+		if let offset = module.symbols[.struct(name)] {
 			return Byte(offset)
 		}
 

@@ -48,7 +48,7 @@ public class Environment {
 
 	public func type(named name: String) -> ValueType {
 		switch name {
-		case "i32": .int
+		case "i32", "int": .int
 		case "bool": .bool
 		default:
 			fatalError("unknown type: \(name)")

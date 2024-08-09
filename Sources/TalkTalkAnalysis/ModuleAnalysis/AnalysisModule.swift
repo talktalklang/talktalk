@@ -59,6 +59,9 @@ public struct AnalysisModule {
 	// The list of top level functions in this module
 	public var functions: [String: ModuleFunction] = [:]
 
+	// The list of top level structs in this module
+	public var structs: [String: ModuleStruct] = [:]
+
 	// A list of modules this module imports
 //	public var imports: [String: ModuleGlobal] = [:]
 

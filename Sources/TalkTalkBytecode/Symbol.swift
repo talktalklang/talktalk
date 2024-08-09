@@ -6,5 +6,5 @@
 //
 
 public enum Symbol: Hashable, Codable {
-	case function(String), value(String)
+	case function(String), value(String), `struct`(String)
 }

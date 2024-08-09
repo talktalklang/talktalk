@@ -35,6 +35,10 @@ public enum Opcode: Byte {
 			 // Module global values
 			 getModuleValue, setModuleValue,
 
+			 // Structs
+			 getStruct, setStruct,
+			 getProperty, setProperty,
+
 			 // Builtin functions
 			 getBuiltin, setBuiltin,
 

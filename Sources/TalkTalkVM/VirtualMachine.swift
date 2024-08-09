@@ -330,6 +330,14 @@ public struct VirtualMachine: ~Copyable {
 				stack.push(.builtin(slot))
 			case .setBuiltin:
 				return runtimeError("Cannot set built in")
+			case .getStruct:
+				()
+			case .setStruct:
+				return runtimeError("Cannot set struct")
+			case .getProperty:
+				()
+			case .setProperty:
+				()
 			case .jumpPlaceholder:
 				()
 			}

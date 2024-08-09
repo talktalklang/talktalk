@@ -116,4 +116,20 @@ actor ModuleAnalysisTests {
 		#expect(params.isEmpty)
 		#expect(captures.isEmpty)
 	}
+
+	@Test("Analyzes module structs") func structProperties() throws {
+		let module = analyze(name: "A", .tmp("""
+		struct Person {
+			var age: int
+
+			func getAge() {
+				age
+			}
+		}
+		"""))
+
+		let structT = try #require(module.structs["Person"])
+		#expect(structT.properties.count == 1)
+		#expect(structT.methods.count == 1)
+	}
 }

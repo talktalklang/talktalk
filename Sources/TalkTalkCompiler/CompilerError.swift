@@ -6,5 +6,5 @@
 //
 
 public enum CompilerError: Error {
-	case unknownLocal(String), analysisError(String)
+	case unknownIdentifier(String), analysisError(String)
 }

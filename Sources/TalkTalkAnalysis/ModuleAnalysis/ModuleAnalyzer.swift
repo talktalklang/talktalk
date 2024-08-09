@@ -31,15 +31,7 @@ public struct ModuleAnalyzer {
 
 		// Find all the top level stuff this module has to offer
 		for file in files {
-			for (name, global) in try analyze(file: file, in: analysisModule) {
-				if let global = global as? ModuleValue {
-					analysisModule.values[name] = global
-				} else if let global = global as? ModuleFunction {
-					analysisModule.functions[name] = global
-				} else {
-					fatalError()
-				}
-			}
+			try processFile(file: file, in: &analysisModule)
 		}
 
 		// Mark any found bindings as global
@@ -50,15 +42,7 @@ public struct ModuleAnalyzer {
 		// Do a second pass so things that were defined in other files can
 		// get picked up. TODO: There's gotta be a better way.
 		for file in files {
-			for (name, global) in try analyze(file: file, in: analysisModule) {
-				if let global = global as? ModuleValue {
-					analysisModule.values[name] = global
-				} else if let global = global as? ModuleFunction {
-					analysisModule.functions[name] = global
-				} else {
-					fatalError()
-				}
-			}
+			try processFile(file: file, in: &analysisModule)
 		}
 
 		for (name, binding) in environment.importedSymbols {
@@ -94,6 +78,20 @@ public struct ModuleAnalyzer {
 		}
 
 		return analysisModule
+	}
+
+	private func processFile(file: ParsedSourceFile, in analysisModule: inout AnalysisModule) throws {
+		for (name, global) in try analyze(file: file, in: analysisModule) {
+			if let global = global as? ModuleValue {
+				analysisModule.values[name] = global
+			} else if let global = global as? ModuleFunction {
+				analysisModule.functions[name] = global
+			} else if let structT = global as? ModuleStruct {
+				analysisModule.structs[structT.name] = structT
+			} else {
+				fatalError()
+			}
+		}
 	}
 
 	// Get the top level stuff from this file since that's where globals live.
@@ -142,6 +140,17 @@ public struct ModuleAnalyzer {
 			}
 
 			environment.importModule(module)
+		case let syntax as StructExpr:
+			let structExpr = try visitor.visit(syntax, environment).cast(AnalyzedStructExpr.self)
+			let name = structExpr.name ?? "<struct\(module.structs.count)>"
+			result[name] = ModuleStruct(
+				name: name,
+				syntax: syntax,
+				type: structExpr.type,
+				source: .module,
+				properties: structExpr.lexicalScope.scope.properties,
+				methods: structExpr.lexicalScope.scope.methods
+			)
 		default:
 			()
 		}

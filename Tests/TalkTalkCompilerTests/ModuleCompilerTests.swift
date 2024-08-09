@@ -98,4 +98,18 @@ actor ModuleCompilerTests {
 		#expect(moduleB.chunks.count == 2)
 		#expect(moduleB.chunks.map(\.name).sorted() == ["bar", "foo"].sorted())
 	}
+
+	@Test("Can compile structs") func structs() {
+		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
+		let (module, _) = compile(name: "A", [
+			.tmp("""
+			struct Person {
+				var age: int
+			}
+			""")
+		])
+
+		let structDef = module.structs[0]
+		#expect(structDef.name == "Person")
+	}
 }

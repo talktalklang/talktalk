@@ -12,20 +12,21 @@ import TalkTalkSyntax
 import Testing
 
 actor CompilerTests {
-	func compile(_ string: String) -> Chunk {
+	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
 		let parsed = Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
+		let analysisModule = inModule ? try! ModuleAnalyzer(name: "CompilerTests", files: [.tmp(string)], moduleEnvironment: [:]).analyze() : .empty("CompilerTests")
 		var compiler = SourceFileCompiler(name: "sup", analyzedSyntax: analyzed)
-		return try! compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: .empty("CompilerTests"), moduleEnvironment: [:]))
+		return try compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:]))
 	}
 
-	@Test("Empty program") func empty() {
-		let chunk = compile("")
+	@Test("Empty program") func empty() throws {
+		let chunk = try compile("")
 		#expect(chunk.disassemble()[0].opcode == .return)
 	}
 
-	@Test("Int literal") func intLiteral() {
-		let chunk = compile("123")
+	@Test("Int literal") func intLiteral() throws {
+		let chunk = try compile("123")
 
 		let instructions = [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
@@ -35,8 +36,8 @@ actor CompilerTests {
 		#expect(chunk.disassemble() == instructions)
 	}
 
-	@Test("Binary int op") func binaryIntOp() {
-		let chunk = compile("10 + 20")
+	@Test("Binary int op") func binaryIntOp() throws {
+		let chunk = try compile("10 + 20")
 
 		let instructions = [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(20))),
@@ -48,8 +49,8 @@ actor CompilerTests {
 		#expect(chunk.disassemble() == instructions)
 	}
 
-	@Test("Static string") func staticString() {
-		let chunk = compile("""
+	@Test("Static string") func staticString() throws {
+		let chunk = try compile("""
 		"hello "
 		"world"
 		""")
@@ -72,43 +73,39 @@ actor CompilerTests {
 		#expect(result == expected)
 	}
 
-	@Test("Def expr") func defExpr() {
-		let chunk = compile("""
+	@Test("Def expr") func defExpr() throws {
+		let chunk = try compile("""
 		i = 123
-		""")
+		""", inModule: true)
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, offset: 2, line: 0, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
 			Instruction(opcode: .return, offset: 4, line: 0, metadata: .simple)
 		])
 	}
 
-
-
-	@Test("Var expr") func varExpr() {
-		let chunk = compile("""
+	@Test("Var expr") func varExpr() throws {
+		let chunk = try compile("""
 		x = 123
 		x
 		y = 456
 		y
-		""")
-
-		chunk.dump()
+		""", inModule: true)
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, offset: 2, line: 0, metadata: .local(slot: 1, name: "x")),
-			Instruction(opcode: .getLocal, offset: 4, line: 1, metadata: .local(slot: 1, name: "x")),
+			Instruction(opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
+			Instruction(opcode: .getModuleValue, offset: 4, line: 1, metadata: .global(slot: 0)),
 			Instruction(opcode: .constant, offset: 6, line: 2, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, offset: 8, line: 2, metadata: .local(slot: 2, name: "y")),
-			Instruction(opcode: .getLocal, offset: 10, line: 3, metadata: .local(slot: 2, name: "y")),
+			Instruction(opcode: .setModuleValue, offset: 8, line: 2, metadata: .global(slot: 1)),
+			Instruction(opcode: .getModuleValue, offset: 10, line: 3, metadata: .global(slot: 1)),
 			Instruction(opcode: .return, offset: 12, line: 0, metadata: .simple)
 		])
 	}
 
-	@Test("If expr") func ifExpr() {
-		let chunk = compile("""
+	@Test("If expr") func ifExpr() throws {
+		let chunk = try compile("""
 		if false {
 			123
 		} else {
@@ -139,8 +136,8 @@ actor CompilerTests {
 		])
 	}
 
-	@Test("Func expr") func funcExpr() {
-		let chunk = compile("""
+	@Test("Func expr") func funcExpr() throws {
+		let chunk = try compile("""
 		func() {
 			123
 		}
@@ -159,8 +156,8 @@ actor CompilerTests {
 		])
 	}
 
-	@Test("Call expr") func callExpr() {
-		let chunk = compile("""
+	@Test("Call expr") func callExpr() throws {
+		let chunk = try compile("""
 		func() {
 			123
 		}()
@@ -175,47 +172,49 @@ actor CompilerTests {
 		])
 	}
 
-	@Test("Non-capturing upvalue") func upvalue() {
+	@Test("Non-capturing upvalue") func upvalue() throws {
 		// Using two locals in this test to make sure slot indexes get updated correctly
-		let chunk = compile("""
-		a = 123
-		b = 456
+		let chunk = try compile("""
 		func() {
-			a
-			b
+			a = 123
+			b = 456
+			func() {
+				a
+				b
+			}
 		}
 		""")
 
-		let result = chunk.disassemble()
+		let result = chunk.getChunk(at: 1).disassemble()
 		let expected = [
-			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, offset: 2, line: 0, metadata: .local(slot: 1, name: "a")),
-			Instruction(opcode: .constant, offset: 4, line: 1, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, offset: 6, line: 1, metadata: .local(slot: 2, name: "b")),
-			Instruction(opcode: .defClosure, offset: 8, line: 2, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(1), .capturing(2)])),
-			Instruction(opcode: .return, offset: 14, line: 0, metadata: .simple),
+			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
+			Instruction(opcode: .setLocal, offset: 2, line: 1, metadata: .local(slot: 1, name: "a")),
+			Instruction(opcode: .constant, offset: 4, line: 2, metadata: .constant(.int(456))),
+			Instruction(opcode: .setLocal, offset: 6, line: 2, metadata: .local(slot: 2, name: "b")),
+			Instruction(opcode: .defClosure, offset: 8, line: 3, metadata: .closure(arity: 0, depth: 1, upvalues: [.capturing(1), .capturing(2)])),
+			Instruction(opcode: .return, offset: 14, line: 7, metadata: .simple),
 		]
 
 		#expect(result == expected)
 
-		let subchunk = chunk.getChunk(at: 0)
+		let subchunk = chunk.getChunk(at: 1).getChunk(at: 0)
 		let subexpected = [
-			Instruction(opcode: .getUpvalue, offset: 0, line: 3, metadata: .upvalue(slot: 0, name: "a")),
-			Instruction(opcode: .getUpvalue, offset: 2, line: 4, metadata: .upvalue(slot: 1, name: "b")),
-			Instruction(opcode: .return, offset: 6, line: 5, metadata: .simple),
+			Instruction(opcode: .getUpvalue, offset: 0, line: 4, metadata: .upvalue(slot: 0, name: "a")),
+			Instruction(opcode: .getUpvalue, offset: 2, line: 5, metadata: .upvalue(slot: 1, name: "b")),
+			Instruction(opcode: .return, offset: 6, line: 7, metadata: .simple),
 		]
 
 		#expect(subchunk.disassemble() == subexpected)
 	}
 
-	@Test("Cleans up locals") func cleansUpLocals() {
-		let chunk = compile("""
+	@Test("Cleans up locals") func cleansUpLocals() throws {
+		let chunk = try compile("""
 		a = 123
 		func() {
 			b = 456
 			a + b
 		}
-		""")
+		""", inModule: false)
 
 		let result = chunk.disassemble()
 		let expected = [
@@ -247,5 +246,41 @@ actor CompilerTests {
 		]
 
 		#expect(subchunk.disassemble() == subexpected)
+	}
+
+	@Test("Struct initializer") func structs() throws {
+		let chunk = try compile("""
+		struct Person {
+			var age: int
+		}
+
+		Person(age: 123)
+		""", inModule: true)
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
+			Instruction(opcode: .getStruct, offset: 2, line: 4, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 4, line: 4, metadata: .simple),
+			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple)
+		])
+	}
+
+	@Test("Struct property getter") func structsProperties() throws {
+		let chunk = try compile("""
+		struct Person {
+			var age: int
+		}
+
+		Person(age: 123).age
+		""", inModule: true)
+
+		chunk.dump()
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
+			Instruction(opcode: .getStruct, offset: 2, line: 4, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 4, line: 4, metadata: .simple),
+			Instruction(opcode: .getProperty, offset: 6, line: 4, metadata: .property(slot: 0)),
+		])
 	}
 }
