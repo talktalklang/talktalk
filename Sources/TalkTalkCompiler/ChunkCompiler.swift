@@ -84,6 +84,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 			throw CompilerError.unknownIdentifier(expr.description)
 		}
 
+		// If this is a member, we need to put the member's owner on the stack as well
+		if let member = expr.receiverAnalyzed as? AnalyzedMemberExpr {
+			try member.receiverAnalyzed.accept(self, chunk)
+		}
+
 		chunk.emit(opcode: variable.setter, line: expr.location.line)
 		chunk.emit(byte: variable.slot, line: expr.location.line)
 
@@ -215,8 +220,41 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(elseJump)
 	}
 
-	public func visit(_ expr: AnalyzedInitDecl, _ context: Chunk) throws -> Void {
-		fatalError("TODO")
+	public func visit(_ expr: AnalyzedInitDecl, _ chunk: Chunk) throws {
+		guard let structName = expr.environment.lexicalScope?.scope.name else {
+			fatalError("no name for struct for init")
+		}
+
+		let symbol: Symbol = .method(structName, "init", expr.parameters.params.map(\.name))
+		let initChunk = Chunk(name: symbol.description, parent: chunk, arity: Byte(expr.parameters.count), depth: Byte(scopeDepth))
+		let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
+
+		// Define the actual params for this initializer
+		for parameter in expr.parametersAnalyzed.paramsAnalyzed {
+			_ = defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
+
+//			initChunk.emit(opcode: .setLocal, line: parameter.location.line)
+//			initChunk.emit(byte: Byte(i + 1), line: parameter.location.line)
+//			initChunk.emit(opcode: .pop, line: parameter.location.line)
+		}
+
+		// Emit the init body
+		for expr in expr.bodyAnalyzed.exprsAnalyzed {
+			try expr.accept(initCompiler, initChunk)
+		}
+
+		// End the scope, which pops locals
+		initCompiler.endScope(chunk: initChunk)
+
+//		// Leave the instance on top of the stack to be returned
+//		initChunk.emit(opcode: .getLocal, line: UInt32(expr.location.end.line))
+//		initChunk.emit(byte: 0, line: UInt32(expr.location.end.line))
+
+		// We always want to emit a return at the end of a function
+		initChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
+
+		// Save the chunk into the struct's methods
+		module.structMethods[.struct(structName), default: [:]][symbol] = initChunk
 	}
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
@@ -229,7 +267,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Define the params for this function
 		for (i, parameter) in expr.analyzedParams.paramsAnalyzed.enumerated() {
-			_ = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: chunk)
+			_ = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
 
 			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
 			functionChunk.emit(byte: Byte(i), line: parameter.location.line)
@@ -267,31 +305,52 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedWhileExpr, _ chunk: Chunk) throws {}
-
-	public func visit(_ expr: AnalyzedParamsExpr, _ chunk: Chunk) throws {}
-
-	public func visit(_ expr: AnalyzedReturnExpr, _ chunk: Chunk) throws {}
-
-	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
-		// Put the receiver on the stack
-		try expr.receiverAnalyzed.accept(self, chunk)
-
-		// Emit the getter
-		chunk.emit(opcode: .getProperty, line: expr.location.line)
-		chunk.emit(byte: Byte(expr.propertyAnalyzed.slot), line: expr.location.line)
+	public func visit(_ expr: AnalyzedWhileExpr, _ chunk: Chunk) throws {
+		fatalError("TODO")
 	}
 
-	public func visit(_ expr: AnalyzedDeclBlock, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedParamsExpr, _ chunk: Chunk) throws {
+		fatalError("TODO")
+	}
+
+	public func visit(_ expr: AnalyzedReturnExpr, _ chunk: Chunk) throws {
+		fatalError("TODO")
+	}
+
+	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
+		// Emit the getter
+		chunk.emit(opcode: .getProperty, line: expr.location.line)
+
+		// Emit the property's slot
+		let slot = expr.memberAnalyzed.slot
+		chunk.emit(byte: Byte(slot), line: expr.location.line)
+
+		// Put the receiver on the stack
+//		try expr.receiverAnalyzed.accept(self, chunk)
+//		chunk.emit(byte: Byte(expr.receiverAnalyzed), line: expr.location.line)
+	}
+
+	public func visit(_ expr: AnalyzedDeclBlock, _ chunk: Chunk) throws {
+		for decl in expr.declsAnalyzed {
+			try decl.accept(self, chunk)
+		}
+	}
 
 	public func visit(_ expr: AnalyzedStructExpr, _ chunk: Chunk) throws {
 		let name = expr.name ?? "<struct\(module.structs.count)>"
+
+		try expr.bodyAnalyzed.accept(self, chunk)
+
 		module.structs[.struct(name)] = Struct(name: name, propertyCount: expr.structType.properties.count)
 	}
 
-	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {
+		// No need to emit any code here because var decls are just used by the analyzer
+	}
 
-	public func visit(_ expr: AnalyzedLetDecl, _ chunk: Chunk) throws {}
+	public func visit(_ expr: AnalyzedLetDecl, _ chunk: Chunk) throws {
+		// No need to emit any code here because let decls are just used by the analyzer
+	}
 
 	// MARK: Helpers
 
@@ -301,6 +360,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func resolveVariable(receiver: any Syntax, chunk: Chunk) -> Variable? {
 		if let syntax = receiver as? VarExpr {
 			let name = syntax.name
+
+			if name == "self" {
+				return Variable(
+					name: name,
+					slot: 0,
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getLocal,
+					setter: .setLocal
+				)
+			}
 
 			if let slot = resolveLocal(named: name) {
 				return Variable(
@@ -370,7 +440,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		} else if let syntax = receiver as? AnalyzedMemberExpr {
 			return Variable(
 				name: syntax.property,
-				slot: Byte(syntax.environment.lexicalScope!.scope.offset(method: syntax.property)),
+				slot: Byte(syntax.memberAnalyzed.slot),
 				depth: scopeDepth,
 				isCaptured: false,
 				getter: .getProperty,
@@ -383,8 +453,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// Just look up the var in our locals
 	public func resolveLocal(named name: String) -> Byte? {
-		if let i = locals.firstIndex(where: { $0.name == name }) {
-			return Byte(i)
+		if let variable = locals.first(where: { $0.name == name }) {
+			return variable.slot
 		}
 
 		return nil

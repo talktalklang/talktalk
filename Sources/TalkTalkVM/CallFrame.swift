@@ -25,5 +25,5 @@ public struct CallFrame {
 
 	// Store instances created in this call frame
 	// TODO: We're gonna need to figure out how they can move between frames?
-	var instances: [StructInstance] = []
+	var instances: [StructInstance]
 }

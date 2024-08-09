@@ -9,7 +9,7 @@ import TalkTalkBytecode
 
 struct StructInstance {
 	let type: Value
-	let fields: [Value?]
+	var fields: [Value?]
 
 	init(type: Value, fieldCount: Int) {
 		self.type = type

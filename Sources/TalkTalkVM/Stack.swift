@@ -22,7 +22,7 @@ struct Stack<Element> {
 			withUnsafeMutablePointers { _, oldElements in
 				Storage.create(minimumCapacity: newSize) { newBuf in
 					newBuf.withUnsafeMutablePointerToElements { newElements in
-						newElements.moveInitialize(from: oldElements, count: oldSize)
+						newElements.initialize(from: oldElements, count: oldSize)
 					}
 				} as! Storage
 			}

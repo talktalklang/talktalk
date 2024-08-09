@@ -17,6 +17,10 @@ public extension ParamsExpr {
 	subscript(_ index: Int) -> Param {
 		params[index]
 	}
+
+	var count: Int {
+		params.count
+	}
 }
 
 public struct ParamSyntax: Param {

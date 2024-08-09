@@ -28,6 +28,7 @@ actor AnalysisTests {
 		let ast = ast("foo = 1")
 		let def = try #require(ast as? AnalyzedDefExpr)
 		#expect(def.type == .int)
+		#expect(def.receiverAnalyzed.cast(AnalyzedVarExpr.self).name == "foo")
 	}
 
 	@Test("Types if expr") func ifExpr() {
@@ -160,6 +161,9 @@ actor AnalysisTests {
 		#expect(fn.environment.captures.count == 0)
 
 		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
+
+		print(counterFn.environment.captures)
+
 		#expect(counterFn.environment.captures.count == 1)
 		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).type == .int)
 
@@ -178,6 +182,10 @@ actor AnalysisTests {
 		struct Person {
 			let age: i32
 
+			init(age: i32) {
+				self.age = age
+			}
+
 			func sup() {
 				345
 			}
@@ -195,6 +203,8 @@ actor AnalysisTests {
 		let stype = s.environment.lookupStruct(named: "Person")
 		let type = try #require(stype)
 		#expect(name == "Person")
+		#expect(type.methods["init"] != nil)
+
 		#expect(type.properties["age"]!.type == .int)
 		#expect(type.properties["age"]!.type == .int)
 		#expect(type.methods["sup"]!.type == .function("sup", .int, [], []))

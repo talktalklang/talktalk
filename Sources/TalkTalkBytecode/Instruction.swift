@@ -27,6 +27,10 @@ public struct Instruction {
 	public func emit(into chunk: inout Chunk) {
 		metadata.emit(into: &chunk, from: self)
 	}
+
+	public func dump() {
+		FileHandle.standardError.write(Data((description + "\n").utf8))
+	}
 }
 
 extension Instruction: CustomStringConvertible {

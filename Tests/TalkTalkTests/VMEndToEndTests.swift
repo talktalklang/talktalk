@@ -218,11 +218,9 @@ actor VMEndToEndTests {
 			moduleEnvironment: ["A": moduleA]
 		)
 
-		let out = captureOutput {
-			VirtualMachine.run(module: moduleB)
-		}
+		let result = VirtualMachine.run(module: moduleB).get()
 
-		#expect(out.output == ".int(123)\n")
+		#expect(result == .int(123))
 	}
 
 	@Test("Struct properties") func structProperties() throws {
@@ -245,8 +243,6 @@ actor VMEndToEndTests {
 				)
 			]
 		)
-
-		module.main?.dump()
 
 		#expect(VirtualMachine.run(module: module).get() == .int(123))
 	}

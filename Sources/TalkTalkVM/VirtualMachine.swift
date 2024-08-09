@@ -5,32 +5,15 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
+import Foundation
 import TalkTalkBytecode
 
-public struct VirtualMachine: ~Copyable {
-	public enum ExecutionResult {
-		case ok(Value), error(String)
-
-		public func error() -> String? {
-			switch self {
-			case .ok(_):
-				return nil
-			case .error(let string):
-				return string
-			}
-		}
-
-		public func get() -> Value {
-			switch self {
-			case .ok(let value):
-				return value
-			case .error(let string):
-				fatalError("Execution error: \(string)")
-			}
-		}
-	}
-
+public struct VirtualMachine {
+	// The module to run. Must be compiled in executable mode.
 	var module: Module
+
+	// Should we print disassembled instructions/stack dumps on each tick
+	var verbose: Bool = false
 
 	var ip: UInt64 {
 		get {
@@ -70,9 +53,6 @@ public struct VirtualMachine: ~Copyable {
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
 
-	// So we can retain stuff
-	var memory: [Value] = []
-
 	public static func run(module: Module) -> ExecutionResult {
 		var vm = VirtualMachine(module: module)
 		return vm.run()
@@ -90,20 +70,22 @@ public struct VirtualMachine: ~Copyable {
 		// Reserving this space
 		stack.push(.int(Int64.max))
 
-		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0)
+		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [])
 		frames.push(frame)
 	}
 
 	public mutating func run() -> ExecutionResult {
 		while true {
-//			#if DEBUG
-//			var disassembler = Disassembler(chunk: chunk)
-//			disassembler.current = Int(ip)
-//			if let instruction = disassembler.next() {
-//				dumpStack()
-//				print(instruction.description)
-//			}
-//			#endif
+			#if DEBUG
+			if verbose {
+				var disassembler = Disassembler(chunk: chunk)
+				disassembler.current = Int(ip)
+				if let instruction = disassembler.next() {
+					dumpStack()
+					instruction.dump()
+				}
+			}
+			#endif
 
 			let byte = readByte()
 
@@ -139,6 +121,11 @@ public struct VirtualMachine: ~Copyable {
 
 				// Push the result back onto the stack
 				stack.push(result)
+
+				// Update frame instances to reflect changes that happened in last frame
+				for i in 0..<currentFrame.instances.count {
+					currentFrame.instances[i] = calledFrame.instances[i]
+				}
 
 				// Return to where we called from
 				ip = calledFrame.returnTo
@@ -337,7 +324,7 @@ public struct VirtualMachine: ~Copyable {
 				return runtimeError("Cannot set struct")
 			case .getProperty:
 				let slot = readByte()
-				let peek = stack.peek()
+				let peek = stack.peek(offset: 1)
 				guard let receiver = peek.instanceValue else {
 					return runtimeError("Receiver is not a struct")
 				}
@@ -349,7 +336,15 @@ public struct VirtualMachine: ~Copyable {
 
 				stack.push(value)
 			case .setProperty:
-				_ = readByte()
+				let slot = readByte()
+				let instance = stack.peek()
+				let propertyValue = stack.peek(offset: 1)
+
+				guard let receiver = instance.instanceValue else {
+					return runtimeError("Receiver is not a struct")
+				}
+
+				currentFrame.instances[Int(receiver)].fields[Int(slot)] = propertyValue
 			case .jumpPlaceholder:
 				()
 			}
@@ -370,8 +365,19 @@ public struct VirtualMachine: ~Copyable {
 		}
 	}
 
-	mutating func call(structValue: Int) {
+	// Call a method on an instance.
+	// Takes the method offset, instance and type that defines the method.
+	// We pass the instance as the first argument which defines self inside the
+	// function. TODO: I think this approach means we don't need to reserve stack slot 0?
+	mutating func call(method: Value, receiver: Value, type: Value) {
 		// Get the struct we're gonna be using
+		let structType = module.structs[Int(type.structValue!)]
+
+		fatalError("TODO")
+	}
+
+	mutating func call(structValue: Int) {
+		// Get the struct we're gonna be instantiating
 		let structType = module.structs[structValue]
 
 		// Figure out where in the instances "memory" the instance will live
@@ -380,11 +386,31 @@ public struct VirtualMachine: ~Copyable {
 		// Create the instance Value
 		let instance = Value.instance(structType: Byte(structValue), data: UInt64(instanceID))
 
+		// Put the instance into the stack's reserved slot
+		// TODO: use initializer arity instead of struct property count
+		stack[stack.size - Int(structType.propertyCount) - 1] = instance
+
 		// Store the instance value
 		currentFrame.instances.append(StructInstance(type: .struct(Byte(structValue)), fieldCount: structType.propertyCount))
 
-		// Push the instance value to the stack
-		stack.push(instance)
+		// Call the initializer (TODO: don't hardcode initializer location)
+		let initializer = structType.methods[0]
+
+		call(chunk: initializer)
+	}
+
+	mutating func call(chunk: Chunk) {
+		let frame = CallFrame(
+			closure: .init(
+				chunk: chunk,
+				upvalues: []
+			),
+			returnTo: ip,
+			stackOffset: stack.size - Int(chunk.arity) - 1,
+			instances: currentFrame.instances
+		)
+
+		frames.push(frame)
 	}
 
 	mutating func call(inline: Chunk) {
@@ -394,7 +420,8 @@ public struct VirtualMachine: ~Copyable {
 				upvalues: []
 			),
 			returnTo: ip,
-			stackOffset: stack.size - 1
+			stackOffset: stack.size - 1,
+			instances: currentFrame.instances
 		)
 
 		frames.push(frame)
@@ -407,7 +434,8 @@ public struct VirtualMachine: ~Copyable {
 		let frame = CallFrame(
 			closure: closures[UInt64(closureID)]!,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1
+			stackOffset: stack.size - Int(chunk.arity) - 1,
+			instances: currentFrame.instances
 		)
 
 		frames.push(frame)
@@ -420,7 +448,8 @@ public struct VirtualMachine: ~Copyable {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1
+			stackOffset: stack.size - Int(chunk.arity) - 1,
+			instances: currentFrame.instances
 		)
 
 		frames.push(frame)
@@ -433,7 +462,8 @@ public struct VirtualMachine: ~Copyable {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1
+			stackOffset: stack.size - Int(chunk.arity) - 1,
+			instances: currentFrame.instances
 		)
 
 		frames.push(frame)
@@ -452,7 +482,6 @@ public struct VirtualMachine: ~Copyable {
 
 	mutating func readConstant() -> Value {
 		let value = chunk.constants[Int(readByte())]
-		memory.append(value)
 		return value
 	}
 
@@ -505,7 +534,10 @@ public struct VirtualMachine: ~Copyable {
 				result += "[ \(slot.disassemble(in: chunk)) ]"
 			}
 		}
-		print(result)
+
+		FileHandle.standardError.write(Data((result + "\n").utf8))
+
 		return result
 	}
 }
+

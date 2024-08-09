@@ -163,8 +163,6 @@ actor CompilerTests {
 		}()
 		""")
 
-		chunk.dump()
-
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .defClosure, offset: 0, line: 0, metadata: .closure(arity: 0, depth: 0)),
 			Instruction(opcode: .call, offset: 2, line: 2, metadata: .simple),
@@ -252,16 +250,20 @@ actor CompilerTests {
 		let chunk = try compile("""
 		struct Person {
 			var age: int
+
+			init(age: int) {
+				self.age = age
+			}
 		}
 
 		Person(age: 123)
 		""", inModule: true)
 
 		#expect(chunk.disassemble() == [
-			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
-			Instruction(opcode: .getStruct, offset: 2, line: 4, metadata: .struct(slot: 0)),
-			Instruction(opcode: .call, offset: 4, line: 4, metadata: .simple),
-			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple)
+			Instruction(opcode: .constant, offset: 0, line: 8, metadata: .constant(.int(123))),
+			Instruction(opcode: .getStruct, offset: 2, line: 8, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 4, line: 8, metadata: .simple),
+			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
 		])
 	}
 

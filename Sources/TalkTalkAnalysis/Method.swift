@@ -1,22 +1,24 @@
 //
-//  Property.swift
+//  Method.swift
 //  TalkTalk
 //
-//  Created by Pat Nakajima on 8/7/24.
+//  Created by Pat Nakajima on 8/9/24.
 //
 
 import TalkTalkSyntax
 
-public struct SerializedProperty: Codable {
+public struct SerializedMethod: Codable {
 	public let slot: Int
 	public let name: String
+	public let params: [String]
 	public let type: ValueType
 	public let isMutable: Bool
 }
 
-public struct Property: Member {
+public struct Method: Member {
 	public let slot: Int
 	public let name: String
+	public let params: [String]
 	public let type: ValueType
 	public let expr: any Syntax
 	public let isMutable: Bool

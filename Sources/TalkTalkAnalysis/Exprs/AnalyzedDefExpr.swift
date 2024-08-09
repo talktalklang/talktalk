@@ -13,7 +13,7 @@ public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 	public var type: ValueType
 	let expr: DefExpr
 
-	public var receiver: any Expr { expr.value }
+	public var receiver: any Expr { expr.receiver }
 	public var receiverAnalyzed: any Expr
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }

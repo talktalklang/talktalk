@@ -33,6 +33,7 @@ public class CompilingModule {
 
 	// Top level structs for this module
 	var structs: [Symbol: Struct] = [:]
+	var structMethods: [Symbol: [Symbol: Chunk]] = [:]
 
 	// The available modules for import
 	let moduleEnvironment: [String: Module]
@@ -55,6 +56,11 @@ public class CompilingModule {
 		// Reserve offsets for struct values
 		for (i, (_, structT)) in analysisModule.structs.sorted(by: { $0.key < $1.key }).enumerated() {
 			symbols[.struct(structT.name)] = i
+
+			// Reserve offsets for struct methods
+			for (j, (methodName, method)) in structT.methods.enumerated() {
+				symbols[.method(structT.name, methodName, method.params)] = j
+			}
 		}
 	}
 
@@ -112,7 +118,13 @@ public class CompilingModule {
 		}
 
 		// Copy struct types, sorting by their index in the symbols table
-		for case let (.struct(_), structType) in structs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+		for case var (.struct(structName), structType) in structs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+			// Copy struct methods, sorting by their index in the symbols table
+			let methods = structMethods[.struct(structName)] ?? [:]
+			for case let (.method(_, methodName, params), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+				structType.methods.append(chunk)
+			}
+
 			module.structs.append(structType)
 		}
 
@@ -134,6 +146,9 @@ public class CompilingModule {
 
 			compiledChunks[offset] = chunk
 		}
+
+		// Ensure we have a return
+		chunk.emit(opcode: .return, line: 0)
 
 		fileChunks.append(chunk)
 	}

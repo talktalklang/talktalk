@@ -99,17 +99,36 @@ actor ModuleCompilerTests {
 		#expect(moduleB.chunks.map(\.name).sorted() == ["bar", "foo"].sorted())
 	}
 
-	@Test("Can compile structs") func structs() {
+	@Test("Can compile structs") func structs() throws {
 		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
 		let (module, _) = compile(name: "A", [
 			.tmp("""
 			struct Person {
 				var age: int
+
+				init(age: int) {
+					self.age = age
+				}
 			}
+
+			person = Person(age: 123)
 			""")
 		])
 
 		let structDef = module.structs[0]
 		#expect(structDef.name == "Person")
+		#expect(structDef.propertyCount == 1)
+		#expect(structDef.methods.count == 1)
+
+		let initChunk = structDef.methods[0]
+
+		#expect(initChunk.disassemble() == [
+			Instruction(opcode: .setLocal, offset: 0, line: 4, metadata: .local(slot: 1, name: "self")),
+			Instruction(opcode: .setLocal, offset: 2, line: 4, metadata: .local(slot: 2, name: "age")),
+			Instruction(opcode: .getLocal, offset: 4, line: 4, metadata: .local(slot: 2, name: "age")),
+			Instruction(opcode: .getLocal, offset: 6, line: 4, metadata: .local(slot: 1, name: "self")),
+			Instruction(opcode: .setProperty, offset: 8, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .return, offset: 10, line: 4, metadata: .simple)
+		])
 	}
 }

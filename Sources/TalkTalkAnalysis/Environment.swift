@@ -64,6 +64,10 @@ public class Environment {
 			return global
 		}
 
+		if let existingCapture = captures.first(where: { $0.name == name }) {
+			return existingCapture.binding
+		}
+
 		if let capture = capture(name: name) {
 			captures.append(capture)
 			return capture.binding
@@ -113,7 +117,7 @@ public class Environment {
 			}
 
 			if case .struct(_) = scope.type {
-				if let method = scope.scope.methods[name] {
+				if let method = scope.scope.methods.values.first(where: { $0.name == name }) {
 					return Binding(
 						name: name,
 						expr: method.expr,
@@ -121,7 +125,7 @@ public class Environment {
 					)
 				}
 
-				if let property = scope.scope.properties[name] {
+				if let property = scope.scope.properties.values.first(where: { $0.name == name }) {
 					return Binding(
 						name: name,
 						expr: property.expr,

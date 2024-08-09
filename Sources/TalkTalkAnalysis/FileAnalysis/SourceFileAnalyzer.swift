@@ -117,14 +117,14 @@ public struct SourceFileAnalyzer: Visitor {
 		let receiver = try expr.receiver.accept(self, context)
 		let propertyName = expr.property
 
-		var property: Property? = nil
+		var member: (any Member)? = nil
 		switch receiver.type {
 		case let .instance(.struct(name)):
 			guard let structType = context.lookupStruct(named: name) else {
 				return error(at: expr, "Could not find struct named \(name)", environment: context, expectation: .identifier)
 			}
 
-			property = structType.properties[propertyName] ?? structType.methods[propertyName]
+			member = structType.properties[propertyName] ?? structType.methods[propertyName]
 		default:
 			return error(
 				at: expr, "Cannot access property \(propertyName) on \(receiver)",
@@ -133,7 +133,7 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
-		guard let property else {
+		guard let member else {
 			return error(
 				at: expr,
 				"No property '\(propertyName)' found for \(receiver)",
@@ -143,17 +143,16 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		return AnalyzedMemberExpr(
-			type: property.type,
+			type: member.type,
 			expr: expr,
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			propertyAnalyzed: property
+			memberAnalyzed: member
 		)
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
-		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 
 		switch expr.receiver {
 		case let receiver as any VarExpr:
@@ -161,7 +160,7 @@ public struct SourceFileAnalyzer: Visitor {
 		default: ()
 		}
 
-
+		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 		return AnalyzedDefExpr(type: value.type, expr: expr, receiverAnalyzed: receiver, valueAnalyzed: value, environment: context)
 	}
 
@@ -369,9 +368,10 @@ public struct SourceFileAnalyzer: Visitor {
 					isMutable: false
 				))
 			case let decl as FuncExpr:
-				structType.add(method: Property(
+				structType.add(method: Method(
 					slot: structType.methods.count,
 					name: decl.name!.lexeme,
+					params: decl.params.params.map(\.name),
 					type: .function(decl.name!.lexeme, .placeholder(2), [], []),
 					expr: decl,
 					isMutable: false
@@ -380,6 +380,7 @@ public struct SourceFileAnalyzer: Visitor {
 				structType.add(initializer: .init(
 					slot: structType.methods.count,
 					name: "init",
+					params: decl.parameters.params.map(\.name),
 					type: .function("init", .placeholder(2), [], []),
 					expr: decl,
 					isMutable: false
@@ -431,9 +432,10 @@ public struct SourceFileAnalyzer: Visitor {
 				 let lexicalScope = context.lexicalScope {
 				let existing = lexicalScope.scope.methods[funcExpr.name!.lexeme]!
 
-				lexicalScope.scope.add(method: Property(
+				lexicalScope.scope.add(method: Method(
 					slot: existing.slot,
 					name: funcExpr.name!.lexeme,
+					params: funcExpr.params.params.map(\.name),
 					type: funcExpr.type,
 					expr: funcExpr,
 					isMutable: false
