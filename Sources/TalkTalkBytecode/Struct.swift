@@ -8,7 +8,7 @@
 public struct Struct: Hashable, Equatable {
 	public let name: String
 	public let propertyCount: Int
-	public var hasInitializer: Bool = false
+	public var initializer: Int = 0
 	public var methods: [Chunk] = []
 
 	public init(name: String, propertyCount: Int) {

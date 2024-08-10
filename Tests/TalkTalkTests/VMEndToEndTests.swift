@@ -254,6 +254,35 @@ struct VMEndToEndTests {
 		#expect(VirtualMachine.run(module: module).get() == .int(123))
 	}
 
+	@Test("Struct methods") func structMethods() throws {
+		let (module, _) = try compile(
+			name: "A",
+			[
+				.tmp(
+					"""
+					struct Person {
+						var age: int
+
+						init(age: int) {
+							self.age = age
+						}
+
+						func getAge() {
+							self.age
+						}
+					}
+
+					person = Person(age: 123)
+					method = person.getAge
+					method()
+					"""
+				)
+			]
+		)
+
+		#expect(VirtualMachine.run(module: module, verbose: true).get() == .int(123))
+	}
+
 	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {
 		let (moduleA, analysisA) = try compile(
 			name: "A",

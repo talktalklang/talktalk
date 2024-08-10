@@ -17,7 +17,7 @@ struct CompilerTests {
 		let parsed = try Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
 		let analysisModule = inModule ? try! ModuleAnalyzer(name: "CompilerTests", files: [.tmp(string)], moduleEnvironment: [:]).analyze() : .empty("CompilerTests")
-		var compiler = SourceFileCompiler(name: "sup", analyzedSyntax: analyzed)
+		var compiler = SourceFileCompiler(name: "CompilerTests", analyzedSyntax: analyzed)
 		return try compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:]))
 	}
 
@@ -272,17 +272,44 @@ struct CompilerTests {
 		let chunk = try compile("""
 		struct Person {
 			var age: int
+
+			init(age: int) { self.age = age }
 		}
 
 		Person(age: 123).age
 		""", inModule: true)
 
 		#expect(chunk.disassemble() == [
-			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
-			Instruction(opcode: .getStruct, offset: 2, line: 4, metadata: .struct(slot: 0)),
-			Instruction(opcode: .call, offset: 4, line: 4, metadata: .simple),
-			Instruction(opcode: .getProperty, offset: 5, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .constant, offset: 0, line: 6, metadata: .constant(.int(123))),
+			Instruction(opcode: .getStruct, offset: 2, line: 6, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 4, line: 6, metadata: .simple),
+			Instruction(opcode: .getProperty, offset: 5, line: 6, metadata: .property(slot: 0)),
 			Instruction(opcode: .return, offset: 7, line: 0, metadata: .simple)
+		])
+	}
+
+	@Test("Struct methods") func structMethods() throws {
+		let chunk = try compile("""
+		struct Person {
+			var age: int
+
+			init(age: int) { self.age = age }
+
+			func getAge() {
+				self.age
+			}
+		}
+
+		Person(age: 123).getAge()
+		""", inModule: true)
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .constant, offset: 0, line: 10, metadata: .constant(.int(123))),
+			Instruction(opcode: .getStruct, offset: 2, line: 10, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 4, line: 10, metadata: .simple),
+			Instruction(opcode: .getProperty, offset: 5, line: 10, metadata: .property(slot: 1)),
+			Instruction(opcode: .call, offset: 7, line: 10, metadata: .simple),
+			Instruction(opcode: .return, offset: 8, line: 0, metadata: .simple)
 		])
 	}
 }

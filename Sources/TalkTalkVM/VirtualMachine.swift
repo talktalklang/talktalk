@@ -70,7 +70,7 @@ public struct VirtualMachine {
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
-		stack.push(.int(Int64.max))
+		stack.push(.int(Value.IntValue.max))
 
 		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [])
 		frames.push(frame)
@@ -105,7 +105,7 @@ public struct VirtualMachine {
 				let calledFrame = frames.pop()
 
 				// Pop off values created on the stack by the called frame
-				while stack.size > calledFrame.stackOffset+1 {
+				while stack.size > calledFrame.stackOffset + 1 {
 					stack.pop()
 				}
 
@@ -165,56 +165,56 @@ public struct VirtualMachine {
 				let rhsValue = stack.pop()
 
 				guard let lhs = lhsValue.intValue,
-							let rhs = rhsValue.intValue
+				      let rhs = rhsValue.intValue
 				else {
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
 				stack.push(.int(lhs + rhs))
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot subtract none int operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot divide none int operands")
 				}
 				stack.push(.int(lhs / rhs))
 			case .multiply:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot multiply none int operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				guard let lhs = stack.pop().intValue,
-							let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
@@ -275,7 +275,7 @@ public struct VirtualMachine {
 				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
 
 				// Push the closure Value onto the stack
-				stack.push(.closure(slot))
+				stack.push(.closure(Value.IntValue(slot)))
 			case .call:
 				let callee = stack.pop()
 				if callee.isCallable {
@@ -316,33 +316,44 @@ public struct VirtualMachine {
 				module.valueInitializers.removeValue(forKey: slot)
 			case .getBuiltin:
 				let slot = readByte()
-				stack.push(.builtin(slot))
+				stack.push(.builtin(Value.IntValue(slot)))
 			case .setBuiltin:
 				return runtimeError("Cannot set built in")
 			case .getStruct:
 				let slot = readByte()
-				stack.push(.struct(slot))
+				stack.push(.struct(Value.IntValue(slot)))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
 				let slot = readByte()
+				let propertyOptions = PropertyOptions(rawValue: readByte())
+
 				let peek = stack.peek(offset: 1)
-				guard let receiver = peek.instanceValue else {
+				guard let (_, receiver) = peek.instanceValue else {
 					return runtimeError("Receiver is not a struct")
 				}
 
 				let instance = currentFrame.instances[Int(receiver)]
-				guard let value = instance.fields[Int(slot)] else {
-					fatalError("No value in slot: \(slot)")
-				}
 
-				stack.push(value)
+				if propertyOptions.contains(.isMethod) {
+					// If it's a method, we create a boundMethod value, which consists of the method slot
+					// and the instance ID. Using this, we can use the type we get from instance[instanceID]
+					// to lookup the method.
+					let boundMethod = Value.boundMethod(Value.IntValue(slot), receiver)
+					stack.push(boundMethod)
+				} else {
+					guard let value = instance.fields[Int(slot)] else {
+						fatalError("No value in slot: \(slot)")
+					}
+
+					stack.push(value)
+				}
 			case .setProperty:
 				let slot = readByte()
 				let instance = stack.peek()
 				let propertyValue = stack.peek(offset: 1)
 
-				guard let receiver = instance.instanceValue else {
+				guard let (_, receiver) = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct")
 				}
 
@@ -361,7 +372,9 @@ public struct VirtualMachine {
 		} else if let moduleFunction = callee.moduleFunctionValue {
 			call(moduleFunction: Int(moduleFunction))
 		} else if let structValue = callee.structValue {
-			call(structValue: Int(structValue))
+			call(structValue: Value.IntValue(structValue))
+		} else if let boundMethodValue = callee.boundMethodValue {
+			call(boundMethod: boundMethodValue.slot, on: boundMethodValue.instanceID)
 		} else {
 			fatalError("\(callee) not callable")
 		}
@@ -369,34 +382,34 @@ public struct VirtualMachine {
 
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
-	// We pass the instance as the first argument which defines self inside the
-	// function. TODO: I think this approach means we don't need to reserve stack slot 0?
-	mutating func call(method: Value, receiver: Value, type: Value) {
-		// Get the struct we're gonna be using
-		let structType = module.structs[Int(type.structValue!)]
+	mutating func call(boundMethod: Value.IntValue, on instanceData: Value.IntValue) {
+		let instance = currentFrame.instances[Int(instanceData)]
+		let structType = module.structs[Int(instance.type.structValue!)]
+		let methodChunk = structType.methods[Int(boundMethod)]
 
-		fatalError("TODO")
+		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(instance.type.structValue!, instanceData)
+		call(chunk: methodChunk)
 	}
 
-	mutating func call(structValue: Int) {
+	mutating func call(structValue: Value.IntValue) {
 		// Get the struct we're gonna be instantiating
-		let structType = module.structs[structValue]
+		let structType = module.structs[Int(structValue)]
 
 		// Figure out where in the instances "memory" the instance will live
-		let instanceID = currentFrame.instances.count
+		let instanceID = Value.IntValue(currentFrame.instances.count)
 
 		// Create the instance Value
-		let instance = Value.instance(structType: Byte(structValue), data: UInt64(instanceID))
+		let instance = Value.instance(structValue, instanceID)
 
 		// Put the instance into the stack's reserved slot
 		// TODO: use initializer arity instead of struct property count
 		stack[stack.size - Int(structType.propertyCount) - 1] = instance
 
 		// Store the instance value
-		currentFrame.instances.append(StructInstance(type: .struct(Byte(structValue)), fieldCount: structType.propertyCount))
+		currentFrame.instances.append(StructInstance(type: .struct(structValue), fieldCount: structType.propertyCount))
 
 		// Call the initializer (TODO: don't hardcode initializer location)
-		let initializer = structType.methods[0]
+		let initializer = structType.methods[structType.initializer]
 
 		call(chunk: initializer)
 	}
@@ -501,7 +514,7 @@ public struct VirtualMachine {
 		var previousUpvalue: Upvalue? = nil
 		var upvalue = openUpvalues
 
-		while upvalue != nil, upvalue!.value.asUInt64 > value.asUInt64 {
+		while upvalue != nil/*, upvalue!.value > value*/ {
 			previousUpvalue = upvalue
 			upvalue = upvalue!.next
 		}
@@ -516,7 +529,7 @@ public struct VirtualMachine {
 		if let previousUpvalue {
 			previousUpvalue.next = createdUpvalue
 		} else {
-			self.openUpvalues = createdUpvalue
+			openUpvalues = createdUpvalue
 		}
 
 		return createdUpvalue
@@ -542,4 +555,3 @@ public struct VirtualMachine {
 		return result
 	}
 }
-

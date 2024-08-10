@@ -163,9 +163,9 @@ public class Chunk: Codable {
 
 	// Emit static data for the program
 	public func emit(data constantData: [Byte], line: UInt32) {
-		let start = UInt64(data.count)
+		let start = data.count
 		data.append(contentsOf: constantData)
-		emit(constant: .data(start), line: line)
+		emit(constant: .data(Value.IntValue(start)), line: line)
 	}
 
 	private func write(constant value: Value) -> Byte {

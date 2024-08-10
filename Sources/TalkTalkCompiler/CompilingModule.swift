@@ -109,7 +109,7 @@ public class CompilingModule {
 
 		// Set offets for moduleFunction values
 		for (i, _) in module.chunks.enumerated() {
-			module.functions[Byte(i)] = .moduleFunction(Byte(i))
+			module.functions[Byte(i)] = .moduleFunction(Value.IntValue(i))
 		}
 
 		// Copy lazy value initializers
@@ -132,7 +132,7 @@ public class CompilingModule {
 		}
 
 		// Copy struct types, sorting by their index in the symbols table
-		for case var (.struct(name), structType) in foundStructs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+		for case (.struct(let name), var structType) in foundStructs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
 			// Copy struct methods, sorting by their index in the symbols table
 			let methods = structMethods[.struct(name)] ?? [:]
 			for case let (.method(_, _, _), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {

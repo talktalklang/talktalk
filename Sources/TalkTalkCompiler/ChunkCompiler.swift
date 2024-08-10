@@ -85,7 +85,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		guard let variable else {
-			throw CompilerError.unknownIdentifier(expr.description)
+			throw CompilerError.unknownIdentifier(expr.description + " at line: \(expr.location.start.line)")
 		}
 
 		// If this is a member, we need to put the member's owner on the stack as well
@@ -148,7 +148,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedLiteralExpr, _ chunk: Chunk) throws {
 		switch expr.value {
 		case .int(let int):
-			chunk.emit(constant: .int(Int64(int)), line: expr.location.line)
+			chunk.emit(constant: .int(.init(int)), line: expr.location.line)
 		case .bool(let bool):
 			chunk.emit(opcode: bool ? .true : .false, line: expr.location.line)
 		case .string(let string):
@@ -166,7 +166,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			receiver: expr,
 			chunk: chunk
 		) else {
-			throw CompilerError.unknownIdentifier(expr.name)
+			throw CompilerError.unknownIdentifier(expr.name + " at line: \(expr.location.start.line)")
 		}
 
 		chunk.emit(opcode: variable.getter, line: expr.location.line)
@@ -321,6 +321,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let slot = expr.memberAnalyzed.slot
 		chunk.emit(byte: Byte(slot), line: expr.location.line)
 
+		// Emit the property's optionset
+		var options = PropertyOptions()
+		if expr.memberAnalyzed is Method {
+			options.insert(.isMethod)
+		}
+		chunk.emit(byte: options.rawValue, line: expr.location.line)
 		// Put the receiver on the stack
 //
 //		chunk.emit(byte: Byte(expr.receiverAnalyzed), line: expr.location.line)
@@ -334,10 +340,62 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedStructExpr, _ chunk: Chunk) throws {
 		let name = expr.name ?? "<struct\(module.structs.count)>"
+		var structType = Struct(name: name, propertyCount: expr.structType.properties.count)
+		var methods: [Chunk?] = Array(repeating: nil, count: expr.structType.methods.count)
 
-		try expr.bodyAnalyzed.accept(self, chunk)
+		// Go through the body and collect the chunks (we don't want to emit them into the outer chunk)
+		for decl in expr.bodyAnalyzed.declsAnalyzed {
+			switch decl {
+			case let decl as AnalyzedInitDecl:
+				let symbol = Symbol.initializer(name, decl.parameters.params.map(\.name))
+				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
+				let declChunk = Chunk(name: symbol.description, parent: chunk, arity: Byte(decl.parameters.count), depth: Byte(scopeDepth))
 
-		module.structs[.struct(name)] = Struct(name: name, propertyCount: expr.structType.properties.count)
+				// Define the actual params for this initializer
+				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
+					_ = declCompiler.defineLocal(name: parameter.name, compiler: declCompiler, chunk: declChunk)
+				}
+
+				// Emit the init body
+				for expr in decl.bodyAnalyzed.exprsAnalyzed {
+					try expr.accept(declCompiler, declChunk)
+				}
+
+				// End the scope, which pops locals
+				declCompiler.endScope(chunk: declChunk)
+
+				let analysisMethod = expr.structType.methods["init"]!
+				methods[analysisMethod.slot] = declChunk.finalize()
+			case let decl as AnalyzedFuncExpr:
+				let symbol = Symbol.method(name, decl.name!.lexeme, decl.params.params.map(\.name))
+				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
+				let declChunk = Chunk(name: symbol.description, parent: chunk, arity: Byte(decl.params.count), depth: Byte(scopeDepth))
+
+				// Define the params for this function
+				for parameter in decl.analyzedParams.paramsAnalyzed {
+					_ = declCompiler.defineLocal(name: parameter.name, compiler: declCompiler, chunk: declChunk)
+				}
+
+				// Emit the body
+				for expr in decl.bodyAnalyzed.exprsAnalyzed {
+					try expr.accept(declCompiler, declChunk)
+				}
+
+				// End the scope, which pops locals
+				declCompiler.endScope(chunk: declChunk)
+
+				let analysisMethod = expr.structType.methods[decl.name!.lexeme]!
+				methods[analysisMethod.slot] = declChunk.finalize()
+			case is AnalyzedVarDecl: ()
+			case is AnalyzedLetDecl: ()
+			default:
+				fatalError("unknown decl: \(decl)")
+			}
+		}
+
+		structType.methods = methods.map { $0! }
+		structType.initializer = expr.structType.methods["init"]!.slot
+		module.structs[.struct(name)] = structType
 	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {
