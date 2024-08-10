@@ -15,10 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Setup Swift environment
-      run: |
-        curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash \
-        swiftly install main-snapshot
+    - name: Install Swift
+      uses: slashmo/install-swift@v0.1.0
+      with:
+        version: swift-6.0-DEVELOPMENT-SNAPSHOT-2024-08-08-a
     - uses: actions/checkout@v4
     - name: Run tests
       run: swift test -v
