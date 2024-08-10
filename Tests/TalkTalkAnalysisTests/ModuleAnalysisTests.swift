@@ -132,4 +132,37 @@ struct ModuleAnalysisTests {
 		#expect(structT.properties.count == 1)
 		#expect(structT.methods.count == 1)
 	}
+
+	@Test("Analyzes imported module structs") func importStructProperties() throws {
+		let moduleA = analyze(name: "A", .tmp("""
+		struct Person {
+			var age: int
+
+			init(age: int) {
+				self.age = age
+			}
+
+			func getAge() {
+				age
+			}
+		}
+		"""))
+
+		let moduleB = analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
+		import A
+
+		person = Person(age: 123)
+		person.age
+		"""))
+
+		let person = try #require(moduleB.values["person"])
+		#expect(person.type == .instance(.struct("Person")))
+
+		guard case let .external(module) = moduleB.moduleStruct(named: "Person")?.source else {
+			#expect(Bool(false), "imported type does not have external source")
+			return
+		}
+
+		#expect(module.name == "A")
+	}
 }

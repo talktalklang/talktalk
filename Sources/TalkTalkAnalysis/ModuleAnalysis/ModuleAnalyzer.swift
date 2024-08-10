@@ -64,6 +64,18 @@ public struct ModuleAnalyzer {
 					type: binding.type,
 					source: .external(module)
 				)
+			} else if case let .struct(name) = name,
+								let structType = binding.externalModule?.structs[name] {
+				analysisModule.structs[name] = ModuleStruct(
+					name: name,
+					syntax: binding.expr,
+					type: binding.type,
+					source: .external(module),
+					properties: structType.properties,
+					methods: structType.methods
+				)
+			} else {
+				fatalError("unhandled exported symbol: \(name)")
 			}
 		}
 

@@ -433,7 +433,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 					setter: .setBuiltin
 				)
 			}
-		} else if let syntax = receiver as? AnalyzedMemberExpr {
+		}
+
+		if let syntax = receiver as? AnalyzedMemberExpr {
 			return Variable(
 				name: syntax.property,
 				slot: Byte(syntax.memberAnalyzed.slot),

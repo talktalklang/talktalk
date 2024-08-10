@@ -145,6 +145,9 @@ public class Environment {
 			} else if let function = module.moduleFunction(named: name) {
 				symbol = .function(name)
 				global = function
+			} else if let type = module.moduleStruct(named: name) {
+				symbol = .struct(name)
+				global = type
 			}
 
 			guard let symbol, let global else {
@@ -173,6 +176,12 @@ public class Environment {
 
 		if let type = parent?.lookupStruct(named: name) {
 			return type
+		}
+
+		if let binding = importedSymbols[.struct(name)],
+			 let externalModule = binding.externalModule,
+		   let moduleStruct = externalModule.structs[name] {
+			return StructType(name: name, properties: moduleStruct.properties, methods: moduleStruct.methods)
 		}
 
 		return nil

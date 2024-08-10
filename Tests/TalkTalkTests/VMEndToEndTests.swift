@@ -30,69 +30,70 @@ struct VMEndToEndTests {
 		_ files: [ParsedSourceFile],
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:]
-	) -> (Module, AnalysisModule) {
+	) throws -> (Module, AnalysisModule) {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
-		let analyzed = try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis).analyze()
-		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
+		let analyzed = try ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis).analyze()
+
+		let module = try ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
 		return (module, analyzed)
 	}
 
-	func run(_ strings: String...) -> TalkTalkBytecode.Value {
-		let module = try! compile(strings)
-		return VirtualMachine.run(module: module).get()
+	func run(_ strings: String..., verbose: Bool = false) throws -> TalkTalkBytecode.Value {
+		let module = try compile(strings)
+		return VirtualMachine.run(module: module, verbose: verbose).get()
 	}
 
-	func runAsync(_ strings: String...) {
-		let module = try! compile(strings)
+	func runAsync(_ strings: String...) throws {
+		let module = try compile(strings)
 		_ = VirtualMachine.run(module: module)
 	}
 
-	@Test("Adds") func adds() {
-		#expect(run("1 + 2") == .int(3))
+	@Test("Adds") func adds() throws {
+		#expect(try run("1 + 2") == .int(3))
 	}
 
-	@Test("Subtracts") func subtracts() {
-		#expect(run("2 - 1") == .int(1))
+	@Test("Subtracts") func subtracts() throws {
+		#expect(try run("2 - 1") == .int(1))
 	}
 
-	@Test("Comparison") func comparison() {
-		#expect(run("1 == 2") == .bool(false))
-		#expect(run("2 == 2") == .bool(true))
+	@Test("Comparison") func comparison() throws {
+		#expect(try run("1 == 2") == .bool(false))
+		#expect(try run("2 == 2") == .bool(true))
 
-		#expect(run("1 != 2") == .bool(true))
-		#expect(run("2 != 2") == .bool(false))
+		#expect(try run("1 != 2") == .bool(true))
+		#expect(try run("2 != 2") == .bool(false))
 
-		#expect(run("1 < 2") == .bool(true))
-		#expect(run("2 < 1") == .bool(false))
+		#expect(try run("1 < 2") == .bool(true))
+		#expect(try run("2 < 1") == .bool(false))
 
-		#expect(run("1 > 2") == .bool(false))
-		#expect(run("2 > 1") == .bool(true))
+		#expect(try run("1 > 2") == .bool(false))
+		#expect(try run("2 > 1") == .bool(true))
 
-		#expect(run("1 <= 2") == .bool(true))
-		#expect(run("2 <= 1") == .bool(false))
-		#expect(run("2 <= 2") == .bool(true))
+		#expect(try run("1 <= 2") == .bool(true))
+		#expect(try run("2 <= 1") == .bool(false))
+		#expect(try run("2 <= 2") == .bool(true))
 
-		#expect(run("1 >= 2") == .bool(false))
-		#expect(run("2 >= 1") == .bool(true))
-		#expect(run("2 >= 2") == .bool(true))
+		#expect(try run("1 >= 2") == .bool(false))
+		#expect(try run("2 >= 1") == .bool(true))
+		#expect(try run("2 >= 2") == .bool(true))
 	}
 
-	@Test("Negate") func negate() {
-		#expect(run("-123") == .int(-123))
-		#expect(run("--123") == .int(123))
+	@Test("Negate") func negate() throws {
+		#expect(try run("-123") == .int(-123))
+		#expect(try run("--123") == .int(123))
 	}
 
-	@Test("Not") func not() {
-		#expect(run("!true") == .bool(false))
-		#expect(run("!false") == .bool(true))
+	@Test("Not") func not() throws {
+		#expect(try run("!true") == .bool(false))
+		#expect(try run("!false") == .bool(true))
 	}
 
-	@Test("Strings") func strings() {
-		#expect(run(#""hello world""#) == .data(0))
+	@Test("Strings") func strings() throws {
+		#expect(try run(#""hello world""#) == .data(0))
 	}
 
-	@Test("If expr") func ifExpr() {
-		#expect(run("""
+	@Test("If expr") func ifExpr() throws {
+		#expect(try run("""
 		if false {
 			123
 		} else {
@@ -101,8 +102,8 @@ struct VMEndToEndTests {
 		""") == .int(456))
 	}
 
-	@Test("Var expr") func varExpr() {
-		#expect(run("""
+	@Test("Var expr") func varExpr() throws {
+		#expect(try run("""
 		a = 10
 		b = 20
 		a = a + b
@@ -110,8 +111,8 @@ struct VMEndToEndTests {
 		""") == .int(30))
 	}
 
-	@Test("Basic func/call expr") func funcExpr() {
-		#expect(run("""
+	@Test("Basic func/call expr") func funcExpr() throws {
+		#expect(try run("""
 		i = func() {
 			123
 		}()
@@ -120,16 +121,16 @@ struct VMEndToEndTests {
 		""") == .int(124))
 	}
 
-	@Test("Func arguments") func funcArgs() {
-		#expect(run("""
+	@Test("Func arguments") func funcArgs() throws {
+		#expect(try run("""
 		func(i) {
 			i + 20
 		}(10)
 		""") == .int(30))
 	}
 
-	@Test("Get var from enlosing scope") func enclosing() {
-		#expect(run("""
+	@Test("Get var from enlosing scope") func enclosing() throws {
+		#expect(try run("""
 		a10 = 10
 		b20 = 20
 		func() {
@@ -139,8 +140,8 @@ struct VMEndToEndTests {
 		""") == .int(60))
 	}
 
-	@Test("Modify var from enclosing scope") func modifyEnclosing() {
-		#expect(run("""
+	@Test("Modify var from enclosing scope") func modifyEnclosing() throws {
+		#expect(try run("""
 		a = 10
 		func() {
 			a = 20
@@ -149,8 +150,8 @@ struct VMEndToEndTests {
 		""") == .int(20))
 	}
 
-	@Test("Works with counter") func counter() {
-		#expect(run("""
+	@Test("Works with counter") func counter() throws {
+		#expect(try run("""
 		func makeCounter() {
 			count = 0
 			func increment() {
@@ -179,8 +180,8 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Can run functions across files") func crossFile() throws {
-		let out = OutputCapture.run {
-			runAsync(
+		let out = try OutputCapture.run {
+			try runAsync(
 				"print(fizz())",
 				"func foo() { bar() }",
 				"func bar() { 123 }",
@@ -192,8 +193,8 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Can use values across files") func crossFileValues() throws {
-		let out = OutputCapture.run {
-			runAsync(
+		let out = try OutputCapture.run {
+			try runAsync(
 				"print(fizz)",
 				"print(fizz)",
 				"fizz = 123"
@@ -204,8 +205,8 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Can run functions across modules") func crossModule() throws {
-		let (moduleA, analysisA) = compile(name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
-		let (moduleB, _) = compile(
+		let (moduleA, analysisA) = try compile(name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
+		let (moduleB, _) = try compile(
 			name: "B",
 			[
 				.tmp(
@@ -230,7 +231,7 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Struct properties") func structProperties() throws {
-		let (module, _) = compile(
+		let (module, _) = try compile(
 			name: "A",
 			[
 				.tmp(
@@ -251,5 +252,40 @@ struct VMEndToEndTests {
 		)
 
 		#expect(VirtualMachine.run(module: module).get() == .int(123))
+	}
+
+	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {
+		let (moduleA, analysisA) = try compile(
+			name: "A",
+			[
+				.tmp(
+					"""
+					struct Person {
+						var age: int
+
+						init(age) {
+							self.age = age
+						}
+					}
+					"""
+				)
+			]
+		)
+
+		let (moduleB, _) = try compile(
+			name: "B",
+			[
+				.tmp("""
+				import A
+				
+				person = Person(age: 123)
+				person.age
+				""")
+			],
+			analysisEnvironment: ["A": analysisA],
+			moduleEnvironment: ["A": moduleA]
+		)
+
+		#expect(VirtualMachine.run(module: moduleB).get() == .int(123))
 	}
 }

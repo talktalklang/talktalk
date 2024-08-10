@@ -16,4 +16,12 @@ public struct ModuleStruct: ModuleGlobal {
 
 	public var properties: [String: Property]
 	public var methods: [String: Method]
+
+	public var isImport: Bool {
+		if case .module = source {
+			return false
+		}
+
+		return true
+	}
 }

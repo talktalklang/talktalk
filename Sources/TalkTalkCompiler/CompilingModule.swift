@@ -117,11 +117,25 @@ public class CompilingModule {
 			module.valueInitializers[Byte(symbols[name]!)] = chunk
 		}
 
+		let foundStructs = analysisModule.structs.map { (name, astruct) in
+			if let internalStruct = structs.first(where: { $0.value.name == name }) {
+				// If we've already got it, just return it
+				return internalStruct
+			} else if case let .external(module) = astruct.source,
+								let module = moduleEnvironment[module.name],
+								let importStruct = module.structs.first(where: { $0.name == name }) {
+				// If we don't, we need to import it
+				return (.struct(name), importStruct)
+			} else {
+				fatalError("could not find compiled struct named \(name)")
+			}
+		}
+
 		// Copy struct types, sorting by their index in the symbols table
-		for case var (.struct(structName), structType) in structs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+		for case var (.struct(name), structType) in foundStructs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
 			// Copy struct methods, sorting by their index in the symbols table
-			let methods = structMethods[.struct(structName)] ?? [:]
-			for case let (.method(_, methodName, params), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+			let methods = structMethods[.struct(name)] ?? [:]
+			for case let (.method(_, _, _), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
 				structType.methods.append(chunk)
 			}
 

@@ -17,11 +17,11 @@ public struct OutputCapture: Sendable {
 	static let instance = OutputCapture()
 	private init() {}
 
-	public static func run(block: () -> Void) -> Result {
-		instance.run(block)
+	public static func run(block: () throws -> Void) rethrows -> Result {
+		try instance.run(block)
 	}
 
-	func run(_ block: () -> Void) -> Result {
+	func run(_ block: () throws -> Void) rethrows -> Result {
 		// Create pipes for capturing stdout and stderr
 		var stdoutPipe = [Int32](repeating: 0, count: 2)
 		var stderrPipe = [Int32](repeating: 0, count: 2)
@@ -39,7 +39,17 @@ public struct OutputCapture: Sendable {
 		close(stderrPipe[1])
 
 		// Execute the block and capture the output
-		block()
+		do {
+			try block()
+		} catch {
+			// Restore original stdout and stderr
+			dup2(originalStdout, STDOUT_FILENO)
+			dup2(originalStderr, STDERR_FILENO)
+			close(originalStdout)
+			close(originalStderr)
+
+			throw error
+		}
 
 		// Restore original stdout and stderr
 		dup2(originalStdout, STDOUT_FILENO)

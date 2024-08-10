@@ -27,7 +27,7 @@ public struct ModuleValue: ModuleGlobal {
 	public let name: String
 	public let syntax: any Syntax
 	public let type: ValueType
-	public let source: ModuleSource
+	public var source: ModuleSource
 
 	public var isImport: Bool {
 		if case .module = source {

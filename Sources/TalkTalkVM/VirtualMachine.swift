@@ -53,13 +53,15 @@ public struct VirtualMachine {
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
 
-	public static func run(module: Module) -> ExecutionResult {
-		var vm = VirtualMachine(module: module)
+	public static func run(module: Module, verbose: Bool = false) -> ExecutionResult {
+		var vm = VirtualMachine(module: module, verbose: verbose)
 		return vm.run()
 	}
 
-	public init(module: Module) {
+	public init(module: Module, verbose: Bool = false) {
 		self.module = module
+		self.verbose = verbose
+
 		guard let chunk = module.main else {
 			fatalError("no entrypoint found for module")
 		}

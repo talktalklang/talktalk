@@ -76,6 +76,10 @@ public struct AnalysisModule {
 	public func moduleGlobal(named name: String) -> (any ModuleGlobal)? {
 		moduleFunction(named: name) ?? moduleValue(named: name)
 	}
+
+	public func moduleStruct(named name: String) -> ModuleStruct? {
+		structs[name]
+	}
 }
 
 public extension AnalysisModule {
