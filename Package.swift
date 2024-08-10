@@ -137,7 +137,7 @@ let package = Package(
 	]
 )
 
-#if os(Linux)
+#if !canImport(Testing)
 package.dependencies.append(
 	.package(url: "https://github.com/apple/swift-testing", branch: "main")
 )
