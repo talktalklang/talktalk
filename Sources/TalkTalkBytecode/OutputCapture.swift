@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import os
 
 public struct OutputCapture: Sendable {
 	public struct Result: Sendable {
