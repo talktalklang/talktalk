@@ -22,7 +22,7 @@ extension TalkTalkCommand {
 
 		if FileManager.default.fileExists(atPath: input) {
 			filename = input
-			source = try String(contentsOfFile: input)
+			source = try String(contentsOf: URL.currentDirectory().appending(path: input), encoding: .utf8)
 		} else {
 			filename = "<stdin>"
 			source = input
