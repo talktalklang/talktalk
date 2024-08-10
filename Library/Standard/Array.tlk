@@ -8,4 +8,12 @@ struct Array {
 	func append(item) {
 		self.count = self.count + 1
 	}
+
+	func foo() {
+
+	}
+
+	func bar() {
+	}
 }
+

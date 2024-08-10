@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 public struct LSP {
 	var server: Server
 	var handler: Handler

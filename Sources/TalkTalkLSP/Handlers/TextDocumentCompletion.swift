@@ -8,7 +8,7 @@
 struct TextDocumentCompletion {
 	var request: Request
 
-	func handle(_ handler: Server) {
+	func handle(_ handler: inout Server) {
 		let params = request.params as! TextDocumentCompletionRequest
 		Log.info("handling completion request at \(params.position)")
 

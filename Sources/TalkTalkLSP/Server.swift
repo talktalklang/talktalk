@@ -25,19 +25,17 @@ public struct Server {
 		case .initialized:
 			()
 		case .textDocumentDidOpen:
-			let params = request.params as! TextDocumentDidOpenRequest
-			sources[params.textDocument.uri] = .init(textDocument: params.textDocument)
+			TextDocumentDidOpen(request: request).handle(&self)
 		case .textDocumentDidChange:
-			let params = request.params as! TextDocumentDidChangeRequest
-			sources[params.textDocument.uri] = .init(version: params.textDocument.version, uri: params.textDocument.uri, text: params.contentChanges[0].text)
+			TextDocumentDidChange(request: request).handle(&self)
 		case .textDocumentCompletion:
-			TextDocumentCompletion(request: request).handle(self)
+			TextDocumentCompletion(request: request).handle(&self)
 		case .textDocumentFormatting:
-			TextDocumentFormatting(request: request).handle(self)
+			TextDocumentFormatting(request: request).handle(&self)
 		case .textDocumentDiagnostic:
-			TextDocumentDiagnostic(request: request).handle(self)
+			TextDocumentDiagnostic(request: request).handle(&self)
 		case .textDocumentSemanticTokensFull:
-			TextDocumentSemanticTokensFull(request: request).handle(self)
+			TextDocumentSemanticTokensFull(request: request).handle(&self)
 		case .workspaceSemanticTokensRefresh:
 			()
 		case .shutdown:

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 class LSPRequestParser {
 	enum State {
 		case contentLength, length, split, body(Int)
@@ -9,7 +10,7 @@ class LSPRequestParser {
 	var state: State = .contentLength
 	var callback: (Request) -> Void = { _ in }
 
-	var current = -1
+	var current = 0
 	var currentLength: [UInt8] = []
 	var currentBody: [UInt8] = []
 
@@ -35,17 +36,17 @@ class LSPRequestParser {
 	}
 
 	func contentLength(byte: UInt8) {
-		if current == contentLengthArray.count {
+		if current == contentLengthArray.count+1 {
 			// We're done parsing the content length part, move on to the length part
 			state = .length
 			length(byte: byte)
 			return
 		}
 
-		if contentLengthArray[current] == byte {
+		if contentLengthArray[current-1] == byte {
 			return
 		} else {
-			Log.error("[contentLength] unexpected character parsing message at \(current): \(UnicodeScalar(byte)), expected: \(UnicodeScalar(contentLengthArray[current]))")
+			Log.error("[contentLength] unexpected character parsing message at \(current-1): \(UnicodeScalar(byte)), expected: \(UnicodeScalar(contentLengthArray[current-1]))")
 		}
 	}
 
@@ -87,6 +88,7 @@ class LSPRequestParser {
 	func body(byte: UInt8, contentLength: Int) {
 		if currentBody.count == contentLength {
 			complete()
+			current = 1
 		} else {
 			currentBody.append(byte)
 		}
@@ -122,7 +124,8 @@ class LSPRequestParser {
 	}
 }
 
-class Handler {
+@MainActor
+struct Handler {
 	// We read json, we write json
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
@@ -138,7 +141,7 @@ class Handler {
 		self.parser.callback = callback
 	}
 
-	func handle(data: Data) {
+	mutating func handle(data: Data) {
 		if data.isEmpty {
 			emptyResponseCount += 1
 			Log.info("incrementing empty response count. now: \(emptyResponseCount)")

@@ -4,6 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/26/24.
 //
+import Foundation
 import TalkTalkSyntax
 
 // Analyze the AST, trying to figure out types and also checking for errors
@@ -446,8 +447,11 @@ public struct SourceFileAnalyzer: Visitor {
 						expr: decl,
 						isMutable: false
 					))
+			case let decl as ErrorSyntax:
+				()
 			default:
-				fatalError()
+				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl)" + "\n").utf8))
+				fatalError("unknown decl in struct: \(decl)")
 			}
 		}
 

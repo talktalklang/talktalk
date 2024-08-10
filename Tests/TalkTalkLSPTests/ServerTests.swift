@@ -16,6 +16,7 @@ fileprivate extension Data {
 	}
 }
 
+@MainActor
 struct ServerTests {
 	enum Err: Error {
 		case err(String)
@@ -71,16 +72,23 @@ struct ServerTests {
 		let data2 = data[32..<data.count]
 
 		var server = Server()
-		let handler = Handler { server.handle($0) }
-		let output = OutputCapture.run {
-			handler.handle(data: data1)
-			handler.handle(data: data2)
+		var called = false
+		var handler = Handler { request in
+			let output = OutputCapture.run {
+				called = true
+				server.handle(request)
+			}
+
+			let response = stripHeader(from: Data(output.stdout.utf8))
+			let result = try! JSONDecoder().decode(InitializeResult.self, from: response)
+
+			#expect(result != nil)
 		}
 
-		let response = stripHeader(from: Data(output.stdout.utf8))
-		let result = try JSONDecoder().decode(InitializeResult.self, from: response)
+		handler.handle(data: data1)
+		handler.handle(data: data2)
 
-		#expect(result != nil)
+		#expect(called == true)
 	}
 
 	@Test("Handles two messages") func twoMessages() throws {

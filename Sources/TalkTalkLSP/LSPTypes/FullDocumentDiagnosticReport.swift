@@ -6,6 +6,10 @@
 //
 
 public struct FullDocumentDiagnosticReport: Codable {
+	enum CodingKeys: CodingKey {
+		case kind, items
+	}
+
 	public let kind: DocumentDiagnosticReport.Kind = .full
 	public let items: [Diagnostic]
 }
