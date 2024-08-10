@@ -19,6 +19,7 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public var calleeAnalyzed: any AnalyzedExpr
 	public var argsAnalyzed: [AnalyzedArgument]
 	public var analyzedChildren: [any AnalyzedSyntax] { [calleeAnalyzed] + argsAnalyzed.map(\.expr) }
+	public var analysisErrors: [AnalysisError]
 	public let environment: Environment
 
 	public var callee: any Expr { expr.callee }

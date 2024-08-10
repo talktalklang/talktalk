@@ -362,4 +362,28 @@ struct VMEndToEndTests {
 		#expect(VirtualMachine.run(module: module).get() == .int(123))
 	}
 
+	@Test("Struct init with no args") func structInitNoArgs() throws {
+		let (module, _) = try compile(
+			name: "A",
+			[
+				.tmp(
+					"""
+					struct Person {
+						var age: int
+
+						init() {
+							self.age = 123
+						}
+					}
+
+					person = Person()
+					person.age
+					"""
+				)
+			]
+		)
+
+		#expect(VirtualMachine.run(module: module, verbose: true).get() == .int(123))
+	}
+
 }

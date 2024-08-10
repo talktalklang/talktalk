@@ -64,7 +64,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try arg.expr.accept(self, chunk)
 		}
 
-		// Put the callee on the stack
+		// Put the callee on the stack. This gets popped first. Then we can go and grab the args.
 		try expr.calleeAnalyzed.accept(self, chunk)
 
 		// Call the callee

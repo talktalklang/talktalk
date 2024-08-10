@@ -8,7 +8,7 @@
 import TalkTalkBytecode
 
 public extension VirtualMachine {
-	enum ExecutionResult {
+	enum ExecutionResult: Sendable {
 		case ok(Value), error(String)
 
 		public func error() -> String? {

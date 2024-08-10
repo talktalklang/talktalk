@@ -161,9 +161,6 @@ public class CompilingModule {
 			compiledChunks[offset] = chunk
 		}
 
-		// Ensure we have a return
-		chunk.emit(opcode: .return, line: 0)
-
 		fileChunks.append(chunk)
 	}
 

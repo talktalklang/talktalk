@@ -88,7 +88,14 @@ let package = Package(
 		),
 		.testTarget(
 			name: "TalkTalkTests",
-			dependencies: ["TalkTalk"]
+			dependencies: [
+				"TalkTalk",
+				"TalkTalkDriver",
+				"TalkTalkBytecode",
+				"TalkTalkAnalysis",
+				"TalkTalkSyntax",
+				"TalkTalkCompiler"
+			]
 		),
 		.testTarget(
 			name: "TalkTalkBytecodeTests",

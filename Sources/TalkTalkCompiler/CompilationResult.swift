@@ -8,7 +8,7 @@
 import TalkTalkBytecode
 import TalkTalkAnalysis
 
-public struct CompilationResult {
+public struct CompilationResult: @unchecked Sendable {
 	public let module: Module
 	public let analysis: AnalysisModule
 

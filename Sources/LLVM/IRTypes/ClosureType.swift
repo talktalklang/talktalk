@@ -45,8 +45,6 @@ public extension LLVM {
 				newParameterTypes.append(TypePointer(type: self))
 			}
 
-			
-
 			let newReturnType = if let returnType = functionType.returnType as? ClosureType {
 				TypePointer(type: returnType)
 			} else {

@@ -64,7 +64,7 @@ public class Chunk: Codable {
 	}
 
 	@discardableResult public func dump() -> String {
-		var result = "\(name) locals: \(localsCount), upvalues: \(upvalueCount)\n"
+		var result = "[\(name) locals: \(localsCount), upvalues: \(upvalueCount)]\n"
 		result += disassemble().map(\.description).joined(separator: "\n") + "\n"
 
 		for subchunk in subchunks {

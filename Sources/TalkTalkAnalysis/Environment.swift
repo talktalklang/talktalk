@@ -20,6 +20,7 @@ public class Environment {
 	public var capturedValues: [Binding]
 	public var importedModules: [AnalysisModule]
 	public var importedSymbols: [Symbol: Binding] = [:]
+	public var errors: [AnalysisError] = []
 
 	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
@@ -28,6 +29,18 @@ public class Environment {
 		self.captures = []
 		self.capturedValues = []
 		self.importedModules = importedModules
+	}
+
+	// We want to collect all errors at the top level module, so walk up ancestors then add it there
+	public func report(_ kind: AnalysisErrorKind, at location: SourceLocation) -> AnalysisError {
+		let error = AnalysisError(kind: kind, location: location)
+
+		if let parent = parent {
+			return parent.report(kind, at: location)
+		}
+
+		errors.append(error)
+		return error
 	}
 
 	public func importModule(_ analysisModule: AnalysisModule) {

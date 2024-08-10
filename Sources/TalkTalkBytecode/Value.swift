@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-public enum Value: Equatable, Hashable, Codable {
+public enum Value: Equatable, Hashable, Codable, Sendable {
 	public typealias IntValue = Int32
 
 	case int(IntValue)

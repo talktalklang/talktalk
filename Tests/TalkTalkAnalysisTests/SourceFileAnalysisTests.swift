@@ -98,7 +98,7 @@ struct AnalysisTests {
 		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
-	@Test("Compiles functions") func closures() throws {
+	@Test("Types functions") func closures() throws {
 		let ast = try SourceFileAnalyzer.analyze(
 			Parser.parse(
 				"""
@@ -112,6 +112,20 @@ struct AnalysisTests {
 		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
 
 		#expect(result == expected)
+	}
+
+	@Test("Emits an error when args don't match params") func arityError() throws {
+		let env = Environment()
+		let ast = try SourceFileAnalyzer.analyze(Parser.parse("func() {}(123)"), in: env)
+
+		let callExpr = ast[0].cast(AnalyzedCallExpr.self)
+		let error = try #require(callExpr.analysisErrors.first)
+
+		#expect(error.kind == .argumentError(expected: 0, received: 1))
+
+		// Make sure the env knows about it too
+		let envError = try #require(env.errors.first)
+		#expect(envError.kind == .argumentError(expected: 0, received: 1))
 	}
 
 	@Test("Types captures") func funcCaptures() throws {

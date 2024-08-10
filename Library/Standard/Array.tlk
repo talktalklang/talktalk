@@ -1,7 +1,11 @@
 struct Array {
 	var count: int
 
-	init(count) {
+	init() {
+		self.count = 0
+	}
 
+	func append(item) {
+		self.count = self.count + 1
 	}
 }

@@ -129,4 +129,45 @@ struct ModuleCompilerTests {
 			Instruction(opcode: .return, offset: 6, line: 6, metadata: .simple)
 		])
 	}
+
+	@Test("Can compile struct init with no args") @MainActor func structInitNoArgs() throws {
+		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
+		let (module, _) = compile(name: "A", [
+			.tmp("""
+			struct Person {
+				var age: int
+
+				init() {
+					self.age = 123
+				}
+			}
+
+			person = Person()
+			""")
+		])
+
+		// Get the actual code, not the synthesized main
+		let mainChunk = try #require(module.main?.getChunk(at: 0))
+
+		#expect(mainChunk.disassemble() == [
+			Instruction(opcode: .getStruct, offset: 0, line: 8, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 2, line: 8, metadata: .simple),
+			Instruction(opcode: .setModuleValue, offset: 3, line: 8, metadata: .global(slot: 0)),
+			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
+		])
+
+		let structDef = module.structs[0]
+		#expect(structDef.name == "Person")
+		#expect(structDef.propertyCount == 1)
+		#expect(structDef.methods.count == 1)
+
+		let initChunk = structDef.methods[0]
+
+		#expect(initChunk.disassemble() == [
+			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
+			Instruction(opcode: .getLocal, offset: 2, line: 4, metadata: .local(slot: 0, name: "__reserved__")),
+			Instruction(opcode: .setProperty, offset: 4, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .return, offset: 6, line: 6, metadata: .simple)
+		])
+	}
 }

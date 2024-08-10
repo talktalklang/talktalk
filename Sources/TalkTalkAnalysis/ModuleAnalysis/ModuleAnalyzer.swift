@@ -29,6 +29,11 @@ public struct ModuleAnalyzer {
 	public func analyze() throws -> AnalysisModule {
 		var analysisModule = AnalysisModule(name: name, files: files)
 
+		// Always include the standard lib
+		if let stdlib = moduleEnvironment["Standard"] {
+			environment.importModule(stdlib)
+		}
+
 		// Find all the top level stuff this module has to offer
 		for file in files {
 			try processFile(file: file, in: &analysisModule)

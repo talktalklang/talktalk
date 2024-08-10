@@ -70,7 +70,7 @@ public struct VirtualMachine {
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
-		stack.push(.int(Value.IntValue.max))
+		stack.push(.int(0))
 
 		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [])
 		frames.push(frame)
@@ -325,11 +325,15 @@ public struct VirtualMachine {
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
+				// Get the slot of the member
 				let slot = readByte()
+
+				// PropertyOptions let us see if this member is a method
 				let propertyOptions = PropertyOptions(rawValue: readByte())
 
-				let peek = stack.peek(offset: 1)
-				guard let (_, receiver) = peek.instanceValue else {
+				// Pop the receiver off the stack
+				let receiverValue = stack.pop()
+				guard let (_, receiver) = receiverValue.instanceValue else {
 					return runtimeError("Receiver is not a struct")
 				}
 
@@ -365,18 +369,19 @@ public struct VirtualMachine {
 	}
 
 	mutating func call(_ callee: Value) {
-		if let chunkID = callee.closureValue {
+		switch callee {
+		case .closure(let chunkID):
 			call(closureID: Int(chunkID))
-		} else if let builtin = callee.builtinValue {
+		case .builtin(let builtin):
 			call(builtin: Int(builtin))
-		} else if let moduleFunction = callee.moduleFunctionValue {
+		case .moduleFunction(let moduleFunction):
 			call(moduleFunction: Int(moduleFunction))
-		} else if let structValue = callee.structValue {
+		case .struct(let structValue):
 			call(structValue: Value.IntValue(structValue))
-		} else if let boundMethodValue = callee.boundMethodValue {
-			call(boundMethod: boundMethodValue.slot, on: boundMethodValue.instanceID)
-		} else {
-			fatalError("\(callee) not callable")
+		case .boundMethod(let methodSlot, let instanceID):
+			call(boundMethod: methodSlot, on: instanceID)
+		default:
+			fatalError("\(callee) is not callable")
 		}
 	}
 
@@ -401,15 +406,14 @@ public struct VirtualMachine {
 		// Create the instance Value
 		let instance = Value.instance(structValue, instanceID)
 
-		// Put the instance into the stack's reserved slot
-		// TODO: use initializer arity instead of struct property count
-		stack[stack.size - Int(structType.propertyCount) - 1] = instance
+		// Get the initializer
+		let initializer = structType.methods[structType.initializer]
+
+		// Add the instance to the stack
+		stack[stack.size - Int(initializer.arity) - 1] = instance
 
 		// Store the instance value
 		currentFrame.instances.append(StructInstance(type: .struct(structValue), fieldCount: structType.propertyCount))
-
-		// Call the initializer (TODO: don't hardcode initializer location)
-		let initializer = structType.methods[structType.initializer]
 
 		call(chunk: initializer)
 	}
@@ -553,5 +557,17 @@ public struct VirtualMachine {
 		FileHandle.standardError.write(Data((result + "\n").utf8))
 
 		return result
+	}
+
+	mutating func dump() {
+		var disassembler = Disassembler(chunk: chunk)
+		for instruction in disassembler.disassemble() {
+			let prefix = instruction.offset == ip ? "> " : "  "
+			print(prefix + instruction.description)
+
+			if instruction.offset == ip {
+				dumpStack()
+			}
+		}
 	}
 }

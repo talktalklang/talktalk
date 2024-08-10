@@ -268,6 +268,26 @@ struct CompilerTests {
 		])
 	}
 
+	@Test("Struct init with no args") func structInitNoArgs() throws {
+		let chunk = try compile("""
+		struct Person {
+			var age: int
+
+			init() {
+				self.age = 123
+			}
+		}
+
+		Person()
+		""", inModule: true)
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .getStruct, offset: 2, line: 8, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 4, line: 8, metadata: .simple),
+			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
+		])
+	}
+
 	@Test("Struct property getter") func structsProperties() throws {
 		let chunk = try compile("""
 		struct Person {

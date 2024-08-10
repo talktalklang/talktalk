@@ -1,4 +1,4 @@
 struct String {
-	init() {}
+	init() {
 	}
 }
