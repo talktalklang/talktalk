@@ -16,9 +16,9 @@ jobs:
 
     steps:
     - name: Setup Swift environment
-			run: |
-				curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
-				swiftly install main-snapshot
+      run: |
+        curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash \
+        swiftly install main-snapshot
     - uses: actions/checkout@v4
     - name: Run tests
       run: swift test -v
