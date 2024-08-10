@@ -11,6 +11,7 @@ import TalkTalkCompiler
 import TalkTalkSyntax
 import Testing
 
+@MainActor
 struct ModuleCompilerTests {
 	func compile(
 		name: String,
@@ -24,7 +25,7 @@ struct ModuleCompilerTests {
 		return (module, analyzed)
 	}
 
-	@Test("Can compile module functions") func basic() {
+	@Test("Can compile module functions") @MainActor func basic() {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
 			func fizz() {}
@@ -49,7 +50,7 @@ struct ModuleCompilerTests {
 		#expect(module.chunks.count == 3)
 	}
 
-	@Test("Can compile module global values") func globalValues() throws {
+	@Test("Can compile module global values") @MainActor func globalValues() throws {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
 			fizz = 123
@@ -66,13 +67,12 @@ struct ModuleCompilerTests {
 
 		#expect(module.chunks.map(\.name).sorted() == ["bar"].sorted())
 		#expect(module.chunks.count == 1)
-		print(module.symbols)
 
 		let fizzSlot = try #require(module.symbols[.value("fizz")])
 		#expect(module.valueInitializers[Byte(fizzSlot)] != nil)
 	}
 
-	@Test("Can import module functions") func importing() {
+	@Test("Can import module functions") @MainActor func importing() {
 		let (moduleA, analysisA) = compile(
 			name: "A",
 			[
@@ -99,7 +99,7 @@ struct ModuleCompilerTests {
 		#expect(moduleB.chunks.map(\.name).sorted() == ["bar", "foo"].sorted())
 	}
 
-	@Test("Can compile structs") func structs() throws {
+	@Test("Can compile structs") @MainActor func structs() throws {
 		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
 		let (module, _) = compile(name: "A", [
 			.tmp("""

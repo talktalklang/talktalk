@@ -363,9 +363,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 				// End the scope, which pops locals
 				declCompiler.endScope(chunk: declChunk)
+				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
 
 				let analysisMethod = expr.structType.methods["init"]!
-				methods[analysisMethod.slot] = declChunk.finalize()
+				methods[analysisMethod.slot] = declChunk
 			case let decl as AnalyzedFuncExpr:
 				let symbol = Symbol.method(name, decl.name!.lexeme, decl.params.params.map(\.name))
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
@@ -383,9 +384,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 				// End the scope, which pops locals
 				declCompiler.endScope(chunk: declChunk)
+				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
 
 				let analysisMethod = expr.structType.methods[decl.name!.lexeme]!
-				methods[analysisMethod.slot] = declChunk.finalize()
+				methods[analysisMethod.slot] = declChunk
 			case is AnalyzedVarDecl: ()
 			case is AnalyzedLetDecl: ()
 			default:

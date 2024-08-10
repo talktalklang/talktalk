@@ -49,7 +49,9 @@ public struct Disassembler {
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getStruct, .setStruct:
 			return variableInstruction(opcode: opcode, start: index, type: .struct)
-		case .getProperty, .setProperty:
+		case .getProperty:
+			return getPropertyInstruction(opcode: opcode, start: index, type: .property)
+		case .setProperty:
 			return variableInstruction(opcode: opcode, start: index, type: .property)
 		case .setBuiltin, .getBuiltin:
 			return variableInstruction(opcode: opcode, start: index, type: .builtin)
@@ -119,6 +121,14 @@ public struct Disassembler {
 	mutating func upvalueInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
 		let metadata = UpvalueMetadata(slot: slot, name: chunk.upvalueNames[Int(slot)])
+		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
+	}
+
+	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) -> Instruction {
+		let slot = chunk.code[current++]
+		let options = chunk.code[current++]
+
+		let metadata = GetPropertyMetadata(slot: Int(slot), options: PropertyOptions(rawValue: options))
 		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 }

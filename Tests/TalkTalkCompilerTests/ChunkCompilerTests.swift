@@ -283,7 +283,7 @@ struct CompilerTests {
 			Instruction(opcode: .constant, offset: 0, line: 6, metadata: .constant(.int(123))),
 			Instruction(opcode: .getStruct, offset: 2, line: 6, metadata: .struct(slot: 0)),
 			Instruction(opcode: .call, offset: 4, line: 6, metadata: .simple),
-			Instruction(opcode: .getProperty, offset: 5, line: 6, metadata: .property(slot: 0)),
+			Instruction(opcode: .getProperty, offset: 5, line: 6, metadata: .getProperty(slot: 0, options: [])),
 			Instruction(opcode: .return, offset: 7, line: 0, metadata: .simple)
 		])
 	}
@@ -303,13 +303,15 @@ struct CompilerTests {
 		Person(age: 123).getAge()
 		""", inModule: true)
 
+		chunk.dump()
+
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 10, metadata: .constant(.int(123))),
 			Instruction(opcode: .getStruct, offset: 2, line: 10, metadata: .struct(slot: 0)),
 			Instruction(opcode: .call, offset: 4, line: 10, metadata: .simple),
-			Instruction(opcode: .getProperty, offset: 5, line: 10, metadata: .property(slot: 1)),
-			Instruction(opcode: .call, offset: 7, line: 10, metadata: .simple),
-			Instruction(opcode: .return, offset: 8, line: 0, metadata: .simple)
+			Instruction(opcode: .getProperty, offset: 5, line: 10, metadata: .getProperty(slot: 1, options: .isMethod)),
+			Instruction(opcode: .call, offset: 8, line: 10, metadata: .simple),
+			Instruction(opcode: .return, offset: 9, line: 0, metadata: .simple)
 		])
 	}
 }

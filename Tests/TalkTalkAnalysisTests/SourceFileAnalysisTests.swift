@@ -162,8 +162,6 @@ struct AnalysisTests {
 
 		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
 
-		print(counterFn.environment.captures)
-
 		#expect(counterFn.environment.captures.count == 1)
 		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).type == .int)
 

@@ -214,7 +214,7 @@ struct VMEndToEndTests {
 					import A
 
 					func bar() {
-						print(foo())
+						foo()
 					}
 
 					bar()
@@ -280,7 +280,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(VirtualMachine.run(module: module, verbose: true).get() == .int(123))
+		#expect(VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {

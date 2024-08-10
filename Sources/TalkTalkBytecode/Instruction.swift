@@ -124,6 +124,25 @@ public extension InstructionMetadata where Self == JumpMetadata {
 	}
 }
 
+public struct GetPropertyMetadata: InstructionMetadata {
+	let slot: Int
+	let options: PropertyOptions
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+
+	public var description: String {
+		"slot: \(slot), options: \(options)"
+	}
+}
+
+public extension InstructionMetadata where Self == GetPropertyMetadata {
+	static func getProperty(slot: Int, options: PropertyOptions) -> GetPropertyMetadata {
+		GetPropertyMetadata(slot: slot, options: options)
+	}
+}
+
 public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
 		case local, global, builtin, `struct`, property
