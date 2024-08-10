@@ -143,7 +143,7 @@ struct ABTTests {
 		}
 		""")).visit()
 
-		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
+		#expect(abt.scope.locals["foo"]!.type.description == "Function() -> (Int)")
 	}
 
 	@Test("Error when function type decl that's not inferred return") func inferFuncBadReturn() throws {
@@ -167,7 +167,7 @@ struct ABTTests {
 
 		#expect(abt.scope.errors.isEmpty)
 
-		#expect(abt.scope.locals["a"] == nil)
+		#expect(abt.scope.locals["a"]?.name == nil)
 
 		let decl = abt.cast(Program.self).declarations[0]
 
@@ -176,7 +176,27 @@ struct ABTTests {
 		#expect(varA.type.description == "Int")
 		#expect(decl.scope.depth == 1)
 
-		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
+		#expect(abt.scope.locals["foo"]!.type.description == "Function(a: Int) -> (Int)")
+	}
+
+	@Test("If statement") func ifStmt() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func foo(n) {
+			if false {
+				return n + 1
+			}
+
+			return n
+		}
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+
+		#expect(abt.scope.locals["foo"]?.type.description == "Function(n: Int) -> (Int)")
+
+		let fn = abt.scope.locals["foo"]!.node.cast(Function.self)
+		let local = fn.scope.locals["n"]!
+		#expect(local.type.description == "Int")
 	}
 
 	@Test("If expression") func ifExpr() {
@@ -249,7 +269,7 @@ struct ABTTests {
 		""")).visit()
 
 		#expect(abt.scope.errors.isEmpty)
-		#expect(abt.scope.locals["i"] == nil)
+		#expect(abt.scope.locals["i"]?.name == nil)
 
 		let decl = abt.cast(Program.self).declarations[0]
 
@@ -258,10 +278,123 @@ struct ABTTests {
 		#expect(varI.type.description == "Int")
 		#expect(decl.scope.depth == 1)
 
-		#expect(abt.scope.locals["foo"]!.type.description == "Function -> (Int)")
+		#expect(abt.scope.locals["foo"]!.type.description == "Function(i: Int) -> (Int)")
 
 		let children = decl.cast(Function.self).body.children
 		#expect(children.count == 1)
 		#expect(children[0].type.description == "Int")
+	}
+
+	@Test("Functions returning inferred values") func functionsReturningInferred() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func fib(n) {
+			if (n <= 1) {
+				return n
+			}
+
+			return fib(n - 2) + fib(n - 1)
+		}
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+
+		let fun = abt.scope.locals["fib"]!
+		#expect(fun.type.description == "Function(n: Int) -> (Int)")
+	}
+
+	@Test("foistin'", .disabled()) func foist() throws {
+
+	}
+
+	@Test("captures locals") func captures() throws {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func print(any) {}
+
+		func main() {
+			var foo = "sup"
+			func bar() {
+				print(foo)
+			}
+		}
+
+		func fizz() {
+			// No captures here.
+		}
+		""")).visit()
+
+		#expect(abt.scope.errors.isEmpty)
+
+		let bar = abt.declarations[1]
+			.cast(Function.self)
+			.body.children[1].cast(Function.self)
+
+		#expect(bar.scope.lookup(identifier: "foo")?.type.description == "String")
+	}
+
+	@Test("function capture") func fnCapture() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		func main() {
+			var i = 123
+
+			func bar() {
+				i = i + 1
+			}
+
+			return bar
+		}
+		""")).visit()
+
+		let main = abt.scope.locals["main"]!.node
+
+		#expect(abt.scope.errors.isEmpty)
+		#expect(main.type.description == "Function() -> (Function() -> (Int))")
+		#expect(main.cast(Function.self).scope.locals["bar"]?.type.description == "Function() -> (Int)")
+		#expect(abt.scope.locals["bar"] == nil)
+
+		let ivar = main.scope.lookup(identifier: "i")!
+		#expect(ivar.isEscaping == true)
+
+		let bar = main.scope.lookup(identifier: "bar")!
+		#expect(bar.isEscaping == true)
+		#expect(bar.node.cast(Function.self).body.captures["i"]?.node.is(ivar.node) == true)
+	}
+
+	@Test("Counter") func counter() {
+		let abt = SemanticASTVisitor(ast: ast("""
+		// Test closures
+		func makeCounter() {
+			var i = 0
+
+			func count() {
+				i = i + 1
+				i
+			}
+
+			return count
+		}
+
+		var counter = makeCounter()
+		counter()
+		counter()
+		""")).visit()
+
+		let makeCounter = abt.scope.locals["makeCounter"]!
+		#expect(makeCounter.type.description == "Function() -> (Function() -> (Int))")
+
+		let makeCounterFunction = makeCounter.node.cast(Function.self)
+		#expect(makeCounterFunction.body.children.count == 3)
+		#expect(makeCounterFunction.scope.captures().map(\.key) == [])
+		#expect(makeCounterFunction.scope.locals.map(\.key).sorted() == ["i", "count"].sorted())
+
+		let count = makeCounterFunction.scope.lookup(identifier: "count")!
+		#expect(count.isEscaping)
+		#expect(count.node.scope.captures().map(\.key).sorted() == ["count", "i"].sorted())
+
+
+		let countFunction = count.node.cast(Function.self)
+		#expect(countFunction.body.children.count == 2)
+		#expect(countFunction.body.children[0].syntax.description == "i = i + 1")
+		#expect(countFunction.body.children[0].type.description == "Int")
+		#expect(countFunction.body.children[1].syntax.description == "i")
 	}
 }

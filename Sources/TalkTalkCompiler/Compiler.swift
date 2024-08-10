@@ -20,12 +20,12 @@ public class Compiler {
 		self.pipeline = Pipeline(sourceFile: sourceFile)
 	}
 
-	public func compile() -> LLVM.Module {
+	public func compile() throws -> LLVM.Module {
 		LLVMInitializeNativeTarget()
 		LLVMInitializeNativeAsmParser()
 		LLVMInitializeNativeAsmPrinter()
 
-		pipeline.process(module)
+		try pipeline.process(module)
 		return module
 	}
 }

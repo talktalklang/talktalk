@@ -10,3 +10,9 @@ public extension LLVM {
 		func asLLVM<T>() -> T
 	}
 }
+
+extension Array: LLVM.IR where Element == any LLVM.IR {
+	public func asLLVM<T>() -> T {
+		self as! T
+	}
+}

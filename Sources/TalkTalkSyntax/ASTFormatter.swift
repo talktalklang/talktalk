@@ -166,7 +166,7 @@ public struct ASTFormatter: ASTVisitor {
 
 	public func visit(_ node: ArgumentListSyntax, context: Context) -> String {
 		node.arguments.map {
-			visit($0, context: context)
+			visit($0.expr, context: context)
 		}.joined(separator: ", ")
 	}
 

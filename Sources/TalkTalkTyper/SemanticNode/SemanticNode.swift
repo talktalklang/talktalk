@@ -23,7 +23,7 @@ public extension SemanticType {
 	}
 }
 
-public protocol SemanticNode {
+public protocol SemanticNode: CustomStringConvertible {
 	var scope: Scope { get }
 	var syntax: any Syntax { get }
 	var type: any SemanticType { get set }
@@ -31,8 +31,16 @@ public protocol SemanticNode {
 }
 
 public extension SemanticNode {
+	var description: String {
+		"\(Self.self)(type: \(type.description), syntax: \(syntax.description))"
+	}
+
 	func cast<T: SemanticNode>(_: T.Type) -> T {
 		self as! T
+	}
+
+	func `as`<T: SemanticNode>(_: T.Type) -> T? {
+		self as? T
 	}
 
 	func `is`(_ other: any SemanticNode) -> Bool {
@@ -42,10 +50,18 @@ public extension SemanticNode {
 	}
 }
 
+public struct TODOType: SemanticType {
+	public var description: String = "TODO"
+
+	public func assignable(from other: any SemanticType) -> Bool {
+		false
+	}
+}
+
 public struct TODONode: SemanticNode {
 	public var scope: Scope
 	public var syntax: any Syntax
-	public var type: any SemanticType = UnknownType()
+	public var type: any SemanticType = TODOType()
 	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
 		visitor.visit(self)
 	}

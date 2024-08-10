@@ -12,6 +12,7 @@ public struct Block: SemanticNode {
 	public var syntax: any Syntax
 	public var type: any SemanticType
 	public var children: [any SemanticNode]
+	public var captures: [String: Binding] = [:]
 
 	public func accept<V: ABTVisitor>(_ visitor: V) -> V.Value {
 		visitor.visit(self)

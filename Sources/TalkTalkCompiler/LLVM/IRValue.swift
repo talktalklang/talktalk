@@ -51,17 +51,3 @@ extension LLVM {
 		var ref: LLVMValueRef { get }
 	}
 }
-
-extension LLVMValueRef: LLVM.IRValue {
-	var ref: LLVMValueRef {
-		self
-	}
-
-	public func asLLVM<T>() -> T {
-		self as! T
-	}
-
-	var optional: LLVMValueRef? {
-		Optional(self)
-	}
-}

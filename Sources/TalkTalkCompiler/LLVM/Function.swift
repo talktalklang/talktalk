@@ -31,15 +31,30 @@ enum VariableState: Equatable {
 }
 
 extension LLVM {
-	class Function {
+	class Function: IRValue {
+		func asLLVM<T>() -> T {
+			ref as! T
+		}
+
+		static func == (lhs: LLVM.Function, rhs: LLVM.Function) -> Bool {
+			lhs.hashValue == rhs.hashValue
+		}
+
 		let type: FunctionType
 		let ref: LLVMValueRef
 		var parameters: [String: VariableState] = [:]
 		var locals: [String: VariableState] = [:]
+		var environment: Environment
 
-		init(type: FunctionType, ref: LLVMValueRef) {
+		init(type: FunctionType, ref: LLVMValueRef, environment: Environment) {
 			self.type = type
 			self.ref = ref
+			self.environment = environment
+		}
+
+		func hash(into hasher: inout Hasher) {
+			hasher.combine(type)
+			hasher.combine(ref)
 		}
 
 		func allocate(name: String, for type: any LLVM.IRType, in builder: Builder) -> StackValue {

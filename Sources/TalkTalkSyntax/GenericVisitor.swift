@@ -222,7 +222,7 @@ public struct GenericVisitor<Context>: ASTVisitor {
 	public func visit(_ node: ArgumentListSyntax, context: Context) -> Context {
 		var context = perform(node, context)
 		for argument in node.arguments {
-			context = visit(argument, context: context)
+			context = visit(argument.expr, context: context)
 		}
 		return context
 	}

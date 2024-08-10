@@ -18,14 +18,14 @@ extension LLVM {
 
 		// This emits the function declaration code and returns a Function object that
 		// the builder can use to decide where to emit the body
-		func addFunction(named name: String, _ functionType: FunctionType) -> Function? {
-			if let ref = LLVMAddFunction(module.ref, name, functionType.ref) {
-				module.functionTypes[ref] = functionType
-
-				return Function(type: functionType, ref: ref)
-			}
-
-			return nil
+		func addFunction(
+			named name: String,
+			type: FunctionType,
+			environment: Environment
+		) -> Function {
+			let ref = LLVMAddFunction(module.ref, name, type.ref)!
+			module.functionTypes[ref] = type
+			return Function(type: type, ref: ref, environment: environment)
 		}
 	}
 }

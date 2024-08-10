@@ -12,15 +12,20 @@ public struct Environment {
 	public init() {}
 }
 
-public class Binding {
+public class Binding: Equatable {
+	public static func == (lhs: Binding, rhs: Binding) -> Bool {
+		lhs.name == rhs.name && lhs.node.is(rhs.node) && lhs.traits == rhs.traits
+	}
+
 	public enum Trait {
-		case initialized, constant
+		case initialized, constant, escapes
 	}
 
 	public var name: String
 	public var node: any SemanticNode
 	public var traits: Set<Trait> = []
 	public var inferedTypeFrom: (any SemanticNode)?
+	public var isStub = false
 
 	init(name: String, node: any SemanticNode, traits: Set<Trait> = []) {
 		self.name = name
@@ -29,7 +34,13 @@ public class Binding {
 	}
 
 	public var type: any SemanticType {
-		inferedTypeFrom?.type ?? node.type
+		get {
+			inferedTypeFrom?.type ?? node.type
+		}
+
+		set {
+			inferedTypeFrom?.type = newValue
+		}
 	}
 
 	public var isInitialized: Bool {
@@ -38,6 +49,10 @@ public class Binding {
 
 	public var isConstant: Bool {
 		traits.contains(.constant)
+	}
+
+	public var isEscaping: Bool {
+		traits.contains(.escapes)
 	}
 }
 
@@ -48,10 +63,15 @@ public class Scope {
 	public var children: [Scope] = []
 	public var locals: [String: Binding] = [:]
 	public var environment: Environment = .init()
+	public var returnNodes: [any Expression] = []
 
 	// If a binding has an expectedReturn, we can maybe use it
 	// instead of Unknown
-	public var expectedReturnVia: (any SemanticNode)?
+	public var expectedReturnVia: (any SemanticNode)? {
+		willSet {
+			assert(newValue?.type.isKnown == true, "Should not set expected return to unknown")
+		}
+	}
 
 	public init(
 		parent: Scope? = nil,
@@ -67,7 +87,7 @@ public class Scope {
 
 	public func nodeAt(line: Int, column: Int) -> (any SemanticNode)? {
 		if let node = locals.values.first(where: {
-			let syntax = ($0.node.syntax as! any Syntax)
+			let syntax = $0.node.syntax
 			return syntax.line == line && syntax.column.contains(column)
 		}) {
 			return node.node
@@ -91,12 +111,37 @@ public class Scope {
 		for local in locals.values {
 			if local.node.is(node) {
 				local.inferedTypeFrom = inferedType
+				local.node.type = inferedType.type
 			}
 		}
 	}
 
+	public func lookup(identifier: String) -> Binding? {
+		locals[identifier] ?? parent?.lookup(identifier: identifier)
+	}
+
+	public func captures() -> [String: Binding] {
+		var result: [String: Binding] = [:]
+
+		guard let parent else {
+			return result
+		}
+
+		for (name, binding) in parent.locals {
+			if binding.isEscaping {
+				result[name] = binding
+			}
+		}
+
+		return result
+	}
+
 	public func binding(for node: any SemanticNode) -> Binding? {
 		for local in locals.values {
+			if let node = node as? VarExpression {
+				return lookup(identifier: node.name)
+			}
+
 			if local.node.is(node) {
 				return local
 			}
@@ -105,12 +150,14 @@ public class Scope {
 		return parent?.binding(for: node)
 	}
 
-	public func bind(
+	@discardableResult public func bind(
 		name: String,
 		to node: any SemanticNode,
 		traits: Set<Binding.Trait>
-	) {
-		locals[name] = Binding(name: name, node: node, traits: traits)
+	) -> Binding {
+		let binding = Binding(name: name, node: node, traits: traits)
+		locals[name] = binding
+		return binding
 	}
 
 	func append(child: Scope) {

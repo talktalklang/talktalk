@@ -319,7 +319,7 @@ class TyperVisitor: ASTVisitor {
 	}
 
 	func visit(_ node: ArgumentListSyntax, context: Context) -> TypedValue? {
-		for argument in node.arguments {
+		for argument in node.arguments.map(\.expr) {
 			let typedValue = visit(argument, context: context)
 			// TODO: Validate
 		}
@@ -333,7 +333,7 @@ class TyperVisitor: ASTVisitor {
 		}
 
 		let elemDefs = node.elements.arguments.compactMap {
-			visit($0, context: context)
+			visit($0.expr, context: context)
 		}
 
 		// TODO: Check taht they match or add heterogenous arrays who knows

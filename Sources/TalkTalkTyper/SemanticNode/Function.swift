@@ -9,10 +9,15 @@ import TalkTalkSyntax
 
 public struct FunctionType: SemanticType {
 	public var name: String
+	public var parameters: ParameterList
 	public var returns: any SemanticType
 
 	public var description: String {
-		"Function -> (\(returns.description))"
+		let params = parameters.list.map { (key, val) in
+			"\(key): \(val.node.type.description)"
+		}.joined(separator: ", ")
+
+		return "Function(\(params)) -> (\(returns.description))"
 	}
 
 	public func assignable(from other: any SemanticType) -> Bool {
@@ -29,6 +34,7 @@ public struct FunctionType: SemanticType {
 }
 
 public struct Function: SemanticNode, Declaration {
+	public var name: String
 	public var syntax: any Syntax
 	public var scope: Scope
 	public var prototype: FunctionType

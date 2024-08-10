@@ -49,21 +49,29 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: ParameterListSyntax, context: Scope) -> any SemanticNode {
-		for parameter in node.parameters {
-			// Define the parameters into the scope of the function body. We don't know
-			// the types yet so they're unknown (TODO: type decls for fn params)
-			context.bind(
-				name: parameter.lexeme,
-				to: .unknown(syntax: parameter, scope: context),
+		let list: [(String, Binding)] = node.parameters.map {
+			let binding = context.bind(
+				name: $0.lexeme,
+				to: .unknown(syntax: $0, scope: context),
 				traits: [.initialized, .constant]
 			)
+
+			return ($0.lexeme, binding)
 		}
 
-		return .void(syntax: node, scope: context)
+		return ParameterList(scope: context, syntax: node, list: list)
 	}
 
 	public func visit(_ node: ArgumentListSyntax, context: Scope) -> any SemanticNode {
-		.todo(node, context)
+		let list: [(String, any SemanticNode)] = node.arguments.map {
+			($0.name, $0.expr.accept(self, context: context))
+		}
+
+		return ArgumentList(
+			scope: context,
+			syntax: node,
+			list: list
+		)
 	}
 
 	public func visit(_ node: BinaryOperatorSyntax, context: Scope) -> any SemanticNode {
@@ -152,7 +160,13 @@ public struct SemanticASTVisitor: ASTVisitor {
 		}
 
 		if lhs.type.assignable(from: rhs.type) {
-			return lhs
+			return AssignmentExpression(
+				scope: context,
+				syntax: node,
+				type: lhs.type,
+				lhs: lhs,
+				rhs: rhs
+			)
 		}
 
 		error(node, "Cannot assign \(rhs) to \(lhs.type)")
@@ -160,8 +174,13 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: VariableExprSyntax, context scope: Scope) -> any SemanticNode {
-		if let binding = scope.locals[node.name.lexeme] {
-			return binding.node
+		if let binding = scope.lookup(identifier: node.name.lexeme) {
+			return VarExpression(
+				scope: scope,
+				syntax: node,
+				type: binding.type,
+				name: node.name.lexeme
+			)
 		}
 
 		error(node, "Undefined variable: \(node.name)")
@@ -177,7 +196,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: IdentifierSyntax, context: Scope) -> any SemanticNode {
-		.todo(node, context)
+		context.locals[node.lexeme]?.node ?? .unknown(syntax: node, scope: context)
 	}
 
 	public func visit(_ node: BinaryExprSyntax, context scope: Scope) -> any SemanticNode {
@@ -210,15 +229,43 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: CallExprSyntax, context: Scope) -> any SemanticNode {
-		.todo(node, context)
+		let callee = visit(node.callee, context: context)
+		switch callee {
+		case let callee as Function:
+			return handleFunctionCall(node, callee: callee, type: callee.prototype, scope: context)
+		case let callee as CallExpression:
+			return callee
+		case let callee as VarExpression:
+			let function = context.lookup(identifier: callee.name)!.node.type as! FunctionType
+			return handleFunctionCall(node, callee: callee, type: function, scope: context)
+		default:
+			return .todo(node, context)
+		}
 	}
 
 	public func visit(_ node: GroupExpr, context: Scope) -> any SemanticNode {
 		visit(node.expr, context: context)
 	}
 
-	public func visit(_ node: ReturnStmtSyntax, context: Scope) -> any SemanticNode {
-		.todo(node, context)
+	public func visit(_ node: ReturnStmtSyntax, context scope: Scope) -> any SemanticNode {
+		let node = visit(node.value, context: scope)
+
+		if let expectedReturnVia = scope.expectedReturnVia,
+		   !expectedReturnVia.type.assignable(from: node.type)
+		{
+			error(node.syntax, "\(node.type.description) cannot be used as return, expected \(expectedReturnVia.type)")
+		} else if node.type.isKnown {
+			scope.expectedReturnVia = node
+		}
+
+		if let node = node as? Expression {
+			scope.returnNodes.append(node)
+			if let binding = scope.binding(for: node) {
+				binding.traits.insert(.escapes)
+			}
+		}
+
+		return node
 	}
 
 	public func visit(_ node: WhileStmtSyntax, context: Scope) -> any SemanticNode {
@@ -230,7 +277,16 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	public func visit(_ node: IfStmtSyntax, context: Scope) -> any SemanticNode {
-		.todo(node, context)
+		// TODO: Ensure bool condition
+		_ = visit(node.condition, context: context)
+
+		_ = visit(node.then, context: context)
+
+		if let elseBlock = node.else {
+			_ = visit(elseBlock, context: context)
+		}
+
+		return .void(syntax: node, scope: context)
 	}
 
 	public func visit(_ node: BlockStmtSyntax, context scope: Scope) -> any SemanticNode {
@@ -238,25 +294,44 @@ public struct SemanticASTVisitor: ASTVisitor {
 		// Eventually it might be nice to require a `return` if there is more than one
 		// decl in the block.
 		var decls: [any SemanticNode] = []
+		_ = scope.locals
 
-		for decl in node.decls {
-			decls.append(visit(decl, context: scope))
-		}
-
-		if var lastReturn = decls.last,
-			 lastReturn.type.description == "Unknown",
-		   let expectedReturnVia = scope.expectedReturnVia
-		{
-			scope.inferType(for: &lastReturn, from: expectedReturnVia)
-			decls[decls.count-1] = lastReturn
-		}
-
-		return Block(
+		var block = Block(
 			scope: scope,
 			syntax: node,
-			type: decls.last?.type ?? .void,
+			type: .unknown,
 			children: decls
 		)
+
+		for (i, decl) in node.decls.enumerated() {
+			var declNode = visit(decl, context: scope)
+			decls.append(declNode)
+
+			// Handle case where we don't know the return type of the decl but we do know
+			// what the scope expects
+			if !declNode.type.isKnown, let expectedReturnVia = scope.expectedReturnVia {
+				scope.inferType(for: &declNode, from: expectedReturnVia)
+				decls[i] = declNode
+				block.type = declNode.type
+			}
+
+			if let binding = scope.binding(for: declNode) {
+				binding.traits.insert(.escapes)
+			}
+
+			block.children.append(declNode)
+		}
+
+		let captures = scope.captures()
+
+		for (_, binding) in captures {
+			binding.traits.insert(.escapes)
+		}
+
+		block.captures = captures
+
+		block.type = decls.last(where: { $0.type.isKnown })?.type ?? .unknown
+		return block
 	}
 
 	public func visit(_ node: ExprStmtSyntax, context: Scope) -> any SemanticNode {
@@ -287,12 +362,45 @@ public struct SemanticASTVisitor: ASTVisitor {
 		// Introduce a new scope
 		let innerBinding = context.child()
 
+		let parameterList = visit(node.parameters, context: innerBinding).cast(ParameterList.self)
+		let name = node.name.lexeme
+
+		// Bind the function itself to its inner scope so it can call itself
+		let stub = innerBinding.bind(
+			name: node.name.lexeme,
+			to: Function(
+				name: name,
+				syntax: node,
+				scope: innerBinding,
+				prototype: .init(
+					name: node.name.lexeme,
+					parameters: parameterList,
+					returns: .unknown
+				),
+				body: .init(
+					scope: innerBinding,
+					syntax: node.body,
+					type: .unknown,
+					children: []
+				)
+			),
+			traits: [.initialized]
+		)
+
+		stub.isStub = true
+
 		// Call into handle function, which could potentially do multiple passes
 		let function = handleFunction(node, scope: innerBinding)
 
+		// If we didn't make a new thing inside this function with the same name,
+		// remove the stub
+		if innerBinding.locals[node.name.lexeme]?.isStub == true {
+			innerBinding.locals.removeValue(forKey: node.name.lexeme)
+		}
+
 		// Bind the function by name to the enclosing scope
 		context.bind(
-			name: node.name.lexeme,
+			name: name,
 			to: function,
 			traits: [.constant, .initialized]
 		)
@@ -314,16 +422,20 @@ public struct SemanticASTVisitor: ASTVisitor {
 		let typeDeclNode = handleTypeDecl(binding: scope) { node.typeDecl }
 
 		// Set the scope's expected return value if we have a type decl
-		if let type = typeDeclNode?.type {
+		if let _ = typeDeclNode?.type {
 			scope.expectedReturnVia = typeDeclNode
 		}
 
 		// Make sure the parameters are declared inside the function body
-		_ = visit(node.parameters, context: scope)
+		let parameterList = visit(node.parameters, context: scope)
 
 		// Visit the function body, if we don't have a type decl, maybe we can figure out
 		// what the return type is from here
-		let body = visit(node.body, context: scope)
+		let body = visit(node.body, context: scope).cast(Block.self)
+
+		if !scope.returnNodes.isEmpty, !checkTypeAgreement(of: scope.returnNodes) {
+			error(body.syntax, "Must match")
+		}
 
 		// If we have a type decl, check that the function actually returns it
 		if let typeDeclNode, !typeDeclNode.type.assignable(from: body.type) {
@@ -332,14 +444,49 @@ public struct SemanticASTVisitor: ASTVisitor {
 
 		let functionType = FunctionType(
 			name: node.name.lexeme,
-			returns: body.type
+			parameters: parameterList.cast(ParameterList.self),
+			returns: scope.returnNodes.first?.type ?? body.type
 		)
 
 		return Function(
+			name: Mangler.mangle(
+				function: node.name.lexeme,
+				parameters: parameterList.cast(ParameterList.self),
+				scope: scope.parent!
+			),
 			syntax: node,
 			scope: scope,
 			prototype: functionType,
 			body: body.cast(Block.self)
+		)
+	}
+
+	func handleFunctionCall(
+		_ node: CallExprSyntax,
+		callee: any SemanticNode,
+		type: FunctionType,
+		scope: Scope
+	) -> any SemanticNode {
+		// TODO: Validate args/params matching
+		let arguments = visit(node.arguments, context: scope).cast(ArgumentList.self)
+
+		if type.returns.isKnown {
+			let type = type.returns
+			return CallExpression(
+				scope: scope,
+				syntax: node,
+				type: type,
+				callee: callee,
+				arguments: arguments
+			)
+		}
+
+		return CallExpression(
+			scope: scope,
+			syntax: callee.syntax,
+			type: callee.scope.returnNodes.first?.type ?? .unknown,
+			callee: callee,
+			arguments: arguments
 		)
 	}
 
@@ -380,7 +527,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 			type = exprNode.type
 			binding.bind(
 				name: name,
-				to: exprNode,
+				to: VarExpression(scope: binding, syntax: node, type: type, name: node.variable.lexeme),
 				traits: traits
 			)
 
@@ -388,6 +535,7 @@ public struct SemanticASTVisitor: ASTVisitor {
 				type: type,
 				syntax: node,
 				scope: binding,
+				name: node.variable.lexeme,
 				expression: exprNode
 			)
 		} else {
@@ -404,7 +552,8 @@ public struct SemanticASTVisitor: ASTVisitor {
 			return VarLetDeclaration(
 				type: type,
 				syntax: node,
-				scope: binding
+				scope: binding,
+				name: name
 			)
 		}
 	}
@@ -442,6 +591,10 @@ public struct SemanticASTVisitor: ASTVisitor {
 	}
 
 	func checkTypeAgreement(of nodes: (any SemanticNode)...) -> Bool {
+		checkTypeAgreement(of: nodes)
+	}
+
+	func checkTypeAgreement(of nodes: [any SemanticNode]) -> Bool {
 		let known = nodes[0].type
 
 		for i in 1..<nodes.count {

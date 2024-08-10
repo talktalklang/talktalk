@@ -467,7 +467,7 @@ public struct Parser {
 			skip(.statementTerminators)
 		}
 
-		consume(.rightBrace, "Expected '{' after function body")
+		consume(.rightBrace, "Expected '}' after function body")
 
 		return BlockStmtSyntax(
 			start: start,
@@ -491,7 +491,7 @@ public struct Parser {
 		return ArgumentListSyntax(
 			start: start,
 			end: previous,
-			arguments: arguments
+			arguments: arguments.enumerated().map { ("$\($0.offset)", $0.element) }
 		)
 	}
 

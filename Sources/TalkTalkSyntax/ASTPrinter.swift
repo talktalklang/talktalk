@@ -236,7 +236,7 @@ public struct ASTPrinter<Root: Syntax>: ASTVisitor {
 		describe(node)
 		indenting {
 			for arg in node.arguments {
-				$0.visit(arg, context: context)
+				$0.visit(arg.expr, context: context)
 			}
 		}
 	}

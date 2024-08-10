@@ -41,7 +41,8 @@ class CompilerVisitor: ASTVisitor {
 		}
 		_ = LLVMAddFunction(module.ref, "printf", printfType)
 
-		let function = builder.addFunction(named: "main", mainType)!
+		let env = Environment(name: "xmain", parent: nil, scope: .init(), emitter: LLVM.Emitter(module: builder.module))
+		let function = builder.addFunction(named: "main", type: mainType, environment: env)
 		let blockRef = LLVMAppendBasicBlockInContext(module.context.ref, function.ref, "entry")
 		self.currentFunction = function
 
@@ -62,12 +63,8 @@ class CompilerVisitor: ASTVisitor {
 	}
 
 	func resolveFunction(named name: String, in module: LLVM.Module) -> LLVM.Function? {
-		if let named = module.function(named: name) {
-			return named
-		}
-
 		if let captured = heapValues[name], let functionType = captured.type as? LLVM.FunctionType {
-			return LLVM.Function(type: functionType, ref: captured.ref)
+			return LLVM.Function(type: functionType, ref: captured.ref, environment: Environment(name: "", parent: nil, scope: .init(), emitter: LLVM.Emitter(module: self.builder.module)))
 		}
 
 		return nil
@@ -109,7 +106,8 @@ class CompilerVisitor: ASTVisitor {
 		)
 
 		// TODO: validate we're not redeclaring the same function
-		let function = builder.addFunction(named: node.name.lexeme, functionType)!
+		let env = Environment(name: "xmain", parent: nil, scope: .init(), emitter: LLVM.Emitter(module: builder.module))
+		let function = builder.addFunction(named: node.name.lexeme, type: functionType, environment: env)
 
 		for capture in typedef.environment!.captures {
 			let type = capture.value.value.llvmType(in: module.context, bindings: bindings)
@@ -142,8 +140,8 @@ class CompilerVisitor: ASTVisitor {
 		let block = LLVMGetLastBasicBlock(oldFunction.ref)
 		LLVMPositionBuilderAtEnd(builder.ref, block)
 
-		oldFunction.locals[node.name.lexeme] = .defined(function.ref)
-		return .value(function.ref)
+		oldFunction.locals[node.name.lexeme] = .defined(function)
+		return .value(function)
 	}
 
 	func visit(_ node: VarDeclSyntax, context module: LLVM.Module) -> LLVM.IRValueRef {
@@ -289,7 +287,7 @@ class CompilerVisitor: ASTVisitor {
 		if let callee = node.callee.as(VariableExprSyntax.self) {
 			let fn = resolveFunction(named: callee.name.lexeme, in: module)!
 			var args: [LLVMValueRef?] = node.arguments.arguments.map {
-				switch visit($0, context: module) {
+				switch visit($0.expr, context: module) {
 				case let .value(value):
 					value.ref
 				default:
@@ -308,7 +306,7 @@ class CompilerVisitor: ASTVisitor {
 				)
 			}
 
-			return .value(ref!)
+			return .value(LLVM.IntValue(ref: ref!))
 		}
 
 		return .void()
@@ -319,9 +317,9 @@ class CompilerVisitor: ASTVisitor {
 
 		return switch node.op.kind {
 		case .bang, .minus:
-			.value(LLVMBuildNeg(builder.ref, val.ref, ""))
+			.value(LLVM.IntValue(ref: LLVMBuildNeg(builder.ref, val.ref, "")))
 		@unknown default:
-			.value(LLVMIsAPoisonValue(val.ref))
+			.value(LLVM.IntValue.i1(1))
 		}
 	}
 
@@ -339,7 +337,7 @@ class CompilerVisitor: ASTVisitor {
 			fatalError("unhandled binary op: \(node.op)")
 		}
 
-		return .value(ref!)
+		return .value(LLVM.IntValue(ref: ref!))
 	}
 
 	func visit(_ node: IdentifierSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
@@ -374,14 +372,14 @@ class CompilerVisitor: ASTVisitor {
 			return .value(val)
 		} else if case let .allocated(value) = currentFunction.locals[name.lexeme] {
 			// See if it's a stack var
-			return .value(LLVMBuildLoad2(builder.ref, value.type.ref, value.ref, name.lexeme))
+			return .value(.i1(0))
 		} else if let heapValue = heapValues[name.lexeme] {
 			// See if it's a heap var
 			let load = LLVMBuildLoad2(builder.ref, heapValue.type.ref, heapValue.ref, name.lexeme)!
-			return .value(load)
+			return .value(.i1(0))
 		} else if currentFunction.parameters[name.lexeme] == .declared {
 			let paramIndex = currentFunction.type.parameters.firstIndex(where: { $0.0 == name.lexeme })!
-			return .value(LLVMGetParam(currentFunction.ref, UInt32(paramIndex)))
+			return .value(.i1(0))
 		}
 
 		fatalError("unknown variable: \(name.lexeme)")
@@ -413,11 +411,11 @@ class CompilerVisitor: ASTVisitor {
 	func visit(_ node: LiteralExprSyntax, context _: LLVM.Module) -> LLVM.IRValueRef {
 		switch node.kind {
 		case .true:
-			.value(.i1(1).ref)
+			.value(.i1(1))
 		case .false:
-			.value(.i1(0).ref)
+			.value(.i1(0))
 		case .nil:
-			.value(.i1(0).ref)
+			.value(.i1(0))
 		}
 	}
 
@@ -473,7 +471,7 @@ class CompilerVisitor: ASTVisitor {
 			}
 		}
 
-		return .value(phiNode)
+		return .value(.i1(0))
 	}
 
 	func visit(_ node: UnaryOperator, context _: LLVM.Module) -> LLVM.IRValueRef {
