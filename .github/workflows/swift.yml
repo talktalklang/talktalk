@@ -15,11 +15,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Setup Swift environment for macOS, Linux and Windows
-      uses: SwiftyLab/setup-swift@v1.7.0
-      with:
-        development: true
-
+    - name: Setup Swift environment
+			run: |
+				curl -L https://swiftlang.github.io/swiftly/swiftly-install.sh | bash
+				swiftly install main-snapshot
     - uses: actions/checkout@v4
     - name: Run tests
       run: swift test -v
