@@ -40,7 +40,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func endScope(chunk: Chunk) {
-		for i in 0 ..< locals.count {
+		for i in 0..<locals.count {
 			let local = locals[locals.count - i - 1]
 			if local.depth <= scopeDepth { break }
 
@@ -164,10 +164,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedVarExpr, _ chunk: Chunk) throws {
-		guard let variable = resolveVariable(
-			receiver: expr,
-			chunk: chunk
-		) else {
+		guard
+			let variable = resolveVariable(
+				receiver: expr,
+				chunk: chunk
+			)
+		else {
 			throw CompilerError.unknownIdentifier(expr.name + " at line: \(expr.location.start.line)")
 		}
 
@@ -176,18 +178,19 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedBinaryExpr, _ chunk: Chunk) throws {
-		let opcode: Opcode = switch expr.op {
-		case .plus: .add
-		case .equalEqual: .equal
-		case .bangEqual: .notEqual
-		case .less: .less
-		case .lessEqual: .lessEqual
-		case .greater: .greater
-		case .greaterEqual: .greaterEqual
-		case .minus: .subtract
-		case .star: .multiply
-		case .slash: .divide
-		}
+		let opcode: Opcode =
+			switch expr.op {
+			case .plus: .add
+			case .equalEqual: .equal
+			case .bangEqual: .notEqual
+			case .less: .less
+			case .lessEqual: .lessEqual
+			case .greater: .greater
+			case .greaterEqual: .greaterEqual
+			case .minus: .subtract
+			case .star: .multiply
+			case .slash: .divide
+			}
 
 		try expr.rhsAnalyzed.accept(self, chunk)
 		try expr.lhsAnalyzed.accept(self, chunk)
@@ -199,8 +202,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Emit the condition
 		try expr.conditionAnalyzed.accept(self, chunk)
 
-		// Emit the jumpUnless opcode, and keep track of where we are in the code. We need this location
-		// so we can go back and patch the locations after emitting the else stuff.
+		// Emit the jumpUnless opcode, and keep track of where we are in the code.
+		// We need this location so we can go back and patch the locations after emitting
+		// the else stuff.
 		let thenJumpLocation = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
 
 		// Pop the condition off the stack
@@ -209,9 +213,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Emit the consequence block
 		try expr.consequenceAnalyzed.accept(self, chunk)
 
-		// Emit the else jump, right after the consequence block. This is where we'll skip to if the condition
-		// is false. If the condition was true, once the consequence block was evaluated, we'll jump to past
-		// the alternative block.
+		// Emit the else jump, right after the consequence block. This is where we'll skip to
+		// if the condition is false. If the condition was true, once the consequence block was
+		// evaluated, we'll jump to past the alternative block.
 		let elseJump = chunk.emit(jump: .jump, line: expr.alternativeAnalyzed.location.line)
 
 		// Fill in the initial placeholder bytes now that we know how big the consequence block was
@@ -232,7 +236,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		let symbol: Symbol = .method(structName, "init", expr.parameters.params.map(\.name))
-		let initChunk = Chunk(name: symbol.description, parent: chunk, arity: Byte(expr.parameters.count), depth: Byte(scopeDepth))
+		let initChunk = Chunk(
+			name: symbol.description, parent: chunk, arity: Byte(expr.parameters.count),
+			depth: Byte(scopeDepth))
 		let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		// Define the actual params for this initializer
@@ -256,7 +262,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
-		let functionChunk = Chunk(name: expr.name?.lexeme ?? expr.autoname, parent: chunk, arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
+		let functionChunk = Chunk(
+			name: expr.name?.lexeme ?? expr.autoname, parent: chunk,
+			arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		if let name = expr.name {
@@ -347,13 +355,20 @@ public class ChunkCompiler: AnalyzedVisitor {
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
 			switch decl {
 			case let decl as AnalyzedInitDecl:
+				if expr.structType.methods["init"]?.isSynthetic == true {
+					continue
+				}
+
 				let symbol = Symbol.initializer(name, decl.parameters.params.map(\.name))
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
-				let declChunk = Chunk(name: symbol.description, parent: chunk, arity: Byte(decl.parameters.count), depth: Byte(scopeDepth))
+				let declChunk = Chunk(
+					name: symbol.description, parent: chunk, arity: Byte(decl.parameters.count),
+					depth: Byte(scopeDepth))
 
 				// Define the actual params for this initializer
 				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
-					_ = declCompiler.defineLocal(name: parameter.name, compiler: declCompiler, chunk: declChunk)
+					_ = declCompiler.defineLocal(
+						name: parameter.name, compiler: declCompiler, chunk: declChunk)
 				}
 
 				// Emit the init body
@@ -370,11 +385,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 			case let decl as AnalyzedFuncExpr:
 				let symbol = Symbol.method(name, decl.name!.lexeme, decl.params.params.map(\.name))
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
-				let declChunk = Chunk(name: symbol.description, parent: chunk, arity: Byte(decl.params.count), depth: Byte(scopeDepth))
+				let declChunk = Chunk(
+					name: symbol.description, parent: chunk, arity: Byte(decl.params.count),
+					depth: Byte(scopeDepth))
 
 				// Define the params for this function
 				for parameter in decl.analyzedParams.paramsAnalyzed {
-					_ = declCompiler.defineLocal(name: parameter.name, compiler: declCompiler, chunk: declChunk)
+					_ = declCompiler.defineLocal(
+						name: parameter.name,
+						compiler: declCompiler,
+						chunk: declChunk
+					)
 				}
 
 				// Emit the body
@@ -395,15 +416,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 			}
 		}
 
-		structType.methods = methods.map { $0! }
+		let initializer = expr.structType.methods["init"]!
 
-		if let initializer = expr.structType.methods["init"] {
-			structType.initializer = initializer.slot
-		} else {
-			let slot = structType.methods.count
-			structType.methods.append(synthesizeInit())
-			structType.initializer = slot
+		if initializer.isSynthetic {
+			methods[initializer.slot] = synthesizeInit(for: expr.structType)
 		}
+
+		structType.initializer = initializer.slot
+
+		structType.methods = methods.map { $0! }
 		module.structs[.struct(name)] = structType
 	}
 
@@ -608,7 +629,39 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return Byte(upvalues.count - 1)
 	}
 
-	private func synthesizeInit() -> Chunk {
-		fatalError("TODO: implement init")
+	private func synthesizeInit(for structType: StructType) -> Chunk {
+		let params = Array(structType.properties.keys)
+		let chunk = Chunk(
+			name: Symbol.initializer(structType.name!, params).description,
+			parent: nil,
+			arity: Byte(params.count),
+			depth: Byte(scopeDepth)
+		)
+
+		let compiler = ChunkCompiler(module: module)
+
+		// Define the params for this function
+		var variables: [(Variable, Property)] = []
+		for (name, property) in structType.properties {
+			variables.append((compiler.defineLocal(
+				name: name,
+				compiler: compiler,
+				chunk: chunk
+			), property))
+		}
+
+		for (variable, property) in variables {
+			chunk.emit(opcode: .getLocal, line: 0)
+			chunk.emit(byte: Byte(variable.slot), line: 0)
+			chunk.emit(opcode: .getLocal, line: 0)
+			chunk.emit(byte: 0, line: 0)
+			chunk.emit(opcode: .setProperty, line: 0)
+			chunk.emit(byte: Byte(property.slot), line: 0)
+		}
+
+		compiler.endScope(chunk: chunk)
+		chunk.emit(opcode: .return, line: 0)
+
+		return chunk
 	}
 }

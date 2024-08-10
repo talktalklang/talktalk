@@ -20,7 +20,9 @@ struct VMEndToEndTests {
 	}
 
 	func compile(_ strings: [String]) throws -> Module {
-		let analysisModule = try ModuleAnalyzer(name: "E2E", files: strings.map { .tmp($0) }, moduleEnvironment: [:]).analyze()
+		let analysisModule = try ModuleAnalyzer(
+			name: "E2E", files: strings.map { .tmp($0) }, moduleEnvironment: [:]
+		).analyze()
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
 		return try compiler.compile(mode: .executable)
 	}
@@ -31,10 +33,15 @@ struct VMEndToEndTests {
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:]
 	) throws -> (Module, AnalysisModule) {
-		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
-		let analyzed = try ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis).analyze()
+		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in
+			res[tup.key] = analysisEnvironment[tup.key]
+		}
+		let analyzed = try ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis)
+			.analyze()
 
-		let module = try ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
+		let module = try ModuleCompiler(
+			name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment
+		).compile(mode: .executable)
 		return (module, analyzed)
 	}
 
@@ -93,89 +100,104 @@ struct VMEndToEndTests {
 	}
 
 	@Test("If expr") func ifExpr() throws {
-		#expect(try run("""
-		if false {
-			123
-		} else {
-			456
-		}
-		""") == .int(456))
+		#expect(
+			try run(
+				"""
+				if false {
+					123
+				} else {
+					456
+				}
+				""") == .int(456))
 	}
 
 	@Test("Var expr") func varExpr() throws {
-		#expect(try run("""
-		a = 10
-		b = 20
-		a = a + b
-		a
-		""") == .int(30))
+		#expect(
+			try run(
+				"""
+				a = 10
+				b = 20
+				a = a + b
+				a
+				""") == .int(30))
 	}
 
 	@Test("Basic func/call expr") func funcExpr() throws {
-		#expect(try run("""
-		i = func() {
-			123
-		}()
+		#expect(
+			try run(
+				"""
+				i = func() {
+					123
+				}()
 
-		i + 1
-		""") == .int(124))
+				i + 1
+				""") == .int(124))
 	}
 
 	@Test("Func arguments") func funcArgs() throws {
-		#expect(try run("""
-		func(i) {
-			i + 20
-		}(10)
-		""") == .int(30))
+		#expect(
+			try run(
+				"""
+				func(i) {
+					i + 20
+				}(10)
+				""") == .int(30))
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
-		#expect(try run("""
-		a10 = 10
-		b20 = 20
-		func() {
-			c30 = 30
-			a10 + b20 + c30
-		}()
-		""") == .int(60))
+		#expect(
+			try run(
+				"""
+				a10 = 10
+				b20 = 20
+				func() {
+					c30 = 30
+					a10 + b20 + c30
+				}()
+				""") == .int(60))
 	}
 
 	@Test("Modify var from enclosing scope") func modifyEnclosing() throws {
-		#expect(try run("""
-		a = 10
-		func() {
-			a = 20
-		}()
-		a
-		""") == .int(20))
+		#expect(
+			try run(
+				"""
+				a = 10
+				func() {
+					a = 20
+				}()
+				a
+				""") == .int(20))
 	}
 
 	@Test("Works with counter") func counter() throws {
-		#expect(try run("""
-		func makeCounter() {
-			count = 0
-			func increment() {
-				count = count + 1
-				count
-			}
-			increment
-		}
+		#expect(
+			try run(
+				"""
+				func makeCounter() {
+					count = 0
+					func increment() {
+						count = count + 1
+						count
+					}
+					increment
+				}
 
-		mycounter = makeCounter()
-		mycounter()
-		mycounter()
-		""") == .int(2))
+				mycounter = makeCounter()
+				mycounter()
+				mycounter()
+				""") == .int(2))
 	}
 
 	@Test("Doesn't leak out of closures") func closureLeak() throws {
 		#expect(throws: CompilerError.self) {
-			try compile("""
-			func() {
-			 a = 123
-			}
+			try compile(
+				"""
+				func() {
+				 a = 123
+				}
 
-			a
-			""")
+				a
+				""")
 		}
 	}
 
@@ -205,7 +227,8 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Can run functions across modules") func crossModule() throws {
-		let (moduleA, analysisA) = try compile(name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
+		let (moduleA, analysisA) = try compile(
+			name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
 		let (moduleB, _) = try compile(
 			name: "B",
 			[
@@ -304,12 +327,13 @@ struct VMEndToEndTests {
 		let (moduleB, _) = try compile(
 			name: "B",
 			[
-				.tmp("""
-				import A
-				
-				person = Person(age: 123)
-				person.age
-				""")
+				.tmp(
+					"""
+					import A
+
+					person = Person(age: 123)
+					person.age
+					""")
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -317,4 +341,25 @@ struct VMEndToEndTests {
 
 		#expect(VirtualMachine.run(module: moduleB).get() == .int(123))
 	}
+
+	@Test("Struct synthesized init") func structSynthesizedInit() throws {
+		let (module, _) = try compile(
+			name: "A",
+			[
+				.tmp(
+					"""
+					struct Person {
+						var age: int
+					}
+
+					person = Person(age: 123)
+					person.age
+					"""
+				)
+			]
+		)
+
+		#expect(VirtualMachine.run(module: module).get() == .int(123))
+	}
+
 }

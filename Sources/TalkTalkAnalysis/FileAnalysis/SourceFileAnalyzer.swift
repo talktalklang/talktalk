@@ -436,6 +436,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 
 		// See if there's an initializer defined. If not, generate one.
+		if structType.methods["init"] == nil {
 		structType.add(
 			initializer: .init(
 				slot: structType.methods.count,
@@ -446,6 +447,7 @@ public struct SourceFileAnalyzer: Visitor {
 				isMutable: false,
 				isSynthetic: true
 			))
+		}
 
 		let lexicalScope = bodyContext.lexicalScope!
 

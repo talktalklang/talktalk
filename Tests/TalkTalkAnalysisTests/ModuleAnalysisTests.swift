@@ -130,7 +130,7 @@ struct ModuleAnalysisTests {
 
 		let structT = try #require(module.structs["Person"])
 		#expect(structT.properties.count == 1)
-		#expect(structT.methods.count == 1)
+		#expect(structT.methods.count == 2) // add 1 for the synthesized init
 	}
 
 	@Test("Analyzes imported module structs") func importStructProperties() throws {

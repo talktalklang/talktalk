@@ -44,17 +44,19 @@ struct AnalysisTests {
 	}
 
 	@Test("Types func expr") func funcExpr() {
-		let fn = ast("""
-		func(x) { x + x }
-		""")
+		let fn = ast(
+			"""
+			func(x) { x + x }
+			""")
 
 		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
 	@Test("Types recursive func expr") func funcExprRecur() {
-		let fn = ast("""
-		func foo(x) { foo(x) }
-		""")
+		let fn = ast(
+			"""
+			func foo(x) { foo(x) }
+			""")
 
 		#expect(
 			fn
@@ -64,27 +66,30 @@ struct AnalysisTests {
 	}
 
 	@Test("Types named func expr") func namedfuncExpr() {
-		let fn = ast("""
-		func foo(x) { x + x }
-		foo
-		""")
+		let fn = ast(
+			"""
+			func foo(x) { x + x }
+			foo
+			""")
 
 		#expect(fn.type == .function("foo", .int, [.int("x")], []))
 	}
 
 	@Test("Types calls") func funcCalls() {
-		let res = ast("""
-		foo = func(x) { x + x }
-		foo(1)
-		""")
+		let res = ast(
+			"""
+			foo = func(x) { x + x }
+			foo(1)
+			""")
 
 		#expect(res.type == .int)
 	}
 
 	@Test("Types func parameters") func funcParams() throws {
-		let ast = ast("""
-		func(x) { 1 + x }
-		""")
+		let ast = ast(
+			"""
+			func(x) { 1 + x }
+			""")
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
@@ -94,12 +99,14 @@ struct AnalysisTests {
 	}
 
 	@Test("Compiles functions") func closures() throws {
-		let ast = try SourceFileAnalyzer.analyze(Parser.parse("""
-		i = 1
-		func(x) {
-			i + 2
-		}(2)
-	"""), in: .init())
+		let ast = try SourceFileAnalyzer.analyze(
+			Parser.parse(
+				"""
+					i = 1
+					func(x) {
+						i + 2
+					}(2)
+				"""), in: .init())
 
 		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
 		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
@@ -108,30 +115,33 @@ struct AnalysisTests {
 	}
 
 	@Test("Types captures") func funcCaptures() throws {
-		let ast = ast("""
-		func(x) {
-			func(y) {
-				y + x
+		let ast = ast(
+			"""
+			func(x) {
+				func(y) {
+					y + x
+				}
 			}
-		}
-		""")
+			""")
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.name == "x")
 		#expect(param.type == .int)
-		#expect(fn.type == .function(
-			"_fn_x_33",
-			.function(
-				"_fn_y_32",
-				.int,
-				[.int("y")],
-				["x"]
-			),
-			[.int("x")],
-			[]
-		))
+		#expect(
+			fn.type
+				== .function(
+					"_fn_x_33",
+					.function(
+						"_fn_y_32",
+						.int,
+						[.int("y")],
+						["x"]
+					),
+					[.int("x")],
+					[]
+				))
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
@@ -143,18 +153,20 @@ struct AnalysisTests {
 	}
 
 	@Test("Types counter") func counter() throws {
-		let main = try SourceFileAnalyzer.analyze(Parser.parse("""
-		makeCounter = func() {
-			count = 0
-			func() {
-				count = count + 1
-				count
-			}
-		}
+		let main = try SourceFileAnalyzer.analyze(
+			Parser.parse(
+				"""
+				makeCounter = func() {
+					count = 0
+					func() {
+						count = count + 1
+						count
+					}
+				}
 
-		mycounter = makeCounter()
-		mycounter()
-		"""), in: .init())
+				mycounter = makeCounter()
+				mycounter()
+				"""), in: .init())
 
 		let def = try #require(main[0] as? AnalyzedDefExpr)
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
@@ -165,7 +177,8 @@ struct AnalysisTests {
 		#expect(counterFn.environment.captures.count == 1)
 		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).type == .int)
 
-		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.type else {
+		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.type
+		else {
 			#expect(Bool(false), "\(counterFn.type)")
 			return
 		}
@@ -176,19 +189,20 @@ struct AnalysisTests {
 	}
 
 	@Test("Types structs") func structs() throws {
-		let ast = ast("""
-		struct Person {
-			let age: i32
+		let ast = ast(
+			"""
+			struct Person {
+				let age: i32
 
-			init(age: i32) {
-				self.age = age
-			}
+				init(age: i32) {
+					self.age = age
+				}
 
-			func sup() {
-				345
+				func sup() {
+					345
+				}
 			}
-		}
-		""")
+			""")
 
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Person")
@@ -208,18 +222,39 @@ struct AnalysisTests {
 		#expect(type.methods["sup"]!.type == .function("sup", .int, [], []))
 	}
 
-	@Test("Types struct Self/self") func selfSelf() throws {
-		let ast = ast("""
-		struct Person {
-			func typeSup() {
-				Self
-			}
+	@Test("Synthesizing init for structs") func synthesizingInitForStructs() throws {
+		let ast = ast(
+			"""
+			struct Person {
+				let age: i32
 
-			func sup() {
-				self
+				func sup() {
+					345
+				}
 			}
-		}
-		""")
+			""")
+
+		let s = try #require(ast as? AnalyzedStructExpr)
+		#expect(s.name == "Person")
+
+		let structType = s.structType
+		let initializer = try #require(structType.methods["init"])
+		#expect(initializer.params == ["age"])
+	}
+
+	@Test("Types struct Self/self") func selfSelf() throws {
+		let ast = ast(
+			"""
+			struct Person {
+				func typeSup() {
+					Self
+				}
+
+				func sup() {
+					self
+				}
+			}
+			""")
 
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Person")

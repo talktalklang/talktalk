@@ -51,7 +51,7 @@ public class Chunk: Codable {
 		self.name = name
 	}
 
-	public init(name: String, parent: Chunk, arity: Byte, depth: Byte) {
+	public init(name: String, parent: Chunk?, arity: Byte, depth: Byte) {
 		self.name = name
 		self.parent = parent
 		self.arity = arity
