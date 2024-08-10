@@ -1,22 +1,144 @@
 import Foundation
 
-struct Handler {
+class LSPRequestParser {
+	enum State {
+		case contentLength, length, split, body(Int)
+	}
+
+	var buffer: [UInt8] = []
+	var state: State = .contentLength
+	var callback: (Request) -> Void = { _ in }
+
+	var current = -1
+	var currentLength: [UInt8] = []
+	var currentBody: [UInt8] = []
+
+	let contentLengthArray = Array("Content-Length: ").map { $0.asciiValue! }
+	let cr: UInt8 = 13
+	let newline: UInt8 = 10
+
+	func parse(data: Data) {
+		buffer.append(contentsOf: data)
+
+		while let byte = next() {
+			switch state {
+			case .contentLength:
+				contentLength(byte: byte)
+			case .length:
+				length(byte: byte)
+			case .split:
+				split(byte: byte)
+			case .body(let contentLength):
+				body(byte: byte, contentLength: contentLength)
+			}
+		}
+	}
+
+	func contentLength(byte: UInt8) {
+		if current == contentLengthArray.count {
+			// We're done parsing the content length part, move on to the length part
+			state = .length
+			length(byte: byte)
+			return
+		}
+
+		if contentLengthArray[current] == byte {
+			return
+		} else {
+			Log.error("[contentLength] unexpected character parsing message at \(current): \(UnicodeScalar(byte)), expected: \(UnicodeScalar(contentLengthArray[current]))")
+		}
+	}
+
+	func length(byte: UInt8) {
+		if Character(UnicodeScalar(byte)).isNumber {
+			currentLength.append(byte)
+		} else if byte == cr {
+			current = -1
+			state = .split
+		} else {
+			Log.error("[length] unexpected character parsing message at \(current): \(UnicodeScalar(byte).debugDescription), expected number")
+		}
+	}
+
+	// We need to listen for \n\r\n because the first \r was handled in length
+	func split(byte: UInt8) {
+		if current == 3 {
+			let contentLength = Int(String(data: Data(currentLength), encoding: .ascii)!)!
+			state = .body(contentLength)
+			self.current = -1
+			body(byte: byte, contentLength: contentLength)
+			return
+		}
+
+		let expected: UInt8? = switch current {
+		case 0: newline
+		case 1: cr
+		case 2: newline
+		default:
+			nil
+		}
+
+		guard let expected, expected == byte else {
+			Log.error("[split] unexpected character parsing message at \(current): \(UnicodeScalar(byte))")
+			return
+		}
+	}
+
+	func body(byte: UInt8, contentLength: Int) {
+		if currentBody.count == contentLength {
+			complete()
+		} else {
+			currentBody.append(byte)
+		}
+	}
+
+	func next() -> UInt8? {
+		if buffer.isEmpty {
+			complete()
+			return nil
+		}
+
+		defer {
+			current += 1
+		}
+
+		return buffer.removeFirst()
+	}
+
+	func complete() {
+		guard case let .body(contentLength) = state, currentBody.count == contentLength else {
+			return
+		}
+
+		let data = Data(currentBody)
+		let request = try! JSONDecoder().decode(Request.self, from: data)
+
+		current = 0
+		currentBody = []
+		currentLength = []
+		state = .contentLength
+
+		self.callback(request)
+	}
+}
+
+class Handler {
 	// We read json, we write json
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
 
-	// Responses are just written to stdout
-	let stdout = FileHandle.standardOutput
-
-	// Keep track of our files
-	var sources: [String: SourceDocument] = [:]
+	// Parses incoming data over stdin and emits requests
+	var parser: LSPRequestParser
 
 	// Keep track of how many empty responses we get. If it goes to 10 we should just exit.
 	var emptyResponseCount: Int = 0
 
-	mutating func handle(data: Data) {
-		Log.info("handling. empty response count: \(emptyResponseCount)")
+	init(callback: @escaping (Request) -> Void) {
+		self.parser = .init()
+		self.parser.callback = callback
+	}
 
+	func handle(data: Data) {
 		if data.isEmpty {
 			emptyResponseCount += 1
 			Log.info("incrementing empty response count. now: \(emptyResponseCount)")
@@ -31,85 +153,6 @@ struct Handler {
 
 		emptyResponseCount = 0
 
-		var length: Data = .init()
-		var i = 16
-		while i <= data.count, data[i] != 13 {
-			length.append(data[i])
-			i += 1
-		}
-
-		i += 3  // Skip the \n\r\n
-
-		if i > data.count {
-			Log.error("i less than data.count")
-			return
-		}
-
-		let body = data[i..<data.count]
-
-		Log.info(String(data: body, encoding: .utf8) ?? "Could not get body string.")
-
-		let request: Request
-		do {
-			request = try decoder.decode(Request.self, from: body)
-		} catch {
-			Log.error("Error parsing JSON: \(error)")
-			Log.error(String(data: body, encoding: .utf8) ?? "<no string>")
-			return
-		}
-
-		Log.info("[request] method: \(request.method), id: \(request.id as Any)")
-
-		switch request.method {
-		case .initialize:
-			respond(to: request.id, with: InitializeResult())
-		case .initialized:
-			()
-		case .textDocumentDidOpen:
-			TextDocumentDidOpen(request: request).handle(&self)
-		case .textDocumentDidChange:
-			TextDocumentDidChange(request: request).handle(&self)
-		case .textDocumentCompletion:
-			TextDocumentCompletion(request: request).handle(&self)
-		case .textDocumentFormatting:
-			TextDocumentFormatting(request: request).handle(&self)
-		case .textDocumentDiagnostic:
-			TextDocumentDiagnostic(request: request).handle(&self)
-		case .textDocumentSemanticTokensFull:
-			TextDocumentSemanticTokensFull(request: request).handle(&self)
-		case .workspaceSemanticTokensRefresh:
-			()
-		case .shutdown:
-			Log.info("shutting down!")
-			exit(0)
-		}
-	}
-
-	func request<T: Encodable>(_ request: T) {
-		do {
-			let content = try encoder.encode(request)
-			let contentLength = content.count
-			var data = Data("Content-Length: \(contentLength)\r\n\r\n".utf8)
-			data.append(content)
-			try stdout.write(contentsOf: data)
-		} catch {
-			Log.error("Error issuing server request")
-		}
-	}
-
-	func respond<T: Encodable>(to id: RequestID?, with response: T) {
-		do {
-			let response = Response(id: id, result: response)
-			let content = try encoder.encode(response)
-			let contentLength = content.count
-			var data = Data("Content-Length: \(contentLength)\r\n\r\n".utf8)
-			data.append(content)
-			try stdout.write(contentsOf: data)
-
-			let dataString = String(data: data, encoding: .utf8)!
-			Log.info(dataString)
-		} catch {
-			Log.error("error generating response: \(error)")
-		}
+		parser.parse(data: data)
 	}
 }

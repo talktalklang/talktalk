@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-enum SemanticTokenTypes: String, Encodable {
+enum SemanticTokenTypes: String, Codable {
 	case type = "type"
 	case `class` = "class"
 	case `enum` = "enum"
@@ -29,11 +29,15 @@ enum SemanticTokenTypes: String, Encodable {
 	case `operator` = "operator"
 }
 
-enum SemanticTokenModifiers: String, Encodable {
+enum SemanticTokenModifiers: String, Codable {
 	case declaration, definition, deprecated
 }
 
-struct SemanticTokensLegend: Encodable {
+struct SemanticTokensLegend: Codable {
+	enum CodingKeys: CodingKey {
+		case tokenTypes, tokenModifiers
+	}
+
 	static func lookup(_ type: SemanticTokenTypes) -> Int {
 		[.type: 0,
 		 .struct: 1,
@@ -69,7 +73,11 @@ struct SemanticTokensLegend: Encodable {
 	]
 }
 
-struct SemanticTokensOptions: Encodable {
+struct SemanticTokensOptions: Codable {
+	enum CodingKeys: CodingKey {
+		case legend, range, full
+	}
+
 	let legend: SemanticTokensLegend = .init()
 	let range = false
 	let full = true

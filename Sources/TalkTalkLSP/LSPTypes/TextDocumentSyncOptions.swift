@@ -5,7 +5,11 @@
 //  Created by Pat Nakajima on 8/5/24.
 //
 
-struct TextDocumentSyncOptions: Encodable {
+struct TextDocumentSyncOptions: Codable {
+	enum CodingKeys: CodingKey {
+		case change, openClose
+	}
+
 	let change: TextDocumentSyncKind
 	let openClose = true
 }

@@ -36,7 +36,7 @@ enum RequestID: Equatable, Codable {
 	}
 }
 
-struct Request: Equatable, Decodable {
+struct Request: Equatable, Codable {
 	static func == (lhs: Request, rhs: Request) -> Bool {
 		lhs.id == rhs.id && lhs.method == rhs.method
 	}
@@ -51,6 +51,22 @@ struct Request: Equatable, Decodable {
 
 	enum CodingKeys: CodingKey {
 		case id, method, params
+	}
+
+	init(id: RequestID?, method: Method, params: (any Decodable)? = nil) {
+		self.id = id
+		self.method = method
+		self.params = params
+	}
+
+	func encode(to encoder: any Encoder) throws {
+		var container = encoder.container(keyedBy: CodingKeys.self)
+		try container.encode(id, forKey: .id)
+		try container.encode(method, forKey: .method)
+
+		if let params = params as? Encodable {
+			try container.encode(params, forKey: .params)
+		}
 	}
 
 	init(from decoder: any Decoder) throws {

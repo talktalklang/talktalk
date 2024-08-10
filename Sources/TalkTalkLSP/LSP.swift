@@ -8,9 +8,18 @@
 import Foundation
 
 public struct LSP {
-	var handler = Handler()
+	var server: Server
+	var handler: Handler
 
-	public init() {}
+	public init() {
+		var server = Server()
+		let handler = Handler() {
+			server.handle($0)
+		}
+
+		self.server = server
+		self.handler = handler
+	}
 
 	public mutating func start() {
 		Log.info("starting talktalk lsp")

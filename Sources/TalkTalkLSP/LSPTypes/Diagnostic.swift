@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-public struct Diagnostic: Encodable {
+public struct Diagnostic: Codable {
 	// The range at which the message applies.
 	public let range: Range
 
@@ -37,15 +37,15 @@ public struct Diagnostic: Encodable {
 }
 
 public extension Diagnostic {
-	enum Severity: Int, Encodable {
+	enum Severity: Int, Codable {
 		case error = 1, warning = 2, information = 3, hint = 4
 	}
 
-	enum Tag: Int, Encodable {
+	enum Tag: Int, Codable {
 		case unnecessary = 1, deprecated = 2
 	}
 
-	struct RelatedInformation: Encodable {
+	struct RelatedInformation: Codable {
 		public let location: Location
 		public let message: String
 	}

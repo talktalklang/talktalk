@@ -17,7 +17,7 @@ struct ArrayTests: StandardLibraryTest {
 		#expect(result == .int(0))
 	}
 
-	@Test("Can add items") func add() async throws {
+	@Test("append increments count") func append() async throws {
 		let result = try await run("""
 		a = Array()
 		a.append(123)
@@ -25,5 +25,15 @@ struct ArrayTests: StandardLibraryTest {
 		""").get()
 
 		#expect(result == .int(1))
+	}
+
+	@Test("can get items at index") func get() async throws {
+		let result = try await run("""
+		a = Array()
+		a.append(123)
+		a.get(0)
+		""").get()
+
+		#expect(result == .int(123))
 	}
 }

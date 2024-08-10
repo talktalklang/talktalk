@@ -23,7 +23,7 @@ struct TextDocumentFormatting {
 		return SourceDocument(version: nil, uri: uri, text: string)
 	}
 
-	func handle(_ handler: inout Handler) {
+	func handle(_ handler: Server) {
 		let params = request.params as! TextDocumentFormattingRequest
 		guard let source = handler.sources[params.textDocument.uri] ?? readFromDisk(uri: params.textDocument.uri) else {
 			Log.error("could not find source for document uri")

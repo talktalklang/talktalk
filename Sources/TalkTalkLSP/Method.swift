@@ -1,4 +1,4 @@
-enum Method: String, Decodable {
+enum Method: String, Codable {
 	case initialize = "initialize",
 			 initialized = "initialized",
 			 shutdown = "shutdown",

@@ -5,12 +5,26 @@
 //  Created by Pat Nakajima on 8/5/24.
 //
 
-struct ServerInfo: Encodable {
+struct ServerInfo: Codable {
+	enum CodingKeys: CodingKey {
+		case name, version
+	}
+
 	let name = "talktalk-lsp"
 	let version = "0.0.1"
 }
 
-struct ServerCapabilities: Encodable {
+struct ServerCapabilities: Codable {
+	enum CodingKeys: CodingKey {
+		case positionEncoding,
+				 serverInfo,
+				 textDocumentSync,
+				 completionProvider,
+				 semanticTokensProvider,
+				 documentFormattingProvider,
+				 diagnosticProvider
+	}
+
 	let positionEncoding = "utf-8"
 	let serverInfo: ServerInfo = .init()
 	let textDocumentSync: TextDocumentSyncOptions = .init(change: .full)

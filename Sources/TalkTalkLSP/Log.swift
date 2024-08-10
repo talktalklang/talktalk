@@ -13,6 +13,7 @@ struct Log {
 	}
 
 	static func error(_ message: String) {
+		FileHandle.standardError.write(Data((message + "\n").utf8))
 		log("ERROR: " + message)
 	}
 

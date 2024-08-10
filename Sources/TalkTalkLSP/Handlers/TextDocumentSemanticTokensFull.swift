@@ -12,7 +12,7 @@ import TalkTalkSyntax
 struct TextDocumentSemanticTokensFull {
 	var request: Request
 
-	func handle(_ handler: inout Handler) {
+	func handle(_ handler: Server) {
 		let params = request.params as! TextDocumentSemanticTokensFullRequest
 
 		guard let source = handler.sources[params.textDocument.uri] else {

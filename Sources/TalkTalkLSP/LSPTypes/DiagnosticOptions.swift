@@ -5,6 +5,10 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-struct DiagnosticOptions: Encodable {
+struct DiagnosticOptions: Codable {
+	enum CodingKeys: CodingKey {
+		case interFileDependencies
+	}
+
 	let interFileDependencies = true
 }

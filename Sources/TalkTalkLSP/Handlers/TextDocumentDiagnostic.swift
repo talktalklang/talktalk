@@ -10,7 +10,7 @@ import TalkTalkAnalysis
 struct TextDocumentDiagnostic: Decodable {
 	var request: Request
 
-	func handle(_ handler: inout Handler) {
+	func handle(_ handler: Server) {
 		let params = request.params as! TextDocumentDiagnosticRequest
 		
 		guard let source = handler.sources[params.textDocument.uri] else {

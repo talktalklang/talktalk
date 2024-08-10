@@ -65,6 +65,6 @@ struct RelativeSemanticToken: Equatable {
 	}
 }
 
-struct TextDocumentSemanticTokens: Encodable {
+struct TextDocumentSemanticTokens: Codable {
 	let data: [Int]
 }

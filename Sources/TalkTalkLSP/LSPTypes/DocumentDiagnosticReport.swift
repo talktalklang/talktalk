@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-public struct DocumentDiagnosticReport: Encodable {
-	public enum Kind: String, Encodable {
+public struct DocumentDiagnosticReport: Codable {
+	public enum Kind: String, Codable {
 		case full, unchanged
 	}
 

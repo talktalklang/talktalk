@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-enum CompletionItemKind: Int, Encodable {
+enum CompletionItemKind: Int, Codable {
 	case text = 1
 	case method = 2
 	case function = 3
@@ -33,7 +33,7 @@ enum CompletionItemKind: Int, Encodable {
 	case typeParameter = 25
 }
 
-public struct CompletionItem: Encodable, Equatable, Comparable {
+public struct CompletionItem: Codable, Equatable, Comparable {
 	public static func < (lhs: CompletionItem, rhs: CompletionItem) -> Bool {
 		lhs.label < rhs.label
 	}
