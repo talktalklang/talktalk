@@ -85,7 +85,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		guard let variable else {
-			throw CompilerError.unknownIdentifier(expr.description + " at line: \(expr.location.start.line)")
+			throw CompilerError.unknownIdentifier(
+				expr.description + " at line: \(expr.location.start.line)"
+			)
 		}
 
 		// If this is a member, we need to put the member's owner on the stack as well
@@ -327,9 +329,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 			options.insert(.isMethod)
 		}
 		chunk.emit(byte: options.rawValue, line: expr.location.line)
-		// Put the receiver on the stack
-//
-//		chunk.emit(byte: Byte(expr.receiverAnalyzed), line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedDeclBlock, _ chunk: Chunk) throws {
@@ -343,7 +342,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		var structType = Struct(name: name, propertyCount: expr.structType.properties.count)
 		var methods: [Chunk?] = Array(repeating: nil, count: expr.structType.methods.count)
 
-		// Go through the body and collect the chunks (we don't want to emit them into the outer chunk)
+		// Go through the body and collect the chunks (we don't want to emit them into the
+		// outer chunk)
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
 			switch decl {
 			case let decl as AnalyzedInitDecl:
@@ -396,7 +396,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		structType.methods = methods.map { $0! }
-		structType.initializer = expr.structType.methods["init"]!.slot
+
+		if let initializer = expr.structType.methods["init"] {
+			structType.initializer = initializer.slot
+		} else {
+			let slot = structType.methods.count
+			structType.methods.append(synthesizeInit())
+			structType.initializer = slot
+		}
 		module.structs[.struct(name)] = structType
 	}
 
@@ -599,5 +606,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.upvalueNames.append(name)
 
 		return Byte(upvalues.count - 1)
+	}
+
+	private func synthesizeInit() -> Chunk {
+		fatalError("TODO: implement init")
 	}
 }
