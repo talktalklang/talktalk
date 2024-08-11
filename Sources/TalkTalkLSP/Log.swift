@@ -18,6 +18,10 @@ public struct Log {
 	}
 
 	private static func log(_ message: String) {
+		guard FileManager.default.fileExists(atPath: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log").path) else {
+			return
+		}
+
 		let logfile = URL.homeDirectory.appending(path: "apps/talktalk/lsp.log")
 		try! Data(message.utf8).append(to: logfile)
 		try! Data("\n".utf8).append(to: logfile)
