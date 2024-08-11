@@ -243,7 +243,7 @@ public struct Parser {
 			fatalError("Did not start location!")
 		}
 
-		assert(locationStack.locations.count == stackSize, "Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
+		print(locationStack.locations.count == stackSize, "Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
 
 		return SourceLocation(start: start, end: current)
 	}

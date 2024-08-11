@@ -91,7 +91,7 @@ public class Environment {
 			return Binding(
 				name: "print",
 				expr: AnalyzedFuncExpr(
-					type: Builtin.print.type,
+					type: BuiltinFunction.print.type,
 					expr: FuncExprSyntax(
 						funcToken: .synthetic(.func),
 						params: ParamsExprSyntax(
@@ -112,7 +112,7 @@ public class Environment {
 					returnsAnalyzed: nil,
 					environment: .init()
 				),
-				type: Builtin.print.type
+				type: BuiltinFunction.print.type
 			)
 		}
 

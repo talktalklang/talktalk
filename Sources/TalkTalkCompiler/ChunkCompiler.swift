@@ -511,7 +511,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = Builtin.list.firstIndex(where: { $0.name == name }) {
+			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == name }) {
 				return Variable(
 					name: name,
 					slot: Byte(slot),
