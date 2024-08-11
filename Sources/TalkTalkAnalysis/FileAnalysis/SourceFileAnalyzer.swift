@@ -428,15 +428,17 @@ public struct SourceFileAnalyzer: Visitor {
 						isMutable: false
 					))
 			case let decl as FuncExpr:
-				structType.add(
-					method: Method(
-						slot: structType.methods.count,
-						name: decl.name!.lexeme,
-						params: decl.params.params.map(\.name),
-						type: .function(decl.name!.lexeme, .placeholder(2), [], []),
-						expr: decl,
-						isMutable: false
-					))
+				if let name = decl.name {
+					structType.add(
+						method: Method(
+							slot: structType.methods.count,
+							name: name.lexeme,
+							params: decl.params.params.map(\.name),
+							type: .function(name.lexeme, .placeholder(2), [], []),
+							expr: decl,
+							isMutable: false
+						))
+				}
 			case let decl as InitDecl:
 				structType.add(
 					initializer: .init(
@@ -450,8 +452,7 @@ public struct SourceFileAnalyzer: Visitor {
 			case let decl as ErrorSyntax:
 				()
 			default:
-				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl)" + "\n").utf8))
-				fatalError("unknown decl in struct: \(decl)")
+				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
 			}
 		}
 
@@ -504,16 +505,18 @@ public struct SourceFileAnalyzer: Visitor {
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
 		for decl in expr.decls {
-			let declAnalyzed = try decl.accept(self, context)
+			guard let declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
+				continue
+			}
 
-			declsAnalyzed.append(declAnalyzed as! any AnalyzedExpr)
+			declsAnalyzed.append(declAnalyzed)
 
 			// If we have an updated type for a method, update the struct to know about it.
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
-			   let lexicalScope = context.lexicalScope
+			   let lexicalScope = context.lexicalScope,
+				 let name = funcExpr.name?.lexeme,
+				 let existing = lexicalScope.scope.methods[name]
 			{
-				let existing = lexicalScope.scope.methods[funcExpr.name!.lexeme]!
-
 				lexicalScope.scope.add(
 					method: Method(
 						slot: existing.slot,
@@ -527,7 +530,8 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		return AnalyzedDeclBlock(
-			type: .void, decl: expr, declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl],
+			type: .void, decl: expr,
+			declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl],
 			environment: context
 		)
 	}

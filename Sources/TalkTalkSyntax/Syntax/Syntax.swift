@@ -35,4 +35,8 @@ public extension Syntax {
 			"No description found for \(self)"
 		}
 	}
+
+	var debugDescription: String {
+		"\(Self.self)(location: \(location), children: \(children.map(\.debugDescription).joined(separator: ", "))"
+	}
 }
