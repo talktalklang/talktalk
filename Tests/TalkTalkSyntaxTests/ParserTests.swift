@@ -254,6 +254,18 @@ struct TalkTalkParserTests {
 		#expect(fooMember.property == "age")
 	}
 
+	@Test("Generics?") func generics() throws {
+		let ast = parse("""
+		struct Foo<Bar> {
+			var fizz: Bar
+		}
+		""")
+
+		let structExpr = ast[0].cast(StructExprSyntax.self)
+		#expect(structExpr.name == "Foo")
+		#expect(structExpr.genericParams?.params.map(\.name) == ["Bar"])
+	}
+
 	@Test("Parses bang") func bang() throws {
 		let expr = try #require(parse("!hello")[0] as? UnaryExpr)
 		#expect(expr.op == .bang)

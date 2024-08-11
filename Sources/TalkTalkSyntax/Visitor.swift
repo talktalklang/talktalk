@@ -22,6 +22,7 @@ public protocol Visitor {
 	func visit(_ expr: FuncExpr, _ context: Context) throws -> Value
 	func visit(_ expr: ParamsExpr, _ context: Context) throws -> Value
 	func visit(_ expr: Param, _ context: Context) throws -> Value
+	func visit(_ expr: GenericParams, _ context: Context) throws -> Value
 
 	func visit(_ expr: StructExpr, _ context: Context) throws -> Value
 	func visit(_ expr: DeclBlockExpr, _ context: Context) throws -> Value

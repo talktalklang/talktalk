@@ -93,6 +93,15 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
+	@StringBuilder public func visit(_ expr: any GenericParams, _ context: Context) throws -> String {
+		dump(expr)
+		indent {
+			for param in expr.params {
+				param.name
+			}
+		}
+	}
+
 	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
 		dump(expr, "property: \(expr.property)")
 		indent {

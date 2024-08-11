@@ -73,6 +73,10 @@ struct SemanticTokensVisitor: Visitor {
 		[]
 	}
 
+	func visit(_ expr: any GenericParams, _ context: Context) throws -> [RawSemanticToken] {
+		[]
+	}
+
 	func visit(_ expr: LiteralExpr, _ context: Context) throws -> [RawSemanticToken] {
 		let kind: SemanticTokenTypes
 

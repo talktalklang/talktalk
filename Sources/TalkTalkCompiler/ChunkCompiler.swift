@@ -428,6 +428,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		module.structs[.struct(name)] = structType
 	}
 
+	public func visit(_ expr: AnalyzedGenericParams, _ context: Chunk) throws -> Void {
+		// No need to emit any code here because generic params are just used by the analyzer... for now?
+	}
+
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {
 		// No need to emit any code here because var decls are just used by the analyzer
 	}

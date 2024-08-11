@@ -19,6 +19,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 
 	public var structToken: Token { expr.structToken }
 	public var name: String? { expr.name }
+	public var genericParams: (any GenericParams)? { expr.genericParams }
 	public var body: DeclBlockExpr { expr.body }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }

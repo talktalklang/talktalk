@@ -382,6 +382,12 @@ public struct SourceFileAnalyzer: Visitor {
 		AnalyzedParam(type: .placeholder(1), expr: expr, environment: context)
 	}
 
+	public func visit(_ expr: any GenericParams, _ context: Environment) throws -> any AnalyzedSyntax {
+		AnalyzedGenericParams(wrapped: expr, type: .void, paramsAnalyzed: expr.params.map {
+			AnalyzedGenericParam(wrapped: $0)
+		})
+	}
+
 	public func visit(_ expr: any StructExpr, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{

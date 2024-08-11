@@ -31,4 +31,5 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedLetDecl, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedImportStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedInitDecl, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedGenericParams, _ context: Context) throws -> Value
 }

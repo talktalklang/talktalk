@@ -101,7 +101,7 @@ public struct Parser {
 		return expr()
 	}
 
-	mutating func parameterList() -> ParamsExpr {
+	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExpr {
 		let i = startLocation(at: previous)
 
 		if didMatch(.rightParen) {
@@ -125,7 +125,7 @@ public struct Parser {
 			params.append(ParamSyntax(name: identifier.lexeme, type: type, location: [identifier]))
 		} while didMatch(.comma)
 
-		consume(.rightParen, "Expected ')' after parameter list")
+		consume(terminator, "Expected '\(terminator)' after parameter list")
 
 		return ParamsExprSyntax(
 			params: params,

@@ -9,11 +9,13 @@ public protocol StructExpr: Expr {
 	var structToken: Token { get }
 	var name: String? { get }
 	var body: any DeclBlockExpr { get }
+	var genericParams: (any GenericParams)? { get }
 }
 
 public struct StructExprSyntax: StructExpr {
 	public var structToken: Token
 	public var name: String?
+	public var genericParams: (any GenericParams)?
 	public var body: any DeclBlockExpr
 	public var location: SourceLocation
 	public var children: [any Syntax] { [body] }

@@ -168,9 +168,30 @@ extension Parser {
 		let i = startLocation(at: previous)
 
 		let name = match(.identifier)
+
+		var genericParamsSyntax: GenericParamsSyntax? = nil
+		if didMatch(.less) {
+			genericParamsSyntax = genericParams()
+		}
+
 		let body = declBlock()
 
-		return StructExprSyntax(structToken: structToken, name: name?.lexeme, body: body, location: endLocation(i))
+		return StructExprSyntax(
+			structToken: structToken,
+			name: name?.lexeme,
+			genericParams: genericParamsSyntax,
+			body: body,
+			location: endLocation(i)
+		)
+	}
+
+	mutating func genericParams() -> GenericParamsSyntax {
+		let i = startLocation(at: previous)
+		let params = parameterList(terminator: .greater)
+		return GenericParamsSyntax(
+			params: params.params.map { GenericParamSyntax(name: $0.name) },
+			location: endLocation(i)
+		)
 	}
 
 	mutating func blockExpr(_: Bool) -> BlockExprSyntax {

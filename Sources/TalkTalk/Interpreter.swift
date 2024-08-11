@@ -51,6 +51,10 @@ public struct Interpreter: AnalyzedVisitor {
 		.none
 	}
 
+	public func visit(_ expr: AnalyzedGenericParams, _ context: Scope) throws -> Value {
+		.none
+	}
+
 	public func visit(_ expr: AnalyzedUnaryExpr, _ context: Scope) throws -> Value {
 		switch expr.op {
 		case .bang:

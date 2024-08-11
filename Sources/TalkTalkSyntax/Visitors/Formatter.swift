@@ -62,6 +62,13 @@ public struct Formatter: Visitor {
 		return expr.name
 	}
 
+	public func visit(_ expr: any GenericParams, _ context: Context) throws -> String {
+		var result = "<"
+		result += expr.params.map(\.name).joined(separator: ", ")
+		result += "> "
+		return result
+	}
+
 	public func visit(_ expr: any IfExpr, _ context: Context) throws -> Value {
 		var result = "if "
 		result += try expr.condition.accept(self, context)
