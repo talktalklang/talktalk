@@ -14,6 +14,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case none
 	case closure(IntValue)
 	case builtin(IntValue)
+	case builtinStruct(IntValue)
 	case moduleFunction(IntValue)
 	case `struct`(IntValue)
 	case instance(IntValue, IntValue)
@@ -23,6 +24,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		switch self {
 		case .closure: true
 		case .builtin: true
+		case .builtinStruct: true
 		case .moduleFunction: true
 		case .struct: true
 		case .boundMethod: true
@@ -133,6 +135,8 @@ extension Value: CustomStringConvertible {
 			"instance \(instanceValue!)"
 		case .boundMethod:
 			"bound method \(boundMethodValue!)"
+		case .builtinStruct:
+			"builtin struct"
 		case .none:
 			"none"
 		}

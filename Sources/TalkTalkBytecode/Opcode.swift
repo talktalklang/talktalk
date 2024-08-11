@@ -39,8 +39,9 @@ public enum Opcode: Byte {
 			 getStruct, setStruct,
 			 getProperty, setProperty,
 
-			 // Builtin functions
+			 // Builtins
 			 getBuiltin, setBuiltin,
+			 getBuiltinStruct, setBuiltinStruct,
 
 			 // Literals
 			 `true`,

@@ -71,6 +71,13 @@ struct TalkTalkLexerTests {
 		#expect(token.lexeme == "foo12")
 	}
 
+	@Test("Identifier starting with underscore") func identifierUnderscore() async throws {
+		var lexer = TalkTalkLexer("_foo12")
+		let token = lexer.collect()[0]
+		#expect(token.kind == .identifier)
+		#expect(token.lexeme == "_foo12")
+	}
+
 	@Test("eof") func eof() async throws {
 		var lexer = TalkTalkLexer("()")
 		let tokens = lexer.collect()

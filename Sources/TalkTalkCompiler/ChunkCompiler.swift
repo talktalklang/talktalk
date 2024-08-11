@@ -511,6 +511,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
+			if let builtinStruct = BuiltinStruct.lookup(name: name) {
+				return Variable(
+					name: builtinStruct.name,
+					slot: builtinStruct.slot(),
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getBuiltinStruct,
+					setter: .setBuiltinStruct
+				)
+			}
+
 			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == name }) {
 				return Variable(
 					name: name,

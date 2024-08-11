@@ -386,4 +386,17 @@ struct VMEndToEndTests {
 		#expect(VirtualMachine.run(module: module, verbose: true).get() == .int(123))
 	}
 
+	@Test("Basic _RawArray") func rawArray() throws {
+		let result = try run(
+			"""
+			a = _RawArray()
+			a.append(123)
+			a.count
+			"""
+		)
+
+		#expect(
+			result == .int(1)
+		)
+	}
 }

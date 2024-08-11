@@ -49,6 +49,8 @@ public struct Disassembler {
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getStruct, .setStruct:
 			return variableInstruction(opcode: opcode, start: index, type: .struct)
+		case .getBuiltinStruct, .setBuiltinStruct:
+			return variableInstruction(opcode: opcode, start: index, type: .builtinStruct)
 		case .getProperty:
 			return getPropertyInstruction(opcode: opcode, start: index, type: .property)
 		case .setProperty:
@@ -95,6 +97,8 @@ public struct Disassembler {
 		case .struct:
 			"slot: \(slot)"
 		case .property:
+			"slot: \(slot)"
+		case .builtinStruct:
 			"slot: \(slot)"
 		}
 

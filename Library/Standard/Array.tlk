@@ -3,7 +3,6 @@ struct Array {
 
 	init() {
 		self.count = 0
-		self.buffer = _buffer()
 	}
 
 	func append(item) {

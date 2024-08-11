@@ -86,6 +86,10 @@ public class Environment {
 			return capture.binding
 		}
 
+		if let builtinStruct = BuiltinStruct.lookup(name: name) {
+			return builtinStruct.binding()
+		}
+
 		if name == "print" {
 			// um..
 			return Binding(
@@ -195,6 +199,10 @@ public class Environment {
 			 let externalModule = binding.externalModule,
 		   let moduleStruct = externalModule.structs[name] {
 			return StructType(name: name, properties: moduleStruct.properties, methods: moduleStruct.methods)
+		}
+
+		if let builtinStruct = BuiltinStruct.lookup(name: name) {
+			return builtinStruct.structType()
 		}
 
 		return nil

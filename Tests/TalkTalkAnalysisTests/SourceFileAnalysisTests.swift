@@ -290,4 +290,23 @@ struct AnalysisTests {
 		#expect(name == "sup")
 		#expect(returns == .instance(.struct("Person")))
 	}
+
+	@Test("Types builtin structs") func builtinStruct() throws {
+		let ast = ast(
+			"""
+			rawArray = _RawArray()
+			rawArray
+			"""
+		)
+
+		let s = try #require(ast as? AnalyzedVarExpr)
+		#expect(s.name == "rawArray")
+
+		guard case let .instance(.struct(name)) = s.type else {
+			#expect(Bool(false), "did not get instance type, got: \(s.type)")
+			return
+		}
+
+		#expect(name == "_RawArray")
+	}
 }

@@ -275,7 +275,7 @@ public struct VirtualMachine {
 				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
 
 				// Push the closure Value onto the stack
-				stack.push(.closure(Value.IntValue(slot)))
+				stack.push(.closure(.init(slot)))
 			case .call:
 				let callee = stack.pop()
 				if callee.isCallable {
@@ -316,12 +316,17 @@ public struct VirtualMachine {
 				module.valueInitializers.removeValue(forKey: slot)
 			case .getBuiltin:
 				let slot = readByte()
-				stack.push(.builtin(Value.IntValue(slot)))
+				stack.push(.builtin(.init(slot)))
 			case .setBuiltin:
+				return runtimeError("Cannot set built in")
+			case .getBuiltinStruct:
+				let slot = readByte()
+				stack.push(.builtinStruct(.init(slot)))
+			case .setBuiltinStruct:
 				return runtimeError("Cannot set built in")
 			case .getStruct:
 				let slot = readByte()
-				stack.push(.struct(Value.IntValue(slot)))
+				stack.push(.struct(.init(slot)))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
@@ -334,7 +339,7 @@ public struct VirtualMachine {
 				// Pop the receiver off the stack
 				let receiverValue = stack.pop()
 				guard let (_, receiver) = receiverValue.instanceValue else {
-					return runtimeError("Receiver is not a struct")
+					return runtimeError("Receiver is not an instance of a struct")
 				}
 
 				let instance = currentFrame.instances[Int(receiver)]
@@ -343,7 +348,7 @@ public struct VirtualMachine {
 					// If it's a method, we create a boundMethod value, which consists of the method slot
 					// and the instance ID. Using this, we can use the type we get from instance[instanceID]
 					// to lookup the method.
-					let boundMethod = Value.boundMethod(Value.IntValue(slot), receiver)
+					let boundMethod = Value.boundMethod(.init(slot), receiver)
 					stack.push(boundMethod)
 				} else {
 					guard let value = instance.fields[Int(slot)] else {
@@ -377,12 +382,18 @@ public struct VirtualMachine {
 		case .moduleFunction(let moduleFunction):
 			call(moduleFunction: Int(moduleFunction))
 		case .struct(let structValue):
-			call(structValue: Value.IntValue(structValue))
+			call(structValue: .init(structValue))
 		case .boundMethod(let methodSlot, let instanceID):
 			call(boundMethod: methodSlot, on: instanceID)
+		case .builtinStruct(let slot):
+			call(builtinStruct: slot)
 		default:
 			fatalError("\(callee) is not callable")
 		}
+	}
+
+	mutating func call(builtinStruct: Value.IntValue) {
+		
 	}
 
 	// Call a method on an instance.
@@ -489,7 +500,7 @@ public struct VirtualMachine {
 	}
 
 	mutating func call(builtin: Int) {
-		guard let builtin = Builtin(rawValue: builtin) else {
+		guard let builtin = BuiltinFunction(rawValue: builtin) else {
 			fatalError("no builtin at index: \(builtin)")
 		}
 

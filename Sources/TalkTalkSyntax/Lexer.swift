@@ -97,7 +97,7 @@ public struct TalkTalkLexer {
 		case _ where char.isMathSymbol: symbol()
 		case _ where char.isNumber: number()
 		default:
-			if char.isLetter {
+			if char.isLetter || char == "_" {
 				identifier()
 			} else {
 				error("unexpected character: \(char)")

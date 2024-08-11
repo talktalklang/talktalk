@@ -17,5 +17,10 @@ public struct IdentifierExprSyntax: IdentifierExpr {
 		try visitor.visit(self, scope)
 	}
 
+	public init(name: String, location: SourceLocation) {
+		self.name = name
+		self.location = location
+	}
+
 	public var children: [any Syntax] { [] }
 }

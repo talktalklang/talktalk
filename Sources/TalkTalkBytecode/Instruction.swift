@@ -145,7 +145,7 @@ public extension InstructionMetadata where Self == GetPropertyMetadata {
 
 public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
-		case local, global, builtin, `struct`, property
+		case local, global, builtin, `struct`, property, builtinStruct
 	}
 
 	public let slot: Byte
@@ -172,6 +172,10 @@ public extension InstructionMetadata where Self == VariableMetadata {
 
 	static func builtin(slot: Byte, name: String) -> VariableMetadata {
 		VariableMetadata(slot: slot, name: name, type: .builtin)
+	}
+
+	static func builtinStruct(slot: Byte, name: String) -> VariableMetadata {
+		VariableMetadata(slot: slot, name: name, type: .builtinStruct)
 	}
 
 	static func `struct`(slot: Byte) -> VariableMetadata {

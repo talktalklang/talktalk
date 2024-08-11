@@ -243,7 +243,9 @@ public struct Parser {
 			fatalError("Did not start location!")
 		}
 
-		print(locationStack.locations.count == stackSize, "Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
+		if locationStack.locations.count != stackSize {
+			print("Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
+		}
 
 		return SourceLocation(start: start, end: current)
 	}

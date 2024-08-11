@@ -334,4 +334,30 @@ struct CompilerTests {
 			Instruction(opcode: .return, offset: 9, line: 0, metadata: .simple)
 		])
 	}
+
+	@Test("_RawArray") func rawArray() throws {
+		let chunk = try compile("""
+		a = _RawArray()
+		a.count
+		a.append(123)
+		""")
+
+		let instructions = [
+			Instruction(opcode: .getBuiltinStruct, offset: 0, line: 0, metadata: .builtinStruct(slot: 0, name: "slot: 0")),
+			Instruction(opcode: .call, offset: 2, line: 0, metadata: .simple),
+			Instruction(opcode: .setLocal, offset: 3, line: 0, metadata: .local(slot: 1, name: "a")),
+
+			Instruction(opcode: .getLocal, offset: 5, line: 1, metadata: .local(slot: 1, name: "a")),
+			Instruction(opcode: .getProperty, offset: 7, line: 1, metadata: .getProperty(slot: 0, options: [])),
+
+			Instruction(opcode: .constant, offset: 10, line: 2, metadata: ConstantMetadata(value: .int(123))),
+			Instruction(opcode: .getLocal, offset: 12, line: 2, metadata: .local(slot: 1, name: "a")),
+			Instruction(opcode: .getProperty, offset: 14, line: 2, metadata: .getProperty(slot: 1, options: .isMethod)),
+			Instruction(opcode: .call, offset: 17, line: 2, metadata: .simple),
+
+			Instruction(opcode: .return, offset: 18, line: 0, metadata: .simple)
+		]
+
+		#expect(chunk.disassemble() == instructions)
+	}
 }
