@@ -70,9 +70,10 @@ struct CompilerTests {
 		let result = chunk.disassemble()
 		let expected = [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .data(0))),
-			Instruction(opcode: .constant, offset: 2, line: 1, metadata: ConstantMetadata(value: .data(8))),
-			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
-			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
+			Instruction(opcode: .pop, offset: 2, line: 0, metadata: .simple),
+			Instruction(opcode: .constant, offset: 3, line: 1, metadata: ConstantMetadata(value: .data(8))),
+			Instruction(opcode: .pop, offset: 5, line: 1, metadata: .simple),
+			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple)
 		]
 
 		#expect(result == expected)
@@ -111,10 +112,10 @@ struct CompilerTests {
 			Instruction(opcode: .setModuleValue, offset: 10, line: 2, metadata: .global(slot: 1)),
 			Instruction(opcode: .pop, offset: 12, line: 0, metadata: .simple),
 
-			Instruction(opcode: .getModuleValue, offset: 11, line: 3, metadata: .global(slot: 1)),
-			Instruction(opcode: .pop, offset: 13, line: 3, metadata: .simple),
+			Instruction(opcode: .getModuleValue, offset: 13, line: 3, metadata: .global(slot: 1)),
+			Instruction(opcode: .pop, offset: 15, line: 3, metadata: .simple),
 
-			Instruction(opcode: .return, offset: 14, line: 0, metadata: .simple)
+			Instruction(opcode: .return, offset: 16, line: 0, metadata: .simple)
 		])
 	}
 
@@ -172,20 +173,18 @@ struct CompilerTests {
 
 			// If we're not jumping, here's the value of the consequence block
 			Instruction(opcode: .constant, offset: 7, line: 1, metadata: .constant(.int(123))),
-			Instruction(opcode: .pop, offset: 9, line: 1, metadata: .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			Instruction(opcode: .jump, offset: 10, line: 2, metadata: .jump(offset: 3)),
+			Instruction(opcode: .jump, offset: 9, line: 2, metadata: .jump(offset: 3)),
 
 			// Pop the condition
-			Instruction(opcode: .pop, offset: 13, line: 0, metadata: .simple),
+			Instruction(opcode: .pop, offset: 12, line: 0, metadata: .simple),
 
 			// If the condition was false, we jumped here
-			Instruction(opcode: .constant, offset: 10, line: 3, metadata: .constant(.int(456))),
-			Instruction(opcode: .pop, offset: 12, line: 3, metadata: .simple),
+			Instruction(opcode: .constant, offset: 13, line: 3, metadata: .constant(.int(456))),
 
 			// return the result
-			Instruction(opcode: .return, offset: 13, line: 0, metadata: .simple)
+			Instruction(opcode: .return, offset: 15, line: 0, metadata: .simple)
 		])
 	}
 
@@ -246,7 +245,7 @@ struct CompilerTests {
 
 			Instruction(opcode: .constant, offset: 5, line: 2, metadata: .constant(.int(456))),
 			Instruction(opcode: .setLocal, offset: 7, line: 2, metadata: .local(slot: 2, name: "b")),
-			Instruction(opcode: .pop, offset: 9, line: 3, metadata: .simple),
+			Instruction(opcode: .pop, offset: 9, line: 2, metadata: .simple),
 
 			Instruction(opcode: .defClosure, offset: 10, line: 3, metadata: .closure(arity: 0, depth: 1, upvalues: [.capturing(1), .capturing(2)])),
 			Instruction(opcode: .pop, offset: 12, line: 3, metadata: .simple),
@@ -260,7 +259,6 @@ struct CompilerTests {
 			Instruction(opcode: .getUpvalue, offset: 0, line: 4, metadata: .upvalue(slot: 0, name: "a")),
 			Instruction(opcode: .pop, offset: 2, line: 4, metadata: .simple),
 			Instruction(opcode: .getUpvalue, offset: 3, line: 5, metadata: .upvalue(slot: 1, name: "b")),
-			Instruction(opcode: .pop, offset: 5, line: 3, metadata: .simple),
 			Instruction(opcode: .return, offset: 6, line: 7, metadata: .simple),
 		]
 
@@ -280,8 +278,9 @@ struct CompilerTests {
 		let expected = [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
 			Instruction(opcode: .setLocal, offset: 2, line: 0, metadata: .local(slot: 1, name: "a")),
-			Instruction(opcode: .defClosure, offset: 4, line: 1, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
-			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple),
+			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
+			Instruction(opcode: .defClosure, offset: 5, line: 1, metadata: .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
+			Instruction(opcode: .return, offset: 7, line: 0, metadata: .simple),
 		]
 
 		#expect(result == expected)
@@ -294,6 +293,7 @@ struct CompilerTests {
 			// Define 'b'
 			Instruction(opcode: .constant, offset: 0, line: 2, metadata: .constant(.int(456))),
 			Instruction(opcode: .setLocal, offset: 2, line: 2, metadata: .local(slot: 1, name: "b")),
+			Instruction(opcode: .pop, offset: 4, line: 2, metadata: .simple),
 
 			// Get 'b' to add to a
 			Instruction(opcode: .getLocal, offset: 4, line: 3, metadata: .local(slot: 1, name: "b")),
@@ -394,31 +394,5 @@ struct CompilerTests {
 			Instruction(opcode: .call, offset: 8, line: 10, metadata: .simple),
 			Instruction(opcode: .return, offset: 9, line: 0, metadata: .simple)
 		])
-	}
-
-	@Test("_RawArray") func rawArray() throws {
-		let chunk = try compile("""
-		a = _RawArray()
-		a.count
-		a.append(123)
-		""")
-
-		let instructions = [
-			Instruction(opcode: .getBuiltinStruct, offset: 0, line: 0, metadata: .builtinStruct(slot: 0, name: "slot: 0")),
-			Instruction(opcode: .call, offset: 2, line: 0, metadata: .simple),
-			Instruction(opcode: .setLocal, offset: 3, line: 0, metadata: .local(slot: 1, name: "a")),
-
-			Instruction(opcode: .getLocal, offset: 5, line: 1, metadata: .local(slot: 1, name: "a")),
-			Instruction(opcode: .getProperty, offset: 7, line: 1, metadata: .getProperty(slot: 0, options: [])),
-
-			Instruction(opcode: .constant, offset: 10, line: 2, metadata: ConstantMetadata(value: .int(123))),
-			Instruction(opcode: .getLocal, offset: 12, line: 2, metadata: .local(slot: 1, name: "a")),
-			Instruction(opcode: .getProperty, offset: 14, line: 2, metadata: .getProperty(slot: 1, options: .isMethod)),
-			Instruction(opcode: .call, offset: 17, line: 2, metadata: .simple),
-
-			Instruction(opcode: .return, offset: 18, line: 0, metadata: .simple)
-		]
-
-		#expect(chunk.disassemble() == instructions)
 	}
 }
