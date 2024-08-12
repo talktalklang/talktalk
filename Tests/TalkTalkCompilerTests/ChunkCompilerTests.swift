@@ -219,7 +219,7 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .defClosure, offset: 0, line: 0, metadata: .closure(arity: 0, depth: 0)),
 			Instruction(opcode: .call, offset: 2, line: 2, metadata: .simple),
-			Instruction(opcode: .pop, offset: 3, line: 3, metadata: .simple),
+			Instruction(opcode: .pop, offset: 3, line: 2, metadata: .simple),
 			Instruction(opcode: .return, offset: 4, line: 0, metadata: .simple),
 		])
 	}
