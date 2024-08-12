@@ -54,7 +54,7 @@ public struct VirtualMachine {
 	var openUpvalues: Upvalue?
 
 	// A fake heap
-	var heap: [ContiguousArray<Value>] = []
+	var heap: ContiguousArray<Value?> = []
 
 	public static func run(module: Module, verbose: Bool = false) -> ExecutionResult {
 		var vm = VirtualMachine(module: module, verbose: verbose)
