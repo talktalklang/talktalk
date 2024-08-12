@@ -74,7 +74,8 @@ public struct ModuleAnalyzer {
 					source: .external(module)
 				)
 			} else if case let .struct(name) = name,
-								let structType = binding.externalModule?.structs[name] {
+			          let structType = binding.externalModule?.structs[name]
+			{
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
 					syntax: binding.expr,
@@ -133,6 +134,13 @@ public struct ModuleAnalyzer {
 
 	private func analyze(syntax: any Syntax, in module: AnalysisModule) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
+
+		var syntax = syntax
+
+		// Unwrap expr statements
+		if let exprStmt = syntax as? ExprStmt {
+			syntax = exprStmt.expr
+		}
 
 		switch syntax {
 		case let syntax as FuncExpr:

@@ -98,7 +98,9 @@ public struct Parser {
 			return importStmt()
 		}
 
-		return expr()
+		// At this level, we want an ExprStmt, not just a normal expr
+		let expr = expr()
+		return ExprStmtSyntax(expr: expr, location: expr.location)
 	}
 
 	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExpr {

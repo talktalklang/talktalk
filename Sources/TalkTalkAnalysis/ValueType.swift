@@ -5,16 +5,21 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-public struct InstanceValueType: Codable {
+public struct InstanceValueType: Codable, Equatable {
 	public static func `struct`(_ name: String) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
 	}
 
 	public var ofType: ValueType
 	public var boundGenericTypes: [String: ValueType]
+
+	public init(ofType: ValueType, boundGenericTypes: [String : ValueType]) {
+		self.ofType = ofType
+		self.boundGenericTypes = boundGenericTypes
+	}
 }
 
-public indirect enum ValueType: Codable {
+public indirect enum ValueType: Codable, Equatable {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
 	}

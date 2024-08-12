@@ -31,6 +31,8 @@ public extension Syntax {
 			try! syntax.accept(Formatter(), Formatter.Context())
 		case let syntax as any Decl:
 			try! syntax.accept(Formatter(), Formatter.Context())
+		case let syntax as any Stmt:
+			try! syntax.accept(Formatter(), Formatter.Context())
 		default:
 			"No description found for \(debugDescription)"
 		}

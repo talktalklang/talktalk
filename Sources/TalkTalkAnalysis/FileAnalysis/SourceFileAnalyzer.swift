@@ -52,6 +52,14 @@ public struct SourceFileAnalyzer: Visitor {
 		return try exprs.map { try $0.accept(analyzer, environment) }
 	}
 
+	public func visit(_ expr: any ExprStmt, _ context: Environment) throws -> any AnalyzedSyntax {
+		try AnalyzedExprStmt(
+			wrapped: expr,
+			exprAnalyzed: expr.expr.accept(self, context) as! any AnalyzedExpr,
+			environment: context
+		)
+	}
+
 	public func visit(_ expr: any ImportStmt, _ context: Environment) -> SourceFileAnalyzer.Value {
 		AnalyzedImportStmt(environment: context, typeAnalyzed: .none, stmt: expr)
 	}
@@ -89,7 +97,13 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		let callee = try expr.callee.accept(self, context)
+		var callee = try expr.callee.accept(self, context)
+
+		// Unwrap expr stmt
+		if let exprStmt = callee as? AnalyzedExprStmt {
+			callee = exprStmt.exprAnalyzed
+		}
+
 		var errors: [AnalysisError] = []
 
 		let args = try expr.args.map {
@@ -104,6 +118,15 @@ public struct SourceFileAnalyzer: Visitor {
 
 		switch callee.typeAnalyzed {
 		case let .function(_, t, params, _):
+			if params.count == args.count {
+				// Try to infer param types
+				for (i, param) in params.enumerated() {
+					if case .placeholder(_) = param.type {
+						
+					}
+				}
+			}
+
 			type = t
 			arity = params.count
 		case let .struct(t):
@@ -137,10 +160,13 @@ public struct SourceFileAnalyzer: Visitor {
 			} else if !structType.typeParameters.isEmpty, let initFn = structType.methods["init"] {
 				// Try to infer type parameters from init
 				for arg in args {
-					if let label = arg.label, // See if we have a label for the arg (could maybe rely on positions here??)
-						 let param = initFn.params[label], // Find the param definition from the init
-						 case let .generic(.struct(structType.name!), typeName) = param {
-						// If the param type is generic, then bound it in this instance
+					// See if we have a label for the arg (could maybe rely on positions here??)
+					guard let label = arg.label else { continue }
+					// Find the param definition from the init
+					guard let param = initFn.params[label] else { continue }
+
+					if case let .instance(paramInstanceType) = param,
+						 case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType {
 						instanceType.boundGenericTypes[typeName] = arg.expr.typeAnalyzed
 					}
 				}
@@ -474,39 +500,79 @@ public struct SourceFileAnalyzer: Visitor {
 		for decl in expr.body.decls {
 			switch decl {
 			case let decl as VarDecl:
+				var type = bodyContext.type(named: decl.typeDecl)
+
+				if case .struct(_) = type {
+					type = .instance(
+						InstanceValueType(
+							ofType: type,
+							boundGenericTypes: [:]
+						)
+					)
+				}
+
+				if case .generic(_, _) = type {
+					type = .instance(
+						InstanceValueType(
+							ofType: type,
+							boundGenericTypes: [:]
+						)
+					)
+				}
+
 				let property = Property(
 					slot: structType.properties.count,
 					name: decl.name,
-					type: .instance(
-						InstanceValueType(
-							ofType: bodyContext.type(named: decl.typeDecl),
-							boundGenericTypes: [:]
-						)
-					),
+					type: type,
 					expr: decl,
 					isMutable: true
 				)
 				structType.add(property: property)
 			case let decl as LetDecl:
+				var type = bodyContext.type(named: decl.typeDecl)
+
+				if case .struct(_) = type {
+					type = .instance(
+						InstanceValueType(
+							ofType: type,
+							boundGenericTypes: [:]
+						)
+					)
+				}
+
+				if case .generic(_, _) = type {
+					type = .instance(
+						InstanceValueType(
+							ofType: type,
+							boundGenericTypes: [:]
+						)
+					)
+				}
+
+
 				structType.add(
 					property: Property(
 						slot: structType.properties.count,
 						name: decl.name,
-						type: bodyContext.type(named: decl.typeDecl),
+						type: type,
 						expr: decl,
 						isMutable: false
 					))
-			case let decl as FuncExpr:
-				if let name = decl.name {
-					structType.add(
-						method: Method(
-							slot: structType.methods.count,
-							name: name.lexeme,
-							params: decl.params.params.map(\.name).reduce(into: [:]) { res, p in res[p] = .placeholder(0) },
-							type: .function(name.lexeme, .placeholder(2), [], []),
-							expr: decl,
-							isMutable: false
-						))
+			case let decl as ExprStmt:
+				if let decl = decl.expr as? FuncExpr {
+					if let name = decl.name {
+						structType.add(
+							method: Method(
+								slot: structType.methods.count,
+								name: name.lexeme,
+								params: decl.params.params.map(\.name).reduce(into: [:]) { res, p in res[p] = .placeholder(0) },
+								type: .function(name.lexeme, .placeholder(2), [], []),
+								expr: decl,
+								isMutable: false
+							))
+					}
+				} else {
+					FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
 				}
 			case let decl as InitDecl:
 				structType.add(
@@ -574,11 +640,16 @@ public struct SourceFileAnalyzer: Visitor {
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
 		for decl in expr.decls {
-			guard let declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
+			guard var declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
 				continue
 			}
 
 			declsAnalyzed.append(declAnalyzed)
+
+			if let exprStmt = declAnalyzed as? AnalyzedExprStmt,
+				 let wrappedDecl = exprStmt.expr as? any AnalyzedDecl {
+				declAnalyzed = wrappedDecl
+			}
 
 			// If we have an updated type for a method, update the struct to know about it.
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
@@ -612,7 +683,12 @@ public struct SourceFileAnalyzer: Visitor {
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
 		if case .placeholder = type { return }
 
-		for expr in exprs {
+		for var expr in exprs {
+			if let exprStmt = expr as? AnalyzedExprStmt {
+				// Unwrap expr stmt
+				expr = exprStmt.exprAnalyzed
+			}
+
 			if var expr = expr as? AnalyzedVarExpr {
 				expr.typeAnalyzed = type
 				env.update(local: expr.name, as: type)

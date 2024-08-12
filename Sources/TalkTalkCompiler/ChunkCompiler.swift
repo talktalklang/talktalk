@@ -54,6 +54,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// This gets handled by VarExpr
 	}
 
+	public func visit(_ expr: AnalyzedExprStmt, _ chunk: Chunk) throws -> Void {
+		// Visit the actual expr
+		try expr.exprAnalyzed.accept(self, chunk)
+
+		// Pop the expr off the stack because this is a statement so we don't care about the
+		// return value
+		chunk.emit(opcode: .pop, line: expr.location.line)
+	}
+
 	public func visit(_ expr: AnalyzedImportStmt, _ context: Chunk) throws {
 		// This is just an analysis thing
 	}

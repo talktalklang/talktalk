@@ -47,6 +47,10 @@ public struct Interpreter: AnalyzedVisitor {
 		context.lookup(expr.identifier.lexeme)
 	}
 
+	public func visit(_ expr: AnalyzedExprStmt, _ context: Scope) throws -> Value {
+		try expr.exprAnalyzed.accept(self, context)
+	}
+
 	public func visit(_ expr: AnalyzedImportStmt, _ context: Scope) throws -> Value {
 		.none
 	}

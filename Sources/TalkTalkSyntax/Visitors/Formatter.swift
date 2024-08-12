@@ -25,6 +25,10 @@ public struct Formatter: Visitor {
 		"import \(expr.module.name)"
 	}
 
+	public func visit(_ expr: any ExprStmt, _ context: Context) throws -> String {
+		try expr.expr.accept(self, context)
+	}
+
 	public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
 		var result = try expr.receiver.accept(self, context)
 		result += "."

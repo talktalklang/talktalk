@@ -11,7 +11,7 @@ import Testing
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
-		try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init()).last!
+		try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init()).last!.cast(AnalyzedExprStmt.self).exprAnalyzed
 	}
 
 	@Test("Types literals") func literals() {
@@ -108,7 +108,7 @@ struct AnalysisTests {
 					}(2)
 				"""), in: .init())
 
-		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).typeAnalyzed
+		let result = ast[1].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).typeAnalyzed
 		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
 
 		#expect(result == expected)
@@ -118,7 +118,7 @@ struct AnalysisTests {
 		let env = Environment()
 		let ast = try SourceFileAnalyzer.analyze(Parser.parse("func() {}(123)"), in: env)
 
-		let callExpr = ast[0].cast(AnalyzedCallExpr.self)
+		let callExpr = ast[0].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedCallExpr.self)
 		let error = try #require(callExpr.analysisErrors.first)
 
 		#expect(error.kind == .argumentError(expected: 0, received: 1))
@@ -182,7 +182,7 @@ struct AnalysisTests {
 				mycounter()
 				"""), in: .init())
 
-		let def = try #require(main[0] as? AnalyzedDefExpr)
+		let def = try #require(main[0].cast(AnalyzedExprStmt.self).exprAnalyzed as? AnalyzedDefExpr)
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.count == 0)
 

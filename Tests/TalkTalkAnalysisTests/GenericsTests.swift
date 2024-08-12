@@ -19,7 +19,7 @@ struct GenericsTests {
 		struct Wrapper<Wrapped> {
 			let wrapped: Wrapped
 		}
-		""")
+		""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Wrapper")
@@ -33,7 +33,13 @@ struct GenericsTests {
 		#expect(type.typeParameters.count == 1)
 
 		let property = try #require(s.structType.properties["wrapped"])
-		#expect(property.type == .generic(.struct("Wrapper"), "Wrapped"))
+
+		guard case let .instance(instanceType) = property.type else {
+			#expect(Bool(false), "did not get instance type")
+			return
+		}
+
+		#expect(instanceType.ofType == .generic(.struct("Wrapper"), "Wrapped"))
 	}
 
 	@Test("Gets bound generic types") func boundGenericTypes() throws {
@@ -44,7 +50,7 @@ struct GenericsTests {
 
 		wrapper = Wrapper<int>(wrapped: 123)
 		wrapper
-		""")
+		""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		let variable = try #require(ast as? AnalyzedVarExpr)
 		#expect(variable.name == "wrapper")
@@ -66,7 +72,7 @@ struct GenericsTests {
 
 		wrapper = Wrapper(wrapped: 123)
 		wrapper
-		""")
+		""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		let variable = try #require(ast as? AnalyzedVarExpr)
 		#expect(variable.name == "wrapper")
