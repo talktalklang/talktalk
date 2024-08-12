@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
+import TalkTalkSyntax
+
 public struct BuiltinFunction {
 	public let name: String
 	public let type: ValueType
@@ -13,8 +15,26 @@ public struct BuiltinFunction {
 		[
 			.print,
 			.allocate,
-			.free
+			.free,
 		]
+	}
+
+	static func syntheticExpr() -> any Expr {
+		IdentifierExprSyntax(name: "__builtin__", location: [.synthetic(.builtin)])
+	}
+
+	func binding() -> Environment.Binding {
+		.init(
+			name: name,
+			expr: Self.syntheticExpr(),
+			type: type,
+			isCaptured: false,
+			isBuiltin: true,
+			isParameter: false,
+			isGlobal: false,
+			externalModule: nil
+		)
+
 	}
 
 	public static var print: BuiltinFunction {

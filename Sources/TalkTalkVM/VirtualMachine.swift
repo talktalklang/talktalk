@@ -47,15 +47,14 @@ public struct VirtualMachine {
 	// The stack
 	var stack: Stack<Value>
 
+	// A fake heap
+	var heap = Heap()
+
 	// Closure storage
 	var closures: [UInt64: Closure] = [:]
 
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
-
-	// A fake heap
-	var heap: ContiguousArray<Value?> = []
-
 	public static func run(module: Module, verbose: Bool = false) -> ExecutionResult {
 		var vm = VirtualMachine(module: module, verbose: verbose)
 		return vm.run()
@@ -75,21 +74,23 @@ public struct VirtualMachine {
 		// Reserving this space
 		stack.push(.int(0))
 
-		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [], builtinInstances: [])
+		let frame = CallFrame(
+			closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [],
+			builtinInstances: [])
 		frames.push(frame)
 	}
 
 	public mutating func run() -> ExecutionResult {
 		while true {
 			#if DEBUG
-			if verbose {
-				var disassembler = Disassembler(chunk: chunk)
-				disassembler.current = Int(ip)
-				if let instruction = disassembler.next() {
-					dumpStack()
-					instruction.dump()
+				if verbose {
+					var disassembler = Disassembler(chunk: chunk)
+					disassembler.current = Int(ip)
+					if let instruction = disassembler.next() {
+						dumpStack()
+						instruction.dump()
+					}
 				}
-			}
 			#endif
 
 			let byte = readByte()
@@ -168,56 +169,56 @@ public struct VirtualMachine {
 				let rhsValue = stack.pop()
 
 				guard let lhs = lhsValue.intValue,
-				      let rhs = rhsValue.intValue
+					let rhs = rhsValue.intValue
 				else {
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
 				stack.push(.int(lhs + rhs))
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot subtract none int operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot divide none int operands")
 				}
 				stack.push(.int(lhs / rhs))
 			case .multiply:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot multiply none int operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
@@ -415,7 +416,7 @@ public struct VirtualMachine {
 	}
 
 	mutating func call(boundMethod methodSlot: Value.IntValue, onBuiltin instanceID: Value.IntValue) {
-		stack.pop() // Pop the method off the stack
+		stack.pop()  // Pop the method off the stack
 
 		let instance = currentFrame.builtinInstances[Int(instanceID)]
 		let arity = instance.arity(for: Int(methodSlot))
@@ -435,7 +436,8 @@ public struct VirtualMachine {
 		let structType = module.structs[Int(instance.type.structValue!)]
 		let methodChunk = structType.methods[Int(boundMethod)]
 
-		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(.struct(instance.type.structValue!), instanceData)
+		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(
+			.struct(instance.type.structValue!), instanceData)
 		call(chunk: methodChunk)
 	}
 
@@ -456,7 +458,8 @@ public struct VirtualMachine {
 		stack[stack.size - Int(initializer.arity) - 1] = instance
 
 		// Store the instance value
-		currentFrame.instances.append(StructInstance(type: .struct(structValue), fieldCount: structType.propertyCount))
+		currentFrame.instances.append(
+			StructInstance(type: .struct(structValue), fieldCount: structType.propertyCount))
 
 		call(chunk: initializer)
 	}
@@ -544,6 +547,13 @@ public struct VirtualMachine {
 		switch builtin {
 		case .print:
 			print(stack.peek())
+		case .allocate:
+			if case let .int(count) = stack.pop() {  // Get the capacity
+				let address = heap.allocate(count: Int(count))
+				stack.push(.pointer(.init(address)))
+			}
+		case .free:
+			()  // TODO
 		}
 	}
 
@@ -566,7 +576,7 @@ public struct VirtualMachine {
 		var previousUpvalue: Upvalue? = nil
 		var upvalue = openUpvalues
 
-		while upvalue != nil/*, upvalue!.value > value*/ {
+		while upvalue != nil /*, upvalue!.value > value*/ {
 			previousUpvalue = upvalue
 			upvalue = upvalue!.next
 		}

@@ -283,4 +283,21 @@ struct TalkTalkParserTests {
 		#expect(expr.op == .minus)
 		#expect(expr.expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}
+
+	@Test("Parses assignment with property access") func assignmentWithProp() throws {
+		let ast = parse("""
+		newCapacity = self.capacity * 2
+		""")
+
+		let defExpr = ast[0].cast(DefExprSyntax.self)
+		#expect(defExpr.receiver.as(VarExprSyntax.self)?.name == "newCapacity")
+		let value = defExpr.value.cast(BinaryExprSyntax.self)
+		let lhs = try #require(value.lhs.as(MemberExprSyntax.self))
+		let rhs = try #require(value.rhs.as(LiteralExprSyntax.self))
+		let op = value.op
+		#expect(op == .star)
+		#expect(lhs.property == "capacity")
+		#expect(lhs.receiver.as(VarExprSyntax.self)?.name == "self")
+		#expect(rhs.value == .int(2))
+	}
 }

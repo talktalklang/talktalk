@@ -100,34 +100,8 @@ public class Environment {
 			return builtinStruct.binding()
 		}
 
-		if name == "print" {
-			// um..
-			return Binding(
-				name: "print",
-				expr: AnalyzedFuncExpr(
-					type: BuiltinFunction.print.type,
-					expr: FuncExprSyntax(
-						funcToken: .synthetic(.func),
-						params: ParamsExprSyntax(
-							params: [.int("value")],
-							location: [.synthetic(.builtin)]
-						),
-						body: BlockExprSyntax(exprs: [], location: [.synthetic(.builtin)]),
-						i: -1,
-						location: [.synthetic(.builtin)]
-					),
-					analyzedParams: [.int("value")],
-					bodyAnalyzed: AnalyzedBlockExpr(
-						typeAnalyzed: .none,
-						expr: BlockExprSyntax(exprs: [], location: [.synthetic(.builtin)]),
-						exprsAnalyzed: [],
-						environment: self
-					),
-					returnsAnalyzed: nil,
-					environment: .init()
-				),
-				type: BuiltinFunction.print.type
-			)
+		if let builtinFunction = BuiltinFunction.list.first(where: { $0.name == name }) {
+			return builtinFunction.binding()
 		}
 
 		if let scope = getLexicalScope() {

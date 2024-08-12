@@ -89,6 +89,8 @@ public struct TalkTalkLexer {
 		case "}": make(.rightBrace)
 		case "=": make(match("=") ? .equalEqual : .equals)
 		case "!": make(match("=") ? .bangEqual : .bang)
+		case "*": make(.star)
+		case "/": make(.slash)
 		case "+": make(.plus)
 		case ",": make(.comma)
 		case ":": make(.colon)

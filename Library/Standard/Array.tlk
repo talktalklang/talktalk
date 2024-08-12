@@ -1,19 +1,30 @@
-struct Array<Element> {
-	var _storage: _RawArray
+
+struct Array {
+	var _storage: Pointer
 	var count: int
+	var capacity: int
 
 	init() {
-		self._storage = _RawArray()
 		self.count = 0
+		self.capacity = 4
+		self._storage = allocate(4)
 	}
 
 	func append(item) {
-		self._storage.append(item)
-		self.count = self.count
+		if count + 1 > capacity	{
+			self.resize()
+		} else 	{
+			self.count = self.count
+		}
 	}
 
 	func at(index) {
 
 	}
-}
 
+	func resize() {
+		newCapacity = self.capacity * 2
+		newStorage = allocate(newCapacity)
+
+	}
+}

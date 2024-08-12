@@ -6,5 +6,5 @@
 //
 
 enum BuiltinFunction: Int {
-	case print
+	case print, allocate, free
 }
