@@ -78,6 +78,10 @@ public struct ASTPrinter: Visitor {
 		dump(expr, "module: \(expr.module.name)")
 	}
 
+	@StringBuilder public func visit(_ expr: any TypeExpr, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	@StringBuilder public func visit(_ expr: any UnaryExpr, _ context: Context) throws -> String {
 		dump(expr, "op: \(expr.op)")
 		indent {

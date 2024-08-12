@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	let expr: StructExpr
 
 	public let bodyAnalyzed: AnalyzedDeclBlock

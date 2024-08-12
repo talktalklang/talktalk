@@ -259,11 +259,17 @@ struct TalkTalkParserTests {
 		struct Foo<Bar> {
 			var fizz: Bar
 		}
+
+		Foo<int>()
 		""")
 
 		let structExpr = ast[0].cast(StructExprSyntax.self)
 		#expect(structExpr.name == "Foo")
 		#expect(structExpr.genericParams?.params.map(\.name) == ["Bar"])
+
+		let calleeExpr = try #require(ast[1].cast(CallExprSyntax.self).callee.as(TypeExprSyntax.self))
+		#expect(calleeExpr.identifier.lexeme == "Foo")
+		#expect(calleeExpr.genericParams?.params.map(\.name) == ["int"])
 	}
 
 	@Test("Parses bang") func bang() throws {

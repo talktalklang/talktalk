@@ -61,10 +61,20 @@ public class Environment {
 
 	public func type(named name: String) -> ValueType {
 		switch name {
-		case "i32", "int": .int
-		case "bool": .bool
+		case "i32", "int":
+			return .int
+		case "bool":
+			return .bool
 		default:
-			fatalError("unknown type: \(name)")
+			if let scope = getLexicalScope()?.scope,
+				 let scopeName = scope.name,
+				 let typeParameter = scope.typeParameters.first(where: { $0.name == name }) {
+				return .generic(.struct(scopeName), typeParameter.name)
+			} else if let structType = lookupStruct(named: name) {
+				return .struct(structType.name ?? "<anon struct>")
+			}
+
+			return .error("unknown type: \(name)")
 		}
 	}
 
@@ -108,7 +118,7 @@ public class Environment {
 					),
 					analyzedParams: [.int("value")],
 					bodyAnalyzed: AnalyzedBlockExpr(
-						type: .none,
+						typeAnalyzed: .none,
 						expr: BlockExprSyntax(exprs: [], location: [.synthetic(.builtin)]),
 						exprsAnalyzed: [],
 						environment: self
@@ -125,7 +135,7 @@ public class Environment {
 				return Binding(
 					name: "Self",
 					expr: AnalyzedVarExpr(
-						type: scope.type,
+						typeAnalyzed: scope.type,
 						expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
 						environment: self
 					),
@@ -133,12 +143,12 @@ public class Environment {
 				)
 			}
 
-			if case .struct(_) = scope.type {
+			if case .struct = scope.type {
 				if let method = scope.scope.methods.values.first(where: { $0.name == name }) {
 					return Binding(
 						name: name,
 						expr: method.expr,
-						type: .instanceValue(scope.type)
+						type: .member(scope.type)
 					)
 				}
 
@@ -146,7 +156,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: property.expr,
-						type: .instanceValue(scope.type)
+						type: .member(scope.type)
 					)
 				}
 			}
@@ -196,9 +206,15 @@ public class Environment {
 		}
 
 		if let binding = importedSymbols[.struct(name)],
-			 let externalModule = binding.externalModule,
-		   let moduleStruct = externalModule.structs[name] {
-			return StructType(name: name, properties: moduleStruct.properties, methods: moduleStruct.methods)
+		   let externalModule = binding.externalModule,
+		   let moduleStruct = externalModule.structs[name]
+		{
+			return StructType(
+				name: name,
+				properties: moduleStruct.properties,
+				methods: moduleStruct.methods,
+				typeParameters: moduleStruct.typeParameters
+			)
 		}
 
 		if let builtinStruct = BuiltinStruct.lookup(name: name) {
@@ -220,11 +236,11 @@ public class Environment {
 	}
 
 	public func define(local: String, as expr: any AnalyzedExpr) {
-		locals[local] = Binding(name: local, expr: expr, type: expr.type)
+		locals[local] = Binding(name: local, expr: expr, type: expr.typeAnalyzed)
 	}
 
 	public func define(parameter: String, as expr: any AnalyzedExpr) {
-		locals[parameter] = Binding(name: parameter, expr: expr, type: expr.type, isParameter: true)
+		locals[parameter] = Binding(name: parameter, expr: expr, type: expr.typeAnalyzed, isParameter: true)
 	}
 
 	public func addLexicalScope(scope: StructType, type: ValueType, expr: any Expr) -> Environment {

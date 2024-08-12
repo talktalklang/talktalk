@@ -15,32 +15,32 @@ struct AnalysisTests {
 	}
 
 	@Test("Types literals") func literals() {
-		#expect(ast("true").type == .bool)
-		#expect(ast("false").type == .bool)
-		#expect(ast("123").type == .int)
+		#expect(ast("true").typeAnalyzed == .bool)
+		#expect(ast("false").typeAnalyzed == .bool)
+		#expect(ast("123").typeAnalyzed == .int)
 	}
 
 	@Test("Types add") func add() {
-		#expect(ast("1 + 2").type == .int)
+		#expect(ast("1 + 2").typeAnalyzed == .int)
 	}
 
 	@Test("Types def") func def() throws {
 		let ast = ast("foo = 1")
 		let def = try #require(ast as? AnalyzedDefExpr)
-		#expect(def.type == .int)
+		#expect(def.typeAnalyzed == .int)
 		#expect(def.receiverAnalyzed.cast(AnalyzedVarExpr.self).name == "foo")
 	}
 
 	@Test("Types if expr") func ifExpr() {
-		#expect(ast("if true { 1 } else { 2 }").type == .int)
+		#expect(ast("if true { 1 } else { 2 }").typeAnalyzed == .int)
 	}
 
 	@Test("Types block expr") func blockExpr() {
-		#expect(ast("{ 1 }").type == .int)
+		#expect(ast("{ 1 }").typeAnalyzed == .int)
 	}
 
 	@Test("Types while expr") func whileExpr() {
-		#expect(ast("while true { 1 }").type == .int)
+		#expect(ast("while true { 1 }").typeAnalyzed == .int)
 	}
 
 	@Test("Types func expr") func funcExpr() {
@@ -49,7 +49,7 @@ struct AnalysisTests {
 			func(x) { x + x }
 			""")
 
-		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
 	@Test("Types recursive func expr") func funcExprRecur() {
@@ -72,7 +72,7 @@ struct AnalysisTests {
 			foo
 			""")
 
-		#expect(fn.type == .function("foo", .int, [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function("foo", .int, [.int("x")], []))
 	}
 
 	@Test("Types calls") func funcCalls() {
@@ -82,7 +82,7 @@ struct AnalysisTests {
 			foo(1)
 			""")
 
-		#expect(res.type == .int)
+		#expect(res.typeAnalyzed == .int)
 	}
 
 	@Test("Types func parameters") func funcParams() throws {
@@ -94,8 +94,8 @@ struct AnalysisTests {
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
-		#expect(param.type == .int)
-		#expect(fn.type == .function("_fn_x_17", .int, [.int("x")], []))
+		#expect(param.typeAnalyzed == .int)
+		#expect(fn.typeAnalyzed == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
 	@Test("Types functions") func closures() throws {
@@ -108,7 +108,7 @@ struct AnalysisTests {
 					}(2)
 				"""), in: .init())
 
-		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).type
+		let result = ast[1].cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).typeAnalyzed
 		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
 
 		#expect(result == expected)
@@ -142,9 +142,9 @@ struct AnalysisTests {
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.name == "x")
-		#expect(param.type == .int)
+		#expect(param.typeAnalyzed == .int)
 		#expect(
-			fn.type
+			fn.typeAnalyzed
 				== .function(
 					"_fn_x_33",
 					.function(
@@ -159,7 +159,7 @@ struct AnalysisTests {
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
-		#expect(nestedFn.type == .function("_fn_y_32", .int, [.int("y")], ["x"]))
+		#expect(nestedFn.typeAnalyzed == .function("_fn_y_32", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
@@ -189,11 +189,11 @@ struct AnalysisTests {
 		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
 
 		#expect(counterFn.environment.captures.count == 1)
-		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).type == .int)
+		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).typeAnalyzed == .int)
 
-		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.type
+		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.typeAnalyzed
 		else {
-			#expect(Bool(false), "\(counterFn.type)")
+			#expect(Bool(false), "\(counterFn.typeAnalyzed)")
 			return
 		}
 
@@ -221,7 +221,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Person")
 
-		guard case let .struct(name) = s.type else {
+		guard case let .struct(name) = s.typeAnalyzed else {
 			#expect(Bool(false), "did not get struct type")
 			return
 		}
@@ -253,7 +253,7 @@ struct AnalysisTests {
 
 		let structType = s.structType
 		let initializer = try #require(structType.methods["init"])
-		#expect(initializer.params == ["age"])
+		#expect(initializer.params.map(\.key) == ["age"])
 	}
 
 	@Test("Types struct Self/self") func selfSelf() throws {
@@ -273,7 +273,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructExpr)
 		#expect(s.name == "Person")
 
-		guard case let .struct(name) = s.type else {
+		guard case let .struct(name) = s.typeAnalyzed else {
 			#expect(Bool(false), "did not get struct type")
 			return
 		}
@@ -302,8 +302,9 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedVarExpr)
 		#expect(s.name == "rawArray")
 
-		guard case let .instance(.struct(name)) = s.type else {
-			#expect(Bool(false), "did not get instance type, got: \(s.type)")
+		guard case let .instance(instance) = s.typeAnalyzed,
+					case let .struct(name) = instance.ofType else {
+			#expect(Bool(false), "did not get instance type, got: \(s.typeAnalyzed)")
 			return
 		}
 

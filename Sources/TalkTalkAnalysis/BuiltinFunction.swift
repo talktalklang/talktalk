@@ -16,6 +16,6 @@ public struct BuiltinFunction {
 	}
 
 	public static var print: BuiltinFunction {
-		return BuiltinFunction(name: "print", type: .function("print", .int, [.int("value")], []))
+		return BuiltinFunction(name: "print", type: .function("print", .int, [.init(name: "value", type: .any)], []))
 	}
 }

@@ -20,11 +20,18 @@ public class StructType {
 	public let name: String?
 	public private(set) var properties: [String: Property]
 	public private(set) var methods: [String: Method]
+	public private(set) var typeParameters: [TypeParameter]
 
-	public init(name: String? = nil, properties: [String: Property], methods: [String: Method]) {
+	public init(
+		name: String? = nil,
+		properties: [String: Property],
+		methods: [String: Method],
+		typeParameters: [TypeParameter]
+	) {
 		self.name = name
 		self.properties = properties
 		self.methods = methods
+		self.typeParameters = typeParameters
 	}
 
 	public func add(property: Property) {

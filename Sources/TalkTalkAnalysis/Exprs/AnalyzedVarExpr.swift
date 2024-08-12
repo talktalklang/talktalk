@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	let expr: VarExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment

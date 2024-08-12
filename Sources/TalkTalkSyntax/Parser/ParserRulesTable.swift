@@ -33,28 +33,24 @@ extension Token.Kind {
 		case .rightParen: .none
 		case .leftBrace: .init({ $0.blockExpr($1) }, nil, .none)
 		case .rightBrace: .none
-
 		// unary
 		case .bang: .init({ $0.unary($1) }, nil, .factor)
-
 		// prefix ops
 		case .if: .init({ $0.ifExpr($1) }, nil, .none)
 		case .identifier: .init({ $0.variable($1) }, nil, .none)
 		case .while: .init({ $0.whileExpr($1) }, nil, .none)
 		case .return: .init({ $0.returning($1) }, nil, .none)
-
 		// Binary ops
 		case .equalEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .bangEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .plus: .init(nil, { $0.binary($1, $2) }, .term)
 		case .minus: .init({ $0.unary($1) }, { $0.binary($1, $2) }, .term)
 		case .star, .slash: .init(nil, { $0.binary($1, $2) }, .factor)
+		case .lessEqual,
+		     .greaterEqual: .init(nil, { $0.binary($1, $2) }, .comparison)
 		case .less,
-				 .lessEqual,
-				 .greater,
-				 .greaterEqual: .init(nil, { $0.binary($1, $2) }, .comparison)
+		     .greater: .init(nil, { $0.binary($1, $2) }, .comparison)
 		case .dot: .init(nil, { $0.dot($1, $2) }, .call)
-
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
 		case .struct: .init({ $0.structExpr($1) }, nil, .none)
@@ -63,7 +59,6 @@ extension Token.Kind {
 		case .int: .init({ $0.literal($1) }, nil, .none)
 		case .float: .init({ $0.literal($1) }, nil, .none)
 		case .string: .init({ $0.literal($1) }, nil, .none)
-
 		case .else: .none
 		case .equals: .none
 		case .eof: .none

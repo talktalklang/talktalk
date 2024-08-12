@@ -5,34 +5,48 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+public struct InstanceValueType: Codable {
+	public static func `struct`(_ name: String) -> InstanceValueType {
+		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
+	}
+
+	public var ofType: ValueType
+	public var boundGenericTypes: [String: ValueType]
+}
+
 public indirect enum ValueType: Codable {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
 	}
 
-	public enum Param: Codable {
-		case int(String)
+	public struct Param: Codable {
+		let name: String
+		let type: ValueType
 
-		var description: String {
-			switch self {
-			case .int(let name):
-				".int(\(name))"
-			}
+		public static func int(_ name: String) -> Param {
+			Param(name: name, type: .int)
+		}
+
+		public var description: String {
+			"\(name): \(type)"
 		}
 	}
 
-	case int,
-			 string,
+	case none,
+			 // primitives
+			 int, string, bool,
 			 // function name, return type, param types, captures
 			 function(String, ValueType, [Param], [String]),
-			 bool,
+			 // struct name
 			 `struct`(String),
-			 instance(ValueType),
-			 instanceValue(ValueType),
+			 // owning type of this generic, the name of the generic type
+			 generic(ValueType, String),
+			 instance(InstanceValueType),
+			 member(ValueType),
 			 error(String),
-			 none,
 			 void,
-			 placeholder(Int)
+			 placeholder(Int),
+			 `any`
 
 	public var description: String {
 		switch self {
@@ -54,11 +68,15 @@ public indirect enum ValueType: Codable {
 		case .placeholder:
 			return "placeholder"
 		case let .instance(valueType):
-			return "instance \(valueType.description)"
-		case let .instanceValue(structType):
+			return "instance \(valueType.ofType.description)"
+		case let .member(structType):
 			return "struct instance value \(structType)"
+		case let .generic(owner, name):
+			return "\(owner.description)<\(name)>"
 		case .string:
 			return "string"
+		case .any:
+			return "<any>"
 		}
 	}
 }

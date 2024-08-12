@@ -43,6 +43,10 @@ public struct Interpreter: AnalyzedVisitor {
 		return last
 	}
 
+	public func visit(_ expr: AnalyzedTypeExpr, _ context: Scope) throws -> Value {
+		context.lookup(expr.identifier.lexeme)
+	}
+
 	public func visit(_ expr: AnalyzedImportStmt, _ context: Scope) throws -> Value {
 		.none
 	}
@@ -190,7 +194,7 @@ public struct Interpreter: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ context: Scope) throws -> Value {
-		fatalError(expr.message)
+		.error(expr.message)
 	}
 
 	public func visit(_ expr: AnalyzedStructExpr, _ context: Scope) throws -> Value {

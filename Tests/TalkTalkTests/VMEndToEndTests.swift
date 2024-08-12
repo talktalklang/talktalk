@@ -47,7 +47,7 @@ struct VMEndToEndTests {
 
 	func run(_ strings: String..., verbose: Bool = false) throws -> TalkTalkBytecode.Value {
 		let module = try compile(strings)
-		return VirtualMachine.run(module: module, verbose: verbose).get()
+		return try VirtualMachine.run(module: module, verbose: verbose).get()
 	}
 
 	func runAsync(_ strings: String...) throws {
@@ -248,7 +248,7 @@ struct VMEndToEndTests {
 			moduleEnvironment: ["A": moduleA]
 		)
 
-		let result = VirtualMachine.run(module: moduleB).get()
+		let result = try VirtualMachine.run(module: moduleB).get()
 
 		#expect(result == .int(123))
 	}
@@ -274,7 +274,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct methods") func structMethods() throws {
@@ -303,7 +303,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {
@@ -339,7 +339,7 @@ struct VMEndToEndTests {
 			moduleEnvironment: ["A": moduleA]
 		)
 
-		#expect(VirtualMachine.run(module: moduleB).get() == .int(123))
+		#expect(try VirtualMachine.run(module: moduleB).get() == .int(123))
 	}
 
 	@Test("Struct synthesized init") func structSynthesizedInit() throws {
@@ -359,7 +359,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {
@@ -383,7 +383,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(VirtualMachine.run(module: module, verbose: true).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbose: true).get() == .int(123))
 	}
 
 	@Test("Basic _RawArray") func rawArray() throws {
@@ -393,7 +393,7 @@ struct VMEndToEndTests {
 			a.append(123)
 			a.count
 			"""
-		)
+			, verbose: true)
 
 		#expect(
 			result == .int(1)

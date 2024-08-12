@@ -15,7 +15,7 @@ public extension Environment {
 				binding: .init(
 					name: name,
 					expr: AnalyzedLiteralExpr(
-						type: .bool,
+						typeAnalyzed: .bool,
 						expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)]),
 						environment: .init()
 					),

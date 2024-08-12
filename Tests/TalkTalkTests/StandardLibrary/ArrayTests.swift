@@ -22,7 +22,7 @@ struct ArrayTests: StandardLibraryTest {
 		a = Array()
 		a.append(123)
 		a.count
-		""").get()
+		""", verbose: true).get()
 
 		#expect(result == .int(1))
 	}
@@ -31,7 +31,7 @@ struct ArrayTests: StandardLibraryTest {
 		let result = try await run("""
 		a = Array()
 		a.append(123)
-		a.get(0)
+		a.at(0)
 		""").get()
 
 		#expect(result == .int(123))

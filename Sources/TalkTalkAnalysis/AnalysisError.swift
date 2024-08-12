@@ -9,6 +9,7 @@ import TalkTalkSyntax
 
 public enum AnalysisErrorKind: Equatable {
 	case argumentError(expected: Int, received: Int)
+	case typeParameterError(expected: Int, received: Int)
 }
 
 public struct AnalysisError: Equatable {

@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax {
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	let expr: any ErrorSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
@@ -19,7 +19,7 @@ public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax {
 	public var expectation: ParseExpectation { expr.expectation }
 
 	public init(type: ValueType, expr: any ErrorSyntax, environment: Environment) {
-		self.type = type
+		self.typeAnalyzed = type
 		self.expr = expr
 		self.environment = environment
 	}

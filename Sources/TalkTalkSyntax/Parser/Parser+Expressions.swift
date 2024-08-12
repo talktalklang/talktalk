@@ -229,6 +229,18 @@ extension Parser {
 			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
+		// this is sorta weird but we're gonna go with it for now.
+		// check to see if the next token is < and if it follows the identifier immediately
+		// if there's no space, treat it as a type parameter list opener.
+		if check(.less), peek().end == lhs.location.end.end {
+			let i = startLocation(at: lhs.token)
+			consume(.less)
+			skip(.newline)
+			let genericParams = genericParams()
+			skip(.newline)
+			return TypeExprSyntax(identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
+		}
+
 		return lhs
 	}
 

@@ -7,6 +7,7 @@
 
 public protocol Param: Expr {
 	var name: String { get }
+	var type: (any IdentifierExpr)? { get }
 }
 
 public protocol ParamsExpr: Expr {

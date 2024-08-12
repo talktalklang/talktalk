@@ -53,6 +53,9 @@ public struct VirtualMachine {
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
 
+	// A fake heap
+	var heap: [ContiguousArray<Value>] = []
+
 	public static func run(module: Module, verbose: Bool = false) -> ExecutionResult {
 		var vm = VirtualMachine(module: module, verbose: verbose)
 		return vm.run()
@@ -72,7 +75,7 @@ public struct VirtualMachine {
 		// Reserving this space
 		stack.push(.int(0))
 
-		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [])
+		let frame = CallFrame(closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [], builtinInstances: [])
 		frames.push(frame)
 	}
 
@@ -337,25 +340,34 @@ public struct VirtualMachine {
 				let propertyOptions = PropertyOptions(rawValue: readByte())
 
 				// Pop the receiver off the stack
-				let receiverValue = stack.pop()
-				guard let (_, receiver) = receiverValue.instanceValue else {
-					return runtimeError("Receiver is not an instance of a struct")
-				}
+				switch stack.pop() {
+				case let .instance(.struct, receiver):
+					let instance = currentFrame.instances[Int(receiver)]
 
-				let instance = currentFrame.instances[Int(receiver)]
+					if propertyOptions.contains(.isMethod) {
+						// If it's a method, we create a boundMethod value, which consists of the method slot
+						// and the instance ID. Using this, we can use the type we get from instance[instanceID]
+						// to lookup the method.
+						let boundMethod = Value.boundMethod(.init(slot), .struct(receiver))
+						stack.push(boundMethod)
+					} else {
+						guard let value = instance.fields[Int(slot)] else {
+							fatalError("No value in slot: \(slot)")
+						}
 
-				if propertyOptions.contains(.isMethod) {
-					// If it's a method, we create a boundMethod value, which consists of the method slot
-					// and the instance ID. Using this, we can use the type we get from instance[instanceID]
-					// to lookup the method.
-					let boundMethod = Value.boundMethod(.init(slot), receiver)
-					stack.push(boundMethod)
-				} else {
-					guard let value = instance.fields[Int(slot)] else {
-						fatalError("No value in slot: \(slot)")
+						stack.push(value)
 					}
-
-					stack.push(value)
+				case let .instance(.builtinStruct, receiver):
+					if propertyOptions.contains(.isMethod) {
+						let boundMethod = Value.boundMethod(.init(slot), .builtinStruct(receiver))
+						stack.push(boundMethod)
+					} else {
+						let instance = currentFrame.builtinInstances[Int(receiver)]
+						let value = instance.getProperty(Int(slot))
+						stack.push(value)
+					}
+				default:
+					return runtimeError("Receiver is not an instance of a struct")
 				}
 			case .setProperty:
 				let slot = readByte()
@@ -383,17 +395,37 @@ public struct VirtualMachine {
 			call(moduleFunction: Int(moduleFunction))
 		case .struct(let structValue):
 			call(structValue: .init(structValue))
-		case .boundMethod(let methodSlot, let instanceID):
-			call(boundMethod: methodSlot, on: instanceID)
 		case .builtinStruct(let slot):
 			call(builtinStruct: slot)
+		case .boundMethod(let methodSlot, .struct(let instanceID)):
+			call(boundMethod: methodSlot, on: instanceID)
+		case .boundMethod(let methodSlot, .builtinStruct(let instanceID)):
+			call(boundMethod: methodSlot, onBuiltin: instanceID)
 		default:
 			fatalError("\(callee) is not callable")
 		}
 	}
 
 	mutating func call(builtinStruct: Value.IntValue) {
-		
+		let structType = BuiltinStructs.list[Int(builtinStruct)]
+		let instance = structType.instantiate()
+		let slot = currentFrame.builtinInstances.count
+		currentFrame.builtinInstances.append(instance)
+		stack.push(.instance(.builtinStruct(builtinStruct), .init(slot)))
+	}
+
+	mutating func call(boundMethod methodSlot: Value.IntValue, onBuiltin instanceID: Value.IntValue) {
+		stack.pop() // Pop the method off the stack
+
+		let instance = currentFrame.builtinInstances[Int(instanceID)]
+		let arity = instance.arity(for: Int(methodSlot))
+		let args = stack.pop(count: arity)
+		let result = instance.call(Int(methodSlot), args)
+
+		// If the call returned a value (it's not void), push it on the stack
+		if let result {
+			stack.push(result)
+		}
 	}
 
 	// Call a method on an instance.
@@ -403,7 +435,7 @@ public struct VirtualMachine {
 		let structType = module.structs[Int(instance.type.structValue!)]
 		let methodChunk = structType.methods[Int(boundMethod)]
 
-		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(instance.type.structValue!, instanceData)
+		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(.struct(instance.type.structValue!), instanceData)
 		call(chunk: methodChunk)
 	}
 
@@ -415,7 +447,7 @@ public struct VirtualMachine {
 		let instanceID = Value.IntValue(currentFrame.instances.count)
 
 		// Create the instance Value
-		let instance = Value.instance(structValue, instanceID)
+		let instance = Value.instance(.struct(structValue), instanceID)
 
 		// Get the initializer
 		let initializer = structType.methods[structType.initializer]
@@ -437,7 +469,8 @@ public struct VirtualMachine {
 			),
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
 		)
 
 		frames.push(frame)
@@ -451,7 +484,8 @@ public struct VirtualMachine {
 			),
 			returnTo: ip,
 			stackOffset: stack.size - 1,
-			instances: currentFrame.instances
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
 		)
 
 		frames.push(frame)
@@ -465,7 +499,8 @@ public struct VirtualMachine {
 			closure: closures[UInt64(closureID)]!,
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
 		)
 
 		frames.push(frame)
@@ -479,7 +514,8 @@ public struct VirtualMachine {
 			closure: closure,
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
 		)
 
 		frames.push(frame)
@@ -493,7 +529,8 @@ public struct VirtualMachine {
 			closure: closure,
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
 		)
 
 		frames.push(frame)

@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedBinaryExpr: AnalyzedExpr, BinaryExpr {
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	let expr: any BinaryExpr
 
 	public let lhsAnalyzed: any AnalyzedExpr

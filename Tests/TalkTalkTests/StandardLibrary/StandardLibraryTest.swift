@@ -27,7 +27,12 @@ extension StandardLibraryTest {
 
 		let files: [ParsedSourceFile] = [.tmp(input)]
 		let analysis = ["Standard": stdlib.analysis]
-		let analyzed = try ModuleAnalyzer(name: "StdLibTest", files: files, moduleEnvironment: analysis).analyze()
+		let analyzer = ModuleAnalyzer(name: "StdLibTest", files: files, moduleEnvironment: analysis)
+		let analyzed = try analyzer.analyze()
+
+		if !analyzer.errors.isEmpty {
+			throw CompilerError.analysisError(analyzer.errors.map { "\($0)" }.joined(separator: ", "))
+		}
 
 		let module = try ModuleCompiler(name: "StdLibTest", analysisModule: analyzed, moduleEnvironment: ["Standard": stdlib.module]).compile(mode: .executable)
 		return VirtualMachine.run(module: module, verbose: verbose)

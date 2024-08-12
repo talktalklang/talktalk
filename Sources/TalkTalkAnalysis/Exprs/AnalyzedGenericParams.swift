@@ -14,7 +14,7 @@ public struct AnalyzedGenericParam {
 
 public struct AnalyzedGenericParams: GenericParams, AnalyzedSyntax {
 	let wrapped: any GenericParams
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	public var paramsAnalyzed: [AnalyzedGenericParam]
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 

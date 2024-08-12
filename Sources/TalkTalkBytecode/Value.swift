@@ -8,6 +8,19 @@
 public enum Value: Equatable, Hashable, Codable, Sendable {
 	public typealias IntValue = Int32
 
+	public enum InstanceKind: Equatable, Hashable, Codable, Sendable, CustomStringConvertible {
+		case `struct`(IntValue), builtinStruct(IntValue)
+
+		public var description: String {
+			switch self {
+			case .struct(let intValue):
+				"struct \(intValue)"
+			case .builtinStruct(let intValue):
+				"builtin struct \(intValue)"
+			}
+		}
+	}
+
 	case int(IntValue)
 	case bool(Bool)
 	case data(IntValue)
@@ -17,8 +30,8 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case builtinStruct(IntValue)
 	case moduleFunction(IntValue)
 	case `struct`(IntValue)
-	case instance(IntValue, IntValue)
-	case boundMethod(IntValue, IntValue)
+	case instance(InstanceKind, IntValue)
+	case boundMethod(IntValue, InstanceKind)
 
 	public var isCallable: Bool {
 		switch self {
@@ -88,7 +101,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var instanceValue: (IntValue, IntValue)? {
+	public var instanceValue: (InstanceKind, IntValue)? {
 		guard case let .instance(type, instance) = self else {
 			return nil
 		}
@@ -96,7 +109,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return (type, instance)
 	}
 
-	public var boundMethodValue: (slot: IntValue, instanceID: IntValue)? {
+	public var boundMethodValue: (slot: IntValue, instanceID: InstanceKind)? {
 		guard case let .boundMethod(methodSlot, instance) = self else {
 			return nil
 		}

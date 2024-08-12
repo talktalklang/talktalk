@@ -26,6 +26,10 @@ public struct ModuleAnalyzer {
 		self.moduleEnvironment = moduleEnvironment
 	}
 
+	public var errors: [AnalysisError] {
+		environment.errors
+	}
+
 	public func analyze() throws -> AnalysisModule {
 		var analysisModule = AnalysisModule(name: name, files: files)
 
@@ -77,7 +81,8 @@ public struct ModuleAnalyzer {
 					type: binding.type,
 					source: .external(module),
 					properties: structType.properties,
-					methods: structType.methods
+					methods: structType.methods,
+					typeParameters: structType.typeParameters
 				)
 			} else {
 				fatalError("unhandled exported symbol: \(name)")
@@ -137,7 +142,7 @@ public struct ModuleAnalyzer {
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					syntax: syntax,
-					type: analyzed.type,
+					type: analyzed.typeAnalyzed,
 					source: .module
 				)
 			}
@@ -149,7 +154,7 @@ public struct ModuleAnalyzer {
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
 					syntax: syntax,
-					type: analyzed.type,
+					type: analyzed.typeAnalyzed,
 					source: .module
 				)
 			}
@@ -165,10 +170,11 @@ public struct ModuleAnalyzer {
 			result[name] = ModuleStruct(
 				name: name,
 				syntax: syntax,
-				type: structExpr.type,
+				type: structExpr.typeAnalyzed,
 				source: .module,
 				properties: structExpr.lexicalScope.scope.properties,
-				methods: structExpr.lexicalScope.scope.methods
+				methods: structExpr.lexicalScope.scope.methods,
+				typeParameters: structExpr.lexicalScope.scope.typeParameters
 			)
 		default:
 			()

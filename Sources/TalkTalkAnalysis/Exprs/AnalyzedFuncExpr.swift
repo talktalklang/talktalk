@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	let expr: FuncExpr
 
 	public let analyzedParams: AnalyzedParamsExpr
@@ -36,7 +36,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		environment: Environment
 	) {
 		self.name = expr.name
-		self.type = type
+		self.typeAnalyzed = type
 		self.expr = expr
 		self.analyzedParams = analyzedParams
 		self.bodyAnalyzed = bodyAnalyzed

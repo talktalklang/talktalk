@@ -1,12 +1,19 @@
-struct Array {
+struct Array<Element> {
+	var _storage: _RawArray
 	var count: int
 
 	init() {
+		self._storage = _RawArray()
 		self.count = 0
 	}
 
 	func append(item) {
+		self._storage.append(item)
 		self.count = self.count
+	}
+
+	func at(index) {
+
 	}
 }
 

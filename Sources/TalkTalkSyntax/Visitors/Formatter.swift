@@ -35,6 +35,14 @@ public struct Formatter: Visitor {
 		return result
 	}
 
+	public func visit(_ expr: any TypeExpr, _ context: Context) throws -> String {
+		var result = expr.identifier.lexeme
+		if let genericParams = expr.genericParams {
+			result += try visit(genericParams, context)
+		}
+		return result
+	}
+
 	public func visit(_ expr: any WhileExpr, _ context: Context) throws -> String {
 		var result = "while "
 		result += try expr.condition.accept(self, context)
@@ -63,6 +71,10 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any GenericParams, _ context: Context) throws -> String {
+		if expr.params.isEmpty {
+			return ""
+		}
+
 		var result = "<"
 		result += expr.params.map(\.name).joined(separator: ", ")
 		result += "> "

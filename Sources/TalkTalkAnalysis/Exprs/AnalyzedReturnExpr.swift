@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
-	public var type: ValueType
+	public var typeAnalyzed: ValueType
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
 	}

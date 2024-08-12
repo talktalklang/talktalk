@@ -345,6 +345,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
+	public func visit(_ expr: AnalyzedTypeExpr, _ chunk: Chunk) throws -> Void {
+		if let slot = resolveStruct(named: expr.identifier.lexeme) {
+			chunk.emit(opcode: .getStruct, line: expr.location.line)
+			chunk.emit(byte: slot, line: expr.location.line)
+		} else {
+			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
+		}
+	}
+
 	public func visit(_ expr: AnalyzedStructExpr, _ chunk: Chunk) throws {
 		let name = expr.name ?? "<struct\(module.structs.count)>"
 		var structType = Struct(name: name, propertyCount: expr.structType.properties.count)

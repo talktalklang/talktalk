@@ -17,6 +17,11 @@ public protocol GenericParams: Syntax {
 	var params: [any GenericParam] { get }
 }
 
+public extension GenericParams {
+	var isEmpty: Bool { params.isEmpty }
+	var count: Int { params.count }
+}
+
 public struct GenericParamsSyntax: GenericParams {
 	public var params: [GenericParam]
 	public var location: SourceLocation

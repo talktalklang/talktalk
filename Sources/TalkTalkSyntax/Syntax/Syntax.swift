@@ -32,7 +32,7 @@ public extension Syntax {
 		case let syntax as any Decl:
 			try! syntax.accept(Formatter(), Formatter.Context())
 		default:
-			"No description found for \(self)"
+			"No description found for \(debugDescription)"
 		}
 	}
 

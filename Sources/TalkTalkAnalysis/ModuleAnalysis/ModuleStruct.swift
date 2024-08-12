@@ -8,6 +8,8 @@
 import TalkTalkBytecode
 import TalkTalkSyntax
 
+// Module structs are type level structs that can be shared across
+// module boundaries.
 public struct ModuleStruct: ModuleGlobal {
 	public var name: String
 	public var syntax: any Syntax
@@ -16,6 +18,7 @@ public struct ModuleStruct: ModuleGlobal {
 
 	public var properties: [String: Property]
 	public var methods: [String: Method]
+	public var typeParameters: [TypeParameter]
 
 	public var isImport: Bool {
 		if case .module = source {

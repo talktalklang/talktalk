@@ -9,6 +9,10 @@ import TalkTalkBytecode
 
 public extension VirtualMachine {
 	enum ExecutionResult: Sendable {
+		enum Error: Swift.Error {
+			case error(String)
+		}
+
 		case ok(Value), error(String)
 
 		public func error() -> String? {
@@ -20,12 +24,12 @@ public extension VirtualMachine {
 			}
 		}
 
-		public func get() -> Value {
+		public func get() throws -> Value {
 			switch self {
 			case .ok(let value):
 				return value
 			case .error(let string):
-				fatalError("Execution error: \(string)")
+				throw Error.error(string)
 			}
 		}
 	}

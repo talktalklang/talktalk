@@ -59,7 +59,7 @@ public class CompilingModule {
 
 			// Reserve offsets for struct methods
 			for (j, (methodName, method)) in structT.methods.enumerated() {
-				symbols[.method(structT.name, methodName, method.params)] = j
+				symbols[.method(structT.name, methodName, method.params.map(\.key))] = j
 			}
 		}
 	}

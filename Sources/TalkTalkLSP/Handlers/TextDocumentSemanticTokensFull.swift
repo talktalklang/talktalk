@@ -48,6 +48,11 @@ struct SemanticTokensVisitor: Visitor {
 		RawSemanticToken(lexeme: token.lexeme, line: token.line, startChar: token.column, length: token.length, tokenType: kind, modifiers: [])
 	}
 
+	func visit(_ expr: any TypeExpr, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.type, from: expr.identifier)]
+		return result
+	}
+
 	func visit(_ expr: CallExpr, _ context: Context) throws -> [RawSemanticToken] {
 		var results = try expr.callee.accept(self, .callee)
 		try results.append(contentsOf: expr.args.flatMap { try $0.value.accept(self, context) })

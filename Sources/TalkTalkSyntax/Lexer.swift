@@ -37,6 +37,10 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable {
 
 	public let lexeme: String
 
+	public var end: Int {
+		start + length
+	}
+
 	public var debugDescription: String {
 		".\(kind)"
 	}
