@@ -24,7 +24,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case int(IntValue)
 	case bool(Bool)
 	case data(IntValue)
-	case none
+	case pointer(IntValue)
 	case closure(IntValue)
 	case builtin(IntValue)
 	case builtinStruct(IntValue)
@@ -32,6 +32,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case `struct`(IntValue)
 	case instance(InstanceKind, IntValue)
 	case boundMethod(IntValue, InstanceKind)
+	case none
 
 	public var isCallable: Bool {
 		switch self {
@@ -150,6 +151,8 @@ extension Value: CustomStringConvertible {
 			"bound method \(boundMethodValue!)"
 		case .builtinStruct:
 			"builtin struct"
+		case .pointer:
+			"pointer"
 		case .none:
 			"none"
 		}

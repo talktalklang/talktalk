@@ -35,6 +35,8 @@ public indirect enum ValueType: Codable {
 	case none,
 			 // primitives
 			 int, string, bool,
+			 // pointer to a spot on the "heap"
+			 pointer,
 			 // function name, return type, param types, captures
 			 function(String, ValueType, [Param], [String]),
 			 // struct name
@@ -75,6 +77,8 @@ public indirect enum ValueType: Codable {
 			return "\(owner.description)<\(name)>"
 		case .string:
 			return "string"
+		case .pointer:
+			return "pointer"
 		case .any:
 			return "<any>"
 		}
