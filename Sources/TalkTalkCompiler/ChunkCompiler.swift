@@ -390,7 +390,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Go through the body and collect the chunks (we don't want to emit them into the
 		// outer chunk)
-		for decl in expr.bodyAnalyzed.declsAnalyzed {
+		for var decl in expr.bodyAnalyzed.declsAnalyzed {
+			if let exprStmt = decl as? AnalyzedExprStmt {
+				// Unwrap expr stmts
+				decl = exprStmt.exprAnalyzed as! any AnalyzedDecl
+			}
+
 			switch decl {
 			case let decl as AnalyzedInitDecl:
 				if expr.structType.methods["init"]?.isSynthetic == true {

@@ -31,6 +31,7 @@ struct CompilerTests {
 
 		let instructions = [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
+			Instruction(opcode: .pop, offset: 2, line: 0, metadata: .simple),
 			Instruction(opcode: .return, offset: 2, line: 0, metadata: .simple)
 		]
 
@@ -44,7 +45,9 @@ struct CompilerTests {
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(20))),
 			Instruction(opcode: .constant, offset: 2, line: 0, metadata: ConstantMetadata(value: .int(10))),
 			Instruction(opcode: .add, offset: 4, line: 0, metadata: .simple),
-			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
+
+			Instruction(opcode: .pop, offset: 5, line: 0, metadata: .simple),
+			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple)
 		]
 
 		#expect(chunk.disassemble() == instructions)
@@ -68,7 +71,8 @@ struct CompilerTests {
 		let expected = [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .data(0))),
 			Instruction(opcode: .constant, offset: 2, line: 1, metadata: ConstantMetadata(value: .data(8))),
-			Instruction(opcode: .return, offset: 4, line: 0, metadata: .simple)
+			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
+			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
 		]
 
 		#expect(result == expected)
@@ -82,7 +86,8 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
 			Instruction(opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
-			Instruction(opcode: .return, offset: 4, line: 0, metadata: .simple)
+			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
+			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
 		])
 	}
 
@@ -97,11 +102,19 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
 			Instruction(opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
-			Instruction(opcode: .getModuleValue, offset: 4, line: 1, metadata: .global(slot: 0)),
-			Instruction(opcode: .constant, offset: 6, line: 2, metadata: .constant(.int(456))),
-			Instruction(opcode: .setModuleValue, offset: 8, line: 2, metadata: .global(slot: 1)),
-			Instruction(opcode: .getModuleValue, offset: 10, line: 3, metadata: .global(slot: 1)),
-			Instruction(opcode: .return, offset: 12, line: 0, metadata: .simple)
+			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
+
+			Instruction(opcode: .getModuleValue, offset: 5, line: 1, metadata: .global(slot: 0)),
+			Instruction(opcode: .pop, offset: 7, line: 1, metadata: .simple),
+
+			Instruction(opcode: .constant, offset: 8, line: 2, metadata: .constant(.int(456))),
+			Instruction(opcode: .setModuleValue, offset: 10, line: 2, metadata: .global(slot: 1)),
+			Instruction(opcode: .pop, offset: 12, line: 0, metadata: .simple),
+
+			Instruction(opcode: .getModuleValue, offset: 11, line: 3, metadata: .global(slot: 1)),
+			Instruction(opcode: .pop, offset: 13, line: 3, metadata: .simple),
+
+			Instruction(opcode: .return, offset: 14, line: 0, metadata: .simple)
 		])
 	}
 
@@ -116,26 +129,27 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(0))),
 			Instruction(opcode: .setLocal, offset: 2, line: 0, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
 
 			// Condition
-			Instruction(opcode: .constant, offset: 4, line: 1, metadata: .constant(.int(5))),
-			Instruction(opcode: .getLocal, offset: 6, line: 1, metadata: .local(slot: 1, name: "i")),
-			Instruction(opcode: .less, offset: 8, line: 1, metadata: .simple),
+			Instruction(opcode: .constant, offset: 5, line: 1, metadata: .constant(.int(5))),
+			Instruction(opcode: .getLocal, offset: 7, line: 1, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .less, offset: 9, line: 1, metadata: .simple),
 
 			// Jump that skips the body if the condition isn't true
-			Instruction(opcode: .jumpUnless, offset: 12, line: 1, metadata: .jump(offset: 11)),
+			Instruction(opcode: .jumpUnless, offset: 13, line: 1, metadata: .jump(offset: 11)),
 
 			// Pop condition off the stack
-			Instruction(opcode: .pop, offset: 15, line: 1, metadata: .simple),
+			Instruction(opcode: .pop, offset: 16, line: 1, metadata: .simple),
 
 			// Body
-			Instruction(opcode: .constant, offset: 16, line: 2, metadata: .constant(.int(1))),
-			Instruction(opcode: .getLocal, offset: 18, line: 2, metadata: .local(slot: 1, name: "i")),
-			Instruction(opcode: .add, offset: 20, line: 2, metadata: .simple),
-			Instruction(opcode: .setLocal, offset: 21, line: 2, metadata: .local(slot: 1, name: "i")),
-			Instruction(opcode: .loop, offset: 23, line: 3, metadata: .loop(back: 19)),
+			Instruction(opcode: .constant, offset: 17, line: 2, metadata: .constant(.int(1))),
+			Instruction(opcode: .getLocal, offset: 19, line: 2, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .add, offset: 21, line: 2, metadata: .simple),
+			Instruction(opcode: .setLocal, offset: 22, line: 2, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .loop, offset: 24, line: 3, metadata: .loop(back: 19)),
 
-			Instruction(opcode: .return, offset: 26, line: 0, metadata: .simple)
+			Instruction(opcode: .return, offset: 27, line: 0, metadata: .simple)
 		])
 	}
 
@@ -158,16 +172,20 @@ struct CompilerTests {
 
 			// If we're not jumping, here's the value of the consequence block
 			Instruction(opcode: .constant, offset: 7, line: 1, metadata: .constant(.int(123))),
+			Instruction(opcode: .pop, offset: 9, line: 1, metadata: .simple),
+
 			// If the condition was true, we want to jump over the alernative block
 			Instruction(opcode: .jump, offset: 10, line: 2, metadata: .jump(offset: 3)),
+
 			// Pop the condition
-			Instruction(opcode: .pop, offset: 10, line: 0, metadata: .simple),
+			Instruction(opcode: .pop, offset: 13, line: 0, metadata: .simple),
 
 			// If the condition was false, we jumped here
-			Instruction(opcode: .constant, offset: 7, line: 3, metadata: .constant(.int(456))),
+			Instruction(opcode: .constant, offset: 10, line: 3, metadata: .constant(.int(456))),
+			Instruction(opcode: .pop, offset: 12, line: 3, metadata: .simple),
 
 			// return the result
-			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
+			Instruction(opcode: .return, offset: 13, line: 0, metadata: .simple)
 		])
 	}
 
@@ -182,12 +200,13 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .defClosure, offset: 0, line: 0, metadata: .closure(arity: 0, depth: 0)),
-			Instruction(opcode: .return, offset: 2, line: 0, metadata: .simple)
+			Instruction(opcode: .pop, offset: 2, line: 0, metadata: .simple),
+			Instruction(opcode: .return, offset: 3, line: 0, metadata: .simple)
 		])
 
 		#expect(subchunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
-			Instruction(opcode: .return, offset: 2, line: 2, metadata: .simple)
+			Instruction(opcode: .return, offset: 3, line: 2, metadata: .simple)
 		])
 	}
 
@@ -201,7 +220,8 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .defClosure, offset: 0, line: 0, metadata: .closure(arity: 0, depth: 0)),
 			Instruction(opcode: .call, offset: 2, line: 2, metadata: .simple),
-			Instruction(opcode: .return, offset: 3, line: 0, metadata: .simple),
+			Instruction(opcode: .pop, offset: 3, line: 3, metadata: .simple),
+			Instruction(opcode: .return, offset: 4, line: 0, metadata: .simple),
 		])
 	}
 
@@ -222,10 +242,15 @@ struct CompilerTests {
 		let expected = [
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
 			Instruction(opcode: .setLocal, offset: 2, line: 1, metadata: .local(slot: 1, name: "a")),
-			Instruction(opcode: .constant, offset: 4, line: 2, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, offset: 6, line: 2, metadata: .local(slot: 2, name: "b")),
-			Instruction(opcode: .defClosure, offset: 8, line: 3, metadata: .closure(arity: 0, depth: 1, upvalues: [.capturing(1), .capturing(2)])),
-			Instruction(opcode: .return, offset: 14, line: 7, metadata: .simple),
+			Instruction(opcode: .pop, offset: 4, line: 1, metadata: .simple),
+
+			Instruction(opcode: .constant, offset: 5, line: 2, metadata: .constant(.int(456))),
+			Instruction(opcode: .setLocal, offset: 7, line: 2, metadata: .local(slot: 2, name: "b")),
+			Instruction(opcode: .pop, offset: 9, line: 3, metadata: .simple),
+
+			Instruction(opcode: .defClosure, offset: 10, line: 3, metadata: .closure(arity: 0, depth: 1, upvalues: [.capturing(1), .capturing(2)])),
+			Instruction(opcode: .pop, offset: 12, line: 3, metadata: .simple),
+			Instruction(opcode: .return, offset: 13, line: 7, metadata: .simple),
 		]
 
 		#expect(result == expected)
@@ -233,7 +258,9 @@ struct CompilerTests {
 		let subchunk = chunk.getChunk(at: 1).getChunk(at: 0)
 		let subexpected = [
 			Instruction(opcode: .getUpvalue, offset: 0, line: 4, metadata: .upvalue(slot: 0, name: "a")),
-			Instruction(opcode: .getUpvalue, offset: 2, line: 5, metadata: .upvalue(slot: 1, name: "b")),
+			Instruction(opcode: .pop, offset: 2, line: 4, metadata: .simple),
+			Instruction(opcode: .getUpvalue, offset: 3, line: 5, metadata: .upvalue(slot: 1, name: "b")),
+			Instruction(opcode: .pop, offset: 5, line: 3, metadata: .simple),
 			Instruction(opcode: .return, offset: 6, line: 7, metadata: .simple),
 		]
 
