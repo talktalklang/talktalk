@@ -39,7 +39,7 @@ public struct Disassembler {
 			return constantInstruction(start: index)
 		case .defClosure:
 			return defClosureInstruction(start: index)
-		case .jump, .jumpUnless:
+		case .jump, .jumpUnless, .loop:
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
 			return variableInstruction(opcode: opcode, start: index, type: .local)
@@ -81,7 +81,8 @@ public struct Disassembler {
 		var jump = Int(placeholderA << 8)
 		jump |= Int(placehodlerB)
 
-		return Instruction(opcode: opcode, offset: current, line: chunk.lines[start], metadata: .jump(offset: jump))
+		let metadata: any InstructionMetadata = opcode == .loop ? .loop(back: jump) : .jump(offset: jump)
+		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func variableInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) -> Instruction {

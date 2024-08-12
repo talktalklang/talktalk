@@ -105,6 +105,40 @@ struct CompilerTests {
 		])
 	}
 
+	@Test("while loops") func whileLoops() throws {
+		let chunk = try compile("""
+		i = 0
+		while i < 5 {
+			i = i + 1
+		}
+		""")
+
+		#expect(chunk.disassemble() == [
+			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(0))),
+			Instruction(opcode: .setLocal, offset: 2, line: 0, metadata: .local(slot: 1, name: "i")),
+
+			// Condition
+			Instruction(opcode: .constant, offset: 4, line: 1, metadata: .constant(.int(5))),
+			Instruction(opcode: .getLocal, offset: 6, line: 1, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .less, offset: 8, line: 1, metadata: .simple),
+
+			// Jump that skips the body if the condition isn't true
+			Instruction(opcode: .jumpUnless, offset: 12, line: 1, metadata: .jump(offset: 11)),
+
+			// Pop condition off the stack
+			Instruction(opcode: .pop, offset: 15, line: 1, metadata: .simple),
+
+			// Body
+			Instruction(opcode: .constant, offset: 16, line: 2, metadata: .constant(.int(1))),
+			Instruction(opcode: .getLocal, offset: 18, line: 2, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .add, offset: 20, line: 2, metadata: .simple),
+			Instruction(opcode: .setLocal, offset: 21, line: 2, metadata: .local(slot: 1, name: "i")),
+			Instruction(opcode: .loop, offset: 23, line: 3, metadata: .loop(back: 19)),
+
+			Instruction(opcode: .return, offset: 26, line: 0, metadata: .simple)
+		])
+	}
+
 	@Test("If expr") func ifExpr() throws {
 		let chunk = try compile("""
 		if false {

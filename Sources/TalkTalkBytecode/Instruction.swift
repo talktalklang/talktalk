@@ -114,13 +114,31 @@ public struct JumpMetadata: InstructionMetadata {
 	}
 	
 	public var description: String {
-		"to: \(offset)"
+		"offset: \(offset)"
 	}
 }
 
 public extension InstructionMetadata where Self == JumpMetadata {
 	static func jump(offset: Int) -> JumpMetadata {
 		JumpMetadata(offset: offset)
+	}
+}
+
+public struct LoopMetadata: InstructionMetadata {
+	let back: Int
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+
+	public var description: String {
+		"to: \(back)"
+	}
+}
+
+public extension InstructionMetadata where Self == LoopMetadata {
+	static func loop(back: Int) -> LoopMetadata {
+		LoopMetadata(back: back)
 	}
 }
 

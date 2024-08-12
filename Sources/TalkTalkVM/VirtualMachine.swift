@@ -228,6 +228,8 @@ public struct VirtualMachine {
 				stack.push(offset)
 			case .pop:
 				stack.pop()
+			case .loop:
+				ip = readUInt16()
 			case .jump:
 				ip += readUInt16()
 			case .jumpUnless:

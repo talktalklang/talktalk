@@ -232,7 +232,7 @@ extension Parser {
 		// this is sorta weird but we're gonna go with it for now.
 		// check to see if the next token is < and if it follows the identifier immediately
 		// if there's no space, treat it as a type parameter list opener.
-		if check(.less), peek().end == lhs.location.end.end {
+		if check(.less), lhs.location.start.end == peek().start {
 			let i = startLocation(at: lhs.token)
 			consume(.less)
 			skip(.newline)

@@ -59,6 +59,7 @@ public enum Opcode: Byte {
 			 jump,
 			 jumpUnless,
 			 jumpPlaceholder,
+			 loop,
 
 			 // Comparisons
 			 less,

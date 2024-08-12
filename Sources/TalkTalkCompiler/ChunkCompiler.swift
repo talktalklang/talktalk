@@ -310,7 +310,27 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedWhileExpr, _ chunk: Chunk) throws {
-		fatalError("TODO")
+		// This is where we return to if the condition is true
+		let loopStart = chunk.code.count
+
+		// Emit the condition
+		try expr.conditionAnalyzed.accept(self, chunk)
+
+		// Emit the jump for after the block for when the condition isn't true
+		let exitJump = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
+
+		// Pop the condition off the stack
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+
+		// Emit the body
+		try expr.bodyAnalyzed.accept(self, chunk)
+
+		// Jump back to the loop start
+		chunk.emit(loop: loopStart, line: .init(expr.body.location.end.line))
+
+		// Now that we know how long the body is (including the jump back), we can patch our jump
+		// with the location to jump to in the event that the condition is false
+		try chunk.patchJump(exitJump)
 	}
 
 	public func visit(_ expr: AnalyzedParamsExpr, _ chunk: Chunk) throws {

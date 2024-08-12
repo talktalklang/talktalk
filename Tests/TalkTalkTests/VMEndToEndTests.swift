@@ -386,17 +386,20 @@ struct VMEndToEndTests {
 		#expect(try VirtualMachine.run(module: module, verbose: true).get() == .int(123))
 	}
 
-	@Test("Basic _RawArray") func rawArray() throws {
+	@Test("While loops") func whileLoops() throws {
 		let result = try run(
 			"""
-			a = _RawArray()
-			a.append(123)
-			a.count
-			"""
-			, verbose: true)
+			i = 0
+			j = 0
+			while i < 5 {
+				i = i + 1
+				j = j + 1
+			}
+			j
+		""", verbose: true)
 
 		#expect(
-			result == .int(1)
+			result == .int(5)
 		)
 	}
 }

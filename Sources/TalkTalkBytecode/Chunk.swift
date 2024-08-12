@@ -142,6 +142,16 @@ public class Chunk: Codable {
 		code[offset + 1] = b
 	}
 
+	public func emit(loop backToInstruction: Int, line: UInt32) {
+		write(.loop, line: line)
+
+		let offset = code.count - backToInstruction + 2
+		let (a, b) = uint16ToBytes(offset)
+
+		write(byte: a, line: line)
+		write(byte: b, line: line)
+	}
+
 	public func emit(opcode: Opcode, line: UInt32) {
 		write(byte: opcode.byte, line: line)
 	}

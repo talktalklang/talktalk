@@ -103,14 +103,15 @@ struct TalkTalkParserTests {
 
 	@Test("while expr") func whileexpr() {
 		let ast = parse("""
-		while true {
+		while i < 5 {
 			123
 			456
 		}
 		""")[0] as! WhileExpr
-		#expect(ast.condition.description == "true")
+		#expect(ast.condition.description == "i < 5")
 		#expect(ast.body.exprs[0].cast(LiteralExprSyntax.self).value == .int(123))
 	}
+	
 
 	@Test("func expr") func funcexpr() throws {
 		let ast = parse("""
