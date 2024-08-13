@@ -806,6 +806,8 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
+	// GENERATOR_INSERTION
+
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
 		if case .placeholder = type { return }
 

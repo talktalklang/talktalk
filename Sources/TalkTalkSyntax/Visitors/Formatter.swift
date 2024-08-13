@@ -256,6 +256,8 @@ public struct Formatter: Visitor {
 		return "return \(try expr.value?.accept(self, context) ?? "")"
 	}
 
+	// GENERATOR_INSERTION
+
 	// MARK: Helpers
 
 	public func indenting(perform: (inout Formatter) throws -> String) rethrows -> String {

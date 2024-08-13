@@ -249,6 +249,8 @@ public struct Interpreter: AnalyzedVisitor {
 		fatalError()
 	}
 
+	// GENERATOR_INSERTION
+
 	private func lastResult(of exprs: [any AnalyzedExpr], in context: Scope) throws -> Value {
 		var lastResult: Value = .none
 		for expr in exprs {

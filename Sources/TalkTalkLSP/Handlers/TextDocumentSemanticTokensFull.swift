@@ -231,4 +231,6 @@ struct SemanticTokensVisitor: Visitor {
 			make(.type, from: expr.typeDeclToken)
 		]
 	}
+
+	// GENERATOR_INSERTION
 }

@@ -34,4 +34,5 @@ public protocol Visitor {
 	func visit(_ expr: ImportStmt, _ context: Context) throws -> Value
 	func visit(_ expr: TypeExpr, _ context: Context) throws -> Value
 	func visit(_ expr: ExprStmt, _ context: Context) throws -> Value
+	// GENERATOR_INSERTION
 }

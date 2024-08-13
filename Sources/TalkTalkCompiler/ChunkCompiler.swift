@@ -503,6 +503,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// No need to emit any code here because let decls are just used by the analyzer
 	}
 
+	// GENERATOR_INSERTION
+
 	// MARK: Helpers
 
 	// Lookup the variable by name. If we've got it in our locals, just return the slot

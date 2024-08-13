@@ -234,4 +234,6 @@ public struct ASTPrinter: Visitor {
 			}
 		}
 	}
+
+	// GENERATOR_INSERTION
 }
