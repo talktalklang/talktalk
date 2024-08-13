@@ -22,14 +22,14 @@ def write(path, contents)
 	end
 
 	File.open(path, "w+")	do |file|
-		file.puts(path)
+		file.puts(contents)
 	end
 end
 
 def insert(path, line, contents)
-	lines = Array(File.read(path)).lines
+	lines = File.read(path).lines
 	lines.insert(line, contents)
-	File.open(path, 'w') { |file|
+	File.open(path, 'w+') { |file|
 		file.puts(lines.join("\n"))
 	}
 end
