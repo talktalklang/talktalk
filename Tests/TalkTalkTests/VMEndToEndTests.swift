@@ -56,7 +56,7 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Adds") func adds() throws {
-		#expect(try run("1 + 2") == .int(3))
+		#expect(try run("1 + 2", verbose: true) == .int(3))
 	}
 
 	@Test("Subtracts") func subtracts() throws {
@@ -118,7 +118,7 @@ struct VMEndToEndTests {
 				a = 10
 				b = 20
 				a = a + b
-				a
+				return a
 				""") == .int(30))
 	}
 
@@ -130,7 +130,7 @@ struct VMEndToEndTests {
 					123
 				}()
 
-				i + 1
+				return i + 1
 				""") == .int(124))
 	}
 
@@ -150,9 +150,9 @@ struct VMEndToEndTests {
 				"""
 				a10 = 10
 				b20 = 20
-				func() {
+				return func() {
 					c30 = 30
-					a10 + b20 + c30
+					return a10 + b20 + c30
 				}()
 				""") == .int(60))
 	}
@@ -165,7 +165,7 @@ struct VMEndToEndTests {
 				func() {
 					a = 20
 				}()
-				a
+				return a
 				""") == .int(20))
 	}
 
@@ -177,15 +177,15 @@ struct VMEndToEndTests {
 					count = 0
 					func increment() {
 						count = count + 1
-						count
+						return count
 					}
-					increment
+					return increment
 				}
 
 				mycounter = makeCounter()
 				mycounter()
-				mycounter()
-				""") == .int(2))
+				return mycounter()
+				""", verbose: true) == .int(2))
 	}
 
 	@Test("Doesn't leak out of closures") func closureLeak() throws {
@@ -196,7 +196,7 @@ struct VMEndToEndTests {
 				 a = 123
 				}
 
-				a
+				return a
 				""")
 		}
 	}
@@ -240,7 +240,7 @@ struct VMEndToEndTests {
 						foo()
 					}
 
-					bar()
+					return bar()
 					"""
 				)
 			],
@@ -249,7 +249,6 @@ struct VMEndToEndTests {
 		)
 
 		let result = try VirtualMachine.run(module: moduleB).get()
-
 		#expect(result == .int(123))
 	}
 
@@ -268,13 +267,13 @@ struct VMEndToEndTests {
 					}
 
 					person = Person(age: 123)
-					person.age
+					return person.age
 					"""
 				)
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbose: true).get() == .int(123))
 	}
 
 	@Test("Struct methods") func structMethods() throws {
@@ -297,7 +296,7 @@ struct VMEndToEndTests {
 
 					person = Person(age: 123)
 					method = person.getAge
-					method()
+					return method()
 					"""
 				)
 			]
@@ -332,7 +331,7 @@ struct VMEndToEndTests {
 					import A
 
 					person = Person(age: 123)
-					person.age
+					return person.age
 					""")
 			],
 			analysisEnvironment: ["A": analysisA],
@@ -353,7 +352,7 @@ struct VMEndToEndTests {
 					}
 
 					person = Person(age: 123)
-					person.age
+					return person.age
 					"""
 				)
 			]
@@ -377,7 +376,7 @@ struct VMEndToEndTests {
 					}
 
 					person = Person()
-					person.age
+					return person.age
 					"""
 				)
 			]
@@ -391,11 +390,13 @@ struct VMEndToEndTests {
 			"""
 			i = 0
 			j = 0
+
 			while i < 5 {
 				i = i + 1
 				j = j + 1
 			}
-			j
+
+			return j
 		""", verbose: true)
 
 		#expect(

@@ -18,6 +18,12 @@ public struct ReturnExprSyntax: ReturnExpr {
 		if let value { [value] } else { [] }
 	}
 
+	public init(returnToken: Token, location: SourceLocation, value: (any Expr)? = nil) {
+		self.returnToken = returnToken
+		self.location = location
+		self.value = value
+	}
+
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
 		try visitor.visit(self, scope)
 	}

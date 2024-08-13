@@ -15,7 +15,7 @@ import Testing
 struct CompilerTests {
 	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
 		let parsed = try Parser.parse(string)
-		let analyzed = try! SourceFileAnalyzer.analyzedExprs(parsed, in: .init())
+		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init())
 		let analysisModule = inModule ? try! ModuleAnalyzer(name: "CompilerTests", files: [.tmp(string)], moduleEnvironment: [:]).analyze() : .empty("CompilerTests")
 		var compiler = SourceFileCompiler(name: "CompilerTests", analyzedSyntax: analyzed)
 		return try compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:]))

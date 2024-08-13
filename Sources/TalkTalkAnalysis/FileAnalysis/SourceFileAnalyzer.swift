@@ -37,19 +37,36 @@ public struct SourceFileAnalyzer: Visitor {
 		return collect(syntaxes: analyzed)
 	}
 
-	public static func analyzedExprs(_ exprs: [any Syntax], in environment: Environment) throws
-		-> [any AnalyzedSyntax]
-	{
-		let analyzer = SourceFileAnalyzer()
-
-		return try exprs.map { try $0.accept(analyzer, environment) }
-	}
+//	public static func analyzedExprs(_ exprs: [any Syntax], in environment: Environment) throws
+//		-> [any AnalyzedSyntax]
+//	{
+//		let analyzer = SourceFileAnalyzer()
+//
+//		let exprsAnalyzed = try exprs.map {
+//			try $0.accept(analyzer, environment)
+//		}
+//	}
 
 	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws
 		-> [SourceFileAnalyzer.Value]
 	{
 		let analyzer = SourceFileAnalyzer()
-		return try exprs.map { try $0.accept(analyzer, environment) }
+		var analyzed = try exprs.map { try $0.accept(analyzer, environment) }
+
+		// If it's just a single statement, just make it a return
+		if analyzed.count == 1, let exprStmt = analyzed[0] as? AnalyzedExprStmt {
+			analyzed[0] = AnalyzedReturnExpr(
+				typeID: exprStmt.typeID,
+				environment: environment,
+				expr: ReturnExprSyntax(
+					returnToken: .synthetic(.return),
+					location: [exprStmt.location.start]
+				),
+				valueAnalyzed: exprStmt.exprAnalyzed
+			)
+		}
+
+		return analyzed
 	}
 
 	public func visit(_ expr: any ExprStmt, _ context: Environment) throws -> any AnalyzedSyntax {
@@ -459,7 +476,7 @@ public struct SourceFileAnalyzer: Visitor {
 		AnalyzedParamsExpr(
 			typeID: TypeID(.void),
 			expr: expr,
-			paramsAnalyzed: expr.params.enumerated().map { i, param in
+			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				AnalyzedParam(
 					type: TypeID(),
 					expr: param,
@@ -490,8 +507,22 @@ public struct SourceFileAnalyzer: Visitor {
 		-> SourceFileAnalyzer.Value
 	{
 		var bodyAnalyzed: [any AnalyzedExpr] = []
+
 		for bodyExpr in expr.exprs {
 			try bodyAnalyzed.append(bodyExpr.accept(self, context) as! any AnalyzedExpr)
+		}
+
+		// Add an implicit return for single statement blocks
+		if expr.exprs.count == 1, let exprStmt = bodyAnalyzed[0] as? AnalyzedExprStmt {
+			bodyAnalyzed[0] = AnalyzedReturnExpr(
+				typeID: exprStmt.typeID,
+				environment: context,
+				expr: ReturnExprSyntax(
+					returnToken: .synthetic(.return),
+					location: [exprStmt.location.start]
+				),
+				valueAnalyzed: exprStmt.exprAnalyzed
+			)
 		}
 
 		return AnalyzedBlockExpr(
@@ -666,7 +697,7 @@ public struct SourceFileAnalyzer: Visitor {
 						expr: decl,
 						isMutable: false
 					))
-			case let decl as ErrorSyntax:
+			case is ErrorSyntax:
 				()
 			default:
 				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
@@ -736,7 +767,7 @@ public struct SourceFileAnalyzer: Visitor {
 			declsAnalyzed.append(declAnalyzed)
 
 			if let exprStmt = declAnalyzed as? AnalyzedExprStmt,
-				 let wrappedDecl = exprStmt.exprAnalyzed as? any AnalyzedDecl
+			   let wrappedDecl = exprStmt.exprAnalyzed as? any AnalyzedDecl
 			{
 				declAnalyzed = wrappedDecl
 			}

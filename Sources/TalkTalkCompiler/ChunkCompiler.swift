@@ -58,6 +58,25 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Visit the actual expr
 		try expr.exprAnalyzed.accept(self, chunk)
 
+		if let funcExpr = expr.exprAnalyzed as? AnalyzedFuncExpr,
+			 funcExpr.name != nil {
+			// Don't pop named functions off the stack because we might need to reference
+			// their name.
+			return
+		}
+
+		if expr.exprAnalyzed is AnalyzedStructExpr {
+			// There shouldn't be any need to pop here because we didn't add anything
+			// to the stack (this could probably also be a different node type)
+			return
+		}
+
+		if expr.exprAnalyzed is AnalyzedDefExpr {
+			// Don't pop def expr values off because we might need the local var.
+			// TODO: This might want to be a different kind of statement instead of a special case.
+			return
+		}
+
 		// Pop the expr off the stack because this is a statement so we don't care about the
 		// return value
 		chunk.emit(opcode: .pop, line: expr.location.line)
@@ -329,7 +348,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let exitJump = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
 
 		// Pop the condition off the stack
-		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+//		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 
 		// Emit the body
 		try expr.bodyAnalyzed.accept(self, chunk)
@@ -347,7 +366,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedReturnExpr, _ chunk: Chunk) throws {
-		fatalError("TODO")
+		try expr.valueAnalyzed?.accept(self, chunk)
+		chunk.emit(opcode: .return, line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {

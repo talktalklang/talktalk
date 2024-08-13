@@ -72,7 +72,7 @@ public struct VirtualMachine {
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
-		stack.push(.int(0))
+		stack.push(.data(-1))
 
 		let frame = CallFrame(
 			closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [],
@@ -229,12 +229,12 @@ public struct VirtualMachine {
 			case .pop:
 				stack.pop()
 			case .loop:
-				ip = readUInt16()
+				ip -= readUInt16()
 			case .jump:
 				ip += readUInt16()
 			case .jumpUnless:
 				let jump = readUInt16()
-				if stack.peek() == .bool(false) {
+				if stack.pop() == .bool(false) {
 					ip += jump
 				}
 			case .getLocal:

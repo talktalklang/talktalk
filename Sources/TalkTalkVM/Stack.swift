@@ -7,87 +7,52 @@
 import TalkTalkBytecode
 
 struct Stack<Element> {
-	final class Storage: ManagedBuffer<Void, Element> {
-		fileprivate func copy(count: Int) -> Storage {
-			withUnsafeMutablePointers { _, elements in
-				Storage.create(minimumCapacity: count) { newBuffer in
-					newBuffer.withUnsafeMutablePointerToElements { newElements in
-						newElements.initialize(from: elements, count: count)
-					}
-				} as! Storage
-			}
-		}
-
-		fileprivate func resize(newSize: Int, oldSize: Int) -> Storage {
-			withUnsafeMutablePointers { _, oldElements in
-				Storage.create(minimumCapacity: newSize) { newBuf in
-					newBuf.withUnsafeMutablePointerToElements { newElements in
-						newElements.initialize(from: oldElements, count: oldSize)
-					}
-				} as! Storage
-			}
-		}
-	}
-
-	private var storage: Storage
-	public var size: Int = 0
+	private var storage: ContiguousArray<Element>
 
 	init(capacity: Int) {
-		self.storage = Storage.create(minimumCapacity: capacity) { _ in } as! Storage
+		self.storage = .init()
 	}
 
 	subscript(_ index: Int) -> Element {
 		get {
-			storage.withUnsafeMutablePointerToElements {
-				$0[index]
-			}
+			storage[index]
 		}
 
 		set {
-			storage.withUnsafeMutablePointerToElements {
-				$0[index] = newValue
-			}
+			storage[index] = newValue
 		}
 	}
 
-	mutating func entries() -> [Element] {
-		let storage = isKnownUniquelyReferenced(&storage) ? storage : storage.copy(count: size)
+	var size: Int {
+		storage.count
+	}
 
-		return storage.withUnsafeMutablePointers { _, elements in
-			(0 ..< size).map { i in
-				elements[i]
-			}
-		}
+	mutating func entries() -> ContiguousArray<Element> {
+		storage
 	}
 
 	mutating func reset() {
-		size = 0
+		storage = []
 	}
 
 	@inline(__always)
 	var isEmpty: Bool {
-		size == 0
+		storage.isEmpty
 	}
 
 	@inline(__always)
 	mutating func push(_ element: Element) {
-		storage.withUnsafeMutablePointers {
-			($1 + size++).initialize(to: element)
-		}
+		storage.append(element)
 	}
 
 	@inline(__always)
 	@discardableResult mutating func pop() -> Element {
-		storage.withUnsafeMutablePointers {
-			($1 + --size).pointee
-		}
+		storage.popLast()!
 	}
 
 	@inline(__always)
 	func peek(offset: Int = 0) -> Element {
-		storage.withUnsafeMutablePointers {
-			($1 + size - 1 - offset).pointee
-		}
+		storage[size - 1 - offset]
 	}
 
 	@inline(__always)

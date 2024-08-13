@@ -95,9 +95,13 @@ public struct ModuleAnalyzer {
 		//
 		// We also need to make sure the files are in the correct order.
 		analysisModule.analyzedFiles = try files.map {
-			try AnalyzedSourceFile(path: $0.path, syntax: $0.syntax.map {
-				try $0.accept(visitor, environment)
-			})
+			try AnalyzedSourceFile(
+				path: $0.path,
+				syntax: SourceFileAnalyzer.analyze(
+					$0.syntax,
+					in: environment
+				)
+			)
 		}
 
 		return analysisModule
