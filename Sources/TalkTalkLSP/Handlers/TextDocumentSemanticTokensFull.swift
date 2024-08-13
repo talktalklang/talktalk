@@ -192,7 +192,9 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: MemberExpr, _ context: Context) throws -> [RawSemanticToken] {
-		[]
+		var result = try expr.receiver.accept(self, context)
+		result.append(make(.property, from: expr.propertyToken))
+		return result
 	}
 
 	func visit(_ expr: DeclBlockExpr, _ context: Context) throws -> [RawSemanticToken] {
@@ -233,14 +235,22 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: any IfStmt, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		fatalError("TODO")
+		var result = [make(.keyword, from: expr.ifToken)]
+		try result.append(contentsOf: expr.condition.accept(self, context))
+		try result.append(contentsOf: expr.consequence.accept(self, context))
+
+		if let alternative = expr.alternative, let elseToken = expr.elseToken {
+			result.append(make(.keyword, from: elseToken))
+			try result.append(contentsOf: alternative.accept(self, context))
+		}
+
+		return result
 	}
 
-
 	func visit(_ expr: any StructExpr, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		fatalError("TODO")
+		var result = [make(.keyword, from: expr.structToken)]
+		try result.append(contentsOf: expr.body.accept(self, .struct))
+		return result
 	}
 
 

@@ -86,7 +86,11 @@ struct Request: Equatable, Codable {
 			try container.decode(TextDocumentFormattingRequest.self, forKey: .params)
 		case .textDocumentSemanticTokensFull:
 			try container.decode(TextDocumentSemanticTokensFullRequest.self, forKey: .params)
-		case .initialize, .initialized, .shutdown, .workspaceSemanticTokensRefresh:
+		case .initialize,
+				.initialized,
+				.shutdown,
+				.textDocumentDidClose,
+				.workspaceSemanticTokensRefresh:
 			nil
 		}
 	}

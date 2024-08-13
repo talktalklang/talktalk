@@ -19,12 +19,23 @@ extension Parser {
 			lhs = prefix(&self, precedence.canAssign)
 		}
 
+		if didMatch(.newline), let lhs {
+			return lhs
+		}
+
 		while precedence < current.kind.rule.precedence {
 			checkForInfiniteLoop()
 
+			if previous.kind == .newline {
+				break
+			}
+
 			if let infix = current.kind.rule.infix, lhs != nil {
 				lhs = infix(&self, precedence.canAssign, lhs!)
-				skip(.newline)
+
+				if didMatch(.newline) {
+					break
+				}
 			}
 		}
 
@@ -43,7 +54,7 @@ extension Parser {
 		let expr = parse(precedence: .assignment)
 
 		guard consume(.rightParen) != nil else {
-			fatalError()
+			return error(at: current, "Expected ')'", expectation: .none)
 		}
 
 		return expr
@@ -283,13 +294,23 @@ extension Parser {
 		if check(.equals), canAssign {
 			consume(.equals)
 			let rhs = parse(precedence: .assignment)
-			let member = MemberExprSyntax(receiver: lhs, property: member.lexeme, location: [member])
+			let member = MemberExprSyntax(
+				receiver: lhs,
+				property: member.lexeme,
+				propertyToken: member,
+				location: [member]
+			)
 			return DefExprSyntax(receiver: member, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
 			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
-		return MemberExprSyntax(receiver: lhs, property: member.lexeme, location: endLocation(i))
+		return MemberExprSyntax(
+			receiver: lhs,
+			property: member.lexeme,
+			propertyToken: member,
+			location: endLocation(i)
+		)
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {

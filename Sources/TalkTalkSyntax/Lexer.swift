@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public struct Token: CustomDebugStringConvertible, Sendable, Equatable {
-	public enum Kind: Sendable, Equatable {
+public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable {
+	public enum Kind: Sendable, Equatable, Hashable {
 		// Single char tokens
 		case leftParen, rightParen,
 				 leftBrace, rightBrace,

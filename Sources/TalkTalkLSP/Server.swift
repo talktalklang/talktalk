@@ -24,6 +24,8 @@ public struct Server {
 			respond(to: request.id, with: InitializeResult())
 		case .initialized:
 			()
+		case .textDocumentDidClose:
+			()
 		case .textDocumentDidOpen:
 			TextDocumentDidOpen(request: request).handle(&self)
 		case .textDocumentDidChange:

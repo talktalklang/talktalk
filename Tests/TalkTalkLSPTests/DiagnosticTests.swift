@@ -14,6 +14,6 @@ struct DiagnosticTests {
 		1 + a
 		"""
 
-		// Um, TODO.
+
 	}
 }

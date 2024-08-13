@@ -1,30 +1,27 @@
-
 struct Array {
-	var _storage: Pointer
+	var _storage: pointer
 	var count: int
 	var capacity: int
 
 	init() {
 		self.count = 0
 		self.capacity = 4
-		self._storage = allocate(4)
+		self._storage = _allocate(4)
 	}
 
 	func append(item) {
-		if self.count + 1 > self.capacity	{
-			self.resize()
-		} else 	{
-			self.count = self.count
-		}
+		self.count = self.count + 1
+		_storePtr(self._storage, item)
 	}
 
 	func at(index) {
-
+		_deref(self._storage + index)
 	}
 
 	func resize() {
 		newCapacity = self.capacity * 2
-		newStorage = allocate(newCapacity)
+		newStorage = _allocate(newCapacity)
+
 
 	}
 }

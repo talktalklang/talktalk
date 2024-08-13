@@ -14,8 +14,10 @@ public struct BuiltinFunction {
 	public static var list: [BuiltinFunction] {
 		[
 			.print,
-			.allocate,
-			.free,
+			._allocate,
+			._free,
+			._deref,
+			._storePtr
 		]
 	}
 
@@ -53,23 +55,52 @@ public struct BuiltinFunction {
 			)
 	}
 
-	public static var allocate: BuiltinFunction {
+	public static var _allocate: BuiltinFunction {
 		return BuiltinFunction(
-			name: "allocate",
-			type: .function("allocate", TypeID(.pointer), [.int("size")], [])
+			name: "_allocate",
+			type: .function("_allocate", TypeID(.pointer), [.int("size")], [])
 		)
 	}
 
-	public static var free: BuiltinFunction {
+	public static var _free: BuiltinFunction {
 		return BuiltinFunction(
-			name: "free",
+			name: "_free",
 			type: .function(
-				"free",
+				"_free",
 				TypeID(.void),
 				[.init(
 					name: "addr",
 					typeID: TypeID(.int)
 				)],
+				[]
+			)
+		)
+	}
+
+	public static var _deref: BuiltinFunction {
+		return BuiltinFunction(
+			name: "_deref",
+			type: .function(
+				"_deref",
+				TypeID(.placeholder(0)),
+				[.init(
+					name: "addr",
+					typeID: TypeID(.pointer)
+				)],
+				[]
+			)
+		)
+	}
+
+	public static var _storePtr: BuiltinFunction {
+		return BuiltinFunction(
+			name: "_storePtr",
+			type: .function(
+				"_storePtr",
+				TypeID(.placeholder(0)),
+				[.init(name: "addr", typeID: TypeID(.pointer)),
+				 .init(name: "value", typeID: TypeID())
+				],
 				[]
 			)
 		)

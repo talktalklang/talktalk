@@ -94,7 +94,7 @@ public struct Disassembler {
 		case .global:
 			"slot: \(slot)"
 		case .builtin:
-			"builtin"
+			"builtin \(slot)"
 		case .struct:
 			"slot: \(slot)"
 		case .property:

@@ -31,7 +31,7 @@ struct ArrayTests: StandardLibraryTest {
 		let result = try await run("""
 		a = Array()
 		a.append(123)
-		a.at(0)
+		return a.at(0)
 		""").get()
 
 		#expect(result == .int(123))

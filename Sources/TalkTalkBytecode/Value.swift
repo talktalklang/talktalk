@@ -23,14 +23,32 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 
 	case int(IntValue)
 	case bool(Bool)
+
+	// The index of some embedded data in the chunk
 	case data(IntValue)
-	case pointer(IntValue)
+
+	// The block ID and the offset
+	case pointer(IntValue, IntValue)
+
+	// The index of the closure
 	case closure(IntValue)
+
+	// The index of the builtin function
 	case builtin(IntValue)
+
+	// The index of the builtin struct
 	case builtinStruct(IntValue)
+
+	// The index of the module function in its lookup table
 	case moduleFunction(IntValue)
+
+	// The index of the struct in the module
 	case `struct`(IntValue)
+
+	// The type of instance, the instance ID
 	case instance(InstanceKind, IntValue)
+
+	// The method slot, the type of instance
 	case boundMethod(IntValue, InstanceKind)
 	case none
 

@@ -16,19 +16,31 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public init() {}
 
-	public static func diagnostics(text: String, environment: Environment) throws -> [ErrorSyntax] {
+	public static func diagnostics(
+		text: String,
+		environment: Environment
+	) throws -> Set<AnalysisError> {
 		let parsed = try Parser.parse(text, allowErrors: true)
 		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 
-		func collect(syntaxes: [any AnalyzedSyntax]) -> [ErrorSyntax] {
-			var result: [ErrorSyntax] = []
+		func collect(syntaxes: [any AnalyzedSyntax]) -> Set<AnalysisError> {
+			var result: Set<AnalysisError> = []
 
 			for syntax in syntaxes {
 				if let err = syntax as? ErrorSyntax {
-					result.append(err)
+					// TODO: We wanna move away from this towards nodes just having their own errors
+					result.insert(
+						AnalysisError(kind: .unknownError(err.message), location: syntax.location)
+					)
 				}
 
-				result.append(contentsOf: collect(syntaxes: syntax.analyzedChildren))
+				for error in syntax.analysisErrors {
+					result.insert(error)
+				}
+
+				for error in collect(syntaxes: syntax.analyzedChildren) {
+					result.insert(error)
+				}
 			}
 
 			return result
@@ -36,16 +48,6 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return collect(syntaxes: analyzed)
 	}
-
-//	public static func analyzedExprs(_ exprs: [any Syntax], in environment: Environment) throws
-//		-> [any AnalyzedSyntax]
-//	{
-//		let analyzer = SourceFileAnalyzer()
-//
-//		let exprsAnalyzed = try exprs.map {
-//			try $0.accept(analyzer, environment)
-//		}
-//	}
 
 	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws
 		-> [Value]
@@ -205,7 +207,7 @@ public struct SourceFileAnalyzer: Visitor {
 			arity = structType.methods["init"]!.params.count
 		default:
 			return error(
-				at: callee, "callee not callable: \(callee), has type: \(callee.typeAnalyzed)",
+				at: callee, "callee not callable: \(callee.typeID.current.description), has type: \(callee.typeAnalyzed)",
 				environment: context,
 				expectation: .decl
 			)
@@ -268,7 +270,8 @@ public struct SourceFileAnalyzer: Visitor {
 			expr: expr,
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			memberAnalyzed: member
+			memberAnalyzed: member,
+			analysisErrors: []
 		)
 	}
 
@@ -588,8 +591,8 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		)
 
-		context.define(struct: expr.name ?? expr.description, as: structType)
-		bodyContext.define(struct: expr.name ?? expr.description, as: structType)
+		context.define(struct: expr.name, as: structType)
+		bodyContext.define(struct: expr.name, as: structType)
 
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
@@ -805,9 +808,17 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		AnalyzedVarDecl(
-			typeID: TypeID(context.type(named: expr.typeDecl)),
+		var errors: [AnalysisError] = []
+		let type = context.type(named: expr.typeDecl)
+
+		if case .error(_) = type {
+			errors.append(.init(kind: .typeNotFound(expr.typeDecl), location: [expr.typeDeclToken]))
+		}
+
+		return AnalyzedVarDecl(
+			typeID: TypeID(type),
 			expr: expr,
+			analysisErrors: errors,
 			environment: context
 		)
 	}

@@ -335,4 +335,18 @@ struct AnalysisTests {
 		#expect(name == "sup")
 		#expect(returns == .instance(.struct("Person")))
 	}
+
+	@Test("Adds error if a decl type can't be found") func declError() throws {
+		let ast = ast(
+			"""
+			struct Person {
+				var name: Nope
+			}
+			""")
+
+		let structDecl = try #require(ast as? AnalyzedStructDecl)
+		let varDecl = structDecl.bodyAnalyzed.declsAnalyzed[0].cast(AnalyzedVarDecl.self)
+
+		#expect(varDecl.analysisErrors.count == 1)
+	}
 }

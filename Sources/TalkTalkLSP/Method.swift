@@ -3,6 +3,7 @@ enum Method: String, Codable {
 			 initialized = "initialized",
 			 shutdown = "shutdown",
 			 textDocumentDidOpen = "textDocument/didOpen",
+			 textDocumentDidClose = "textDocument/didClose",
 			 textDocumentDidChange = "textDocument/didChange",
 			 textDocumentCompletion = "textDocument/completion",
 			 textDocumentFormatting = "textDocument/formatting",

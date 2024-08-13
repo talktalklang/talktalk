@@ -9,7 +9,6 @@ import TalkTalkBytecode
 
 // A fake heap
 public class Heap {
-
 	// A fake memory block
 	class Block {
 		let address: Int
@@ -30,6 +29,14 @@ public class Heap {
 		let block = Heap.Block(address: current, capacity: .init(count))
 		storage.append(block)
 		return current
+	}
+
+	func dereference(block: Int, offset: Int) -> Value? {
+		storage[block].storage[offset]
+	}
+
+	func store(block: Int, offset: Int, value: Value) {
+		storage[block].storage[offset] = value
 	}
 
 	func free(address: Int) {

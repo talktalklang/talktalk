@@ -13,7 +13,7 @@ struct StandardLibraryBootstrapTests: StandardLibraryTest {
 	@Test("Can import it") func basic() async throws {
 		let result = try await run("""
 		a = Array()
-		a.count
+		return a.count
 		""").get()
 
 		#expect(result == .int(0))

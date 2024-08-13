@@ -11,6 +11,7 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public let typeID: TypeID
 	let expr: VarDecl
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
+	public var analysisErrors: [AnalysisError] = []
 	public let environment: Environment
 
 	public var token: Token { expr.token }

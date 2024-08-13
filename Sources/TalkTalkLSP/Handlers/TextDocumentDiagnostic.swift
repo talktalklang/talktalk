@@ -7,6 +7,37 @@
 
 import TalkTalkAnalysis
 
+extension AnalysisError {
+	func diagnostic() -> Diagnostic {
+		let start = location.start
+		let end = location.end
+
+		return Diagnostic(
+			range: Range(
+				start: Position(line: start.line, character: start.column),
+				end: Position(line: end.line, character: end.column)
+			),
+			severity: .error,
+			message: message,
+			tags: nil,
+			relatedInformation: nil
+		)
+	}
+
+	var message: String {
+		switch kind {
+		case let .argumentError(expected: a, received: b):
+			return "Expected \(a) arguments, got: \(b)"
+		case let .typeParameterError(expected: a, received: b):
+			return "Expected \(a) type parameters, got: \(b)"
+		case let .typeNotFound(name):
+			return "Unknown type: \(name)"
+		case let .unknownError(message):
+			return message
+		}
+	}
+}
+
 struct TextDocumentDiagnostic: Decodable {
 	var request: Request
 
@@ -21,19 +52,7 @@ struct TextDocumentDiagnostic: Decodable {
 		do {
 			let environment = Environment() // TODO: Use module environment
 			let errorSyntaxes = try SourceFileAnalyzer.diagnostics(text: source.text, environment: environment)
-			let diagnostics = errorSyntaxes.compactMap { syntax in
-				let start = syntax.location.start
-				let end = syntax.location.end
-
-				return Diagnostic(
-					range: Range(start: Position(line: start.line, character: start.column), end: Position(line: end.line, character: end.column)),
-					severity: .error,
-					message: syntax.message,
-					tags: nil,
-					relatedInformation: nil
-				)
-			}
-
+			let diagnostics = errorSyntaxes.map { $0.diagnostic() }
 			let report = FullDocumentDiagnosticReport(items: diagnostics)
 			handler.respond(to: request.id, with: report)
 		} catch {

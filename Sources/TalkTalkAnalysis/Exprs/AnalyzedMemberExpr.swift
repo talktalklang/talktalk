@@ -15,9 +15,11 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 
 	public let receiverAnalyzed: any AnalyzedExpr
 	public let memberAnalyzed: any Member
+	public let analysisErrors: [AnalysisError]
 
 	public var receiver: any Expr { expr.receiver }
 	public var property: String { expr.property }
+	public var propertyToken: Token { expr.propertyToken }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

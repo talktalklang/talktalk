@@ -80,6 +80,11 @@ public struct ASTPrinter: Visitor {
 
 	@StringBuilder public func visit(_ expr: any ExprStmt, _ context: Context) throws -> String {
 		dump(expr)
+		indent {
+			for child in expr.children {
+				try child.accept(self, context)
+			}
+		}
 	}
 
 	@StringBuilder public func visit(_ expr: any TypeExpr, _ context: Context) throws -> String {
@@ -237,11 +242,21 @@ public struct ASTPrinter: Visitor {
 
 	@StringBuilder public func visit(_ expr: any IfStmt, _ context: Context) throws -> String {
 		dump(expr)
+		indent {
+			for child in expr.children {
+				try child.accept(self, context)
+			}
+		}
 	}
 
 
 	@StringBuilder public func visit(_ expr: any StructDecl, _ context: Context) throws -> String {
 		dump(expr)
+		indent {
+			for child in expr.children {
+				try child.accept(self, context)
+			}
+		}
 	}
 
 

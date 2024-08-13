@@ -58,6 +58,12 @@ public class Environment {
 		Array(locals.values)
 	}
 
+	public func allBindings() -> [Binding] {
+		var result = Array(locals.values)
+		result.append(contentsOf: BuiltinFunction.list.map({ $0.binding(in: self) }))
+		return result
+	}
+
 	public func infer(_ name: String) -> Binding? {
 		if let local = locals[name] {
 			return local
@@ -70,6 +76,8 @@ public class Environment {
 		switch name {
 		case "i32", "int":
 			return .int
+		case "pointer":
+			return .pointer
 		case "bool":
 			return .bool
 		default:

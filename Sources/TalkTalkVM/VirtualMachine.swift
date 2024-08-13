@@ -168,12 +168,14 @@ public struct VirtualMachine {
 				let lhsValue = stack.pop()
 				let rhsValue = stack.pop()
 
-				guard let lhs = lhsValue.intValue,
-					let rhs = rhsValue.intValue
-				else {
+				if let lhs = lhsValue.intValue, let rhs = rhsValue.intValue {
+					stack.push(.int(lhs + rhs))
+				} else if case let .pointer(base, offset) = lhsValue,
+					 let rhs = rhsValue.intValue {
+					stack.push(.pointer(base, offset + rhs))
+				}	else {
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
-				stack.push(.int(lhs + rhs))
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
 					let rhs = stack.pop().intValue
@@ -549,13 +551,23 @@ public struct VirtualMachine {
 		switch builtin {
 		case .print:
 			print(stack.peek())
-		case .allocate:
+		case ._allocate:
 			if case let .int(count) = stack.pop() {  // Get the capacity
 				let address = heap.allocate(count: Int(count))
-				stack.push(.pointer(.init(address)))
+				stack.push(.pointer(.init(address), .init(0)))
 			}
-		case .free:
+		case ._deref:
+			if case let .pointer(blockID, offset) = stack.pop(),
+				 let value = heap.dereference(block: Int(blockID), offset: Int(offset)) {
+				stack.push(value)
+			}
+		case ._free:
 			()  // TODO
+		case ._storePtr:
+			let value = stack.pop()
+			if case let .pointer(blockID, offset) = stack.pop() {
+				heap.store(block: Int(blockID), offset: Int(offset), value: value)
+			}
 		}
 	}
 

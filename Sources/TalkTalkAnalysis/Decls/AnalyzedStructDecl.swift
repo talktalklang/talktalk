@@ -11,7 +11,11 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 
 	// AnalyzedDecl conformance
 	public var typeID: TypeID
-	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
+	public var analyzedChildren: [any AnalyzedSyntax] {
+		[
+			bodyAnalyzed
+		]
+	}
 	public var environment: Environment
 
 	// Delegate these to the wrapped node

@@ -78,6 +78,23 @@ struct TalkTalkParserTests {
 		#expect(ast.value == .int(123))
 	}
 
+	@Test("Newlines terminate statements") func newlineTerminateStatement() {
+		let ast = parse("""
+		func() {
+			self.foo = hello + 1
+			(hello + 1)
+		}
+		""")[0].cast(ExprStmtSyntax.self).expr.cast(FuncExprSyntax.self).body.exprs
+
+		print(ast.description)
+
+		let defExpr = ast[0].cast(ExprStmtSyntax.self).expr.cast(DefExprSyntax.self)
+		#expect(defExpr.receiver.description == "self.foo")
+		#expect(defExpr.value.description == "hello + 1")
+		#expect(ast[1].cast(ExprStmtSyntax.self).expr.cast(BinaryExprSyntax.self).description == "hello + 1")
+		#expect(ast.count == 2)
+	}
+
 	@Test("multiple statements") func multiple() {
 		let ast = parse("""
 		(1)

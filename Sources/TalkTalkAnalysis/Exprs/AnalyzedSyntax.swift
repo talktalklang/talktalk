@@ -10,6 +10,7 @@ import TalkTalkSyntax
 public protocol AnalyzedSyntax: Syntax {
 	var typeID: TypeID { get }
 	var analyzedChildren: [any AnalyzedSyntax] { get }
+	var analysisErrors: [AnalysisError] { get }
 
 	func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor
 }
@@ -18,4 +19,6 @@ public extension AnalyzedSyntax {
 	var typeAnalyzed: ValueType {
 		typeID.current
 	}
+
+	var analysisErrors: [AnalysisError] { [] }
 }
