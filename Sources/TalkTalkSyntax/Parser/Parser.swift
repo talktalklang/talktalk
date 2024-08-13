@@ -73,6 +73,10 @@ public struct Parser {
 	}
 
 	mutating func decl() -> any Syntax {
+		if didMatch(.if) {
+			return ifStmt()
+		}
+
 		if didMatch(.var) {
 			return letVarDecl(.var)
 		}

@@ -88,17 +88,32 @@ struct TalkTalkParserTests {
 		#expect(ast.value.cast(BinaryExprSyntax.self).op == .plus)
 	}
 
-	@Test("if expr") func ifexpr() {
+	@Test("if stmt") func ifStmt() {
 		let ast = parse("""
 		if true {
 			1
 		} else {
 			2
 		}
-		""")[0].cast(ExprStmtSyntax.self).expr.cast(IfExprSyntax.self)
+		""")[0].cast(IfStmtSyntax.self)
 		#expect(ast.condition.description == "true")
 		#expect(ast.consequence.exprs[0].description == "1")
-		#expect(ast.alternative.exprs[0].description == "2")
+		#expect(ast.alternative?.exprs[0].description == "2")
+	}
+
+	@Test("if expr") func ifExpr() {
+		let ast = parse("""
+		a = if true {
+			1
+		} else {
+			2
+		}
+		""")[0].cast(ExprStmtSyntax.self).expr.cast(DefExprSyntax.self)
+		let ifExpr = ast.value.cast(IfExprSyntax.self)
+
+		#expect(ifExpr.condition.description == "true")
+		#expect(ifExpr.consequence.exprs[0].description == "1")
+		#expect(ifExpr.alternative.exprs[0].description == "2")
 	}
 
 	@Test("while expr") func whileexpr() {
