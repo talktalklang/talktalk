@@ -205,7 +205,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: StructExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: StructDecl, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.structToken)]
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
@@ -233,6 +233,12 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: any IfStmt, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+
+	func visit(_ expr: any StructExpr, _ context: Context) throws -> [RawSemanticToken] {
 		#warning("TODO")
 		fatalError("TODO")
 	}

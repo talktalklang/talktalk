@@ -21,6 +21,7 @@ public class Environment {
 	public var importedModules: [AnalysisModule]
 	public var importedSymbols: [Symbol: Binding] = [:]
 	public var errors: [AnalysisError] = []
+	public var canAutoReturn = true
 
 	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
@@ -41,6 +42,12 @@ public class Environment {
 
 		errors.append(error)
 		return error
+	}
+
+	public func withNoAutoReturn() -> Environment {
+		let environment = Environment(parent: self)
+		environment.canAutoReturn = false
+		return environment
 	}
 
 	public func importModule(_ analysisModule: AnalysisModule) {
@@ -228,7 +235,7 @@ public class Environment {
 		)
 	}
 
-	public func addLexicalScope(scope: StructType, type: ValueType, expr: any Expr) -> Environment {
+	public func addLexicalScope(scope: StructType, type: ValueType, expr: any Syntax) -> Environment {
 		let environment = Environment(parent: self)
 		environment.lexicalScope = LexicalScope(scope: scope, type: type, expr: expr)
 		return environment

@@ -10,9 +10,9 @@ import TalkTalkSyntax
 public class LexicalScope {
 	public var scope: StructType
 	var type: ValueType
-	var expr: any Expr
+	var expr: any Syntax
 
-	init(scope: StructType, type: ValueType, expr: any Expr) {
+	init(scope: StructType, type: ValueType, expr: any Syntax) {
 		self.scope = scope
 		self.type = type
 		self.expr = expr

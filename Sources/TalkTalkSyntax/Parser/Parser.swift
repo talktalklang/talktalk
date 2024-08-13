@@ -77,6 +77,10 @@ public struct Parser {
 			return ifStmt()
 		}
 
+		if didMatch(.struct) {
+			return structDecl()
+		}
+
 		if didMatch(.var) {
 			return letVarDecl(.var)
 		}

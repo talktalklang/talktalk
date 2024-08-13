@@ -176,17 +176,17 @@ public struct ModuleAnalyzer {
 			}
 
 			environment.importModule(module)
-		case let syntax as StructExpr:
-			let structExpr = try visitor.visit(syntax, environment).cast(AnalyzedStructExpr.self)
-			let name = structExpr.name ?? "<struct\(module.structs.count)>"
+		case let syntax as StructDecl:
+			let analyzedStructDecl = try visitor.visit(syntax, environment).cast(AnalyzedStructDecl.self)
+			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
 				name: name,
 				syntax: syntax,
-				typeID: structExpr.typeID,
+				typeID: analyzedStructDecl.typeID,
 				source: .module,
-				properties: structExpr.lexicalScope.scope.properties,
-				methods: structExpr.lexicalScope.scope.methods,
-				typeParameters: structExpr.lexicalScope.scope.typeParameters
+				properties: analyzedStructDecl.lexicalScope.scope.properties,
+				methods: analyzedStructDecl.lexicalScope.scope.methods,
+				typeParameters: analyzedStructDecl.lexicalScope.scope.typeParameters
 			)
 		default:
 			()

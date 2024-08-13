@@ -8,6 +8,7 @@
 import Foundation
 
 public protocol InstructionMetadata: CustomStringConvertible, Hashable {
+	var length: Int { get }
 	func emit(into chunk: inout Chunk, from instruction: Instruction)
 }
 
@@ -59,6 +60,8 @@ public extension InstructionMetadata where Self == SimpleMetadata {
 public struct SimpleMetadata: InstructionMetadata {
 	public init() {}
 
+	public var length: Int = 1
+
 	public var description: String {
 		""
 	}
@@ -70,6 +73,8 @@ public struct SimpleMetadata: InstructionMetadata {
 
 public struct ConstantMetadata: InstructionMetadata {
 	public var value: Value
+
+	public var length: Int = 2
 
 	public init(value: Value) {
 		self.value = value
@@ -86,6 +91,8 @@ public struct ConstantMetadata: InstructionMetadata {
 
 public struct ObjectMetadata: InstructionMetadata {
 	public var object: Object
+
+	public var length: Int = 2
 
 	public init(object: Object) {
 		self.object = object
@@ -108,6 +115,7 @@ public extension InstructionMetadata where Self == ConstantMetadata {
 
 public struct JumpMetadata: InstructionMetadata {
 	let offset: Int
+	public var length: Int = 3
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -126,6 +134,7 @@ public extension InstructionMetadata where Self == JumpMetadata {
 
 public struct LoopMetadata: InstructionMetadata {
 	let back: Int
+	public var length: Int = 3
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -145,6 +154,7 @@ public extension InstructionMetadata where Self == LoopMetadata {
 public struct GetPropertyMetadata: InstructionMetadata {
 	let slot: Int
 	let options: PropertyOptions
+	public var length: Int = 3
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -165,6 +175,8 @@ public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
 		case local, global, builtin, `struct`, property, builtinStruct
 	}
+
+	public var length: Int = 2
 
 	public let slot: Byte
 	public let name: String
@@ -231,6 +243,9 @@ public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 	let arity: Byte
 	let depth: Byte
 	let upvalues: [Upvalue]
+	public var length: Int {
+		2 + (upvalues.count * 2)
+	}
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -251,6 +266,7 @@ public extension InstructionMetadata where Self == ClosureMetadata {
 
 public struct CallMetadata: InstructionMetadata {
 	public let name: String
+	public var length: Int = 1
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")
@@ -270,6 +286,7 @@ public extension InstructionMetadata where Self == CallMetadata {
 public struct UpvalueMetadata: InstructionMetadata {
 	public let slot: Byte
 	public let name: String
+	public var length: Int = 2
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
 		fatalError("TODO")

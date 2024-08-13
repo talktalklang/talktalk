@@ -46,7 +46,7 @@ struct InterpreterTests {
 
 	@Test("Evaluates if") func ifEval() {
 		try! #expect(Interpreter("""
-		if false { a = 1 } else { a = 2 }
+		return if false { a = 1 } else { a = 2 }
 		a
 		""").evaluate() == .int(2))
 	}

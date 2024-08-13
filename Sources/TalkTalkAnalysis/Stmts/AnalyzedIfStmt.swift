@@ -6,7 +6,16 @@ public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
 	let wrapped: any IfStmt
 
 	public var typeID: TypeID
-	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
+	public var conditionAnalyzed: any AnalyzedExpr
+	public var consequenceAnalyzed: any AnalyzedExpr
+	public var alternativeAnalyzed: (any AnalyzedExpr)?
+	public var analyzedChildren: [any AnalyzedSyntax] {
+		if let alternativeAnalyzed {
+			[conditionAnalyzed, consequenceAnalyzed, alternativeAnalyzed]
+		} else {
+			[conditionAnalyzed, consequenceAnalyzed]
+		}
+	}
 
 	// Delegate these to the wrapped node
 	public var ifToken: Token { wrapped.ifToken }

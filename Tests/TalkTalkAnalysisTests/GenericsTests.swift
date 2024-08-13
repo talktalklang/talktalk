@@ -15,24 +15,23 @@ struct GenericsTests {
 	}
 
 	@Test("Gets generic types") func types() throws {
-		let ast = ast("""
+		let decl = ast("""
 		struct Wrapper<Wrapped> {
 			let wrapped: Wrapped
 		}
-		""").cast(AnalyzedExprStmt.self).exprAnalyzed
+		""").cast(AnalyzedStructDecl.self)
 
-		let s = try #require(ast as? AnalyzedStructExpr)
-		#expect(s.name == "Wrapper")
+		#expect(decl.name == "Wrapper")
 
-		guard case let .struct(name) = s.typeAnalyzed else {
+		guard case let .struct(name) = decl.typeAnalyzed else {
 			#expect(Bool(false), "did not get struct type")
 			return
 		}
 
-		let type = try #require(s.environment.lookupStruct(named: name))
+		let type = try #require(decl.environment.lookupStruct(named: name))
 		#expect(type.typeParameters.count == 1)
 
-		let property = try #require(s.structType.properties["wrapped"])
+		let property = try #require(decl.structType.properties["wrapped"])
 
 		guard case let .instance(instanceType) = property.typeID.type() else {
 			#expect(Bool(false), "did not get instance type")

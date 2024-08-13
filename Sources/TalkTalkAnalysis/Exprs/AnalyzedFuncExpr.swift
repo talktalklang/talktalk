@@ -13,7 +13,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: AnalyzedBlockExpr
-	public let returnsAnalyzed: (any AnalyzedExpr)?
+	public let returnsAnalyzed: (any AnalyzedSyntax)?
 	public let environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[bodyAnalyzed]
@@ -32,7 +32,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		expr: FuncExpr,
 		analyzedParams: AnalyzedParamsExpr,
 		bodyAnalyzed: AnalyzedBlockExpr,
-		returnsAnalyzed: (any AnalyzedExpr)?,
+		returnsAnalyzed: (any AnalyzedSyntax)?,
 		environment: Environment
 	) {
 		self.name = expr.name

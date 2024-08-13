@@ -228,7 +228,7 @@ struct TalkTalkParserTests {
 		foo.age
 		""")
 
-		let structExpr = ast[0].cast(ExprStmtSyntax.self).expr.cast(StructExprSyntax.self)
+		let structExpr = ast[0].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Foo")
 
 		let varDecl = structExpr.body.decls[0].cast(VarDeclSyntax.self)
@@ -262,7 +262,7 @@ struct TalkTalkParserTests {
 		foo.age
 		""")
 
-		let structExpr = ast[0].cast(ExprStmtSyntax.self).expr.cast(StructExprSyntax.self)
+		let structExpr = ast[0].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Foo")
 
 		let varDecl = structExpr.body.decls[0].cast(LetDeclSyntax.self)
@@ -291,7 +291,7 @@ struct TalkTalkParserTests {
 		Foo<int>()
 		""")
 
-		let structExpr = ast[0].cast(ExprStmtSyntax.self).expr.cast(StructExprSyntax.self)
+		let structExpr = ast[0].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Foo")
 		#expect(structExpr.genericParams?.params.map(\.name) == ["Bar"])
 

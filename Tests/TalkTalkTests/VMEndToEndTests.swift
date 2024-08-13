@@ -103,7 +103,7 @@ struct VMEndToEndTests {
 		#expect(
 			try run(
 				"""
-				if false {
+				return if false {
 					123
 				} else {
 					456

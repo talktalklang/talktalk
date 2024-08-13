@@ -492,7 +492,7 @@ public struct SourceFileAnalyzer: Visitor {
 	{
 		// TODO: Validate condition is bool
 		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
-		let body = try visit(expr.body, context) as! AnalyzedBlockExpr
+		let body = try visit(expr.body, context.withNoAutoReturn()) as! AnalyzedBlockExpr
 
 		return AnalyzedWhileExpr(
 			typeID: body.typeID,
@@ -506,14 +506,14 @@ public struct SourceFileAnalyzer: Visitor {
 	public func visit(_ expr: any BlockExpr, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		var bodyAnalyzed: [any AnalyzedExpr] = []
+		var bodyAnalyzed: [any AnalyzedSyntax] = []
 
 		for bodyExpr in expr.exprs {
-			try bodyAnalyzed.append(bodyExpr.accept(self, context) as! any AnalyzedExpr)
+			try bodyAnalyzed.append(bodyExpr.accept(self, context))
 		}
 
 		// Add an implicit return for single statement blocks
-		if expr.exprs.count == 1, let exprStmt = bodyAnalyzed[0] as? AnalyzedExprStmt {
+		if context.canAutoReturn, expr.exprs.count == 1, let exprStmt = bodyAnalyzed[0] as? AnalyzedExprStmt {
 			bodyAnalyzed[0] = AnalyzedReturnExpr(
 				typeID: exprStmt.typeID,
 				environment: context,
@@ -551,7 +551,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any StructExpr, _ context: Environment) throws
+	public func visit(_ expr: any StructDecl, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		var typeParameters: [TypeParameter] = []
@@ -561,16 +561,24 @@ public struct SourceFileAnalyzer: Visitor {
 			}
 		}
 
-		let structType = StructType(name: expr.name, properties: [:], methods: [:], typeParameters: typeParameters)
+		let structType = StructType(
+			name: expr.name,
+			properties: [:],
+			methods: [:],
+			typeParameters: typeParameters
+		)
+
 		let bodyContext = context.addLexicalScope(
-			scope: structType, type: .struct(expr.name ?? expr.description), expr: expr
+			scope: structType,
+			type: .struct(expr.name),
+			expr: expr
 		)
 
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
 				typeID: TypeID(
-					.instance(.struct(expr.name ?? expr.description))
+					.instance(.struct(expr.name))
 				),
 				expr: VarExprSyntax(
 					token: .synthetic(.self),
@@ -734,18 +742,16 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let lexicalScope = bodyContext.lexicalScope!
 
-		let analyzed = AnalyzedStructExpr(
-			typeID: TypeID(type),
-			expr: expr,
+		let analyzed = AnalyzedStructDecl(
+			wrapped: expr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
 			structType: structType,
 			lexicalScope: lexicalScope,
+			typeID: TypeID(type),
 			environment: context
 		)
 
-		if let name = expr.name {
-			context.define(local: name, as: analyzed)
-		}
+		context.define(local: expr.name, as: analyzed)
 
 		bodyContext.lexicalScope = lexicalScope
 
@@ -807,7 +813,17 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any IfStmt, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
+		return try AnalyzedIfStmt(
+			wrapped: expr,
+			typeID: TypeID(.void),
+			conditionAnalyzed: expr.condition.accept(self, context) as! AnalyzedExpr,
+			consequenceAnalyzed: expr.consequence.accept(self, context.withNoAutoReturn()) as! AnalyzedExpr,
+			alternativeAnalyzed: expr.alternative?.accept(self, context.withNoAutoReturn()) as? AnalyzedExpr
+		)
+	}
+
+
+	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedSyntax {
 		fatalError("TODO")
 	}
 

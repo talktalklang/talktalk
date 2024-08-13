@@ -11,7 +11,7 @@ public struct AnalyzedBlockExpr: AnalyzedExpr, BlockExpr {
 	let expr: any BlockExpr
 	public let typeID: TypeID
 
-	public var exprsAnalyzed: [any AnalyzedExpr]
+	public var exprsAnalyzed: [any AnalyzedSyntax]
 	public var analyzedChildren: [any AnalyzedSyntax] { exprsAnalyzed }
 	public let environment: Environment
 

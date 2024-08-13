@@ -38,7 +38,11 @@ extension TypeID {
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
-		try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init()).last!.cast(AnalyzedExprStmt.self).exprAnalyzed
+		try! SourceFileAnalyzer.analyze(
+			Parser.parse(string),
+			in: .init()
+		)
+		.last!
 	}
 
 	@Test("Types literals") func literals() {
@@ -52,14 +56,18 @@ struct AnalysisTests {
 	}
 
 	@Test("Types def") func def() throws {
-		let ast = ast("foo = 1")
+		let ast = ast("foo = 1").as(AnalyzedReturnExpr.self)?.valueAnalyzed
 		let def = try #require(ast as? AnalyzedDefExpr)
 		#expect(def.typeAnalyzed == .int)
 		#expect(def.receiverAnalyzed.cast(AnalyzedVarExpr.self).name == "foo")
 	}
 
 	@Test("Types if expr") func ifExpr() {
-		#expect(ast("if true { 1 } else { 2 }").typeAnalyzed == .int)
+		#expect(ast("a = if true { 1 } else { 2 }").typeAnalyzed == .int)
+	}
+
+	@Test("Types if stmt") func ifStmt() {
+		#expect(ast("if true { 1 } else { 2 }").typeAnalyzed == .void)
 	}
 
 	@Test("Types block expr") func blockExpr() {
@@ -87,8 +95,9 @@ struct AnalysisTests {
 
 		#expect(
 			fn
+				.cast(AnalyzedReturnExpr.self).valueAnalyzed?
 				.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0]
-				.cast(AnalyzedExprStmt.self).exprAnalyzed
+				.cast(AnalyzedReturnExpr.self).valueAnalyzed?
 				.cast(AnalyzedCallExpr.self).callee.description == "foo"
 		)
 	}
@@ -98,7 +107,8 @@ struct AnalysisTests {
 			"""
 			func foo(x) { x + x }
 			foo
-			""")
+			"""
+		).cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		#expect(fn.typeAnalyzed == .function("foo", .int, [.int("x")], []))
 	}
@@ -108,7 +118,7 @@ struct AnalysisTests {
 			"""
 			foo = func(x) { x + x }
 			foo(1)
-			""")
+			""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		#expect(res.typeAnalyzed == .int)
 	}
@@ -117,7 +127,8 @@ struct AnalysisTests {
 		let ast = ast(
 			"""
 			func(x) { 1 + x }
-			""")
+			"""
+		).cast(AnalyzedReturnExpr.self).valueAnalyzed
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
@@ -141,11 +152,6 @@ struct AnalysisTests {
 			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
 		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
-
-		print(result)
-		print(expected)
-		print()
-
 		#expect(result == expected)
 	}
 
@@ -153,7 +159,9 @@ struct AnalysisTests {
 		let env = Environment()
 		let ast = try SourceFileAnalyzer.analyze(Parser.parse("func() {}(123)"), in: env)
 
-		let callExpr = ast[0].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedCallExpr.self)
+		let callExpr = ast[0]
+			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedCallExpr.self)
 		let error = try #require(callExpr.analysisErrors.first)
 
 		#expect(error.kind == .argumentError(expected: 0, received: 1))
@@ -171,7 +179,7 @@ struct AnalysisTests {
 					y + x
 				}
 			}
-			""")
+		""").as(AnalyzedReturnExpr.self)?.valueAnalyzed
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
@@ -181,9 +189,9 @@ struct AnalysisTests {
 		#expect(
 			fn.typeAnalyzed
 				== .function(
-					"_fn_x_33",
+					"_fn_x_38",
 					.function(
-						"_fn_y_32",
+						"_fn_y_36",
 						.int,
 						[.int("y")],
 						["x"]
@@ -193,8 +201,8 @@ struct AnalysisTests {
 				))
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
-		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0].cast(AnalyzedExprStmt.self).exprAnalyzed as! AnalyzedFuncExpr
-		#expect(nestedFn.typeAnalyzed == .function("_fn_y_32", .int, [.int("y")], ["x"]))
+		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0].cast(AnalyzedReturnExpr.self).valueAnalyzed as! AnalyzedFuncExpr
+		#expect(nestedFn.typeAnalyzed == .function("_fn_y_36", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
@@ -255,7 +263,7 @@ struct AnalysisTests {
 			}
 			""")
 
-		let s = try #require(ast as? AnalyzedStructExpr)
+		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
 		guard case let .struct(name) = s.typeAnalyzed else {
@@ -270,11 +278,6 @@ struct AnalysisTests {
 
 		#expect(type.properties["age"]!.typeID.type() == .int)
 		#expect(type.properties["age"]!.typeID.type() == .int)
-
-		print(ValueType.function("sup", .int, [], []))
-		print(type.methods["sup"]!.typeID.type())
-		print()
-
 		#expect(type.methods["sup"]!.typeID.type() == .function("sup", .int, [], []))
 	}
 
@@ -290,7 +293,7 @@ struct AnalysisTests {
 			}
 			""")
 
-		let s = try #require(ast as? AnalyzedStructExpr)
+		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
 		let structType = s.structType
@@ -312,7 +315,7 @@ struct AnalysisTests {
 			}
 			""")
 
-		let s = try #require(ast as? AnalyzedStructExpr)
+		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
 		guard case let .struct(name) = s.typeAnalyzed else {

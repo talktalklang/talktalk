@@ -86,4 +86,28 @@ public extension Parser {
 
 		return DeclBlockExprSyntax(decls: decls, location: endLocation(i))
 	}
+
+	mutating func structDecl() -> any Syntax {
+		let structToken = previous!
+		let i = startLocation(at: previous)
+
+		guard let name = consume(.identifier) else {
+			return error(at: current, "expected struct name", expectation: .identifier)
+		}
+
+		var genericParamsSyntax: GenericParamsSyntax? = nil
+		if didMatch(.less) {
+			genericParamsSyntax = genericParams()
+		}
+
+		let body = declBlock()
+
+		return StructDeclSyntax(
+			structToken: structToken,
+			name: name.lexeme,
+			body: body,
+			genericParams: genericParamsSyntax,
+			location: endLocation(i)
+		)
+	}
 }
