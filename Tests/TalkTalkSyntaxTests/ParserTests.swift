@@ -109,7 +109,7 @@ struct TalkTalkParserTests {
 		}
 		""")[0].cast(ExprStmtSyntax.self).expr as! WhileExpr
 		#expect(ast.condition.description == "i < 5")
-		#expect(ast.body.exprs[0].cast(LiteralExprSyntax.self).value == .int(123))
+		#expect(ast.body.exprs[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 	
 
@@ -120,9 +120,14 @@ struct TalkTalkParserTests {
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
-		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).lhs.description == "x")
-		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).rhs.description == "y")
-		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).op == .plus)
+
+		let bodyExpr = fn.body.exprs[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(BinaryExprSyntax.self)
+
+		#expect(bodyExpr.lhs.description == "x")
+		#expect(bodyExpr.rhs.description == "y")
+		#expect(bodyExpr.op == .plus)
 	}
 
 	@Test("return expr") func returnExpr() throws {
@@ -133,7 +138,9 @@ struct TalkTalkParserTests {
 		""")[0].cast(ExprStmtSyntax.self).expr
 
 		let fn = try #require(ast as? FuncExpr)
-		#expect(fn.body.exprs[0].cast(ReturnExprSyntax.self).value?.description == "x")
+		#expect(fn.body.exprs[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(ReturnExprSyntax.self).value?.description == "x")
 	}
 
 	@Test("named func expr") func namedfuncexpr() throws {
@@ -144,9 +151,13 @@ struct TalkTalkParserTests {
 		#expect(fn.name?.lexeme == "foo")
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
-		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).lhs.description == "x")
-		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).rhs.description == "y")
-		#expect(fn.body.exprs[0].cast(BinaryExprSyntax.self).op == .plus)
+
+		let bodyExpr = fn.body.exprs[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(BinaryExprSyntax.self)
+		#expect(bodyExpr.lhs.description == "x")
+		#expect(bodyExpr.rhs.description == "y")
+		#expect(bodyExpr.op == .plus)
 	}
 
 	@Test("call expr") func callExpr() {

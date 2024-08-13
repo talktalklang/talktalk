@@ -11,7 +11,7 @@ public extension Environment {
 	class Binding {
 		public let name: String
 		public var expr: any Syntax
-		public var type: ValueType
+		public var type: TypeID
 		public var isCaptured: Bool
 		public var isBuiltin: Bool
 		public var isParameter: Bool
@@ -21,7 +21,7 @@ public extension Environment {
 		public init(
 			name: String,
 			expr: any Syntax,
-			type: ValueType,
+			type: TypeID,
 			isCaptured: Bool = false,
 			isBuiltin: Bool = false,
 			isParameter: Bool = false,

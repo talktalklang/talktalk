@@ -21,6 +21,7 @@ public class Environment {
 	public var importedModules: [AnalysisModule]
 	public var importedSymbols: [Symbol: Binding] = [:]
 	public var errors: [AnalysisError] = []
+	public let typeRegistry = TypeRegistry()
 
 	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
@@ -97,11 +98,11 @@ public class Environment {
 		}
 
 		if let builtinStruct = BuiltinStruct.lookup(name: name) {
-			return builtinStruct.binding()
+			return builtinStruct.binding(in: self)
 		}
 
 		if let builtinFunction = BuiltinFunction.list.first(where: { $0.name == name }) {
-			return builtinFunction.binding()
+			return builtinFunction.binding(in: self)
 		}
 
 		if let scope = getLexicalScope() {
@@ -109,11 +110,11 @@ public class Environment {
 				return Binding(
 					name: "Self",
 					expr: AnalyzedVarExpr(
-						typeAnalyzed: scope.type,
+						typeID: self.typeRegistry.newType(scope.type),
 						expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
 						environment: self
 					),
-					type: scope.type
+					type: typeRegistry.newType(scope.type)
 				)
 			}
 
@@ -122,7 +123,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: method.expr,
-						type: .member(scope.type)
+						type: typeRegistry.newType(.member(scope.type))
 					)
 				}
 
@@ -130,7 +131,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: property.expr,
-						type: .member(scope.type)
+						type: typeRegistry.newType(.member(scope.type))
 					)
 				}
 			}
@@ -158,7 +159,7 @@ public class Environment {
 			let binding = Binding(
 				name: name,
 				expr: global.syntax,
-				type: global.type,
+				type: global.typeID,
 				externalModule: module
 			)
 
@@ -200,9 +201,11 @@ public class Environment {
 
 	public func update(local: String, as type: ValueType) {
 		if let current = locals[local] {
-			current.type = type
+			current.type.update(type)
 			locals[local] = current
 		}
+
+		parent?.update(local: local, as: type)
 	}
 
 	public func define(struct name: String, as type: StructType) {
@@ -210,11 +213,20 @@ public class Environment {
 	}
 
 	public func define(local: String, as expr: any AnalyzedExpr) {
-		locals[local] = Binding(name: local, expr: expr, type: expr.typeAnalyzed)
+		locals[local] = Binding(
+			name: local,
+			expr: expr,
+			type: expr.typeID
+		)
 	}
 
 	public func define(parameter: String, as expr: any AnalyzedExpr) {
-		locals[parameter] = Binding(name: parameter, expr: expr, type: expr.typeAnalyzed, isParameter: true)
+		locals[parameter] = Binding(
+			name: parameter,
+			expr: expr,
+			type: expr.typeID,
+			isParameter: true
+		)
 	}
 
 	public func addLexicalScope(scope: StructType, type: ValueType, expr: any Expr) -> Environment {

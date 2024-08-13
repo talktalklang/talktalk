@@ -200,9 +200,9 @@ extension Parser {
 		consume(.leftBrace, "expected '{' before block body")
 		skip(.newline)
 
-		var body: [any Expr] = []
+		var body: [any Syntax] = []
 		while !check(.eof), !check(.rightBrace) {
-			body.append(expr())
+			body.append(decl())
 			skip(.newline)
 		}
 

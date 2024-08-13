@@ -15,11 +15,11 @@ public extension Environment {
 				binding: .init(
 					name: name,
 					expr: AnalyzedLiteralExpr(
-						typeAnalyzed: .bool,
+						typeID: TypeRegistry().newType(),
 						expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)]),
 						environment: .init()
 					),
-					type: .bool
+					type: TypeRegistry().newType(.bool)
 				),
 				environment: .init()
 			)

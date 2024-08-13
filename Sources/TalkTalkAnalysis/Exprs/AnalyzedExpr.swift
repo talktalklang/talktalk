@@ -8,7 +8,6 @@
 import TalkTalkSyntax
 
 public protocol AnalyzedExpr: Expr, AnalyzedSyntax {
-	var typeAnalyzed: ValueType { get set }
 	var analyzedChildren: [any AnalyzedSyntax] { get }
 	var environment: Environment { get }
 

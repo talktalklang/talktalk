@@ -108,9 +108,12 @@ struct AnalysisTests {
 					}(2)
 				"""), in: .init())
 
-		let result = ast[1].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedCallExpr.self).calleeAnalyzed.cast(AnalyzedFuncExpr.self).typeAnalyzed
-		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
+		let result = ast[1]
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedCallExpr.self).calleeAnalyzed
+			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
+		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
 		#expect(result == expected)
 	}
 
@@ -163,7 +166,7 @@ struct AnalysisTests {
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
-		#expect(capture.binding.type == .int)
+		#expect(capture.binding.type.type() == .int)
 	}
 
 	@Test("Types counter") func counter() throws {

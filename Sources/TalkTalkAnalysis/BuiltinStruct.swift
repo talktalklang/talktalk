@@ -71,11 +71,11 @@ public struct BuiltinStruct {
 		.init(name: name, properties: properties, methods: methods, typeParameters: typeParameters)
 	}
 
-	func binding() -> Environment.Binding {
+	func binding(in environment: Environment) -> Environment.Binding {
 		.init(
 			name: name,
 			expr: Self.syntheticExpr(),
-			type: .struct(name),
+			type: environment.typeRegistry.newType(.struct(name)),
 			isCaptured: false,
 			isBuiltin: true,
 			isParameter: false,

@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-public struct InstanceValueType: Codable, Equatable {
+public struct InstanceValueType: Codable, Equatable, Hashable {
 	public static func `struct`(_ name: String) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
 	}
@@ -19,12 +19,12 @@ public struct InstanceValueType: Codable, Equatable {
 	}
 }
 
-public indirect enum ValueType: Codable, Equatable {
+public indirect enum ValueType: Codable, Equatable, Hashable {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
 	}
 
-	public struct Param: Codable {
+	public struct Param: Codable, Hashable {
 		let name: String
 		let type: ValueType
 

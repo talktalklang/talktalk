@@ -126,7 +126,8 @@ struct ModuleCompilerTests {
 			Instruction(opcode: .getLocal, offset: 0, line: 4, metadata: .local(slot: 1, name: "age")),
 			Instruction(opcode: .getLocal, offset: 2, line: 4, metadata: .local(slot: 0, name: "__reserved__")),
 			Instruction(opcode: .setProperty, offset: 4, line: 4, metadata: .property(slot: 0)),
-			Instruction(opcode: .return, offset: 6, line: 6, metadata: .simple)
+			Instruction(opcode: .pop, offset: 6, line: 4, metadata: .simple),
+			Instruction(opcode: .return, offset: 7, line: 6, metadata: .simple)
 		])
 	}
 
@@ -150,10 +151,12 @@ struct ModuleCompilerTests {
 		let mainChunk = try #require(module.main?.getChunk(at: 0))
 
 		#expect(mainChunk.disassemble() == [
-			Instruction(opcode: .getStruct, offset: 0, line: 8, metadata: .struct(slot: 0)),
-			Instruction(opcode: .call, offset: 2, line: 8, metadata: .simple),
-			Instruction(opcode: .setModuleValue, offset: 3, line: 8, metadata: .global(slot: 0)),
-			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple)
+			Instruction(opcode: .pop, offset: 0, line: 0, metadata: .simple),
+			Instruction(opcode: .getStruct, offset: 1, line: 8, metadata: .struct(slot: 0)),
+			Instruction(opcode: .call, offset: 3, line: 8, metadata: .simple),
+			Instruction(opcode: .setModuleValue, offset: 4, line: 8, metadata: .global(slot: 0)),
+			Instruction(opcode: .pop, offset: 6, line: 8, metadata: .simple),
+			Instruction(opcode: .return, offset: 7, line: 0, metadata: .simple)
 		])
 
 		let structDef = module.structs[0]
@@ -162,11 +165,11 @@ struct ModuleCompilerTests {
 		#expect(structDef.methods.count == 1)
 
 		let initChunk = structDef.methods[0]
-
 		#expect(initChunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 4, metadata: .constant(.int(123))),
 			Instruction(opcode: .getLocal, offset: 2, line: 4, metadata: .local(slot: 0, name: "__reserved__")),
 			Instruction(opcode: .setProperty, offset: 4, line: 4, metadata: .property(slot: 0)),
+			Instruction(opcode: .pop, offset: 6, line: 4, metadata: .simple),
 			Instruction(opcode: .return, offset: 6, line: 6, metadata: .simple)
 		])
 	}

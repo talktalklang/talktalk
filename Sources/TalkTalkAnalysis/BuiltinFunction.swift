@@ -23,11 +23,11 @@ public struct BuiltinFunction {
 		IdentifierExprSyntax(name: "__builtin__", location: [.synthetic(.builtin)])
 	}
 
-	func binding() -> Environment.Binding {
+	func binding(in env: Environment) -> Environment.Binding {
 		.init(
 			name: name,
 			expr: Self.syntheticExpr(),
-			type: type,
+			type: env.typeRegistry.newType(type),
 			isCaptured: false,
 			isBuiltin: true,
 			isParameter: false,

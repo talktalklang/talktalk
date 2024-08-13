@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	let wrapped: InitDecl
 
-	public var typeAnalyzed: ValueType
+	public let typeID: TypeID
 	public var environment: Environment
 	public var parametersAnalyzed: AnalyzedParamsExpr
 	public var bodyAnalyzed: AnalyzedBlockExpr

@@ -36,7 +36,7 @@ struct ModuleAnalysisTests {
 
 		// First make sure we can get a super basic function with no dependencies
 		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
-		guard case let .function(barName, barReturnType, params, captures) = bar.type else {
+		guard case let .function(barName, barReturnType, params, captures) = bar.typeID.type() else {
 			#expect(Bool(false), "bar type was not a function")
 			return
 		}
@@ -48,7 +48,7 @@ struct ModuleAnalysisTests {
 
 		// Next make sure we can get a function that calls another function that was defined after it
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		guard case let .function(fooName, fooReturnType, params, captures) = foo.type else {
+		guard case let .function(fooName, fooReturnType, params, captures) = foo.typeID.type() else {
 			#expect(Bool(false), "foo type was not a function")
 			return
 		}
@@ -80,11 +80,11 @@ struct ModuleAnalysisTests {
 
 		// First make sure we can get a value
 		let bar = try #require(analysisModule.moduleValue(named: "bar"))
-		#expect(bar.type == .int)
+		#expect(bar.typeID.type() == .int)
 
 		// Next make sure we can type a function that uses a module global
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		guard case let .function(fooName, fooReturnType, params, captures) = foo.type else {
+		guard case let .function(fooName, fooReturnType, params, captures) = foo.typeID.type() else {
 			#expect(Bool(false), "foo type was not a function")
 			return
 		}
@@ -106,7 +106,7 @@ struct ModuleAnalysisTests {
 		"""))
 
 		let bar = try #require(moduleB.moduleFunction(named: "bar"))
-		guard case let .function(name, returnType, params, captures) = bar.type else {
+		guard case let .function(name, returnType, params, captures) = bar.typeID.type() else {
 			#expect(Bool(false), "bar type was not a function")
 			return
 		}
@@ -156,7 +156,7 @@ struct ModuleAnalysisTests {
 		"""))
 
 		let person = try #require(moduleB.values["person"])
-		#expect(person.type == .instance(.struct("Person")))
+		#expect(person.typeID.type() == .instance(.struct("Person")))
 
 		guard case let .external(module) = moduleB.moduleStruct(named: "Person")?.source else {
 			#expect(Bool(false), "imported type does not have external source")

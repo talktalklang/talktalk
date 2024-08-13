@@ -11,7 +11,7 @@ import TalkTalkBytecode
 public struct ModuleFunction: ModuleGlobal {
 	public let name: String
 	public let syntax: any Syntax
-	public let type: ValueType
+	public let typeID: TypeID
 	public var source: ModuleSource
 
 	public var isImport: Bool {

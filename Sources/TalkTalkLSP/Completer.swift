@@ -55,7 +55,7 @@ struct Completer {
 				let text = errorSyntax.location.start.lexeme
 				for binding in errorSyntax.environment.bindings {
 					if binding.name.starts(with: text) {
-						let kind: CompletionItemKind = switch binding.type {
+						let kind: CompletionItemKind = switch binding.type.type() {
 						case .function(_, _, _, _):
 							.function
 						case .struct(_):

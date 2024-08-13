@@ -24,7 +24,7 @@ public struct SerializedAnalysisModule: Codable {
 
 		return SerializedModuleGlobal(
 			name: global.name,
-			type: global.type,
+			type: global.typeID,
 			globalType: global is ModuleValue ? .value : .function,
 			source: source
 		)

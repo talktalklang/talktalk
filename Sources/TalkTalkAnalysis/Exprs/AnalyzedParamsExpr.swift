@@ -21,27 +21,29 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 
-	public var typeAnalyzed: ValueType
+	public let typeID: TypeID
 	public var type: (any IdentifierExpr)? { expr.type }
 
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 
-	public init(type: ValueType, expr: any Param, environment: Environment) {
+	public init(type: TypeID, expr: any Param, environment: Environment) {
 		self.expr = expr
-		self.typeAnalyzed = type
+		self.typeID = type
 		self.environment = environment
 	}
 }
 
 public extension Param where Self == AnalyzedParam {
 	static func int(_ name: String) -> AnalyzedParam {
-		AnalyzedParam(type: .int, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]), environment: .init())
+		let t = TypeRegistry().newType()
+		t.registry.update(t, to: .int)
+		return AnalyzedParam(type: t, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]), environment: .init())
 	}
 }
 
 public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
-	public var typeAnalyzed: ValueType
+	public let typeID: TypeID
 	let expr: ParamsExpr
 
 	public var analyzedChildren: [any AnalyzedSyntax] { paramsAnalyzed }
@@ -57,7 +59,8 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public mutating func infer(from env: Environment) {
 		for (i, name) in paramsAnalyzed.enumerated() {
 			if let binding = env.infer(name.name) {
-				paramsAnalyzed[i].typeAnalyzed = binding.type
+				let typeID = paramsAnalyzed[i].typeID
+				typeID.update(binding.type.type())
 			}
 		}
 	}
@@ -80,7 +83,7 @@ extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
 			location: [.synthetic(.identifier)]
 		)
 		self.paramsAnalyzed = elements
-		self.typeAnalyzed = .void
+		self.typeID = .init(id: 0, registry: .init())
 		self.environment = if let element = elements.first {
 			element.environment
 		} else {

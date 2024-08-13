@@ -13,7 +13,7 @@ public struct AnalyzedArgument {
 }
 
 public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
-	public var typeAnalyzed: ValueType
+	public let typeID: TypeID
 	let expr: CallExpr
 
 	public var calleeAnalyzed: any AnalyzedExpr

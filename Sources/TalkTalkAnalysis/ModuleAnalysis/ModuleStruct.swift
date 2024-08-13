@@ -13,7 +13,7 @@ import TalkTalkSyntax
 public struct ModuleStruct: ModuleGlobal {
 	public var name: String
 	public var syntax: any Syntax
-	public var type: ValueType
+	public var typeID: TypeID
 	public var source: ModuleSource
 
 	public var properties: [String: Property]

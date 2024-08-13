@@ -63,14 +63,14 @@ public struct ModuleAnalyzer {
 				analysisModule.functions[name] = ModuleFunction(
 					name: name,
 					syntax: binding.expr,
-					type: binding.type,
+					typeID: binding.type,
 					source: .external(module)
 				)
 			} else if case let .value(name) = name {
 				analysisModule.values[name] = ModuleValue(
 					name: name,
 					syntax: binding.expr,
-					type: binding.type,
+					typeID: binding.type,
 					source: .external(module)
 				)
 			} else if case let .struct(name) = name,
@@ -79,7 +79,7 @@ public struct ModuleAnalyzer {
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
 					syntax: binding.expr,
-					type: binding.type,
+					typeID: binding.type,
 					source: .external(module),
 					properties: structType.properties,
 					methods: structType.methods,
@@ -150,7 +150,7 @@ public struct ModuleAnalyzer {
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					syntax: syntax,
-					type: analyzed.typeAnalyzed,
+					typeID: analyzed.typeID,
 					source: .module
 				)
 			}
@@ -162,7 +162,7 @@ public struct ModuleAnalyzer {
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
 					syntax: syntax,
-					type: analyzed.typeAnalyzed,
+					typeID: analyzed.typeID,
 					source: .module
 				)
 			}
@@ -178,7 +178,7 @@ public struct ModuleAnalyzer {
 			result[name] = ModuleStruct(
 				name: name,
 				syntax: syntax,
-				type: structExpr.typeAnalyzed,
+				typeID: structExpr.typeID,
 				source: .module,
 				properties: structExpr.lexicalScope.scope.properties,
 				methods: structExpr.lexicalScope.scope.methods,

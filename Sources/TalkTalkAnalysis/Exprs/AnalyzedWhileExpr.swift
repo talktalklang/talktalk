@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedWhileExpr: WhileExpr, AnalyzedExpr {
-	public var typeAnalyzed: ValueType
+	public let typeID: TypeID
 	let expr: WhileExpr
 
 	public var conditionAnalyzed: any AnalyzedExpr

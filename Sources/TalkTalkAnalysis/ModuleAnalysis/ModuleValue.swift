@@ -18,7 +18,7 @@ public struct SerializedModuleGlobal: Codable {
 	}
 
 	let name: String
-	let type: ValueType
+	let type: TypeID
 	let globalType: GlobalType
 	let source: SerializedModuleSource
 }
@@ -26,7 +26,7 @@ public struct SerializedModuleGlobal: Codable {
 public struct ModuleValue: ModuleGlobal {
 	public let name: String
 	public let syntax: any Syntax
-	public let type: ValueType
+	public let typeID: TypeID
 	public var source: ModuleSource
 
 	public var isImport: Bool {
