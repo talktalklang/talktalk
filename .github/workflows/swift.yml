@@ -16,7 +16,7 @@ jobs:
       image: swiftlang/swift:nightly-jammy
     steps:
     - uses: actions/checkout@v4
-		- name: Build standard library
+    - name: Build standard library
       run: swift run talk compile module Library/Standard
     - name: Run tests
       run: swift test -v
