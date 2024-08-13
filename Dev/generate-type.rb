@@ -98,10 +98,10 @@ write(analyzedPath, analyzedFile)
 puts "wrote #{analyzedPath}"
 
 insert("Sources/TalkTalkSyntax/Visitor.swift", 12, visitorRequirement)
-puts "added visitor requirement to #{visitorPath}"
+puts "added visitor requirement to Sources/TalkTalkSyntax/Visitor.swift"
 
 insert("Sources/TalkTalkAnalysis/FileAnalysis/AnalysisVisitor.swift", 12, analysisVisitorRequirement)
-puts "added analysis visitor requirement to #{analyzedVisitorPath}"
+puts "added analysis visitor requirement to Sources/TalkTalkAnalysis/FileAnalysis/AnalysisVisitor.swift"
 
 insert "Sources/TalkTalkAnalysis/FileAnalysis/SourceFileAnalyzer.swift", 39, <<SWIFT
 	public func visit(_ expr: any {typeName}, _ context: Environment) throws -> any AnalyzedSyntax {
