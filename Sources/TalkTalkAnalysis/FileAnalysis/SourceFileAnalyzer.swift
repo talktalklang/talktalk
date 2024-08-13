@@ -48,7 +48,7 @@ public struct SourceFileAnalyzer: Visitor {
 //	}
 
 	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws
-		-> [SourceFileAnalyzer.Value]
+		-> [Value]
 	{
 		let analyzer = SourceFileAnalyzer()
 		var analyzed = try exprs.map { try $0.accept(analyzer, environment) }
