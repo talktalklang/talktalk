@@ -44,6 +44,23 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		self.environment = environment
 	}
 
+	public var typeAnalyzed: ValueType {
+		guard case let .function(
+			name,
+			returning,
+			_,
+			captures
+		) = typeID.type() else {
+			fatalError("unreachable")
+		}
+
+		let updatedParams = analyzedParams.paramsAnalyzed.map {
+			ValueType.Param(name: $0.name, typeID: $0.typeID)
+		}
+
+		return .function(name, returning, updatedParams, captures)
+	}
+
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}

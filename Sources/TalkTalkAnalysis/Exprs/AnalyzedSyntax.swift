@@ -16,6 +16,6 @@ public protocol AnalyzedSyntax: Syntax {
 
 public extension AnalyzedSyntax {
 	var typeAnalyzed: ValueType {
-		typeID.registry.lookup(typeID)
+		typeID.current
 	}
 }

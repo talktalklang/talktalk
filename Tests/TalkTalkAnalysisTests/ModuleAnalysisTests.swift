@@ -42,7 +42,7 @@ struct ModuleAnalysisTests {
 		}
 
 		#expect(barName == "bar")
-		#expect(barReturnType == .int)
+		#expect(barReturnType.type() == .int)
 		#expect(params.isEmpty)
 		#expect(captures.isEmpty)
 
@@ -54,7 +54,7 @@ struct ModuleAnalysisTests {
 		}
 
 		#expect(fooName == "foo")
-		#expect(fooReturnType == .int)
+		#expect(fooReturnType.type() == .int)
 		#expect(params.isEmpty)
 		#expect(captures.isEmpty)
 	}
@@ -90,7 +90,7 @@ struct ModuleAnalysisTests {
 		}
 
 		#expect(fooName == "foo")
-		#expect(fooReturnType == .int)
+		#expect(fooReturnType.type() == .int)
 		#expect(params.isEmpty)
 		#expect(captures.isEmpty)
 	}
@@ -112,7 +112,7 @@ struct ModuleAnalysisTests {
 		}
 
 		#expect(name == "bar")
-		#expect(returnType == .int)
+		#expect(returnType.type() == .int)
 		#expect(params.isEmpty)
 		#expect(captures.isEmpty)
 	}

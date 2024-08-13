@@ -18,8 +18,8 @@ public struct SerializedMethod: Codable {
 public struct Method: Member {
 	public let slot: Int
 	public let name: String
-	public let params: [String: ValueType]
-	public let type: ValueType
+	public let params: [String: TypeID]
+	public let typeID: TypeID
 	public let expr: any Syntax
 	public let isMutable: Bool
 	public let isSynthetic: Bool
@@ -27,8 +27,8 @@ public struct Method: Member {
 	public init(
 		slot: Int,
 		name: String,
-		params: [String: ValueType],
-		type: ValueType,
+		params: [String: TypeID],
+		typeID: TypeID,
 		expr: any Syntax,
 		isMutable: Bool = false,
 		isSynthetic: Bool = false
@@ -36,7 +36,7 @@ public struct Method: Member {
 		self.slot = slot
 		self.name = name
 		self.params = params
-		self.type = type
+		self.typeID = typeID
 		self.expr = expr
 		self.isMutable = isMutable
 		self.isSynthetic = isSynthetic

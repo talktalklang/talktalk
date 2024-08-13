@@ -209,7 +209,8 @@ public struct Interpreter: AnalyzedVisitor {
 		)
 
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
-			if let funcExpr = decl as? AnalyzedFuncExpr {
+			if let exprStmt = decl as? AnalyzedExprStmt,
+				 let funcExpr = exprStmt.exprAnalyzed as? AnalyzedFuncExpr {
 				type.methods[funcExpr.name!.lexeme] = funcExpr
 			}
 		}
@@ -233,7 +234,11 @@ public struct Interpreter: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedDeclBlock, _ context: Scope) throws -> Value {
-		.none
+		for decl in expr.declsAnalyzed {
+			_ = try decl.accept(self, context)
+		}
+
+		return .none
 	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ context: Scope) throws -> Value {

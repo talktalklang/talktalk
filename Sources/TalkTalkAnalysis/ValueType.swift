@@ -24,16 +24,16 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 		lhs.description == rhs.description
 	}
 
-	public struct Param: Codable, Hashable {
+	public struct Param: Codable, Hashable, CustomStringConvertible {
 		let name: String
-		let type: ValueType
+		let typeID: TypeID
 
 		public static func int(_ name: String) -> Param {
-			Param(name: name, type: .int)
+			Param(name: name, typeID: TypeID(.int))
 		}
 
 		public var description: String {
-			"\(name): \(type)"
+			"\(name): \(typeID.type())"
 		}
 	}
 
@@ -43,7 +43,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 			 // pointer to a spot on the "heap"
 			 pointer,
 			 // function name, return type, param types, captures
-			 function(String, ValueType, [Param], [String]),
+			 function(String, TypeID, [Param], [String]),
 			 // struct name
 			 `struct`(String),
 			 // owning type of this generic, the name of the generic type
@@ -61,7 +61,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 			return "int"
 		case let .function(name, returnType, args, captures):
 			let captures = captures.isEmpty ? "" : "[\(captures.joined(separator: ", "))] "
-			return "fn \(name)(\(args.map(\.description).joined(separator: ", "))) -> \(captures)(\(returnType.description))"
+			return "fn \(name)(\(args.map(\.description).joined(separator: ", "))) -> \(captures)(\(returnType))"
 		case .bool:
 			return "bool"
 		case .error(let msg):

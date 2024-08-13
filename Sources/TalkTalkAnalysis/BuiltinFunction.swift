@@ -27,37 +27,51 @@ public struct BuiltinFunction {
 		.init(
 			name: name,
 			expr: Self.syntheticExpr(),
-			type: env.typeRegistry.newType(type),
+			type: TypeID(type),
 			isCaptured: false,
 			isBuiltin: true,
 			isParameter: false,
 			isGlobal: false,
 			externalModule: nil
 		)
-
 	}
 
 	public static var print: BuiltinFunction {
-		return BuiltinFunction(
-			name: "print",
-			type: .function(
-				"print", .int, [.init(name: "value", type: .any)],
-				[])
-		)
+			return BuiltinFunction(
+				name: "print",
+				type: .function(
+					"print",
+					TypeID(.int),
+					[
+						.init(
+							name: "value",
+							typeID: TypeID(.any)
+						),
+					],
+					[]
+				)
+			)
 	}
 
 	public static var allocate: BuiltinFunction {
 		return BuiltinFunction(
 			name: "allocate",
-			type: .function("allocate", .pointer, [.int("size")], [])
+			type: .function("allocate", TypeID(.pointer), [.int("size")], [])
 		)
 	}
 
 	public static var free: BuiltinFunction {
 		return BuiltinFunction(
 			name: "free",
-			type: .function("free", .void, [.init(name: "addr", type: .pointer)], [])
+			type: .function(
+				"free",
+				TypeID(.void),
+				[.init(
+					name: "addr",
+					typeID: TypeID(.int)
+				)],
+				[]
+			)
 		)
 	}
-
 }

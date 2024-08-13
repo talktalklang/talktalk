@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, AnalyzedExpr {
 	var wrapped: any ExprStmt
 	public var exprAnalyzed: any AnalyzedExpr
-	public var typeID: TypeID
+	public var typeID: TypeID { exprAnalyzed.typeID }
 
 	public var analyzedChildren: [any AnalyzedSyntax] { [exprAnalyzed] }
 	public var environment: Environment

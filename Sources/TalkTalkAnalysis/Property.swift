@@ -17,7 +17,7 @@ public struct SerializedProperty: Codable {
 public struct Property: Member {
 	public let slot: Int
 	public let name: String
-	public let type: ValueType
+	public let typeID: TypeID
 	public let expr: any Syntax
 	public let isMutable: Bool
 }

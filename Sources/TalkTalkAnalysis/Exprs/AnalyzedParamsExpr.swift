@@ -36,8 +36,8 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 
 public extension Param where Self == AnalyzedParam {
 	static func int(_ name: String) -> AnalyzedParam {
-		let t = TypeRegistry().newType()
-		t.registry.update(t, to: .int)
+		let t = TypeID()
+		t.update(.int)
 		return AnalyzedParam(type: t, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]), environment: .init())
 	}
 }
@@ -83,7 +83,7 @@ extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
 			location: [.synthetic(.identifier)]
 		)
 		self.paramsAnalyzed = elements
-		self.typeID = .init(id: 0, registry: .init())
+		self.typeID = TypeID()
 		self.environment = if let element = elements.first {
 			element.environment
 		} else {

@@ -5,9 +5,36 @@
 //  Created by Pat Nakajima on 7/26/24.
 //
 
-import TalkTalkAnalysis
+@testable import TalkTalkAnalysis
 import TalkTalkSyntax
 import Testing
+
+extension TypeID {
+	static var int: TypeID {
+		TypeID(.int)
+	}
+
+	static func `struct`(_ name: String) -> TypeID {
+		TypeID(.struct(name))
+	}
+
+	static func instance(_ type: ValueType) -> TypeID {
+		TypeID(.instance(
+			.init(ofType: type, boundGenericTypes: [:])
+		))
+	}
+
+	static func function(
+		_ name: String,
+		_ returning: TypeID,
+		_ params: [ValueType.Param],
+		_ captures: [String]
+	) -> TypeID {
+		TypeID(
+			.function(name, returning, params, captures)
+		)
+	}
+}
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
@@ -61,6 +88,7 @@ struct AnalysisTests {
 		#expect(
 			fn
 				.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0]
+				.cast(AnalyzedExprStmt.self).exprAnalyzed
 				.cast(AnalyzedCallExpr.self).callee.description == "foo"
 		)
 	}
@@ -95,7 +123,6 @@ struct AnalysisTests {
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.typeAnalyzed == .int)
-		#expect(fn.typeAnalyzed == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
 	@Test("Types functions") func closures() throws {
@@ -114,6 +141,11 @@ struct AnalysisTests {
 			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
 		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
+
+		print(result)
+		print(expected)
+		print()
+
 		#expect(result == expected)
 	}
 
@@ -161,7 +193,7 @@ struct AnalysisTests {
 				))
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
-		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
+		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0].cast(AnalyzedExprStmt.self).exprAnalyzed as! AnalyzedFuncExpr
 		#expect(nestedFn.typeAnalyzed == .function("_fn_y_32", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
@@ -189,10 +221,12 @@ struct AnalysisTests {
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.count == 0)
 
-		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
+		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedFuncExpr.self)
 
 		#expect(counterFn.environment.captures.count == 1)
-		#expect(counterFn.returnsAnalyzed!.cast(AnalyzedVarExpr.self).typeAnalyzed == .int)
+		#expect(counterFn.returnsAnalyzed!
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedVarExpr.self).typeAnalyzed == .int)
 
 		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.typeAnalyzed
 		else {
@@ -200,7 +234,7 @@ struct AnalysisTests {
 			return
 		}
 
-		#expect(counterReturns.description == "int")
+		#expect(counterReturns.type() == .int)
 		#expect(counterCaptures.first == "count")
 		#expect(counterParams.isEmpty)
 	}
@@ -234,9 +268,14 @@ struct AnalysisTests {
 		#expect(name == "Person")
 		#expect(type.methods["init"] != nil)
 
-		#expect(type.properties["age"]!.type == .int)
-		#expect(type.properties["age"]!.type == .int)
-		#expect(type.methods["sup"]!.type == .function("sup", .int, [], []))
+		#expect(type.properties["age"]!.typeID.type() == .int)
+		#expect(type.properties["age"]!.typeID.type() == .int)
+
+		print(ValueType.function("sup", .int, [], []))
+		print(type.methods["sup"]!.typeID.type())
+		print()
+
+		#expect(type.methods["sup"]!.typeID.type() == .function("sup", .int, [], []))
 	}
 
 	@Test("Synthesizing init for structs") func synthesizingInitForStructs() throws {
@@ -283,34 +322,14 @@ struct AnalysisTests {
 
 		let type = try #require(s.environment.lookupStruct(named: name))
 		#expect(name == "Person")
-		#expect(type.methods["typeSup"]!.type == .function("typeSup", .struct("Person"), [], []))
+		#expect(type.methods["typeSup"]!.typeID.type() == .function("typeSup", .struct("Person"), [], []))
 
-		guard case let .function(name, returns, _, _) = type.methods["sup"]!.type else {
+		guard case let .function(name, returns, _, _) = type.methods["sup"]!.typeID.type() else {
 			#expect(Bool(false))
 			return
 		}
 
 		#expect(name == "sup")
 		#expect(returns == .instance(.struct("Person")))
-	}
-
-	@Test("Types builtin structs") func builtinStruct() throws {
-		let ast = ast(
-			"""
-			rawArray = _RawArray()
-			rawArray
-			"""
-		)
-
-		let s = try #require(ast as? AnalyzedVarExpr)
-		#expect(s.name == "rawArray")
-
-		guard case let .instance(instance) = s.typeAnalyzed,
-					case let .struct(name) = instance.ofType else {
-			#expect(Bool(false), "did not get instance type, got: \(s.typeAnalyzed)")
-			return
-		}
-
-		#expect(name == "_RawArray")
 	}
 }

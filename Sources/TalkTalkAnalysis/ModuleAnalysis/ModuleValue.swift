@@ -18,7 +18,7 @@ public struct SerializedModuleGlobal: Codable {
 	}
 
 	let name: String
-	let type: TypeID
+	let type: ValueType
 	let globalType: GlobalType
 	let source: SerializedModuleSource
 }

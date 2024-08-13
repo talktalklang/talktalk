@@ -32,7 +32,6 @@ protocol BuiltinStruct {
 struct BuiltinStructs {
 	static var list: [any BuiltinStruct.Type] {
 		[
-			_RawArray.self
 		]
 	}
 }

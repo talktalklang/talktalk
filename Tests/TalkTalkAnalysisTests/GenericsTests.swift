@@ -34,7 +34,7 @@ struct GenericsTests {
 
 		let property = try #require(s.structType.properties["wrapped"])
 
-		guard case let .instance(instanceType) = property.type else {
+		guard case let .instance(instanceType) = property.typeID.type() else {
 			#expect(Bool(false), "did not get instance type")
 			return
 		}

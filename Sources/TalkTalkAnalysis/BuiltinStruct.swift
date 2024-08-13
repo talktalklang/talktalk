@@ -10,9 +10,7 @@ import TalkTalkSyntax
 
 public struct BuiltinStruct {
 	public static var list: [BuiltinStruct] {
-		[
-			_RawArray
-		]
+		[]
 	}
 
 	public let name: String
@@ -32,41 +30,6 @@ public struct BuiltinStruct {
 		IdentifierExprSyntax(name: "__builtin__", location: [.synthetic(.builtin)])
 	}
 
-	public static var _RawArray: BuiltinStruct {
-		.init(
-			name: "_RawArray",
-			properties: [
-				"count": .init(
-					slot: 0,
-					name: "count",
-					type: .int,
-					expr: syntheticExpr(),
-					isMutable: false
-				)
-			],
-			methods: [
-				"init": .init(slot: 0, name: "init", params: [:], type: .instance(.struct("_RawArray")), expr: syntheticExpr()),
-				"append": .init(
-					slot: 1,
-					name: "append",
-					params: ["element": .generic(.struct("_RawArray"), "Element")],
-					type: .function("append", .void, [.init(name: "element", type: .generic(.struct("_RawArray"), "Element"))], []),
-					expr: syntheticExpr()
-				),
-				"at": .init(
-					slot: 2,
-					name: "at",
-					params: ["index": .int],
-					type: .function("at", .generic(.struct("_RawArray"), "Element"), [.init(name: "index", type: .int)], []),
-					expr: syntheticExpr()
-				)
-			],
-			typeParameters: [
-				.init(name: "Element", type: .placeholder(0))
-			]
-		)
-	}
-
 	func structType() -> StructType {
 		.init(name: name, properties: properties, methods: methods, typeParameters: typeParameters)
 	}
@@ -75,7 +38,7 @@ public struct BuiltinStruct {
 		.init(
 			name: name,
 			expr: Self.syntheticExpr(),
-			type: environment.typeRegistry.newType(.struct(name)),
+			type: TypeID(.struct(name)),
 			isCaptured: false,
 			isBuiltin: true,
 			isParameter: false,

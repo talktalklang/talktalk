@@ -21,7 +21,6 @@ public class Environment {
 	public var importedModules: [AnalysisModule]
 	public var importedSymbols: [Symbol: Binding] = [:]
 	public var errors: [AnalysisError] = []
-	public let typeRegistry = TypeRegistry()
 
 	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
@@ -110,11 +109,11 @@ public class Environment {
 				return Binding(
 					name: "Self",
 					expr: AnalyzedVarExpr(
-						typeID: self.typeRegistry.newType(scope.type),
+						typeID: TypeID(scope.type),
 						expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
 						environment: self
 					),
-					type: typeRegistry.newType(scope.type)
+					type: TypeID(scope.type)
 				)
 			}
 
@@ -123,7 +122,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: method.expr,
-						type: typeRegistry.newType(.member(scope.type))
+						type: TypeID(.member(scope.type))
 					)
 				}
 
@@ -131,7 +130,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: property.expr,
-						type: typeRegistry.newType(.member(scope.type))
+						type: TypeID(.member(scope.type))
 					)
 				}
 			}
