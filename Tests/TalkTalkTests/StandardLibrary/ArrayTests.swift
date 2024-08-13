@@ -11,7 +11,7 @@ struct ArrayTests: StandardLibraryTest {
 	@Test("Can be created") func create() async throws {
 		let result = try await run("""
 		a = Array()
-		a.count
+		return a.count
 		""").get()
 
 		#expect(result == .int(0))
@@ -21,7 +21,7 @@ struct ArrayTests: StandardLibraryTest {
 		let result = try await run("""
 		a = Array()
 		a.append(123)
-		a.count
+		return a.count
 		""", verbose: true).get()
 
 		#expect(result == .int(1))

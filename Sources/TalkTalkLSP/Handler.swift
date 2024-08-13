@@ -113,14 +113,20 @@ class LSPRequestParser {
 		}
 
 		let data = Data(currentBody)
-		let request = try! JSONDecoder().decode(Request.self, from: data)
+		do {
+			let request = try JSONDecoder().decode(Request.self, from: data)
 
-		current = 0
-		currentBody = []
-		currentLength = []
-		state = .contentLength
+			current = 0
+			currentBody = []
+			currentLength = []
+			state = .contentLength
 
-		self.callback(request)
+			self.callback(request)
+		} catch {
+			Log.error("error parsing json: \(error)")
+			Log.error("--")
+			Log.error(String(data: data, encoding: .utf8) ?? "<invalid string>")
+		}
 	}
 }
 

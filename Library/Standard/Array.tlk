@@ -11,7 +11,7 @@ struct Array {
 	}
 
 	func append(item) {
-		if count + 1 > capacity	{
+		if self.count + 1 > self.capacity	{
 			self.resize()
 		} else 	{
 			self.count = self.count
