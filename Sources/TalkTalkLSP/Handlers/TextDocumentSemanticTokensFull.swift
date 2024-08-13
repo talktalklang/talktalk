@@ -232,5 +232,11 @@ struct SemanticTokensVisitor: Visitor {
 		]
 	}
 
+	func visit(_ expr: any IfStmt, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+
 	// GENERATOR_INSERTION
 }

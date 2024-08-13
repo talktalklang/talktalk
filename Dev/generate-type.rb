@@ -27,14 +27,14 @@ def write(path, contents)
 end
 
 def insert(path, contents)
-	line = File.read(path).lines.find_index { |line| line.include?("// MARK: Visit") }
+	line = File.read(path).lines.find_index { |line| line.include?("// GENERATOR_INSERTION") }
 
 	if !line
 		abort("Could not find insertion point for #{path}")
   end
 
 	lines = File.read(path).lines
-	lines.insert(line, contents)
+	lines.insert(line, contents + "\n")
 	File.open(path, 'w+') { |file|
 		file.puts(lines.join)
 	}
@@ -57,7 +57,7 @@ public struct #{typeName}Syntax: #{typeName} {
 
 	// Let this node be visited by visitors
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context: context)
+		try visitor.visit(self, context)
 	}
 }
 SWIFT
@@ -68,23 +68,22 @@ analyzedFile = <<~SWIFT
 
 import TalkTalkSyntax
 
-public struct #{analyzedName}: #{typeName}, Analyzed#{kind} {
+public struct #{analyzedName}: #{typeName}, Analyzed#{kind.capitalize} {
 	let wrapped: any #{typeName}
 
 	public var typeID: TypeID
 	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
 
 	// Delegate these to the wrapped node
-	public var expr: any Expr { wrapped.expr }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 
-	func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
 	}
 
-	func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context: context)
+	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
+		try visitor.visit(self, context)
 	}
 }
 SWIFT
@@ -110,7 +109,7 @@ insert("Sources/TalkTalkAnalysis/FileAnalysis/AnalysisVisitor.swift", analysisVi
 puts "added analysis visitor requirement to Sources/TalkTalkAnalysis/FileAnalysis/AnalysisVisitor.swift"
 
 insert "Sources/TalkTalkAnalysis/FileAnalysis/SourceFileAnalyzer.swift", <<SWIFT
-	public func visit(_ expr: any {typeName}, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: any #{typeName}, _ context: Environment) throws -> any AnalyzedSyntax {
 		#warning("TODO")
 		fatalError("TODO")
 	}

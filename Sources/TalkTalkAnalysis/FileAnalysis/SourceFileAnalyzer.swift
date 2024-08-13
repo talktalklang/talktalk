@@ -806,6 +806,12 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
+	public func visit(_ expr: any IfStmt, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+
 	// GENERATOR_INSERTION
 
 	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {

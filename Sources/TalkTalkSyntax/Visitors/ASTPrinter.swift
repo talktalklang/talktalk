@@ -235,5 +235,10 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
+	@StringBuilder public func visit(_ expr: any IfStmt, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+
 	// GENERATOR_INSERTION
 }
