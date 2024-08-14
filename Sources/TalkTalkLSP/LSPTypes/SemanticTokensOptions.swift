@@ -49,7 +49,8 @@ struct SemanticTokensLegend: Codable {
 		 .keyword: 7,
 		 .string: 8,
 		 .number: 9,
-		 .operator: 10][type]!
+		 .operator: 10,
+		 .comment: 11][type]!
 	}
 
 	let tokenTypes: [SemanticTokenTypes] = [
@@ -63,7 +64,8 @@ struct SemanticTokensLegend: Codable {
 		.keyword,
 		.string,
 		.number,
-		.operator
+		.operator,
+		.comment
 	]
 
 	let tokenModifiers: [SemanticTokenModifiers] = [

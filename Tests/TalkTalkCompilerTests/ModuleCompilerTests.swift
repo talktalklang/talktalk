@@ -127,6 +127,7 @@ struct ModuleCompilerTests {
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.return, line: 4, .simple),
+			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
 			.op(.return, line: 6, .simple)
 		))
 	}
@@ -168,6 +169,7 @@ struct ModuleCompilerTests {
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.return, line: 4, .simple),
+			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
 			.op(.return, line: 6, .simple)
 		))
 	}

@@ -437,6 +437,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 				// End the scope, which pops locals
 				declCompiler.endScope(chunk: declChunk)
+
+				// Make sure the instance is at the top of the stack and return it
+				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
+				declChunk.emit(byte: 0, line: UInt32(decl.location.end.line))
 				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
 
 				let analysisMethod = expr.structType.methods["init"]!

@@ -414,7 +414,7 @@ struct VMEndToEndTests {
 
 				return j
 			"""
-		)
+			, verbosity: .verbose)
 
 		#expect(
 			result == .int(5)

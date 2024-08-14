@@ -122,6 +122,43 @@ struct TalkTalkLexerTests {
 		])
 	}
 
+	@Test("Comments") func comments() async throws {
+		var lexer = TalkTalkLexer("""
+		// This is a comment
+		func foo() {
+			10
+		}
+		""")
+		let tokens = lexer.collect()
+		#expect(tokens.map(\.kind) == [
+			.newline,
+			.func,
+			.identifier,
+			.leftParen,
+			.rightParen,
+			.leftBrace,
+			.newline,
+			.int,
+			.newline,
+			.rightBrace,
+			.eof
+		])
+
+		#expect(tokens.map(\.line) == [
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			2,
+			2,
+			3,
+			3,
+			3
+		])
+	}
+
 	@Test("func") func function() async throws {
 		var lexer = TalkTalkLexer("""
 		func foo() {

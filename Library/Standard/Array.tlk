@@ -1,3 +1,4 @@
+// Arrays are builtin
 struct Array {
 	var _storage: pointer
 	var count: int
@@ -23,8 +24,8 @@ struct Array {
 	}
 
 	func resize() {
-		newCapacity = self.capacity * 2
-		newStorage = _allocate(newCapacity)
+		var newCapacity = self.capacity * 2
+		var newStorage = _allocate(newCapacity)
 
 		i = 0
 		while i < self.count {

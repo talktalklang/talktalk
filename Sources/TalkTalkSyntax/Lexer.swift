@@ -74,6 +74,7 @@ public struct TalkTalkLexer {
 
 	public mutating func next() -> Token {
 		skipWhitespace()
+		skipComments()
 
 		if isAtEnd {
 			return make(.eof)
@@ -140,7 +141,7 @@ public struct TalkTalkLexer {
 	mutating func newline() -> Token {
 		nextLine()
 
-		while !isAtEnd, peek().isNewline {
+		while !isAtEnd, check(\.isNewline) {
 			advance()
 			nextLine()
 		}
@@ -149,7 +150,7 @@ public struct TalkTalkLexer {
 	}
 
 	mutating func identifier() -> Token {
-		while !isAtEnd, peek().isLetter || peek().isNumber || peek() == "-" || peek() == "_" {
+		while !isAtEnd, check(\.isLetter) || check(\.isNumber) || peek() == "-" || peek() == "_" {
 			advance()
 		}
 
@@ -174,7 +175,7 @@ public struct TalkTalkLexer {
 	}
 
 	mutating func symbol() -> Token {
-		while peek().isMathSymbol, !isAtEnd {
+		while check(\.isMathSymbol), !isAtEnd {
 			advance()
 		}
 
@@ -184,7 +185,7 @@ public struct TalkTalkLexer {
 	mutating func number() -> Token {
 		var isFloat = false
 
-		while !isAtEnd, peek().isNumber || (!isFloat && peek() == ".") {
+		while !isAtEnd, check(\.isNumber) || (!isFloat && peek() == ".") {
 			if peek() == "." {
 				isFloat = true
 			}
@@ -198,8 +199,16 @@ public struct TalkTalkLexer {
 	// MARK: Helpers
 
 	mutating func skipWhitespace() {
-		while !isAtEnd, peek().isWhitespace, !peek().isNewline {
+		while !isAtEnd, check(\.isWhitespace), !check(\.isNewline) {
 			advance()
+		}
+	}
+
+	mutating func skipComments() {
+		if peek() == "/", peekNext() == "/" {
+			while !isAtEnd, peek() != "\n" {
+				advance()
+			}
 		}
 	}
 
@@ -212,8 +221,18 @@ public struct TalkTalkLexer {
 		return false
 	}
 
-	func peek(_ offset: Int = 0) -> Character {
-		source[current + offset]
+	func peek() -> Character? {
+		if isAtEnd { return nil }
+
+		return source[current]
+	}
+
+	func peekNext() -> Character? {
+		if current > source.count - 2 {
+			return nil
+		}
+
+		return source[current + 1]
 	}
 
 	@discardableResult mutating func advance() -> Character {
@@ -239,6 +258,14 @@ public struct TalkTalkLexer {
 
 	var isAtEnd: Bool {
 		source.count == current
+	}
+
+	func check(_ keypath: KeyPath<Character, Bool>) -> Bool {
+		guard let peek = peek() else {
+			return false
+		}
+
+		return peek[keyPath: keypath]
 	}
 
 	mutating func error(_ message: String) -> Token {

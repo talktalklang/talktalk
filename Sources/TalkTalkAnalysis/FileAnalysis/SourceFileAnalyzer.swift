@@ -454,9 +454,13 @@ public struct SourceFileAnalyzer: Visitor {
 		let paramsAnalyzed = try expr.parameters.accept(self, context)
 		let bodyAnalyzed = try expr.body.accept(self, context)
 
+		guard let lexicalScope = context.lexicalScope else {
+			return error(at: expr, "Could not determine lexical scope for init", environment: context, expectation: .none)
+		}
+
 		return AnalyzedInitDecl(
 			wrapped: expr,
-			typeID: TypeID(.struct(context.lexicalScope!.scope.name!)),
+			typeID: TypeID(.struct(lexicalScope.scope.name!)),
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed as! AnalyzedParamsExpr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedBlockExpr

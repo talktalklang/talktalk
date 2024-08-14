@@ -256,7 +256,7 @@ public struct VirtualMachine {
 				ip += readUInt16()
 			case .jumpUnless:
 				let jump = readUInt16()
-				if stack.pop() == .bool(false) {
+				if stack.peek() == .bool(false) {
 					ip += jump
 				}
 			case .getLocal:

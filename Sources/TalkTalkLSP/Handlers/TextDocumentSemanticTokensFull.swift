@@ -20,7 +20,8 @@ struct TextDocumentSemanticTokensFull {
 			return
 		}
 
-		let tokens: [RawSemanticToken]
+		var tokens: [RawSemanticToken]
+
 		do {
 			// TODO: use module environment
 			let parsed = try SourceFileAnalyzer.analyze(Parser.parse(source.text), in: Environment())
@@ -29,6 +30,22 @@ struct TextDocumentSemanticTokensFull {
 		} catch {
 			Log.error("error parsing semantic tokens: \(error)")
 			return
+		}
+
+		// Add in comment tokens since we lost those during parsing
+		for (line, text) in source.text.components(separatedBy: .newlines).enumerated() {
+			var j = 0
+			if let index = text.firstIndex(of: "/"),
+				 text[text.index(index, offsetBy: 1)] == "/" {
+				tokens.append(.init(
+					lexeme: "<comment>",
+					line: line,
+					startChar: index.utf16Offset(in: text),
+					length: text.count - index.utf16Offset(in: text),
+					tokenType: .comment,
+					modifiers: []
+				))
+			}
 		}
 
 		let relativeTokens = RelativeSemanticToken.generate(from: tokens)
