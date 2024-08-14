@@ -22,7 +22,11 @@ extension StandardLibraryTest {
 		moduleEnvironment: [String: Module] = [:],
 		verbosity: Verbosity = .quiet
 	) async throws -> VirtualMachine.ExecutionResult {
-		let stdlibURL = URL.homeDirectory.appending(path: "apps/talktalk/Library/Standard")
+
+		print(#file)
+		let stdlibURL = Driver.standardLibraryURL
+		print(try FileManager.default.contentsOfDirectory(atPath: stdlibURL.path))
+
 		let stdlib = try await Driver(directories: [stdlibURL]).compile()["Standard"]!
 
 		let files: [ParsedSourceFile] = [.tmp(input)]

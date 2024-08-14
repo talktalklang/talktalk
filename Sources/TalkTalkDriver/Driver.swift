@@ -14,6 +14,8 @@ public struct Driver {
 	let directories: [URL]
 	let compilationUnits: [CompilationUnit]
 
+	public static let standardLibraryURL = Bundle.module.resourceURL!.appending(path: "Standard")
+
 	public init(directories: [URL]) {
 		self.directories = directories
 		self.compilationUnits = Self.findCompilationUnits(directories: directories)

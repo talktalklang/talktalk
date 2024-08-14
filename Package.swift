@@ -72,6 +72,9 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkBytecode"
+			],
+			resources: [
+				.process("../../Library/Standard")
 			]
 		),
 		.target(
