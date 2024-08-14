@@ -37,7 +37,8 @@ struct CompleterTests {
 			)
 		).sorted() == [
 			CompletionItem(label: "person", kind: .variable),
-			CompletionItem(label: "pet", kind: .variable)
+			CompletionItem(label: "pet", kind: .variable),
+			CompletionItem(label: "print", kind: .function)
 		].sorted())
 	}
 
