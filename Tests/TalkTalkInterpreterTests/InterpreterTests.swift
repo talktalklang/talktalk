@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalk
+import TalkTalkInterpreter
 import Testing
 
 @MainActor

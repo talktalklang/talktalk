@@ -24,6 +24,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkDriver",
+				"TalkTalkInterpreter",
 				.product(name: "ArgumentParser", package: "swift-argument-parser")
 			]
 		),
@@ -46,7 +47,7 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkBytecode",
 				"TalkTalkVM",
-				"TalkTalkLSP"
+				"TalkTalkLSP",
 			]
 		),
 		.target(
@@ -81,6 +82,14 @@ let package = Package(
 			name: "TalkTalkVM",
 			dependencies: [
 				"TalkTalkCompiler",
+				"TalkTalkSyntax",
+				"TalkTalkAnalysis",
+				"TalkTalkBytecode"
+			]
+		),
+		.target(
+			name: "TalkTalkInterpreter",
+			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode"
@@ -134,6 +143,12 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
+			]
+		),
+		.testTarget(
+			name: "TalkTalkInterpreterTests",
+			dependencies: [
+				"TalkTalkInterpreter"
 			]
 		),
 		.testTarget(

@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-import TalkTalk
+import TalkTalkInterpreter
 import ArgumentParser
 
 struct Interpret: TalkTalkCommand {
