@@ -51,6 +51,9 @@ public enum Opcode: Byte {
 			 // Static data
 			 data,
 
+			 // Suspension
+			 suspend,
+
 			 // Equality
 			 equal,
 			 notEqual,

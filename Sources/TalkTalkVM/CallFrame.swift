@@ -8,7 +8,7 @@
 import TalkTalkBytecode
 
 class Closure {
-	let chunk: Chunk
+	var chunk: Chunk
 	let upvalues: [Upvalue]
 
 	public init(chunk: Chunk, upvalues: [Upvalue]) {

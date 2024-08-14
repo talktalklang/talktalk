@@ -10,4 +10,5 @@ import Foundation
 public struct Library {
 	static var libraryURL: URL { Bundle.module.resourceURL! }
 	public static var standardLibraryURL: URL { libraryURL.appending(path: "Standard") }
+	public static var replURL: URL { libraryURL.appending(path: "REPL") }
 }

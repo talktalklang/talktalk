@@ -14,10 +14,12 @@ import TalkTalkCompiler
 public struct Driver {
 	let directories: [URL]
 	let compilationUnits: [CompilationUnit]
+	let isBootstrap: Bool
 
-	public init(directories: [URL]) {
+	public init(directories: [URL], isBootstrap: Bool = false) {
 		self.directories = directories
 		self.compilationUnits = Self.findCompilationUnits(directories: directories)
+		self.isBootstrap = isBootstrap
 	}
 
 	public func writeModules(to destination: URL? = nil) async throws {
@@ -32,10 +34,16 @@ public struct Driver {
 		}
 	}
 
-	public func compile() async throws -> [String: CompilationResult] {
-		try compilationUnits.reduce(into: [:]) { res, unit in
-			res[unit.name] = try Pipeline(compilationUnit: unit).run()
+	public func compile(mode: CompilationMode = .module) async throws -> [String: CompilationResult] {
+		var result: [String: CompilationResult] = [:]
+		for unit in compilationUnits {
+			result[unit.name] = try await Pipeline(
+				compilationUnit: unit,
+				mode: mode,
+				isBootstrap: isBootstrap
+			).run()
 		}
+		return result
 	}
 }
 

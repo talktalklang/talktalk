@@ -56,7 +56,9 @@ public struct SourceFileAnalyzer: Visitor {
 		var analyzed = try exprs.map { try $0.accept(analyzer, environment) }
 
 		// If it's just a single statement, just make it a return
-		if analyzed.count == 1, let exprStmt = analyzed[0] as? AnalyzedExprStmt {
+		if environment.canAutoReturn,
+			 analyzed.count == 1,
+			 let exprStmt = analyzed[0] as? AnalyzedExprStmt {
 			analyzed[0] = AnalyzedReturnExpr(
 				typeID: exprStmt.typeID,
 				environment: environment,

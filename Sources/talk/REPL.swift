@@ -6,15 +6,14 @@
 //
 
 import ArgumentParser
-import TalkTalkCore
+import TalkTalkVM
 
 struct REPL: TalkTalkCommand {
 	static let configuration = CommandConfiguration(
 		abstract: "Read! Eval?? Print. Loop?!"
 	)
 
-	@MainActor
 	func run() async throws {
-		REPLRunner()//.start()
+		_ = try await REPLRunner.run()
 	}
 }

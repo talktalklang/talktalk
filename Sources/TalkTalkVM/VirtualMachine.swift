@@ -69,7 +69,7 @@ public struct VirtualMachine {
 		self.verbosity = verbosity
 
 		guard let chunk = module.main else {
-			fatalError("no entrypoint found for module")
+			fatalError("no entrypoint found for module `\(module.name)`")
 		}
 
 		self.stack = Stack<Value>(capacity: 256)
@@ -154,6 +154,8 @@ public struct VirtualMachine {
 
 				// Return to where we called from
 				ip = calledFrame.returnTo
+			case .suspend:
+				return .ok(stack.peek())
 			case .constant:
 				let value = readConstant()
 				stack.push(value)

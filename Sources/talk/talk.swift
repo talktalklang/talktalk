@@ -43,9 +43,10 @@ struct TalkCommand: TalkTalkCommand {
 		subcommands: [
 			AST.self,
 			Format.self,
+			REPL.self,
 			Interpret.self,
 			LSP.self,
-			Compile.self
+			Compile.self,
 		]
 	)
 }
