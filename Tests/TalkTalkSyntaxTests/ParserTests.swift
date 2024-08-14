@@ -84,7 +84,7 @@ struct TalkTalkParserTests {
 			self.foo = hello + 1
 			(hello + 1)
 		}
-		""")[0].cast(ExprStmtSyntax.self).expr.cast(FuncExprSyntax.self).body.exprs
+		""")[0].cast(FuncExprSyntax.self).body.exprs
 
 		print(ast.description)
 
@@ -180,7 +180,7 @@ struct TalkTalkParserTests {
 	@Test("func expr") func funcexpr() throws {
 		let ast = parse("""
 		func(x, y) { x + y }
-		""")[0].cast(ExprStmtSyntax.self).expr
+		""")[0]
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
@@ -199,7 +199,7 @@ struct TalkTalkParserTests {
 		func() {
 			return x
 		}
-		""")[0].cast(ExprStmtSyntax.self).expr
+		""")[0]
 
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.body.exprs[0]
@@ -210,7 +210,7 @@ struct TalkTalkParserTests {
 	@Test("named func expr") func namedfuncexpr() throws {
 		let ast = parse("""
 		func foo(x, y) { x + y }
-		""")[0].cast(ExprStmtSyntax.self).expr
+		""")[0]
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.name?.lexeme == "foo")
 		#expect(fn.params.params[0].name == "x")
@@ -235,7 +235,7 @@ struct TalkTalkParserTests {
 	@Test("passing an inline func to a func call") func inlineInlineCall() {
 		let ast = parse("""
 		func(x) { x }(func(y) { y })
-		""")[0].cast(ExprStmtSyntax.self).expr as! CallExpr
+		""")[0] as! CallExpr
 		#expect(ast.callee.cast(FuncExprSyntax.self).params.params[0].name == "x")
 		#expect(ast.args[0].value.cast(FuncExprSyntax.self).params.params[0].name == "y")
 	}
@@ -243,8 +243,8 @@ struct TalkTalkParserTests {
 	@Test("Func with no params") func noparams() {
 		let ast = parse("""
 		func() { 2 }
-		""")[0].cast(ExprStmtSyntax.self)
-		let funcExpr = ast.expr.cast(FuncExprSyntax.self)
+		""")[0]
+		let funcExpr = ast.cast(FuncExprSyntax.self)
 		#expect(funcExpr.params.params.isEmpty)
 		#expect(funcExpr.body.exprs[0].description == "2")
 	}

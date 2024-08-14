@@ -274,8 +274,7 @@ public struct Interpreter: AnalyzedVisitor {
 		)
 
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
-			if let exprStmt = decl as? AnalyzedExprStmt,
-				 let funcExpr = exprStmt.exprAnalyzed as? AnalyzedFuncExpr {
+			if let funcExpr = decl as? AnalyzedFuncExpr {
 				type.methods[funcExpr.name!.lexeme] = funcExpr
 			}
 		}

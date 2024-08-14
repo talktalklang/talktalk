@@ -452,18 +452,24 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any InitDecl, _ context: Environment) throws -> any AnalyzedSyntax {
-		let paramsAnalyzed = try expr.parameters.accept(self, context)
-		let bodyAnalyzed = try expr.body.accept(self, context)
+		let paramsAnalyzed = try expr.parameters.accept(self, context) as! AnalyzedParamsExpr
 
-		guard let lexicalScope = context.lexicalScope else {
+		let innerEnvironment = context.add()
+		for param in paramsAnalyzed.paramsAnalyzed {
+			innerEnvironment.define(parameter: param.name, as: param)
+		}
+
+		let bodyAnalyzed = try expr.body.accept(self, innerEnvironment)
+
+		guard let lexicalScope = innerEnvironment.getLexicalScope() else {
 			return error(at: expr, "Could not determine lexical scope for init", environment: context, expectation: .none)
 		}
 
 		return AnalyzedInitDecl(
 			wrapped: expr,
 			typeID: TypeID(.struct(lexicalScope.scope.name!)),
-			environment: context,
-			parametersAnalyzed: paramsAnalyzed as! AnalyzedParamsExpr,
+			environment: innerEnvironment,
+			parametersAnalyzed: paramsAnalyzed,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedBlockExpr
 		)
 	}
@@ -661,32 +667,30 @@ public struct SourceFileAnalyzer: Visitor {
 						expr: decl,
 						isMutable: false
 					))
-			case let decl as ExprStmt:
-				if let decl = decl.expr as? FuncExpr {
-					if let name = decl.name {
-						structType.add(
-							method: Method(
-								slot: structType.methods.count,
-								name: name.lexeme,
-								params: decl
-									.params
-									.params
-									.map(\.name)
-									.reduce(into: [:]) { res, p in
-										res[p] = TypeID(.placeholder(0))
-									},
-								typeID: TypeID(
-									.function(
-										name.lexeme,
-										TypeID(.placeholder(2)),
-										[],
-										[]
-									)
-								),
-								expr: decl,
-								isMutable: false
-							))
-					}
+			case let decl as FuncExpr:
+				if let name = decl.name {
+					structType.add(
+						method: Method(
+							slot: structType.methods.count,
+							name: name.lexeme,
+							params: decl
+								.params
+								.params
+								.map(\.name)
+								.reduce(into: [:]) { res, p in
+									res[p] = TypeID(.placeholder(0))
+								},
+							typeID: TypeID(
+								.function(
+									name.lexeme,
+									TypeID(.placeholder(2)),
+									[],
+									[]
+								)
+							),
+							expr: decl,
+							isMutable: false
+						))
 				} else {
 					FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
 				}
@@ -748,7 +752,7 @@ public struct SourceFileAnalyzer: Visitor {
 				))
 		}
 
-		let lexicalScope = bodyContext.lexicalScope!
+		let lexicalScope = bodyContext.getLexicalScope()!
 
 		let analyzed = AnalyzedStructDecl(
 			wrapped: expr,
@@ -774,17 +778,11 @@ public struct SourceFileAnalyzer: Visitor {
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
 		for decl in expr.decls {
-			guard var declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
+			guard let declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
 				continue
 			}
 
 			declsAnalyzed.append(declAnalyzed)
-
-			if let exprStmt = declAnalyzed as? AnalyzedExprStmt,
-			   let wrappedDecl = exprStmt.exprAnalyzed as? any AnalyzedDecl
-			{
-				declAnalyzed = wrappedDecl
-			}
 
 			// If we have an updated type for a method, update the struct to know about it.
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
@@ -816,7 +814,7 @@ public struct SourceFileAnalyzer: Visitor {
 		var errors: [AnalysisError] = []
 		let type = context.type(named: expr.typeDecl)
 
-		if case .error(_) = type {
+		if case .error = type {
 			errors.append(
 				.init(
 					kind: .typeNotFound(expr.typeDecl ?? "<no type name>"),
@@ -843,7 +841,7 @@ public struct SourceFileAnalyzer: Visitor {
 		var errors: [AnalysisError] = []
 		let type = context.type(named: expr.typeDecl)
 
-		if case .error(_) = type {
+		if case .error = type {
 			errors.append(.init(kind: .typeNotFound(expr.typeDecl ?? "<no type name>"), location: [expr.typeDeclToken ?? expr.location.start]))
 		}
 
@@ -873,11 +871,9 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-
 	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedSyntax {
 		fatalError("TODO")
 	}
-
 
 	// GENERATOR_INSERTION
 

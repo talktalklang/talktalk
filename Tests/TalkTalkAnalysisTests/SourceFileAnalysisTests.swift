@@ -95,7 +95,6 @@ struct AnalysisTests {
 
 		#expect(
 			fn
-				.cast(AnalyzedReturnExpr.self).valueAnalyzed?
 				.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0]
 				.cast(AnalyzedReturnExpr.self).valueAnalyzed?
 				.cast(AnalyzedCallExpr.self).callee.description == "foo"
@@ -128,7 +127,7 @@ struct AnalysisTests {
 			"""
 			func(x) { 1 + x }
 			"""
-		).cast(AnalyzedReturnExpr.self).valueAnalyzed
+		)
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
@@ -147,7 +146,6 @@ struct AnalysisTests {
 				"""), in: .init())
 
 		let result = ast[1]
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedCallExpr.self).calleeAnalyzed
 			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
@@ -160,7 +158,6 @@ struct AnalysisTests {
 		let ast = try SourceFileAnalyzer.analyze(Parser.parse("func() {}(123)"), in: env)
 
 		let callExpr = ast[0]
-			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
 			.cast(AnalyzedCallExpr.self)
 		let error = try #require(callExpr.analysisErrors.first)
 
@@ -179,7 +176,7 @@ struct AnalysisTests {
 					y + x
 				}
 			}
-		""").as(AnalyzedReturnExpr.self)?.valueAnalyzed
+		""")
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
@@ -201,7 +198,7 @@ struct AnalysisTests {
 				))
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
-		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0].cast(AnalyzedReturnExpr.self).valueAnalyzed as! AnalyzedFuncExpr
+		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
 		#expect(nestedFn.typeAnalyzed == .function("_fn_y_36", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
@@ -229,7 +226,7 @@ struct AnalysisTests {
 		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.count == 0)
 
-		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedFuncExpr.self)
+		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
 
 		#expect(counterFn.environment.captures.count == 1)
 		#expect(counterFn.returnsAnalyzed!

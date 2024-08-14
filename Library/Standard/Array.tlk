@@ -1,5 +1,5 @@
 // Arrays are builtin
-struct Array {
+struct Array<Element> {
 	var _storage: pointer
 	var count: int
 	var capacity: int

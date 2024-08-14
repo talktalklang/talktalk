@@ -253,7 +253,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedInitDecl, _ chunk: Chunk) throws {
-		guard let structName = expr.environment.lexicalScope?.scope.name else {
+		guard let structName = expr.environment.getLexicalScope()?.scope.name else {
 			fatalError("no name for struct for init")
 		}
 
@@ -406,11 +406,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Go through the body and collect the chunks (we don't want to emit them into the
 		// outer chunk)
-		for var decl in expr.bodyAnalyzed.declsAnalyzed {
-			if let exprStmt = decl as? AnalyzedExprStmt {
-				// Unwrap expr stmts
-				decl = exprStmt.exprAnalyzed as! any AnalyzedDecl
-			}
+		for decl in expr.bodyAnalyzed.declsAnalyzed {
+//			if let exprStmt = decl as? AnalyzedExprStmt {
+//				// Unwrap expr stmts
+//				decl = exprStmt.exprAnalyzed as! any AnalyzedDecl
+//			}
 
 			switch decl {
 			case let decl as AnalyzedInitDecl:

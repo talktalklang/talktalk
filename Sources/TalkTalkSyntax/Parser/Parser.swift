@@ -85,6 +85,14 @@ public struct Parser {
 			return structDecl()
 		}
 
+		if didMatch(.func) {
+			return funcExpr()
+		}
+
+		if didMatch(.initialize) {
+			return _init()
+		}
+
 		if didMatch(.var) {
 			return letVarDecl(.var)
 		}
@@ -130,9 +138,21 @@ public struct Parser {
 				break
 			}
 			skip(.newline)
-			var type: IdentifierExpr? = nil
+			var type: TypeExprSyntax? = nil
+
 			if didMatch(.colon), let typeID = consume(.identifier) {
-				type = IdentifierExprSyntax(name: typeID.lexeme, location: [typeID])
+				let i = startLocation(at: previous!)
+
+				var genericParamsSyntax: GenericParamsSyntax? = nil
+				if didMatch(.less) {
+					genericParamsSyntax = genericParams()
+				}
+
+				type = TypeExprSyntax(
+					identifier: typeID,
+					genericParams: genericParamsSyntax,
+					location: endLocation(i)
+				)
 			}
 			skip(.newline)
 
@@ -175,7 +195,9 @@ public struct Parser {
 			return peek()
 		}
 
-		_ = error(at: peek(), message ?? "Expected \(kind), got \(peek().debugDescription)", expectation: .guess(from: kind))
+		_ = error(
+			at: peek(), message ?? "Expected \(kind), got \(peek().debugDescription)",
+			expectation: .guess(from: kind))
 		return nil
 	}
 
@@ -190,7 +212,9 @@ public struct Parser {
 			return true
 		}
 
-		_ = error(at: peek(), "Expected \(kind), got \(peek().debugDescription)", expectation: .guess(from: kind))
+		_ = error(
+			at: peek(), "Expected \(kind), got \(peek().debugDescription)",
+			expectation: .guess(from: kind))
 		return false
 	}
 
@@ -258,7 +282,8 @@ public struct Parser {
 		}
 
 		if locationStack.locations.count != stackSize {
-			print("Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
+			print(
+				"Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
 		}
 
 		return SourceLocation(start: start, end: current)

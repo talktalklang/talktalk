@@ -22,7 +22,7 @@ public class AnalyzedParam: Param, AnalyzedExpr {
 	public let environment: Environment
 
 	public let typeID: TypeID
-	public var type: (any IdentifierExpr)? { expr.type }
+	public var type: (any TypeExpr)? { expr.type }
 
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }

@@ -7,7 +7,7 @@
 
 public protocol Param: Expr {
 	var name: String { get }
-	var type: (any IdentifierExpr)? { get }
+	var type: (any TypeExpr)? { get }
 }
 
 public protocol ParamsExpr: Expr {
@@ -28,13 +28,13 @@ public struct ParamSyntax: Param {
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
 		try visitor.visit(self, scope)
 	}
-	
+
 	public let name: String
-	public let type: (any IdentifierExpr)?
+	public let type: (any TypeExpr)?
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }
 
-	public init(name: String, type: (any IdentifierExpr)? = nil, location: SourceLocation) {
+	public init(name: String, type: (any TypeExpr)? = nil, location: SourceLocation) {
 		self.name = name
 		self.type = type
 		self.location = location

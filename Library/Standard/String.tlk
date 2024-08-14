@@ -1,4 +1,9 @@
+// Strings are builtin
 struct String {
-	init() {
+	var _storage: pointer
+
+	init(chars: Array<int>) {
+		_storage = _allocate(1)
+		_storePtr(_storage, chars)
 	}
 }

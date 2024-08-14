@@ -104,7 +104,7 @@ extension Parser {
 		)
 	}
 
-	mutating func funcExpr() -> FuncExprSyntax {
+	mutating func funcExpr() -> any Expr {
 		let funcToken = previous!
 		let i = startLocation(at: previous)
 
@@ -122,7 +122,13 @@ extension Parser {
 
 		let body = blockExpr(false)
 
-		return FuncExprSyntax(funcToken: funcToken, params: params, body: body, i: lexer.current, name: name, location: endLocation(i))
+		let funcExpr = FuncExprSyntax(funcToken: funcToken, params: params, body: body, i: lexer.current, name: name, location: endLocation(i))
+
+		if check(.leftParen) {
+			return call(false, funcExpr)
+		}
+
+		return funcExpr
 	}
 
 	mutating func literal(_: Bool) -> any Expr {

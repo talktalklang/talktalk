@@ -261,7 +261,6 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
-			.op(.return, line: 0, .simple),
 			.op(.return, line: 0, .simple)
 		))
 
@@ -282,7 +281,6 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == Instructions(
 			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
 			.op(.call, line: 2, .simple),
-			.op(.return, line: 2, .simple),
 			.op(.return, line: 0, .simple)
 		))
 	}
@@ -315,7 +313,6 @@ struct CompilerTests {
 				depth: 1,
 				upvalues: [.capturing(1), .capturing(2)]
 			)),
-			.op(.pop, line: 3, .simple),
 			.op(.return, line: 7, .simple)
 		)
 
@@ -348,7 +345,6 @@ struct CompilerTests {
 			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
 			.op(.pop, line: 0, .simple),
 			.op(.defClosure, line: 1, .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
-			.op(.pop, line: 1, .simple),
 			.op(.return, line: 0, .simple)
 		)
 
