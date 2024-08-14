@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkCore
 import TalkTalkSyntax
 
 public struct ModuleAnalyzer {
@@ -17,13 +18,24 @@ public struct ModuleAnalyzer {
 	let environment: Environment
 	let visitor: SourceFileAnalyzer
 	let moduleEnvironment: [String: AnalysisModule]
+	let library: AnalysisLibrary?
 
-	public init(name: String, files: [ParsedSourceFile], moduleEnvironment: [String: AnalysisModule]) {
+	public init(
+		name: String,
+		files: [ParsedSourceFile],
+		moduleEnvironment: [String: AnalysisModule]
+	) {
 		self.name = name
 		self.files = files
 		self.environment = Environment(isModuleScope: true)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
+
+		if name != "Standard" {
+			self.library = AnalysisLibrary()
+		} else {
+			self.library = nil
+		}
 	}
 
 	public var errors: [AnalysisError] {
@@ -34,8 +46,8 @@ public struct ModuleAnalyzer {
 		var analysisModule = AnalysisModule(name: name, files: files)
 
 		// Always include the standard lib
-		if let stdlib = moduleEnvironment["Standard"] {
-			environment.importModule(stdlib)
+		if let library {
+			environment.importModule(library.standard)
 		}
 
 		// Find all the top level stuff this module has to offer

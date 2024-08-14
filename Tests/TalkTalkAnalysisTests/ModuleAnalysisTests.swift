@@ -10,8 +10,16 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 
 struct ModuleAnalysisTests {
-	func analyze(name: String, moduleEnvironment: [String: AnalysisModule] = [:], _ files: ParsedSourceFile...) -> AnalysisModule {
-		try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: moduleEnvironment).analyze()
+	func analyze(
+		name: String,
+		moduleEnvironment: [String: AnalysisModule] = [:],
+		_ files: ParsedSourceFile...
+	) -> AnalysisModule {
+		try! ModuleAnalyzer(
+			name: name,
+			files: files,
+			moduleEnvironment: moduleEnvironment
+		).analyze()
 	}
 
 	@Test("Analyzes module functions") func basic() throws {
@@ -105,7 +113,13 @@ struct ModuleAnalysisTests {
 		}
 		"""))
 
+		// Make sure we're actually loading these
+		let foo = try #require(moduleA.moduleFunction(named: "foo"))
+		#expect(foo.name == "foo")
+		#expect(foo.typeID.type() == .function("foo", .int, [], []))
+
 		let bar = try #require(moduleB.moduleFunction(named: "bar"))
+
 		guard case let .function(name, returnType, params, captures) = bar.typeID.type() else {
 			#expect(Bool(false), "bar type was not a function")
 			return

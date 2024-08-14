@@ -1,0 +1,5 @@
+import Standard
+var a = Array<int>()
+a.append(1)
+a.append(2)
+print(a.at(1))

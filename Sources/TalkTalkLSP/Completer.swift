@@ -87,10 +87,11 @@ class Completer {
 		let matches = matching(position: position, exprs: lastSuccessfulExprs)
 
 		for match in matches {
-			if let errorSyntax = match.as(AnalyzedErrorSyntax.self) {
-				let text = errorSyntax.location.start.lexeme
-				for binding in errorSyntax.environment.allBindings() {
-					if binding.name.starts(with: text) {
+			if let match = match as? AnalyzedVarExpr {
+				let name = match.name
+
+				for binding in match.environment.allBindings() {
+					if binding.name.starts(with: name) {
 						let kind: CompletionItemKind = switch binding.type.type() {
 						case .function(_, _, _, _):
 							.function
@@ -105,6 +106,7 @@ class Completer {
 				}
 			}
 		}
+
 		return result
 	}
 }

@@ -8,8 +8,8 @@ let package = Package(
 	platforms: [.macOS(.v14), .iOS(.v17)],
 	products: [
 		.library(
-			name: "TalkTalk",
-			targets: ["TalkTalk"]
+			name: "TalkTalkCore",
+			targets: ["TalkTalkCore"]
 		)
 	],
 	dependencies: [
@@ -20,7 +20,8 @@ let package = Package(
 		.executableTarget(
 			name: "talk",
 			dependencies: [
-				"TalkTalk",
+				"TalkTalkCore",
+				"TalkTalkLSP",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkDriver",
@@ -35,19 +36,16 @@ let package = Package(
 		.target(
 			name: "TalkTalkAnalysis",
 			dependencies: [
+				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkBytecode"
 			]
 		),
 		.target(
-			name: "TalkTalk",
-			dependencies: [
-				"TalkTalkSyntax",
-				"TalkTalkAnalysis",
-				"TalkTalkCompiler",
-				"TalkTalkBytecode",
-				"TalkTalkVM",
-				"TalkTalkLSP",
+			name: "TalkTalkCore",
+			dependencies: [],
+			resources: [
+				.process("../../Library/Standard")
 			]
 		),
 		.target(
@@ -60,6 +58,7 @@ let package = Package(
 		.target(
 			name: "TalkTalkCompiler",
 			dependencies: [
+				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
@@ -69,13 +68,11 @@ let package = Package(
 		.target(
 			name: "TalkTalkDriver",
 			dependencies: [
+				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkBytecode"
-			],
-			resources: [
-				.process("../../Library/Standard")
 			]
 		),
 		.target(
@@ -99,9 +96,9 @@ let package = Package(
 			name: "TalkTalkBytecode"
 		),
 		.testTarget(
-			name: "TalkTalkTests",
+			name: "TalkTalkCoreTests",
 			dependencies: [
-				"TalkTalk",
+				"TalkTalkCore",
 				"TalkTalkDriver",
 				"TalkTalkBytecode",
 				"TalkTalkAnalysis",
@@ -139,6 +136,8 @@ let package = Package(
 		.testTarget(
 			name: "TalkTalkVMTests",
 			dependencies: [
+				"TalkTalkCore",
+				"TalkTalkDriver",
 				"TalkTalkVM",
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",

@@ -27,7 +27,11 @@ extension AnalysisError {
 	var message: String {
 		switch kind {
 		case let .argumentError(expected: a, received: b):
-			return "Expected \(a) arguments, got: \(b)"
+			if a == -1 {
+				return "Unable to determine expected arguments, probably because callee isn't callable."
+			} else {
+				return "Expected \(a) arguments, got: \(b)"
+			}
 		case let .typeParameterError(expected: a, received: b):
 			return "Expected \(a) type parameters, got: \(b)"
 		case let .typeNotFound(name):
@@ -35,7 +39,9 @@ extension AnalysisError {
 		case let .unknownError(message):
 			return message
 		case let .noMemberFound(receiver: receiver, property: property):
-			return "No property named '\(property)' for \(receiver)"
+			return "No property named `\(property)` for \(receiver)"
+		case let .undefinedVariable(name):
+			return "Undefined variable `\(name)`"
 		}
 	}
 }

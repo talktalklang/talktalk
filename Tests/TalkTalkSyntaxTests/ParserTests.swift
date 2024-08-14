@@ -8,6 +8,7 @@
 import TalkTalkSyntax
 import Testing
 
+@MainActor
 struct TalkTalkParserTests {
 	func parse(_ source: String) -> [Syntax] {
 		let lexer = TalkTalkLexer(source)
@@ -21,6 +22,17 @@ struct TalkTalkParserTests {
 		}
 
 		return result
+	}
+
+	@Test("Doesn't return an error on a blank file") func blank() {
+		let lexer = TalkTalkLexer("""
+
+		\("   " /* whitespace */ )
+		""")
+		var parser = Parser(lexer)
+		let result = parser.parse()
+
+		#expect(parser.errors.isEmpty)
 	}
 
 	@Test("Imports") func imports() throws {

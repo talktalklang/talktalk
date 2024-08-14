@@ -124,12 +124,12 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		var callee = try expr.callee.accept(self, context)
+		let callee = try expr.callee.accept(self, context)
 
 		// Unwrap expr stmt
-		if let exprStmt = callee as? AnalyzedExprStmt {
-			callee = exprStmt.exprAnalyzed
-		}
+//		if let exprStmt = callee as? AnalyzedExprStmt {
+//			callee = exprStmt.exprAnalyzed
+//		}
 
 		var errors: [AnalysisError] = []
 
@@ -206,11 +206,19 @@ public struct SourceFileAnalyzer: Visitor {
 			type = TypeID(.instance(instanceType))
 			arity = structType.methods["init"]!.params.count
 		default:
-			return error(
-				at: callee, "callee not callable: \(callee.typeID.current.description), has type: \(callee.typeAnalyzed)",
-				environment: context,
-				expectation: .decl
-			)
+			type = TypeID(.any)
+			arity = -1
+
+			// Append the callee not callable error if we don't already have an error
+			// on this callee node.
+			if callee.analysisErrors.isEmpty {
+				errors.append(
+					AnalysisError(
+						kind: .unknownError("Callee not callable: \(callee.typeAnalyzed)"),
+						location: callee.location
+					)
+				)
+			}
 		}
 
 		if arity != args.count {
@@ -250,7 +258,7 @@ public struct SourceFileAnalyzer: Visitor {
 			member = structType.properties[propertyName] ?? structType.methods[propertyName]
 		default:
 			return error(
-				at: expr, "Cannot access property \(propertyName) on \(receiver)",
+				at: expr, "Cannot access property `\(propertyName)` on `\(receiver)`",
 				environment: context,
 				expectation: .member
 			)
@@ -326,20 +334,23 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> Value {
 		if let binding = context.lookup(expr.name) {
 			return AnalyzedVarExpr(
 				typeID: binding.type,
 				expr: expr,
-				environment: context
+				environment: context,
+				analysisErrors: []
 			)
 		}
 
-		return error(
-			at: expr,
-			"undefined variable: \(expr.name) ln: \(expr.location.start.line) col: \(expr.location.start.column)",
+		return AnalyzedVarExpr(
+			typeID: TypeID(.any),
+			expr: expr,
 			environment: context,
-			expectation: .variable
+			analysisErrors: [
+				AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location)
+			]
 		)
 	}
 
@@ -433,6 +444,10 @@ public struct SourceFileAnalyzer: Visitor {
 			params.paramsAnalyzed.map { .init(name: $0.name, typeID: $0.typeID) },
 			innerEnvironment.captures.map(\.name)
 		)
+
+		if expr.name?.lexeme == "bar" {
+
+		}
 
 		let funcExpr = AnalyzedFuncExpr(
 			type: TypeID(analyzed),
@@ -598,7 +613,8 @@ public struct SourceFileAnalyzer: Visitor {
 					token: .synthetic(.self),
 					location: [.synthetic(.self)]
 				),
-				environment: context
+				environment: context,
+				analysisErrors: []
 			)
 		)
 

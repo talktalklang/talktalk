@@ -12,6 +12,7 @@ public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	let expr: VarExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
+	public var analysisErrors: [AnalysisError]
 
 	public var token: Token { expr.token }
 	public var location: SourceLocation { expr.location }

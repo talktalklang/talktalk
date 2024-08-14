@@ -25,7 +25,11 @@ public struct ModuleCompiler {
 	}
 
 	public func compile(mode: CompilationMode) throws -> Module {
-		let module = CompilingModule(name: name, analysisModule: analysisModule, moduleEnvironment: moduleEnvironment)
+		let module = CompilingModule(
+			name: name,
+			analysisModule: analysisModule,
+			moduleEnvironment: moduleEnvironment
+		)
 
 		for file in analysisModule.analyzedFiles {
 			try module.compile(file: file)

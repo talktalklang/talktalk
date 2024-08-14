@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TalkTalkCore
 import TalkTalkBytecode
 import TalkTalkSyntax
 import TalkTalkCompiler
@@ -13,8 +14,6 @@ import TalkTalkCompiler
 public struct Driver {
 	let directories: [URL]
 	let compilationUnits: [CompilationUnit]
-
-	public static let standardLibraryURL = Bundle.module.resourceURL!.appending(path: "Standard")
 
 	public init(directories: [URL]) {
 		self.directories = directories

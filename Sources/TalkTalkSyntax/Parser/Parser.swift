@@ -35,12 +35,11 @@ public struct Parser {
 
 	public static func parse(_ string: String, allowErrors: Bool = false) throws -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(string))
-
+		let result = parser.parse()
 		guard parser.errors.isEmpty || allowErrors else {
 			throw ParseError.couldNotParse(parser.errors)
 		}
-
-		return parser.parse()
+		return result
 	}
 
 	public init(_ lexer: TalkTalkLexer) {
@@ -52,6 +51,7 @@ public struct Parser {
 
 	public mutating func parse() -> [any Syntax] {
 		var results: [any Syntax] = []
+
 		while current.kind != .eof {
 			skip(.newline)
 

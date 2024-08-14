@@ -6,7 +6,7 @@
 //
 
 import ArgumentParser
-import TalkTalkLSP
+import TalkTalkCore
 
 struct REPL: TalkTalkCommand {
 	static let configuration = CommandConfiguration(
@@ -15,8 +15,6 @@ struct REPL: TalkTalkCommand {
 
 	@MainActor
 	func run() async throws {
-		Log.info("talk lsp called")
-		var lsp = TalkTalkLSP.LSP()
-		lsp.start()
+		REPLRunner()//.start()
 	}
 }

@@ -7,7 +7,6 @@
 
 import Foundation
 import TalkTalkSyntax
-import TalkTalkBytecode
 
 public struct SerializedAnalysisModule: Codable {
 	public let name: String

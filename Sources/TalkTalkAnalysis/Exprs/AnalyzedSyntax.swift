@@ -21,4 +21,12 @@ public extension AnalyzedSyntax {
 	}
 
 	var analysisErrors: [AnalysisError] { [] }
+
+	func collectErrors() -> [AnalysisError] {
+		var result = analysisErrors
+		for child in self.analyzedChildren {
+			result.append(contentsOf: child.collectErrors())
+		}
+		return result
+	}
 }

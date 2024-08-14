@@ -130,7 +130,8 @@ public class Environment {
 					expr: AnalyzedVarExpr(
 						typeID: TypeID(scope.type),
 						expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
-						environment: self
+						environment: self,
+						analysisErrors: []
 					),
 					type: TypeID(scope.type)
 				)
@@ -155,6 +156,10 @@ public class Environment {
 			}
 		}
 
+		if name == "foo" {
+
+		}
+
 		for module in importedModules {
 			var symbol: Symbol?
 			var global: (any ModuleGlobal)?
@@ -171,7 +176,7 @@ public class Environment {
 			}
 
 			guard let symbol, let global else {
-				return nil
+				continue
 			}
 
 			let binding = Binding(

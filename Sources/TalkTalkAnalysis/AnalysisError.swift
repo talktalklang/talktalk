@@ -17,6 +17,7 @@ public enum AnalysisErrorKind: Hashable {
 	case noMemberFound(receiver: any Syntax, property: String)
 	case typeNotFound(String)
 	case unknownError(String)
+	case undefinedVariable(String)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
@@ -30,6 +31,8 @@ public enum AnalysisErrorKind: Hashable {
 		case .typeNotFound(let string):
 			hasher.combine(string)
 		case .unknownError(let string):
+			hasher.combine(string)
+		case .undefinedVariable(let string):
 			hasher.combine(string)
 		}
 	}

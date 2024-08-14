@@ -12,7 +12,9 @@ public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	let expr: LetDecl
 	public var analysisErrors: [AnalysisError]
 	public var valueAnalyzed: (any AnalyzedExpr)?
-	public var analyzedChildren: [any AnalyzedSyntax] { [] }
+	public var analyzedChildren: [any AnalyzedSyntax] {
+		if let valueAnalyzed { [valueAnalyzed] } else { [] }
+	}
 	public let environment: Environment
 
 	public var name: String { expr.name }

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
-import TalkTalkAnalysis
 import TalkTalkBytecode
+import TalkTalkAnalysis
 
 public struct SerializedModule: Codable {
 	public let analysis: SerializedAnalysisModule

@@ -38,11 +38,8 @@ extension TypeID {
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
-		try! SourceFileAnalyzer.analyze(
-			Parser.parse(string),
-			in: .init()
-		)
-		.last!
+		let parsed = try! Parser.parse(string)
+		return try! SourceFileAnalyzer.analyze(parsed, in: .init()).last!
 	}
 
 	@Test("Types literals") func literals() {
@@ -242,6 +239,19 @@ struct AnalysisTests {
 		#expect(counterReturns.type() == .int)
 		#expect(counterCaptures.first == "count")
 		#expect(counterParams.isEmpty)
+	}
+
+	@Test("Errors on bad struct instantiating") func badStruct() {
+		let ast = ast("""
+		var a = Nope()
+		""")
+			.cast(AnalyzedVarDecl.self).valueAnalyzed!
+
+		let callExpr = ast
+			.cast(AnalyzedCallExpr.self).calleeAnalyzed
+			.cast(AnalyzedVarExpr.self)
+		#expect(!callExpr.analysisErrors.isEmpty)
+		#expect(callExpr.analysisErrors[0].kind == .undefinedVariable("Nope"))
 	}
 
 	@Test("Types structs") func structs() throws {

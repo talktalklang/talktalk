@@ -10,7 +10,9 @@ import TalkTalkSyntax
 public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public let typeID: TypeID
 	let expr: VarDecl
-	public var analyzedChildren: [any AnalyzedSyntax] { [] }
+	public var analyzedChildren: [any AnalyzedSyntax] {
+		if let valueAnalyzed { [valueAnalyzed] } else { [] }
+	}
 	public var analysisErrors: [AnalysisError] = []
 	public var valueAnalyzed: (any AnalyzedExpr)?
 	public let environment: Environment

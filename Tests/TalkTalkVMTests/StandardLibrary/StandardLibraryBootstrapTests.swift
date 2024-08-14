@@ -10,7 +10,7 @@ import Testing
 
 @MainActor
 struct StandardLibraryBootstrapTests: StandardLibraryTest {
-	@Test("Can import it") func basic() async throws {
+	@Test("Don't need to it") func basic() async throws {
 		let result = try await run("""
 		a = Array()
 		return a.count
