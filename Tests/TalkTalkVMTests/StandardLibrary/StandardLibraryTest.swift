@@ -38,7 +38,7 @@ extension StandardLibraryTest {
 		// The Driver normally does this part but since we're not using it in here, we need
 		// to add the stdlib
 		var moduleEnvironment = moduleEnvironment
-		let driver = await Driver(directories: [Library.standardLibraryURL])
+		let driver = Driver(directories: [Library.standardLibraryURL])
 		let stdlib = try await driver.compile()["Standard"]!.module
 		moduleEnvironment["Standard"] = stdlib
 
