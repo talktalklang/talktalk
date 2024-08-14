@@ -163,7 +163,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: WhileExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: WhileStmt, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.whileToken)]
 		try result.append(contentsOf: expr.condition.accept(self, .condition))
 		try result.append(contentsOf: expr.body.accept(self, context))
@@ -221,17 +221,27 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: VarDecl, _ context: Context) throws -> [RawSemanticToken] {
-		return [
+		var result = [
 			make(.keyword, from: expr.token),
-			make(.type, from: expr.typeDeclToken)
 		]
+
+		if let token = expr.typeDeclToken {
+			result.append(make(.type, from: token))
+		}
+
+		return result
 	}
 
 	func visit(_ expr: LetDecl, _ context: Context) throws -> [RawSemanticToken] {
-		return [
+		var result = [
 			make(.keyword, from: expr.token),
-			make(.type, from: expr.typeDeclToken)
 		]
+
+		if let token = expr.typeDeclToken {
+			result.append(make(.type, from: token))
+		}
+
+		return result
 	}
 
 	func visit(_ expr: any IfStmt, _ context: Context) throws -> [RawSemanticToken] {

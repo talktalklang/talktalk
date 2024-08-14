@@ -20,7 +20,7 @@ extension StandardLibraryTest {
 		_ input: String,
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:],
-		verbose: Bool = false
+		verbosity: Verbosity = .quiet
 	) async throws -> VirtualMachine.ExecutionResult {
 		let stdlibURL = URL.homeDirectory.appending(path: "apps/talktalk/Library/Standard")
 		let stdlib = try await Driver(directories: [stdlibURL]).compile()["Standard"]!
@@ -35,6 +35,7 @@ extension StandardLibraryTest {
 		}
 
 		let module = try ModuleCompiler(name: "StdLibTest", analysisModule: analyzed, moduleEnvironment: ["Standard": stdlib.module]).compile(mode: .executable)
-		return VirtualMachine.run(module: module, verbose: verbose)
+
+		return VirtualMachine.run(module: module, verbosity: verbosity)
 	}
 }

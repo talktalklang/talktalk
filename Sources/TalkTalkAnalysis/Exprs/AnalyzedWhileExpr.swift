@@ -7,20 +7,20 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedWhileExpr: WhileExpr, AnalyzedExpr {
+public struct AnalyzedWhileStmt: WhileStmt, AnalyzedStmt {
 	public let typeID: TypeID
-	let expr: WhileExpr
+	let wrapped: WhileStmt
 
 	public var conditionAnalyzed: any AnalyzedExpr
 	public var bodyAnalyzed: AnalyzedBlockExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [conditionAnalyzed, bodyAnalyzed] }
 	public let environment: Environment
 
-	public var whileToken: Token { expr.whileToken }
-	public var condition: any Expr { expr.condition }
-	public var body: any BlockExpr { expr.body }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var whileToken: Token { wrapped.whileToken }
+	public var condition: any Expr { wrapped.condition }
+	public var body: any BlockExpr { wrapped.body }
+	public var location: SourceLocation { wrapped.location }
+	public var children: [any Syntax] { wrapped.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
 		try visitor.visit(self, scope)

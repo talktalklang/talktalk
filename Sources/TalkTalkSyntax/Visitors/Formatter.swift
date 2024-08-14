@@ -47,7 +47,7 @@ public struct Formatter: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: any WhileExpr, _ context: Context) throws -> String {
+	public func visit(_ expr: any WhileStmt, _ context: Context) throws -> String {
 		var result = "while "
 		result += try expr.condition.accept(self, context)
 		result += " "
@@ -247,7 +247,34 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: any VarDecl, _ context: Context) throws -> String {
 		context.lastType = expr
-		return "var \(expr.name): \(expr.typeDecl)"
+		
+		var result = "var \(expr.name)"
+
+		if let typeDecl = expr.typeDecl {
+			result += ": \(typeDecl)"
+		}
+
+		if let value = expr.value {
+			result += " = "
+			result += try value.accept(self, context)
+		}
+
+		return result
+	}
+
+	public func visit(_ expr: any LetDecl, _ context: Context) throws -> String {
+		var result = "let \(expr.name)"
+
+		if let typeDecl = expr.typeDecl {
+			result += ": \(typeDecl)"
+		}
+
+		if let value = expr.value {
+			result += " = "
+			result += try value.accept(self, context)
+		}
+
+		return result
 	}
 
 	public func visit(_ expr: any ReturnExpr, _ context: Context) throws -> String {

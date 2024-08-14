@@ -5,13 +5,13 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
-public protocol WhileExpr: Expr {
+public protocol WhileStmt: Expr {
 	var whileToken: Token { get }
 	var condition: any Expr { get }
 	var body: any BlockExpr { get }
 }
 
-public struct WhileExprSyntax: WhileExpr {
+public struct WhileStmtSyntax: WhileStmt {
 	public var whileToken: Token
 	public var condition: any Expr
 	public var body: any BlockExpr

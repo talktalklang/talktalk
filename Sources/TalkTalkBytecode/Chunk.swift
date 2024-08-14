@@ -153,6 +153,9 @@ public class Chunk: Codable {
 	}
 
 	public func emit(opcode: Opcode, line: UInt32) {
+		if opcode == .pop {
+			
+		}
 		write(byte: opcode.byte, line: line)
 	}
 

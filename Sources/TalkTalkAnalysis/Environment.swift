@@ -72,7 +72,11 @@ public class Environment {
 		return parent?.infer(name)
 	}
 
-	public func type(named name: String) -> ValueType {
+	public func type(named name: String?) -> ValueType {
+		guard let name else {
+			return .placeholder(0)
+		}
+
 		switch name {
 		case "i32", "int":
 			return .int

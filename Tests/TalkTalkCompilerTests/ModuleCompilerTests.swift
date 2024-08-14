@@ -150,10 +150,11 @@ struct ModuleCompilerTests {
 		// Get the actual code, not the synthesized main
 		let mainChunk = try #require(module.main?.getChunk(at: 0))
 		#expect(mainChunk.disassemble() == Instructions(
-			.op(.getStruct,  line: 8,  .struct(slot: 0)),
-			.op(.call,  line: 8,  .simple),
-			.op(.setModuleValue,line: 8,  .global(slot: 0)),
-			.op(.return, line: 0,  .simple)
+			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.call, line: 8, .simple),
+			.op(.setModuleValue, line: 8, .global(slot: 0)),
+			.op(.pop, line: 8, .simple),
+			.op(.return, line: 0, .simple)
 		))
 
 		let structDef = module.structs[0]
@@ -162,13 +163,12 @@ struct ModuleCompilerTests {
 		#expect(structDef.methods.count == 1)
 
 		let initChunk = structDef.methods[0]
-		initChunk.dump()
 		#expect(initChunk.disassemble() == Instructions(
-			.op(.constant,  line: 4,  .constant(.int(123))),
-			.op(.getLocal,  line: 4,  .local(slot: 0, name: "__reserved__")),
-			.op(.setProperty,  line: 4,  .property(slot: 0)),
-			.op(.return,  line: 4,  .simple),
-			.op(.return,  line: 6,  .simple)
+			.op(.constant, line: 4, .constant(.int(123))),
+			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
+			.op(.setProperty, line: 4, .property(slot: 0)),
+			.op(.return, line: 4, .simple),
+			.op(.return, line: 6, .simple)
 		))
 	}
 }

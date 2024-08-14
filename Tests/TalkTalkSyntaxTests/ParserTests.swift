@@ -95,6 +95,38 @@ struct TalkTalkParserTests {
 		#expect(ast.count == 2)
 	}
 
+	@Test("var/let decls") func varLetDecls() {
+		let a = parse("var foo = 123")[0].cast(VarDeclSyntax.self)
+		#expect(a.name == "foo")
+		#expect(a.typeDecl == nil)
+		#expect(a.value?.cast(LiteralExprSyntax.self).value == .int(123))
+
+		let b = parse("var foo: int")[0].cast(VarDeclSyntax.self)
+		#expect(b.name == "foo")
+		#expect(b.typeDecl == "int")
+		#expect(b.value == nil)
+
+		let c = parse("var foo: int = 123")[0].cast(VarDeclSyntax.self)
+		#expect(c.name == "foo")
+		#expect(c.typeDecl == "int")
+		#expect(c.value?.cast(LiteralExprSyntax.self).value == .int(123))
+
+		let d = parse("let foo = 123")[0].cast(LetDeclSyntax.self)
+		#expect(d.name == "foo")
+		#expect(d.typeDecl == nil)
+		#expect(d.value?.cast(LiteralExprSyntax.self).value == .int(123))
+
+		let e = parse("let foo: int")[0].cast(LetDeclSyntax.self)
+		#expect(e.name == "foo")
+		#expect(e.typeDecl == "int")
+		#expect(e.value == nil)
+
+		let f = parse("let foo: int = 123")[0].cast(LetDeclSyntax.self)
+		#expect(f.name == "foo")
+		#expect(f.typeDecl == "int")
+		#expect(f.value?.cast(LiteralExprSyntax.self).value == .int(123))
+	}
+
 	@Test("multiple statements") func multiple() {
 		let ast = parse("""
 		(1)
@@ -139,7 +171,7 @@ struct TalkTalkParserTests {
 			123
 			456
 		}
-		""")[0].cast(ExprStmtSyntax.self).expr as! WhileExpr
+		""")[0].cast(WhileStmtSyntax.self)
 		#expect(ast.condition.description == "i < 5")
 		#expect(ast.body.exprs[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}

@@ -45,9 +45,9 @@ struct VMEndToEndTests {
 		return (module, analyzed)
 	}
 
-	func run(_ strings: String..., verbose: Bool = false) throws -> TalkTalkBytecode.Value {
+	func run(_ strings: String..., verbosity: Verbosity = .quiet) throws -> TalkTalkBytecode.Value {
 		let module = try compile(strings)
-		return try VirtualMachine.run(module: module, verbose: verbose).get()
+		return try VirtualMachine.run(module: module, verbosity: verbosity).get()
 	}
 
 	func runAsync(_ strings: String...) throws {
@@ -56,7 +56,7 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Adds") func adds() throws {
-		#expect(try run("1 + 2", verbose: true) == .int(3))
+		#expect(try run("1 + 2") == .int(3))
 	}
 
 	@Test("Subtracts") func subtracts() throws {
@@ -145,16 +145,16 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
-		#expect(
-			try run(
-				"""
-				a10 = 10
-				b20 = 20
-				return func() {
-					c30 = 30
-					return a10 + b20 + c30
-				}()
-				""") == .int(60))
+		let source = """
+		a10 = 10
+		b20 = 20
+		return func() {
+			var c30 = 30
+			return a10 + b20 + c30
+		}()
+		"""
+		let result = try run(source)
+		#expect(result == .int(60))
 	}
 
 	@Test("Modify var from enclosing scope") func modifyEnclosing() throws {
@@ -169,23 +169,38 @@ struct VMEndToEndTests {
 				""") == .int(20))
 	}
 
-	@Test("Works with counter") func counter() throws {
-		#expect(
-			try run(
-				"""
-				func makeCounter() {
-					count = 0
-					func increment() {
-						count = count + 1
-						return count
-					}
-					return increment
-				}
+	@Test("Shadow var from enclosing scope") func shadowEnclosing() throws {
+		let result = try run(
+			"""
+			var a = 10
+			var b = func() {
+				var a = 20
+				return a
+			}()
+			return a + b
+			""")
+		#expect(result == .int(30))
+	}
 
-				mycounter = makeCounter()
-				mycounter()
-				return mycounter()
-				""", verbose: true) == .int(2))
+	@Test("Works with counter") func counter() throws {
+		let module = try compile(
+			"""
+			func makeCounter() {
+				var count = 0
+				func increment() {
+					count = count + 1
+					return count
+				}
+				return increment
+			}
+
+			var mycounter = makeCounter()
+			mycounter()
+			return mycounter()
+			""")
+
+		let result = try VirtualMachine.run(module: module).get()
+		#expect(result == .int(2))
 	}
 
 	@Test("Doesn't leak out of closures") func closureLeak() throws {
@@ -228,7 +243,8 @@ struct VMEndToEndTests {
 
 	@Test("Can run functions across modules") func crossModule() throws {
 		let (moduleA, analysisA) = try compile(
-			name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:])
+			name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:]
+		)
 		let (moduleB, _) = try compile(
 			name: "B",
 			[
@@ -273,7 +289,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbose: true).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct methods") func structMethods() throws {
@@ -382,22 +398,23 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbose: true).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("While loops") func whileLoops() throws {
 		let result = try run(
 			"""
-			i = 0
-			j = 0
+				i = 0
+				j = 0
 
-			while i < 5 {
-				i = i + 1
-				j = j + 1
-			}
+				while i < 5 {
+					i = i + 1
+					j = j + 1
+				}
 
-			return j
-		""", verbose: true)
+				return j
+			"""
+		)
 
 		#expect(
 			result == .int(5)

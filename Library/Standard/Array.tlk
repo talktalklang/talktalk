@@ -10,18 +10,31 @@ struct Array {
 	}
 
 	func append(item) {
+		if (self.count + 1) > self.capacity {
+			self.resize()
+		}
+
+		_storePtr(self._storage + self.count, item)
 		self.count = self.count + 1
-		_storePtr(self._storage, item)
 	}
 
 	func at(index) {
-		_deref(self._storage + index)
+		return _deref(self._storage + index)
 	}
 
 	func resize() {
 		newCapacity = self.capacity * 2
 		newStorage = _allocate(newCapacity)
 
+		i = 0
+		while i < self.count {
+			_storePtr(newStorage, self.at(i))
+			i = i + 1
+		}
 
+		_free(self._storage)
+
+		self._storage = newStorage
+		self.capacity = newCapacity
 	}
 }

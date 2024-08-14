@@ -22,7 +22,7 @@ struct ArrayTests: StandardLibraryTest {
 		a = Array()
 		a.append(123)
 		return a.count
-		""", verbose: true).get()
+		""").get()
 
 		#expect(result == .int(1))
 	}
@@ -35,5 +35,19 @@ struct ArrayTests: StandardLibraryTest {
 		""").get()
 
 		#expect(result == .int(123))
+	}
+
+	@Test("can add more than 4 items") func subscripts() async throws {
+		let result = try await run("""
+		a = Array()
+		a.append(1)
+		a.append(2)
+		a.append(3)
+		a.append(4)
+		a.append(5)
+		a.append(6)
+	""").get()
+
+		#expect(result == .int(6))
 	}
 }

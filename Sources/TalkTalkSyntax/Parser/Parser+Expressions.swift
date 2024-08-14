@@ -150,21 +150,6 @@ extension Parser {
 		return SyntaxError(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
-	mutating func whileExpr(_ canAssign: Bool) -> any Expr {
-		let i = startLocation()
-
-		guard let whileToken = consume(.while) else {
-			return error(at: current, "unreachable", expectation: .none)
-		}
-
-		skip(.newline)
-
-		let condition = parse(precedence: .assignment)
-		let body = blockExpr(canAssign)
-
-		return WhileExprSyntax(whileToken: whileToken, condition: condition, body: body, location: endLocation(i))
-	}
-
 	mutating func returning(_ canAssign: Bool) -> any Expr {
 		let i = startLocation()
 

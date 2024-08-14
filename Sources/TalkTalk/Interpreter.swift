@@ -189,7 +189,7 @@ public struct Interpreter: AnalyzedVisitor {
 		context.lookup(expr.name)
 	}
 
-	public func visit(_ expr: AnalyzedWhileExpr, _ context: Scope) throws -> Value {
+	public func visit(_ expr: AnalyzedWhileStmt, _ context: Scope) throws -> Value {
 		var lastResult: Value = .none
 		while try expr.conditionAnalyzed.accept(self, context) == .bool(true) {
 			lastResult = try visit(expr.bodyAnalyzed, context)

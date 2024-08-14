@@ -136,7 +136,7 @@ public struct ModuleAnalyzer {
 		return result
 	}
 
-	private func analyze(syntax: any Syntax, in module: AnalysisModule) throws -> [String: ModuleGlobal] {
+	private func analyze(syntax: any Syntax, in _: AnalysisModule) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
 
 		var syntax = syntax
@@ -147,6 +147,24 @@ public struct ModuleAnalyzer {
 		}
 
 		switch syntax {
+		case let syntax as VarDecl:
+			let analyzed = try visitor.visit(syntax, environment)
+
+			result[syntax.name] = ModuleValue(
+				name: syntax.name,
+				syntax: syntax,
+				typeID: analyzed.typeID,
+				source: .module
+			)
+		case let syntax as LetDecl:
+			let analyzed = try visitor.visit(syntax, environment)
+
+			result[syntax.name] = ModuleValue(
+				name: syntax.name,
+				syntax: syntax,
+				typeID: analyzed.typeID,
+				source: .module
+			)
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {

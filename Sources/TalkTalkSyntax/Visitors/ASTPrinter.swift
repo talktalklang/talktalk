@@ -178,7 +178,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any WhileExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any WhileStmt, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.condition.accept(self, context)
@@ -228,7 +228,11 @@ public struct ASTPrinter: Visitor {
 	}
 
 	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) throws -> String {
-		dump(expr, "name: \(expr.name), type: \(expr.typeDecl)")
+		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
+	}
+
+	@StringBuilder public func visit(_ expr: any LetDecl, _ context: Context) throws -> String {
+		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
 	}
 
 	@StringBuilder public func visit(_ expr: any ReturnExpr, _ context: Context) throws -> String {

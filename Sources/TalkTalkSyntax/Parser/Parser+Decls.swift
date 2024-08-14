@@ -34,16 +34,34 @@ public extension Parser {
 
 		let name = nameToken.lexeme
 
-		consume(.colon, "expected ':' after name")
+		var typeDecl: Token?
+		if didMatch(.colon) {
+			typeDecl = consume(.identifier, "expected type name after ':'")
+		}
 
-		guard let typeDecl = consume(.identifier)?.lexeme else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .type)
+		var value: (any Expr)? = nil
+		if didMatch(.equals) {
+			value = parse(precedence: .assignment)
 		}
 
 		if kind == .let {
-			return LetDeclSyntax(token: token, name: name, typeDecl: typeDecl, typeDeclToken: nameToken, location: endLocation(i))
+			return LetDeclSyntax(
+				token: token,
+				name: name,
+				typeDecl: typeDecl?.lexeme,
+				typeDeclToken: nameToken,
+				value: value,
+				location: endLocation(i)
+			)
 		} else {
-			return VarDeclSyntax(token: token, name: name, typeDecl: typeDecl, typeDeclToken: nameToken, location: endLocation(i))
+			return VarDeclSyntax(
+				token: token,
+				name: name,
+				typeDecl: typeDecl?.lexeme,
+				typeDeclToken: nameToken,
+				value: value,
+				location: endLocation(i)
+			)
 		}
 	}
 

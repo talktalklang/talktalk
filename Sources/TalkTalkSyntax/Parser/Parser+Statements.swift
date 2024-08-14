@@ -30,6 +30,18 @@ extension Parser {
 		)
 	}
 
+	mutating func whileStmt() -> any Expr {
+		let whileToken = previous!
+		let i = startLocation(at: whileToken)
+
+		skip(.newline)
+
+		let condition = parse(precedence: .assignment)
+		let body = blockExpr(false)
+
+		return WhileStmtSyntax(whileToken: whileToken, condition: condition, body: body, location: endLocation(i))
+	}
+
 	mutating func importStmt() -> any Syntax {
 		let importToken = previous!
 		let i = startLocation(at: importToken)

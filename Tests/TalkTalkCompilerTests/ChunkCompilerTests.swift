@@ -162,22 +162,23 @@ struct CompilerTests {
 		y
 		""", inModule: true)
 
-		chunk.dump()
+		#expect(chunk.disassemble() == Instructions(
+			.op(.constant, line: 0, .constant(.int(123))),
+			.op(.setModuleValue, line: 0, .global(slot: 0)),
+			.op(.pop, line: 0, .simple),
 
-		#expect(chunk.disassemble() == [
-			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
-			Instruction(opcode: .getModuleValue, offset: 5, line: 1, metadata: .global(slot: 0)),
+			.op(.getModuleValue, line: 1, .global(slot: 0)),
+			.op(.pop, line: 1, .simple),
 
-			Instruction(opcode: .pop, offset: 7, line: 1, metadata: .simple),
+			.op(.constant, line: 2, .constant(.int(456))),
+			.op(.setModuleValue, line: 2, .global(slot: 1)),
+			.op(.pop, line: 2, .simple),
 
-			Instruction(opcode: .constant, offset: 8, line: 2, metadata: .constant(.int(456))),
-			Instruction(opcode: .setModuleValue, offset: 10, line: 2, metadata: .global(slot: 1)),
-			Instruction(opcode: .getModuleValue, offset: 13, line: 3, metadata: .global(slot: 1)),
+			.op(.getModuleValue, line: 3, .global(slot: 1)),
+			.op(.pop, line: 3, .simple),
 
-			Instruction(opcode: .pop, offset: 15, line: 3, metadata: .simple),
-			Instruction(opcode: .return, offset: 16, line: 0, metadata: .simple),
-		])
+			.op(.return, line: 0, .simple)
+		))
 	}
 
 	@Test("while loops") func whileLoops() throws {
@@ -191,6 +192,7 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
 			.op(.setLocal, line: 0, .local(slot: 1, name: "i")),
+			.op(.pop, line: 0, .simple),
 
 			// Condition
 			.op(.constant, line: 1, .constant(.int(5))),
@@ -198,14 +200,19 @@ struct CompilerTests {
 			.op(.less, line: 1, .simple),
 
 			// Jump that skips the body if the condition isn't true
-			.op(.jumpUnless, line: 1, .jump(offset: 10)),
+			.op(.jumpUnless, line: 1, .jump(offset: 12)),
+
+			// Pop the condition
+			.op(.pop, line: 1, .simple),
 
 			// Body
 			.op(.constant, line: 2, .constant(.int(1))),
 			.op(.getLocal, line: 2, .local(slot: 1, name: "i")),
 			.op(.add, line: 2, .simple),
 			.op(.setLocal, line: 2, .local(slot: 1, name: "i")),
-			.op(.loop, line: 3, .loop(back: 18)),
+			.op(.pop, line: 2, .simple),
+			.op(.loop, line: 3, .loop(back: 20)),
+
 			.op(.pop, line: 1, .simple),
 			.op(.return, line: 0, .simple)
 		))
@@ -220,8 +227,6 @@ struct CompilerTests {
 		}
 		""")
 
-		chunk.dump()
-
 		#expect(chunk.disassemble() == Instructions(
 			// The condition
 			.op(.false, line: 0, .simple),
@@ -235,14 +240,12 @@ struct CompilerTests {
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 4)),
-			.op(.pop, line: 0, .simple),
+			.op(.jump, line: 2, .jump(offset: 3)),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),
 			.op(.pop, line: 3, .simple),
 
-			// return the result
 			.op(.return, line: 0, .simple)
 		))
 	}
@@ -257,15 +260,15 @@ struct CompilerTests {
 		let subchunk = chunk.getChunk(at: 0)
 
 		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0,  .closure(arity: 0, depth: 0)),
-			.op(.return,  line: 0,  .simple),
-			.op(.return,  line: 0,  .simple)
+			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
+			.op(.return, line: 0, .simple),
+			.op(.return, line: 0, .simple)
 		))
 
 		#expect(subchunk.disassemble() == Instructions(
-			.op(.constant,  line: 1,  .constant(.int(123))),
-			.op(.return,line: 1,  .simple),
-			.op(.return, line: 2,  .simple)
+			.op(.constant, line: 1, .constant(.int(123))),
+			.op(.return, line: 1, .simple),
+			.op(.return, line: 2, .simple)
 		))
 	}
 
@@ -277,10 +280,10 @@ struct CompilerTests {
 		""")
 
 		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0,  .closure(arity: 0, depth: 0)),
-			.op(.call,  line: 2,  .simple),
-			.op(.return,  line: 2,  .simple),
-			.op(.return,  line: 0,  .simple)
+			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
+			.op(.call, line: 2, .simple),
+			.op(.return, line: 2, .simple),
+			.op(.return, line: 0, .simple)
 		))
 	}
 
@@ -297,35 +300,26 @@ struct CompilerTests {
 		}
 		""")
 
-		chunk.getChunk(at: 1).dump()
-
 		let result = chunk.getChunk(at: 1).disassemble()
-		let expected = [
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
-			Instruction(opcode: .setLocal, offset: 2, line: 1, metadata: .local(slot: 1, name: "a")),
-
-			Instruction(opcode: .constant, offset: 4, line: 2, metadata: .constant(.int(456))),
-			Instruction(opcode: .setLocal, offset: 6, line: 2, metadata: .local(slot: 2, name: "b")),
-
-			Instruction(opcode: .defClosure, offset: 8, line: 3, metadata: .closure(arity: 0, depth: 1, upvalues: [.capturing(1), .capturing(2)])),
-			Instruction(opcode: .pop, offset: 14, line: 3, metadata: .simple),
-			Instruction(opcode: .return, offset: 15, line: 7, metadata: .simple),
-		]
-
-		let instructions = Instructions(
+		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+			.op(.pop, line: 1, .simple),
 
 			.op(.constant, line: 2, .constant(.int(456))),
 			.op(.setLocal, line: 2, .local(slot: 2, name: "b")),
+			.op(.pop, line: 2, .simple),
 
-			.op(.defClosure, line: 3, .closure(arity: 0, depth: 1, upvalues: [.capturing(1), .capturing(2)])),
+			.op(.defClosure, line: 3, .closure(
+				arity: 0,
+				depth: 1,
+				upvalues: [.capturing(1), .capturing(2)]
+			)),
 			.op(.pop, line: 3, .simple),
 			.op(.return, line: 7, .simple)
 		)
 
 		#expect(result == expected)
-		#expect(result == instructions)
 
 		let subchunk = chunk.getChunk(at: 1).getChunk(at: 0)
 		let subexpected = [
@@ -352,6 +346,7 @@ struct CompilerTests {
 		let expected = Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
+			.op(.pop, line: 0, .simple),
 			.op(.defClosure, line: 1, .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
 			.op(.pop, line: 1, .simple),
 			.op(.return, line: 0, .simple)
@@ -367,6 +362,7 @@ struct CompilerTests {
 			// Define 'b'
 			.op(.constant, line: 2, .constant(.int(456))),
 			.op(.setLocal, line: 2, .local(slot: 1, name: "b")),
+			.op(.pop, line: 2, .simple),
 
 			// Get 'b' to add to a
 			.op(.getLocal, line: 3, .local(slot: 1, name: "b")),

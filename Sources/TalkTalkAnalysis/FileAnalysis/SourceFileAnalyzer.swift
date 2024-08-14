@@ -490,16 +490,16 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any WhileExpr, _ context: Environment) throws
+	public func visit(_ expr: any WhileStmt, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		// TODO: Validate condition is bool
 		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
 		let body = try visit(expr.body, context.withNoAutoReturn()) as! AnalyzedBlockExpr
 
-		return AnalyzedWhileExpr(
+		return AnalyzedWhileStmt(
 			typeID: body.typeID,
-			expr: expr,
+			wrapped: expr,
 			conditionAnalyzed: condition,
 			bodyAnalyzed: body,
 			environment: context
@@ -812,13 +812,48 @@ public struct SourceFileAnalyzer: Visitor {
 		let type = context.type(named: expr.typeDecl)
 
 		if case .error(_) = type {
-			errors.append(.init(kind: .typeNotFound(expr.typeDecl), location: [expr.typeDeclToken]))
+			errors.append(
+				.init(
+					kind: .typeNotFound(expr.typeDecl ?? "<no type name>"),
+					location: [expr.typeDeclToken ?? expr.location.start]
+				)
+			)
+		}
+
+		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
+		if let value {
+			context.define(local: expr.name, as: value)
 		}
 
 		return AnalyzedVarDecl(
 			typeID: TypeID(type),
 			expr: expr,
 			analysisErrors: errors,
+			valueAnalyzed: value,
+			environment: context
+		)
+	}
+
+	public func visit(_ expr: any LetDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+		var errors: [AnalysisError] = []
+		let type = context.type(named: expr.typeDecl)
+
+		if case .error(_) = type {
+			errors.append(.init(kind: .typeNotFound(expr.typeDecl ?? "<no type name>"), location: [expr.typeDeclToken ?? expr.location.start]))
+		}
+
+		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
+		if let value {
+			if !context.isModuleScope {
+				context.define(local: expr.name, as: value)
+			}
+		}
+
+		return AnalyzedLetDecl(
+			typeID: TypeID(type),
+			expr: expr,
+			analysisErrors: errors,
+			valueAnalyzed: value,
 			environment: context
 		)
 	}

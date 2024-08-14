@@ -9,14 +9,17 @@ import TalkTalkSyntax
 
 public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public let typeID: TypeID
-	let expr: VarDecl
+	let expr: LetDecl
+	public var analysisErrors: [AnalysisError]
+	public var valueAnalyzed: (any AnalyzedExpr)?
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 
 	public var name: String { expr.name }
 	public var token: Token { expr.token }
-	public var typeDecl: String { expr.typeDecl }
-	public var typeDeclToken: Token { expr.typeDeclToken }
+	public var typeDecl: String? { expr.typeDecl }
+	public var typeDeclToken: Token? { expr.typeDeclToken }
+	public var value: (any Expr)? { expr.value }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

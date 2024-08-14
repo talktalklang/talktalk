@@ -77,6 +77,10 @@ public struct Parser {
 			return ifStmt()
 		}
 
+		if didMatch(.while) {
+			return whileStmt()
+		}
+
 		if didMatch(.struct) {
 			return structDecl()
 		}

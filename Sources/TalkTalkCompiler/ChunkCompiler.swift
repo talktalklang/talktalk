@@ -68,7 +68,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if expr.exprAnalyzed is AnalyzedDefExpr {
 			// Don't pop def expr values off because we might need the local var.
 			// TODO: This might want to be a different kind of statement instead of a special case.
-			return
+//			return
 		}
 
 		// Pop the expr off the stack because this is a statement so we don't care about the
@@ -147,9 +147,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 			module.valueInitializers[.value(variable.name)] = initializerChunk
 		}
 
-		if variable.setter == .setUpvalue {
-			chunk.emit(opcode: .pop, line: expr.location.line)
-		}
+//		if variable.setter == .setUpvalue {
+//			chunk.emit(opcode: .pop, line: expr.location.line)
+//		}
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ chunk: Chunk) throws {
@@ -331,7 +331,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedWhileExpr, _ chunk: Chunk) throws {
+	public func visit(_ expr: AnalyzedWhileStmt, _ chunk: Chunk) throws {
 		// This is where we return to if the condition is true
 		let loopStart = chunk.code.count
 
@@ -342,7 +342,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let exitJump = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
 
 		// Pop the condition off the stack
-//		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 
 		// Emit the body
 		try expr.bodyAnalyzed.accept(self, chunk)
@@ -353,6 +353,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Now that we know how long the body is (including the jump back), we can patch our jump
 		// with the location to jump to in the event that the condition is false
 		try chunk.patchJump(exitJump)
+
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedParamsExpr, _ chunk: Chunk) throws {
@@ -490,11 +492,23 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {
-		// No need to emit any code here because var decls are just used by the analyzer
+		if let value = expr.valueAnalyzed {
+			let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+
+			try value.accept(self, chunk)
+			chunk.emit(opcode: variable.setter, line: value.location.line)
+			chunk.emit(byte: variable.slot, line: value.location.line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedLetDecl, _ chunk: Chunk) throws {
-		// No need to emit any code here because let decls are just used by the analyzer
+		let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+
+		if let value = expr.valueAnalyzed {
+			try value.accept(self, chunk)
+			chunk.emit(opcode: .setLocal, line: value.location.line)
+			chunk.emit(byte: variable.slot, line: value.location.line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedIfStmt, _ chunk: Chunk) throws {
@@ -520,7 +534,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Fill in the initial placeholder bytes now that we know how big the consequence block was
 		try chunk.patchJump(thenJumpLocation)
 		// Pop the condition off the stack (TODO: why again?)
-		chunk.emit(opcode: .pop, line: expr.conditionAnalyzed.location.line)
+//		chunk.emit(opcode: .pop, line: expr.conditionAnalyzed.location.line)
 
 		// Emit the alternative block
 		if let alternativeAnalyzed = expr.alternativeAnalyzed {
@@ -544,12 +558,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// for that variable. If we don't, search parent chunks to see if they've got it. If
 	// they do, we've got an upvalue.
 	public func resolveVariable(receiver: any Syntax, chunk: Chunk) -> Variable? {
-		if let syntax = receiver as? VarExpr {
-			let name = syntax.name
+		var varName: String?
 
-			if name == "self" {
+		if let syntax = receiver as? VarExpr {
+			varName = syntax.name
+		} else if let syntax = receiver as? VarDecl {
+			varName = syntax.name
+		}
+
+		if let varName {
+			if varName == "self" {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: 0,
 					depth: scopeDepth,
 					isCaptured: false,
@@ -558,9 +578,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = resolveLocal(named: name) {
+			if let slot = resolveLocal(named: varName) {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: slot,
 					depth: scopeDepth,
 					isCaptured: false,
@@ -569,9 +589,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = resolveUpvalue(named: name, chunk: chunk) {
+			if let slot = resolveUpvalue(named: varName, chunk: chunk) {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: slot,
 					depth: scopeDepth,
 					isCaptured: false,
@@ -580,9 +600,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = resolveModuleFunction(named: name) {
+			if let slot = resolveModuleFunction(named: varName) {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: slot,
 					depth: scopeDepth,
 					isCaptured: false,
@@ -591,9 +611,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = resolveModuleValue(named: name) {
+			if let slot = resolveModuleValue(named: varName) {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: slot,
 					depth: scopeDepth,
 					isCaptured: false,
@@ -602,9 +622,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = resolveStruct(named: name) {
+			if let slot = resolveStruct(named: varName) {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: slot,
 					depth: scopeDepth,
 					isCaptured: false,
@@ -613,7 +633,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let builtinStruct = BuiltinStruct.lookup(name: name) {
+			if let builtinStruct = BuiltinStruct.lookup(name: varName) {
 				return Variable(
 					name: builtinStruct.name,
 					slot: builtinStruct.slot(),
@@ -624,9 +644,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == name }) {
+			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == varName }) {
 				return Variable(
-					name: name,
+					name: varName,
 					slot: Byte(slot),
 					depth: scopeDepth,
 					isCaptured: false,

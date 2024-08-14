@@ -38,7 +38,6 @@ extension Token.Kind {
 		// prefix ops
 		case .if: .init({ $0.ifExpr($1) }, nil, .none)
 		case .identifier: .init({ $0.variable($1) }, nil, .none)
-		case .while: .init({ $0.whileExpr($1) }, nil, .none)
 		case .return: .init({ $0.returning($1) }, nil, .none)
 		// Binary ops
 		case .equalEqual: .init(nil, { $0.binary($1, $2) }, .equality)
@@ -69,6 +68,7 @@ extension Token.Kind {
 		case .call: .none
 		case .comma: .none
 		case .builtin: .none
+		case .while: .none
 		case .var: .none
 		case .let: .none
 		case .colon: .none
