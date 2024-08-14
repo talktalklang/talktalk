@@ -29,9 +29,41 @@ struct CompleterTests {
 		p
 		""")
 
-		try #expect(completer.completions(at: .init(line: 8, character: 1)).sorted() == [
+		try #expect(completer.completions(
+			from: .init(
+				position: .init(line: 8, character: 1),
+				textDocument: .init(uri: "", version: nil, text: nil),
+				context: .init(triggerKind: .character, triggerCharacter: nil)
+			)
+		).sorted() == [
 			CompletionItem(label: "person", kind: .variable),
 			CompletionItem(label: "pet", kind: .variable)
+		].sorted())
+	}
+
+	@Test("Completes members") func members() throws {
+		let completer = complete("""
+		struct Person {
+			var age: int
+			var code: int
+
+			func greet() {}
+		}
+
+		var person = Person()
+		person.
+		""")
+
+		try #expect(completer.completions(
+			from: .init(
+				position: .init(line: 8, character: 1),
+				textDocument: .init(uri: "", version: nil, text: nil),
+				context: .init(triggerKind: .character, triggerCharacter: ".")
+			)
+		).sorted() == [
+			CompletionItem(label: "age", kind: .property),
+			CompletionItem(label: "code", kind: .property),
+			CompletionItem(label: "greet", kind: .method),
 		].sorted())
 	}
 }

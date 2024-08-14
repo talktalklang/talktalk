@@ -12,6 +12,7 @@ struct TextDocumentCompletionRequest: Decodable {
 
 	struct Context: Decodable {
 		let triggerKind: TriggerKind
+		let triggerCharacter: String?
 	}
 
 	let position: Position

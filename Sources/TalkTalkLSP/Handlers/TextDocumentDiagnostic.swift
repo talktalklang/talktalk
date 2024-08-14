@@ -34,6 +34,8 @@ extension AnalysisError {
 			return "Unknown type: \(name)"
 		case let .unknownError(message):
 			return message
+		case let .noMemberFound(receiver: receiver, property: property):
+			return "No property named '\(property)' for \(receiver)"
 		}
 	}
 }

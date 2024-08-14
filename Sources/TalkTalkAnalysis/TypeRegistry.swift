@@ -19,7 +19,7 @@ final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 		lhs.current == rhs.current
 	}
 	
-	var current: ValueType
+	public var current: ValueType
 
 	public init(_ initial: ValueType = .placeholder(0)) {
 		self.current = initial

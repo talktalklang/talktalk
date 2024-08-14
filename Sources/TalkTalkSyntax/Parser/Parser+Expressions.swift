@@ -273,7 +273,13 @@ extension Parser {
 		consume(.dot)
 
 		guard let member = consume(.identifier, "expected identifier for property access") else {
-			return error(at: current, "expected identifier for property access", expectation: .member)
+			_ = error(at: current, "expected identifier for property access", expectation: .member)
+			return MemberExprSyntax(
+				receiver: lhs,
+				property: "",
+				propertyToken: .synthetic(.identifier),
+				location: endLocation(i)
+			)
 		}
 
 		if check(.equals), canAssign {

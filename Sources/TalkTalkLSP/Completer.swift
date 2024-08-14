@@ -8,7 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
-struct Completer {
+class Completer {
 	var source: String
 	var lastSuccessfulExprs: [any AnalyzedSyntax] = []
 
@@ -17,7 +17,7 @@ struct Completer {
 		parse()
 	}
 
-	mutating func parse() {
+	func parse() {
 		let lexer = TalkTalkLexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
@@ -36,8 +36,6 @@ struct Completer {
 		for expr in exprs {
 			if expr.location.contains(position) {
 				result.append(expr)
-			} else {
-				Log.info("\(expr.description) does not include \(position)")
 			}
 
 			result.append(contentsOf: matching(position: position, exprs: expr.analyzedChildren))
@@ -46,14 +44,52 @@ struct Completer {
 		return result
 	}
 
-	public func completions(at position: Position) throws -> [CompletionItem] {
+	public func completions(from request: TextDocumentCompletionRequest) throws -> [CompletionItem] {
+		if let char = request.context.triggerCharacter, char == "." {
+			return dotCompletions(at: request.position)
+		}
+
+		return localCompletions(at: request.position)
+	}
+
+	func dotCompletions(at position: Position) -> [CompletionItem] {
+		var result: [CompletionItem] = []
+		let matches = matching(position: position, exprs: lastSuccessfulExprs)
+
+		// Try to figure out the receiver of the member access
+		for match in matches {
+			guard let match = match as? AnalyzedExprStmt,
+						let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
+						case let .instance(instance) = memberExpr.receiverAnalyzed.typeID.current,
+						case let .struct(name) = instance.ofType,
+						let structType = match.environment.lookupStruct(named: name) else {
+				continue
+			}
+
+			result.append(contentsOf: structType.properties.reduce(into: []) { res, prop in
+				if prop.key.starts(with: memberExpr.property) {
+					res.append(.init(label: prop.key, kind: .property))
+				}
+			})
+
+			result.append(contentsOf: structType.methods.reduce(into: []) { res, prop in
+				if prop.key.starts(with: memberExpr.property), prop.key != "init" {
+					res.append(.init(label: prop.key, kind: .method))
+				}
+			})
+		}
+
+		return result
+	}
+
+	func localCompletions(at position: Position) -> [CompletionItem] {
 		var result: [CompletionItem] = []
 		let matches = matching(position: position, exprs: lastSuccessfulExprs)
 
 		for match in matches {
 			if let errorSyntax = match.as(AnalyzedErrorSyntax.self) {
 				let text = errorSyntax.location.start.lexeme
-				for binding in errorSyntax.environment.bindings {
+				for binding in errorSyntax.environment.allBindings() {
 					if binding.name.starts(with: text) {
 						let kind: CompletionItemKind = switch binding.type.type() {
 						case .function(_, _, _, _):
@@ -69,7 +105,6 @@ struct Completer {
 				}
 			}
 		}
-
 		return result
 	}
 }

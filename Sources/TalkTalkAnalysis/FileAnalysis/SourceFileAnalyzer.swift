@@ -256,22 +256,23 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
-		guard let member else {
-			return error(
-				at: expr,
-				"No property '\(propertyName)' found for \(receiver)",
-				environment: context,
-				expectation: .member
+		var errors: [AnalysisError] = []
+		if member == nil {
+			errors.append(
+				.init(
+					kind: .noMemberFound(receiver: receiver, property: propertyName),
+					location: receiver.location
+				)
 			)
 		}
 
 		return AnalyzedMemberExpr(
-			typeID: member.typeID,
+			typeID: member?.typeID ?? TypeID(.error("no member found")),
 			expr: expr,
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			memberAnalyzed: member,
-			analysisErrors: []
+			memberAnalyzed: member ?? error(at: expr, "no member found", environment: context, expectation: .member),
+			analysisErrors: errors
 		)
 	}
 
