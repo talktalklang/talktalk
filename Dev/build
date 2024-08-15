@@ -1,0 +1,4 @@
+#!/bin/sh
+
+swift build --configuration release
+cp .build/release/talk .
