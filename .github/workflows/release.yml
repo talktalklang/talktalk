@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-    - uses: khlopko/setup-swift
+    - uses: khlopko/setup-swift@snapshots-support
       with:
         swift-version: "main-snapshot"
     - uses: actions/checkout@v4
