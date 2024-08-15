@@ -11,6 +11,8 @@ jobs:
     runs-on: macos-latest
     steps:
     - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         swift-version: "main-snapshot"
     - uses: actions/checkout@v4
@@ -51,4 +53,4 @@ jobs:
         AC_PROVIDER: ${{ secrets.AC_PROVIDER }}
         AC_APPLICATION_IDENTITY: ${{ secrets.AC_APPLICATION_IDENTITY }}
       run: |
-        gon Dev/gon.hcl
+        gon gon.hcl
