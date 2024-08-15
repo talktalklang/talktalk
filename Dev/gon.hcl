@@ -1,4 +1,4 @@
-source = ["./talk"]
+source = ["./Release/talk"]
 bundle_id = "sh.talktalk"
 
 sign {
