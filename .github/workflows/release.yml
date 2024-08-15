@@ -8,17 +8,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container:
-      image: swiftlang/swift:nightly-jammy
+    runs-on: macos-latest
     steps:
+    - uses: khlopko/setup-swift
+      with:
+        swift-version: "main-snapshot"
     - uses: actions/checkout@v4
-    - name: Build standard library
-      run: swift run talk compile module Library/Standard
-    - name: Install curl
-      run:  apt-get -y update; apt-get -y install curl
-    - name: Install brew
-      run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     - name: Install gon
       run: brew install Bearer/tap/gon
     - name: Write version file
