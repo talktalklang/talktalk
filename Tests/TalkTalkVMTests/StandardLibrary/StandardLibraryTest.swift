@@ -23,24 +23,22 @@ extension StandardLibraryTest {
 		moduleEnvironment: [String: Module] = [:],
 		verbosity: Verbosity = .quiet
 	) async throws -> VirtualMachine.ExecutionResult {
+		let stdlib = try await StandardLibrary.compile()
+		var moduleEnvironment = moduleEnvironment
+		moduleEnvironment["Standard"] = stdlib.module
+
 		let files: [ParsedSourceFile] = [.tmp(input)]
 		let analyzer = ModuleAnalyzer(
 			name: "StdLibTest",
 			files: files,
-			moduleEnvironment: analysisEnvironment
+			moduleEnvironment: analysisEnvironment,
+			importedModules: [stdlib.analysis]
 		)
 		let analyzed = try analyzer.analyze()
 
 		if !analyzer.errors.isEmpty {
 			throw CompilerError.analysisError(analyzer.errors.map { "\($0)" }.joined(separator: ", "))
 		}
-
-		// The Driver normally does this part but since we're not using it in here, we need
-		// to add the stdlib
-		var moduleEnvironment = moduleEnvironment
-		let driver = Driver(directories: [Library.standardLibraryURL])
-		let stdlib = try await driver.compile()["Standard"]!.module
-		moduleEnvironment["Standard"] = stdlib
 
 		let module = try ModuleCompiler(
 			name: "StdLibTest",

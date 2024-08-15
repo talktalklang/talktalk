@@ -76,7 +76,7 @@ public struct VirtualMachine {
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
-		stack.push(.data(-1))
+		stack.push(.reserved)
 
 		let frame = CallFrame(
 			closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [],
@@ -189,13 +189,22 @@ public struct VirtualMachine {
 				let lhsValue = stack.pop()
 				let rhsValue = stack.pop()
 
-				if let lhs = lhsValue.intValue, let rhs = rhsValue.intValue {
+				switch (lhsValue, rhsValue) {
+				case let (.int(lhs), .int(rhs)):
 					stack.push(.int(lhs + rhs))
-				} else if case .pointer(let base, let offset) = lhsValue,
-				          let rhs = rhsValue.intValue
-				{
+				case let (.pointer(base, offset), .int(rhs)):
 					stack.push(.pointer(base, offset + rhs))
-				} else {
+				case let (.data(lhs), .data(rhs)):
+					let lhs = chunk.data[Int(lhs)]
+					let rhs = chunk.data[Int(rhs)]
+
+					guard lhs.kind == .string, lhs.kind == .string else {
+						return runtimeError("Cannot add two data operands: \(lhs), \(rhs)")
+					}
+
+					let addr = heap.allocate(count: lhs.bytes.count + rhs.bytes.count)
+					stack.push(.pointer(.init(addr), 0))
+				default:
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
 			case .subtract:
@@ -248,8 +257,8 @@ public struct VirtualMachine {
 				}
 				stack.push(.bool(lhs >= rhs))
 			case .data:
-				let offset = stack.pop()
-				stack.push(offset)
+				let slot = readByte()
+				stack.push(.data(.init(slot)))
 			case .pop:
 				stack.pop()
 			case .loop:
@@ -354,6 +363,9 @@ public struct VirtualMachine {
 				stack.push(.builtinStruct(.init(slot)))
 			case .setBuiltinStruct:
 				return runtimeError("Cannot set built in")
+			case .cast:
+				let slot = readByte()
+				call(structValue: .init(slot))
 			case .getStruct:
 				let slot = readByte()
 				stack.push(.struct(.init(slot)))
@@ -397,6 +409,11 @@ public struct VirtualMachine {
 				default:
 					return runtimeError("Receiver is not an instance of a struct")
 				}
+			case .is:
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				checkType(instance: lhs, type: rhs)
 			case .setProperty:
 				let slot = readByte()
 				let instance = stack.peek()
@@ -411,6 +428,10 @@ public struct VirtualMachine {
 				()
 			}
 		}
+	}
+
+	func checkType(instance: Value, type: Value) {
+		()
 	}
 
 	mutating func call(_ callee: Value) {
@@ -576,7 +597,18 @@ public struct VirtualMachine {
 
 		switch builtin {
 		case .print:
-			print(stack.peek())
+			let value = stack.peek()
+			switch value {
+			case .data(let intValue):
+				// Not loving the special casing here..
+				let data = chunk.data[Int(intValue)]
+				switch data.kind {
+				case .string:
+					print(String(data: Data(data.bytes), encoding: .utf8)!)
+				}
+			default:
+				print(value)
+			}
 		case ._allocate:
 			if case .int(let count) = stack.pop() { // Get the capacity
 				let address = heap.allocate(count: Int(count))

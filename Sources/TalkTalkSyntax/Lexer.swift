@@ -21,7 +21,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		case `func`, `true`, `false`, `return`,
 				 `if`, `in`, call, `else`,
 				 `while`, `var`, `let`, initialize,
-				 `struct`, `self`, `Self`, `import`
+				 `struct`, `self`, `Self`, `import`, `is`
 
 		case newline
 		case eof
@@ -160,6 +160,7 @@ public struct TalkTalkLexer {
 		case "false": make(.false)
 		case "if": make(.if)
 		case "else": make(.else)
+		case "is": make(.is)
 		case "in": make(.in)
 		case "call": make(.call)
 		case "while": make(.while)

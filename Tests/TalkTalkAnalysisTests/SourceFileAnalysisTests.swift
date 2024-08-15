@@ -48,6 +48,10 @@ struct AnalysisTests {
 		#expect(ast("123").typeAnalyzed == .int)
 	}
 
+	@Test("Types string literals") func strings() {
+		#expect(ast(#""hello world""#).typeAnalyzed == .instance(.struct("String")))
+	}
+
 	@Test("Types add") func add() {
 		#expect(ast("1 + 2").typeAnalyzed == .int)
 	}

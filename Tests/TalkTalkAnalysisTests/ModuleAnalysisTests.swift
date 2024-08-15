@@ -18,7 +18,8 @@ struct ModuleAnalysisTests {
 		try! ModuleAnalyzer(
 			name: name,
 			files: files,
-			moduleEnvironment: moduleEnvironment
+			moduleEnvironment: moduleEnvironment,
+			importedModules: []
 		).analyze()
 	}
 

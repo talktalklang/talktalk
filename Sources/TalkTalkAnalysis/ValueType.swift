@@ -39,7 +39,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 
 	case none,
 			 // primitives
-			 int, string, bool,
+			 int, bool, byte,
 			 // pointer to a spot on the "heap"
 			 pointer,
 			 // function name, return type, param types, captures
@@ -57,6 +57,8 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 
 	public var description: String {
 		switch self {
+		case .byte:
+			return "byte"
 		case .int:
 			return "int"
 		case let .function(name, returnType, args, captures):
@@ -80,8 +82,6 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 			return "struct instance value \(structType)"
 		case let .generic(owner, name):
 			return "\(owner.description)<\(name)>"
-		case .string:
-			return "string"
 		case .pointer:
 			return "pointer"
 		case .any:

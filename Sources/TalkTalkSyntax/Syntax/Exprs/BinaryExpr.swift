@@ -15,7 +15,8 @@ public enum BinaryOperator: String {
 			 greaterEqual = ">=",
 			 minus = "-",
 			 star = "*",
-			 slash = "/"
+			 slash = "/",
+			 `is` = "is"
 }
 
 public protocol BinaryExpr: Expr {

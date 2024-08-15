@@ -326,7 +326,15 @@ public struct SourceFileAnalyzer: Visitor {
 		case .none:
 			TypeID(.none)
 		case .string:
-			TypeID(.string)
+			TypeID(.instance(.struct("String")))
+		}
+
+		if typeID.current == .instance(.struct("String")) {
+			assert(context.lookupStruct(named: "String") != nil)
+		}
+
+		if typeID.current == .instance(.struct("Int")) {
+			assert(context.lookupStruct(named: "Int") != nil)
 		}
 
 		return AnalyzedLiteralExpr(
@@ -360,10 +368,10 @@ public struct SourceFileAnalyzer: Visitor {
 		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
-		infer(lhs, rhs, as: .int, in: env)
+		infer(lhs, rhs, as: lhs.typeID.current, in: env)
 
 		return AnalyzedBinaryExpr(
-			typeID: TypeID(.int),
+			typeID: lhs.typeID,
 			expr: expr,
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
@@ -446,10 +454,6 @@ public struct SourceFileAnalyzer: Visitor {
 			params.paramsAnalyzed.map { .init(name: $0.name, typeID: $0.typeID) },
 			innerEnvironment.captures.map(\.name)
 		)
-
-		if expr.name?.lexeme == "bar" {
-
-		}
 
 		let funcExpr = AnalyzedFuncExpr(
 			type: TypeID(analyzed),

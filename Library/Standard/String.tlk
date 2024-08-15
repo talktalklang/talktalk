@@ -2,8 +2,7 @@
 struct String {
 	var _storage: pointer
 
-	init(chars: Array<int>) {
-		_storage = _allocate(1)
-		_storePtr(_storage, chars)
+	init(pointer: pointer) {
+		self._storage = pointer
 	}
 }

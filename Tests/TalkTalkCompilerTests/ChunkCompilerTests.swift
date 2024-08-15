@@ -71,7 +71,12 @@ struct CompilerTests {
 	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
 		let parsed = try Parser.parse(string)
 		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init())
-		let analysisModule = inModule ? try! ModuleAnalyzer(name: "CompilerTests", files: [.tmp(string)], moduleEnvironment: [:]).analyze() : .empty("CompilerTests")
+		let analysisModule = inModule ? try! ModuleAnalyzer(
+			name: "CompilerTests",
+			files: [.tmp(string)],
+			moduleEnvironment: [:],
+			importedModules: []
+		).analyze() : .empty("CompilerTests")
 		var compiler = SourceFileCompiler(name: "CompilerTests", analyzedSyntax: analyzed)
 		return try compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:]))
 	}
@@ -113,32 +118,6 @@ struct CompilerTests {
 		]
 
 		#expect(chunk.disassemble() == instructions)
-	}
-
-	@Test("Static string") func staticString() throws {
-		let chunk = try compile("""
-		"hello "
-		"world"
-		""")
-
-		var string1 = "hello ".utf8CString
-		let pointer1 = string1.withUnsafeMutableBufferPointer { $0 }
-
-		var string2 = "world".utf8CString
-		let pointer2 = string2.withUnsafeMutableBufferPointer { $0 }
-
-		chunk.data = Object.string(pointer1).bytes + Object.string(pointer2).bytes
-
-		let result = chunk.disassemble()
-		let expected = [
-			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .data(0))),
-			Instruction(opcode: .pop, offset: 2, line: 0, metadata: .simple),
-			Instruction(opcode: .constant, offset: 3, line: 1, metadata: ConstantMetadata(value: .data(8))),
-			Instruction(opcode: .pop, offset: 5, line: 1, metadata: .simple),
-			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple),
-		]
-
-		#expect(result == expected)
 	}
 
 	@Test("Def expr") func defExpr() throws {

@@ -21,7 +21,10 @@ struct VMEndToEndTests {
 
 	func compile(_ strings: [String]) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
-			name: "E2E", files: strings.map { .tmp($0) }, moduleEnvironment: [:]
+			name: "E2E",
+			files: strings.map { .tmp($0) },
+			moduleEnvironment: [:],
+			importedModules: []
 		).analyze()
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
 		return try compiler.compile(mode: .executable)
@@ -36,8 +39,13 @@ struct VMEndToEndTests {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in
 			res[tup.key] = analysisEnvironment[tup.key]
 		}
-		let analyzed = try ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis)
-			.analyze()
+
+		let analyzed = try ModuleAnalyzer(
+			name: name,
+			files: files,
+			moduleEnvironment: analysis,
+			importedModules: []
+		).analyze()
 
 		let module = try ModuleCompiler(
 			name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment
@@ -97,6 +105,10 @@ struct VMEndToEndTests {
 
 	@Test("Strings") func strings() throws {
 		#expect(try run(#""hello world""#) == .data(0))
+	}
+
+	@Test("is check") func isCheck() throws {
+		try #expect(run("123 is Int") == .bool(true))
 	}
 
 	@Test("If expr") func ifExpr() throws {

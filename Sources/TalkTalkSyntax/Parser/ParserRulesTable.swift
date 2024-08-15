@@ -50,6 +50,8 @@ extension Token.Kind {
 		case .less,
 		     .greater: .init(nil, { $0.binary($1, $2) }, .comparison)
 		case .dot: .init(nil, { $0.dot($1, $2) }, .call)
+		case .is: .init(nil, { $0.binary($1, $2) }, .call)
+
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
 		case .struct: .init({ $0.structExpr($1) }, nil, .none)

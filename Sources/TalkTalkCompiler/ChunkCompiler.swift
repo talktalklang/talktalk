@@ -40,7 +40,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func endScope(chunk: Chunk) {
-		for i in 0..<locals.count {
+		for i in 0 ..< locals.count {
 			let local = locals[locals.count - i - 1]
 			if local.depth <= scopeDepth { break }
 
@@ -54,12 +54,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// This gets handled by VarExpr
 	}
 
-	public func visit(_ expr: AnalyzedExprStmt, _ chunk: Chunk) throws -> Void {
+	public func visit(_ expr: AnalyzedExprStmt, _ chunk: Chunk) throws {
 		// Visit the actual expr
 		try expr.exprAnalyzed.accept(self, chunk)
 
 		if let funcExpr = expr.exprAnalyzed as? AnalyzedFuncExpr,
-			 funcExpr.name != nil {
+		   funcExpr.name != nil
+		{
 			// Don't pop named functions off the stack because we might need to reference
 			// their name.
 			return
@@ -176,10 +177,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 		case .bool(let bool):
 			chunk.emit(opcode: bool ? .true : .false, line: expr.location.line)
 		case .string(let string):
-			var string = string.utf8CString
-			string.withUnsafeMutableBufferPointer {
-				chunk.emit(data: Object.string($0).bytes, line: expr.location.line)
-			}
+			// Get the bytes
+			chunk.emit(
+				data: StaticData(kind: .string, bytes: string.utf8),
+				line: expr.location.line
+			)
+
+			// Cast to type
+			chunk.emit(opcode: .cast, line: expr.location.line)
+			chunk.emit(byte: resolveStruct(named: "String")!, line: expr.location.line)
 		case .none:
 			chunk.emit(opcode: .none, line: expr.location.line)
 		}
@@ -212,6 +218,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			case .minus: .subtract
 			case .star: .multiply
 			case .slash: .divide
+			case .is: .is
 			}
 
 		try expr.rhsAnalyzed.accept(self, chunk)
@@ -260,7 +267,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let symbol: Symbol = .method(structName, "init", expr.parameters.params.map(\.name))
 		let initChunk = Chunk(
 			name: symbol.description, parent: chunk, arity: Byte(expr.parameters.count),
-			depth: Byte(scopeDepth))
+			depth: Byte(scopeDepth)
+		)
 		let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		// Define the actual params for this initializer
@@ -286,7 +294,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
 		let functionChunk = Chunk(
 			name: expr.name?.lexeme ?? expr.autoname, parent: chunk,
-			arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth))
+			arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth)
+		)
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		if let name = expr.name {
@@ -390,7 +399,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedTypeExpr, _ chunk: Chunk) throws -> Void {
+	public func visit(_ expr: AnalyzedTypeExpr, _ chunk: Chunk) throws {
 		if let slot = resolveStruct(named: expr.identifier.lexeme) {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(byte: slot, line: expr.location.line)
@@ -422,12 +431,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description, parent: chunk, arity: Byte(decl.parameters.count),
-					depth: Byte(scopeDepth))
+					depth: Byte(scopeDepth)
+				)
 
 				// Define the actual params for this initializer
 				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
 					_ = declCompiler.defineLocal(
-						name: parameter.name, compiler: declCompiler, chunk: declChunk)
+						name: parameter.name, compiler: declCompiler, chunk: declChunk
+					)
 				}
 
 				// Emit the init body
@@ -450,7 +461,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description, parent: chunk, arity: Byte(decl.params.count),
-					depth: Byte(scopeDepth))
+					depth: Byte(scopeDepth)
+				)
 
 				// Define the params for this function
 				for parameter in decl.analyzedParams.paramsAnalyzed {
@@ -491,7 +503,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		module.structs[.struct(name)] = structType
 	}
 
-	public func visit(_ expr: AnalyzedGenericParams, _ context: Chunk) throws -> Void {
+	public func visit(_ expr: AnalyzedGenericParams, _ context: Chunk) throws {
 		// No need to emit any code here because generic params are just used by the analyzer... for now?
 	}
 

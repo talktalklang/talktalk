@@ -9,6 +9,10 @@ import TalkTalkBytecode
 
 public extension VirtualMachine {
 	enum ExecutionResult: Sendable {
+		public enum ReturnValue {
+			case primitive(Value), object(StructInstance)
+		}
+
 		enum Error: Swift.Error {
 			case error(String)
 		}

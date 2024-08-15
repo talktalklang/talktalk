@@ -22,7 +22,7 @@ struct ModuleTests {
 		moduleEnvironment: [String: Module] = [:]
 	) -> (Module, AnalysisModule) {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
-		let analyzed = try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis).analyze()
+		let analyzed = try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis, importedModules: Array(analysis.values)).analyze()
 		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
 		return (module, analyzed)
 	}

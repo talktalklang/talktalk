@@ -324,6 +324,7 @@ extension Parser {
 		case .lessEqual: .lessEqual
 		case .greater: .greater
 		case .greaterEqual: .greaterEqual
+		case .is: .is
 		default:
 			fatalError("unreachable")
 		}

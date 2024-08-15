@@ -14,31 +14,22 @@ import TalkTalkSyntax
 struct Pipeline {
 	let compilationUnit: CompilationUnit
 	let mode: CompilationMode
-	let isBootstrap: Bool
+	let analyses: [String: AnalysisModule]
+	let modules: [String: Module]
 
 	public init(
 		compilationUnit: CompilationUnit,
 		mode: CompilationMode = .module,
-		isBootstrap: Bool = false) {
+		analyses: [String: AnalysisModule],
+		modules: [String: Module]
+	) {
 		self.compilationUnit = compilationUnit
 		self.mode = mode
-		self.isBootstrap = isBootstrap
+		self.analyses = analyses
+		self.modules = modules
 	}
 
 	func run() async throws -> CompilationResult {
-		let moduleEnvironment: [String: Module]
-
-		if !isBootstrap {
-			let driver = Driver(
-				directories: [Library.standardLibraryURL],
-				isBootstrap: true
-			)
-			let stdlib = try await driver.compile()["Standard"]!
-			moduleEnvironment = ["Standard": stdlib.module]
-		} else {
-			moduleEnvironment = [:]
-		}
-
 		let sourceFiles = try compilationUnit.files.map {
 			try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
 		}
@@ -50,13 +41,14 @@ struct Pipeline {
 		let analysisModule = try ModuleAnalyzer(
 			name: compilationUnit.name,
 			files: parsedSourceFiles,
-			moduleEnvironment: [:]
+			moduleEnvironment: analyses,
+			importedModules: Array(analyses.values)
 		).analyze()
 
 		let module = try ModuleCompiler(
 			name: compilationUnit.name,
 			analysisModule: analysisModule,
-			moduleEnvironment: moduleEnvironment
+			moduleEnvironment: modules
 		).compile(mode: mode)
 
 		return CompilationResult(module: module, analysis: analysisModule)

@@ -90,7 +90,8 @@ struct Request: Equatable, Codable {
 				.initialized,
 				.shutdown,
 				.textDocumentDidClose,
-				.workspaceSemanticTokensRefresh:
+				.workspaceSemanticTokensRefresh,
+				.cancelRequest:
 			nil
 		}
 	}

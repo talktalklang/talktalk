@@ -26,6 +26,8 @@ public struct Server {
 			()
 		case .textDocumentDidClose:
 			()
+		case .cancelRequest:
+			()
 		case .textDocumentDidOpen:
 			TextDocumentDidOpen(request: request).handle(&self)
 		case .textDocumentDidChange:

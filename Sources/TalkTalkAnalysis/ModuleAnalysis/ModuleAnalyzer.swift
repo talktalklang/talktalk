@@ -18,12 +18,12 @@ public struct ModuleAnalyzer {
 	let environment: Environment
 	let visitor: SourceFileAnalyzer
 	let moduleEnvironment: [String: AnalysisModule]
-	let library: AnalysisLibrary?
 
 	public init(
 		name: String,
 		files: [ParsedSourceFile],
-		moduleEnvironment: [String: AnalysisModule]
+		moduleEnvironment: [String: AnalysisModule],
+		importedModules: [AnalysisModule]
 	) {
 		self.name = name
 		self.files = files
@@ -31,10 +31,8 @@ public struct ModuleAnalyzer {
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 
-		if name != "Standard" {
-			self.library = AnalysisLibrary()
-		} else {
-			self.library = nil
+		for module in importedModules {
+			environment.importModule(module)
 		}
 	}
 
@@ -44,11 +42,6 @@ public struct ModuleAnalyzer {
 
 	public func analyze() throws -> AnalysisModule {
 		var analysisModule = AnalysisModule(name: name, files: files)
-
-		// Always include the standard lib
-		if let library {
-			environment.importModule(library.standard)
-		}
 
 		// Find all the top level stuff this module has to offer
 		for file in files {
@@ -66,6 +59,30 @@ public struct ModuleAnalyzer {
 			try processFile(file: file, in: &analysisModule)
 		}
 
+		importSymbols(into: &analysisModule)
+
+		// Once we've got globals established, we can go through and actually analyze
+		// all the files for the module. TODO: Also establish imports.
+		//
+		// We also need to make sure the files are in the correct order.
+		analysisModule.analyzedFiles = try files.map {
+			try AnalyzedSourceFile(
+				path: $0.path,
+				syntax: SourceFileAnalyzer.analyze(
+					$0.syntax,
+					in: environment
+				)
+			)
+		}
+
+		// Now that we've walked the tree, we should make sure we're not missing any
+		// other symbols.
+		importSymbols(into: &analysisModule)
+
+		return analysisModule
+	}
+
+	private func importSymbols(into analysisModule: inout AnalysisModule) {
 		for (name, binding) in environment.importedSymbols {
 			guard let module = binding.externalModule else {
 				fatalError("could not get module for symbol `\(name)`")
@@ -86,7 +103,7 @@ public struct ModuleAnalyzer {
 					source: .external(module)
 				)
 			} else if case let .struct(name) = name,
-			          let structType = binding.externalModule?.structs[name]
+								let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
@@ -101,22 +118,6 @@ public struct ModuleAnalyzer {
 				fatalError("unhandled exported symbol: \(name)")
 			}
 		}
-
-		// Once we've got globals established, we can go through and actually analyze
-		// all the files for the module. TODO: Also establish imports.
-		//
-		// We also need to make sure the files are in the correct order.
-		analysisModule.analyzedFiles = try files.map {
-			try AnalyzedSourceFile(
-				path: $0.path,
-				syntax: SourceFileAnalyzer.analyze(
-					$0.syntax,
-					in: environment
-				)
-			)
-		}
-
-		return analysisModule
 	}
 
 	private func processFile(file: ParsedSourceFile, in analysisModule: inout AnalysisModule) throws {

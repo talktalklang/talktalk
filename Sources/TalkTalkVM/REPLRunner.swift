@@ -28,7 +28,13 @@ public struct REPLRunner {
 	}
 
 	public init() async throws {
-		self.driver = Driver(directories: [Library.replURL])
+		let stdlib = try await StandardLibrary.compile()
+		self.driver = Driver(
+			directories: [Library.replURL],
+			analyses: ["Standard": stdlib.analysis],
+			modules: ["Standard": stdlib.module]
+		)
+
 		let result = try await driver.compile(mode: .module)["REPL"]!
 		self.module = result.module
 		self.analysis = result.analysis

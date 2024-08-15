@@ -90,20 +90,20 @@ public struct ConstantMetadata: InstructionMetadata {
 }
 
 public struct ObjectMetadata: InstructionMetadata {
-	public var object: Object
+	public var value: StaticData
 
 	public var length: Int = 2
 
-	public init(object: Object) {
-		self.object = object
+	public init(value: StaticData) {
+		self.value = value
 	}
 
 	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		chunk.emit(data: object.bytes, line: instruction.line)
+		chunk.emit(data: value, line: instruction.line)
 	}
 
 	public var description: String {
-		"\(object)"
+		"\(value)"
 	}
 }
 

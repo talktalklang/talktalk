@@ -38,6 +38,7 @@ public indirect enum Value: Equatable, Comparable {
 	     error(String),
 	     fn(Closure),
 	     method(AnalyzedFuncExpr, StructInstance),
+			 type(String),
 	     `struct`(StructType),
 	     instance(StructInstance),
 	     `return`(Value),
@@ -71,6 +72,35 @@ public indirect enum Value: Equatable, Comparable {
 		}
 	}
 
+	public var type: Value {
+		switch self {
+		case .int(let int):
+				.type("int")
+		case .bool(let bool):
+				.type("bool")
+		case .string(let string):
+				.type("String")
+		case .none:
+				.type("none")
+		case .error(let string):
+				.type("error")
+		case .fn(let closure):
+				.type("int")
+		case .method(let analyzedFuncExpr, let structInstance):
+				.type("Function")
+		case .type(let string):
+				.type(string)
+		case .struct(let structType):
+				.type("Struct")
+		case .instance(let structInstance):
+				.type(structInstance.type.name!)
+		case .return(let value):
+				.type("Return")
+		case .builtin(let string):
+				.type(string)
+		}
+	}
+
 	public func negate() -> Value {
 		switch self {
 		case let .int(int):
@@ -84,6 +114,8 @@ public indirect enum Value: Equatable, Comparable {
 
 	public var isTruthy: Bool {
 		switch self {
+		case .type(_):
+			true
 		case .int:
 			true
 		case .string(_):

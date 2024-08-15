@@ -7,7 +7,7 @@
 
 import TalkTalkBytecode
 
-struct StructInstance {
+public struct StructInstance {
 	let type: Value
 	var fields: [Value?]
 

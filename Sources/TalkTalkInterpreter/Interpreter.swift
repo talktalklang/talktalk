@@ -36,7 +36,7 @@ public struct Interpreter: AnalyzedVisitor {
 		var last: Value = .none
 		let rootScope = Scope()
 
-		for expr in self.parsed {
+		for expr in parsed {
 			do {
 				last = try expr.accept(self, rootScope)
 			} catch let Return.returning(value) {
@@ -94,31 +94,30 @@ public struct Interpreter: AnalyzedVisitor {
 		let lhs = try expr.lhsAnalyzed.accept(self, scope)
 		let rhs = try expr.rhsAnalyzed.accept(self, scope)
 
-		let result: Value =
-			switch expr.op {
-			case .plus:
-				lhs.add(rhs)
-			case .equalEqual:
-				.bool(lhs == rhs)
-			case .bangEqual:
-				.bool(lhs != rhs)
-			case .less:
-				.bool(lhs < rhs)
-			case .lessEqual:
-				.bool(lhs <= rhs)
-			case .greater:
-				.bool(lhs > rhs)
-			case .greaterEqual:
-				.bool(lhs >= rhs)
-			case .minus:
-				lhs.minus(rhs)
-			case .star:
-				lhs.times(rhs)
-			case .slash:
-				lhs.div(rhs)
-			}
-
-		return result
+		switch expr.op {
+		case .plus:
+			return lhs.add(rhs)
+		case .equalEqual:
+			return .bool(lhs == rhs)
+		case .bangEqual:
+			return .bool(lhs != rhs)
+		case .less:
+			return .bool(lhs < rhs)
+		case .lessEqual:
+			return .bool(lhs <= rhs)
+		case .greater:
+			return .bool(lhs > rhs)
+		case .greaterEqual:
+			return .bool(lhs >= rhs)
+		case .minus:
+			return lhs.minus(rhs)
+		case .star:
+			return lhs.times(rhs)
+		case .slash:
+			return lhs.div(rhs)
+		case .is:
+			return .bool(lhs.type == rhs)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ scope: Scope) throws -> Value {
@@ -131,7 +130,7 @@ public struct Interpreter: AnalyzedVisitor {
 			return try call(funcExpr, on: instance, with: expr.argsAnalyzed.map(\.expr))
 		} else if case let .struct(type) = callee {
 			return try instantiate(type, with: expr.argsAnalyzed, in: scope)
-		} else if case .builtin(_) = callee {
+		} else if case .builtin = callee {
 			_ = try expr.argsAnalyzed.map { try $0.expr.accept(self, scope) }
 			return .none
 		} else {
@@ -214,7 +213,8 @@ public struct Interpreter: AnalyzedVisitor {
 
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
 			if let exprStmt = decl as? AnalyzedExprStmt,
-				 let funcExpr = exprStmt.exprAnalyzed as? AnalyzedFuncExpr {
+			   let funcExpr = exprStmt.exprAnalyzed as? AnalyzedFuncExpr
+			{
 				type.methods[funcExpr.name!.lexeme] = funcExpr
 			}
 		}
@@ -265,7 +265,6 @@ public struct Interpreter: AnalyzedVisitor {
 		return .none
 	}
 
-
 	public func visit(_ expr: AnalyzedStructDecl, _ context: Scope) throws -> Value {
 		var type = StructType(
 			name: expr.name,
@@ -286,7 +285,6 @@ public struct Interpreter: AnalyzedVisitor {
 		return retVal
 	}
 
-
 	// GENERATOR_INSERTION
 
 	private func lastResult(of exprs: [any AnalyzedSyntax], in context: Scope) throws -> Value {
@@ -304,9 +302,9 @@ public struct Interpreter: AnalyzedVisitor {
 		_ = scope.define("self", .instance(instance))
 
 		for (i, argument) in args.enumerated() {
-			_ = scope.define(
+			_ = try scope.define(
 				funcExpr.params.params[i].name,
-				try argument.accept(self, scope)
+				argument.accept(self, scope)
 			)
 		}
 
@@ -325,9 +323,9 @@ public struct Interpreter: AnalyzedVisitor {
 
 	func call(_ closure: Closure, args: [any AnalyzedExpr], _ scope: Scope) throws -> Value {
 		for (i, argument) in args.enumerated() {
-			_ = scope.define(
+			_ = try scope.define(
 				closure.funcExpr.params.params[i].name,
-				try argument.accept(self, scope)
+				argument.accept(self, scope)
 			)
 		}
 

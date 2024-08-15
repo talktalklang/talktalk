@@ -21,11 +21,17 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		}
 	}
 
+	// Just a value that goes on the stack
+	case reserved
+
 	case int(IntValue)
+
 	case bool(Bool)
 
 	// The index of some embedded data in the chunk
 	case data(IntValue)
+
+	case byte(Byte)
 
 	// The block ID and the offset
 	case pointer(IntValue, IntValue)
@@ -50,6 +56,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 
 	// The method slot, the type of instance
 	case boundMethod(IntValue, InstanceKind)
+
 	case none
 
 	public var isCallable: Bool {
@@ -149,6 +156,10 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 extension Value: CustomStringConvertible {
 	public var description: String {
 		switch self {
+		case .reserved:
+			"reserved"
+		case .byte:
+			"byte"
 		case .int:
 			".int(\(intValue!))"
 		case .bool:

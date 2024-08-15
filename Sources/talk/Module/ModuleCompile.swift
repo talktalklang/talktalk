@@ -24,7 +24,12 @@ struct ModuleCompile: TalkTalkCommand {
 
 	func run() async throws {
 		let targetDirectories = directories.map { URL.currentDirectory().appending(path: $0) }
-		let driver = Driver(directories: targetDirectories)
+		let stdlib = try await StandardLibrary.compile()
+		let driver = Driver(
+			directories: targetDirectories,
+			analyses: ["Standard": stdlib.analysis],
+			modules: ["Standard": stdlib.module]
+		)
 
 		if dump {
 			for (name, result) in try await driver.compile() {

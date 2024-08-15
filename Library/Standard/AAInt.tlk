@@ -1,0 +1,8 @@
+// Builtin int type
+struct Int {
+	var raw: int
+
+	init(raw: int) {
+		self.raw = raw
+	}
+}

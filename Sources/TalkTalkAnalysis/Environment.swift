@@ -84,6 +84,8 @@ public class Environment {
 			return .pointer
 		case "bool":
 			return .bool
+		case "byte":
+			return .byte
 		default:
 			if let scope = getLexicalScope()?.scope,
 				 let scopeName = scope.name,
@@ -195,6 +197,10 @@ public class Environment {
 	}
 
 	public func lookupStruct(named name: String) -> StructType? {
+		if name == "String" {
+			
+		}
+
 		if let type = structTypes[name] {
 			return type
 		}
@@ -203,6 +209,7 @@ public class Environment {
 			return type
 		}
 
+		// See if we already know about this somewhere else, if so, use it.
 		if let binding = importedSymbols[.struct(name)],
 		   let externalModule = binding.externalModule,
 		   let moduleStruct = externalModule.structs[name]
@@ -217,6 +224,28 @@ public class Environment {
 
 		if let builtinStruct = BuiltinStruct.lookup(name: name) {
 			return builtinStruct.structType()
+		}
+
+		// See if any of our imported modoules have this struct
+		for module in importedModules {
+			if let moduleStruct = module.moduleStruct(named: name) {
+				importBinding(
+					as: .struct(name),
+					binding: Binding(
+						name: name,
+						expr: moduleStruct.syntax,
+						type: moduleStruct.typeID,
+						externalModule: module
+					)
+				)
+
+				return StructType(
+					name: name,
+					properties: moduleStruct.properties,
+					methods: moduleStruct.methods,
+					typeParameters: moduleStruct.typeParameters
+				)
+			}
 		}
 
 		return nil

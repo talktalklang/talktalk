@@ -8,18 +8,25 @@
 import Foundation
 import TalkTalkCore
 import TalkTalkBytecode
+import TalkTalkAnalysis
 import TalkTalkSyntax
 import TalkTalkCompiler
 
 public struct Driver {
 	let directories: [URL]
 	let compilationUnits: [CompilationUnit]
-	let isBootstrap: Bool
+	let analyses: [String: AnalysisModule]
+	let modules: [String: Module]
 
-	public init(directories: [URL], isBootstrap: Bool = false) {
+	public init(
+		directories: [URL],
+		analyses: [String: AnalysisModule],
+		modules: [String: Module]
+	) {
 		self.directories = directories
 		self.compilationUnits = Self.findCompilationUnits(directories: directories)
-		self.isBootstrap = isBootstrap
+		self.analyses = analyses
+		self.modules = modules
 	}
 
 	public func writeModules(to destination: URL? = nil) async throws {
@@ -34,13 +41,16 @@ public struct Driver {
 		}
 	}
 
-	public func compile(mode: CompilationMode = .module) async throws -> [String: CompilationResult] {
+	public func compile(
+		mode: CompilationMode = .module
+	) async throws -> [String: CompilationResult] {
 		var result: [String: CompilationResult] = [:]
 		for unit in compilationUnits {
 			result[unit.name] = try await Pipeline(
 				compilationUnit: unit,
 				mode: mode,
-				isBootstrap: isBootstrap
+				analyses: analyses,
+				modules: modules
 			).run()
 		}
 		return result
@@ -71,5 +81,4 @@ fileprivate extension Driver {
 			return CompilationUnit(name: $0.lastPathComponent, files: fileURLs)
 		}
 	}
-
 }

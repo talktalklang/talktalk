@@ -26,7 +26,7 @@ public class Chunk: Codable {
 	public var constants: [Value] = []
 
 	// Larger blobs of data like strings from literals found in the source
-	public var data: [Byte] = []
+	public var data: [StaticData] = []
 
 	// How many arguments should this chunk expect
 	public var arity: Byte = 0
@@ -175,10 +175,11 @@ public class Chunk: Codable {
 	}
 
 	// Emit static data for the program
-	public func emit(data constantData: [Byte], line: UInt32) {
+	public func emit(data value: StaticData, line: UInt32) {
 		let start = data.count
-		data.append(contentsOf: constantData)
-		emit(constant: .data(Value.IntValue(start)), line: line)
+		data.append(value)
+		emit(opcode: .data, line: line)
+		emit(byte: Byte(start), line: line)
 	}
 
 	private func write(constant value: Value) -> Byte {

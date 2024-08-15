@@ -16,7 +16,8 @@ public struct AnalysisLibrary {
 		self.standard = try! ModuleAnalyzer(
 			name: "Standard",
 			files: Self.files(in: Library.standardLibraryURL),
-			moduleEnvironment: [:]
+			moduleEnvironment: [:],
+			importedModules: []
 		).analyze()
 	}
 
