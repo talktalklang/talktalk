@@ -16,7 +16,7 @@ jobs:
     - name: Build standard library
       run: swift run talk compile module Library/Standard
     - name: Install curl
-      run: apt-get install curl
+      run:  apt-get -y update; apt-get -y install curl
     - name: Install brew
       run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     - name: Install gon
