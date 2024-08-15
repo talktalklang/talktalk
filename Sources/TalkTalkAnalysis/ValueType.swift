@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkBytecode
+
 public struct InstanceValueType: Codable, Equatable, Hashable {
 	public static func `struct`(_ name: String) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
@@ -13,7 +15,7 @@ public struct InstanceValueType: Codable, Equatable, Hashable {
 	public var ofType: ValueType
 	public var boundGenericTypes: [String: ValueType]
 
-	public init(ofType: ValueType, boundGenericTypes: [String : ValueType]) {
+	public init(ofType: ValueType, boundGenericTypes: [String: ValueType]) {
 		self.ofType = ofType
 		self.boundGenericTypes = boundGenericTypes
 	}
@@ -38,22 +40,22 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 	}
 
 	case none,
-			 // primitives
-			 int, bool, byte,
-			 // pointer to a spot on the "heap"
-			 pointer,
-			 // function name, return type, param types, captures
-			 function(String, TypeID, [Param], [String]),
-			 // struct name
-			 `struct`(String),
-			 // owning type of this generic, the name of the generic type
-			 generic(ValueType, String),
-			 instance(InstanceValueType),
-			 member(ValueType),
-			 error(String),
-			 void,
-			 placeholder(Int),
-			 `any`
+	     // primitives
+	     int, bool, byte,
+	     // pointer to a spot on the "heap"
+	     pointer,
+	     // function name, return type, param types, captures
+	     function(String, TypeID, [Param], [String]),
+	     // struct name
+	     `struct`(String),
+	     // owning type of this generic, the name of the generic type
+	     generic(ValueType, String),
+	     instance(InstanceValueType),
+	     member(ValueType),
+	     error(String),
+	     void,
+	     placeholder,
+	     any
 
 	public var description: String {
 		switch self {
@@ -66,7 +68,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 			return "fn \(name)(\(args.map(\.description).joined(separator: ", "))) -> \(captures)(\(returnType))"
 		case .bool:
 			return "bool"
-		case .error(let msg):
+		case let .error(msg):
 			return "error: \(msg)"
 		case .none:
 			return "none"
@@ -86,6 +88,40 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 			return "pointer"
 		case .any:
 			return "<any>"
+		}
+	}
+
+	public var primitive: Primitive? {
+		switch self {
+		case .none:
+			Primitive.none
+		case .int:
+			.int
+		case .bool:
+			.bool
+		case .byte:
+			.byte
+		case .pointer:
+			.pointer
+		case .struct("String"):
+			.string
+		default:
+			nil
+		}
+	}
+
+	var specificity: Int {
+		switch self {
+		case .pointer:
+			2
+		case let .generic(valueType, _):
+			valueType.specificity + 1
+		case .placeholder:
+			0
+		case .any:
+			1
+		default:
+			3
 		}
 	}
 }

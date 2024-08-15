@@ -166,6 +166,8 @@ public struct VirtualMachine {
 				stack.push(.bool(false))
 			case .none:
 				stack.push(.none)
+			case .primitive:
+				stack.push(.primitive(Primitive(rawValue: readByte())!))
 			case .negate:
 				let value = stack.pop()
 				if let intValue = value.intValue {
@@ -434,8 +436,8 @@ public struct VirtualMachine {
 		}
 	}
 
-	func checkType(instance: Value, type: Value) {
-		()
+	mutating func checkType(instance: Value, type: Value) {
+		stack.push(.bool(instance.is(type)))
 	}
 
 	mutating func call(_ callee: Value) {

@@ -14,6 +14,7 @@ public struct TypeExprSyntax: TypeExpr {
 	public var identifier: Token
 	public var genericParams: (any GenericParams)?
 	public var location: SourceLocation
+	public var errors: [String] = []
 	public var children: [any Syntax] {
 		if let genericParams { [genericParams] } else { [] }
 	}

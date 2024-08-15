@@ -104,11 +104,11 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Strings") func strings() throws {
-		#expect(try run(#""hello world""#) == .data(0))
+		#expect(try run(#""hello world""#) == .string("hello world"))
 	}
 
 	@Test("is check") func isCheck() throws {
-		try #expect(run("123 is Int") == .bool(true))
+		try #expect(run("123 is int", verbosity: .verbose) == .bool(true))
 	}
 
 	@Test("If expr") func ifExpr() throws {

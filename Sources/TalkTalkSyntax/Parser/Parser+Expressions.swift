@@ -141,7 +141,7 @@ extension Parser {
 		}
 
 		if didMatch(.string) {
-			let string = previous.lexeme.split(separator: "")[1..<previous.lexeme.count-1].joined(separator: "")
+			let string = previous.lexeme.split(separator: "")[1 ..< previous.lexeme.count - 1].joined(separator: "")
 			return LiteralExprSyntax(value: .string(string), location: [previous])
 		}
 
@@ -156,7 +156,7 @@ extension Parser {
 		return SyntaxError(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
-	mutating func returning(_ canAssign: Bool) -> any Expr {
+	mutating func returning(_: Bool) -> any Expr {
 		let i = startLocation()
 
 		let returnToken = consume(.return)!
@@ -256,7 +256,7 @@ extension Parser {
 		var args: [CallArgument] = []
 		if !didMatch(.rightParen) {
 			repeat {
-				var name: String? = nil
+				var name: String?
 
 				if check(.identifier), checkNext(.colon) {
 					let identifier = consume(.identifier)!
@@ -330,7 +330,34 @@ extension Parser {
 		}
 
 		advance()
-		let rhs = parse(precedence: current.kind.rule.precedence + 1)
+		let rhs = if op == .is {
+			typeExpr()
+		} else {
+			parse(precedence: current.kind.rule.precedence + 1)
+		}
 		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
+	}
+
+	mutating func typeExpr() -> TypeExpr {
+		let typeID = consume(.identifier)
+		let i = startLocation(at: previous!)
+
+		var genericParamsSyntax: GenericParamsSyntax? = nil
+		if didMatch(.less) {
+			genericParamsSyntax = genericParams()
+		}
+
+		var errors: [String] = []
+
+		if typeID == nil {
+			errors.append("Expected identifier")
+		}
+
+		return TypeExprSyntax(
+			identifier: typeID ?? .synthetic(.error),
+			genericParams: genericParamsSyntax,
+			location: endLocation(i),
+			errors: errors
+		)
 	}
 }

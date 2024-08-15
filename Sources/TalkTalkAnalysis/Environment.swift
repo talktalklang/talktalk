@@ -74,7 +74,7 @@ public class Environment {
 
 	public func type(named name: String?) -> ValueType {
 		guard let name else {
-			return .placeholder(0)
+			return .placeholder
 		}
 
 		switch name {
@@ -197,10 +197,6 @@ public class Environment {
 	}
 
 	public func lookupStruct(named name: String) -> StructType? {
-		if name == "String" {
-			
-		}
-
 		if let type = structTypes[name] {
 			return type
 		}

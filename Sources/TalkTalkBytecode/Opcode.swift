@@ -40,7 +40,7 @@ public enum Opcode: Byte {
 			 getProperty, setProperty,
 
 			 // Type casting
-			 cast, `is`,
+			 cast, `is`, primitive,
 
 			 // Builtins
 			 getBuiltin, setBuiltin,

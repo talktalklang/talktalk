@@ -400,7 +400,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(byte: slot, line: expr.location.line)
 		} else {
-			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
+			let type = expr.environment.type(named: expr.identifier.lexeme)
+			if let primitive = type.primitive {
+				chunk.emit(opcode: .primitive, line: expr.location.line)
+				chunk.emit(byte: primitive.rawValue, line: expr.location.line)
+			} else {
+				throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
+			}
 		}
 	}
 

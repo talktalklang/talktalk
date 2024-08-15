@@ -82,7 +82,7 @@ struct AnalysisTests {
 	@Test("Types func expr") func funcExpr() {
 		let fn = ast(
 			"""
-			func(x) { x + x }
+			func(x) { x + 1 }
 			""")
 
 		#expect(fn.typeAnalyzed == .function("_fn_x_17", .int, [.int("x")], []))
@@ -105,13 +105,23 @@ struct AnalysisTests {
 	@Test("Types named func expr") func namedfuncExpr() {
 		let fn = ast(
 			"""
-			func foo(x) { x + x }
+			func foo(x) { x + 1 }
 			foo
 			"""
 		).cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		#expect(fn.typeAnalyzed == .function("foo", .int, [.int("x")], []))
 	}
+
+	@Test("Types simple calls") func funcSimpleCalls() {
+		let res = ast(
+			"""
+			func(x) { x }(1)
+			""").cast(AnalyzedCallExpr.self)
+
+		#expect(res.typeAnalyzed == .int)
+	}
+
 
 	@Test("Types calls") func funcCalls() {
 		let res = ast(
@@ -172,7 +182,7 @@ struct AnalysisTests {
 	@Test("Types captures") func funcCaptures() throws {
 		let ast = ast(
 			"""
-			func(x) {
+			func(x: int) {
 				func(y) {
 					y + x
 				}
@@ -187,9 +197,9 @@ struct AnalysisTests {
 		#expect(
 			fn.typeAnalyzed
 				== .function(
-					"_fn_x_38",
+					"_fn_x_43",
 					.function(
-						"_fn_y_36",
+						"_fn_y_41",
 						.int,
 						[.int("y")],
 						["x"]
@@ -200,7 +210,7 @@ struct AnalysisTests {
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
-		#expect(nestedFn.typeAnalyzed == .function("_fn_y_36", .int, [.int("y")], ["x"]))
+		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")

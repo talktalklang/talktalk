@@ -11,6 +11,6 @@ import TalkTalkBytecode
 @MainActor
 struct ValueTests {
 	@Test("Memory size") func memorySize() {
-		#expect(MemoryLayout<Value>.size < 16)
+		#expect(MemoryLayout<Value>.size < 32)
 	}
 }

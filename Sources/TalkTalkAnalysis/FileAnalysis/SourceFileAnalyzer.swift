@@ -127,12 +127,6 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let callee = try expr.callee.accept(self, context)
-
-		// Unwrap expr stmt
-//		if let exprStmt = callee as? AnalyzedExprStmt {
-//			callee = exprStmt.exprAnalyzed
-//		}
-
 		var errors: [AnalysisError] = []
 
 		let args = try expr.args.map {
@@ -146,13 +140,36 @@ public struct SourceFileAnalyzer: Visitor {
 		let arity: Int
 
 		switch callee.typeAnalyzed {
-		case let .function(_, returning, params, _):
+		case let .function(funcName, returning, params, _):
 			if params.count == args.count {
 				// Try to infer param types
 				for (i, param) in params.enumerated() {
 					if case .placeholder = param.typeID.type() {
 						param.typeID.update(args[i].expr.typeAnalyzed)
 					}
+				}
+			}
+
+			var returning = returning
+			if returning.type() == .placeholder {
+				var funcExpr: AnalyzedFuncExpr? = nil
+
+				if let callee = callee.as(AnalyzedFuncExpr.self) {
+					funcExpr = callee
+				} else if let callee = callee.as(AnalyzedVarExpr.self),
+									let calleeFunc = context.lookup(callee.name)?.expr.as(AnalyzedFuncExpr.self) {
+					funcExpr = calleeFunc
+				}
+
+				// Don't try this on recursive functions, it doesn't end well. Well actually
+				// it just doesn't end.
+				if let funcExpr, funcExpr.name?.lexeme != funcName {
+					let env = funcExpr.environment.add()
+					for param in params {
+						env.update(local: param.name, as: param.typeID.current)
+					}
+					// Try to infer return type now that we know what a param is
+					returning = try visit(funcExpr.bodyAnalyzed, env).typeID
 				}
 			}
 
@@ -368,7 +385,7 @@ public struct SourceFileAnalyzer: Visitor {
 		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
-		infer(lhs, rhs, as: lhs.typeID.current, in: env)
+		infer([lhs, rhs], in: env)
 
 		return AnalyzedBinaryExpr(
 			typeID: lhs.typeID,
@@ -419,7 +436,7 @@ public struct SourceFileAnalyzer: Visitor {
 			// If it's a named function, define a stub inside the function to allow for recursion
 			let stubType = ValueType.function(
 				name.lexeme,
-				TypeID(.placeholder(0)),
+				TypeID(.placeholder),
 				params.paramsAnalyzed.map {
 					.init(name: $0.name, typeID: $0.typeID)
 				},
@@ -511,9 +528,16 @@ public struct SourceFileAnalyzer: Visitor {
 		AnalyzedParamsExpr(
 			typeID: TypeID(.void),
 			expr: expr,
-			paramsAnalyzed: expr.params.enumerated().map { _, param in
-				AnalyzedParam(
-					type: TypeID(),
+			paramsAnalyzed: try expr.params.enumerated().map { _, param in
+				var type = TypeID()
+
+				if let paramType = param.type {
+					let analyzedTypeExpr = try visit(paramType, context)
+					type = analyzedTypeExpr.typeID
+				}
+
+				return AnalyzedParam(
+					type: type,
 					expr: param,
 					environment: context
 				)
@@ -592,7 +616,7 @@ public struct SourceFileAnalyzer: Visitor {
 		var typeParameters: [TypeParameter] = []
 		if let genericParams = expr.genericParams {
 			for param in genericParams.params {
-				typeParameters.append(.init(name: param.name, type: .placeholder(0)))
+				typeParameters.append(.init(name: param.name, type: .placeholder))
 			}
 		}
 
@@ -700,12 +724,12 @@ public struct SourceFileAnalyzer: Visitor {
 								.params
 								.map(\.name)
 								.reduce(into: [:]) { res, p in
-									res[p] = TypeID(.placeholder(0))
+									res[p] = TypeID(.placeholder)
 								},
 							typeID: TypeID(
 								.function(
 									name.lexeme,
-									TypeID(.placeholder(2)),
+									TypeID(.placeholder),
 									[],
 									[]
 								)
@@ -726,12 +750,12 @@ public struct SourceFileAnalyzer: Visitor {
 							.params
 							.map(\.name)
 							.reduce(into: [:]) { res, p
-								in res[p] = TypeID(.placeholder(0))
+								in res[p] = TypeID(.placeholder)
 							},
 						typeID: TypeID(
 							.function(
 								"init",
-								TypeID(.placeholder(2)),
+								TypeID(.placeholder),
 								[],
 								[]
 							)
@@ -763,7 +787,7 @@ public struct SourceFileAnalyzer: Visitor {
 					typeID: TypeID(
 						.function(
 							"init",
-							TypeID(.placeholder(2)),
+							TypeID(.placeholder),
 							[],
 							[]
 						)
@@ -816,7 +840,7 @@ public struct SourceFileAnalyzer: Visitor {
 					method: Method(
 						slot: existing.slot,
 						name: funcExpr.name!.lexeme,
-						params: funcExpr.params.params.map(\.name).reduce(into: [:]) { res, p in res[p] = TypeID(.placeholder(0)) },
+						params: funcExpr.params.params.map(\.name).reduce(into: [:]) { res, p in res[p] = TypeID(.placeholder) },
 						typeID: funcExpr.typeID,
 						expr: funcExpr,
 						isMutable: false
@@ -899,8 +923,8 @@ public struct SourceFileAnalyzer: Visitor {
 
 	// GENERATOR_INSERTION
 
-	private func infer(_ exprs: (any AnalyzedExpr)..., as type: ValueType, in env: Environment) {
-		if case .placeholder = type { return }
+	private func infer(_ exprs: [any AnalyzedExpr], in env: Environment) {
+		let type = exprs.map(\.typeID.current).max(by: { $0.specificity < $1.specificity }) ?? .placeholder
 
 		for var expr in exprs {
 			if let exprStmt = expr as? AnalyzedExprStmt {

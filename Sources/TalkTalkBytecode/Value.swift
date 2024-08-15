@@ -48,6 +48,8 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	// The method slot, the type of instance
 	case boundMethod(IntValue, IntValue)
 
+	case primitive(Primitive)
+
 	case none
 
 	public var isCallable: Bool {
@@ -175,8 +177,29 @@ extension Value: CustomStringConvertible {
 			"builtin struct"
 		case .pointer:
 			"pointer"
+		case .primitive(_):
+			"primitive"
 		case .none:
 			"none"
+		}
+	}
+
+	public func `is`(_ value: Value) -> Bool {
+		switch (self, value) {
+		case (.int(_), .primitive(.int)):
+			true
+		case (.bool(_), .primitive(.bool)):
+			true
+		case (.byte(_), .primitive(.byte)):
+			true
+		case (.string(_), .primitive(.string)):
+			true
+		case (.pointer(_, _), .primitive(.pointer)):
+			true
+		case (.instance(let slot, _), .struct(let structSlot)):
+			slot == structSlot
+		default:
+			false
 		}
 	}
 }

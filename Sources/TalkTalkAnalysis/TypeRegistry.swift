@@ -21,7 +21,7 @@ final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 	
 	public var current: ValueType
 
-	public init(_ initial: ValueType = .placeholder(0)) {
+	public init(_ initial: ValueType = .placeholder) {
 		self.current = initial
 	}
 
@@ -65,7 +65,7 @@ final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 //		fatalError("no typeID found for \(typeID)")
 //	}
 //
-//	func newType(_ initial: ValueType = .placeholder(0)) -> TypeID {
+//	func newType(_ initial: ValueType = .placeholder) -> TypeID {
 //		let newType = TypeID(
 //			id: storage.count,
 //			registry: self

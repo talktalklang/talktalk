@@ -82,7 +82,7 @@ public struct BuiltinFunction {
 			name: "_deref",
 			type: .function(
 				"_deref",
-				TypeID(.placeholder(0)),
+				TypeID(.placeholder),
 				[.init(
 					name: "addr",
 					typeID: TypeID(.pointer)
@@ -97,7 +97,7 @@ public struct BuiltinFunction {
 			name: "_storePtr",
 			type: .function(
 				"_storePtr",
-				TypeID(.placeholder(0)),
+				TypeID(.placeholder),
 				[.init(name: "addr", typeID: TypeID(.pointer)),
 				 .init(name: "value", typeID: TypeID())
 				],
