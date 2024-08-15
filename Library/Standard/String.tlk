@@ -5,4 +5,8 @@ struct String {
 	init(pointer: pointer) {
 		self._storage = pointer
 	}
+
+	func description() {
+		self._storage
+	}
 }

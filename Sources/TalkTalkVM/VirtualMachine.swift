@@ -381,29 +381,20 @@ public struct VirtualMachine {
 				// Pop the receiver off the stack
 				let receiver = stack.pop()
 				switch receiver {
-				case .instance(.struct, let receiver):
+				case .instance(let kind, let receiver):
 					let instance = currentFrame.instances[Int(receiver)]
 
 					if propertyOptions.contains(.isMethod) {
 						// If it's a method, we create a boundMethod value, which consists of the method slot
 						// and the instance ID. Using this, we can use the type we get from instance[instanceID]
 						// to lookup the method.
-						let boundMethod = Value.boundMethod(.init(slot), .struct(receiver))
+						let boundMethod = Value.boundMethod(.init(slot), receiver)
 						stack.push(boundMethod)
 					} else {
 						guard let value = instance.fields[Int(slot)] else {
 							fatalError("No value in slot: \(slot)")
 						}
 
-						stack.push(value)
-					}
-				case .instance(.builtinStruct, let receiver):
-					if propertyOptions.contains(.isMethod) {
-						let boundMethod = Value.boundMethod(.init(slot), .builtinStruct(receiver))
-						stack.push(boundMethod)
-					} else {
-						let instance = currentFrame.builtinInstances[Int(receiver)]
-						let value = instance.getProperty(Int(slot))
 						stack.push(value)
 					}
 				default:
@@ -444,23 +435,11 @@ public struct VirtualMachine {
 			call(moduleFunction: Int(moduleFunction))
 		case .struct(let structValue):
 			call(structValue: .init(structValue))
-		case .builtinStruct(let slot):
-			call(builtinStruct: slot)
-		case .boundMethod(let methodSlot, .struct(let instanceID)):
+		case .boundMethod(let methodSlot, let instanceID):
 			call(boundMethod: methodSlot, on: instanceID)
-		case .boundMethod(let methodSlot, .builtinStruct(let instanceID)):
-			call(boundMethod: methodSlot, onBuiltin: instanceID)
 		default:
 			fatalError("\(callee) is not callable")
 		}
-	}
-
-	mutating func call(builtinStruct: Value.IntValue) {
-		let structType = BuiltinStructs.list[Int(builtinStruct)]
-		let instance = structType.instantiate()
-		let slot = currentFrame.builtinInstances.count
-		currentFrame.builtinInstances.append(instance)
-		stack.push(.instance(.builtinStruct(builtinStruct), .init(slot)))
 	}
 
 	mutating func call(boundMethod methodSlot: Value.IntValue, onBuiltin instanceID: Value.IntValue) {
@@ -485,7 +464,7 @@ public struct VirtualMachine {
 		let methodChunk = structType.methods[Int(boundMethod)]
 
 		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(
-			.struct(instance.type.structValue!),
+			instance.type.structValue!,
 			instanceData
 		)
 
@@ -500,7 +479,7 @@ public struct VirtualMachine {
 		let instanceID = Value.IntValue(currentFrame.instances.count)
 
 		// Create the instance Value
-		let instance = Value.instance(.struct(structValue), instanceID)
+		let instance = Value.instance(structValue, instanceID)
 
 		// Get the initializer
 		let initializer = structType.methods[structType.initializer]
@@ -599,13 +578,9 @@ public struct VirtualMachine {
 		case .print:
 			let value = stack.peek()
 			switch value {
-			case .data(let intValue):
-				// Not loving the special casing here..
-				let data = chunk.data[Int(intValue)]
-				switch data.kind {
-				case .string:
-					print(String(data: Data(data.bytes), encoding: .utf8)!)
-				}
+			case let .instance(kind, id):
+				let structType = module.structs[Int(kind)]
+				print(structType)
 			default:
 				print(value)
 			}
