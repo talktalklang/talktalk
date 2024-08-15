@@ -193,6 +193,8 @@ public struct VirtualMachine {
 				switch (lhsValue, rhsValue) {
 				case let (.int(lhs), .int(rhs)):
 					stack.push(.int(lhs + rhs))
+				case let (.string(lhs), .string(rhs)):
+					stack.push(.string(lhs + rhs))
 				case let (.pointer(base, offset), .int(rhs)):
 					stack.push(.pointer(base, offset + rhs))
 				case let (.data(lhs), .data(rhs)):
@@ -265,7 +267,11 @@ public struct VirtualMachine {
 				stack.push(.bool(lhs >= rhs))
 			case .data:
 				let slot = readByte()
-				stack.push(.data(.init(slot)))
+				let data = chunk.data[Int(slot)]
+				switch data.kind {
+				case .string:
+					stack.push(.string(String(data: Data(data.bytes), encoding: .utf8) ?? "<invalid string>"))
+				}
 			case .pop:
 				stack.pop()
 			case .loop:
@@ -578,37 +584,8 @@ public struct VirtualMachine {
 
 	func inspect(_ value: Value) -> String {
 		switch value {
-		case let .instance(kind, id):
-			let structType = module.structs[Int(kind)]
-			if structType.name == "String" {
-				if case let .pointer(base, _) = currentFrame.instances[Int(id)].fields[0] {
-					var bytes: [Byte] = []
-					let length = heap.size(of: Int(base))
-					for i in 0..<length {
-						if case let .byte(byte) = heap.dereference(block: Int(base), offset: i) {
-							// This is hilariously inefficient, but sorta mimics how it works in C...sorta.
-							bytes.append(byte)
-						} else {
-							return "<invalid string sequence>"
-						}
-					}
-
-					let string = String(data: Data(bytes), encoding: .utf8)
-					return string ?? "<invalid string sequence>"
-				} else {
-					return "<invalid string>"
-				}
-			} else {
-				var fields: [String] = []
-
-				for i in 0..<structType.propertyCount {
-					fields.append(
-						String(describing: currentFrame.instances[Int(id)].fields[i])
-					)
-				}
-
-				return "\(structType.name)(\(fields.joined(separator: ", ")))"
-			}
+		case .string(let string):
+			return string
 		default:
 			return value.description
 		}

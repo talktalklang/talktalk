@@ -15,7 +15,7 @@ struct StringTests: StandardLibraryTest {
 		"hello world"
 		""").get()
 
-		#expect(result == .data(0))
+		#expect(result == .string("hello world"))
 	}
 
 	@Test("Can print a static string") func printString() async throws {

@@ -182,10 +182,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				data: StaticData(kind: .string, bytes: string.utf8),
 				line: expr.location.line
 			)
-
-			// Cast to type
-			chunk.emit(opcode: .cast, line: expr.location.line)
-			chunk.emit(byte: resolveStruct(named: "String")!, line: expr.location.line)
 		case .none:
 			chunk.emit(opcode: .none, line: expr.location.line)
 		}

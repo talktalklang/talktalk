@@ -18,7 +18,11 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	// The index of some embedded data in the chunk
 	case data(IntValue)
 
+	// In case we wanna play with bytes?
 	case byte(Byte)
+
+	// Strings. It's fine.
+	case string(String)
 
 	// The block ID and the offset
 	case pointer(IntValue, IntValue)
@@ -143,6 +147,8 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 extension Value: CustomStringConvertible {
 	public var description: String {
 		switch self {
+		case .string(let string):
+			string.debugDescription
 		case .reserved:
 			"reserved"
 		case .byte:

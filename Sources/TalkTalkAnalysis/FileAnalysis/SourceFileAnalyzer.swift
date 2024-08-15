@@ -330,11 +330,11 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		if typeID.current == .instance(.struct("String")) {
-			assert(context.lookupStruct(named: "String") != nil)
+			_ = context.lookupStruct(named: "String")
 		}
 
 		if typeID.current == .instance(.struct("Int")) {
-			assert(context.lookupStruct(named: "Int") != nil)
+			_ = context.lookupStruct(named: "Int")
 		}
 
 		return AnalyzedLiteralExpr(
