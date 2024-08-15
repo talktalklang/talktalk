@@ -53,4 +53,4 @@ jobs:
         AC_PROVIDER: ${{ secrets.AC_PROVIDER }}
         AC_APPLICATION_IDENTITY: ${{ secrets.AC_APPLICATION_IDENTITY }}
       run: |
-        gon gon.hcl
+        gon Dev/gon.hcl
