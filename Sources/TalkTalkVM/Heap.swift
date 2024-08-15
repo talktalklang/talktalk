@@ -31,6 +31,14 @@ public class Heap {
 		return current
 	}
 
+	func size(of block: Int) -> Int {
+		storage[block].capacity
+	}
+
+	func copy(base: Int, length: Int, into: inout [Value?]) {
+		into = Array(storage[base].storage[0..<length])
+	}
+
 	func dereference(block: Int, offset: Int) -> Value? {
 		storage[block].storage[offset]
 	}

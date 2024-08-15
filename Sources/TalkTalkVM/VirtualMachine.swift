@@ -9,7 +9,8 @@ import Foundation
 import TalkTalkBytecode
 
 public enum Verbosity {
-	case quiet, verbose, lineByLine(String)
+	case quiet, verbose
+	case lineByLine(String)
 }
 
 public struct VirtualMachine {
@@ -88,28 +89,28 @@ public struct VirtualMachine {
 	public mutating func run() -> ExecutionResult {
 		while true {
 			#if DEBUG
-			func dumpInstruction() -> Instruction? {
-				var disassembler = Disassembler(chunk: chunk)
-				disassembler.current = Int(ip)
-				if let instruction = disassembler.next() {
-					dumpStack()
-					instruction.dump()
-					return instruction
+				func dumpInstruction() -> Instruction? {
+					var disassembler = Disassembler(chunk: chunk)
+					disassembler.current = Int(ip)
+					if let instruction = disassembler.next() {
+						dumpStack()
+						instruction.dump()
+						return instruction
+					}
+					return nil
 				}
-				return nil
-			}
 
-			switch verbosity {
-			case .quiet:
-				()
-			case .verbose:
-				_ = dumpInstruction()
-			case .lineByLine(let string):
-				if let i = dumpInstruction() {
-					let line = string.components(separatedBy: .newlines)[Int(i.line)]
-					FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
+				switch verbosity {
+				case .quiet:
+					()
+				case .verbose:
+					_ = dumpInstruction()
+				case .lineByLine(let string):
+					if let i = dumpInstruction() {
+						let line = string.components(separatedBy: .newlines)[Int(i.line)]
+						FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
+					}
 				}
-			}
 			#endif
 
 			let byte = readByte()
@@ -202,56 +203,62 @@ public struct VirtualMachine {
 						return runtimeError("Cannot add two data operands: \(lhs), \(rhs)")
 					}
 
-					let addr = heap.allocate(count: lhs.bytes.count + rhs.bytes.count)
+					let bytes = lhs.bytes + rhs.bytes
+					let addr = heap.allocate(count: bytes.count)
+
+					for i in 0..<bytes.count {
+						heap.store(block: addr, offset: i, value: .byte(bytes[i]))
+					}
+
 					stack.push(.pointer(.init(addr), 0))
 				default:
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot subtract none int operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot divide none int operands")
 				}
 				stack.push(.int(lhs / rhs))
 			case .multiply:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot multiply none int operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+					let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
@@ -443,7 +450,7 @@ public struct VirtualMachine {
 	}
 
 	mutating func call(boundMethod methodSlot: Value.IntValue, onBuiltin instanceID: Value.IntValue) {
-		stack.pop() // Pop the method off the stack
+		stack.pop()  // Pop the method off the stack
 
 		let instance = currentFrame.builtinInstances[Int(instanceID)]
 		let arity = instance.arity(for: Int(methodSlot))
@@ -569,6 +576,44 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
+	func inspect(_ value: Value) -> String {
+		switch value {
+		case let .instance(kind, id):
+			let structType = module.structs[Int(kind)]
+			if structType.name == "String" {
+				if case let .pointer(base, _) = currentFrame.instances[Int(id)].fields[0] {
+					var bytes: [Byte] = []
+					let length = heap.size(of: Int(base))
+					for i in 0..<length {
+						if case let .byte(byte) = heap.dereference(block: Int(base), offset: i) {
+							// This is hilariously inefficient, but sorta mimics how it works in C...sorta.
+							bytes.append(byte)
+						} else {
+							return "<invalid string sequence>"
+						}
+					}
+
+					let string = String(data: Data(bytes), encoding: .utf8)
+					return string ?? "<invalid string sequence>"
+				} else {
+					return "<invalid string>"
+				}
+			} else {
+				var fields: [String] = []
+
+				for i in 0..<structType.propertyCount {
+					fields.append(
+						String(describing: currentFrame.instances[Int(id)].fields[i])
+					)
+				}
+
+				return "\(structType.name)(\(fields.joined(separator: ", ")))"
+			}
+		default:
+			return value.description
+		}
+	}
+
 	mutating func call(builtin: Int) {
 		guard let builtin = BuiltinFunction(rawValue: builtin) else {
 			fatalError("no builtin at index: \(builtin)")
@@ -577,26 +622,20 @@ public struct VirtualMachine {
 		switch builtin {
 		case .print:
 			let value = stack.peek()
-			switch value {
-			case let .instance(kind, id):
-				let structType = module.structs[Int(kind)]
-				print(structType)
-			default:
-				print(value)
-			}
+			print(inspect(value))
 		case ._allocate:
-			if case .int(let count) = stack.pop() { // Get the capacity
+			if case .int(let count) = stack.pop() {  // Get the capacity
 				let address = heap.allocate(count: Int(count))
 				stack.push(.pointer(.init(address), .init(0)))
 			}
 		case ._deref:
 			if case .pointer(let blockID, let offset) = stack.pop(),
-			   let value = heap.dereference(block: Int(blockID), offset: Int(offset))
+				let value = heap.dereference(block: Int(blockID), offset: Int(offset))
 			{
 				stack.push(value)
 			}
 		case ._free:
-			() // TODO:
+			()  // TODO:
 		case ._storePtr:
 			let value = stack.pop()
 			if case .pointer(let blockID, let offset) = stack.pop() {
