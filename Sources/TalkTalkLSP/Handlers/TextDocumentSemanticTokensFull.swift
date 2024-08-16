@@ -12,10 +12,10 @@ import TalkTalkSyntax
 struct TextDocumentSemanticTokensFull {
 	var request: Request
 
-	func handle(_ handler: inout Server) {
+	func handle(_ handler: Server) async {
 		let params = request.params as! TextDocumentSemanticTokensFullRequest
 
-		guard let source = handler.sources[params.textDocument.uri] else {
+		guard let source = await handler.sources[params.textDocument.uri] else {
 			Log.error("no source for \(params.textDocument.uri)")
 			return
 		}
@@ -24,7 +24,7 @@ struct TextDocumentSemanticTokensFull {
 
 		do {
 			// TODO: use module environment
-			let parsed = try SourceFileAnalyzer.analyze(Parser.parse(source.text, allowErrors: true), in: Environment())
+			let parsed = try await SourceFileAnalyzer.analyze(Parser.parse(source.text, allowErrors: true), in: Environment())
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }
 		} catch {
@@ -33,8 +33,7 @@ struct TextDocumentSemanticTokensFull {
 		}
 
 		// Add in comment tokens since we lost those during parsing
-		for (line, text) in source.text.components(separatedBy: .newlines).enumerated() {
-			var j = 0
+		for (line, text) in await source.text.components(separatedBy: .newlines).enumerated() {
 			if let index = text.firstIndex(of: "/"),
 				 text[text.index(index, offsetBy: 1)] == "/" {
 				tokens.append(.init(
@@ -50,7 +49,7 @@ struct TextDocumentSemanticTokensFull {
 
 		let relativeTokens = RelativeSemanticToken.generate(from: tokens)
 		let response = TextDocumentSemanticTokens(data: Array(relativeTokens.map(\.serialized).joined()))
-		handler.respond(to: request.id, with: response)
+		await handler.respond(to: request.id, with: response)
 	}
 }
 
@@ -70,8 +69,7 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: any TypeExpr, _ context: Context) throws -> [RawSemanticToken] {
-		var result = [make(.type, from: expr.identifier)]
-		return result
+		[make(.type, from: expr.identifier)]
 	}
 
 	func visit(_ expr: CallExpr, _ context: Context) throws -> [RawSemanticToken] {

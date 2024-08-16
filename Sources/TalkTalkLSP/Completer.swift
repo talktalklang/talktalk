@@ -8,13 +8,18 @@
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
-class Completer {
+actor Completer {
 	var source: String
 	var lastSuccessfulExprs: [any AnalyzedSyntax] = []
 
-	public init(source: String) {
+	public init(source: String) async {
 		self.source = source
 		parse()
+	}
+
+	public func update(text: String) {
+		self.source = text
+		self.parse()
 	}
 
 	func parse() {

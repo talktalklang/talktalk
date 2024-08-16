@@ -3,6 +3,7 @@ enum Method: String, Codable {
 			 initialized = "initialized",
 			 shutdown = "shutdown",
 			 cancelRequest = "$/cancelRequest",
+			 textDocumentDefinition = "textDocument/definition",
 			 textDocumentDidOpen = "textDocument/didOpen",
 			 textDocumentDidClose = "textDocument/didClose",
 			 textDocumentDidChange = "textDocument/didChange",

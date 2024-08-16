@@ -53,7 +53,9 @@ let package = Package(
 			name: "TalkTalkLSP",
 			dependencies: [
 				"TalkTalkBytecode",
-				"TalkTalkAnalysis"
+				"TalkTalkAnalysis",
+				"TalkTalkCompiler",
+				"TalkTalkDriver"
 			]
 		),
 		.target(

@@ -33,7 +33,7 @@ enum CompletionItemKind: Int, Codable {
 	case typeParameter = 25
 }
 
-public struct CompletionItem: Codable, Equatable, Comparable {
+public struct CompletionItem: Codable, Equatable, Comparable, Sendable {
 	public static func < (lhs: CompletionItem, rhs: CompletionItem) -> Bool {
 		lhs.label < rhs.label
 	}

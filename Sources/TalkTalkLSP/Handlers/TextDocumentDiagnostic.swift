@@ -53,20 +53,20 @@ extension AnalysisError {
 struct TextDocumentDiagnostic: Decodable {
 	var request: Request
 
-	func handle(_ handler: inout Server) {
+	func handle(_ handler: Server) async {
 		let params = request.params as! TextDocumentDiagnosticRequest
 		
-		guard let source = handler.sources[params.textDocument.uri] else {
+		guard let source = await handler.sources[params.textDocument.uri] else {
 			Log.error("no source found for \(params.textDocument.uri)")
 			return
 		}
 
 		do {
 			let environment = Environment() // TODO: Use module environment
-			let errorSyntaxes = try SourceFileAnalyzer.diagnostics(text: source.text, environment: environment)
+			let errorSyntaxes = try await SourceFileAnalyzer.diagnostics(text: source.text, environment: environment)
 			let diagnostics = errorSyntaxes.map { $0.diagnostic() }
 			let report = FullDocumentDiagnosticReport(items: diagnostics)
-			handler.respond(to: request.id, with: report)
+			await handler.respond(to: request.id, with: report)
 		} catch {
 			Log.error("Error generating diagnostics: \(error)")
 		}

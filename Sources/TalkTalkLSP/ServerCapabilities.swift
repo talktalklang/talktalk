@@ -22,7 +22,8 @@ struct ServerCapabilities: Codable {
 				 completionProvider,
 				 semanticTokensProvider,
 				 documentFormattingProvider,
-				 diagnosticProvider
+				 diagnosticProvider,
+				 definitionProvider
 	}
 
 	let positionEncoding = "utf-8"
@@ -32,6 +33,7 @@ struct ServerCapabilities: Codable {
 	let semanticTokensProvider: SemanticTokensOptions = .init()
 	let documentFormattingProvider = true
 	let diagnosticProvider: DiagnosticOptions = .init()
+	let definitionProvider = true
 
 	//	let hoverProvider = true
 	//	let declarationProvider = true

@@ -6,8 +6,11 @@
 //
 
 import Foundation
+import TalkTalkDriver
+import TalkTalkAnalysis
+import TalkTalkCompiler
 
-public struct Server {
+public actor Server {
 	// We read json, we write json
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
@@ -18,7 +21,33 @@ public struct Server {
 	// Keep track of our files
 	var sources: [String: SourceDocument] = [:]
 
-	mutating func handle(_ request: Request) {
+	var stdlib: CompilationResult
+	var analysis: ModuleAnalyzer
+
+	init() async throws {
+		self.stdlib = try await StandardLibrary.compile()
+		self.analysis = ModuleAnalyzer(
+			name: "LSP",
+			files: [],
+			moduleEnvironment: ["Standard": stdlib.analysis],
+			importedModules: [stdlib.analysis]
+		)
+	}
+
+	func callback(_ request: Request) {
+		
+	}
+
+	func getSource(_ uri: String) -> SourceDocument? {
+		sources[uri]
+	}
+
+	func setSource(uri: String, to document: SourceDocument) {
+		sources[uri] = document
+	}
+
+	func handle(_ request: Request) async {
+		Log.info("handling request: \(request)")
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -28,18 +57,20 @@ public struct Server {
 			()
 		case .cancelRequest:
 			()
+		case .textDocumentDefinition:
+			await TextDocumentDefinition(request: request).handle(self)
 		case .textDocumentDidOpen:
-			TextDocumentDidOpen(request: request).handle(&self)
+			await TextDocumentDidOpen(request: request).handle(self)
 		case .textDocumentDidChange:
-			TextDocumentDidChange(request: request).handle(&self)
+			await TextDocumentDidChange(request: request).handle(self)
 		case .textDocumentCompletion:
-			TextDocumentCompletion(request: request).handle(&self)
+			await TextDocumentCompletion(request: request).handle(self)
 		case .textDocumentFormatting:
-			TextDocumentFormatting(request: request).handle(&self)
+			await TextDocumentFormatting(request: request).handle(self)
 		case .textDocumentDiagnostic:
-			TextDocumentDiagnostic(request: request).handle(&self)
+			await TextDocumentDiagnostic(request: request).handle(self)
 		case .textDocumentSemanticTokensFull:
-			TextDocumentSemanticTokensFull(request: request).handle(&self)
+			await TextDocumentSemanticTokensFull(request: request).handle(self)
 		case .workspaceSemanticTokensRefresh:
 			()
 		case .shutdown:

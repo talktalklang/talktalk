@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-struct TextDocumentCompletionRequest: Decodable {
+struct TextDocumentCompletionRequest: Decodable, Sendable {
 	enum TriggerKind: Int, Decodable {
 		case invoked = 1, character = 2, forIncompleteCompletions = 3
 	}

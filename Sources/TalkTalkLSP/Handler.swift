@@ -1,6 +1,5 @@
 import Foundation
 
-@MainActor
 class LSPRequestParser {
 	enum State {
 		case contentLength, length, split, body(Int)
@@ -130,7 +129,6 @@ class LSPRequestParser {
 	}
 }
 
-@MainActor
 struct Handler {
 	// We read json, we write json
 	let decoder = JSONDecoder()
@@ -142,9 +140,21 @@ struct Handler {
 	// Keep track of how many empty responses we get. If it goes to 10 we should just exit.
 	var emptyResponseCount: Int = 0
 
-	init(callback: @escaping (Request) -> Void) {
+	var requests: AsyncStream<Request>?
+	var continuation: AsyncStream<Request>.Continuation?
+
+	init() {
 		self.parser = .init()
-		self.parser.callback = callback
+
+	}
+
+	mutating func receive() -> AsyncStream<Request> {
+		let requests = AsyncStream { continuation in
+			self.continuation = continuation
+		}
+
+		self.requests = requests
+		return requests
 	}
 
 	mutating func handle(data: Data) {

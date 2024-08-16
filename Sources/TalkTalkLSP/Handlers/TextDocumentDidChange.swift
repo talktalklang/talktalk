@@ -8,14 +8,18 @@
 struct TextDocumentDidChange {
 	var request: Request
 
-	func handle(_ server: inout Server) {
+	func handle(_ server: Server) async {
 		let params = request.params as! TextDocumentDidChangeRequest
-		let source = server.sources[params.textDocument.uri] ?? SourceDocument(
-			version: params.textDocument.version,
-			uri: params.textDocument.uri,
-			text: params.contentChanges[0].text
-		)
+		let source = if let source = await server.sources[params.textDocument.uri] {
+			source
+		} else {
+			await SourceDocument(
+				version: params.textDocument.version,
+				uri: params.textDocument.uri,
+				text: params.contentChanges[0].text
+			)
+		}
 
-		source.update(text: params.contentChanges[0].text)
+		await source.update(text: params.contentChanges[0].text)
 	}
 }

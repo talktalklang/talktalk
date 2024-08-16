@@ -8,8 +8,8 @@
 struct TextDocumentDidOpen {
 	var request: Request
 
-	func handle(_ server: inout Server) {
+	func handle(_ server: Server) async {
 		let params = request.params as! TextDocumentDidOpenRequest
-		server.sources[params.textDocument.uri] = .init(textDocument: params.textDocument)
+		await server.setSource(uri: params.textDocument.uri, to: .init(textDocument: params.textDocument))
 	}
 }

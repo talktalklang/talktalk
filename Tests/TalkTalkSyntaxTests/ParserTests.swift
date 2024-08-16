@@ -34,7 +34,7 @@ struct TalkTalkParserTests {
 		\("   " /* whitespace */ )
 		""")
 		var parser = Parser(lexer)
-		let result = parser.parse()
+		_ = parser.parse()
 
 		#expect(parser.errors.isEmpty)
 	}

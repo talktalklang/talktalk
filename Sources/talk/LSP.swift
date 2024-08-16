@@ -16,7 +16,7 @@ struct LSP: TalkTalkCommand {
 	@MainActor
 	func run() async throws {
 		Log.info("talk lsp called")
-		var lsp = TalkTalkLSP.LSP()
+		var lsp = try await TalkTalkLSP.LSP()
 		lsp.start()
 	}
 }

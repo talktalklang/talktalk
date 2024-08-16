@@ -10,7 +10,7 @@ import TalkTalkBytecode
 
 struct MessageParams: Equatable {}
 
-enum RequestID: Equatable, Codable {
+enum RequestID: Equatable, Codable, Sendable {
 	case integer(Int), string(String)
 
 	init(from decoder: any Decoder) throws {
@@ -36,7 +36,7 @@ enum RequestID: Equatable, Codable {
 	}
 }
 
-struct Request: Equatable, Codable {
+struct Request: Equatable, Codable, Sendable {
 	static func == (lhs: Request, rhs: Request) -> Bool {
 		lhs.id == rhs.id && lhs.method == rhs.method
 	}
@@ -47,13 +47,13 @@ struct Request: Equatable, Codable {
 
 	var id: RequestID?
 	var method: Method
-	var params: (any Decodable)?
+	var params: (any Decodable & Sendable)?
 
 	enum CodingKeys: CodingKey {
 		case id, method, params
 	}
 
-	init(id: RequestID?, method: Method, params: (any Decodable)? = nil) {
+	init(id: RequestID?, method: Method, params: (any Decodable & Sendable)? = nil) {
 		self.id = id
 		self.method = method
 		self.params = params
@@ -74,6 +74,8 @@ struct Request: Equatable, Codable {
 		self.id = try container.decodeIfPresent(RequestID.self, forKey: .id)
 		self.method = try container.decode(Method.self, forKey: .method)
 		self.params = switch method {
+		case .textDocumentDefinition:
+			try container.decode(TextDocumentDefinitionRequest.self, forKey: .params)
 		case .textDocumentDidOpen:
 			try container.decode(TextDocumentDidOpenRequest.self, forKey: .params)
 		case .textDocumentCompletion:
