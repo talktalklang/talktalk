@@ -4,7 +4,7 @@ public protocol StructDecl: Decl {
 	var structToken: Token { get }
 	var name: String { get }
 	var nameToken: Token { get }
-	var body: any DeclBlockExpr { get }
+	var body: any DeclBlock { get }
 	var genericParams: (any GenericParams)? { get }
 }
 
@@ -12,7 +12,7 @@ public struct StructDeclSyntax: StructDecl {
 	public var structToken: Token
 	public var name: String
 	public var nameToken: Token
-	public var body: any DeclBlockExpr
+	public var body: any DeclBlock
 	public var genericParams: (any GenericParams)?
 
 	// Where does this syntax live

@@ -7,17 +7,17 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedBlockExpr: AnalyzedExpr, BlockExpr {
-	let expr: any BlockExpr
+public struct AnalyzedBlockStmt: AnalyzedExpr, BlockStmt {
+	let stmt: any BlockStmt
 	public let typeID: TypeID
 
-	public var exprsAnalyzed: [any AnalyzedSyntax]
-	public var analyzedChildren: [any AnalyzedSyntax] { exprsAnalyzed }
+	public var stmtsAnalyzed: [any AnalyzedSyntax]
+	public var analyzedChildren: [any AnalyzedSyntax] { stmtsAnalyzed }
 	public let environment: Environment
 
-	public var exprs: [any Syntax] { expr.exprs }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var stmts: [any Stmt] { stmt.stmts }
+	public var location: SourceLocation { stmt.location }
+	public var children: [any Syntax] { stmt.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
 		try visitor.visit(self, scope)

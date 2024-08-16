@@ -8,13 +8,13 @@
 public protocol InitDecl: Decl {
 	var initToken: Token { get }
 	var parameters: ParamsExpr { get }
-	var body: any BlockExpr { get }
+	var body: any DeclBlock { get }
 }
 
 public struct InitDeclSyntax: InitDecl {
 	public var initToken: Token
 	public var parameters: ParamsExpr
-	public var body: any BlockExpr
+	public var body: any DeclBlock
 
 	public var location: SourceLocation
 	public var children: [any Syntax] {

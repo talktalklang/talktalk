@@ -6,13 +6,13 @@
 //
 
 public extension Parser {
-	mutating func letVarDecl(_ kind: Token.Kind) -> Decl {
+	mutating func letVarDecl(_ kind: Token.Kind) -> any Stmt {
 		let token = previous!
 
 		let i = startLocation(at: previous)
 
 		guard let nameToken = consume(.identifier, "expected identifier after var") else {
-			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
+			return error(at: current, .unexpectedToken(expected: .identifier, got: current), expectation: .identifier)
 		}
 
 		var typeDecl: Token?
@@ -59,7 +59,7 @@ public extension Parser {
 		let params = parameterList()
 		skip(.newline)
 	
-		let body = blockExpr(false)
+		let body = declBlock()
 		return InitDeclSyntax(
 			initToken: initToken,
 			parameters: params,

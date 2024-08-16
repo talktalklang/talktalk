@@ -18,14 +18,14 @@ public protocol Visitor {
 	func visit(_ expr: BinaryExpr, _ context: Context) throws -> Value
 	func visit(_ expr: IfExpr, _ context: Context) throws -> Value
 	func visit(_ expr: WhileStmt, _ context: Context) throws -> Value
-	func visit(_ expr: BlockExpr, _ context: Context) throws -> Value
+	func visit(_ expr: BlockStmt, _ context: Context) throws -> Value
 	func visit(_ expr: FuncExpr, _ context: Context) throws -> Value
 	func visit(_ expr: ParamsExpr, _ context: Context) throws -> Value
 	func visit(_ expr: Param, _ context: Context) throws -> Value
 	func visit(_ expr: GenericParams, _ context: Context) throws -> Value
 
 	func visit(_ expr: StructExpr, _ context: Context) throws -> Value
-	func visit(_ expr: DeclBlockExpr, _ context: Context) throws -> Value
+	func visit(_ expr: DeclBlock, _ context: Context) throws -> Value
 	func visit(_ expr: VarDecl, _ context: Context) throws -> Value
 	func visit(_ expr: LetDecl, _ context: Context) throws -> Value
 	func visit(_ expr: ParseError, _ context: Context) throws -> Value

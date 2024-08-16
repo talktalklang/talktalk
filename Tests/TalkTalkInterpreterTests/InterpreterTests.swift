@@ -46,14 +46,15 @@ struct InterpreterTests {
 
 	@Test("Evaluates if") func ifEval() {
 		try! #expect(Interpreter("""
-		return if false { a = 1 } else { a = 2 }
+		let a
+		if false { a = 1 } else { a = 2 }
 		a
 		""").evaluate() == .int(2))
 	}
 
 	@Test("Evaluates while") func whileEval() {
 		try! #expect(Interpreter("""
-		a = 0
+		var a = 0
 		while a != 4 {
 			a = a + 1
 		}
@@ -63,7 +64,7 @@ struct InterpreterTests {
 
 	@Test("Evaluates functions") func functions() {
 		try! #expect(Interpreter("""
-		addtwo = func(x) { x + 2 } 
+		let addtwo = func(x) { x + 2 } 
 		addtwo(3)
 		""").evaluate() == .int(5))
 	}
@@ -83,14 +84,14 @@ struct InterpreterTests {
 	@Test("Evaluates counter") func counter() {
 		try! #expect(Interpreter("""
 		func makeCounter() {
-			count = 0
+			var count = 0
 			func() {
 				count = count + 1
-				count
+				return count
 			}
 		}
 		
-		mycounter = makeCounter()
+		let mycounter = makeCounter()
 		mycounter()
 		mycounter()
 		mycounter()
@@ -99,7 +100,7 @@ struct InterpreterTests {
 
 	@Test("Doesn't mutate state between closures") func counter2() {
 		try! #expect(Interpreter("""
-		makeCounter = func() {
+		let makeCounter = func() {
 			count = 0
 			func() {
 				count = count + 1
@@ -107,12 +108,12 @@ struct InterpreterTests {
 			}
 		}
 		
-		mycounter = makeCounter()
+		let mycounter = makeCounter()
 		mycounter()
 		mycounter()
 		mycounter()
 
-		urcounter = makeCounter()
+		let urcounter = makeCounter()
 		urcounter()
 		""").evaluate() == .int(1))
 	}
@@ -124,7 +125,7 @@ struct InterpreterTests {
 				return fib(n - 2) + fib(n - 1)
 			}
 
-			i = 0
+			let i = 0
 			while i < 5 {
 				print(fib(i))
 				i = i + 1
@@ -139,7 +140,7 @@ struct InterpreterTests {
 			let age: i32
 		}
 
-		foo = Foo(age: 123)
+		let foo = Foo(age: 123)
 		foo.age
 		""").evaluate() == .int(123))
 	}
@@ -154,7 +155,7 @@ struct InterpreterTests {
 			}
 		}
 
-		foo = Foo(age: 123)
+		let foo = Foo(age: 123)
 		foo.add()
 		""").evaluate() == .int(126))
 	}
@@ -169,7 +170,7 @@ struct InterpreterTests {
 			}
 		}
 
-		foo = Foo(age: 123)
+		let foo = Foo(age: 123)
 		foo.add(3)
 		""").evaluate() == .int(129))
 	}

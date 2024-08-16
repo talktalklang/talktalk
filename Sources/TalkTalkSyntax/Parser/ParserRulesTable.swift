@@ -31,7 +31,7 @@ extension Token.Kind {
 		return switch self {
 		case .leftParen: .init({ $0.grouping($1) }, { $0.call($1, $2) }, .call)
 		case .rightParen: .none
-		case .leftBrace: .init({ $0.blockExpr($1) }, nil, .none)
+		case .leftBrace: .init({ $0.blockStmt($1) }, nil, .none)
 		case .rightBrace: .none
 		// unary
 		case .bang: .init({ $0.unary($1) }, nil, .factor)

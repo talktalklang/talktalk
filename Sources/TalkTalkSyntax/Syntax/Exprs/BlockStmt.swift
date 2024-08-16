@@ -5,17 +5,17 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
-public protocol BlockExpr: Expr {
-	var exprs: [any Syntax] { get }
+public protocol BlockStmt: Expr {
+	var stmts: [any Stmt] { get }
 }
 
-public struct BlockExprSyntax: BlockExpr {
-	public var exprs: [any Syntax]
+public struct BlockStmtSyntax: BlockStmt {
+	public var stmts: [any Stmt]
 	public let location: SourceLocation
-	public var children: [any Syntax] { exprs }
+	public var children: [any Syntax] { stmts }
 
-	public init(exprs: [any Syntax], location: SourceLocation) {
-		self.exprs = exprs
+	public init(stmts: [any Stmt], location: SourceLocation) {
+		self.stmts = stmts
 		self.location = location
 	}
 

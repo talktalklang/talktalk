@@ -36,7 +36,7 @@ public struct Parser {
 	public static func parse(_ source: SourceFile, allowErrors: Bool = false) throws -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(source))
 		let result = parser.parse()
-		guard parser.errors.isEmpty || allowErrors else {
+		if !parser.errors.isEmpty && !allowErrors {
 			throw ParserError.couldNotParse(parser.errors)
 		}
 		return result
@@ -74,14 +74,6 @@ public struct Parser {
 	}
 
 	mutating func decl() -> any Syntax {
-		if didMatch(.if) {
-			return ifStmt()
-		}
-
-		if didMatch(.while) {
-			return whileStmt()
-		}
-
 		if didMatch(.struct) {
 			return structDecl()
 		}
@@ -114,9 +106,25 @@ public struct Parser {
 		return parse(precedence: .assignment)
 	}
 
-	mutating func stmt() -> any Syntax {
+	mutating func stmt() -> any Stmt {
 		if didMatch(.import) {
 			return importStmt()
+		}
+
+		if didMatch(.if) {
+			return ifStmt()
+		}
+
+		if didMatch(.while) {
+			return whileStmt()
+		}
+
+		if didMatch(.var) {
+			return letVarDecl(.var)
+		}
+
+		if didMatch(.let) {
+			return letVarDecl(.let)
 		}
 
 		// At this level, we want an ExprStmt, not just a normal expr

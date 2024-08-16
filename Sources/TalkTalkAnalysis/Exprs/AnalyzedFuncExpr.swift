@@ -12,7 +12,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	let expr: FuncExpr
 
 	public let analyzedParams: AnalyzedParamsExpr
-	public let bodyAnalyzed: AnalyzedBlockExpr
+	public let bodyAnalyzed: AnalyzedBlockStmt
 	public let returnsAnalyzed: (any AnalyzedSyntax)?
 	public let environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] {
@@ -22,7 +22,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var name: Token?
 	public var funcToken: Token { expr.funcToken }
 	public var params: ParamsExpr { expr.params }
-	public var body: any BlockExpr { expr.body }
+	public var body: any BlockStmt { expr.body }
 	public var i: Int { expr.i }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
@@ -31,7 +31,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		type: TypeID,
 		expr: FuncExpr,
 		analyzedParams: AnalyzedParamsExpr,
-		bodyAnalyzed: AnalyzedBlockExpr,
+		bodyAnalyzed: AnalyzedBlockStmt,
 		returnsAnalyzed: (any AnalyzedSyntax)?,
 		environment: Environment
 	) {

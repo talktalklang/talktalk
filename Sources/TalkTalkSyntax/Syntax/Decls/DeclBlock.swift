@@ -5,11 +5,11 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
-public protocol DeclBlockExpr: Expr {
+public protocol DeclBlock: Expr {
 	var decls: [any Syntax] { get }
 }
 
-public struct DeclBlockExprSyntax: DeclBlockExpr {
+public struct DeclBlockExprSyntax: DeclBlock {
 	public var decls: [any Syntax]
 	public let location: SourceLocation
 	public var children: [any Syntax] { decls }

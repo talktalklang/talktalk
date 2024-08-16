@@ -273,7 +273,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// Emit the init body
-		for expr in expr.bodyAnalyzed.exprsAnalyzed {
+		for expr in expr.bodyAnalyzed.declsAnalyzed {
 			try expr.accept(initCompiler, initChunk)
 		}
 
@@ -307,7 +307,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// Emit the function body
-		for expr in expr.bodyAnalyzed.exprsAnalyzed {
+		for expr in expr.bodyAnalyzed.stmtsAnalyzed {
 			try expr.accept(functionCompiler, functionChunk)
 		}
 
@@ -330,8 +330,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedBlockExpr, _ chunk: Chunk) throws {
-		for expr in expr.exprsAnalyzed {
+	public func visit(_ expr: AnalyzedBlockStmt, _ chunk: Chunk) throws {
+		for expr in expr.stmtsAnalyzed {
 			try expr.accept(self, chunk)
 		}
 	}
@@ -444,7 +444,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				// Emit the init body
-				for expr in decl.bodyAnalyzed.exprsAnalyzed {
+				for expr in decl.bodyAnalyzed.declsAnalyzed {
 					try expr.accept(declCompiler, declChunk)
 				}
 
@@ -476,7 +476,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				// Emit the body
-				for expr in decl.bodyAnalyzed.exprsAnalyzed {
+				for expr in decl.bodyAnalyzed.stmtsAnalyzed {
 					try expr.accept(declCompiler, declChunk)
 				}
 

@@ -10,7 +10,7 @@ import Testing
 struct ArrayTests: StandardLibraryTest {
 	@Test("Can be created") func create() async throws {
 		let result = try await run("""
-		a = Array()
+		let a = Array()
 		return a.count
 		"""
 		).get()

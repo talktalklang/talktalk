@@ -85,14 +85,14 @@ extension Parser {
 
 		skip(.newline)
 
-		let consequence = blockExpr(false)
+		let consequence = blockStmt(false)
 
 		skip(.newline)
 		let elseToken = consume(.else)
 		skip(.newline)
 
 		// TODO: make else optional
-		let alternative = blockExpr(false)
+		let alternative = blockStmt(false)
 
 		return IfExprSyntax(
 			ifToken: ifToken,
@@ -120,9 +120,16 @@ extension Parser {
 
 		skip(.newline)
 
-		let body = blockExpr(false)
+		let body = blockStmt(false)
 
-		let funcExpr = FuncExprSyntax(funcToken: funcToken, params: params, body: body, i: lexer.current, name: name, location: endLocation(i))
+		let funcExpr = FuncExprSyntax(
+			funcToken: funcToken,
+			params: params,
+			body: body,
+			i: lexer.current,
+			name: name,
+			location: endLocation(i)
+		)
 
 		if check(.leftParen) {
 			return call(false, funcExpr)
@@ -196,21 +203,21 @@ extension Parser {
 		)
 	}
 
-	mutating func blockExpr(_: Bool) -> BlockExprSyntax {
+	mutating func blockStmt(_: Bool) -> BlockStmtSyntax {
 		let i = startLocation()
 		skip(.newline)
 		consume(.leftBrace, "expected '{' before block body")
 		skip(.newline)
 
-		var body: [any Syntax] = []
+		var body: [any Stmt] = []
 		while !check(.eof), !check(.rightBrace) {
-			body.append(decl())
+			body.append(stmt())
 			skip(.newline)
 		}
 
 		consume(.rightBrace, "expected '}' after block body")
 
-		return BlockExprSyntax(exprs: body, location: endLocation(i))
+		return BlockStmtSyntax(stmts: body, location: endLocation(i))
 	}
 
 	mutating func variable(_ canAssign: Bool) -> any Expr {

@@ -22,7 +22,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public var structToken: Token { wrapped.structToken }
 	public var name: String { wrapped.name }
 	public var nameToken: Token { wrapped.nameToken }
-	public var body: any DeclBlockExpr { wrapped.body }
+	public var body: any DeclBlock { wrapped.body }
 	public var genericParams: (any GenericParams)? { wrapped.genericParams }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }

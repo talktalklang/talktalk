@@ -13,14 +13,14 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	public let typeID: TypeID
 	public var environment: Environment
 	public var parametersAnalyzed: AnalyzedParamsExpr
-	public var bodyAnalyzed: AnalyzedBlockExpr
+	public var bodyAnalyzed: AnalyzedDeclBlock
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[parametersAnalyzed, bodyAnalyzed]
 	}
 
 	public var initToken: Token { wrapped.initToken }
 	public var parameters: any ParamsExpr { wrapped.parameters }
-	public var body: any BlockExpr { wrapped.body }
+	public var body: any DeclBlock { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 

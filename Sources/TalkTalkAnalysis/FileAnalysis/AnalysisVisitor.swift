@@ -18,7 +18,7 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedUnaryExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedIfExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedFuncExpr, _ context: Context) throws -> Value
-	func visit(_ expr: AnalyzedBlockExpr, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedBlockStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedWhileStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedParamsExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedReturnExpr, _ context: Context) throws -> Value

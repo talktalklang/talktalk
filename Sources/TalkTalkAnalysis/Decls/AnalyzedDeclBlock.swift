@@ -7,10 +7,10 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedDeclBlock: DeclBlockExpr, AnalyzedDecl {
+public struct AnalyzedDeclBlock: DeclBlock, AnalyzedDecl {
 	public let typeID: TypeID
 
-	let decl: DeclBlockExpr
+	let decl: DeclBlock
 
 	public var declsAnalyzed: [any AnalyzedDecl]
 	public var analyzedChildren: [any AnalyzedSyntax] { declsAnalyzed }

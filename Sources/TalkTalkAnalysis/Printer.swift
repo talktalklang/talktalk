@@ -156,7 +156,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedBlockExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedBlockStmt, _ context: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {

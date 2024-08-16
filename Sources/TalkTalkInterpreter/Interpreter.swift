@@ -197,8 +197,8 @@ public struct Interpreter: AnalyzedVisitor {
 		return lastResult
 	}
 
-	public func visit(_ expr: AnalyzedBlockExpr, _ context: Scope) throws -> Value {
-		try lastResult(of: expr.exprsAnalyzed, in: context)
+	public func visit(_ expr: AnalyzedBlockStmt, _ context: Scope) throws -> Value {
+		try lastResult(of: expr.stmtsAnalyzed, in: context)
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _ context: Scope) throws -> Value {
@@ -247,11 +247,19 @@ public struct Interpreter: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ context: Scope) throws -> Value {
-		fatalError()
+		if let value = expr.valueAnalyzed {
+			return try context.define(expr.name, value.accept(self, context))
+		}
+
+		return .none
 	}
 
 	public func visit(_ expr: AnalyzedLetDecl, _ context: Scope) throws -> Value {
-		fatalError()
+		if let value = expr.valueAnalyzed {
+			return try context.define(expr.name, value.accept(self, context))
+		}
+
+		return .none
 	}
 
 	public func visit(_ expr: AnalyzedIfStmt, _ context: Scope) throws -> Value {
@@ -311,7 +319,7 @@ public struct Interpreter: AnalyzedVisitor {
 
 		var lastReturn: Value = .none
 
-		for expr in funcExpr.bodyAnalyzed.exprsAnalyzed {
+		for expr in funcExpr.bodyAnalyzed.stmtsAnalyzed {
 			do {
 				lastReturn = try expr.accept(self, scope)
 			} catch let Return.returning(value) {
@@ -332,7 +340,7 @@ public struct Interpreter: AnalyzedVisitor {
 
 		var lastReturn: Value = .none
 
-		for expr in closure.funcExpr.bodyAnalyzed.exprsAnalyzed {
+		for expr in closure.funcExpr.bodyAnalyzed.stmtsAnalyzed {
 			do {
 				lastReturn = try expr.accept(self, scope)
 			} catch let Return.returning(value) {

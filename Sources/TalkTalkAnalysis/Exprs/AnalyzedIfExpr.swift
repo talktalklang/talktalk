@@ -12,16 +12,16 @@ public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
 	let expr: IfExpr
 
 	public var conditionAnalyzed: any AnalyzedExpr
-	public var consequenceAnalyzed: AnalyzedBlockExpr
-	public var alternativeAnalyzed: AnalyzedBlockExpr
+	public var consequenceAnalyzed: AnalyzedBlockStmt
+	public var alternativeAnalyzed: AnalyzedBlockStmt
 	public let environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { [conditionAnalyzed, consequenceAnalyzed, alternativeAnalyzed] }
 
 	public var ifToken: Token { expr.ifToken }
 	public var elseToken: Token? { expr.elseToken }
 	public var condition: any Expr { expr.condition }
-	public var consequence: any BlockExpr { expr.consequence }
-	public var alternative: any BlockExpr { expr.alternative }
+	public var consequence: any BlockStmt { expr.consequence }
+	public var alternative: any BlockStmt { expr.alternative }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

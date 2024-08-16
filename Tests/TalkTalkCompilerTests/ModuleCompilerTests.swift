@@ -117,7 +117,7 @@ struct ModuleCompilerTests {
 				}
 			}
 
-			person = Person(age: 123)
+			let person = Person(age: 123)
 			""")
 		])
 
@@ -132,7 +132,7 @@ struct ModuleCompilerTests {
 			.op(.getLocal, line: 4, .local(slot: 1, name: "age")),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
-			.op(.return, line: 4, .simple),
+			.op(.pop, line: 4, .simple),
 			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
 			.op(.return, line: 6, .simple)
 		))
@@ -174,7 +174,7 @@ struct ModuleCompilerTests {
 			.op(.constant, line: 4, .constant(.int(123))),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
-			.op(.return, line: 4, .simple),
+			.op(.pop, line: 4, .simple),
 			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
 			.op(.return, line: 6, .simple)
 		))

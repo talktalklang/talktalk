@@ -112,7 +112,7 @@ struct TalkTalkParserTests {
 			self.foo = hello + 1
 			(hello + 1)
 		}
-		""")[0].cast(FuncExprSyntax.self).body.exprs
+		""")[0].cast(FuncExprSyntax.self).body.stmts
 
 		print(ast.description)
 
@@ -174,8 +174,8 @@ struct TalkTalkParserTests {
 		}
 		""")[0].cast(IfStmtSyntax.self)
 		#expect(ast.condition.description == "true")
-		#expect(ast.consequence.exprs[0].description == "1")
-		#expect(ast.alternative?.exprs[0].description == "2")
+		#expect(ast.consequence.stmts[0].description == "1")
+		#expect(ast.alternative?.stmts[0].description == "2")
 	}
 
 	@Test("if expr") func ifExpr() {
@@ -189,8 +189,8 @@ struct TalkTalkParserTests {
 		let ifExpr = ast.value.cast(IfExprSyntax.self)
 
 		#expect(ifExpr.condition.description == "true")
-		#expect(ifExpr.consequence.exprs[0].description == "1")
-		#expect(ifExpr.alternative.exprs[0].description == "2")
+		#expect(ifExpr.consequence.stmts[0].description == "1")
+		#expect(ifExpr.alternative.stmts[0].description == "2")
 	}
 
 	@Test("while expr") func whileexpr() {
@@ -201,7 +201,7 @@ struct TalkTalkParserTests {
 		}
 		""")[0].cast(WhileStmtSyntax.self)
 		#expect(ast.condition.description == "i < 5")
-		#expect(ast.body.exprs[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .int(123))
+		#expect(ast.body.stmts[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 	
 
@@ -213,7 +213,7 @@ struct TalkTalkParserTests {
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
 
-		let bodyExpr = fn.body.exprs[0]
+		let bodyExpr = fn.body.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(BinaryExprSyntax.self)
 
@@ -230,7 +230,7 @@ struct TalkTalkParserTests {
 		""")[0]
 
 		let fn = try #require(ast as? FuncExpr)
-		#expect(fn.body.exprs[0]
+		#expect(fn.body.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(ReturnExprSyntax.self).value?.description == "x")
 	}
@@ -244,7 +244,7 @@ struct TalkTalkParserTests {
 		#expect(fn.params.params[0].name == "x")
 		#expect(fn.params.params[1].name == "y")
 
-		let bodyExpr = fn.body.exprs[0]
+		let bodyExpr = fn.body.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(BinaryExprSyntax.self)
 		#expect(bodyExpr.lhs.description == "x")
@@ -277,7 +277,7 @@ struct TalkTalkParserTests {
 		""")[0]
 		let funcExpr = ast.cast(FuncExprSyntax.self)
 		#expect(funcExpr.params.params.isEmpty)
-		#expect(funcExpr.body.exprs[0].description == "2")
+		#expect(funcExpr.body.stmts[0].description == "2")
 	}
 
 	@Test("Parses counter") func counter() throws {

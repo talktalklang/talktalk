@@ -188,10 +188,10 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any BlockExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any BlockStmt, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			try expr.exprs.map { try $0.accept(self, context) }.joined(separator: "\n")
+			try expr.stmts.map { try $0.accept(self, context) }.joined(separator: "\n")
 		}
 	}
 
@@ -218,7 +218,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any DeclBlockExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any DeclBlock, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for decl in expr.decls {

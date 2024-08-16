@@ -6,17 +6,17 @@
 //
 
 extension Parser {
-	mutating func ifStmt() -> any Syntax {
+	mutating func ifStmt() -> any Stmt {
 		let ifToken = previous!
 		let i = startLocation(at: ifToken)
 		let condition = expr()
-		let consequence = blockExpr(false)
+		let consequence = blockStmt(false)
 
 		var elseToken: Token?
-		var alternative: (any BlockExpr)?
+		var alternative: (any BlockStmt)?
 		if let token = match(.else) {
 			elseToken = token
-			alternative = blockExpr(false)
+			alternative = blockStmt(false)
 		}
 
 		return IfStmtSyntax(
@@ -30,19 +30,19 @@ extension Parser {
 		)
 	}
 
-	mutating func whileStmt() -> any Expr {
+	mutating func whileStmt() -> any Stmt {
 		let whileToken = previous!
 		let i = startLocation(at: whileToken)
 
 		skip(.newline)
 
 		let condition = parse(precedence: .assignment)
-		let body = blockExpr(false)
+		let body = blockStmt(false)
 
 		return WhileStmtSyntax(whileToken: whileToken, condition: condition, body: body, location: endLocation(i))
 	}
 
-	mutating func importStmt() -> any Syntax {
+	mutating func importStmt() -> any Stmt {
 		let importToken = previous!
 		let i = startLocation(at: importToken)
 

@@ -57,22 +57,6 @@ public struct SourceFileAnalyzer: Visitor {
 			try $0.accept(analyzer, environment)
 		}
 
-		// If it's just a single statement, just make it a return
-		if environment.canAutoReturn,
-		   analyzed.count == 1,
-		   let exprStmt = analyzed[0] as? AnalyzedExprStmt
-		{
-			analyzed[0] = AnalyzedReturnExpr(
-				typeID: exprStmt.typeID,
-				environment: environment,
-				expr: ReturnExprSyntax(
-					returnToken: .synthetic(.return),
-					location: [exprStmt.location.start]
-				),
-				valueAnalyzed: exprStmt.exprAnalyzed
-			)
-		}
-
 		return analyzed
 	}
 
@@ -425,8 +409,8 @@ public struct SourceFileAnalyzer: Visitor {
 			typeID: expr.consequence.accept(self, context).typeID,
 			expr: expr,
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
-			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockExpr,
-			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockExpr,
+			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockStmt,
+			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockStmt,
 			environment: context
 		)
 	}
@@ -470,9 +454,9 @@ public struct SourceFileAnalyzer: Visitor {
 				expr: expr,
 				analyzedParams: params,
 				bodyAnalyzed: .init(
-					expr: expr.body,
+					stmt: expr.body,
 					typeID: TypeID(),
-					exprsAnalyzed: [],
+					stmtsAnalyzed: [],
 					environment: env
 				),
 				returnsAnalyzed: nil,
@@ -482,7 +466,7 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		// Visit the body with the innerEnvironment, finding captures as we go.
-		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockExpr
+		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
 
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
@@ -500,7 +484,7 @@ public struct SourceFileAnalyzer: Visitor {
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
-			returnsAnalyzed: bodyAnalyzed.exprsAnalyzed.last,
+			returnsAnalyzed: bodyAnalyzed.stmtsAnalyzed.last,
 			environment: innerEnvironment
 		)
 
@@ -531,7 +515,7 @@ public struct SourceFileAnalyzer: Visitor {
 			typeID: TypeID(.struct(lexicalScope.scope.name!)),
 			environment: innerEnvironment,
 			parametersAnalyzed: paramsAnalyzed,
-			bodyAnalyzed: bodyAnalyzed as! AnalyzedBlockExpr
+			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock
 		)
 	}
 
@@ -574,7 +558,7 @@ public struct SourceFileAnalyzer: Visitor {
 	{
 		// TODO: Validate condition is bool
 		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
-		let body = try visit(expr.body, context.withNoAutoReturn()) as! AnalyzedBlockExpr
+		let body = try visit(expr.body, context.withNoAutoReturn()) as! AnalyzedBlockStmt
 
 		return AnalyzedWhileStmt(
 			typeID: body.typeID,
@@ -585,17 +569,17 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any BlockExpr, _ context: Environment) throws
+	public func visit(_ stmt: any BlockStmt, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		var bodyAnalyzed: [any AnalyzedSyntax] = []
 
-		for bodyExpr in expr.exprs {
+		for bodyExpr in stmt.stmts {
 			try bodyAnalyzed.append(bodyExpr.accept(self, context))
 		}
 
 		// Add an implicit return for single statement blocks
-		if context.canAutoReturn, expr.exprs.count == 1, let exprStmt = bodyAnalyzed[0] as? AnalyzedExprStmt {
+		if context.canAutoReturn, stmt.stmts.count == 1, let exprStmt = bodyAnalyzed[0] as? AnalyzedExprStmt {
 			bodyAnalyzed[0] = AnalyzedReturnExpr(
 				typeID: exprStmt.typeID,
 				environment: context,
@@ -607,10 +591,10 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
-		return AnalyzedBlockExpr(
-			expr: expr,
+		return AnalyzedBlockStmt(
+			stmt: stmt,
 			typeID: TypeID(bodyAnalyzed.last?.typeAnalyzed ?? .none),
-			exprsAnalyzed: bodyAnalyzed,
+			stmtsAnalyzed: bodyAnalyzed,
 			environment: context
 		)
 	}
@@ -842,7 +826,7 @@ public struct SourceFileAnalyzer: Visitor {
 		return analyzed
 	}
 
-	public func visit(_ expr: any DeclBlockExpr, _ context: Environment) throws
+	public func visit(_ expr: any DeclBlock, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		var declsAnalyzed: [any AnalyzedExpr] = []

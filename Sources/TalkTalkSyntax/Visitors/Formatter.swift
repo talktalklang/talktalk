@@ -170,11 +170,11 @@ public struct Formatter: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: any BlockExpr, _ context: Context) throws -> Value {
+	public func visit(_ expr: any BlockStmt, _ context: Context) throws -> Value {
 		var result = "{\n"
 		result += try indenting {
 			var result: [String] = []
-			for expr in expr.exprs {
+			for expr in expr.stmts {
 				try result.append(expr.accept($0, context))
 			}
 			return result.joined(separator: "\n")
@@ -229,7 +229,7 @@ public struct Formatter: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: any DeclBlockExpr, _ context: Context) throws -> String {
+	public func visit(_ expr: any DeclBlock, _ context: Context) throws -> String {
 		var result = "{\n"
 		result += try indenting {
 			var result: [String] = []

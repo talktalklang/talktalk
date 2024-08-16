@@ -21,8 +21,8 @@ public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
 	public var ifToken: Token { wrapped.ifToken }
 	public var elseToken: Token? { wrapped.elseToken }
 	public var condition: any Expr { wrapped.condition }
-	public var consequence: any BlockExpr { wrapped.consequence }
-	public var alternative: (any BlockExpr)? { wrapped.alternative }
+	public var consequence: any BlockStmt { wrapped.consequence }
+	public var alternative: (any BlockStmt)? { wrapped.alternative }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 

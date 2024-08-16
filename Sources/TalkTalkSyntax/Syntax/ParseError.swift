@@ -20,7 +20,7 @@ public enum ParseExpectation: Sendable {
 	}
 }
 
-public protocol ParseError: Decl, Expr, Syntax {
+public protocol ParseError: Decl, Expr, Stmt, Syntax {
 	var message: String { get }
 	var expectation: ParseExpectation { get }
 }

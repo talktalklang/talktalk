@@ -4,17 +4,17 @@ public protocol IfStmt: Stmt {
 	// Insert IfStmt specific fields here
 	var ifToken: Token { get }
 	var condition: any Expr { get }
-	var consequence: any BlockExpr { get }
+	var consequence: any BlockStmt { get }
 	var elseToken: Token? { get }
-	var alternative: (any BlockExpr)? { get }
+	var alternative: (any BlockStmt)? { get }
 }
 
 public struct IfStmtSyntax: IfStmt {
 	public var ifToken: Token
 	public var condition: any Expr
-	public var consequence: any BlockExpr
+	public var consequence: any BlockStmt
 	public var elseToken: Token?
-	public var alternative: (any BlockExpr)?
+	public var alternative: (any BlockStmt)?
 
 	// Where does this syntax live
 	public var location: SourceLocation

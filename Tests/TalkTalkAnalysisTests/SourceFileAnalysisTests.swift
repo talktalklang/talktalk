@@ -100,12 +100,12 @@ struct AnalysisTests {
 			func foo(x) { foo(x) }
 			""")
 
-		#expect(
-			fn
-				.cast(AnalyzedFuncExpr.self).bodyAnalyzed.exprsAnalyzed[0]
-				.cast(AnalyzedReturnExpr.self).valueAnalyzed?
-				.cast(AnalyzedCallExpr.self).callee.description == "foo"
-		)
+		let passed = fn
+			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
+			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedCallExpr.self).callee.description == "foo"
+
+		#expect(passed)
 	}
 
 	@Test("Types named func expr") func namedfuncExpr() {
@@ -227,7 +227,9 @@ struct AnalysisTests {
 				))
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
-		let nestedFn = fn.bodyAnalyzed.exprsAnalyzed[0] as! AnalyzedFuncExpr
+		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
+			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedFuncExpr.self)
 		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", .int, [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
@@ -240,10 +242,10 @@ struct AnalysisTests {
 			Parser.parse(
 				"""
 				let makeCounter = func() {
-					var count = 0
-					func() {
+					let count = 0
+					return func() {
 						count = count + 1
-						count
+						return count
 					}
 				}
 
@@ -255,11 +257,15 @@ struct AnalysisTests {
 		let fn = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.count == 0)
 
-		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)
+		let counterFn = try #require(fn.returnsAnalyzed)
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedFuncExpr.self)
 
 		#expect(counterFn.environment.captures.count == 1)
 		#expect(counterFn.returnsAnalyzed!
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
 			.cast(AnalyzedVarExpr.self).typeAnalyzed == .int)
 
 		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.typeAnalyzed

@@ -174,9 +174,9 @@ struct SemanticTokensVisitor: Visitor {
 		return results
 	}
 
-	func visit(_ expr: BlockExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: BlockStmt, _ context: Context) throws -> [RawSemanticToken] {
 		var result: [RawSemanticToken] = []
-		for expr in expr.exprs {
+		for expr in expr.stmts {
 			try result.append(contentsOf: expr.accept(self, context))
 		}
 		return result
@@ -216,7 +216,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: DeclBlockExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: DeclBlock, _ context: Context) throws -> [RawSemanticToken] {
 		var result: [RawSemanticToken] = []
 
 		for expr in expr.decls {

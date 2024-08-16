@@ -12,13 +12,13 @@ public struct AnalyzedWhileStmt: WhileStmt, AnalyzedStmt {
 	let wrapped: WhileStmt
 
 	public var conditionAnalyzed: any AnalyzedExpr
-	public var bodyAnalyzed: AnalyzedBlockExpr
+	public var bodyAnalyzed: AnalyzedBlockStmt
 	public var analyzedChildren: [any AnalyzedSyntax] { [conditionAnalyzed, bodyAnalyzed] }
 	public let environment: Environment
 
 	public var whileToken: Token { wrapped.whileToken }
 	public var condition: any Expr { wrapped.condition }
-	public var body: any BlockExpr { wrapped.body }
+	public var body: any BlockStmt { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 

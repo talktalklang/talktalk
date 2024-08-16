@@ -8,7 +8,7 @@
 public protocol FuncExpr: Expr {
 	var funcToken: Token { get }
 	var params: ParamsExpr { get }
-	var body: any BlockExpr { get }
+	var body: any BlockStmt { get }
 	var i: Int { get }
 	var name: Token? { get }
 }
@@ -22,13 +22,13 @@ public extension FuncExpr {
 public struct FuncExprSyntax: FuncExpr, Decl {
 	public let funcToken: Token
 	public let params: ParamsExpr
-	public let body: any BlockExpr
+	public let body: any BlockStmt
 	public let i: Int
 	public let name: Token?
 	public let location: SourceLocation
 	public var children: [any Syntax] { [params, body] }
 
-	public init(funcToken: Token, params: ParamsExpr, body: any BlockExpr, i: Int, name: Token? = nil, location: SourceLocation) {
+	public init(funcToken: Token, params: ParamsExpr, body: any BlockStmt, i: Int, name: Token? = nil, location: SourceLocation) {
 		self.funcToken = funcToken
 		self.params = params
 		self.body = body

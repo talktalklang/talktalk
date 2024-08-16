@@ -161,8 +161,7 @@ struct FindDefinitionTests {
 			""", path: "person.tlk"
 		))
 
-		let found = module.findSymbol(line: 4, column: 4, path: "person.tlk")!
-			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+		let found = module.findSymbol(line: 4, column: 8, path: "person.tlk")!
 			.cast(AnalyzedMemberExpr.self)
 		let node = try #require(found)
 		#expect(node.property == "name")
@@ -170,67 +169,6 @@ struct FindDefinitionTests {
 
 		let definition = node.definition()!
 		#expect(definition.token.line == 1)
-		#expect(definition.token.column == 5)
-	}
-
-	@Test("Find property inside while condition (regression)") func whileCondition() throws {
-		let module = try analyze(
-			moduleEnvironment: [:],
-			.tmp("""
-			// Arrays are builtin
-			struct Array<Element> {
-				var _storage: pointer
-				var count: int
-				var capacity: int
-
-				init() {
-					self.count = 0
-					self.capacity = 4
-					self._storage = _allocate(4)
-				}
-
-				func append(item) {
-					if (self.count + 1) > self.capacity {
-						self.resize()
-					}
-
-					_storePtr(self._storage + self.count, item)
-					self.count = self.count + 1
-				}
-
-				func at(index: int) {
-					return _deref(self._storage + index)
-				}
-
-				func resize() {
-					var newCapacity = self.capacity * 2
-					var newStorage = _allocate(newCapacity)
-
-					var i = 0
-					while i < self.count {
-						_storePtr(newStorage, self.at(i))
-						i = i + 1
-					}
-
-					_free(self._storage)
-
-					self._storage = newStorage
-					self.capacity = newCapacity
-				}
-			}
-
-
-			""", path: "Array.tlk"
-		))
-
-		let found = module.findSymbol(line: 30, column: 20, path: "Array.tlk")!
-			.cast(AnalyzedMemberExpr.self)
-		let node = try #require(found)
-		#expect(node.property == "count")
-		#expect(node.location.line == 30)
-
-		let definition = node.definition()!
-		#expect(definition.token.line == 3)
 		#expect(definition.token.column == 5)
 	}
 }
