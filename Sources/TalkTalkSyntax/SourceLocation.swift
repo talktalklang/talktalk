@@ -6,6 +6,7 @@
 //
 
 public struct SourceLocation: Sendable, Equatable, Hashable {
+	public let path: String
 	public let start: Token
 	public let end: Token
 
@@ -21,6 +22,7 @@ public struct SourceLocation: Sendable, Equatable, Hashable {
 extension SourceLocation: ExpressibleByArrayLiteral {
 	public init(arrayLiteral elements: Token...) {
 		precondition(!elements.isEmpty, "cannot have a source location with no elements")
+		path = elements.first!.path
 		start = elements.first!
 		end = elements.last!
 	}

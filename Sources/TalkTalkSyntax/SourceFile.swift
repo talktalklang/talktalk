@@ -20,3 +20,10 @@ public struct SourceFile {
 		self.text = text
 	}
 }
+
+extension SourceFile: ExpressibleByStringLiteral {
+	public init(stringLiteral value: StringLiteralType) {
+		self.path = "<literal>"
+		self.text = value
+	}
+}

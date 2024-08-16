@@ -35,7 +35,7 @@ struct ServerTests {
 		return data[i..<data.count]
 	}
 
-	func responses(from requests: Request...) throws -> [Data] {
+	func responses(from requests: Request...) async throws -> [Data] {
 		let requestData = try Data(requests.map {
 			let data = try JSONEncoder().encode($0)
 			return "Content-Length: \(data.count)\r\n\r\n\(String(data: data, encoding: .utf8)!)"
@@ -43,47 +43,29 @@ struct ServerTests {
 
 		var responses: [Data] = []
 
-		var handler = Handler { request in
-			var server = Server()
-			let output = OutputCapture.run {
-				server.handle(request)
-			}
-
-			responses.append(Data(output.stdout.utf8))
-		}
-
+		var handler = Handler()
 		handler.handle(data: requestData)
 
 		return responses.map { stripHeader(from: $0) }
 	}
 
-	@Test("Handles simple message") func simple() throws {
-		let responses = try responses(
+	@Test("Handles simple message") func simple() async throws {
+		let responses = try await responses(
 			from: Request(id: .integer(321), method: .initialize)
 		)
 
 		#expect(responses[0].as(InitializeResult.self) != nil)
 	}
 
-	@Test("Handles partial message") func partial() throws {
+	@Test("Handles partial message") func partial() async throws {
 		let requestData = try JSONEncoder().encode(Request(id: .integer(321), method: .initialize))
 		let data = Data("Content-Length: \(requestData.count)\r\n\r\n\(String(data: requestData, encoding: .utf8)!)".utf8)
 		let data1 = data[0..<32]
 		let data2 = data[32..<data.count]
 
-		var server = Server()
+		var server = try await Server()
 		var called = false
-		var handler = Handler { request in
-			let output = OutputCapture.run {
-				called = true
-				server.handle(request)
-			}
-
-			let response = stripHeader(from: Data(output.stdout.utf8))
-			let result = try! JSONDecoder().decode(InitializeResult.self, from: response)
-
-			#expect(result != nil)
-		}
+		var handler = Handler()
 
 		handler.handle(data: data1)
 		handler.handle(data: data2)
@@ -91,8 +73,8 @@ struct ServerTests {
 		#expect(called == true)
 	}
 
-	@Test("Handles two messages") func twoMessages() throws {
-		let responses = try responses(
+	@Test("Handles two messages") func twoMessages() async throws {
+		let responses = try await responses(
 			from: Request(id: .integer(321), method: .initialize),
 						Request(id: .integer(123), method: .initialize)
 		)

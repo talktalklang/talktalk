@@ -21,5 +21,6 @@ struct TextDocumentDidChange {
 		}
 
 		await source.update(text: params.contentChanges[0].text)
+		await server.analyze()
 	}
 }

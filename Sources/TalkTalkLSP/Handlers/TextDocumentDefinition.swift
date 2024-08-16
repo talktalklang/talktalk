@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/15/24.
 //
 
+import TalkTalkAnalysis
+
 struct TextDocumentDefinition {
 	var request: Request
 
@@ -16,5 +18,10 @@ struct TextDocumentDefinition {
 		}
 
 		Log.info("we got a definition request \(params) : \(source)")
+		let match = await server.findSyntaxLocation(from: params.position)
+
+		if let match {
+			print(match)
+		}
 	}
 }

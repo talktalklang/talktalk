@@ -12,12 +12,12 @@ import Testing
 
 @MainActor
 struct CompleterTests {
-	func complete(_ string: String) -> Completer {
-		return Completer(source: string)
+	func complete(_ string: String) async -> Completer {
+		return await Completer(source: string)
 	}
 
-	@Test("Completes locals") func locals() throws {
-		let completer = complete("""
+	@Test("Completes locals") func locals() async throws {
+		let completer = await complete("""
 		person = "Pat"
 		pet = "dog"
 
@@ -29,7 +29,7 @@ struct CompleterTests {
 		p
 		""")
 
-		try #expect(completer.completions(
+		try await #expect(completer.completions(
 			from: .init(
 				position: .init(line: 8, character: 1),
 				textDocument: .init(uri: "", version: nil, text: nil),
@@ -42,8 +42,8 @@ struct CompleterTests {
 		].sorted())
 	}
 
-	@Test("Completes members") func members() throws {
-		let completer = complete("""
+	@Test("Completes members") func members() async throws {
+		let completer = await complete("""
 		struct Person {
 			var age: int
 			var code: int
@@ -55,7 +55,7 @@ struct CompleterTests {
 		person.
 		""")
 
-		try #expect(completer.completions(
+		try await #expect(completer.completions(
 			from: .init(
 				position: .init(line: 8, character: 1),
 				textDocument: .init(uri: "", version: nil, text: nil),

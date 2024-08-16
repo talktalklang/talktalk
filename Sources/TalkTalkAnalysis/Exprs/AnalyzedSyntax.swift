@@ -30,6 +30,19 @@ public extension AnalyzedSyntax {
 		return result
 	}
 
+	// Try to find the most specific node that contains this position
+	func nearestTo(line: Int, column: Int) -> any AnalyzedSyntax {
+		var candidate: any AnalyzedSyntax = self
+
+		for child in analyzedChildren {
+			if child.location.range.count > candidate.location.range.count {
+				candidate = child
+			}
+		}
+
+		return candidate
+	}
+
 	var debugDescription: String {
 		"\(Self.self)(analyzedChildren: [\(analyzedChildren.map(\.debugDescription).joined(separator: ", "))], errors: \(analysisErrors))"
 	}

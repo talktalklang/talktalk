@@ -7,8 +7,7 @@
 
 import Foundation
 
-@MainActor
-public struct LSP {
+public actor LSP {
 	var server: Server
 	var serverTask: Task<Void, Never>?
 
@@ -16,22 +15,20 @@ public struct LSP {
 		self.server = try await Server()
 	}
 
-	public mutating func start() async {
+	public func start() async {
 		Log.info("starting talktalk lsp")
 
 		let file = FileHandle.standardInput
-		var handler = Handler()
+		var handler = Handler(callback: receive)
 
-		self.serverTask = Task {
-			while true {
-				let data = file.availableData
-				handler.handle(data: data)
-			}
+		while true {
+			let data = file.availableData
+			handler.handle(data: data)
 		}
+	}
 
-		for await request in handler.receive() {
-			await self.server.handle(request)
-		}
+	func receive(_ request: Request) {
+		self.server.enqueue(request)
 	}
 }
 

@@ -19,7 +19,7 @@ struct Array<Element> {
 		self.count = self.count + 1
 	}
 
-	func at(index) {
+	func at(index: int) {
 		return _deref(self._storage + index)
 	}
 

@@ -120,6 +120,7 @@ class LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
+			Log.info("GOT A CALLBACK \(request)")
 			self.callback(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
@@ -143,18 +144,9 @@ struct Handler {
 	var requests: AsyncStream<Request>?
 	var continuation: AsyncStream<Request>.Continuation?
 
-	init() {
+	init(callback: @Sendable @escaping (Request) -> Void) {
 		self.parser = .init()
-
-	}
-
-	mutating func receive() -> AsyncStream<Request> {
-		let requests = AsyncStream { continuation in
-			self.continuation = continuation
-		}
-
-		self.requests = requests
-		return requests
+		self.parser.callback = callback
 	}
 
 	mutating func handle(data: Data) {
@@ -172,6 +164,7 @@ struct Handler {
 
 		emptyResponseCount = 0
 
+		Log.info("parsing \(data.count) bytes")
 		parser.parse(data: data)
 	}
 }

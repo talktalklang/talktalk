@@ -29,6 +29,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		case builtin
 	}
 
+	public let path: String
 	public let kind: Kind
 	public let start: Int
 	public let length: Int
@@ -47,6 +48,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 
 	public static func synthetic(_ kind: Kind, lexeme: String? = nil ) -> Token {
 		Token(
+			path: "synthetic",
 			kind: kind,
 			start: 0,
 			length: 0,
@@ -58,6 +60,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 }
 
 public struct TalkTalkLexer {
+	let path: String
 	let source: ContiguousArray<Character>
 
 	var start = 0
@@ -68,8 +71,9 @@ public struct TalkTalkLexer {
 
 	var errors: [SyntaxError]
 
-	public init(_ source: String) {
-		self.source = ContiguousArray<Character>(source)
+	public init(_ source: SourceFile) {
+		self.path = source.path
+		self.source = ContiguousArray<Character>(source.text)
 		self.errors = []
 	}
 
@@ -256,6 +260,7 @@ public struct TalkTalkLexer {
 	mutating func make(_ kind: Token.Kind) -> Token {
 		let length = current - start
 		return Token(
+			path: path,
 			kind: kind,
 			start: start,
 			length: length,

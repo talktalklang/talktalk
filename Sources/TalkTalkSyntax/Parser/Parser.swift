@@ -33,8 +33,8 @@ public struct Parser {
 
 	public var errors: [SyntaxError] = []
 
-	public static func parse(_ string: String, allowErrors: Bool = false) throws -> [any Syntax] {
-		var parser = Parser(TalkTalkLexer(string))
+	public static func parse(_ source: SourceFile, allowErrors: Bool = false) throws -> [any Syntax] {
+		var parser = Parser(TalkTalkLexer(source))
 		let result = parser.parse()
 		guard parser.errors.isEmpty || allowErrors else {
 			throw ParserError.couldNotParse(parser.errors)
@@ -296,6 +296,6 @@ public struct Parser {
 				"Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
 		}
 
-		return SourceLocation(start: start, end: current)
+		return SourceLocation(path: start.path, start: start, end: current)
 	}
 }
