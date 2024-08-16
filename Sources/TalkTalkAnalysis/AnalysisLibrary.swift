@@ -42,7 +42,16 @@ public struct AnalysisLibrary {
 
 		return try fileURLs.map {
 			let contents = try String(contentsOf: $0, encoding: .utf8)
-			return try ParsedSourceFile(path: $0.path, syntax: Parser.parse(contents, allowErrors: false))
+			return try ParsedSourceFile(
+				path: $0.path,
+				syntax: Parser.parse(
+					SourceFile(
+						path: $0.path,
+						text: contents
+					),
+					allowErrors: false
+				)
+			)
 		}
 	}
 }

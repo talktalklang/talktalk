@@ -55,7 +55,8 @@ public struct REPLRunner {
 
 		if line.isEmpty { return .error("No input") }
 
-		let analyzed = try SourceFileAnalyzer.analyze(Parser.parse(line), in: environment)
+		let parsed = try Parser.parse(SourceFile(path: "<repl>", text: line))
+		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 		for syntax in analyzed {
 			if let syntax = syntax as? AnalyzedExprStmt {
 				// Unwrap expr stmt because we don't just want to pop the value

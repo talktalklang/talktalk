@@ -17,6 +17,11 @@ public struct SourceLocation: Sendable, Equatable, Hashable {
 	public var range: Range<Int> {
 		start.start..<(end.start + end.length)
 	}
+
+	public func contains(line: Int, column: Int) -> Bool {
+		line >= start.line && line <= end.line &&
+			column >= start.column && column <= (end.column + end.length)
+	}
 }
 
 extension SourceLocation: ExpressibleByArrayLiteral {

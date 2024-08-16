@@ -69,7 +69,7 @@ struct Instructions: CustomStringConvertible {
 @MainActor
 struct CompilerTests {
 	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
-		let parsed = try Parser.parse(string)
+		let parsed = try Parser.parse(.init(path: "", text: string))
 		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init())
 		let analysisModule = inModule ? try! ModuleAnalyzer(
 			name: "CompilerTests",

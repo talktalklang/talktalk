@@ -249,7 +249,7 @@ extension Parser {
 	// MARK: Binary ops
 
 	mutating func call(_: Bool, _ lhs: any Expr) -> any Expr {
-		let i = startLocation()
+		let i = startLocation(at: lhs.location.start)
 
 		consume(.leftParen) // This is how we got here.
 

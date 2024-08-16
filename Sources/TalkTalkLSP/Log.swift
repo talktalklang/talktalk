@@ -9,12 +9,12 @@ import Foundation
 
 public struct Log {
 	public static func info(_ message: String) {
-		log(message)
+		log("[info] " + message)
 	}
 
 	public static func error(_ message: String) {
 		FileHandle.standardError.write(Data((message + "\n").utf8))
-		log("ERROR: " + message)
+		log("[error] " + message)
 	}
 
 	private static func log(_ message: String) {

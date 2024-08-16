@@ -38,7 +38,7 @@ extension TypeID {
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
-		let parsed = try! Parser.parse(string)
+		let parsed = try! Parser.parse(.init(path: "", text: string))
 		return try! SourceFileAnalyzer.analyze(parsed, in: .init()).last!
 	}
 

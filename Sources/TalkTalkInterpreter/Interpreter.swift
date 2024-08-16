@@ -21,7 +21,7 @@ public struct Interpreter: AnalyzedVisitor {
 	let parsed: [any AnalyzedSyntax]
 
 	public init(_ code: String) {
-		let lexer = TalkTalkLexer(code)
+		let lexer = TalkTalkLexer(SourceFile(path: "", text: code))
 		var parser = Parser(lexer)
 		self.parsed = try! SourceFileAnalyzer.analyze(parser.parse(), in: .init())
 

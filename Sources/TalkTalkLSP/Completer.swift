@@ -9,16 +9,16 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 
 actor Completer {
-	var source: String
+	var source: SourceFile
 	var lastSuccessfulExprs: [any AnalyzedSyntax] = []
 
-	public init(source: String) async {
+	public init(source: SourceFile) async {
 		self.source = source
 		parse()
 	}
 
 	public func update(text: String) {
-		self.source = text
+		self.source = SourceFile(path: source.path, text: text)
 		self.parse()
 	}
 

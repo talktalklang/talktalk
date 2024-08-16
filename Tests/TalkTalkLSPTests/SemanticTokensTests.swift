@@ -24,7 +24,11 @@ struct SemanticTokensTests {
 		"""
 
 		let visitor = SemanticTokensVisitor()
-		let tokens = RelativeSemanticToken.generate(from: try Parser.parse(string).flatMap { try $0.accept(visitor, .topLevel) })
+		let tokens = RelativeSemanticToken.generate(
+			from: try Parser.parse(.init(path: "", text: string)).flatMap {
+				try $0.accept(visitor, .topLevel)
+			}
+		)
 
 		#expect(tokens == [
 			RelativeSemanticToken(lineDelta: 1, startDelta: 0, length: 6, tokenType: .variable, modifiers: [], lexeme: "person"),

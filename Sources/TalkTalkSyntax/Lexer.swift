@@ -43,7 +43,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 	}
 
 	public var debugDescription: String {
-		".\(kind)"
+		"Token(kind: .\(kind), line: \(line), column: \(column), position: \(start), length: \(length), lexeme: \(lexeme.debugDescription))"
 	}
 
 	public static func synthetic(_ kind: Kind, lexeme: String? = nil ) -> Token {
@@ -158,7 +158,9 @@ public struct TalkTalkLexer {
 			nextLine()
 		}
 
-		return make(.newline)
+		let newline = make(.newline)
+
+		return newline
 	}
 
 	mutating func identifier() -> Token {
@@ -284,7 +286,11 @@ public struct TalkTalkLexer {
 
 	@discardableResult mutating func error(_ message: String) -> Token {
 		errors.append(
-			.init(line: line, column: column, kind: .lexerError(message))
+			.init(
+				line: line,
+				column: column,
+				kind: .lexerError(message)
+			)
 		)
 		return make(.error)
 	}

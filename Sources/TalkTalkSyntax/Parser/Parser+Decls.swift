@@ -10,7 +10,7 @@ public extension Parser {
 		let token = previous!
 		let i = startLocation(at: previous)
 
-		guard let name = consume(.identifier, "expected identifier after var")?.lexeme else {
+		guard let name = consume(.identifier, "expected identifier after var") else {
 			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
 
@@ -20,7 +20,14 @@ public extension Parser {
 			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .type)
 		}
 
-		return VarDeclSyntax(token: token, name: name, typeDecl: typeDecl.lexeme, typeDeclToken: typeDecl, location: endLocation(i))
+		return VarDeclSyntax(
+			token: token,
+			name: name.lexeme,
+			nameToken: name,
+			typeDecl: typeDecl.lexeme,
+			typeDeclToken: typeDecl,
+			location: endLocation(i)
+		)
 	}
 
 	mutating func letVarDecl(_ kind: Token.Kind) -> Decl {
@@ -31,8 +38,6 @@ public extension Parser {
 		guard let nameToken = consume(.identifier, "expected identifier after var") else {
 			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
-
-		let name = nameToken.lexeme
 
 		var typeDecl: Token?
 		if didMatch(.colon) {
@@ -47,7 +52,8 @@ public extension Parser {
 		if kind == .let {
 			return LetDeclSyntax(
 				token: token,
-				name: name,
+				name: nameToken.lexeme,
+				nameToken: nameToken,
 				typeDecl: typeDecl?.lexeme,
 				typeDeclToken: nameToken,
 				value: value,
@@ -56,7 +62,8 @@ public extension Parser {
 		} else {
 			return VarDeclSyntax(
 				token: token,
-				name: name,
+				name: nameToken.lexeme,
+				nameToken: nameToken,
 				typeDecl: typeDecl?.lexeme,
 				typeDeclToken: nameToken,
 				value: value,

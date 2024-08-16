@@ -14,7 +14,7 @@ import Foundation
 // time new information becomes available. Also multiple things that
 // are known to have the same type should get updated when you update one
 // of them.
-final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible {
+final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible, @unchecked Sendable {
 	public static func == (lhs: TypeID, rhs: TypeID) -> Bool {
 		lhs.current == rhs.current
 	}

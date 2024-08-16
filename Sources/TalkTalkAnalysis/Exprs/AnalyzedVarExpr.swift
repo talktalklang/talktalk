@@ -30,4 +30,13 @@ public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
 	}
+
+	public func definition() -> Definition? {
+		guard let type = environment.lookup(name) else {
+			return nil
+		}
+
+		let token = type.expr.location.start
+		return Definition(token: token, type: type.type.current)
+	}
 }

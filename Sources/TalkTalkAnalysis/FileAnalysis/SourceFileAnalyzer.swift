@@ -17,7 +17,7 @@ public struct SourceFileAnalyzer: Visitor {
 	public init() {}
 
 	public static func diagnostics(
-		text: String,
+		text: SourceFile,
 		environment: Environment
 	) throws -> Set<AnalysisError> {
 		let parsed = try Parser.parse(text, allowErrors: true)

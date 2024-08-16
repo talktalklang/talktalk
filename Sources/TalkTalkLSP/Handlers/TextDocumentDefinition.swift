@@ -17,11 +17,17 @@ struct TextDocumentDefinition {
 			return
 		}
 
-		Log.info("we got a definition request \(params) : \(source)")
-		let match = await server.findSyntaxLocation(from: params.position)
-
-		if let match {
-			print(match)
+		if let match = await server.findDefinition(from: params.position, path: params.textDocument.uri) {
+			await server.respond(
+				to: request.id,
+				with: Location(
+					uri: match.token.path,
+					range: Range(
+						start: Position(line: match.token.line, character: match.token.column),
+						end: Position(line: match.token.line, character: match.token.column + match.token.length)
+					)
+				)
+			)
 		}
 	}
 }

@@ -15,7 +15,10 @@ struct DiagnosticTests {
 		var a = Nope()
 		"""
 
-		let diagnostics = try SourceFileAnalyzer.diagnostics(text: source, environment: .init())
+		let diagnostics = try SourceFileAnalyzer.diagnostics(
+			text: .init(path: "", text: source),
+			environment: .init()
+		)
 		#expect(!diagnostics.isEmpty)
 	}
 }

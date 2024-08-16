@@ -87,7 +87,7 @@ public actor Server {
 	}
 
 	func perform(_ request: Request) async {
-		Log.info("handling request: \(request)")
+		Log.info("handling request: \(request.method)")
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -128,31 +128,20 @@ public actor Server {
 
 	}
 
-	func findSyntaxLocation(from position: Position) -> Location? {
-		let match = analysis.analyzedFiles
-			.flatMap { file in
-				file.syntax.compactMap {
-					$0.nearestTo(
-						line: position.line,
-						column: position.character
-					)
-				}
-			}.sorted { lhs, rhs in
-				lhs.location.range.count < rhs.location.range.count
-			}.first
+	func findDefinition(from position: Position, path: String) -> Definition? {
+		let match = analysis.findSymbol(
+			line: position.line,
+			column: position.character,
+			path: path
+		)
 
-		if let match {
-			let location = match.location
-			return Location(
-				uri: location.path,
-				range: Range(
-					start: Position(line: location.start.line, character: location.start.column),
-					end: Position(line: location.end.line, character: location.end.column)
-				)
-			)
+		Log.info("findDefinition: \(position), match: \(match as Any), def: \(match?.definition() as Any)")
+
+		guard let match else {
+			return nil
 		}
 
-		return nil
+		return match.definition()
 	}
 
 	func request<T: Encodable>(_ request: T) {
@@ -175,9 +164,6 @@ public actor Server {
 			var data = Data("Content-Length: \(contentLength)\r\n\r\n".utf8)
 			data.append(content)
 			try stdout.write(contentsOf: data)
-
-			let dataString = String(data: data, encoding: .utf8)!
-			Log.info(dataString)
 		} catch {
 			Log.error("error generating response: \(error)")
 		}

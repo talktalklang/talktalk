@@ -7,7 +7,7 @@
 
 import TalkTalkBytecode
 
-public struct InstanceValueType: Codable, Equatable, Hashable {
+public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 	public static func `struct`(_ name: String) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
 	}
@@ -21,12 +21,12 @@ public struct InstanceValueType: Codable, Equatable, Hashable {
 	}
 }
 
-public indirect enum ValueType: Codable, Equatable, Hashable {
+public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 	public static func == (lhs: ValueType, rhs: ValueType) -> Bool {
 		lhs.description == rhs.description
 	}
 
-	public struct Param: Codable, Hashable, CustomStringConvertible, Typed {
+	public struct Param: Codable, Hashable, CustomStringConvertible, Typed, Sendable {
 		public let name: String
 		public let typeID: TypeID
 

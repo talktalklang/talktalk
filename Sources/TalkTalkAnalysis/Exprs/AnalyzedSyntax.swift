@@ -31,16 +31,31 @@ public extension AnalyzedSyntax {
 	}
 
 	// Try to find the most specific node that contains this position
-	func nearestTo(line: Int, column: Int) -> any AnalyzedSyntax {
-		var candidate: any AnalyzedSyntax = self
+	func nearestTo(line: Int, column: Int, candidate: (any AnalyzedSyntax)? = nil) -> any AnalyzedSyntax {
+		var candidate: any AnalyzedSyntax = candidate ?? self
+
+		if location.range.count < candidate.location.range.count,
+			 location.contains(line: line, column: column) {
+			candidate = self
+		}
 
 		for child in analyzedChildren {
-			if child.location.range.count > candidate.location.range.count {
-				candidate = child
-			}
+			candidate = child.nearestTo(line: line, column: column, candidate: candidate)
 		}
 
 		return candidate
+	}
+
+	func definition() -> Definition? {
+		switch self {
+		case let node as AnalyzedMemberExpr:
+			return node.definition()
+		case let node as AnalyzedVarExpr:
+			return node.definition()
+		default: ()
+		}
+
+		return nil
 	}
 
 	var debugDescription: String {

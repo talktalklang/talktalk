@@ -31,11 +31,11 @@ struct Pipeline {
 
 	func run() async throws -> CompilationResult {
 		let sourceFiles = try compilationUnit.files.map {
-			try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
+			return try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
 		}
 
 		let parsedSourceFiles = try sourceFiles.map {
-			try ParsedSourceFile(path: $0.path, syntax: Parser.parse($0.text))
+			try ParsedSourceFile(path: $0.path, syntax: Parser.parse($0))
 		}
 
 		let analysisModule = try ModuleAnalyzer(

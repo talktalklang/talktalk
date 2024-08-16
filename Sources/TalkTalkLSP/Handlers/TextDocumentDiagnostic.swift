@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
+import TalkTalkSyntax
 import TalkTalkAnalysis
 
 extension AnalysisError {
@@ -63,7 +64,10 @@ struct TextDocumentDiagnostic: Decodable {
 
 		do {
 			let environment = Environment() // TODO: Use module environment
-			let errorSyntaxes = try await SourceFileAnalyzer.diagnostics(text: source.text, environment: environment)
+			let errorSyntaxes = try await SourceFileAnalyzer.diagnostics(
+				text: SourceFile(path: source.uri, text: source.text),
+				environment: environment
+			)
 			let diagnostics = errorSyntaxes.map { $0.diagnostic() }
 			let report = FullDocumentDiagnosticReport(items: diagnostics)
 			await handler.respond(to: request.id, with: report)

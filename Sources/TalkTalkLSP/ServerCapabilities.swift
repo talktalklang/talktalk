@@ -34,9 +34,4 @@ struct ServerCapabilities: Codable {
 	let documentFormattingProvider = true
 	let diagnosticProvider: DiagnosticOptions = .init()
 	let definitionProvider = true
-
-	//	let hoverProvider = true
-	//	let declarationProvider = true
-	//	let typeDefinitionProvider = true
-	//	let implementationProvider = true
 }

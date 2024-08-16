@@ -5,9 +5,10 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-public protocol LetDecl: Decl {
+public protocol LetDecl: Decl, VarLetDecl {
 	var token: Token { get }
 	var name: String { get }
+	var nameToken: Token { get }
 	var typeDecl: String? { get }
 	var typeDeclToken: Token? { get }
 	var value: (any Expr)? { get }
@@ -16,6 +17,7 @@ public protocol LetDecl: Decl {
 public struct LetDeclSyntax: LetDecl {
 	public var token: Token
 	public var name: String
+	public var nameToken: Token
 	public var typeDecl: String?
 	public var typeDeclToken: Token?
 	public var value: (any Expr)?

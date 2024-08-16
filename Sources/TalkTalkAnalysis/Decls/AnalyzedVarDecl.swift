@@ -19,6 +19,7 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 
 	public var token: Token { expr.token }
 	public var name: String { expr.name }
+	public var nameToken: Token { expr.nameToken }
 	public var typeDecl: String? { expr.typeDecl }
 	public var typeDeclToken: Token? { expr.typeDeclToken }
 	public var value: (any Expr)? { expr.value }

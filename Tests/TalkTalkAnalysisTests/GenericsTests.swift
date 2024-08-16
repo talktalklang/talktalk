@@ -11,7 +11,7 @@ import Testing
 
 struct GenericsTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
-		try! SourceFileAnalyzer.analyze(Parser.parse(string), in: .init()).last!
+		try! SourceFileAnalyzer.analyze(Parser.parse(.init(path: "", text: string)), in: .init()).last!
 	}
 
 	@Test("Gets generic types") func types() throws {

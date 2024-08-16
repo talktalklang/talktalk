@@ -7,7 +7,13 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedArgument {
+public struct AnalyzedArgument: Syntax {
+	public var location: SourceLocation { expr.location }
+	public var children: [any Syntax] { expr.children }
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V : Visitor {
+		try expr.accept(visitor, context)
+	}
+
 	public let label: String?
 	public let expr: any AnalyzedExpr
 }

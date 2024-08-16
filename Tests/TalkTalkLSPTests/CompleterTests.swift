@@ -13,7 +13,7 @@ import Testing
 @MainActor
 struct CompleterTests {
 	func complete(_ string: String) async -> Completer {
-		return await Completer(source: string)
+		return await Completer(source: .init(path: "", text: string))
 	}
 
 	@Test("Completes locals") func locals() async throws {

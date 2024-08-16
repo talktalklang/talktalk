@@ -34,7 +34,7 @@ struct RelativeSemanticToken: Equatable {
 			}
 
 			let lineDelta = token.line - lastLine
-			let startDelta = lineDelta == 0 ? token.startChar - lastStart : token.startChar
+			let startDelta = (lineDelta == 0 ? token.startChar - lastStart : token.startChar)
 
 			lastStart = token.startChar
 			lastLine = token.line

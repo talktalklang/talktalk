@@ -18,7 +18,12 @@ public extension AnalysisTest {
 			files: Library.files(for: Library.standardLibraryURL).map {
 				try ParsedSourceFile(
 					path: $0.path,
-					syntax: Parser.parse(String(contentsOf: $0, encoding: .utf8))
+					syntax: Parser.parse(
+						SourceFile(
+							path: $0.path,
+							text: String(contentsOf: $0, encoding: .utf8)
+						)
+					)
 				)
 			},
 			moduleEnvironment: [:],

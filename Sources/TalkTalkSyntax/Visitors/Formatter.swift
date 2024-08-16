@@ -9,7 +9,7 @@ public struct Formatter: Visitor {
 	var indent = 0
 
 	public static func format(_ input: String) throws -> String {
-		let parsed = try Parser.parse(input)
+		let parsed = try Parser.parse(SourceFile(path: "", text: input))
 		let formatter = Formatter()
 		let context = Formatter.Context()
 

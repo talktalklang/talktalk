@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct TalkTalkParserTests {
 	func parse(_ source: String, errors: [SyntaxError] = []) -> [Syntax] {
-		let lexer = TalkTalkLexer(source)
+		let lexer = TalkTalkLexer(.init(path: "", text: source))
 		var parser = Parser(lexer)
 		let result = parser.parse()
 
@@ -29,10 +29,10 @@ struct TalkTalkParserTests {
 	}
 
 	@Test("Doesn't return an error on a blank file") func blank() {
-		let lexer = TalkTalkLexer("""
+		let lexer = TalkTalkLexer(.init(path: "", text: """
 
 		\("   " /* whitespace */ )
-		""")
+		"""))
 		var parser = Parser(lexer)
 		_ = parser.parse()
 
@@ -256,6 +256,7 @@ struct TalkTalkParserTests {
 		let ast = parse("""
 		foo(1)
 		""")[0].cast(ExprStmtSyntax.self).expr as! CallExpr
+		#expect(ast.location.start.column == 0)
 		#expect(ast.callee.description == "foo")
 		#expect(ast.args[0].value.description == "1")
 	}

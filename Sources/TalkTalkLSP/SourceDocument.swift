@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
+import TalkTalkSyntax
+
 actor SourceDocument {
 	let uri: String
 	let range: Range
@@ -27,6 +29,6 @@ actor SourceDocument {
 		self.range = Range(start: .init(line: 0, character: 0), end: .init(line: lines.count, character: lastLineCharacter))
 		self.text = text
 		self.uri = uri
-		self.completer = await Completer(source: text)
+		self.completer = await Completer(source: SourceFile(path: uri, text: text))
 	}
 }

@@ -43,8 +43,9 @@ struct ServerTests {
 
 		var responses: [Data] = []
 
-		var handler = Handler()
-		handler.handle(data: requestData)
+		var handler = Handler { request in
+
+		}
 
 		return responses.map { stripHeader(from: $0) }
 	}
@@ -65,7 +66,7 @@ struct ServerTests {
 
 		var server = try await Server()
 		var called = false
-		var handler = Handler()
+		var handler = Handler { _ in }
 
 		handler.handle(data: data1)
 		handler.handle(data: data2)

@@ -24,7 +24,11 @@ struct TextDocumentSemanticTokensFull {
 
 		do {
 			// TODO: use module environment
-			let parsed = try await SourceFileAnalyzer.analyze(Parser.parse(source.text, allowErrors: true), in: Environment())
+			let parsed = try await SourceFileAnalyzer.analyze(
+				Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true)
+				,
+				in: Environment()
+			)
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }
 		} catch {

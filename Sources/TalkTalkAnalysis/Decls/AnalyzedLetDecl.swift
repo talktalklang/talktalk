@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
+public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl {
 	public let typeID: TypeID
 	let expr: LetDecl
 	public var analysisErrors: [AnalysisError]
@@ -18,6 +18,7 @@ public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public let environment: Environment
 
 	public var name: String { expr.name }
+	public var nameToken: Token { expr.nameToken }
 	public var token: Token { expr.token }
 	public var typeDecl: String? { expr.typeDecl }
 	public var typeDeclToken: Token? { expr.typeDeclToken }

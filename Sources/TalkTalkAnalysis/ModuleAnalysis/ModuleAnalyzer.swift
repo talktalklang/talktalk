@@ -15,9 +15,9 @@ public struct ModuleAnalyzer {
 
 	let name: String
 	let files: [ParsedSourceFile]
-	let environment: Environment
+	public let environment: Environment
 	let visitor: SourceFileAnalyzer
-	let moduleEnvironment: [String: AnalysisModule]
+	public let moduleEnvironment: [String: AnalysisModule]
 
 	public init(
 		name: String,

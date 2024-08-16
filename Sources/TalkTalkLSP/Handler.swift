@@ -120,7 +120,6 @@ class LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			Log.info("GOT A CALLBACK \(request)")
 			self.callback(request)
 		} catch {
 			Log.error("error parsing json: \(error)")

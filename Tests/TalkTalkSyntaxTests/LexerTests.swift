@@ -159,6 +159,47 @@ struct TalkTalkLexerTests {
 		])
 	}
 
+	@Test("Columns") func columns() {
+		var lexer = TalkTalkLexer(
+//			"""
+//			struct Person {
+//				func greet() {
+//					print("sup")
+//				}
+//			}
+//
+//			person = Person()
+//			person.greet()
+//			"""
+			"""
+			123
+			456
+			"""
+		)
+
+		let tokens = lexer.collect()
+		#expect(tokens.map(\.kind) == [
+			.int,
+			.newline,
+			.int,
+			.eof
+		])
+
+		#expect(tokens.map(\.line) == [
+			0,
+			0,
+			1,
+			1
+		])
+
+		#expect(tokens.map(\.column) == [
+			0,
+			3,
+			0,
+			3
+		])
+	}
+
 	@Test("func") func function() async throws {
 		var lexer = TalkTalkLexer("""
 		func foo() {
