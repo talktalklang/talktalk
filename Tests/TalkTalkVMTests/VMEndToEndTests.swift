@@ -22,7 +22,7 @@ struct VMEndToEndTests {
 	func compile(_ strings: [String]) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: strings.map { .tmp($0) },
+			files: Set(strings.map { .tmp($0) }),
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -42,13 +42,15 @@ struct VMEndToEndTests {
 
 		let analyzed = try ModuleAnalyzer(
 			name: name,
-			files: files,
+			files: Set(files),
 			moduleEnvironment: analysis,
 			importedModules: []
 		).analyze()
 
 		let module = try ModuleCompiler(
-			name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment
+			name: name,
+			analysisModule: analyzed,
+			moduleEnvironment: moduleEnvironment
 		).compile(mode: .executable)
 		return (module, analyzed)
 	}

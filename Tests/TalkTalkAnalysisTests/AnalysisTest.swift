@@ -15,7 +15,7 @@ public extension AnalysisTest {
 	func ast(_ string: String) async throws -> any AnalyzedSyntax {
 		let stdlib = try ModuleAnalyzer(
 			name: "Standard",
-			files: Library.files(for: Library.standardLibraryURL).map {
+			files: Set(Library.files(for: Library.standardLibraryURL).map {
 				try ParsedSourceFile(
 					path: $0.path,
 					syntax: Parser.parse(
@@ -25,7 +25,7 @@ public extension AnalysisTest {
 						)
 					)
 				)
-			},
+			}),
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()

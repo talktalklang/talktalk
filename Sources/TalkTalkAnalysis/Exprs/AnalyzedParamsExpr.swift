@@ -32,6 +32,10 @@ public class AnalyzedParam: Param, AnalyzedExpr, Typed {
 		self.typeID = type
 		self.environment = environment
 	}
+
+	public var debugDescription: String {
+		"\(name): \(typeID.current.description)"
+	}
 }
 
 public extension Param where Self == AnalyzedParam {

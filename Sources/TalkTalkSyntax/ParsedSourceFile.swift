@@ -7,13 +7,17 @@
 
 import Foundation
 
-public struct ParsedSourceFile {
+public struct ParsedSourceFile: Hashable, Equatable {
+	public static func == (lhs: ParsedSourceFile, rhs: ParsedSourceFile) -> Bool {
+		lhs.path == rhs.path
+	}
+
 	public let path: String
 	public let syntax: [any Syntax]
 
-	public static func tmp(_ text: String) -> ParsedSourceFile {
+	public static func tmp(_ text: String, path: String = "/tmp/\(UUID().uuidString)") -> ParsedSourceFile {
 		ParsedSourceFile(
-			path: "/tmp/\(UUID().uuidString)",
+			path: path,
 			syntax: try! Parser.parse(SourceFile(path: "", text: text))
 		)
 	}
@@ -22,11 +26,15 @@ public struct ParsedSourceFile {
 		self.path = path
 		self.syntax = syntax
 	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(path)
+	}
 }
 
 extension ParsedSourceFile: ExpressibleByStringLiteral {
 	public init(stringLiteral value: StringLiteralType) {
-		self.path = "<literal>"
-		self.syntax = try! Parser.parse(.init(path: "<literal>", text: value))
+		self.path = "<literal \(value)>"
+		self.syntax = try! Parser.parse(.init(path: "<literal \(value)>", text: value))
 	}
 }

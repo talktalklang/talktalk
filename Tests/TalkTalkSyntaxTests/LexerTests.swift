@@ -187,14 +187,14 @@ struct TalkTalkLexerTests {
 
 		#expect(tokens.map(\.line) == [
 			0,
-			0,
+			1,
 			1,
 			1
 		])
 
 		#expect(tokens.map(\.column) == [
 			0,
-			3,
+			-1,
 			0,
 			3
 		])

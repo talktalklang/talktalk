@@ -296,6 +296,10 @@ public struct Parser {
 				"Location tracking leaked, started: \(stackSize), ended: \(locationStack.locations.count)")
 		}
 
-		return SourceLocation(path: start.path, start: start, end: current)
+		return SourceLocation(
+			path: start.path,
+			start: start,
+			end: previous
+		)
 	}
 }

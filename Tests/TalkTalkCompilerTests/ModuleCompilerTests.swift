@@ -11,6 +11,12 @@ import TalkTalkCompiler
 import TalkTalkSyntax
 import Testing
 
+extension Array: @retroactive CustomTestStringConvertible where Element == Instruction {
+	public var testDescription: String {
+		map(\.description).joined(separator: "\n")
+	}
+}
+
 @MainActor
 struct ModuleCompilerTests {
 	func compile(
@@ -20,7 +26,7 @@ struct ModuleCompilerTests {
 		moduleEnvironment: [String: Module] = [:]
 	) -> (Module, AnalysisModule) {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
-		let analyzed = try! ModuleAnalyzer(name: name, files: files, moduleEnvironment: analysis, importedModules: Array(analysisEnvironment.values)).analyze()
+		let analyzed = try! ModuleAnalyzer(name: name, files: Set(files), moduleEnvironment: analysis, importedModules: Array(analysisEnvironment.values)).analyze()
 		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
 		return (module, analyzed)
 	}

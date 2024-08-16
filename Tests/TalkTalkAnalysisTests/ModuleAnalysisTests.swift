@@ -10,21 +10,33 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 
 struct ModuleAnalysisTests {
+	func analyzer(
+		name: String,
+		moduleEnvironment: [String: AnalysisModule] = [:],
+		_ files: [ParsedSourceFile]
+	) -> ModuleAnalyzer {
+		ModuleAnalyzer(
+			name: name,
+			files: Set(files),
+			moduleEnvironment: moduleEnvironment,
+			importedModules: []
+		)
+	}
+
 	func analyze(
 		name: String,
 		moduleEnvironment: [String: AnalysisModule] = [:],
 		_ files: ParsedSourceFile...
-	) -> AnalysisModule {
-		try! ModuleAnalyzer(
+	) throws -> AnalysisModule {
+		try analyzer(
 			name: name,
-			files: files,
 			moduleEnvironment: moduleEnvironment,
-			importedModules: []
+			files
 		).analyze()
 	}
 
 	@Test("Analyzes module functions") func basic() throws {
-		let analysisModule = analyze(
+		let analysisModule = try analyze(
 			name: "A",
 			.tmp("""
 			func fizz() {}
@@ -69,7 +81,7 @@ struct ModuleAnalysisTests {
 	}
 
 	@Test("Analyzes module global values") func globalValues() throws {
-		let analysisModule = analyze(
+		let analysisModule = try analyze(
 			name: "A",
 			.tmp("""
 			func fizz() {}
@@ -79,7 +91,7 @@ struct ModuleAnalysisTests {
 			}
 			"""),
 			.tmp("""
-			bar = 123
+			let bar = 123
 			""")
 		)
 
@@ -105,8 +117,8 @@ struct ModuleAnalysisTests {
 	}
 
 	@Test("Analyzes module function imports") func importing() throws {
-		let moduleA = analyze(name: "A", .tmp("func foo() { 123 }"))
-		let moduleB = analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
+		let moduleA = try analyze(name: "A", .tmp("func foo() { 123 }"))
+		let moduleB = try analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
 		import A
 
 		func bar() {
@@ -133,7 +145,7 @@ struct ModuleAnalysisTests {
 	}
 
 	@Test("Analyzes module structs") func structProperties() throws {
-		let module = analyze(name: "A", .tmp("""
+		let module = try analyze(name: "A", .tmp("""
 		struct Person {
 			var age: int
 
@@ -149,7 +161,7 @@ struct ModuleAnalysisTests {
 	}
 
 	@Test("Analyzes imported module structs") func importStructProperties() throws {
-		let moduleA = analyze(name: "A", .tmp("""
+		let moduleA = try analyze(name: "A", .tmp("""
 		struct Person {
 			var age: int
 
@@ -163,7 +175,7 @@ struct ModuleAnalysisTests {
 		}
 		"""))
 
-		let moduleB = analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
+		let moduleB = try analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
 		import A
 
 		person = Person(age: 123)
@@ -179,5 +191,35 @@ struct ModuleAnalysisTests {
 		}
 
 		#expect(module.name == "A")
+	}
+
+	@Test("Add file to analyzer") func addFile() throws {
+		var analyzer = try analyzer(
+			name: "A",
+			[
+				"""
+				func fizz() {}
+
+				func foo() {
+					bar()
+				}
+				"""
+			]
+		)
+
+		var analysisModule = try analyzer.analyze()
+		#expect(analysisModule.name == "A")
+		#expect(analysisModule.functions.count == 2)
+
+		analysisModule = try analyzer.addFile(
+			"""
+			func bar() {
+				123
+			}
+			"""
+		)
+
+		#expect(analysisModule.name == "A")
+		#expect(analysisModule.functions.count == 3)
 	}
 }

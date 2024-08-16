@@ -23,7 +23,19 @@ public struct Log {
 		}
 
 		let logfile = URL.homeDirectory.appending(path: "apps/talktalk/lsp.log")
-		try! Data(message.utf8).append(to: logfile)
-		try! Data("\n".utf8).append(to: logfile)
+		try! append(data: Data(message.utf8), to: logfile)
+		try! append(data: Data("\n".utf8), to: logfile)
+	}
+
+	static func append(data: Data, to fileURL: URL) throws {
+		if let fileHandle = FileHandle(forWritingAtPath: fileURL.path) {
+			defer {
+				fileHandle.closeFile()
+			}
+			fileHandle.seekToEndOfFile()
+			fileHandle.write(data)
+		} else {
+			try data.write(to: fileURL, options: .atomic)
+		}
 	}
 }

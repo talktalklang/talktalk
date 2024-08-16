@@ -47,7 +47,7 @@ public struct SerializedAnalysisModule: Codable {
 public struct AnalysisModule {
 	public let name: String
 
-	public let files: [ParsedSourceFile]
+	public var files: Set<ParsedSourceFile>
 
 	// The list of analyzed files for this module (this is built up by the module analyzer)
 	public var analyzedFiles: [AnalyzedSourceFile] = []

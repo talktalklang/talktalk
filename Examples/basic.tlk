@@ -1,13 +1,8 @@
-person = "Pat"
-pet = "dog"
-
 struct Person {
 	func greet() {
+		print("sup")
 	}
 }
 
-func foo() {
-	func bar() {
-		"fizz"
-	}
-}
+var person = Person()
+person.greet()

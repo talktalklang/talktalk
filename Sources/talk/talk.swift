@@ -13,9 +13,9 @@ enum ProgramInput {
 	case path(SourceFile), string(String), stdin
 }
 
-protocol TalkTalkCommand: AsyncParsableCommand {}
+public protocol TalkTalkCommand: AsyncParsableCommand {}
 
-extension TalkTalkCommand {
+public extension TalkTalkCommand {
 	func get(input: String) throws -> SourceFile {
 		let filename: String
 		let source: String
@@ -47,6 +47,7 @@ struct TalkCommand: TalkTalkCommand {
 			Interpret.self,
 			LSP.self,
 			Compile.self,
+			AnalysisPrinter.self
 		]
 	)
 }

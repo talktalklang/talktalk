@@ -32,11 +32,20 @@ public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	}
 
 	public func definition() -> Definition? {
-		guard let type = environment.lookup(name) else {
+		guard let binding = environment.lookup(name) else {
 			return nil
 		}
 
-		let token = type.expr.location.start
-		return Definition(token: token, type: type.type.current)
+		switch binding.definition ?? binding.expr {
+		case let expr as any VarLetDecl:
+			let token = expr.nameToken
+			return Definition(token: token, type: binding.type.current)
+		case let expr as any StructDecl:
+			return Definition(token: expr.nameToken, type: binding.type.current)
+		case let expr as AnalyzedCallExpr:
+			return Definition(token: expr.location.start, type: binding.type.current)
+		default:
+			return Definition(token: expr.location.start, type: binding.type.current)
+		}
 	}
 }

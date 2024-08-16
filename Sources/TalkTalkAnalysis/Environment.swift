@@ -262,10 +262,16 @@ public class Environment {
 		structTypes[name] = type
 	}
 
-	public func define(local: String, as expr: any AnalyzedExpr, isMutable: Bool) {
+	public func define(
+		local: String,
+		as expr: any AnalyzedExpr,
+		definition: (any AnalyzedExpr)? = nil,
+		isMutable: Bool
+	) {
 		locals[local] = Binding(
 			name: local,
 			expr: expr,
+			definition: definition,
 			type: expr.typeID,
 			isMutable: isMutable
 		)

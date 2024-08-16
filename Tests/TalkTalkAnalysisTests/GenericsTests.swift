@@ -47,7 +47,7 @@ struct GenericsTests {
 			let wrapped: Wrapped
 		}
 
-		wrapper = Wrapper<int>(wrapped: 123)
+		let wrapper = Wrapper<int>(wrapped: 123)
 		wrapper
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
@@ -69,7 +69,7 @@ struct GenericsTests {
 			let wrapped: Wrapped
 		}
 
-		wrapper = Wrapper(wrapped: 123)
+		var wrapper = Wrapper(wrapped: 123)
 		wrapper
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
@@ -77,7 +77,7 @@ struct GenericsTests {
 		#expect(variable.name == "wrapper")
 
 		guard case let .instance(instance) = variable.typeAnalyzed else {
-			#expect(Bool(false), "did not get struct type")
+			#expect(Bool(false), "did not get struct type: \(variable.typeAnalyzed)")
 			return
 		}
 

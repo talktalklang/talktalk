@@ -43,12 +43,29 @@ public actor Server {
 		self.analysis = try analyzer.analyze()
 	}
 
+	var analyzedFilePaths: [String] {
+		analysis.analyzedFiles.map(\.path)
+	}
+
 	func getSource(_ uri: String) -> SourceDocument? {
 		sources[uri]
 	}
 
-	func setSource(uri: String, to document: SourceDocument) {
+	func setSource(uri: String, to document: SourceDocument) async {
 		sources[uri] = document
+
+		do {
+			self.analysis = try await analyzer.addFile(
+				ParsedSourceFile(
+					path: document.uri,
+					syntax: Parser.parse(
+						SourceFile(path: document.uri, text: document.text)
+					)
+				)
+			)
+		} catch {
+			Log.error("error adding file to analyzer: \(error)")
+		}
 	}
 
 	nonisolated func enqueue(_ request: Request) {
@@ -129,13 +146,17 @@ public actor Server {
 	}
 
 	func findDefinition(from position: Position, path: String) -> Definition? {
+		self.analysis = try! analyzer.analyze()
+
+		Log.info("findDefinition: path: \(path) position: \(position)")
+
 		let match = analysis.findSymbol(
 			line: position.line,
 			column: position.character,
 			path: path
 		)
 
-		Log.info("findDefinition: \(position), match: \(match as Any), def: \(match?.definition() as Any)")
+
 
 		guard let match else {
 			return nil

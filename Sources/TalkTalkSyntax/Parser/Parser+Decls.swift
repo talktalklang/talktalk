@@ -6,30 +6,6 @@
 //
 
 public extension Parser {
-	mutating func varDecl() -> Decl {
-		let token = previous!
-		let i = startLocation(at: previous)
-
-		guard let name = consume(.identifier, "expected identifier after var") else {
-			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
-		}
-
-		consume(.colon, "expected ':' after name")
-
-		guard let typeDecl = consume(.identifier) else {
-			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .type)
-		}
-
-		return VarDeclSyntax(
-			token: token,
-			name: name.lexeme,
-			nameToken: name,
-			typeDecl: typeDecl.lexeme,
-			typeDeclToken: typeDecl,
-			location: endLocation(i)
-		)
-	}
-
 	mutating func letVarDecl(_ kind: Token.Kind) -> Decl {
 		let token = previous!
 
@@ -134,6 +110,7 @@ public extension Parser {
 		return StructDeclSyntax(
 			structToken: structToken,
 			name: name.lexeme,
+			nameToken: name,
 			body: body,
 			genericParams: genericParamsSyntax,
 			location: endLocation(i)

@@ -255,10 +255,12 @@ struct TalkTalkParserTests {
 	@Test("call expr") func callExpr() {
 		let ast = parse("""
 		foo(1)
+
 		""")[0].cast(ExprStmtSyntax.self).expr as! CallExpr
 		#expect(ast.location.start.column == 0)
 		#expect(ast.callee.description == "foo")
 		#expect(ast.args[0].value.description == "1")
+		#expect(ast.location.end.column == 5)
 	}
 
 	@Test("passing an inline func to a func call") func inlineInlineCall() {
@@ -371,7 +373,9 @@ struct TalkTalkParserTests {
 
 		let structExpr = ast[0].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Foo")
-		#expect(structExpr.genericParams?.params.map(\.name) == ["Bar"])
+
+		let paramNames = structExpr.genericParams?.params.map(\.name)
+		#expect(paramNames == ["Bar"])
 
 		let calleeExpr = try #require(ast[1].cast(ExprStmtSyntax.self).expr.cast(CallExprSyntax.self).callee.as(TypeExprSyntax.self))
 		#expect(calleeExpr.identifier.lexeme == "Foo")

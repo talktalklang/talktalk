@@ -19,7 +19,7 @@ extension Parser {
 			lhs = prefix(&self, precedence.canAssign)
 		}
 
-		if didMatch(.newline), let lhs {
+		if check(.newline), let lhs {
 			return lhs
 		}
 
@@ -33,7 +33,7 @@ extension Parser {
 			if let infix = current.kind.rule.infix, lhs != nil {
 				lhs = infix(&self, precedence.canAssign, lhs!)
 
-				if didMatch(.newline) {
+				if check(.newline) {
 					break
 				}
 			}

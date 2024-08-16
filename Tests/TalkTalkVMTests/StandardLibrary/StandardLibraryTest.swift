@@ -27,10 +27,12 @@ extension StandardLibraryTest {
 		var moduleEnvironment = moduleEnvironment
 		moduleEnvironment["Standard"] = stdlib.module
 
+		print(stdlib.analysis.files.map(\.path))
+
 		let files: [ParsedSourceFile] = [.tmp(input)]
 		let analyzer = ModuleAnalyzer(
 			name: "StdLibTest",
-			files: files,
+			files: Set(files),
 			moduleEnvironment: analysisEnvironment,
 			importedModules: [stdlib.analysis]
 		)

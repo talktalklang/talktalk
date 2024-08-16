@@ -11,6 +11,7 @@ public extension Environment {
 	class Binding {
 		public let name: String
 		public var expr: any Syntax
+		public var definition: (any Syntax)?
 		public var type: TypeID
 		public var isCaptured: Bool
 		public var isBuiltin: Bool
@@ -22,6 +23,7 @@ public extension Environment {
 		public init(
 			name: String,
 			expr: any Syntax,
+			definition: (any Syntax)? = nil,
 			type: TypeID,
 			isCaptured: Bool = false,
 			isBuiltin: Bool = false,
@@ -32,6 +34,7 @@ public extension Environment {
 		) {
 			self.name = name
 			self.expr = expr
+			self.definition = definition
 			self.type = type
 			self.isCaptured = isCaptured
 			self.isBuiltin = isBuiltin

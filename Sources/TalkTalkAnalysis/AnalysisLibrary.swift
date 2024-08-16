@@ -21,7 +21,7 @@ public struct AnalysisLibrary {
 		).analyze()
 	}
 
-	private static func files(in url: URL) throws -> [ParsedSourceFile] {
+	private static func files(in url: URL) throws -> Set<ParsedSourceFile> {
 		guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.nameKey]) else {
 			fatalError("could not enumerate files for \(url)")
 		}
@@ -40,7 +40,7 @@ public struct AnalysisLibrary {
 			}
 		}
 
-		return try fileURLs.map {
+		return try Set(fileURLs.map {
 			let contents = try String(contentsOf: $0, encoding: .utf8)
 			return try ParsedSourceFile(
 				path: $0.path,
@@ -52,6 +52,6 @@ public struct AnalysisLibrary {
 					allowErrors: false
 				)
 			)
-		}
+		})
 	}
 }

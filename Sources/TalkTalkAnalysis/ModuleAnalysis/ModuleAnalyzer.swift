@@ -13,15 +13,15 @@ public struct ModuleAnalyzer {
 		case moduleNotFound(String)
 	}
 
-	let name: String
-	let files: [ParsedSourceFile]
+	public let name: String
+	public var files: Set<ParsedSourceFile>
 	public let environment: Environment
 	let visitor: SourceFileAnalyzer
 	public let moduleEnvironment: [String: AnalysisModule]
 
 	public init(
 		name: String,
-		files: [ParsedSourceFile],
+		files: Set<ParsedSourceFile>,
 		moduleEnvironment: [String: AnalysisModule],
 		importedModules: [AnalysisModule]
 	) {

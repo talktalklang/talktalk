@@ -57,10 +57,10 @@ struct AnalysisTests {
 	}
 
 	@Test("Types def") func def() throws {
-		let ast = ast("var foo = 1").as(AnalyzedReturnExpr.self)?.valueAnalyzed
-		let def = try #require(ast as? AnalyzedDefExpr)
+		let ast = try #require(ast("var foo = 1").as(AnalyzedVarDecl.self))
+		let def = try #require(ast.valueAnalyzed as? AnalyzedLiteralExpr)
 		#expect(def.typeAnalyzed == .int)
-		#expect(def.receiverAnalyzed.cast(AnalyzedVarExpr.self).name == "foo")
+		#expect(ast.name == "foo")
 	}
 
 	@Test("Types let") func typesLet() throws {
@@ -132,7 +132,7 @@ struct AnalysisTests {
 	@Test("Types calls") func funcCalls() {
 		let res = ast(
 			"""
-			foo = func(x) { x + x }
+			let foo = func(x) { x + x }
 			foo(1)
 			""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
@@ -168,7 +168,7 @@ struct AnalysisTests {
 		let ast = try SourceFileAnalyzer.analyze(
 			Parser.parse(
 				"""
-					i = 1
+					let i = 1
 					func(x) {
 						i + 2
 					}(2)
@@ -178,7 +178,7 @@ struct AnalysisTests {
 			.cast(AnalyzedCallExpr.self).calleeAnalyzed
 			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
-		let expected: ValueType = .function("_fn_x_29", .int, [.int("x")], ["i"])
+		let expected: ValueType = .function("_fn_x_33", .int, [.int("x")], ["i"])
 		#expect(result == expected)
 	}
 
@@ -239,20 +239,20 @@ struct AnalysisTests {
 		let main = try SourceFileAnalyzer.analyze(
 			Parser.parse(
 				"""
-				makeCounter = func() {
-					count = 0
+				let makeCounter = func() {
+					var count = 0
 					func() {
 						count = count + 1
 						count
 					}
 				}
 
-				mycounter = makeCounter()
+				let mycounter = makeCounter()
 				mycounter()
 				"""), in: .init())
 
-		let def = try #require(main[0].cast(AnalyzedExprStmt.self).exprAnalyzed as? AnalyzedDefExpr)
-		let fn = try #require(def.valueAnalyzed.cast(AnalyzedFuncExpr.self))
+		let def = try #require(main[0].cast(AnalyzedLetDecl.self))
+		let fn = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.count == 0)
 
 		let counterFn = try #require(fn.returnsAnalyzed).cast(AnalyzedFuncExpr.self)

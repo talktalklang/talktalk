@@ -39,3 +39,4 @@ struct Array<Element> {
 		self.capacity = newCapacity
 	}
 }
+

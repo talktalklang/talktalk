@@ -19,7 +19,13 @@ public struct SourceLocation: Sendable, Equatable, Hashable {
 	}
 
 	public func contains(line: Int, column: Int) -> Bool {
-		line >= start.line && line <= end.line &&
+		if start.line != end.line {
+			// If this location spans multiple lines then just see if the
+			// line is within them since matching columns doesn't make as much sense.
+			return line >= start.line && line <= end.line
+		}
+
+		return line >= start.line && line <= end.line &&
 			column >= start.column && column <= (end.column + end.length)
 	}
 }

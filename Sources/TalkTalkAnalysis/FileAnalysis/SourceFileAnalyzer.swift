@@ -896,43 +896,48 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
-		if let value {
-			context.define(local: expr.name, as: value, isMutable: true)
-		}
-
-		return AnalyzedVarDecl(
+		let decl = AnalyzedVarDecl(
 			typeID: TypeID(type),
 			expr: expr,
 			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
 		)
+
+		if let value {
+			context.define(local: expr.name, as: value, definition: decl, isMutable: true)
+		}
+
+		return decl
 	}
 
 	public func visit(_ expr: any LetDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
-		let type = context.type(named: expr.typeDecl)
+		let type = TypeID(context.type(named: expr.typeDecl))
 
-		if case .error = type {
+		if case .error = type.current {
 			errors.append(.init(kind: .typeNotFound(expr.typeDecl ?? "<no type name>"), location: [expr.typeDeclToken ?? expr.location.start]))
 		}
 
+		var valueType = type
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
-		if let value {
-			if !context.isModuleScope {
-				context.define(local: expr.name, as: value, isMutable: false)
-			} else {
-
-			}
+		if let value, valueType.current == .placeholder {
+			valueType = value.typeID
 		}
 
-		return AnalyzedLetDecl(
-			typeID: TypeID(type),
+		let decl = AnalyzedLetDecl(
+			typeID: valueType,
 			expr: expr,
 			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
 		)
+
+		if let value {
+			context.define(local: expr.name, as: value, definition: decl, isMutable: false)
+		}
+
+		return decl
 	}
 
 	public func visit(_ expr: any IfStmt, _ context: Environment) throws -> any AnalyzedSyntax {

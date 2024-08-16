@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public protocol AnalyzedSyntax: Syntax {
+public protocol AnalyzedSyntax: Syntax, CustomDebugStringConvertible {
 	var typeID: TypeID { get }
 	var analyzedChildren: [any AnalyzedSyntax] { get }
 	var analysisErrors: [AnalysisError] { get }
@@ -31,7 +31,7 @@ public extension AnalyzedSyntax {
 	}
 
 	// Try to find the most specific node that contains this position
-	func nearestTo(line: Int, column: Int, candidate: (any AnalyzedSyntax)? = nil) -> any AnalyzedSyntax {
+	func nearestTo(line: Int, column: Int, candidate: (any AnalyzedSyntax)? = nil) -> (any AnalyzedSyntax)? {
 		var candidate: any AnalyzedSyntax = candidate ?? self
 
 		if location.range.count < candidate.location.range.count,
@@ -40,7 +40,9 @@ public extension AnalyzedSyntax {
 		}
 
 		for child in analyzedChildren {
-			candidate = child.nearestTo(line: line, column: column, candidate: candidate)
+			if let newCandidate = child.nearestTo(line: line, column: column, candidate: candidate) {
+				candidate = newCandidate
+			}
 		}
 
 		return candidate
@@ -59,6 +61,10 @@ public extension AnalyzedSyntax {
 	}
 
 	var debugDescription: String {
-		"\(Self.self)(analyzedChildren: [\(analyzedChildren.map(\.debugDescription).joined(separator: ", "))], errors: \(analysisErrors))"
+		if analysisErrors.isEmpty {
+			"\(Self.self)(ln: \(location.line), type: \(typeID.current.description))"
+		} else {
+			"\(Self.self)(lns: \(location.line), type: \(typeID.current.description), errors: \(analysisErrors))"
+		}
 	}
 }

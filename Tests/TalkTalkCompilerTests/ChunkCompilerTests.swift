@@ -257,6 +257,8 @@ struct CompilerTests {
 		}()
 		""")
 
+		chunk.dump()
+
 		#expect(chunk.disassemble() == Instructions(
 			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
 			.op(.call, line: 2, .simple),
@@ -268,8 +270,8 @@ struct CompilerTests {
 		// Using two locals in this test to make sure slot indexes get updated correctly
 		let chunk = try compile("""
 		func() {
-			a = 123
-			b = 456
+			let a = 123
+			let b = 456
 			func() {
 				a
 				b
