@@ -209,7 +209,7 @@ public struct Formatter: Visitor {
 		return expr.params.map(\.name).joined(separator: ", ")
 	}
 
-	public func visit(_ expr: ErrorSyntax, _ context: Context) throws -> Value {
+	public func visit(_ expr: ParseError, _ context: Context) throws -> Value {
 		context.lastType = expr
 
 		return "<error: \(expr.message)>"

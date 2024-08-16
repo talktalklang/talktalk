@@ -20,6 +20,7 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public var receiver: any Expr { expr.receiver }
 	public var property: String { expr.property }
 	public var propertyToken: Token { expr.propertyToken }
+	public var isMutable: Bool
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 

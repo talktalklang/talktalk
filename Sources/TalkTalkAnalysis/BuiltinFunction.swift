@@ -70,7 +70,7 @@ public struct BuiltinFunction {
 				TypeID(.void),
 				[.init(
 					name: "addr",
-					typeID: TypeID(.int)
+					typeID: TypeID(.pointer)
 				)],
 				[]
 			)

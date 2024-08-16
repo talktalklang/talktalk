@@ -42,6 +42,10 @@ extension AnalysisError {
 			return "No property named `\(property)` for \(receiver)"
 		case let .undefinedVariable(name):
 			return "Undefined variable `\(name)`"
+		case let .typeCannotAssign(expected: expected, received: received):
+			return "Cannot assign \(received) to \(expected)"
+		case let .cannotReassignLet(variable: syntax):
+			return "Cannot re-assign let variable: \(syntax.description)"
 		}
 	}
 }

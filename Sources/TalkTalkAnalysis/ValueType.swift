@@ -26,9 +26,9 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 		lhs.description == rhs.description
 	}
 
-	public struct Param: Codable, Hashable, CustomStringConvertible {
-		let name: String
-		let typeID: TypeID
+	public struct Param: Codable, Hashable, CustomStringConvertible, Typed {
+		public let name: String
+		public let typeID: TypeID
 
 		public static func int(_ name: String) -> Param {
 			Param(name: name, typeID: TypeID(.int))
@@ -122,6 +122,43 @@ public indirect enum ValueType: Codable, Equatable, Hashable {
 			1
 		default:
 			3
+		}
+	}
+
+	func isAssignable(from other: ValueType) -> Bool {
+		switch self {
+		case .none:
+			return false
+		case .int:
+			return other == .int
+		case .bool:
+			return other == .bool
+		case .byte:
+			return other == .byte
+		case .pointer:
+			return other == .pointer
+		case .function(_, let typeID, let params, _):
+			guard case let .function(_, otherID, otherParams, _) = other else {
+				return false
+			}
+
+			return typeID == otherID && params == otherParams
+		case .struct(let string):
+			return other == .struct(string)
+		case .generic(let valueType, let string):
+			return other == .generic(valueType, string)
+		case .instance(let instanceValueType):
+			return other == .instance(instanceValueType)
+		case .member(let valueType):
+			return other == .member(valueType)
+		case .error(_):
+			return false
+		case .void:
+			return false
+		case .placeholder:
+			return true
+		case .any:
+			return true
 		}
 	}
 }

@@ -147,7 +147,7 @@ public struct ASTPrinter: Visitor {
 		dump(expr, "name: \(expr.name)")
 	}
 
-	@StringBuilder public func visit(_ expr: ErrorSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ParseError, _ context: Context) throws -> String {
 		dump(expr, expr.message)
 	}
 

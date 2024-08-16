@@ -11,13 +11,13 @@ public extension Parser {
 		let i = startLocation(at: previous)
 
 		guard let name = consume(.identifier, "expected identifier after var")?.lexeme else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
+			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
 
 		consume(.colon, "expected ':' after name")
 
 		guard let typeDecl = consume(.identifier) else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .type)
+			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .type)
 		}
 
 		return VarDeclSyntax(token: token, name: name, typeDecl: typeDecl.lexeme, typeDeclToken: typeDecl, location: endLocation(i))
@@ -29,7 +29,7 @@ public extension Parser {
 		let i = startLocation(at: previous)
 
 		guard let nameToken = consume(.identifier, "expected identifier after var") else {
-			return SyntaxError(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
+			return ParseErrorSyntax(location: endLocation(i), message: "expected identifier after var", expectation: .identifier)
 		}
 
 		let name = nameToken.lexeme
@@ -110,7 +110,11 @@ public extension Parser {
 		let i = startLocation(at: previous)
 
 		guard let name = consume(.identifier) else {
-			return error(at: current, "expected struct name", expectation: .identifier)
+			return error(
+				at: current,
+				.unexpectedToken(expected: .identifier, got: current),
+				expectation: .structName
+			)
 		}
 
 		var genericParamsSyntax: GenericParamsSyntax? = nil

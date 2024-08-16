@@ -18,6 +18,8 @@ public enum AnalysisErrorKind: Hashable {
 	case typeNotFound(String)
 	case unknownError(String)
 	case undefinedVariable(String)
+	case typeCannotAssign(expected: TypeID, received: TypeID)
+	case cannotReassignLet(variable: any AnalyzedExpr)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
@@ -34,6 +36,11 @@ public enum AnalysisErrorKind: Hashable {
 			hasher.combine(string)
 		case .undefinedVariable(let string):
 			hasher.combine(string)
+		case .typeCannotAssign(let expected, let received):
+			hasher.combine(expected)
+			hasher.combine(received)
+		case let .cannotReassignLet(variable: syntax):
+			hasher.combine(syntax.description.hashValue)
 		}
 	}
 }

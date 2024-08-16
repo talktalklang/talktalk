@@ -27,7 +27,7 @@ public struct SourceFileAnalyzer: Visitor {
 			var result: Set<AnalysisError> = []
 
 			for syntax in syntaxes {
-				if let err = syntax as? ErrorSyntax {
+				if let err = syntax as? ParseError {
 					// TODO: We wanna move away from this towards nodes just having their own errors
 					result.insert(
 						AnalysisError(kind: .unknownError(err.message), location: syntax.location)
@@ -53,12 +53,15 @@ public struct SourceFileAnalyzer: Visitor {
 		-> [Value]
 	{
 		let analyzer = SourceFileAnalyzer()
-		var analyzed = try exprs.map { try $0.accept(analyzer, environment) }
+		var analyzed = try exprs.map {
+			try $0.accept(analyzer, environment)
+		}
 
 		// If it's just a single statement, just make it a return
 		if environment.canAutoReturn,
-			 analyzed.count == 1,
-			 let exprStmt = analyzed[0] as? AnalyzedExprStmt {
+		   analyzed.count == 1,
+		   let exprStmt = analyzed[0] as? AnalyzedExprStmt
+		{
 			analyzed[0] = AnalyzedReturnExpr(
 				typeID: exprStmt.typeID,
 				environment: environment,
@@ -74,9 +77,11 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any ExprStmt, _ context: Environment) throws -> any AnalyzedSyntax {
-		try AnalyzedExprStmt(
+		let exprAnalyzed = try expr.expr.accept(self, context) as! any AnalyzedExpr
+
+		return AnalyzedExprStmt(
 			wrapped: expr,
-			exprAnalyzed: expr.expr.accept(self, context) as! any AnalyzedExpr,
+			exprAnalyzed: exprAnalyzed,
 			environment: context
 		)
 	}
@@ -142,10 +147,12 @@ public struct SourceFileAnalyzer: Visitor {
 		switch callee.typeAnalyzed {
 		case let .function(funcName, returning, params, _):
 			if params.count == args.count {
-				// Try to infer param types
+				// Try to infer param types, or check types if we already have one
 				for (i, param) in params.enumerated() {
 					if case .placeholder = param.typeID.type() {
 						param.typeID.update(args[i].expr.typeAnalyzed)
+					} else {
+						errors.append(contentsOf: checkAssignment(to: param, value: args[i].expr, in: context))
 					}
 				}
 			}
@@ -157,7 +164,8 @@ public struct SourceFileAnalyzer: Visitor {
 				if let callee = callee.as(AnalyzedFuncExpr.self) {
 					funcExpr = callee
 				} else if let callee = callee.as(AnalyzedVarExpr.self),
-									let calleeFunc = context.lookup(callee.name)?.expr.as(AnalyzedFuncExpr.self) {
+				          let calleeFunc = context.lookup(callee.name)?.expr.as(AnalyzedFuncExpr.self)
+				{
 					funcExpr = calleeFunc
 				}
 
@@ -299,30 +307,36 @@ public struct SourceFileAnalyzer: Visitor {
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
 			memberAnalyzed: member ?? error(at: expr, "no member found", environment: context, expectation: .member),
-			analysisErrors: errors
+			analysisErrors: errors,
+			isMutable: member?.isMutable ?? false
 		)
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
+		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 
-		switch expr.receiver {
-		case let receiver as any VarExpr:
-			context.define(local: receiver.name, as: value)
-		default: ()
+		let errors = checkAssignment(to: receiver, value: value, in: context)
+
+		if errors.isEmpty {
+			switch receiver {
+			case let receiver as AnalyzedVarExpr:
+				context.define(local: receiver.name, as: value, isMutable: receiver.isMutable)
+			default: ()
+			}
 		}
 
-		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 		return AnalyzedDefExpr(
 			typeID: TypeID(value.typeAnalyzed),
 			expr: expr,
 			receiverAnalyzed: receiver,
+			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any ErrorSyntax, _ context: Environment) throws
+	public func visit(_ expr: any ParseError, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedErrorSyntax(
@@ -367,7 +381,8 @@ public struct SourceFileAnalyzer: Visitor {
 				typeID: binding.type,
 				expr: expr,
 				environment: context,
-				analysisErrors: []
+				analysisErrors: [],
+				isMutable: binding.isMutable
 			)
 		}
 
@@ -377,7 +392,8 @@ public struct SourceFileAnalyzer: Visitor {
 			environment: context,
 			analysisErrors: [
 				AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location)
-			]
+			],
+			isMutable: false
 		)
 	}
 
@@ -385,7 +401,14 @@ public struct SourceFileAnalyzer: Visitor {
 		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
-		infer([lhs, rhs], in: env)
+		if lhs.typeID.current == .pointer,
+			 [.int, .placeholder].contains(rhs.typeID.current) {
+			// This is pointer arithmetic
+			// TODO: More generic handling of different operand types
+			rhs.typeID.current = .int
+		} else {
+			infer([lhs, rhs], in: env)
+		}
 
 		return AnalyzedBinaryExpr(
 			typeID: lhs.typeID,
@@ -455,7 +478,7 @@ public struct SourceFileAnalyzer: Visitor {
 				returnsAnalyzed: nil,
 				environment: innerEnvironment
 			)
-			innerEnvironment.define(local: name.lexeme, as: stub)
+			innerEnvironment.define(local: name.lexeme, as: stub, isMutable: false)
 		}
 
 		// Visit the body with the innerEnvironment, finding captures as we go.
@@ -482,8 +505,8 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 
 		if let name = expr.name {
-			innerEnvironment.define(local: name.lexeme, as: funcExpr)
-			env.define(local: name.lexeme, as: funcExpr)
+			innerEnvironment.define(local: name.lexeme, as: funcExpr, isMutable: false)
+			env.define(local: name.lexeme, as: funcExpr, isMutable: false)
 		}
 
 		return funcExpr
@@ -525,10 +548,10 @@ public struct SourceFileAnalyzer: Visitor {
 	public func visit(_ expr: any ParamsExpr, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		AnalyzedParamsExpr(
+		try AnalyzedParamsExpr(
 			typeID: TypeID(.void),
 			expr: expr,
-			paramsAnalyzed: try expr.params.enumerated().map { _, param in
+			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				var type = TypeID()
 
 				if let paramType = param.type {
@@ -644,8 +667,11 @@ public struct SourceFileAnalyzer: Visitor {
 					location: [.synthetic(.self)]
 				),
 				environment: context,
-				analysisErrors: []
+				analysisErrors: [],
+				isMutable: false
 			)
+			,
+			isMutable: false
 		)
 
 		context.define(struct: expr.name, as: structType)
@@ -763,7 +789,7 @@ public struct SourceFileAnalyzer: Visitor {
 						expr: decl,
 						isMutable: false
 					))
-			case is ErrorSyntax:
+			case is ParseError:
 				()
 			default:
 				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
@@ -809,7 +835,7 @@ public struct SourceFileAnalyzer: Visitor {
 			environment: context
 		)
 
-		context.define(local: expr.name, as: analyzed)
+		context.define(local: expr.name, as: analyzed, isMutable: false)
 
 		bodyContext.lexicalScope = lexicalScope
 
@@ -871,7 +897,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		if let value {
-			context.define(local: expr.name, as: value)
+			context.define(local: expr.name, as: value, isMutable: true)
 		}
 
 		return AnalyzedVarDecl(
@@ -894,7 +920,9 @@ public struct SourceFileAnalyzer: Visitor {
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		if let value {
 			if !context.isModuleScope {
-				context.define(local: expr.name, as: value)
+				context.define(local: expr.name, as: value, isMutable: false)
+			} else {
+
 			}
 		}
 
@@ -942,12 +970,70 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 	}
 
+	public func checkAssignment(
+		to receiver: any Typed,
+		value: any AnalyzedExpr,
+		in env: Environment
+	) -> [AnalysisError] {
+		var errors: [AnalysisError] = []
+
+		errors.append(contentsOf: checkMutability(of: receiver, in: env))
+
+		if value.typeID.current == .placeholder {
+			value.typeID.current = receiver.typeID.current
+		}
+
+		if receiver.typeID.current.isAssignable(from: value.typeAnalyzed) {
+			receiver.typeID.current = value.typeID.current
+			return errors
+		}
+
+		errors.append(
+			AnalysisError(
+				kind: .typeCannotAssign(
+					expected: receiver.typeID,
+					received: value.typeID
+				),
+				location: value.location
+			)
+		)
+
+		return errors
+	}
+
+	func checkMutability(of receiver: any Typed, in env: Environment) -> [AnalysisError] {
+		switch receiver {
+		case let receiver as AnalyzedVarExpr:
+			let binding = env.lookup(receiver.name)
+
+			if !receiver.isMutable || (binding?.isMutable == false){
+				return [
+					AnalysisError(
+						kind: .cannotReassignLet(variable: receiver),
+						location: receiver.location
+					)
+				]
+			}
+		case let receiver as AnalyzedMemberExpr:
+			if !receiver.isMutable {
+				return [AnalysisError(
+					kind: .cannotReassignLet(variable: receiver),
+					location: receiver.location
+				)]
+			}
+		default:
+			()
+		}
+
+		return []
+	}
+
 	public func error(
 		at expr: any Syntax, _ message: String, environment: Environment, expectation: ParseExpectation
 	) -> AnalyzedErrorSyntax {
 		AnalyzedErrorSyntax(
 			typeID: TypeID(.error(message)),
-			expr: SyntaxError(location: expr.location, message: message, expectation: expectation),
+			expr: ParseErrorSyntax(location: expr.location, message: message, expectation: expectation),
 			environment: environment
 		)
 	}

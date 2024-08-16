@@ -18,8 +18,8 @@ struct SourceLocationStack {
 }
 
 public struct Parser {
-	enum ParseError: Error {
-		case couldNotParse([(Token, String)])
+	enum ParserError: Error {
+		case couldNotParse([SyntaxError])
 	}
 
 	var parserRepeats: [Int: Int] = [:]
@@ -31,13 +31,13 @@ public struct Parser {
 	// The location stack is used for tracking source locations while parsing
 	var locationStack: SourceLocationStack = .init()
 
-	public var errors: [(Token, String)] = []
+	public var errors: [SyntaxError] = []
 
 	public static func parse(_ string: String, allowErrors: Bool = false) throws -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(string))
 		let result = parser.parse()
 		guard parser.errors.isEmpty || allowErrors else {
-			throw ParseError.couldNotParse(parser.errors)
+			throw ParserError.couldNotParse(parser.errors)
 		}
 		return result
 	}
@@ -47,6 +47,7 @@ public struct Parser {
 		self.previous = lexer.next()
 		self.current = previous
 		self.lexer = lexer
+		self.errors = lexer.errors
 	}
 
 	public mutating func parse() -> [any Syntax] {
@@ -196,7 +197,8 @@ public struct Parser {
 		}
 
 		_ = error(
-			at: peek(), message ?? "Expected \(kind), got \(peek().debugDescription)",
+			at: peek(),
+			.unexpectedToken(expected: kind, got: peek()),
 			expectation: .guess(from: kind))
 		return nil
 	}
@@ -213,7 +215,8 @@ public struct Parser {
 		}
 
 		_ = error(
-			at: peek(), "Expected \(kind), got \(peek().debugDescription)",
+			at: peek(),
+			.unexpectedToken(expected: kind, got: peek()),
 			expectation: .guess(from: kind))
 		return false
 	}
@@ -262,10 +265,17 @@ public struct Parser {
 		current
 	}
 
-	mutating func error(at: Token, _ message: String, expectation: ParseExpectation) -> ErrorSyntax {
-		errors.append((at, message))
-		print(message, "ln: \(at.line) col: \(at.column)")
-		return SyntaxError(location: [at], message: message, expectation: expectation)
+	mutating func error(at: Token, _ kind: SyntaxErrorKind, expectation: ParseExpectation) -> ParseError {
+		errors.append(
+			SyntaxError(
+				line: at.line,
+				column: at.column,
+				kind: kind,
+				syntax: nil
+			)
+		)
+
+		return ParseErrorSyntax(location: [at], message: "\(kind)", expectation: expectation)
 	}
 
 	mutating func startLocation(at token: Token? = nil) -> Int {

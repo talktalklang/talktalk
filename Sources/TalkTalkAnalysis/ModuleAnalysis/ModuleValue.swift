@@ -15,6 +15,7 @@ public struct ModuleValue: ModuleGlobal {
 	public let syntax: any Syntax
 	public let typeID: TypeID
 	public var source: ModuleSource
+	public var isMutable: Bool
 
 	public var isImport: Bool {
 		if case .module = source {

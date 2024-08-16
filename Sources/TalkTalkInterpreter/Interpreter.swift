@@ -26,9 +26,10 @@ public struct Interpreter: AnalyzedVisitor {
 		self.parsed = try! SourceFileAnalyzer.analyze(parser.parse(), in: .init())
 
 		if !parser.errors.isEmpty {
-			for (_, message) in parser.errors {
-				print(message)
+			for error in parser.errors {
+				print("\(error)")
 			}
+			return
 		}
 	}
 

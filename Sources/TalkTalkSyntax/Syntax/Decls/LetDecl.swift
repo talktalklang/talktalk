@@ -13,7 +13,7 @@ public protocol LetDecl: Decl {
 	var value: (any Expr)? { get }
 }
 
-public struct LetDeclSyntax: VarDecl {
+public struct LetDeclSyntax: LetDecl {
 	public var token: Token
 	public var name: String
 	public var typeDecl: String?

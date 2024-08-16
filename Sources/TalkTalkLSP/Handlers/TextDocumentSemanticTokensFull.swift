@@ -24,7 +24,7 @@ struct TextDocumentSemanticTokensFull {
 
 		do {
 			// TODO: use module environment
-			let parsed = try SourceFileAnalyzer.analyze(Parser.parse(source.text), in: Environment())
+			let parsed = try SourceFileAnalyzer.analyze(Parser.parse(source.text, allowErrors: true), in: Environment())
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }
 		} catch {
@@ -91,7 +91,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: ErrorSyntax, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: ParseError, _ context: Context) throws -> [RawSemanticToken] {
 		[]
 	}
 

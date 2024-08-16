@@ -100,7 +100,8 @@ public struct ModuleAnalyzer {
 					name: name,
 					syntax: binding.expr,
 					typeID: binding.type,
-					source: .external(module)
+					source: .external(module),
+					isMutable: false
 				)
 			} else if case let .struct(name) = name,
 								let structType = binding.externalModule?.structs[name]
@@ -167,7 +168,8 @@ public struct ModuleAnalyzer {
 				name: syntax.name,
 				syntax: syntax,
 				typeID: analyzed.typeID,
-				source: .module
+				source: .module,
+				isMutable: true
 			)
 		case let syntax as LetDecl:
 			let analyzed = try visitor.visit(syntax, environment)
@@ -176,7 +178,8 @@ public struct ModuleAnalyzer {
 				name: syntax.name,
 				syntax: syntax,
 				typeID: analyzed.typeID,
-				source: .module
+				source: .module,
+				isMutable: false
 			)
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
@@ -198,7 +201,8 @@ public struct ModuleAnalyzer {
 					name: syntax.name,
 					syntax: syntax,
 					typeID: analyzed.typeID,
-					source: .module
+					source: .module,
+					isMutable: false
 				)
 			}
 		case let syntax as ImportStmt:

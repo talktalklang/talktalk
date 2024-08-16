@@ -66,8 +66,11 @@ public struct TalkTalkLexer {
 	var line = 0
 	var column = 0
 
+	var errors: [SyntaxError]
+
 	public init(_ source: String) {
 		self.source = ContiguousArray<Character>(source)
+		self.errors = []
 	}
 
 	public mutating func rewind(count _: Int) {}
@@ -129,8 +132,13 @@ public struct TalkTalkLexer {
 	// MARK: Recognizers
 
 	mutating func string() -> Token {
-		while !isAtEnd, peek() != "\"" {
+		while peek() != "\"" {
 			advance()
+
+			if isAtEnd {
+				error("unterminated string literal")
+				return make(.string)
+			}
 		}
 
 		advance()
@@ -269,8 +277,10 @@ public struct TalkTalkLexer {
 		return peek[keyPath: keypath]
 	}
 
-	mutating func error(_ message: String) -> Token {
-		print(message)
+	@discardableResult mutating func error(_ message: String) -> Token {
+		errors.append(
+			.init(line: line, column: column, kind: .lexerError(message))
+		)
 		return make(.error)
 	}
 

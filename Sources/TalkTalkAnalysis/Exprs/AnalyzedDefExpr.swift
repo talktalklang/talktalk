@@ -14,12 +14,13 @@ public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 	let expr: DefExpr
 
 	public var receiver: any Expr { expr.receiver }
-	public var receiverAnalyzed: any Expr
+	public var receiverAnalyzed: any AnalyzedExpr
+	public var analysisErrors: [AnalysisError]
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 
 	public var valueAnalyzed: any AnalyzedExpr
-	public var analyzedChildren: [any AnalyzedSyntax] { [valueAnalyzed] }
+	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed, valueAnalyzed] }
 	public let environment: Environment
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {

@@ -27,7 +27,7 @@ struct Array<Element> {
 		var newCapacity = self.capacity * 2
 		var newStorage = _allocate(newCapacity)
 
-		i = 0
+		var i = 0
 		while i < self.count {
 			_storePtr(newStorage, self.at(i))
 			i = i + 1

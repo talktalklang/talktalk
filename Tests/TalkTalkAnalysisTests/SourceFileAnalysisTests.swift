@@ -57,10 +57,16 @@ struct AnalysisTests {
 	}
 
 	@Test("Types def") func def() throws {
-		let ast = ast("foo = 1").as(AnalyzedReturnExpr.self)?.valueAnalyzed
+		let ast = ast("var foo = 1").as(AnalyzedReturnExpr.self)?.valueAnalyzed
 		let def = try #require(ast as? AnalyzedDefExpr)
 		#expect(def.typeAnalyzed == .int)
 		#expect(def.receiverAnalyzed.cast(AnalyzedVarExpr.self).name == "foo")
+	}
+
+	@Test("Types let") func typesLet() throws {
+		let ast = ast("let foo = 1").cast(AnalyzedLetDecl.self)
+		#expect(ast.name == "foo")
+		#expect(ast.value?.cast(LiteralExprSyntax.self).value == .int(1))
 	}
 
 	@Test("Types if expr") func ifExpr() {
@@ -144,6 +150,18 @@ struct AnalysisTests {
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.typeAnalyzed == .int)
+	}
+
+	@Test("Types pointer arithmetic") func pointers() throws {
+		let ast = ast(
+			"""
+			func foo(p: pointer) {
+				p + 1
+			}
+			"""
+		)
+
+		#expect(ast.cast(AnalyzedFuncExpr.self).returnsAnalyzed?.typeAnalyzed == .pointer)
 	}
 
 	@Test("Types functions") func closures() throws {

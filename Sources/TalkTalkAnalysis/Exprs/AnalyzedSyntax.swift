@@ -29,4 +29,8 @@ public extension AnalyzedSyntax {
 		}
 		return result
 	}
+
+	var debugDescription: String {
+		"\(Self.self)(analyzedChildren: [\(analyzedChildren.map(\.debugDescription).joined(separator: ", "))], errors: \(analysisErrors))"
+	}
 }

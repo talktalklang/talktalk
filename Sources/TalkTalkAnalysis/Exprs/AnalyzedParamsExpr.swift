@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public class AnalyzedParam: Param, AnalyzedExpr {
+public class AnalyzedParam: Param, AnalyzedExpr, Typed {
 	public func accept<V>(_: V, _: V.Context) -> V.Value where V: AnalyzedVisitor {
 		fatalError("unreachable")
 	}

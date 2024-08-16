@@ -5,20 +5,24 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalkSyntax
+@testable import TalkTalkSyntax
 import Testing
 
 @MainActor
 struct TalkTalkParserTests {
-	func parse(_ source: String) -> [Syntax] {
+	func parse(_ source: String, errors: [SyntaxError] = []) -> [Syntax] {
 		let lexer = TalkTalkLexer(source)
 		var parser = Parser(lexer)
 		let result = parser.parse()
 
-		#expect(parser.errors.isEmpty)
-
-		for (token, message) in parser.errors {
-			print("Error at \(token): \(message)")
+		if errors.isEmpty {
+			#expect(parser.errors.isEmpty)
+		} else if errors.count == parser.errors.count {
+			for (i, error) in parser.errors.enumerated() {
+				#expect(errors[i] == error)
+			}
+		} else {
+			#expect(parser.errors == errors)
 		}
 
 		return result
@@ -49,6 +53,18 @@ struct TalkTalkParserTests {
 		#expect(parse("true")[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .bool(true))
 		#expect(parse("false")[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .bool(false))
 		#expect(parse(#""hello world""#)[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .string("hello world"))
+	}
+
+	@Test("Don't crash on incomplete string") func incompleteString() throws {
+		#expect(parse(#""hello "#, errors: [
+			SyntaxError(
+				line: 0,
+				column: 7,
+				kind: .lexerError("unterminated string literal")
+				)
+			])[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(LiteralExprSyntax.self).value == .string("hello"))
 	}
 
 	@Test("Plus expr") func binaryexpr() throws {

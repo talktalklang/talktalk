@@ -7,14 +7,15 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax, Member {
+public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 	public var expr: any TalkTalkSyntax.Syntax { wrapped }
 	
 	public var slot: Int = -1
 	public var name: String = ""
-	
+	public var isMutable: Bool = false
+
 	public let typeID: TypeID
-	public let wrapped: any ErrorSyntax
+	public let wrapped: any ParseError
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 
@@ -23,7 +24,7 @@ public struct AnalyzedErrorSyntax: AnalyzedExpr, ErrorSyntax, Member {
 	public var children: [any Syntax] { expr.children }
 	public var expectation: ParseExpectation { wrapped.expectation }
 
-	public init(typeID: TypeID, expr: any ErrorSyntax, environment: Environment) {
+	public init(typeID: TypeID, expr: any ParseError, environment: Environment) {
 		self.typeID = typeID
 		self.wrapped = expr
 		self.environment = environment

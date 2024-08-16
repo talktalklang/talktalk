@@ -39,7 +39,7 @@ extension Parser {
 			}
 		}
 
-		return lhs ?? SyntaxError(
+		return lhs ?? ParseErrorSyntax(
 			location: [previous, current],
 			message: "Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)",
 			expectation: .expr
@@ -54,7 +54,7 @@ extension Parser {
 		let expr = parse(precedence: .assignment)
 
 		guard consume(.rightParen) != nil else {
-			return error(at: current, "Expected ')'", expectation: .none)
+			return error(at: current, .unexpectedToken(expected: .rightParen, got: current), expectation: .none)
 		}
 
 		return expr
@@ -76,7 +76,7 @@ extension Parser {
 		let i = startLocation()
 
 		guard let ifToken = consume(.if) else {
-			return error(at: current, "unreachable", expectation: .none)
+			return error(at: current, .unexpectedToken(expected: .if, got: current), expectation: .none)
 		}
 
 		skip(.newline)
@@ -153,7 +153,7 @@ extension Parser {
 			return funcExpr()
 		}
 
-		return SyntaxError(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
+		return ParseErrorSyntax(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
 	mutating func returning(_: Bool) -> any Expr {
@@ -217,7 +217,7 @@ extension Parser {
 		let i = startLocation()
 
 		guard let token = consume(.identifier) else {
-			return SyntaxError(location: [current], message: "Expected identifier for variable", expectation: .variable)
+			return ParseErrorSyntax(location: [current], message: "Expected identifier for variable", expectation: .variable)
 		}
 
 		let lhs = VarExprSyntax(token: token, location: endLocation(i))
@@ -228,7 +228,7 @@ extension Parser {
 			let rhs = parse(precedence: .assignment)
 			return DefExprSyntax(receiver: lhs, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
-			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
+			return ParseErrorSyntax(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
 		// this is sorta weird but we're gonna go with it for now.
@@ -279,7 +279,11 @@ extension Parser {
 		consume(.dot)
 
 		guard let member = consume(.identifier, "expected identifier for property access") else {
-			_ = error(at: current, "expected identifier for property access", expectation: .member)
+			_ = error(
+				at: current,
+				.unexpectedToken(expected: .identifier, got: current),
+				expectation: .member
+			)
 			return MemberExprSyntax(
 				receiver: lhs,
 				property: "",
@@ -299,7 +303,7 @@ extension Parser {
 			)
 			return DefExprSyntax(receiver: member, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
-			return SyntaxError(location: endLocation(i), message: "Can't assign", expectation: .none)
+			return ParseErrorSyntax(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
 		return MemberExprSyntax(

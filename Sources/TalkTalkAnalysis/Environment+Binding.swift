@@ -16,6 +16,7 @@ public extension Environment {
 		public var isBuiltin: Bool
 		public var isParameter: Bool
 		public var isGlobal: Bool
+		public var isMutable: Bool
 		public var externalModule: AnalysisModule?
 
 		public init(
@@ -26,6 +27,7 @@ public extension Environment {
 			isBuiltin: Bool = false,
 			isParameter: Bool = false,
 			isGlobal: Bool = false,
+			isMutable: Bool = false,
 			externalModule: AnalysisModule? = nil
 		) {
 			self.name = name
@@ -35,6 +37,7 @@ public extension Environment {
 			self.isBuiltin = isBuiltin
 			self.isParameter = isParameter
 			self.isGlobal = isGlobal
+			self.isMutable = isMutable
 			self.externalModule = externalModule
 		}
 	}

@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public protocol AnalyzedExpr: Expr, AnalyzedSyntax {
+public protocol AnalyzedExpr: Expr, AnalyzedSyntax, Typed {
 	var analyzedChildren: [any AnalyzedSyntax] { get }
 	var environment: Environment { get }
 

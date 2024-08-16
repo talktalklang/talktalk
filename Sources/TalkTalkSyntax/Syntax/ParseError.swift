@@ -8,7 +8,7 @@
 // This is sorta leaking semantic info into the syntax package but also the parser knows
 // a bunch of stuff that we probably don't want to leak _out_ of the syntax package?
 public enum ParseExpectation: Sendable {
-	case decl, expr, identifier, none, type, variable, member, moduleName
+	case decl, expr, identifier, none, type, variable, member, moduleName, structName
 
 	static func guess(from kind: Token.Kind) -> ParseExpectation {
 		switch kind {
@@ -20,12 +20,12 @@ public enum ParseExpectation: Sendable {
 	}
 }
 
-public protocol ErrorSyntax: Decl, Expr, Syntax {
+public protocol ParseError: Decl, Expr, Syntax {
 	var message: String { get }
 	var expectation: ParseExpectation { get }
 }
 
-public struct SyntaxError: ErrorSyntax, Sendable {
+public struct ParseErrorSyntax: ParseError, Sendable {
 	public let location: SourceLocation
 	public let message: String
 	public var children: [any Syntax] { [] }

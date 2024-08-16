@@ -133,9 +133,11 @@ public class Environment {
 						typeID: TypeID(scope.type),
 						expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
 						environment: self,
-						analysisErrors: []
+						analysisErrors: [],
+						isMutable: false
 					),
-					type: TypeID(scope.type)
+					type: TypeID(scope.type),
+					isMutable: false
 				)
 			}
 
@@ -260,11 +262,12 @@ public class Environment {
 		structTypes[name] = type
 	}
 
-	public func define(local: String, as expr: any AnalyzedExpr) {
+	public func define(local: String, as expr: any AnalyzedExpr, isMutable: Bool) {
 		locals[local] = Binding(
 			name: local,
 			expr: expr,
-			type: expr.typeID
+			type: expr.typeID,
+			isMutable: isMutable
 		)
 	}
 

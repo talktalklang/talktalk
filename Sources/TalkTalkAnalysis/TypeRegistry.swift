@@ -34,7 +34,39 @@ final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 	}
 
 	public var description: String {
-		"TypeID(\(current.description))"
+		switch current {
+		case .none:
+			"nope"
+		case .int:
+			"int"
+		case .bool:
+			"bool"
+		case .byte:
+			"byte"
+		case .pointer:
+			"pointer"
+		case .function(_, let typeID, let array, _):
+			"func(\(array)) -> \(typeID.description)"
+		case .struct(let string):
+			string + ".Type"
+		case .generic(let valueType, let string):
+			"\(valueType)<\(string)>"
+		case .instance(let instanceValueType):
+			switch instanceValueType.ofType {
+			case let .struct(name): name
+			default: instanceValueType.ofType.description
+			}
+		case .member(let valueType):
+			"\(valueType) member"
+		case .error(let string):
+			string
+		case .void:
+			"void"
+		case .placeholder:
+			"<unknown>"
+		case .any:
+			"any"
+		}
 	}
 
 	public func hash(into hasher: inout Hasher) {

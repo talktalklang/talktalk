@@ -47,7 +47,11 @@ extension Parser {
 		let i = startLocation(at: importToken)
 
 		guard let name = consume(.identifier) else {
-			return error(at: current, "Expected module name", expectation: .moduleName)
+			return error(
+				at: current,
+				.unexpectedToken(expected: .identifier, got: current),
+				expectation: .moduleName
+			)
 		}
 
 		let module = IdentifierExprSyntax(name: name.lexeme, location: [name])

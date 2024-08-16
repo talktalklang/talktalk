@@ -2,7 +2,8 @@
 struct Int {
 	var raw: int
 
-	init(raw: int) {
-		self.raw = raw
+	init(raw2) {
+		self.raw = raw2
 	}
 }
+
