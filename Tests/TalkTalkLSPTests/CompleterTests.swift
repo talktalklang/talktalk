@@ -18,8 +18,8 @@ struct CompleterTests {
 
 	@Test("Completes locals") func locals() async throws {
 		let completer = await complete("""
-		person = "Pat"
-		pet = "dog"
+		let person = "Pat"
+		let pet = "dog"
 
 		func nope() {
 			part = "nope"

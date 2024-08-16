@@ -20,7 +20,9 @@ public struct OutputCapture: Sendable {
 		try instance.run(block)
 	}
 
-	public static func run(block: () async throws -> Void) async rethrows -> Result {
+	@MainActor public static func run(
+		block: @Sendable () async throws -> Void
+	) async rethrows -> Result {
 		try await instance.run(block)
 	}
 

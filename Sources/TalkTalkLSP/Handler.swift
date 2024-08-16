@@ -7,7 +7,7 @@ class LSPRequestParser {
 
 	var buffer: [UInt8] = []
 	var state: State = .contentLength
-	var callback: (Request) -> Void = { _ in }
+	var callback: @Sendable (Request) async -> Void = { _ in }
 
 	var current = 0
 	var currentLength: [UInt8] = []
@@ -17,19 +17,19 @@ class LSPRequestParser {
 	let cr: UInt8 = 13
 	let newline: UInt8 = 10
 
-	func parse(data: Data) {
+	func parse(data: Data) async {
 		buffer.append(contentsOf: data)
 
-		while let byte = next() {
+		while let byte = await next() {
 			switch state {
 			case .contentLength:
 				contentLength(byte: byte)
 			case .length:
 				length(byte: byte)
 			case .split:
-				split(byte: byte)
+				await split(byte: byte)
 			case .body(let contentLength):
-				body(byte: byte, contentLength: contentLength)
+				await body(byte: byte, contentLength: contentLength)
 			}
 		}
 	}
@@ -61,12 +61,12 @@ class LSPRequestParser {
 	}
 
 	// We need to listen for \n\r\n because the first \r was handled in length
-	func split(byte: UInt8) {
+	func split(byte: UInt8) async {
 		if current == 3 {
 			let contentLength = Int(String(data: Data(currentLength), encoding: .ascii)!)!
 			state = .body(contentLength)
 			self.current = -1
-			body(byte: byte, contentLength: contentLength)
+			await body(byte: byte, contentLength: contentLength)
 			return
 		}
 
@@ -84,18 +84,18 @@ class LSPRequestParser {
 		}
 	}
 
-	func body(byte: UInt8, contentLength: Int) {
+	func body(byte: UInt8, contentLength: Int) async {
 		if currentBody.count == contentLength {
-			complete()
+			await complete()
 			current = 1
 		} else {
 			currentBody.append(byte)
 		}
 	}
 
-	func next() -> UInt8? {
+	func next() async -> UInt8? {
 		if buffer.isEmpty {
-			complete()
+			await complete()
 			return nil
 		}
 
@@ -106,7 +106,7 @@ class LSPRequestParser {
 		return buffer.removeFirst()
 	}
 
-	func complete() {
+	func complete() async {
 		guard case let .body(contentLength) = state, currentBody.count == contentLength else {
 			return
 		}
@@ -120,7 +120,7 @@ class LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			self.callback(request)
+			await self.callback(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")
@@ -143,12 +143,12 @@ struct Handler {
 	var requests: AsyncStream<Request>?
 	var continuation: AsyncStream<Request>.Continuation?
 
-	init(callback: @Sendable @escaping (Request) -> Void) {
+	init(callback: @Sendable @escaping (Request) async -> Void) {
 		self.parser = .init()
 		self.parser.callback = callback
 	}
 
-	mutating func handle(data: Data) {
+	mutating func handle(data: Data) async {
 		if data.isEmpty {
 			emptyResponseCount += 1
 			Log.info("incrementing empty response count. now: \(emptyResponseCount)")
@@ -164,6 +164,6 @@ struct Handler {
 		emptyResponseCount = 0
 
 		Log.info("parsing \(data.count) bytes")
-		parser.parse(data: data)
+		await parser.parse(data: data)
 	}
 }

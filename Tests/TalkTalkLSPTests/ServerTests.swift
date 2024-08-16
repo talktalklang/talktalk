@@ -6,18 +6,17 @@
 //
 
 import Foundation
-import Testing
 import TalkTalkBytecode
 @testable import TalkTalkLSP
+import Testing
 
-fileprivate extension Data {
+private extension Data {
 	func `as`<T: Codable>(_ codable: T.Type) -> T? {
 		try? JSONDecoder().decode(T.self, from: self)
 	}
 }
 
-@MainActor
-struct ServerTests {
+actor ServerTests {
 	enum Err: Error {
 		case err(String)
 	}
@@ -30,22 +29,24 @@ struct ServerTests {
 			i += 1
 		}
 
-		i += 3  // Skip the \n\r\n
+		i += 3 // Skip the \n\r\n
 
 		return data[i..<data.count]
 	}
 
 	func responses(from requests: Request...) async throws -> [Data] {
-		let requestData = try Data(requests.map {
-			let data = try JSONEncoder().encode($0)
-			return "Content-Length: \(data.count)\r\n\r\n\(String(data: data, encoding: .utf8)!)"
-		}.joined().utf8)
-
 		var responses: [Data] = []
+		let server = try await Server()
 
-		var handler = Handler { request in
+		for request in requests {
+			let out = await OutputCapture.run {
+				await server.perform(request)
+			}
 
+			responses.append(Data(out.stdout.utf8))
 		}
+
+		await server.worker?.value
 
 		return responses.map { stripHeader(from: $0) }
 	}
@@ -64,20 +65,21 @@ struct ServerTests {
 		let data1 = data[0..<32]
 		let data2 = data[32..<data.count]
 
-		var server = try await Server()
-		var called = false
-		var handler = Handler { _ in }
+		let server = try await Server()
+		var handler = Handler { request in
+			server.enqueue(request)
+		}
 
-		handler.handle(data: data1)
-		handler.handle(data: data2)
+		await handler.handle(data: data1)
+		await handler.handle(data: data2)
 
-		#expect(called == true)
+		await server.worker?.value
 	}
 
 	@Test("Handles two messages") func twoMessages() async throws {
 		let responses = try await responses(
 			from: Request(id: .integer(321), method: .initialize),
-						Request(id: .integer(123), method: .initialize)
+			Request(id: .integer(123), method: .initialize)
 		)
 
 		#expect(responses[0].as(InitializeResult.self) != nil)

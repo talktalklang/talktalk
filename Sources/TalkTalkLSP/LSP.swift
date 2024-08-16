@@ -23,7 +23,7 @@ public actor LSP {
 
 		while true {
 			let data = file.availableData
-			handler.handle(data: data)
+			await handler.handle(data: data)
 		}
 	}
 
