@@ -267,6 +267,10 @@ public class Environment {
 		structTypes[name] = type
 	}
 
+	public func local(named: String) -> Binding? {
+		locals[named]
+	}
+
 	public func define(
 		local: String,
 		as expr: any AnalyzedExpr,

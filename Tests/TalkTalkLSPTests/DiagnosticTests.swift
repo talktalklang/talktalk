@@ -29,6 +29,9 @@ struct DiagnosticTests {
 		)
 
 		let module = try analyzer.analyze()
-		try #expect(module.collectErrors().isEmpty)
+		let errors = try module.collectErrors()
+		print(errors)
+		print()
+		#expect(errors.isEmpty)
 	}
 }

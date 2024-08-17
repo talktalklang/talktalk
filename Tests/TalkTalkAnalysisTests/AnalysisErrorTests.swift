@@ -87,6 +87,38 @@ struct AnalysisErrorTests: AnalysisTest {
 		}
 	}
 
+	@Test("Trying to init the same let twice") func reInitLet() async throws {
+		try await errors(
+			"""
+			let foo = "bar"
+			let foo = "fizz"
+			"""
+		) { kinds in
+			guard kinds.count > 0, case let .invalidRedeclaration(variable: name, _) = kinds[0] else {
+				#expect(Bool(false), "did not get correct kind: \(kinds)")
+				return
+			}
+
+			#expect(name == "foo")
+		}
+	}
+
+	@Test("Trying to init the same var twice") func reInitVar() async throws {
+		try await errors(
+			"""
+			var foo = "bar"
+			var foo = "fizz"
+			"""
+		) { kinds in
+			guard kinds.count > 0, case let .invalidRedeclaration(variable: name, _) = kinds[0] else {
+				#expect(Bool(false), "did not get correct kind: \(kinds)")
+				return
+			}
+
+			#expect(name == "foo")
+		}
+	}
+
 	@Test("Assigning to param var") func assignParam() async throws {
 		try await errors(
 			"""

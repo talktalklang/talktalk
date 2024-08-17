@@ -20,6 +20,7 @@ public enum AnalysisErrorKind: Hashable {
 	case undefinedVariable(String)
 	case typeCannotAssign(expected: TypeID, received: TypeID)
 	case cannotReassignLet(variable: any AnalyzedExpr)
+	case invalidRedeclaration(variable: String, existing: Environment.Binding)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
@@ -41,6 +42,8 @@ public enum AnalysisErrorKind: Hashable {
 			hasher.combine(received)
 		case let .cannotReassignLet(variable: syntax):
 			hasher.combine(syntax.description.hashValue)
+		case let .invalidRedeclaration(variable: name, existing: _):
+			hasher.combine(name)
 		}
 	}
 }

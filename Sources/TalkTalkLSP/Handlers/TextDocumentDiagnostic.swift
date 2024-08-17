@@ -47,6 +47,8 @@ extension AnalysisError {
 			"Cannot assign \(received) to \(expected)"
 		case let .cannotReassignLet(variable: syntax):
 			"Cannot re-assign let variable: \(syntax.description)"
+		case let .invalidRedeclaration(variable: name, existing: decl):
+			"Cannot re-declare \(name)."
 		}
 	}
 }

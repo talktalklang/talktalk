@@ -836,6 +836,18 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
+
+		if let existing = context.local(named: expr.name),
+			 let definition = existing.definition,
+			 definition.location.start != expr.location.start {
+			errors.append(
+				.init(
+					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
+					location: expr.location
+				)
+			)
+		}
+
 		let type = context.type(named: expr.typeDecl)
 
 		if case .error = type {
@@ -866,6 +878,17 @@ public struct SourceFileAnalyzer: Visitor {
 	public func visit(_ expr: any LetDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
 		let type = TypeID(context.type(named: expr.typeDecl))
+
+		if let existing = context.local(named: expr.name),
+			 let definition = existing.definition,
+			 definition.location.start != expr.location.start {
+			errors.append(
+				.init(
+					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
+					location: expr.location
+				)
+			)
+		}
 
 		if case .error = type.current {
 			errors.append(.init(kind: .typeNotFound(expr.typeDecl ?? "<no type name>"), location: [expr.typeDeclToken ?? expr.location.start]))
