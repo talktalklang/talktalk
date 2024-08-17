@@ -69,7 +69,6 @@ fileprivate extension Driver {
 				guard let resourceValues = try? fileURL.resourceValues(forKeys: [.nameKey, .isDirectoryKey]),
 							let isDirectory = resourceValues.isDirectory
 				else {
-					print("skipping \(fileURL)")
 					continue
 				}
 

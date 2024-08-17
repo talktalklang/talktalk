@@ -114,8 +114,6 @@ struct TalkTalkParserTests {
 		}
 		""")[0].cast(FuncExprSyntax.self).body.stmts
 
-		print(ast.description)
-
 		let defExpr = ast[0].cast(ExprStmtSyntax.self).expr.cast(DefExprSyntax.self)
 		#expect(defExpr.receiver.description == "self.foo")
 		#expect(defExpr.value.description == "hello + 1")

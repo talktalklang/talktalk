@@ -8,7 +8,7 @@
 import Foundation
 import TalkTalkBytecode
 
-public enum Verbosity {
+public enum Verbosity: Equatable {
 	case quiet, verbose
 	case lineByLine(String)
 }
@@ -137,9 +137,11 @@ public struct VirtualMachine {
 				if frames.size == 0 {
 					// Make sure we didn't leak anything, we should only have the main program
 					// on the stack.
-					if stack.size != 1 {
-						print("stack size expected to be 0, got: \(stack.size)")
-						dumpStack()
+					if verbosity == .verbose {
+						if stack.size != 0 {
+							print("stack size expected to be 0, got: \(stack.size)")
+							dumpStack()
+						}
 					}
 
 					return .ok(result)
@@ -396,7 +398,7 @@ public struct VirtualMachine {
 				// Pop the receiver off the stack
 				let receiver = stack.pop()
 				switch receiver {
-				case .instance(let kind, let receiver):
+				case .instance(_, let receiver):
 					let instance = currentFrame.instances[Int(receiver)]
 
 					if propertyOptions.contains(.isMethod) {

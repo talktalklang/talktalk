@@ -10,7 +10,7 @@ import TalkTalkVM
 
 struct IntTests: StandardLibraryTest {
 	@Test("Basic") func basic() async throws {
-		let result = try await run("123").get()
+		let result = try await run("return 123").get()
 		#expect(result == .int(123))
 	}
 }

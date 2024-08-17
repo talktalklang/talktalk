@@ -14,6 +14,7 @@ import TalkTalkVM
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
+@MainActor
 protocol StandardLibraryTest {}
 
 extension StandardLibraryTest {
@@ -26,8 +27,6 @@ extension StandardLibraryTest {
 		let stdlib = try await StandardLibrary.compile()
 		var moduleEnvironment = moduleEnvironment
 		moduleEnvironment["Standard"] = stdlib.module
-
-		print(stdlib.analysis.files.map(\.path))
 
 		let files: [ParsedSourceFile] = [.tmp(input)]
 		let analyzer = ModuleAnalyzer(

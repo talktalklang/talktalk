@@ -9,10 +9,11 @@ import Testing
 import TalkTalkVM
 import TalkTalkBytecode
 
+@MainActor
 struct StringTests: StandardLibraryTest {
 	@Test("Can have a static string") func basic() async throws {
 		let result = try await run("""
-		"hello world"
+		return "hello world"
 		""").get()
 
 		#expect(result == .string("hello world"))

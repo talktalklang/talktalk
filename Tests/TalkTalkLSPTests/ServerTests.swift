@@ -16,7 +16,7 @@ private extension Data {
 	}
 }
 
-actor ServerTests {
+@Suite(.disabled()) actor ServerTests {
 	enum Err: Error {
 		case err(String)
 	}

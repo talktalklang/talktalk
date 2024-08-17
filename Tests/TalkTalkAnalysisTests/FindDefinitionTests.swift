@@ -71,7 +71,6 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 5)
 
 		let definition = node.definition()!
-		print(definition)
 		#expect(definition.token.line == 1)
 		#expect(definition.token.column == 5)
 	}
@@ -96,7 +95,6 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 4)
 
 		let definition = node.definition()!
-		print(definition)
 		#expect(definition.token.line == 0)
 		#expect(definition.token.column == 7)
 	}

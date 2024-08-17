@@ -32,8 +32,7 @@ struct ModuleCompile: TalkTalkCommand {
 		)
 
 		if dump {
-			for (name, result) in try await driver.compile() {
-				print(result)
+			for (_, result) in try await driver.compile() {
 				for chunk in result.module.chunks {
 					chunk.dump()
 				}

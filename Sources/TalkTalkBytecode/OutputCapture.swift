@@ -21,12 +21,12 @@ public struct OutputCapture: Sendable {
 	}
 
 	@MainActor public static func run(
-		block: @Sendable () async throws -> Void
+		block: @Sendable @MainActor () async throws -> Void
 	) async rethrows -> Result {
 		try await instance.run(block)
 	}
 
-	func run(_ block: () async throws -> Void) async rethrows -> Result {
+	@MainActor func run(_ block: () async throws -> Void) async rethrows -> Result {
 		// Create pipes for capturing stdout and stderr
 		var stdoutPipe = [Int32](repeating: 0, count: 2)
 		var stderrPipe = [Int32](repeating: 0, count: 2)

@@ -257,8 +257,6 @@ struct CompilerTests {
 		}()
 		""")
 
-		chunk.dump()
-
 		#expect(chunk.disassemble() == Instructions(
 			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
 			.op(.call, line: 0, .simple),

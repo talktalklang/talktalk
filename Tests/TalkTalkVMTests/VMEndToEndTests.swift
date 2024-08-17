@@ -60,57 +60,61 @@ struct VMEndToEndTests {
 		return try VirtualMachine.run(module: module, verbosity: verbosity).get()
 	}
 
+	func returning(_ string: String) throws -> TalkTalkBytecode.Value {
+		return try run("return \(string)")
+	}
+
 	func runAsync(_ strings: String...) throws {
 		let module = try compile(strings)
 		_ = VirtualMachine.run(module: module)
 	}
 
 	@Test("Adds") func adds() throws {
-		#expect(try run("1 + 2") == .int(3))
+		#expect(try returning("1 + 2") == .int(3))
 	}
 
 	@Test("Subtracts") func subtracts() throws {
-		#expect(try run("2 - 1") == .int(1))
+		#expect(try returning("2 - 1") == .int(1))
 	}
 
 	@Test("Comparison") func comparison() throws {
-		#expect(try run("1 == 2") == .bool(false))
-		#expect(try run("2 == 2") == .bool(true))
+		#expect(try returning("1 == 2") == .bool(false))
+		#expect(try returning("2 == 2") == .bool(true))
 
-		#expect(try run("1 != 2") == .bool(true))
-		#expect(try run("2 != 2") == .bool(false))
+		#expect(try returning("1 != 2") == .bool(true))
+		#expect(try returning("2 != 2") == .bool(false))
 
-		#expect(try run("1 < 2") == .bool(true))
-		#expect(try run("2 < 1") == .bool(false))
+		#expect(try returning("1 < 2") == .bool(true))
+		#expect(try returning("2 < 1") == .bool(false))
 
-		#expect(try run("1 > 2") == .bool(false))
-		#expect(try run("2 > 1") == .bool(true))
+		#expect(try returning("1 > 2") == .bool(false))
+		#expect(try returning("2 > 1") == .bool(true))
 
-		#expect(try run("1 <= 2") == .bool(true))
-		#expect(try run("2 <= 1") == .bool(false))
-		#expect(try run("2 <= 2") == .bool(true))
+		#expect(try returning("1 <= 2") == .bool(true))
+		#expect(try returning("2 <= 1") == .bool(false))
+		#expect(try returning("2 <= 2") == .bool(true))
 
-		#expect(try run("1 >= 2") == .bool(false))
-		#expect(try run("2 >= 1") == .bool(true))
-		#expect(try run("2 >= 2") == .bool(true))
+		#expect(try returning("1 >= 2") == .bool(false))
+		#expect(try returning("2 >= 1") == .bool(true))
+		#expect(try returning("2 >= 2") == .bool(true))
 	}
 
 	@Test("Negate") func negate() throws {
-		#expect(try run("-123") == .int(-123))
-		#expect(try run("--123") == .int(123))
+		#expect(try returning("-123") == .int(-123))
+		#expect(try returning("--123") == .int(123))
 	}
 
 	@Test("Not") func not() throws {
-		#expect(try run("!true") == .bool(false))
-		#expect(try run("!false") == .bool(true))
+		#expect(try returning("!true") == .bool(false))
+		#expect(try returning("!false") == .bool(true))
 	}
 
 	@Test("Strings") func strings() throws {
-		#expect(try run(#""hello world""#) == .string("hello world"))
+		#expect(try returning(#""hello world""#) == .string("hello world"))
 	}
 
 	@Test("is check") func isCheck() throws {
-		try #expect(run("123 is int", verbosity: .verbose) == .bool(true))
+		try #expect(returning("123 is int") == .bool(true))
 	}
 
 	@Test("If expr") func ifExpr() throws {
@@ -296,7 +300,7 @@ struct VMEndToEndTests {
 						}
 					}
 
-					person = Person(age: 123)
+					let person = Person(age: 123)
 					return person.age
 					"""
 				)
@@ -324,8 +328,8 @@ struct VMEndToEndTests {
 						}
 					}
 
-					person = Person(age: 123)
-					method = person.getAge
+					let person = Person(age: 123)
+					let method = person.getAge
 					return method()
 					"""
 				)
@@ -360,7 +364,7 @@ struct VMEndToEndTests {
 					"""
 					import A
 
-					person = Person(age: 123)
+					let person = Person(age: 123)
 					return person.age
 					""")
 			],
@@ -381,7 +385,7 @@ struct VMEndToEndTests {
 						var age: int
 					}
 
-					person = Person(age: 123)
+					let person = Person(age: 123)
 					return person.age
 					"""
 				)
@@ -405,7 +409,7 @@ struct VMEndToEndTests {
 						}
 					}
 
-					person = Person()
+					let person = Person()
 					return person.age
 					"""
 				)
@@ -428,7 +432,7 @@ struct VMEndToEndTests {
 
 				return j
 			"""
-			, verbosity: .verbose)
+			)
 
 		#expect(
 			result == .int(5)
