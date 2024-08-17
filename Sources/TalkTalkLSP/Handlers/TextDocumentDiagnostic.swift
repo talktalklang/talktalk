@@ -25,32 +25,6 @@ extension AnalysisError {
 		)
 	}
 
-	var message: String {
-		switch kind {
-		case let .argumentError(expected: a, received: b):
-			if a == -1 {
-				"Unable to determine expected arguments, probably because callee isn't callable."
-			} else {
-				"Expected \(a) arguments, got: \(b)"
-			}
-		case let .typeParameterError(expected: a, received: b):
-			"Expected \(a) type parameters, got: \(b)"
-		case let .typeNotFound(name):
-			"Unknown type: \(name)"
-		case let .unknownError(message):
-			message
-		case let .noMemberFound(receiver: receiver, property: property):
-			"No property named `\(property)` for \(receiver)"
-		case let .undefinedVariable(name):
-			"Undefined variable `\(name)`"
-		case let .typeCannotAssign(expected: expected, received: received):
-			"Cannot assign \(received) to \(expected)"
-		case let .cannotReassignLet(variable: syntax):
-			"Cannot re-assign let variable: \(syntax.description)"
-		case let .invalidRedeclaration(variable: name, existing: decl):
-			"Cannot re-declare \(name)."
-		}
-	}
 }
 
 struct TextDocumentDiagnostic: Decodable {

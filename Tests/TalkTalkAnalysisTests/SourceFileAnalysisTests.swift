@@ -393,8 +393,6 @@ struct AnalysisTests {
 		let structDecl = try #require(ast as? AnalyzedStructDecl)
 		let varDecl = structDecl.bodyAnalyzed.declsAnalyzed[0].cast(AnalyzedVarDecl.self)
 
-		print(varDecl.analysisErrors)
-
 		#expect(varDecl.analysisErrors.count == 1)
 	}
 }

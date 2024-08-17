@@ -23,6 +23,8 @@ public class Environment {
 	public var errors: [AnalysisError] = []
 	public var canAutoReturn = true
 
+	public private(set) var shouldReportErrors: Bool = true
+
 	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
 		self.isModuleScope = isModuleScope
 		self.parent = parent
@@ -30,6 +32,12 @@ public class Environment {
 		self.captures = []
 		self.capturedValues = []
 		self.importedModules = importedModules
+	}
+
+	public func ignoringErrors(perform: () throws -> Void) throws {
+		defer { self.shouldReportErrors = true }
+		self.shouldReportErrors = false
+		try perform()
 	}
 
 	// We want to collect all errors at the top level module, so walk up ancestors then add it there

@@ -264,6 +264,34 @@ struct CompilerTests {
 		))
 	}
 
+	@Test("Modifying upvalues") func modifyUpvalue() throws {
+		let chunk = try compile(
+			"""
+			var a = 10
+
+			func() {
+				a = 20
+			}()
+
+			return a
+			"""
+		)
+
+		#expect(chunk.disassemble() == Instructions(
+			.op(.constant, line: 0, .constant(.int(10))),
+			.op(.defClosure, line: 2, .closure(arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.call, line: 4, .simple),
+			.op(.pop, line: 5, .simple),
+			.op(.getLocal, line: 6, .local(slot: 1, name: "a")),
+			.op(.return, line: 6, .simple)
+		))
+
+		let subchunk = chunk.getChunk(at: 0)
+		#expect(subchunk.disassemble() == Instructions(
+			.op(.setUpvalue, line: 3, .upvalue(slot: 1, name: "slot: 1")
+		))
+	}
+
 	@Test("Non-capturing upvalue") func upvalue() throws {
 		// Using two locals in this test to make sure slot indexes get updated correctly
 		let chunk = try compile("""

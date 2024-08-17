@@ -24,14 +24,25 @@ struct ModuleCompilerTests {
 		_ files: [ParsedSourceFile],
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:]
-	) -> (Module, AnalysisModule) {
+	) throws -> (Module, AnalysisModule) {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
-		let analyzed = try! ModuleAnalyzer(name: name, files: Set(files), moduleEnvironment: analysis, importedModules: Array(analysisEnvironment.values)).analyze()
-		let module = try! ModuleCompiler(name: name, analysisModule: analyzed, moduleEnvironment: moduleEnvironment).compile(mode: .executable)
+		let analyzed = try ModuleAnalyzer(
+			name: name,
+			files: Set(files),
+			moduleEnvironment: analysis,
+			importedModules: Array(analysisEnvironment.values)
+		).analyze()
+
+		let module = try ModuleCompiler(
+			name: name,
+			analysisModule: analyzed,
+			moduleEnvironment: moduleEnvironment
+		).compile(mode: .executable)
+
 		return (module, analyzed)
 	}
 
-	@Test("Can compile module functions") @MainActor func basic() {
+	@Test("Can compile module functions") @MainActor func basic() throws {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
 			func fizz() {}
@@ -47,7 +58,7 @@ struct ModuleCompilerTests {
 			"""),
 		]
 
-		let (module, _) = compile(name: "CompilerTests", files)
+		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
 		#expect(module.chunks.map(\.name).sorted() == ["fizz", "foo", "bar"].sorted())
@@ -59,7 +70,7 @@ struct ModuleCompilerTests {
 	@Test("Can compile module global values") @MainActor func globalValues() throws {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
-			fizz = 123
+			let fizz = 123
 			"""),
 			.tmp("""
 			func bar() {
@@ -68,7 +79,7 @@ struct ModuleCompilerTests {
 			"""),
 		]
 
-		let (module, _) = compile(name: "CompilerTests", files)
+		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
 		#expect(module.chunks.map(\.name).sorted() == ["bar"].sorted())
@@ -78,14 +89,14 @@ struct ModuleCompilerTests {
 		#expect(module.valueInitializers[Byte(fizzSlot)] != nil)
 	}
 
-	@Test("Can import module functions") @MainActor func importing() {
-		let (moduleA, analysisA) = compile(
+	@Test("Can import module functions") @MainActor func importing() throws {
+		let (moduleA, analysisA) = try compile(
 			name: "A",
 			[
 				.tmp("func foo() { 123 }"),
 			]
 		)
-		let (moduleB, _) = compile(
+		let (moduleB, _) = try compile(
 			name: "B",
 			[
 				.tmp("""
@@ -107,7 +118,7 @@ struct ModuleCompilerTests {
 
 	@Test("Can compile structs") @MainActor func structs() throws {
 		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
-		let (module, _) = compile(name: "A", [
+		let (module, _) = try compile(name: "A", [
 			.tmp("""
 			struct Person {
 				var age: int
@@ -140,7 +151,7 @@ struct ModuleCompilerTests {
 
 	@Test("Can compile struct init with no args") @MainActor func structInitNoArgs() throws {
 		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
-		let (module, _) = compile(name: "A", [
+		let (module, _) = try compile(name: "A", [
 			.tmp("""
 			struct Person {
 				var age: int
@@ -150,7 +161,7 @@ struct ModuleCompilerTests {
 				}
 			}
 
-			person = Person()
+			let person = Person()
 			"""),
 		])
 

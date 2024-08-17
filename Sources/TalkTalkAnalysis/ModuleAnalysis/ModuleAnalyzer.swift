@@ -56,9 +56,12 @@ public struct ModuleAnalyzer {
 			}
 		}
 
-		// Find all the top level stuff this module has to offer
-		for file in files {
-			try processFile(file: file, in: &analysisModule)
+		// Find all the top level stuff this module has to offer. We ignore errors at this
+		// stage because we're just getting started
+		try environment.ignoringErrors {
+			for file in files {
+				try processFile(file: file, in: &analysisModule)
+			}
 		}
 
 		// Mark any found bindings as global
@@ -68,8 +71,10 @@ public struct ModuleAnalyzer {
 
 		// Do a second pass so things that were defined in other files can
 		// get picked up. TODO: There's gotta be a better way.
-		for file in files {
-			try processFile(file: file, in: &analysisModule)
+		try environment.ignoringErrors {
+			for file in files {
+				try processFile(file: file, in: &analysisModule)
+			}
 		}
 
 		importSymbols(into: &analysisModule)
@@ -117,7 +122,7 @@ public struct ModuleAnalyzer {
 					isMutable: false
 				)
 			} else if case let .struct(name) = name,
-			          let structType = binding.externalModule?.structs[name]
+				let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
@@ -149,7 +154,9 @@ public struct ModuleAnalyzer {
 	}
 
 	// Get the top level stuff from this file since that's where globals live.
-	private func analyze(file: ParsedSourceFile, in module: AnalysisModule) throws -> [String: ModuleGlobal] {
+	private func analyze(file: ParsedSourceFile, in module: AnalysisModule) throws -> [String:
+		ModuleGlobal]
+	{
 		var result: [String: ModuleGlobal] = [:]
 
 		// Do a first pass over the file to find everything

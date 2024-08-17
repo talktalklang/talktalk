@@ -102,7 +102,7 @@ public struct SourceFileAnalyzer: Visitor {
 				for (i, param) in params.enumerated() {
 					if case .placeholder = param.typeID.type() {
 						param.typeID.update(args[i].expr.typeAnalyzed)
-					} else {
+					} else if context.shouldReportErrors {
 						errors.append(contentsOf: checkAssignment(to: param, value: args[i].expr, in: context))
 					}
 				}
@@ -155,7 +155,7 @@ public struct SourceFileAnalyzer: Visitor {
 						let type = context.type(named: typeName)
 						instanceType.boundGenericTypes[param.name] = type
 					}
-				} else {
+				} else if context.shouldReportErrors {
 					errors.append(
 						context.report(.typeParameterError(
 							expected: structType.typeParameters.count,
@@ -243,7 +243,7 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		var errors: [AnalysisError] = []
-		if member == nil {
+		if member == nil, context.shouldReportErrors {
 			errors.append(
 				.init(
 					kind: .noMemberFound(receiver: receiver, property: propertyName),
@@ -269,13 +269,13 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let errors = checkAssignment(to: receiver, value: value, in: context)
 
-		if errors.isEmpty {
-			switch receiver {
-			case let receiver as AnalyzedVarExpr:
-				context.define(local: receiver.name, as: value, isMutable: receiver.isMutable)
-			default: ()
-			}
-		}
+		// if errors.isEmpty {
+		// switch receiver {
+		// 	case let receiver as AnalyzedVarExpr:
+		// 		context.define(local: receiver.name, as: value, isMutable: receiver.isMutable)
+		// 	default: ()
+		// 	}
+		// }
 
 		return AnalyzedDefExpr(
 			typeID: TypeID(value.typeAnalyzed),
@@ -839,7 +839,8 @@ public struct SourceFileAnalyzer: Visitor {
 
 		if let existing = context.local(named: expr.name),
 			 let definition = existing.definition,
-			 definition.location.start != expr.location.start {
+			 definition.location.start != expr.location.start,
+			 context.shouldReportErrors {
 			errors.append(
 				.init(
 					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
@@ -850,7 +851,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let type = context.type(named: expr.typeDecl)
 
-		if case .error = type {
+		if case .error = type, context.shouldReportErrors {
 			errors.append(
 				.init(
 					kind: .typeNotFound(expr.typeDecl ?? "<no type name>"),
@@ -956,6 +957,10 @@ public struct SourceFileAnalyzer: Visitor {
 		in env: Environment
 	) -> [AnalysisError] {
 		var errors: [AnalysisError] = []
+
+		if !env.shouldReportErrors {
+			return errors
+		}
 
 		errors.append(contentsOf: checkMutability(of: receiver, in: env))
 

@@ -25,6 +25,11 @@ public struct ModuleCompiler {
 	}
 
 	public func compile(mode: CompilationMode) throws -> Module {
+		let errors = try analysisModule.collectErrors()
+		if !errors.isEmpty {
+			throw CompilerError.analysisErrors("Cannot compile, found \(errors.count) analysis errors: \(errors.map(\.message))")
+		}
+
 		let module = CompilingModule(
 			name: name,
 			analysisModule: analysisModule,

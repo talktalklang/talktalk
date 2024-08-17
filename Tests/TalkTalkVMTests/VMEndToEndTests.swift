@@ -133,8 +133,8 @@ struct VMEndToEndTests {
 		#expect(
 			try run(
 				"""
-				a = 10
-				b = 20
+				var a = 10
+				let b = 20
 				a = a + b
 				return a
 				""") == .int(30))
@@ -144,7 +144,7 @@ struct VMEndToEndTests {
 		#expect(
 			try run(
 				"""
-				i = func() {
+				let i = func() {
 					123
 				}()
 
@@ -164,27 +164,30 @@ struct VMEndToEndTests {
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
 		let source = """
-		a10 = 10
-		b20 = 20
-		return func() {
-			var c30 = 30
-			return a10 + b20 + c30
-		}()
-		"""
+			let	a10 = 10
+			let b20 = 20
+			return func() {
+				var c30 = 30
+				return a10 + b20 + c30
+			}()
+			"""
 		let result = try run(source)
 		#expect(result == .int(60))
 	}
 
 	@Test("Modify var from enclosing scope") func modifyEnclosing() throws {
-		#expect(
-			try run(
-				"""
-				a = 10
-				func() {
-					a = 20
-				}()
-				return a
-				""") == .int(20))
+		let result = try run(
+			"""
+			var a = 10
+
+			func() {
+				a = 20
+			}()
+
+			return a
+			"""
+		)
+		#expect(result == .int(20))
 	}
 
 	@Test("Shadow var from enclosing scope") func shadowEnclosing() throws {
@@ -252,7 +255,7 @@ struct VMEndToEndTests {
 			try runAsync(
 				"print(fizz)",
 				"print(fizz)",
-				"fizz = 123"
+				"let fizz = 123"
 			)
 		}
 
@@ -276,7 +279,7 @@ struct VMEndToEndTests {
 
 					return bar()
 					"""
-				),
+				)
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -303,7 +306,7 @@ struct VMEndToEndTests {
 					let person = Person(age: 123)
 					return person.age
 					"""
-				),
+				)
 			]
 		)
 
@@ -332,7 +335,7 @@ struct VMEndToEndTests {
 					let method = person.getAge
 					return method()
 					"""
-				),
+				)
 			]
 		)
 
@@ -353,7 +356,7 @@ struct VMEndToEndTests {
 						}
 					}
 					"""
-				),
+				)
 			]
 		)
 
@@ -366,7 +369,7 @@ struct VMEndToEndTests {
 
 					let person = Person(age: 123)
 					return person.age
-					"""),
+					""")
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -388,7 +391,7 @@ struct VMEndToEndTests {
 					let person = Person(age: 123)
 					return person.age
 					"""
-				),
+				)
 			]
 		)
 
@@ -412,7 +415,7 @@ struct VMEndToEndTests {
 					let person = Person()
 					return person.age
 					"""
-				),
+				)
 			]
 		)
 
@@ -422,8 +425,8 @@ struct VMEndToEndTests {
 	@Test("While loops") func whileLoops() throws {
 		let result = try run(
 			"""
-				i = 0
-				j = 0
+				var i = 0
+				var j = 0
 
 				while i < 5 {
 					i = i + 1
@@ -437,5 +440,23 @@ struct VMEndToEndTests {
 		#expect(
 			result == .int(5)
 		)
+	}
+
+	@Test("Pass by value") func byValue() throws {
+		let result = try run(
+			"""
+			func increments(v) {
+				var v = v
+				v = v + 1
+			}
+
+
+			var i = 3
+			increments(i)
+			return i
+			"""
+		)
+
+		#expect(result == .int(3))
 	}
 }
