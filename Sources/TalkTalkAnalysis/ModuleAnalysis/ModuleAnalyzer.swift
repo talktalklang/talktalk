@@ -43,7 +43,15 @@ public struct ModuleAnalyzer {
 			if module.name == "Standard" {
 				// Always make standard types available
 				for (name, structType) in module.structs {
-					analysisModule.structs[name] = structType
+					analysisModule.structs[name] = ModuleStruct(
+						name: name,
+						syntax: structType.syntax,
+						typeID: structType.typeID,
+						source: .external(module),
+						properties: structType.properties,
+						methods: structType.methods,
+						typeParameters: structType.typeParameters
+					)
 				}
 			}
 		}
