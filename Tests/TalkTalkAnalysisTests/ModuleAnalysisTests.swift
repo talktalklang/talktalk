@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import Testing
 import TalkTalkAnalysis
 import TalkTalkSyntax
+import Testing
 
 struct ModuleAnalysisTests {
 	func analyzer(
@@ -203,7 +203,7 @@ struct ModuleAnalysisTests {
 				func foo() {
 					bar()
 				}
-				"""
+				""",
 			]
 		)
 

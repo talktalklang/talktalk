@@ -11,7 +11,7 @@ public struct DynamicArray<Element> {
 
 	public init(capacity: Int) {
 		self.storage = ContiguousArray<Element>()
-		self.storage.reserveCapacity(capacity)
+		storage.reserveCapacity(capacity)
 		self.capacity = capacity
 	}
 
@@ -28,7 +28,7 @@ public struct DynamicArray<Element> {
 
 extension DynamicArray: ExpressibleByArrayLiteral {
 	public init(arrayLiteral elements: Element...) {
-		storage = ContiguousArray(elements)
-		capacity = storage.count
+		self.storage = ContiguousArray(elements)
+		self.capacity = storage.count
 	}
 }

@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import Testing
 @testable import TalkTalkLSP
+import Testing
 
 @MainActor
 struct LSPTests {

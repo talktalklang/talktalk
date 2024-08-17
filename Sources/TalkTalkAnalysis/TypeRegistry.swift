@@ -14,11 +14,11 @@ import Foundation
 // time new information becomes available. Also multiple things that
 // are known to have the same type should get updated when you update one
 // of them.
-final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible, @unchecked Sendable {
+public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible, @unchecked Sendable {
 	public static func == (lhs: TypeID, rhs: TypeID) -> Bool {
 		lhs.current == rhs.current
 	}
-	
+
 	public var current: ValueType
 
 	public init(_ initial: ValueType = .placeholder) {
@@ -45,20 +45,20 @@ final public class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 			"byte"
 		case .pointer:
 			"pointer"
-		case .function(_, let typeID, let array, _):
+		case let .function(_, typeID, array, _):
 			"func(\(array)) -> \(typeID.description)"
-		case .struct(let string):
+		case let .struct(string):
 			string + ".Type"
-		case .generic(let valueType, let string):
+		case let .generic(valueType, string):
 			"\(valueType)<\(string)>"
-		case .instance(let instanceValueType):
+		case let .instance(instanceValueType):
 			switch instanceValueType.ofType {
 			case let .struct(name): name
 			default: instanceValueType.ofType.description
 			}
-		case .member(let valueType):
+		case let .member(valueType):
 			"\(valueType) member"
-		case .error(let string):
+		case let .error(string):
 			string
 		case .void:
 			"void"

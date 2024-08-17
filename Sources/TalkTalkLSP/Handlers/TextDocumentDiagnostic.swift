@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-import TalkTalkSyntax
 import TalkTalkAnalysis
+import TalkTalkSyntax
 
 extension AnalysisError {
 	func diagnostic() -> Diagnostic {
@@ -29,24 +29,24 @@ extension AnalysisError {
 		switch kind {
 		case let .argumentError(expected: a, received: b):
 			if a == -1 {
-				return "Unable to determine expected arguments, probably because callee isn't callable."
+				"Unable to determine expected arguments, probably because callee isn't callable."
 			} else {
-				return "Expected \(a) arguments, got: \(b)"
+				"Expected \(a) arguments, got: \(b)"
 			}
 		case let .typeParameterError(expected: a, received: b):
-			return "Expected \(a) type parameters, got: \(b)"
+			"Expected \(a) type parameters, got: \(b)"
 		case let .typeNotFound(name):
-			return "Unknown type: \(name)"
+			"Unknown type: \(name)"
 		case let .unknownError(message):
-			return message
+			message
 		case let .noMemberFound(receiver: receiver, property: property):
-			return "No property named `\(property)` for \(receiver)"
+			"No property named `\(property)` for \(receiver)"
 		case let .undefinedVariable(name):
-			return "Undefined variable `\(name)`"
+			"Undefined variable `\(name)`"
 		case let .typeCannotAssign(expected: expected, received: received):
-			return "Cannot assign \(received) to \(expected)"
+			"Cannot assign \(received) to \(expected)"
 		case let .cannotReassignLet(variable: syntax):
-			return "Cannot re-assign let variable: \(syntax.description)"
+			"Cannot re-assign let variable: \(syntax.description)"
 		}
 	}
 }
@@ -56,7 +56,7 @@ struct TextDocumentDiagnostic: Decodable {
 
 	func handle(_ handler: Server) async {
 		let params = request.params as! TextDocumentDiagnosticRequest
-		
+
 		guard let source = await handler.sources[params.textDocument.uri] else {
 			Log.error("no source found for \(params.textDocument.uri)")
 			return

@@ -18,8 +18,8 @@ actor Completer {
 	}
 
 	public func update(text: String) {
-		self.source = SourceFile(path: source.path, text: text)
-		self.parse()
+		source = SourceFile(path: source.path, text: text)
+		parse()
 	}
 
 	func parse() {
@@ -64,10 +64,11 @@ actor Completer {
 		// Try to figure out the receiver of the member access
 		for match in matches {
 			guard let match = match as? AnalyzedExprStmt,
-						let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
-						case let .instance(instance) = memberExpr.receiverAnalyzed.typeID.current,
-						case let .struct(name) = instance.ofType,
-						let structType = match.environment.lookupStruct(named: name) else {
+			      let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
+			      case let .instance(instance) = memberExpr.receiverAnalyzed.typeID.current,
+			      case let .struct(name) = instance.ofType,
+			      let structType = match.environment.lookupStruct(named: name)
+			else {
 				continue
 			}
 
@@ -98,9 +99,9 @@ actor Completer {
 				for binding in match.environment.allBindings() {
 					if binding.name.starts(with: name) {
 						let kind: CompletionItemKind = switch binding.type.type() {
-						case .function(_, _, _, _):
+						case .function:
 							.function
-						case .struct(_):
+						case .struct:
 							.constant
 						default:
 							.variable

@@ -17,13 +17,13 @@ struct ServerInfo: Codable {
 struct ServerCapabilities: Codable {
 	enum CodingKeys: CodingKey {
 		case positionEncoding,
-				 serverInfo,
-				 textDocumentSync,
-				 completionProvider,
-				 semanticTokensProvider,
-				 documentFormattingProvider,
-				 diagnosticProvider,
-				 definitionProvider
+		     serverInfo,
+		     textDocumentSync,
+		     completionProvider,
+		     semanticTokensProvider,
+		     documentFormattingProvider,
+		     diagnosticProvider,
+		     definitionProvider
 	}
 
 	let positionEncoding = "utf-8"

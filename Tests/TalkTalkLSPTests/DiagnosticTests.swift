@@ -4,9 +4,9 @@
 //
 //  Created by Pat Nakajima on 8/6/24.
 //
-import Testing
 import TalkTalkAnalysis
 import TalkTalkLSP
+import Testing
 
 @MainActor
 struct DiagnosticTests {

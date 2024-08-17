@@ -4,6 +4,7 @@ public struct Formatter: Visitor {
 	public class Context {
 		var lastType: (any Syntax)? = nil
 	}
+
 	public typealias Value = String
 
 	var indent = 0
@@ -21,7 +22,7 @@ public struct Formatter: Visitor {
 		return result.joined(separator: "\n")
 	}
 
-	public func visit(_ expr: any ImportStmt, _ context: Context) throws -> String {
+	public func visit(_ expr: any ImportStmt, _: Context) throws -> String {
 		"import \(expr.module.name)"
 	}
 
@@ -74,7 +75,7 @@ public struct Formatter: Visitor {
 		return expr.name
 	}
 
-	public func visit(_ expr: any GenericParams, _ context: Context) throws -> String {
+	public func visit(_ expr: any GenericParams, _: Context) throws -> String {
 		if expr.params.isEmpty {
 			return ""
 		}
@@ -109,7 +110,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Context) throws -> Value {
-		var result = "\(try expr.receiver.accept(self, context)) = "
+		var result = try "\(expr.receiver.accept(self, context)) = "
 		result += try expr.value.accept(self, context)
 
 		context.lastType = expr
@@ -190,11 +191,11 @@ public struct Formatter: Visitor {
 		context.lastType = expr
 
 		return switch expr.value {
-		case .int(let int):
+		case let .int(int):
 			"\(int)"
-		case .bool(let bool):
+		case let .bool(bool):
 			"\(bool)"
-		case .string(let string):
+		case let .string(string):
 			"""
 			"\(string)"
 			"""
@@ -247,7 +248,7 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: any VarDecl, _ context: Context) throws -> String {
 		context.lastType = expr
-		
+
 		var result = "var \(expr.name)"
 
 		if let typeDecl = expr.typeDecl {
@@ -280,7 +281,7 @@ public struct Formatter: Visitor {
 	public func visit(_ expr: any ReturnExpr, _ context: Context) throws -> String {
 		context.lastType = expr
 
-		return "return \(try expr.value?.accept(self, context) ?? "")"
+		return try "return \(expr.value?.accept(self, context) ?? "")"
 	}
 
 	public func visit(_ expr: any IfStmt, _ context: Context) throws -> String {
@@ -303,7 +304,6 @@ public struct Formatter: Visitor {
 		return result
 	}
 
-
 	public func visit(_ expr: any StructDecl, _ context: Context) throws -> String {
 		var result = "\nstruct "
 
@@ -315,7 +315,6 @@ public struct Formatter: Visitor {
 
 		return result
 	}
-
 
 	// GENERATOR_INSERTION
 

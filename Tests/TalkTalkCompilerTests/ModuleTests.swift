@@ -5,13 +5,13 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
-import Testing
+import Foundation
+import MessagePack
+import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkSyntax
-import TalkTalkAnalysis
-import Foundation
-import MessagePack
+import Testing
 
 @MainActor
 struct ModuleTests {

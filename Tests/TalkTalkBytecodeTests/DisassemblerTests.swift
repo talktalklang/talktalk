@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import Testing
 import TalkTalkBytecode
+import Testing
 
 @MainActor
 struct DisassemblerTests {
@@ -15,7 +15,7 @@ struct DisassemblerTests {
 		chunk.emit(opcode: .true, line: 1)
 
 		#expect(chunk.disassemble() == [
-			Instruction(opcode: .true, offset: 1, line: 1, metadata: .simple)
+			Instruction(opcode: .true, offset: 1, line: 1, metadata: .simple),
 		])
 	}
 
@@ -26,7 +26,7 @@ struct DisassemblerTests {
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 1, line: 1, metadata: ConstantMetadata(value: .int(123))),
-			Instruction(opcode: .return, offset: 3, line: 2, metadata: .simple)
+			Instruction(opcode: .return, offset: 3, line: 2, metadata: .simple),
 		])
 	}
 }

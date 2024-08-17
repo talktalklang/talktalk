@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/15/24.
 //
 
+import TalkTalkAnalysis
 import TalkTalkCore
 import TalkTalkSyntax
-import TalkTalkAnalysis
 
 public protocol AnalysisTest {}
 

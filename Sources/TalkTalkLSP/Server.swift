@@ -6,10 +6,10 @@
 //
 
 import Foundation
-import TalkTalkSyntax
 import TalkTalkAnalysis
 import TalkTalkCompiler
 import TalkTalkDriver
+import TalkTalkSyntax
 
 public actor Server {
 	// We read json, we write json
@@ -55,7 +55,7 @@ public actor Server {
 		sources[uri] = document
 
 		do {
-			self.analysis = try await analyzer.addFile(
+			analysis = try await analyzer.addFile(
 				ParsedSourceFile(
 					path: document.uri,
 					syntax: Parser.parse(
@@ -78,7 +78,7 @@ public actor Server {
 	func work() {
 		if worker != nil { return }
 
-		self.worker = Task {
+		worker = Task {
 			while !queue.isEmpty {
 				await Task.yield()
 
@@ -142,11 +142,10 @@ public actor Server {
 		} catch {
 			Log.error("Error analyzing: \(error)")
 		}
-
 	}
 
 	func findDefinition(from position: Position, path: String) -> Definition? {
-		self.analysis = try! analyzer.analyze()
+		analysis = try! analyzer.analyze()
 
 		Log.info("findDefinition: path: \(path) position: \(position)")
 
@@ -156,8 +155,6 @@ public actor Server {
 			path: path
 		)
 
-
-
 		guard let match else {
 			return nil
 		}
@@ -165,7 +162,7 @@ public actor Server {
 		return match.definition()
 	}
 
-	func request<T: Encodable>(_ request: T) {
+	func request(_ request: some Encodable) {
 		do {
 			let content = try encoder.encode(request)
 			let contentLength = content.count
@@ -177,7 +174,7 @@ public actor Server {
 		}
 	}
 
-	func respond<T: Codable>(to id: RequestID?, with response: T) {
+	func respond(to id: RequestID?, with response: some Codable) {
 		do {
 			let response = Response(id: id, result: response)
 			let content = try encoder.encode(response)

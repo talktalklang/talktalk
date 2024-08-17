@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
-import TalkTalkCore
 import TalkTalkAnalysis
-import TalkTalkCompiler
 import TalkTalkBytecode
+import TalkTalkCompiler
+import TalkTalkCore
 import TalkTalkSyntax
 
 struct Pipeline {
@@ -31,7 +31,7 @@ struct Pipeline {
 
 	func run() async throws -> CompilationResult {
 		let sourceFiles = try compilationUnit.files.map {
-			return try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
+			try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
 		}
 
 		let parsedSourceFiles = try sourceFiles.map {

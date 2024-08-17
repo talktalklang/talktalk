@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 	public var value: any Expr { expr.value }
-	
+
 	public let typeID: TypeID
 	let expr: DefExpr
 

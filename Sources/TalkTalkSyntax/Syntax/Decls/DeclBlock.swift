@@ -1,5 +1,5 @@
 //
-//  DeclBlockExpr.swift
+//  DeclBlock.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 7/28/24.
@@ -19,7 +19,7 @@ public struct DeclBlockExprSyntax: DeclBlock {
 		self.location = location
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}
 }

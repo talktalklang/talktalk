@@ -22,11 +22,11 @@ public struct AnalyzedWhileStmt: WhileStmt, AnalyzedStmt {
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}
 }

@@ -11,7 +11,7 @@ public enum AnalysisErrorKind: Hashable {
 	public static func == (lhs: AnalysisErrorKind, rhs: AnalysisErrorKind) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
-	
+
 	case argumentError(expected: Int, received: Int)
 	case typeParameterError(expected: Int, received: Int)
 	case noMemberFound(receiver: any Syntax, property: String)
@@ -23,20 +23,20 @@ public enum AnalysisErrorKind: Hashable {
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
-		case .argumentError(let expected, let received):
+		case let .argumentError(expected, received):
 			hasher.combine([expected, received])
-		case .typeParameterError(let expected, let received):
+		case let .typeParameterError(expected, received):
 			hasher.combine([expected, received])
-		case .noMemberFound(let receiver, let property):
+		case let .noMemberFound(receiver, property):
 			hasher.combine(receiver.description)
 			hasher.combine(property)
-		case .typeNotFound(let string):
+		case let .typeNotFound(string):
 			hasher.combine(string)
-		case .unknownError(let string):
+		case let .unknownError(string):
 			hasher.combine(string)
-		case .undefinedVariable(let string):
+		case let .undefinedVariable(string):
 			hasher.combine(string)
-		case .typeCannotAssign(let expected, let received):
+		case let .typeCannotAssign(expected, received):
 			hasher.combine(expected)
 			hasher.combine(received)
 		case let .cannotReassignLet(variable: syntax):

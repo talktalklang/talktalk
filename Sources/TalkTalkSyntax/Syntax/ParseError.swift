@@ -1,5 +1,5 @@
 //
-//  ErrorSyntax.swift
+//  ParseError.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 7/29/24.
@@ -37,7 +37,7 @@ public struct ParseErrorSyntax: ParseError, Sendable {
 		self.expectation = expectation
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}
 }

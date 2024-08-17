@@ -8,7 +8,7 @@ import Foundation
 
 public extension AnalysisModule {
 	func findSymbol(line: Int, column: Int, path: String) -> (any AnalyzedSyntax)? {
-		var candidate: (any AnalyzedSyntax)? = nil
+		var candidate: (any AnalyzedSyntax)?
 		for file in analyzedFiles {
 			if file.path != path {
 				continue

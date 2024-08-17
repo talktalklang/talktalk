@@ -7,5 +7,5 @@
 
 enum Capability: String, Codable {
 	case hover = "textDocument/hover",
-			 completion = "textDocument/completion"
+	     completion = "textDocument/completion"
 }

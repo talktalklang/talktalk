@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
+import ArgumentParser
 import Foundation
 import TalkTalkSyntax
-import ArgumentParser
 
 enum ProgramInput {
 	case path(SourceFile), string(String), stdin
@@ -47,7 +47,7 @@ struct TalkCommand: TalkTalkCommand {
 			Interpret.self,
 			LSP.self,
 			Compile.self,
-			AnalysisPrinter.self
+			AnalysisPrinter.self,
 		]
 	)
 }

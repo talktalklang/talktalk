@@ -18,7 +18,7 @@ public struct WhileStmtSyntax: WhileStmt {
 	public let location: SourceLocation
 	public var children: [any Syntax] { [condition, body] }
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}
 }

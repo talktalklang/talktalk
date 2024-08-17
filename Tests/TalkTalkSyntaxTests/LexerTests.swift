@@ -23,7 +23,7 @@ struct TalkTalkLexerTests {
 		#expect(tokens.map(\.kind) == [
 			.import,
 			.identifier,
-			.eof
+			.eof,
 		])
 	}
 
@@ -100,7 +100,7 @@ struct TalkTalkLexerTests {
 			.identifier,
 			.equals,
 			.int,
-			.eof
+			.eof,
 		])
 	}
 
@@ -118,7 +118,7 @@ struct TalkTalkLexerTests {
 			.leftBrace,
 			.int,
 			.rightBrace,
-			.eof
+			.eof,
 		])
 	}
 
@@ -141,7 +141,7 @@ struct TalkTalkLexerTests {
 			.int,
 			.newline,
 			.rightBrace,
-			.eof
+			.eof,
 		])
 
 		#expect(tokens.map(\.line) == [
@@ -155,13 +155,13 @@ struct TalkTalkLexerTests {
 			2,
 			3,
 			3,
-			3
+			3,
 		])
 	}
 
 	@Test("Columns") func columns() {
 		var lexer = TalkTalkLexer(
-//			"""
+			//			"""
 //			struct Person {
 //				func greet() {
 //					print("sup")
@@ -182,21 +182,21 @@ struct TalkTalkLexerTests {
 			.int,
 			.newline,
 			.int,
-			.eof
+			.eof,
 		])
 
 		#expect(tokens.map(\.line) == [
 			0,
 			1,
 			1,
-			1
+			1,
 		])
 
 		#expect(tokens.map(\.column) == [
 			0,
 			-1,
 			0,
-			3
+			3,
 		])
 	}
 
@@ -218,7 +218,7 @@ struct TalkTalkLexerTests {
 			.int,
 			.newline,
 			.rightBrace,
-			.eof
+			.eof,
 		])
 
 		#expect(tokens.map(\.line) == [
@@ -231,7 +231,7 @@ struct TalkTalkLexerTests {
 			1,
 			2,
 			2,
-			2
+			2,
 		])
 	}
 
@@ -243,7 +243,7 @@ struct TalkTalkLexerTests {
 			.while,
 			.leftBrace,
 			.rightBrace,
-			.eof
+			.eof,
 		])
 	}
 

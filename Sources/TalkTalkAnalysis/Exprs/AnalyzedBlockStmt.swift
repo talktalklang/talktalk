@@ -1,5 +1,5 @@
 //
-//  AnalyzedBlockExpr.swift
+//  AnalyzedBlockStmt.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 7/28/24.
@@ -19,11 +19,11 @@ public struct AnalyzedBlockStmt: AnalyzedExpr, BlockStmt {
 	public var location: SourceLocation { stmt.location }
 	public var children: [any Syntax] { stmt.children }
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}
 }

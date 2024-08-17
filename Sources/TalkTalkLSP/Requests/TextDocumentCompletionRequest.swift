@@ -19,5 +19,3 @@ struct TextDocumentCompletionRequest: Decodable, Sendable {
 	let textDocument: TextDocument
 	let context: Context
 }
-
-

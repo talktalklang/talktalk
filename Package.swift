@@ -10,11 +10,11 @@ let package = Package(
 		.library(
 			name: "TalkTalkCore",
 			targets: ["TalkTalkCore"]
-		)
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-		.package(url: "https://github.com/fumoboy007/msgpack-swift", branch: "main")
+		.package(url: "https://github.com/fumoboy007/msgpack-swift", branch: "main"),
 	],
 	targets: [
 		.executableTarget(
@@ -27,7 +27,7 @@ let package = Package(
 				"TalkTalkDriver",
 				"TalkTalkInterpreter",
 				"TalkTalkVM",
-				.product(name: "ArgumentParser", package: "swift-argument-parser")
+				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),
 		.target(
@@ -39,14 +39,14 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCore",
 				"TalkTalkSyntax",
-				"TalkTalkBytecode"
+				"TalkTalkBytecode",
 			]
 		),
 		.target(
 			name: "TalkTalkCore",
 			dependencies: [],
 			resources: [
-				.copy("../../Library/Standard")
+				.copy("../../Library/Standard"),
 			]
 		),
 		.target(
@@ -55,7 +55,7 @@ let package = Package(
 				"TalkTalkBytecode",
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
-				"TalkTalkDriver"
+				"TalkTalkDriver",
 			]
 		),
 		.target(
@@ -65,7 +65,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
-				.product(name: "DMMessagePack", package: "msgpack-swift")
+				.product(name: "DMMessagePack", package: "msgpack-swift"),
 			]
 		),
 		.target(
@@ -85,7 +85,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
-				"TalkTalkDriver"
+				"TalkTalkDriver",
 			]
 		),
 		.target(
@@ -93,7 +93,7 @@ let package = Package(
 			dependencies: [
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				"TalkTalkBytecode"
+				"TalkTalkBytecode",
 			]
 		),
 		.target(
@@ -107,7 +107,7 @@ let package = Package(
 				"TalkTalkBytecode",
 				"TalkTalkAnalysis",
 				"TalkTalkSyntax",
-				"TalkTalkCompiler"
+				"TalkTalkCompiler",
 			]
 		),
 		.testTarget(
@@ -116,7 +116,7 @@ let package = Package(
 				"TalkTalkBytecode",
 				"TalkTalkSyntax",
 				"TalkTalkCompiler",
-				"TalkTalkAnalysis"
+				"TalkTalkAnalysis",
 			]
 		),
 		.testTarget(
@@ -125,7 +125,7 @@ let package = Package(
 				"TalkTalkLSP",
 				"TalkTalkBytecode",
 				"TalkTalkAnalysis",
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
 			]
 		),
 		.testTarget(
@@ -134,7 +134,7 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				.product(name: "DMMessagePack", package: "msgpack-swift")
+				.product(name: "DMMessagePack", package: "msgpack-swift"),
 			]
 		),
 		.testTarget(
@@ -151,7 +151,7 @@ let package = Package(
 		.testTarget(
 			name: "TalkTalkInterpreterTests",
 			dependencies: [
-				"TalkTalkInterpreter"
+				"TalkTalkInterpreter",
 			]
 		),
 		.testTarget(
@@ -161,16 +161,16 @@ let package = Package(
 		.testTarget(
 			name: "TalkTalkSyntaxTests",
 			dependencies: ["TalkTalkSyntax"]
-		)
+		),
 	]
 )
 
 #if !canImport(Testing)
-package.dependencies.append(
-	.package(url: "https://github.com/apple/swift-testing", branch: "main")
-)
+	package.dependencies.append(
+		.package(url: "https://github.com/apple/swift-testing", branch: "main")
+	)
 
-for target in package.targets.filter(\.isTest) {
-	target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
-}
+	for target in package.targets.filter(\.isTest) {
+		target.dependencies.append(.product(name: "Testing", package: "swift-testing"))
+	}
 #endif

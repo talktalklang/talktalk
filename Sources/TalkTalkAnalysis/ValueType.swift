@@ -137,21 +137,21 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 			return other == .byte
 		case .pointer:
 			return other == .pointer
-		case .function(_, let typeID, let params, _):
+		case let .function(_, typeID, params, _):
 			guard case let .function(_, otherID, otherParams, _) = other else {
 				return false
 			}
 
 			return typeID == otherID && params == otherParams
-		case .struct(let string):
+		case let .struct(string):
 			return other == .struct(string)
-		case .generic(let valueType, let string):
+		case let .generic(valueType, string):
 			return other == .generic(valueType, string)
-		case .instance(let instanceValueType):
+		case let .instance(instanceValueType):
 			return other == .instance(instanceValueType)
-		case .member(let valueType):
+		case let .member(valueType):
 			return other == .member(valueType)
-		case .error(_):
+		case .error:
 			return false
 		case .void:
 			return false

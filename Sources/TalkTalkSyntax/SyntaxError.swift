@@ -1,5 +1,5 @@
 //
-//  ParseError.swift
+//  SyntaxError.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/15/24.
@@ -7,12 +7,12 @@
 
 public enum SyntaxErrorKind: Equatable {
 	case lexerError(String),
-			 unexpectedToken(expected: Token.Kind, got: Token),
-			 infiniteLoop
+	     unexpectedToken(expected: Token.Kind, got: Token),
+	     infiniteLoop
 }
 
 public struct SyntaxError: Equatable, @unchecked Sendable {
-	public static func ==(lhs: SyntaxError, rhs: SyntaxError) -> Bool {
+	public static func == (lhs: SyntaxError, rhs: SyntaxError) -> Bool {
 		lhs.line == rhs.line && lhs.column == rhs.column && lhs.kind == rhs.kind
 	}
 

@@ -1,5 +1,5 @@
 //
-//  AnalysisTests.swift
+//  SourceFileAnalysisTests.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 7/26/24.
@@ -128,7 +128,6 @@ struct AnalysisTests {
 		#expect(res.typeAnalyzed == .int)
 	}
 
-
 	@Test("Types calls") func funcCalls() {
 		let res = ast(
 			"""
@@ -172,7 +171,8 @@ struct AnalysisTests {
 					func(x) {
 						i + 2
 					}(2)
-				"""), in: .init())
+				"""), in: .init()
+		)
 
 		let result = ast[1]
 			.cast(AnalyzedCallExpr.self).calleeAnalyzed
@@ -200,12 +200,12 @@ struct AnalysisTests {
 	@Test("Types captures") func funcCaptures() throws {
 		let ast = ast(
 			"""
-			func(x: int) {
-				func(y) {
-					y + x
+				func(x: int) {
+					func(y) {
+						y + x
+					}
 				}
-			}
-		""")
+			""")
 
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
@@ -251,7 +251,8 @@ struct AnalysisTests {
 
 				let mycounter = makeCounter()
 				mycounter()
-				"""), in: .init())
+				"""), in: .init()
+		)
 
 		let def = try #require(main[0].cast(AnalyzedLetDecl.self))
 		let fn = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
@@ -283,7 +284,7 @@ struct AnalysisTests {
 		let ast = ast("""
 		var a = Nope()
 		""")
-			.cast(AnalyzedVarDecl.self).valueAnalyzed!
+		.cast(AnalyzedVarDecl.self).valueAnalyzed!
 
 		let callExpr = ast
 			.cast(AnalyzedCallExpr.self).calleeAnalyzed

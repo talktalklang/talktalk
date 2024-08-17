@@ -36,7 +36,7 @@ public struct Parser {
 	public static func parse(_ source: SourceFile, allowErrors: Bool = false) throws -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(source))
 		let result = parser.parse()
-		if !parser.errors.isEmpty && !allowErrors {
+		if !parser.errors.isEmpty, !allowErrors {
 			throw ParserError.couldNotParse(parser.errors)
 		}
 		return result
@@ -193,7 +193,7 @@ public struct Parser {
 		current = lexer.next()
 	}
 
-	@discardableResult mutating func consume(_ kind: Token.Kind, _ message: String? = nil) -> Token? {
+	@discardableResult mutating func consume(_ kind: Token.Kind, _: String? = nil) -> Token? {
 		checkForInfiniteLoop()
 
 		if peek().kind == kind {
@@ -207,7 +207,8 @@ public struct Parser {
 		_ = error(
 			at: peek(),
 			.unexpectedToken(expected: kind, got: peek()),
-			expectation: .guess(from: kind))
+			expectation: .guess(from: kind)
+		)
 		return nil
 	}
 
@@ -225,7 +226,8 @@ public struct Parser {
 		_ = error(
 			at: peek(),
 			.unexpectedToken(expected: kind, got: peek()),
-			expectation: .guess(from: kind))
+			expectation: .guess(from: kind)
+		)
 		return false
 	}
 

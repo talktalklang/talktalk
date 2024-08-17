@@ -117,10 +117,10 @@ public struct JumpMetadata: InstructionMetadata {
 	let offset: Int
 	public var length: Int = 3
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
-	
+
 	public var description: String {
 		"offset: \(offset)"
 	}
@@ -136,7 +136,7 @@ public struct LoopMetadata: InstructionMetadata {
 	let back: Int
 	public var length: Int = 3
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
 
@@ -156,7 +156,7 @@ public struct GetPropertyMetadata: InstructionMetadata {
 	let options: PropertyOptions
 	public var length: Int = 3
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
 
@@ -182,10 +182,10 @@ public struct VariableMetadata: InstructionMetadata {
 	public let name: String
 	public let type: VariableType
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
-	
+
 	public var description: String {
 		"slot: \(slot), name: \(name)"
 	}
@@ -219,7 +219,7 @@ public extension InstructionMetadata where Self == VariableMetadata {
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 	public struct Upvalue: Equatable, Hashable {
-		public static func ==(lhs: Upvalue, rhs: Upvalue) -> Bool {
+		public static func == (lhs: Upvalue, rhs: Upvalue) -> Bool {
 			lhs.isLocal == rhs.isLocal && lhs.index == rhs.index
 		}
 
@@ -247,13 +247,13 @@ public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 		2 + (upvalues.count * 2)
 	}
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
-	
+
 	public var description: String {
 		var result = if let name { "name: \(name) " } else { "" }
-		result +=	"arity: \(arity) depth: \(depth) upvalues: [\(upvalues.map(\.description).joined(separator: ", "))]"
+		result += "arity: \(arity) depth: \(depth) upvalues: [\(upvalues.map(\.description).joined(separator: ", "))]"
 		return result
 	}
 }
@@ -268,7 +268,7 @@ public struct CallMetadata: InstructionMetadata {
 	public let name: String
 	public var length: Int = 1
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
 
@@ -288,7 +288,7 @@ public struct UpvalueMetadata: InstructionMetadata {
 	public let name: String
 	public var length: Int = 2
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
 

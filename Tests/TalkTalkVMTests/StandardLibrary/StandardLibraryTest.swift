@@ -6,13 +6,13 @@
 //
 
 import Foundation
-import TalkTalkCore
-import TalkTalkDriver
+import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
-import TalkTalkVM
-import TalkTalkAnalysis
+import TalkTalkCore
+import TalkTalkDriver
 import TalkTalkSyntax
+import TalkTalkVM
 
 @MainActor
 protocol StandardLibraryTest {}

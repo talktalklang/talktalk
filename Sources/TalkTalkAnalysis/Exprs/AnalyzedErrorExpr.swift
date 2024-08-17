@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 	public var expr: any TalkTalkSyntax.Syntax { wrapped }
-	
+
 	public var slot: Int = -1
 	public var name: String = ""
 	public var isMutable: Bool = false

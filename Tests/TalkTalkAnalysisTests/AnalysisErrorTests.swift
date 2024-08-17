@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/15/24.
 //
 
-import Testing
+import TalkTalkAnalysis
 import TalkTalkCore
 import TalkTalkSyntax
-import TalkTalkAnalysis
+import Testing
 
 struct AnalysisErrorTests: AnalysisTest {
 	func errors(

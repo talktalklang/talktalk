@@ -24,7 +24,7 @@ public extension AnalyzedSyntax {
 
 	func collectErrors() -> [AnalysisError] {
 		var result = analysisErrors
-		for child in self.analyzedChildren {
+		for child in analyzedChildren {
 			result.append(contentsOf: child.collectErrors())
 		}
 		return result
@@ -35,7 +35,8 @@ public extension AnalyzedSyntax {
 		var candidate: any AnalyzedSyntax = candidate ?? self
 
 		if location.range.count < candidate.location.range.count,
-			 location.contains(line: line, column: column) {
+		   location.contains(line: line, column: column)
+		{
 			candidate = self
 		}
 

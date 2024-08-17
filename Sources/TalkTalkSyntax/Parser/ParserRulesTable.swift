@@ -1,5 +1,5 @@
 //
-//  Parser+RulesTable.swift
+//  ParserRulesTable.swift
 //
 //
 //  Created by Pat Nakajima on 7/8/24.
@@ -28,7 +28,7 @@ struct ParserRule {
 
 extension Token.Kind {
 	var rule: ParserRule {
-		return switch self {
+		switch self {
 		case .leftParen: .init({ $0.grouping($1) }, { $0.call($1, $2) }, .call)
 		case .rightParen: .none
 		case .leftBrace: .init({ $0.blockStmt($1) }, nil, .none)
@@ -51,7 +51,6 @@ extension Token.Kind {
 		     .greater: .init(nil, { $0.binary($1, $2) }, .comparison)
 		case .dot: .init(nil, { $0.dot($1, $2) }, .call)
 		case .is: .init(nil, { $0.binary($1, $2) }, .call)
-
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
 		case .struct: .init({ $0.structExpr($1) }, nil, .none)

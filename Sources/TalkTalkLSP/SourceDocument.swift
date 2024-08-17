@@ -23,9 +23,9 @@ actor SourceDocument {
 		self.text = text
 	}
 
-	init(version: Int?, uri: String, text: String) async {
+	init(version _: Int?, uri: String, text: String) async {
 		let lines = text.components(separatedBy: .newlines)
-		let lastLineCharacter = lines.isEmpty ? 0 : lines[lines.count-1].count
+		let lastLineCharacter = lines.isEmpty ? 0 : lines[lines.count - 1].count
 		self.range = Range(start: .init(line: 0, character: 0), end: .init(line: lines.count, character: lastLineCharacter))
 		self.text = text
 		self.uri = uri

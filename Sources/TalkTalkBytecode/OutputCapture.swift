@@ -135,5 +135,4 @@ public struct OutputCapture: Sendable {
 
 		return data
 	}
-
 }

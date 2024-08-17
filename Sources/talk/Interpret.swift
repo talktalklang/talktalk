@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-import TalkTalkInterpreter
 import ArgumentParser
+import TalkTalkInterpreter
 
 struct Interpret: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

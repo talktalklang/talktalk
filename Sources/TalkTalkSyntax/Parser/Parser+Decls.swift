@@ -20,7 +20,7 @@ public extension Parser {
 			typeDecl = consume(.identifier, "expected type name after ':'")
 		}
 
-		var value: (any Expr)? = nil
+		var value: (any Expr)?
 		if didMatch(.equals) {
 			value = parse(precedence: .assignment)
 		}
@@ -58,7 +58,7 @@ public extension Parser {
 		skip(.newline)
 		let params = parameterList()
 		skip(.newline)
-	
+
 		let body = declBlock()
 		return InitDeclSyntax(
 			initToken: initToken,
@@ -100,7 +100,7 @@ public extension Parser {
 			)
 		}
 
-		var genericParamsSyntax: GenericParamsSyntax? = nil
+		var genericParamsSyntax: GenericParamsSyntax?
 		if didMatch(.less) {
 			genericParamsSyntax = genericParams()
 		}

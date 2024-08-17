@@ -21,18 +21,18 @@ public extension VirtualMachine {
 
 		public func error() -> String? {
 			switch self {
-			case .ok(_):
-				return nil
-			case .error(let string):
-				return string
+			case .ok:
+				nil
+			case let .error(string):
+				string
 			}
 		}
 
 		public func get() throws -> Value {
 			switch self {
-			case .ok(let value):
+			case let .ok(value):
 				return value
-			case .error(let string):
+			case let .error(string):
 				throw Error.error(string)
 			}
 		}

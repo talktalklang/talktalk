@@ -27,7 +27,7 @@ public struct GenericParamsSyntax: GenericParams {
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }
 
-	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, context)
 	}
 }

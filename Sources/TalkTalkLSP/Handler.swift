@@ -28,24 +28,24 @@ class LSPRequestParser {
 				length(byte: byte)
 			case .split:
 				await split(byte: byte)
-			case .body(let contentLength):
+			case let .body(contentLength):
 				await body(byte: byte, contentLength: contentLength)
 			}
 		}
 	}
 
 	func contentLength(byte: UInt8) {
-		if current == contentLengthArray.count+1 {
+		if current == contentLengthArray.count + 1 {
 			// We're done parsing the content length part, move on to the length part
 			state = .length
 			length(byte: byte)
 			return
 		}
 
-		if contentLengthArray[current-1] == byte {
+		if contentLengthArray[current - 1] == byte {
 			return
 		} else {
-			Log.error("[contentLength] unexpected character parsing message at \(current-1): \(UnicodeScalar(byte)), expected: \(UnicodeScalar(contentLengthArray[current-1]))")
+			Log.error("[contentLength] unexpected character parsing message at \(current - 1): \(UnicodeScalar(byte)), expected: \(UnicodeScalar(contentLengthArray[current - 1]))")
 		}
 	}
 
@@ -65,7 +65,7 @@ class LSPRequestParser {
 		if current == 3 {
 			let contentLength = Int(String(data: Data(currentLength), encoding: .ascii)!)!
 			state = .body(contentLength)
-			self.current = -1
+			current = -1
 			await body(byte: byte, contentLength: contentLength)
 			return
 		}
@@ -120,7 +120,7 @@ class LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			await self.callback(request)
+			await callback(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")
@@ -145,7 +145,7 @@ struct Handler {
 
 	init(callback: @Sendable @escaping (Request) async -> Void) {
 		self.parser = .init()
-		self.parser.callback = callback
+		parser.callback = callback
 	}
 
 	mutating func handle(data: Data) async {

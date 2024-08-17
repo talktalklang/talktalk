@@ -5,15 +5,15 @@
 //  Created by Pat Nakajima on 7/26/24.
 //
 
+import TalkTalkAnalysis
 @testable import TalkTalkLSP
 import TalkTalkSyntax
-import TalkTalkAnalysis
 import Testing
 
 @MainActor
 struct CompleterTests {
 	func complete(_ string: String) async -> Completer {
-		return await Completer(source: .init(path: "", text: string))
+		await Completer(source: .init(path: "", text: string))
 	}
 
 	@Test("Completes locals") func locals() async throws {
@@ -38,7 +38,7 @@ struct CompleterTests {
 		).sorted() == [
 			CompletionItem(label: "person", kind: .variable),
 			CompletionItem(label: "pet", kind: .variable),
-			CompletionItem(label: "print", kind: .function)
+			CompletionItem(label: "print", kind: .function),
 		].sorted())
 	}
 

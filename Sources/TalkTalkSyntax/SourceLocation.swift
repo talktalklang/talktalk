@@ -15,7 +15,7 @@ public struct SourceLocation: Sendable, Equatable, Hashable {
 	}
 
 	public var range: Range<Int> {
-		start.start..<(end.start + end.length)
+		start.start ..< (end.start + end.length)
 	}
 
 	public func contains(line: Int, column: Int) -> Bool {
@@ -33,8 +33,8 @@ public struct SourceLocation: Sendable, Equatable, Hashable {
 extension SourceLocation: ExpressibleByArrayLiteral {
 	public init(arrayLiteral elements: Token...) {
 		precondition(!elements.isEmpty, "cannot have a source location with no elements")
-		path = elements.first!.path
-		start = elements.first!
-		end = elements.last!
+		self.path = elements.first!.path
+		self.start = elements.first!
+		self.end = elements.last!
 	}
 }

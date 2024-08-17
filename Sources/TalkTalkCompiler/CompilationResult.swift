@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
-import TalkTalkBytecode
 import TalkTalkAnalysis
+import TalkTalkBytecode
 
 public struct CompilationResult: @unchecked Sendable {
 	public let module: Module

@@ -149,7 +149,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 extension Value: CustomStringConvertible {
 	public var description: String {
 		switch self {
-		case .string(let string):
+		case let .string(string):
 			string.debugDescription
 		case .reserved:
 			"reserved"
@@ -177,7 +177,7 @@ extension Value: CustomStringConvertible {
 			"builtin struct"
 		case .pointer:
 			"pointer"
-		case .primitive(_):
+		case .primitive:
 			"primitive"
 		case .none:
 			"none"
@@ -196,7 +196,7 @@ extension Value: CustomStringConvertible {
 			true
 		case (.pointer(_, _), .primitive(.pointer)):
 			true
-		case (.instance(let slot, _), .struct(let structSlot)):
+		case let (.instance(slot, _), .struct(structSlot)):
 			slot == structSlot
 		default:
 			false

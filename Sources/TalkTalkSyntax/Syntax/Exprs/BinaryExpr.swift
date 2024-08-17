@@ -7,16 +7,16 @@
 
 public enum BinaryOperator: String {
 	case plus = "+",
-			 equalEqual = "==",
-			 bangEqual = "!=",
-			 less = "<",
-			 lessEqual = "<=",
-			 greater = ">",
-			 greaterEqual = ">=",
-			 minus = "-",
-			 star = "*",
-			 slash = "/",
-			 `is` = "is"
+	     equalEqual = "==",
+	     bangEqual = "!=",
+	     less = "<",
+	     lessEqual = "<=",
+	     greater = ">",
+	     greaterEqual = ">=",
+	     minus = "-",
+	     star = "*",
+	     slash = "/",
+	     `is`
 }
 
 public protocol BinaryExpr: Expr {

@@ -9,75 +9,75 @@ public enum Opcode: Byte {
 	public var byte: Byte { rawValue }
 
 	case `return`,
-			 constant,
-			 negate,
-			 not,
+	     constant,
+	     negate,
+	     not,
 
-			 // Callables
-			 call, callChunkID,
+	     // Callables
+	     call, callChunkID,
 
-			 // Stack operations
-			 pop,
+	     // Stack operations
+	     pop,
 
-			 // Functions
-			 defClosure,
+	     // Functions
+	     defClosure,
 
-			 // Local variables
-			 setLocal,
-			 getLocal,
+	     // Local variables
+	     setLocal,
+	     getLocal,
 
-			 // Upvalues (captures)
-			 getUpvalue, setUpvalue,
+	     // Upvalues (captures)
+	     getUpvalue, setUpvalue,
 
-			 // Module functions
-			 getModuleFunction, setModuleFunction,
+	     // Module functions
+	     getModuleFunction, setModuleFunction,
 
-			 // Module global values
-			 getModuleValue, setModuleValue,
+	     // Module global values
+	     getModuleValue, setModuleValue,
 
-			 // Structs
-			 getStruct, setStruct,
-			 getProperty, setProperty,
+	     // Structs
+	     getStruct, setStruct,
+	     getProperty, setProperty,
 
-			 // Type casting
-			 cast, `is`, primitive,
+	     // Type casting
+	     cast, `is`, primitive,
 
-			 // Builtins
-			 getBuiltin, setBuiltin,
-			 getBuiltinStruct, setBuiltinStruct,
+	     // Builtins
+	     getBuiltin, setBuiltin,
+	     getBuiltinStruct, setBuiltinStruct,
 
-			 // Literals
-			 `true`,
-			 `false`,
-			 none,
+	     // Literals
+	     `true`,
+	     `false`,
+	     none,
 
-			 // Static data
-			 data,
+	     // Static data
+	     data,
 
-			 // Suspension
-			 suspend,
+	     // Suspension
+	     suspend,
 
-			 // Equality
-			 equal,
-			 notEqual,
+	     // Equality
+	     equal,
+	     notEqual,
 
-			 // Jumps
-			 jump,
-			 jumpUnless,
-			 jumpPlaceholder,
-			 loop,
+	     // Jumps
+	     jump,
+	     jumpUnless,
+	     jumpPlaceholder,
+	     loop,
 
-			 // Comparisons
-			 less,
-			 greater,
-			 lessEqual,
-			 greaterEqual,
+	     // Comparisons
+	     less,
+	     greater,
+	     lessEqual,
+	     greaterEqual,
 
-			 // Binary operations
-			 add,
-			 subtract,
-			 divide,
-			 multiply
+	     // Binary operations
+	     add,
+	     subtract,
+	     divide,
+	     multiply
 }
 
 extension Opcode {
@@ -86,7 +86,7 @@ extension Opcode {
 	}
 
 	func format() -> String {
-		return "\(self)"
+		"\(self)"
 			.replacing(#/([a-z])([A-Z])/#, with: { "\($0.output.1)_\($0.output.2)" })
 			.uppercased()
 	}

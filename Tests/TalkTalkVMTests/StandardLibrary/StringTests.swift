@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/14/24.
 //
 
-import Testing
-import TalkTalkVM
 import TalkTalkBytecode
+import TalkTalkVM
+import Testing
 
 @MainActor
 struct StringTests: StandardLibraryTest {

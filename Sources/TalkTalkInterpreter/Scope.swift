@@ -24,7 +24,8 @@ public class Scope {
 		}
 
 		if case let .instance(instance) = locals["self"],
-			 let property = instance.properties[name] {
+		   let property = instance.properties[name]
+		{
 			return property
 		}
 

@@ -22,7 +22,8 @@ public struct AnalyzedImportStmt: ImportStmt, AnalyzedStmt {
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value
-	where V: AnalyzedVisitor {
+		where V: AnalyzedVisitor
+	{
 		try visitor.visit(self, scope)
 	}
 }

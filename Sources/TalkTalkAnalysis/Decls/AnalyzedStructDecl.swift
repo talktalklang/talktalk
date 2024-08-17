@@ -13,9 +13,10 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public var typeID: TypeID
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[
-			bodyAnalyzed
+			bodyAnalyzed,
 		]
 	}
+
 	public var environment: Environment
 
 	// Delegate these to the wrapped node

@@ -9,4 +9,3 @@ public struct Location: Codable, Sendable {
 	let uri: String
 	let range: Range
 }
-

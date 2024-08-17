@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/14/24.
 //
 
-import Testing
 import TalkTalkVM
+import Testing
 
 struct REPLTests {
 	@Test("Basic") func basic() async throws {

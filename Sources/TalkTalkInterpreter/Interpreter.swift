@@ -56,15 +56,15 @@ public struct Interpreter: AnalyzedVisitor {
 		try expr.exprAnalyzed.accept(self, context)
 	}
 
-	public func visit(_ expr: AnalyzedImportStmt, _ context: Scope) throws -> Value {
+	public func visit(_: AnalyzedImportStmt, _: Scope) throws -> Value {
 		.none
 	}
 
-	public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Scope) throws -> Value {
+	public func visit(_: AnalyzedIdentifierExpr, _: Scope) throws -> Value {
 		.none
 	}
 
-	public func visit(_ expr: AnalyzedGenericParams, _ context: Scope) throws -> Value {
+	public func visit(_: AnalyzedGenericParams, _: Scope) throws -> Value {
 		.none
 	}
 
@@ -146,13 +146,13 @@ public struct Interpreter: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedLiteralExpr, _: Scope) throws -> Value {
 		switch expr.value {
 		case let .bool(bool):
-			return .bool(bool)
+			.bool(bool)
 		case let .int(int):
-			return .int(int)
+			.int(int)
 		case let .string(string):
-			return .string(string)
+			.string(string)
 		case .none:
-			return .none
+			.none
 		}
 	}
 
@@ -201,7 +201,7 @@ public struct Interpreter: AnalyzedVisitor {
 		try lastResult(of: expr.stmtsAnalyzed, in: context)
 	}
 
-	public func visit(_ expr: AnalyzedErrorSyntax, _ context: Scope) throws -> Value {
+	public func visit(_ expr: AnalyzedErrorSyntax, _: Scope) throws -> Value {
 		.error(expr.message)
 	}
 
@@ -229,7 +229,7 @@ public struct Interpreter: AnalyzedVisitor {
 		return retVal
 	}
 
-	public func visit(_ expr: AnalyzedInitDecl, _ context: Scope) throws -> Value {
+	public func visit(_: AnalyzedInitDecl, _: Scope) throws -> Value {
 		fatalError("TODO")
 	}
 

@@ -1,5 +1,5 @@
 //
-//  AnalyzedAddExpr.swift
+//  AnalyzedBinaryExpr.swift
 //
 //
 //  Created by Pat Nakajima on 7/22/24.

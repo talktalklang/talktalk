@@ -1,16 +1,16 @@
 //
-//  REPL.swift
+//  REPLRunner.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/14/24.
 //
 
-import TalkTalkCore
-import TalkTalkSyntax
 import TalkTalkAnalysis
-import TalkTalkCompiler
 import TalkTalkBytecode
+import TalkTalkCompiler
+import TalkTalkCore
 import TalkTalkDriver
+import TalkTalkSyntax
 
 public struct REPLRunner {
 	let driver: Driver
@@ -39,20 +39,19 @@ public struct REPLRunner {
 		self.module = result.module
 		self.analysis = result.analysis
 		self.environment = Environment()
-		self.environment.canAutoReturn = false
+		environment.canAutoReturn = false
 		self.compilingModule = CompilingModule(
 			name: "REPL",
 			analysisModule: analysis,
 			moduleEnvironment: [:]
 		)
 		self.chunk = Chunk(name: "main")
-		self.module.main = chunk
+		module.main = chunk
 		self.compiler = ChunkCompiler(module: compilingModule)
 		self.vm = VirtualMachine(module: module)
 	}
 
-	public mutating func evaluate(_ line: String, index: Int) throws -> VirtualMachine.ExecutionResult {
-
+	public mutating func evaluate(_ line: String, index _: Int) throws -> VirtualMachine.ExecutionResult {
 		if line.isEmpty { return .error("No input") }
 
 		let parsed = try Parser.parse(SourceFile(path: "<repl>", text: line))

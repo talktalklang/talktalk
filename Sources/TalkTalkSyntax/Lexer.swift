@@ -9,19 +9,18 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 	public enum Kind: Sendable, Equatable, Hashable {
 		// Single char tokens
 		case leftParen, rightParen,
-				 leftBrace, rightBrace,
+		     leftBrace, rightBrace,
 		     symbol, plus, equals, comma, bang,
-				 colon, dot, less, greater, minus, star, slash
-
+		     colon, dot, less, greater, minus, star, slash
 
 		// Multiple char tokens
 		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string
 
 		// Keywords
 		case `func`, `true`, `false`, `return`,
-				 `if`, `in`, call, `else`,
-				 `while`, `var`, `let`, initialize,
-				 `struct`, `self`, `Self`, `import`, `is`
+		     `if`, `in`, call, `else`,
+		     `while`, `var`, `let`, initialize,
+		     `struct`, `self`, `Self`, `import`, `is`
 
 		case newline
 		case eof
@@ -46,7 +45,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		"Token(kind: .\(kind), line: \(line), column: \(column), position: \(start), length: \(length), lexeme: \(lexeme.debugDescription))"
 	}
 
-	public static func synthetic(_ kind: Kind, lexeme: String? = nil ) -> Token {
+	public static func synthetic(_ kind: Kind, lexeme: String? = nil) -> Token {
 		Token(
 			path: "synthetic",
 			kind: kind,

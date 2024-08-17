@@ -1,14 +1,12 @@
 //
-//  ModuleGlobal.swift
+//  ModuleValue.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkSyntax
 import TalkTalkBytecode
-
-
+import TalkTalkSyntax
 
 public struct ModuleValue: ModuleGlobal {
 	public let name: String

@@ -1,5 +1,5 @@
 //
-//  ObjectType.swift
+//  Object.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/2/24.
@@ -8,10 +8,10 @@
 public enum Object: Equatable, Hashable {
 	var stringTag: Byte { 0 }
 
-	public static func ==(lhs: Object, rhs: Object) -> Bool {
+	public static func == (lhs: Object, rhs: Object) -> Bool {
 		switch (lhs, rhs) {
 		case (.string(_), .string(_)):
-			return false // TODO: Fix me
+			false // TODO: Fix me
 		}
 	}
 
@@ -19,7 +19,7 @@ public enum Object: Equatable, Hashable {
 
 	public var bytes: [Byte] {
 		switch self {
-		case .string(let pointer):
+		case let .string(pointer):
 			[stringTag] + pointer.map { Byte(bitPattern: $0) }
 		}
 	}

@@ -1,5 +1,6 @@
 #if false && os(Linux)
 	import Foundation
+
 	public extension URL {
 		static var homeDirectory: URL {
 			let home = ProcessInfo.processInfo.environment["HOME"]!
@@ -7,9 +8,7 @@
 		}
 
 		func appending(path: String) -> URL {
-			self.appendingPathComponent(path)
+			appendingPathComponent(path)
 		}
 	}
 #endif
-
-

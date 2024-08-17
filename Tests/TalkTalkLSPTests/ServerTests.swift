@@ -11,7 +11,7 @@ import TalkTalkBytecode
 import Testing
 
 private extension Data {
-	func `as`<T: Codable>(_ codable: T.Type) -> T? {
+	func `as`<T: Codable>(_: T.Type) -> T? {
 		try? JSONDecoder().decode(T.self, from: self)
 	}
 }
@@ -31,7 +31,7 @@ private extension Data {
 
 		i += 3 // Skip the \n\r\n
 
-		return data[i..<data.count]
+		return data[i ..< data.count]
 	}
 
 	func responses(from requests: Request...) async throws -> [Data] {
@@ -62,8 +62,8 @@ private extension Data {
 	@Test("Handles partial message") func partial() async throws {
 		let requestData = try JSONEncoder().encode(Request(id: .integer(321), method: .initialize))
 		let data = Data("Content-Length: \(requestData.count)\r\n\r\n\(String(data: requestData, encoding: .utf8)!)".utf8)
-		let data1 = data[0..<32]
-		let data2 = data[32..<data.count]
+		let data1 = data[0 ..< 32]
+		let data2 = data[32 ..< data.count]
 
 		let server = try await Server()
 		var handler = Handler { request in

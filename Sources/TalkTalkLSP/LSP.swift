@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  LSP.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/5/24.
@@ -28,6 +28,6 @@ public actor LSP {
 	}
 
 	func receive(_ request: Request) {
-		self.server.enqueue(request)
+		server.enqueue(request)
 	}
 }

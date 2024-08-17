@@ -61,8 +61,8 @@ struct TalkTalkParserTests {
 				line: 0,
 				column: 7,
 				kind: .lexerError("unterminated string literal")
-				)
-			])[0]
+			),
+		])[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(LiteralExprSyntax.self).value == .string("hello"))
 	}
@@ -201,7 +201,6 @@ struct TalkTalkParserTests {
 		#expect(ast.condition.description == "i < 5")
 		#expect(ast.body.stmts[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}
-	
 
 	@Test("func expr") func funcexpr() throws {
 		let ast = parse("""

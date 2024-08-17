@@ -13,6 +13,7 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl {
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
 	}
+
 	public var analysisErrors: [AnalysisError] = []
 	public var valueAnalyzed: (any AnalyzedExpr)?
 	public let environment: Environment

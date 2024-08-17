@@ -1,12 +1,12 @@
 //
-//  Compiler.swift
+//  SourceFileCompiler.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import TalkTalkBytecode
 import TalkTalkAnalysis
+import TalkTalkBytecode
 
 public struct SourceFileCompiler {
 	public var number = 0

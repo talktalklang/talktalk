@@ -11,7 +11,7 @@ import TalkTalkCompiler
 import TalkTalkSyntax
 import Testing
 
-extension Array: @retroactive CustomTestStringConvertible where Element == Instruction {
+extension [Instruction]: @retroactive CustomTestStringConvertible {
 	public var testDescription: String {
 		map(\.description).joined(separator: "\n")
 	}
@@ -44,7 +44,7 @@ struct ModuleCompilerTests {
 			func bar() {
 				123
 			}
-			""")
+			"""),
 		]
 
 		let (module, _) = compile(name: "CompilerTests", files)
@@ -65,7 +65,7 @@ struct ModuleCompilerTests {
 			func bar() {
 				fizz
 			}
-			""")
+			"""),
 		]
 
 		let (module, _) = compile(name: "CompilerTests", files)
@@ -82,7 +82,7 @@ struct ModuleCompilerTests {
 		let (moduleA, analysisA) = compile(
 			name: "A",
 			[
-				.tmp("func foo() { 123 }")
+				.tmp("func foo() { 123 }"),
 			]
 		)
 		let (moduleB, _) = compile(
@@ -95,7 +95,7 @@ struct ModuleCompilerTests {
 						foo()
 					}
 					"""
-				)
+				),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -118,7 +118,7 @@ struct ModuleCompilerTests {
 			}
 
 			let person = Person(age: 123)
-			""")
+			"""),
 		])
 
 		let structDef = module.structs[0]
@@ -151,7 +151,7 @@ struct ModuleCompilerTests {
 			}
 
 			person = Person()
-			""")
+			"""),
 		])
 
 		// Get the actual code, not the synthesized main

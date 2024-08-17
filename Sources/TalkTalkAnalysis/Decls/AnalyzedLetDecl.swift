@@ -15,6 +15,7 @@ public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl {
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
 	}
+
 	public let environment: Environment
 
 	public var name: String { expr.name }

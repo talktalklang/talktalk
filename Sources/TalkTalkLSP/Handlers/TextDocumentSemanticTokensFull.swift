@@ -25,8 +25,8 @@ struct TextDocumentSemanticTokensFull {
 		do {
 			// TODO: use module environment
 			let parsed = try await SourceFileAnalyzer.analyze(
-				Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true)
-				,
+				Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true),
+
 				in: Environment()
 			)
 			let visitor = SemanticTokensVisitor()
@@ -39,7 +39,8 @@ struct TextDocumentSemanticTokensFull {
 		// Add in comment tokens since we lost those during parsing
 		for (line, text) in await source.text.components(separatedBy: .newlines).enumerated() {
 			if let index = text.firstIndex(of: "/"),
-				 text[text.index(index, offsetBy: 1)] == "/" {
+			   text[text.index(index, offsetBy: 1)] == "/"
+			{
 				tokens.append(.init(
 					lexeme: "<comment>",
 					line: line,
@@ -72,7 +73,7 @@ struct SemanticTokensVisitor: Visitor {
 		try expr.expr.accept(self, context)
 	}
 
-	func visit(_ expr: any TypeExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: any TypeExpr, _: Context) throws -> [RawSemanticToken] {
 		[make(.type, from: expr.identifier)]
 	}
 
@@ -82,38 +83,38 @@ struct SemanticTokensVisitor: Visitor {
 		return results
 	}
 
-	public func visit(_ expr: any ImportStmt, _ context: Context) throws -> [RawSemanticToken] {
-	[make(.keyword, from: expr.token)]
-}
+	public func visit(_ expr: any ImportStmt, _: Context) throws -> [RawSemanticToken] {
+		[make(.keyword, from: expr.token)]
+	}
 
 	func visit(_ expr: DefExpr, _ context: Context) throws -> [RawSemanticToken] {
 		var result = try expr.receiver.accept(self, context)
-		try result.append(contentsOf:	expr.value.accept(self, context))
+		try result.append(contentsOf: expr.value.accept(self, context))
 
 		return result
 	}
 
-	func visit(_ expr: ParseError, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_: ParseError, _: Context) throws -> [RawSemanticToken] {
 		[]
 	}
 
-	func visit(_ expr: any TalkTalkSyntax.Param, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_: any TalkTalkSyntax.Param, _: Context) throws -> [RawSemanticToken] {
 		[]
 	}
 
-	func visit(_ expr: any GenericParams, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_: any GenericParams, _: Context) throws -> [RawSemanticToken] {
 		[]
 	}
 
-	func visit(_ expr: LiteralExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: LiteralExpr, _: Context) throws -> [RawSemanticToken] {
 		let kind: SemanticTokenTypes
 
 		switch expr.value {
-		case .int(_):
+		case .int:
 			kind = .number
-		case .bool(_):
+		case .bool:
 			kind = .keyword
-		case .string(_):
+		case .string:
 			kind = .string
 		case .none:
 			return []
@@ -127,11 +128,11 @@ struct SemanticTokensVisitor: Visitor {
 				length: expr.location.start.length,
 				tokenType: kind,
 				modifiers: []
-			)
+			),
 		]
 	}
 
-	func visit(_ expr: VarExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: VarExpr, _: Context) throws -> [RawSemanticToken] {
 		[make(.variable, from: expr.token)]
 	}
 
@@ -143,7 +144,7 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: UnaryExpr, _ context: Context) throws -> [RawSemanticToken] {
-		return try expr.expr.accept(self, context)
+		try expr.expr.accept(self, context)
 	}
 
 	func visit(_ expr: IfExpr, _ context: Context) throws -> [RawSemanticToken] {
@@ -190,8 +191,8 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: ParamsExpr, _ context: Context) throws -> [RawSemanticToken] {
-		return expr.params.map {
+	func visit(_ expr: ParamsExpr, _: Context) throws -> [RawSemanticToken] {
+		expr.params.map {
 			make(.parameter, from: $0.location.start)
 		}
 	}
@@ -206,7 +207,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: IdentifierExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_: IdentifierExpr, _: Context) throws -> [RawSemanticToken] {
 		[]
 	}
 
@@ -226,20 +227,20 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: StructDecl, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: StructDecl, _: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.structToken)]
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
 	}
 
-	func visit(_ expr: any InitDecl, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: any InitDecl, _: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.initToken)]
 		try result.append(contentsOf: visit(expr.parameters, .initializer))
 		try result.append(contentsOf: expr.body.accept(self, .initializer))
 		return result
 	}
 
-	func visit(_ expr: VarDecl, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: VarDecl, _: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.token),
 		]
@@ -251,7 +252,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: LetDecl, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: LetDecl, _: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.token),
 		]
@@ -276,12 +277,11 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: any StructExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: any StructExpr, _: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.structToken)]
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
 	}
-
 
 	// GENERATOR_INSERTION
 }

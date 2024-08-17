@@ -29,7 +29,7 @@ protocol BuiltinStruct {
 	func arity(for methodSlot: Int) -> Int
 }
 
-struct BuiltinStructs {
+enum BuiltinStructs {
 	static var list: [any BuiltinStruct.Type] {
 		[
 		]

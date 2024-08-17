@@ -61,7 +61,7 @@ struct VMEndToEndTests {
 	}
 
 	func returning(_ string: String) throws -> TalkTalkBytecode.Value {
-		return try run("return \(string)")
+		try run("return \(string)")
 	}
 
 	func runAsync(_ strings: String...) throws {
@@ -276,7 +276,7 @@ struct VMEndToEndTests {
 
 					return bar()
 					"""
-				)
+				),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -303,7 +303,7 @@ struct VMEndToEndTests {
 					let person = Person(age: 123)
 					return person.age
 					"""
-				)
+				),
 			]
 		)
 
@@ -332,7 +332,7 @@ struct VMEndToEndTests {
 					let method = person.getAge
 					return method()
 					"""
-				)
+				),
 			]
 		)
 
@@ -353,7 +353,7 @@ struct VMEndToEndTests {
 						}
 					}
 					"""
-				)
+				),
 			]
 		)
 
@@ -366,7 +366,7 @@ struct VMEndToEndTests {
 
 					let person = Person(age: 123)
 					return person.age
-					""")
+					"""),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -388,7 +388,7 @@ struct VMEndToEndTests {
 					let person = Person(age: 123)
 					return person.age
 					"""
-				)
+				),
 			]
 		)
 
@@ -412,7 +412,7 @@ struct VMEndToEndTests {
 					let person = Person()
 					return person.age
 					"""
-				)
+				),
 			]
 		)
 
@@ -432,7 +432,7 @@ struct VMEndToEndTests {
 
 				return j
 			"""
-			)
+		)
 
 		#expect(
 			result == .int(5)

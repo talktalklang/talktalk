@@ -153,9 +153,7 @@ public class Chunk: Codable {
 	}
 
 	public func emit(opcode: Opcode, line: UInt32) {
-		if opcode == .pop {
-			
-		}
+		if opcode == .pop {}
 		write(byte: opcode.byte, line: line)
 	}
 
@@ -213,7 +211,7 @@ extension Chunk: Equatable {
 			\.constants,
 			\.lines,
 			\.arity,
-			\.upvalueCount
+			\.upvalueCount,
 		]
 
 		for keypath in keypaths {
@@ -233,6 +231,6 @@ extension Chunk: Equatable {
 	}
 }
 
-fileprivate extension Equatable {
+private extension Equatable {
 	func equals(_ any: some Any) -> Bool { self == any as? Self }
 }

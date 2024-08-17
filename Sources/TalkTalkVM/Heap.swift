@@ -36,7 +36,7 @@ public class Heap {
 	}
 
 	func copy(base: Int, length: Int, into: inout [Value?]) {
-		into = Array(storage[base].storage[0..<length])
+		into = Array(storage[base].storage[0 ..< length])
 	}
 
 	func dereference(block: Int, offset: Int) -> Value? {

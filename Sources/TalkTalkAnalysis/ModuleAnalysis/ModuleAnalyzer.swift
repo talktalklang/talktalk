@@ -104,7 +104,7 @@ public struct ModuleAnalyzer {
 					isMutable: false
 				)
 			} else if case let .struct(name) = name,
-								let structType = binding.externalModule?.structs[name]
+			          let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,

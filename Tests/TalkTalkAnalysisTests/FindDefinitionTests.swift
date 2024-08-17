@@ -1,13 +1,13 @@
 //
-//  AnalyzedSyntaxTests.swift
+//  FindDefinitionTests.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/15/24.
 //
 
-import Testing
-import TalkTalkSyntax
 import TalkTalkAnalysis
+import TalkTalkSyntax
+import Testing
 
 struct FindDefinitionTests {
 	func analyze(
@@ -35,8 +35,8 @@ struct FindDefinitionTests {
 			var person = Person()
 			person.greet()
 
-			""", path: "person.tlk"
-		))
+			""", path: "person.tlk")
+		)
 
 		let found = module.findSymbol(line: 7, column: 9, path: "person.tlk")!.cast(AnalyzedMemberExpr.self)
 		let node = try #require(found)
@@ -59,8 +59,8 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", path: "person.tlk"
-		))
+			""", path: "person.tlk")
+		)
 
 		let found = module.findSymbol(line: 5, column: 9, path: "person.tlk")!
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
@@ -85,8 +85,8 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", path: "person.tlk"
-		))
+			""", path: "person.tlk")
+		)
 
 		let found = module.findSymbol(line: 4, column: 15, path: "person.tlk")!
 			.cast(AnalyzedVarExpr.self)
@@ -106,8 +106,8 @@ struct FindDefinitionTests {
 			var age = 123
 			age
 
-			""", path: "person.tlk"
-		))
+			""", path: "person.tlk")
+		)
 
 		let found = module.findSymbol(line: 1, column: 1, path: "person.tlk")!
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
@@ -131,8 +131,8 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", path: "person.tlk"
-		))
+			""", path: "person.tlk")
+		)
 
 		let found = module.findSymbol(line: 5, column: 3, path: "person.tlk")!
 			.cast(AnalyzedVarExpr.self)
@@ -156,8 +156,8 @@ struct FindDefinitionTests {
 					self.name
 				}
 			}
-			""", path: "person.tlk"
-		))
+			""", path: "person.tlk")
+		)
 
 		let found = module.findSymbol(line: 4, column: 8, path: "person.tlk")!
 			.cast(AnalyzedMemberExpr.self)

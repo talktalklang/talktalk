@@ -34,7 +34,7 @@ public struct BuiltinStruct {
 		.init(name: name, properties: properties, methods: methods, typeParameters: typeParameters)
 	}
 
-	func binding(in environment: Environment) -> Environment.Binding {
+	func binding(in _: Environment) -> Environment.Binding {
 		.init(
 			name: name,
 			expr: Self.syntheticExpr(),

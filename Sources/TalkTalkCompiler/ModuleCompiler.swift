@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkBytecode
 import TalkTalkAnalysis
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct ModuleCompiler {

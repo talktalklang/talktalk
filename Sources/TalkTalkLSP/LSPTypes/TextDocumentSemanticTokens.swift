@@ -60,7 +60,7 @@ struct RelativeSemanticToken: Equatable {
 			startDelta,
 			length,
 			SemanticTokensLegend.lookup(tokenType),
-			0
+			0,
 		]
 	}
 }

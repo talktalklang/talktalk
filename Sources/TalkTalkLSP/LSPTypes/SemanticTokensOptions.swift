@@ -6,27 +6,27 @@
 //
 
 enum SemanticTokenTypes: String, Codable {
-	case type = "type"
-	case `class` = "class"
-	case `enum` = "enum"
-	case interface = "interface"
-	case `struct` = "struct"
-	case typeParameter = "typeParameter"
-	case parameter = "parameter"
-	case variable = "variable"
-	case property = "property"
-	case enumMember = "enumMember"
-	case event = "event"
-	case function = "function"
-	case method = "method"
-	case macro = "macro"
-	case keyword = "keyword"
-	case modifier = "modifier"
-	case comment = "comment"
-	case string = "string"
-	case number = "number"
-	case regexp = "regexp"
-	case `operator` = "operator"
+	case type
+	case `class`
+	case `enum`
+	case interface
+	case `struct`
+	case typeParameter
+	case parameter
+	case variable
+	case property
+	case enumMember
+	case event
+	case function
+	case method
+	case macro
+	case keyword
+	case modifier
+	case comment
+	case string
+	case number
+	case regexp
+	case `operator`
 }
 
 enum SemanticTokenModifiers: String, Codable {
@@ -65,13 +65,13 @@ struct SemanticTokensLegend: Codable {
 		.string,
 		.number,
 		.operator,
-		.comment
+		.comment,
 	]
 
 	let tokenModifiers: [SemanticTokenModifiers] = [
 		.declaration,
 		.definition,
-		.deprecated
+		.deprecated,
 	]
 }
 

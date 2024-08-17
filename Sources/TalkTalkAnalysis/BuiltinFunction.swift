@@ -1,5 +1,5 @@
 //
-//  Builtins.swift
+//  BuiltinFunction.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 7/29/24.
@@ -17,7 +17,7 @@ public struct BuiltinFunction {
 			._allocate,
 			._free,
 			._deref,
-			._storePtr
+			._storePtr,
 		]
 	}
 
@@ -25,7 +25,7 @@ public struct BuiltinFunction {
 		IdentifierExprSyntax(name: "__builtin__", location: [.synthetic(.builtin)])
 	}
 
-	func binding(in env: Environment) -> Environment.Binding {
+	func binding(in _: Environment) -> Environment.Binding {
 		.init(
 			name: name,
 			expr: Self.syntheticExpr(),
@@ -39,31 +39,31 @@ public struct BuiltinFunction {
 	}
 
 	public static var print: BuiltinFunction {
-			return BuiltinFunction(
-				name: "print",
-				type: .function(
-					"print",
-					TypeID(.int),
-					[
-						.init(
-							name: "value",
-							typeID: TypeID(.any)
-						),
-					],
-					[]
-				)
+		BuiltinFunction(
+			name: "print",
+			type: .function(
+				"print",
+				TypeID(.int),
+				[
+					.init(
+						name: "value",
+						typeID: TypeID(.any)
+					),
+				],
+				[]
 			)
+		)
 	}
 
 	public static var _allocate: BuiltinFunction {
-		return BuiltinFunction(
+		BuiltinFunction(
 			name: "_allocate",
 			type: .function("_allocate", TypeID(.pointer), [.int("size")], [])
 		)
 	}
 
 	public static var _free: BuiltinFunction {
-		return BuiltinFunction(
+		BuiltinFunction(
 			name: "_free",
 			type: .function(
 				"_free",
@@ -78,7 +78,7 @@ public struct BuiltinFunction {
 	}
 
 	public static var _deref: BuiltinFunction {
-		return BuiltinFunction(
+		BuiltinFunction(
 			name: "_deref",
 			type: .function(
 				"_deref",
@@ -93,14 +93,13 @@ public struct BuiltinFunction {
 	}
 
 	public static var _storePtr: BuiltinFunction {
-		return BuiltinFunction(
+		BuiltinFunction(
 			name: "_storePtr",
 			type: .function(
 				"_storePtr",
 				TypeID(.placeholder),
 				[.init(name: "addr", typeID: TypeID(.pointer)),
-				 .init(name: "value", typeID: TypeID())
-				],
+				 .init(name: "value", typeID: TypeID())],
 				[]
 			)
 		)

@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-import Testing
-import TalkTalkSyntax
 import TalkTalkAnalysis
 @testable import TalkTalkLSP
+import TalkTalkSyntax
+import Testing
 
 @MainActor
 struct SemanticTokensTests {
@@ -24,8 +24,8 @@ struct SemanticTokensTests {
 		"""
 
 		let visitor = SemanticTokensVisitor()
-		let tokens = RelativeSemanticToken.generate(
-			from: try Parser.parse(.init(path: "", text: string)).flatMap {
+		let tokens = try RelativeSemanticToken.generate(
+			from: Parser.parse(.init(path: "", text: string)).flatMap {
 				try $0.accept(visitor, .topLevel)
 			}
 		)

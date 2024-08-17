@@ -9,7 +9,7 @@ import TalkTalkBytecode
 struct Stack<Element> {
 	private var storage: ContiguousArray<Element>
 
-	init(capacity: Int) {
+	init(capacity _: Int) {
 		self.storage = .init()
 	}
 

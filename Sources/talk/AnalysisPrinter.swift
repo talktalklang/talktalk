@@ -1,5 +1,5 @@
 //
-//  Analysis.swift
+//  AnalysisPrinter.swift
 //
 //
 //  Created by Pat Nakajima on 7/11/24.
@@ -7,8 +7,8 @@
 
 import ArgumentParser
 import Foundation
-import TalkTalkSyntax
 import TalkTalkAnalysis
+import TalkTalkSyntax
 
 struct AnalysisPrinter: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

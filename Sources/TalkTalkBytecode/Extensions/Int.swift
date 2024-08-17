@@ -1,5 +1,5 @@
 //
-//  FixedWidthInteger.swift
+//  Int.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/2/24.
@@ -28,7 +28,6 @@
 	value -= 1
 	return value
 }
-
 
 // Implement postfix increment
 @discardableResult public postfix func ++ (value: inout UInt64) -> UInt64 {

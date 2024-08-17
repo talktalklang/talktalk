@@ -14,15 +14,15 @@ import TalkTalkSyntax
 	}
 
 	static func buildOptional(_ component: String?) -> String {
-		return component ?? ""
+		component ?? ""
 	}
 
 	static func buildEither(first component: String) -> String {
-		return component
+		component
 	}
 
 	static func buildEither(second component: String) -> String {
-		return component
+		component
 	}
 
 	static func buildArray(_ components: [String]) -> String {
@@ -44,13 +44,16 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 				with: {
 					// Tidy indents
 					"\($0.output.2) |\($0.output.1)└ "
-				}).replacing(
+				}
+			).replacing(
 				#/(\t*)(\d+)[\s]*\|/#,
 				with: {
 					// Tidy line numbers
 					$0.output.2.trimmingCharacters(in: .whitespacesAndNewlines).padding(
-						toLength: 4, withPad: " ", startingAt: 0) + "| \($0.output.1)"
-				})
+						toLength: 4, withPad: " ", startingAt: 0
+					) + "| \($0.output.1)"
+				}
+			)
 
 		}.joined(separator: "\n")
 	}
@@ -74,7 +77,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		return copy.add(content)
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedCallExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedCallExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			dump(expr.calleeAnalyzed)
@@ -84,7 +87,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedDefExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedDefExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -93,7 +96,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedErrorSyntax, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedErrorSyntax, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -102,7 +105,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedLiteralExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedLiteralExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -111,7 +114,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedVarExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedVarExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -120,7 +123,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedBinaryExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedBinaryExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -129,7 +132,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedUnaryExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedUnaryExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -138,7 +141,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedIfExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedIfExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -147,7 +150,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedFuncExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedFuncExpr, _: Void) throws -> String {
 		dump(expr, "name: \(expr.name?.lexeme ?? "<none>"), params: \(expr.analyzedParams.paramsAnalyzed.map(\.debugDescription))")
 		indent {
 			for child in expr.analyzedChildren {
@@ -156,7 +159,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedBlockStmt, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedBlockStmt, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -165,7 +168,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedWhileStmt, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedWhileStmt, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -174,7 +177,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedParamsExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedParamsExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -183,7 +186,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedReturnExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedReturnExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -192,7 +195,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedIdentifierExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedIdentifierExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -201,7 +204,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedMemberExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedMemberExpr, _: Void) throws -> String {
 		dump(expr, "name: \(expr.property.debugDescription)")
 		indent {
 			for child in expr.analyzedChildren {
@@ -210,7 +213,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedDeclBlock, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedDeclBlock, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -219,7 +222,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedStructExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedStructExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -228,7 +231,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedVarDecl, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedVarDecl, _: Void) throws -> String {
 		dump(expr, "name: \(expr.name)")
 		indent {
 			for child in expr.analyzedChildren {
@@ -237,7 +240,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedLetDecl, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedLetDecl, _: Void) throws -> String {
 		dump(expr, "name: \(expr.name)")
 		indent {
 			for child in expr.analyzedChildren {
@@ -246,7 +249,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedImportStmt, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedImportStmt, _: Void) throws -> String {
 		dump(expr, expr.module.debugDescription)
 		indent {
 			for child in expr.analyzedChildren {
@@ -255,7 +258,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedInitDecl, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedInitDecl, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -264,7 +267,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedGenericParams, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedGenericParams, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -273,7 +276,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedTypeExpr, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedTypeExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -282,7 +285,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedExprStmt, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedExprStmt, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -291,7 +294,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedIfStmt, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedIfStmt, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {
@@ -300,7 +303,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedStructDecl, _ context: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedStructDecl, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {

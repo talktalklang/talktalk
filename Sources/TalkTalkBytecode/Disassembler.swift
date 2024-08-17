@@ -13,7 +13,7 @@ public struct Disassembler {
 		self.chunk = chunk
 	}
 
-	mutating public func disassemble() -> [Instruction] {
+	public mutating func disassemble() -> [Instruction] {
 		var result: [Instruction] = []
 
 		while let next = next() {
@@ -23,7 +23,7 @@ public struct Disassembler {
 		return result
 	}
 
-	mutating public func next() -> Instruction? {
+	public mutating func next() -> Instruction? {
 		if current == chunk.code.count {
 			return nil
 		}
@@ -112,7 +112,7 @@ public struct Disassembler {
 		let subchunk = chunk.getChunk(at: Int(closureSlot))
 
 		var upvalues: [ClosureMetadata.Upvalue] = []
-		for _ in 0..<subchunk.upvalueCount {
+		for _ in 0 ..< subchunk.upvalueCount {
 			let isLocal = chunk.code[current++] == 1
 			let index = chunk.code[current++]
 
@@ -129,7 +129,7 @@ public struct Disassembler {
 		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
-	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) -> Instruction {
+	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type _: VariableMetadata.VariableType) -> Instruction {
 		let slot = chunk.code[current++]
 		let options = chunk.code[current++]
 

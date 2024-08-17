@@ -7,15 +7,15 @@
 
 import Foundation
 
-public struct Library {
+public enum Library {
 	static var libraryURL: URL {
 		#if DEBUG
-		Bundle.module.resourceURL!
+			Bundle.module.resourceURL!
 		#else
-		URL.currentDirectory().appending(path: "Library")
+			URL.currentDirectory().appending(path: "Library")
 		#endif
 	}
-	
+
 	public static var standardLibraryURL: URL {
 		libraryURL.appending(path: "Standard")
 	}
@@ -32,7 +32,7 @@ public struct Library {
 		var fileURLs: Set<URL> = []
 		for case let fileURL as URL in enumerator {
 			guard let resourceValues = try? fileURL.resourceValues(forKeys: [.nameKey, .isDirectoryKey]),
-						let isDirectory = resourceValues.isDirectory
+			      let isDirectory = resourceValues.isDirectory
 			else {
 				print("skipping \(fileURL)")
 				continue
@@ -46,4 +46,3 @@ public struct Library {
 		return fileURLs
 	}
 }
-

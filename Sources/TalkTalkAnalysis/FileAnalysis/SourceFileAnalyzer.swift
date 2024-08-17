@@ -375,7 +375,7 @@ public struct SourceFileAnalyzer: Visitor {
 			expr: expr,
 			environment: context,
 			analysisErrors: [
-				AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location)
+				AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location),
 			],
 			isMutable: false
 		)
@@ -386,7 +386,8 @@ public struct SourceFileAnalyzer: Visitor {
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
 		if lhs.typeID.current == .pointer,
-			 [.int, .placeholder].contains(rhs.typeID.current) {
+		   [.int, .placeholder].contains(rhs.typeID.current)
+		{
 			// This is pointer arithmetic
 			// TODO: More generic handling of different operand types
 			rhs.typeID.current = .int
@@ -607,7 +608,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any GenericParams, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: any GenericParams, _: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedGenericParams(
 			wrapped: expr,
 			typeID: TypeID(),
@@ -653,8 +654,8 @@ public struct SourceFileAnalyzer: Visitor {
 				environment: context,
 				analysisErrors: [],
 				isMutable: false
-			)
-			,
+			),
+
 			isMutable: false
 		)
 
@@ -925,7 +926,7 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any IfStmt, _ context: Environment) throws -> any AnalyzedSyntax {
-		return try AnalyzedIfStmt(
+		try AnalyzedIfStmt(
 			wrapped: expr,
 			typeID: TypeID(.void),
 			conditionAnalyzed: expr.condition.accept(self, context) as! AnalyzedExpr,
@@ -934,7 +935,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_: any StructExpr, _: Environment) throws -> any AnalyzedSyntax {
 		fatalError("TODO")
 	}
 
@@ -995,12 +996,12 @@ public struct SourceFileAnalyzer: Visitor {
 		case let receiver as AnalyzedVarExpr:
 			let binding = env.lookup(receiver.name)
 
-			if !receiver.isMutable || (binding?.isMutable == false){
+			if !receiver.isMutable || (binding?.isMutable == false) {
 				return [
 					AnalysisError(
 						kind: .cannotReassignLet(variable: receiver),
 						location: receiver.location
-					)
+					),
 				]
 			}
 		case let receiver as AnalyzedMemberExpr:

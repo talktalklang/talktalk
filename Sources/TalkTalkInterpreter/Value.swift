@@ -33,12 +33,12 @@ public struct StructInstance {
 public indirect enum Value: Equatable, Comparable {
 	case int(Int),
 	     bool(Bool),
-			 string(String),
+	     string(String),
 	     none,
 	     error(String),
 	     fn(Closure),
 	     method(AnalyzedFuncExpr, StructInstance),
-			 type(String),
+	     type(String),
 	     `struct`(StructType),
 	     instance(StructInstance),
 	     `return`(Value),
@@ -60,44 +60,44 @@ public indirect enum Value: Equatable, Comparable {
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch (lhs, rhs) {
 		case let (.string(lhs), .string(rhs)):
-			return lhs == rhs
+			lhs == rhs
 		case let (.int(lhs), .int(rhs)):
-			return lhs == rhs
+			lhs == rhs
 		case let (.bool(lhs), .bool(rhs)):
-			return lhs == rhs
+			lhs == rhs
 		case let (.fn(lhs), .fn(rhs)):
-			return lhs.funcExpr.i == rhs.funcExpr.i
+			lhs.funcExpr.i == rhs.funcExpr.i
 		default:
-			return false
+			false
 		}
 	}
 
 	public var type: Value {
 		switch self {
-		case .int(let int):
-				.type("int")
-		case .bool(let bool):
-				.type("bool")
-		case .string(let string):
-				.type("String")
+		case let .int(int):
+			.type("int")
+		case let .bool(bool):
+			.type("bool")
+		case let .string(string):
+			.type("String")
 		case .none:
-				.type("none")
-		case .error(let string):
-				.type("error")
-		case .fn(let closure):
-				.type("int")
-		case .method(let analyzedFuncExpr, let structInstance):
-				.type("Function")
-		case .type(let string):
-				.type(string)
-		case .struct(let structType):
-				.type("Struct")
-		case .instance(let structInstance):
-				.type(structInstance.type.name!)
-		case .return(let value):
-				.type("Return")
-		case .builtin(let string):
-				.type(string)
+			.type("none")
+		case let .error(string):
+			.type("error")
+		case let .fn(closure):
+			.type("int")
+		case let .method(analyzedFuncExpr, structInstance):
+			.type("Function")
+		case let .type(string):
+			.type(string)
+		case let .struct(structType):
+			.type("Struct")
+		case let .instance(structInstance):
+			.type(structInstance.type.name!)
+		case let .return(value):
+			.type("Return")
+		case let .builtin(string):
+			.type(string)
 		}
 	}
 
@@ -114,11 +114,11 @@ public indirect enum Value: Equatable, Comparable {
 
 	public var isTruthy: Bool {
 		switch self {
-		case .type(_):
+		case .type:
 			true
 		case .int:
 			true
-		case .string(_):
+		case .string:
 			true
 		case .method:
 			true

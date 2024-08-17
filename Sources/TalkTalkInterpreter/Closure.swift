@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-import TalkTalkSyntax
 import TalkTalkAnalysis
+import TalkTalkSyntax
 
 public class Closure {
 	let funcExpr: AnalyzedFuncExpr

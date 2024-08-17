@@ -36,7 +36,7 @@ public class Environment {
 	public func report(_ kind: AnalysisErrorKind, at location: SourceLocation) -> AnalysisError {
 		let error = AnalysisError(kind: kind, location: location)
 
-		if let parent = parent {
+		if let parent {
 			return parent.report(kind, at: location)
 		}
 
@@ -60,7 +60,7 @@ public class Environment {
 
 	public func allBindings() -> [Binding] {
 		var result = Array(locals.values)
-		result.append(contentsOf: BuiltinFunction.list.map({ $0.binding(in: self) }))
+		result.append(contentsOf: BuiltinFunction.list.map { $0.binding(in: self) })
 		return result
 	}
 
@@ -88,8 +88,9 @@ public class Environment {
 			return .byte
 		default:
 			if let scope = getLexicalScope()?.scope,
-				 let scopeName = scope.name,
-				 let typeParameter = scope.typeParameters.first(where: { $0.name == name }) {
+			   let scopeName = scope.name,
+			   let typeParameter = scope.typeParameters.first(where: { $0.name == name })
+			{
 				return .generic(.struct(scopeName), typeParameter.name)
 			} else if let structType = lookupStruct(named: name) {
 				return .struct(structType.name ?? "<anon struct>")
@@ -160,9 +161,7 @@ public class Environment {
 			}
 		}
 
-		if name == "foo" {
-
-		}
+		if name == "foo" {}
 
 		for module in importedModules {
 			var symbol: Symbol?

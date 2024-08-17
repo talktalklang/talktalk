@@ -1,5 +1,5 @@
 //
-//  Message.swift
+//  Request.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/5/24.
@@ -28,9 +28,9 @@ enum RequestID: Equatable, Codable, Sendable, Hashable {
 		var container = encoder.singleValueContainer()
 
 		switch self {
-		case .integer(let int):
+		case let .integer(int):
 			try container.encode(int)
-		case .string(let string):
+		case let .string(string):
 			try container.encode(string)
 		}
 	}
@@ -91,10 +91,10 @@ struct Request: Equatable, Codable, Sendable {
 		case .cancelRequest:
 			try container.decode(CancelParams.self, forKey: .params)
 		case .initialize,
-				.initialized,
-				.shutdown,
-				.textDocumentDidClose,
-				.workspaceSemanticTokensRefresh:
+		     .initialized,
+		     .shutdown,
+		     .textDocumentDidClose,
+		     .workspaceSemanticTokensRefresh:
 			nil
 		}
 	}

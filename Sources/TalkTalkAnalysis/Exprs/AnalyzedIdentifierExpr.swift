@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedIdentifierExpr: AnalyzedExpr, IdentifierExpr {
 	public let typeID: TypeID
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
 	}
 
@@ -21,9 +21,7 @@ public struct AnalyzedIdentifierExpr: AnalyzedExpr, IdentifierExpr {
 	public let environment: Environment
 	public var children: [any Syntax] { expr.children }
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : TalkTalkSyntax.Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
 		try visitor.visit(self, scope)
 	}
-
-
 }

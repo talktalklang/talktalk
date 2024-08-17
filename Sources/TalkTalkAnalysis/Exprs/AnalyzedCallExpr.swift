@@ -10,13 +10,13 @@ import TalkTalkSyntax
 public struct AnalyzedArgument: Syntax, AnalyzedSyntax {
 	public var typeID: TypeID { expr.typeID }
 	public var analyzedChildren: [any AnalyzedSyntax] { expr.analyzedChildren }
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V : AnalyzedVisitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try expr.accept(visitor, scope)
 	}
 
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
-	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try expr.accept(visitor, context)
 	}
 
@@ -33,6 +33,7 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[calleeAnalyzed] + argsAnalyzed.map(\.expr)
 	}
+
 	public var analysisErrors: [AnalysisError]
 	public let environment: Environment
 

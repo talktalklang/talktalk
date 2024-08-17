@@ -105,7 +105,7 @@ public struct VirtualMachine {
 					()
 				case .verbose:
 					_ = dumpInstruction()
-				case .lineByLine(let string):
+				case let .lineByLine(string):
 					if let i = dumpInstruction() {
 						let line = string.components(separatedBy: .newlines)[Int(i.line)]
 						FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
@@ -151,7 +151,7 @@ public struct VirtualMachine {
 				stack.push(result)
 
 				// Update frame instances to reflect changes that happened in last frame
-				for i in 0..<currentFrame.instances.count {
+				for i in 0 ..< currentFrame.instances.count {
 					currentFrame.instances[i] = calledFrame.instances[i]
 				}
 
@@ -212,7 +212,7 @@ public struct VirtualMachine {
 					let bytes = lhs.bytes + rhs.bytes
 					let addr = heap.allocate(count: bytes.count)
 
-					for i in 0..<bytes.count {
+					for i in 0 ..< bytes.count {
 						heap.store(block: addr, offset: i, value: .byte(bytes[i]))
 					}
 
@@ -222,49 +222,49 @@ public struct VirtualMachine {
 				}
 			case .subtract:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot subtract none int operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot divide none int operands")
 				}
 				stack.push(.int(lhs / rhs))
 			case .multiply:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot multiply none int operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				guard let lhs = stack.pop().intValue,
-					let rhs = stack.pop().intValue
+				      let rhs = stack.pop().intValue
 				else {
 					return runtimeError("Cannot compare none int operands")
 				}
@@ -310,7 +310,7 @@ public struct VirtualMachine {
 
 				// Capture upvalues
 				var upvalues: [Upvalue] = []
-				for _ in 0..<subchunk.upvalueCount {
+				for _ in 0 ..< subchunk.upvalueCount {
 					let isLocal = readByte() == 1
 					let index = readByte()
 
@@ -398,7 +398,7 @@ public struct VirtualMachine {
 				// Pop the receiver off the stack
 				let receiver = stack.pop()
 				switch receiver {
-				case .instance(_, let receiver):
+				case let .instance(_, receiver):
 					let instance = currentFrame.instances[Int(receiver)]
 
 					if propertyOptions.contains(.isMethod) {
@@ -444,15 +444,15 @@ public struct VirtualMachine {
 
 	mutating func call(_ callee: Value) {
 		switch callee {
-		case .closure(let chunkID):
+		case let .closure(chunkID):
 			call(closureID: Int(chunkID))
-		case .builtin(let builtin):
+		case let .builtin(builtin):
 			call(builtin: Int(builtin))
-		case .moduleFunction(let moduleFunction):
+		case let .moduleFunction(moduleFunction):
 			call(moduleFunction: Int(moduleFunction))
-		case .struct(let structValue):
+		case let .struct(structValue):
 			call(structValue: .init(structValue))
-		case .boundMethod(let methodSlot, let instanceID):
+		case let .boundMethod(methodSlot, instanceID):
 			call(boundMethod: methodSlot, on: instanceID)
 		default:
 			fatalError("\(callee) is not callable")
@@ -460,7 +460,7 @@ public struct VirtualMachine {
 	}
 
 	mutating func call(boundMethod methodSlot: Value.IntValue, onBuiltin instanceID: Value.IntValue) {
-		stack.pop()  // Pop the method off the stack
+		stack.pop() // Pop the method off the stack
 
 		let instance = currentFrame.builtinInstances[Int(instanceID)]
 		let arity = instance.arity(for: Int(methodSlot))
@@ -588,10 +588,10 @@ public struct VirtualMachine {
 
 	func inspect(_ value: Value) -> String {
 		switch value {
-		case .string(let string):
-			return string
+		case let .string(string):
+			string
 		default:
-			return value.description
+			value.description
 		}
 	}
 
@@ -605,21 +605,21 @@ public struct VirtualMachine {
 			let value = stack.peek()
 			print(inspect(value))
 		case ._allocate:
-			if case .int(let count) = stack.pop() {  // Get the capacity
+			if case let .int(count) = stack.pop() { // Get the capacity
 				let address = heap.allocate(count: Int(count))
 				stack.push(.pointer(.init(address), .init(0)))
 			}
 		case ._deref:
-			if case .pointer(let blockID, let offset) = stack.pop(),
-				let value = heap.dereference(block: Int(blockID), offset: Int(offset))
+			if case let .pointer(blockID, offset) = stack.pop(),
+			   let value = heap.dereference(block: Int(blockID), offset: Int(offset))
 			{
 				stack.push(value)
 			}
 		case ._free:
-			()  // TODO:
+			() // TODO:
 		case ._storePtr:
 			let value = stack.pop()
-			if case .pointer(let blockID, let offset) = stack.pop() {
+			if case let .pointer(blockID, offset) = stack.pop() {
 				heap.store(block: Int(blockID), offset: Int(offset), value: value)
 			}
 		}

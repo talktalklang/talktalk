@@ -5,13 +5,13 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkAnalysis
-import TalkTalkBytecode
 import Foundation
 import MessagePack
+import TalkTalkAnalysis
+import TalkTalkBytecode
 
 public protocol ModuleEncoder {
-	func encode<T>(_ value: T) throws -> Data where T : Encodable
+	func encode<T>(_ value: T) throws -> Data where T: Encodable
 }
 
 public protocol ModuleDecoder {

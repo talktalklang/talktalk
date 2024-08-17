@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import Testing
-import TalkTalkVM
-import TalkTalkCompiler
 import TalkTalkBytecode
+import TalkTalkCompiler
+import TalkTalkVM
+import Testing
 
 @MainActor
 struct VMTests {
@@ -23,7 +23,7 @@ struct VMTests {
 
 	@Test func int() throws {
 		let chunk = chunk([
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123)))
+			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
 		])
 
 		let result = VirtualMachine.run(module: .main(chunk))
@@ -34,7 +34,7 @@ struct VMTests {
 		let chunk = chunk([
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(10))),
 			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .add, offset: 4, line: 1, metadata: .simple)
+			Instruction(opcode: .add, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = try VirtualMachine.run(module: .main(chunk)).get()
@@ -45,7 +45,7 @@ struct VMTests {
 		let chunk = chunk([
 			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(5))),
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .subtract, offset: 4, line: 1, metadata: .simple)
+			Instruction(opcode: .subtract, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = VirtualMachine.run(module: .main(chunk))
@@ -56,7 +56,7 @@ struct VMTests {
 		let chunk = chunk([
 			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(10))),
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .divide, offset: 4, line: 1, metadata: .simple)
+			Instruction(opcode: .divide, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = VirtualMachine.run(module: .main(chunk))
@@ -67,7 +67,7 @@ struct VMTests {
 		let chunk = chunk([
 			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(20))),
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(10))),
-			Instruction(opcode: .multiply, offset: 4, line: 1, metadata: .simple)
+			Instruction(opcode: .multiply, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = VirtualMachine.run(module: .main(chunk))

@@ -11,15 +11,15 @@
 	}
 
 	static func buildOptional(_ component: String?) -> String {
-		return component ?? ""
+		component ?? ""
 	}
 
 	static func buildEither(first component: String) -> String {
-		return component
+		component
 	}
 
 	static func buildEither(second component: String) -> String {
-		return component
+		component
 	}
 
 	static func buildArray(_ components: [String]) -> String {
@@ -49,8 +49,10 @@ public struct ASTPrinter: Visitor {
 				with: {
 					// Tidy line numbers
 					$0.output.2.trimmingCharacters(in: .whitespacesAndNewlines).padding(
-						toLength: 4, withPad: " ", startingAt: 0) + "| \($0.output.1)"
-				})
+						toLength: 4, withPad: " ", startingAt: 0
+					) + "| \($0.output.1)"
+				}
+			)
 
 		}.joined(separator: "\n")
 	}
@@ -74,7 +76,7 @@ public struct ASTPrinter: Visitor {
 		return copy.add(content)
 	}
 
-	@StringBuilder public func visit(_ expr: any ImportStmt, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any ImportStmt, _: Context) throws -> String {
 		dump(expr, "module: \(expr.module.name)")
 	}
 
@@ -87,7 +89,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any TypeExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any TypeExpr, _: Context) throws -> String {
 		dump(expr)
 	}
 
@@ -106,7 +108,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any GenericParams, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any GenericParams, _: Context) throws -> String {
 		dump(expr)
 		indent {
 			for param in expr.params {
@@ -142,20 +144,19 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any IdentifierExpr, _ context: Context) throws -> String
-	{
+	@StringBuilder public func visit(_ expr: any IdentifierExpr, _: Context) throws -> String {
 		dump(expr, "name: \(expr.name)")
 	}
 
-	@StringBuilder public func visit(_ expr: ParseError, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ParseError, _: Context) throws -> String {
 		dump(expr, expr.message)
 	}
 
-	@StringBuilder public func visit(_ expr: any LiteralExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any LiteralExpr, _: Context) throws -> String {
 		dump(expr, "value: \(expr.value)")
 	}
 
-	@StringBuilder public func visit(_ expr: any VarExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any VarExpr, _: Context) throws -> String {
 		dump(expr, "name: \(expr.name)")
 	}
 
@@ -207,7 +208,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any Param, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any Param, _: Context) throws -> String {
 		dump(expr)
 	}
 
@@ -227,11 +228,11 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any VarDecl, _: Context) throws -> String {
 		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
 	}
 
-	@StringBuilder public func visit(_ expr: any LetDecl, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any LetDecl, _: Context) throws -> String {
 		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
 	}
 
@@ -253,7 +254,6 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-
 	@StringBuilder public func visit(_ expr: any StructDecl, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
@@ -262,7 +262,6 @@ public struct ASTPrinter: Visitor {
 			}
 		}
 	}
-
 
 	// GENERATOR_INSERTION
 }

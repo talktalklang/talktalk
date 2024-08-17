@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import Testing
 import TalkTalkBytecode
+import Testing
 
 @MainActor
 struct ValueTests {

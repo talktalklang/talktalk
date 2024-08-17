@@ -13,5 +13,3 @@ protocol HoverParams {
 protocol HoverResult {
 	var value: String { get }
 }
-
-

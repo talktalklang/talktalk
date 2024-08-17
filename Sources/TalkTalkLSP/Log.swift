@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Log {
+public enum Log {
 	public static func info(_ message: String) {
 		log("[info] " + message)
 	}

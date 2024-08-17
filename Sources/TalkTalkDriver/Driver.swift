@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import TalkTalkCore
-import TalkTalkBytecode
 import TalkTalkAnalysis
-import TalkTalkSyntax
+import TalkTalkBytecode
 import TalkTalkCompiler
+import TalkTalkCore
+import TalkTalkSyntax
 
 public struct Driver {
 	let directories: [URL]
@@ -57,7 +57,7 @@ public struct Driver {
 	}
 }
 
-fileprivate extension Driver {
+private extension Driver {
 	static func findCompilationUnits(directories: [URL]) -> [CompilationUnit] {
 		directories.map {
 			guard let enumerator = FileManager.default.enumerator(at: $0, includingPropertiesForKeys: [.nameKey]) else {
@@ -67,7 +67,7 @@ fileprivate extension Driver {
 			var fileURLs: [URL] = []
 			for case let fileURL as URL in enumerator {
 				guard let resourceValues = try? fileURL.resourceValues(forKeys: [.nameKey, .isDirectoryKey]),
-							let isDirectory = resourceValues.isDirectory
+				      let isDirectory = resourceValues.isDirectory
 				else {
 					continue
 				}

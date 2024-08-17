@@ -80,7 +80,6 @@ struct InterpreterTests {
 		""").evaluate() == .int(5))
 	}
 
-
 	@Test("Evaluates counter") func counter() {
 		try! #expect(Interpreter("""
 		func makeCounter() {
@@ -90,7 +89,7 @@ struct InterpreterTests {
 				return count
 			}
 		}
-		
+
 		let mycounter = makeCounter()
 		mycounter()
 		mycounter()
@@ -107,7 +106,7 @@ struct InterpreterTests {
 				count
 			}
 		}
-		
+
 		let mycounter = makeCounter()
 		mycounter()
 		mycounter()
