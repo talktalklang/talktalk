@@ -49,6 +49,10 @@ public actor Server {
 		analysis.analyzedFiles.map(\.path)
 	}
 
+	func completions(for request: Completion.Request) -> [Completion.Item] {
+		analysis.completions(for: request).sorted()
+	}
+
 	func getSource(_ uri: String) -> SourceDocument? {
 		sources[uri]
 	}
@@ -61,7 +65,8 @@ public actor Server {
 				ParsedSourceFile(
 					path: document.uri,
 					syntax: Parser.parse(
-						SourceFile(path: document.uri, text: document.text)
+						SourceFile(path: document.uri, text: document.text),
+						allowErrors: true
 					)
 				)
 			)

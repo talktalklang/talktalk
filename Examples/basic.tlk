@@ -6,5 +6,8 @@ struct Person {
 
 var person = Person()
 person.greet()
+person
 
-let array = Array<int>()
+let a = Array()
+
+

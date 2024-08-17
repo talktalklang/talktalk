@@ -35,11 +35,18 @@ public struct ModuleAnalyzer {
 	}
 
 	public func analyze() throws -> AnalysisModule {
+		var analysisModule = AnalysisModule(name: name, files: files)
+
 		for module in importedModules {
 			environment.importModule(module)
-		}
 
-		var analysisModule = AnalysisModule(name: name, files: files)
+			if module.name == "Standard" {
+				// Always make standard types available
+				for (name, structType) in module.structs {
+					analysisModule.structs[name] = structType
+				}
+			}
+		}
 
 		// Find all the top level stuff this module has to offer
 		for file in files {

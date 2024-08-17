@@ -60,6 +60,12 @@ public class Environment {
 
 	public func allBindings() -> [Binding] {
 		var result = Array(locals.values)
+		var parent = parent
+		while let nextParent = parent {
+			result.append(contentsOf: nextParent.allBindings())
+			parent = nextParent
+		}
+
 		result.append(contentsOf: BuiltinFunction.list.map { $0.binding(in: self) })
 		return result
 	}
