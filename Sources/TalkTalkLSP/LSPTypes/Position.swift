@@ -7,12 +7,12 @@
 
 import TalkTalkSyntax
 
-public struct Range: Codable, Sendable {
+public struct Range: Codable, Sendable, Hashable {
 	public let start: Position
 	public let end: Position
 }
 
-public struct Position: Codable, Sendable {
+public struct Position: Codable, Sendable, Hashable {
 	public let line: Int
 	public let character: Int
 }

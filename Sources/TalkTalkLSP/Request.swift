@@ -94,7 +94,8 @@ struct Request: Equatable, Codable, Sendable {
 		     .initialized,
 		     .shutdown,
 		     .textDocumentDidClose,
-		     .workspaceSemanticTokensRefresh:
+		     .workspaceSemanticTokensRefresh,
+		     .textDocumentPublishDiagnostics:
 			nil
 		}
 	}

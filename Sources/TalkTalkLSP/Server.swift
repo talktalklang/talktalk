@@ -34,12 +34,14 @@ public actor Server {
 	init() async throws {
 		self.stdlib = try await StandardLibrary.compile()
 		Log.info("Compiled stdlib")
+
 		self.analyzer = ModuleAnalyzer(
 			name: "LSP",
 			files: [],
 			moduleEnvironment: ["Standard": stdlib.analysis],
 			importedModules: [stdlib.analysis]
 		)
+
 		self.analysis = try analyzer.analyze()
 	}
 
@@ -103,6 +105,13 @@ public actor Server {
 		queue.append(request)
 	}
 
+	func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
+		analyze()
+		return try analysis.collectErrors(for: uri).map {
+			$0.diagnostic()
+		}
+	}
+
 	func perform(_ request: Request) async {
 		Log.info("handling request: \(request.method)")
 		switch request.method {
@@ -129,6 +138,8 @@ public actor Server {
 		case .textDocumentSemanticTokensFull:
 			await TextDocumentSemanticTokensFull(request: request).handle(self)
 		case .workspaceSemanticTokensRefresh:
+			()
+		case .textDocumentPublishDiagnostics:
 			()
 		case .shutdown:
 			Log.info("shutting down!")

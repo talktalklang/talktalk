@@ -16,44 +16,11 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public init() {}
 
-	public static func diagnostics(
-		text: SourceFile,
-		environment: Environment
-	) throws -> Set<AnalysisError> {
-		let parsed = try Parser.parse(text, allowErrors: true)
-		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
-
-		func collect(syntaxes: [any AnalyzedSyntax]) -> Set<AnalysisError> {
-			var result: Set<AnalysisError> = []
-
-			for syntax in syntaxes {
-				if let err = syntax as? ParseError {
-					// TODO: We wanna move away from this towards nodes just having their own errors
-					result.insert(
-						AnalysisError(kind: .unknownError(err.message), location: syntax.location)
-					)
-				}
-
-				for error in syntax.analysisErrors {
-					result.insert(error)
-				}
-
-				for error in collect(syntaxes: syntax.analyzedChildren) {
-					result.insert(error)
-				}
-			}
-
-			return result
-		}
-
-		return collect(syntaxes: analyzed)
-	}
-
 	public static func analyze(_ exprs: [any Syntax], in environment: Environment) throws
 		-> [Value]
 	{
 		let analyzer = SourceFileAnalyzer()
-		var analyzed = try exprs.map {
+		let analyzed = try exprs.map {
 			try $0.accept(analyzer, environment)
 		}
 

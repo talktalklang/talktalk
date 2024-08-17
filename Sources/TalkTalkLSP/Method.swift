@@ -4,6 +4,7 @@ enum Method: String, Codable {
 	     shutdown,
 	     cancelRequest = "$/cancelRequest",
 	     textDocumentDefinition = "textDocument/definition",
+			 textDocumentPublishDiagnostics = "textDocument/publishDiagnostics",
 	     textDocumentDidOpen = "textDocument/didOpen",
 	     textDocumentDidClose = "textDocument/didClose",
 	     textDocumentDidChange = "textDocument/didChange",

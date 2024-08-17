@@ -6,19 +6,29 @@
 //
 import TalkTalkAnalysis
 import TalkTalkLSP
+import TalkTalkDriver
 import Testing
 
 @MainActor
 struct DiagnosticTests {
 	@Test("Error on trying to instantiate bad struct") func gets() throws {
-		let source = """
-		var a = Nope()
-		"""
+		let analyzer = ModuleAnalyzer(name: "Testing", files: ["var a = Nope()"], moduleEnvironment: [:], importedModules: [])
 
-		let diagnostics = try SourceFileAnalyzer.diagnostics(
-			text: .init(path: "", text: source),
-			environment: .init()
+		let module = try analyzer.analyze()
+		try #expect(!module.collectErrors().isEmpty)
+	}
+
+	@Test("Knows about stdlib") func stdlib() async throws {
+		let stdlib = try await StandardLibrary.compile()
+
+		let analyzer = ModuleAnalyzer(
+			name: "Testing",
+			files: ["var array = Array<int>()"],
+			moduleEnvironment: [:],
+			importedModules: [stdlib.analysis]
 		)
-		#expect(!diagnostics.isEmpty)
+
+		let module = try analyzer.analyze()
+		try #expect(module.collectErrors().isEmpty)
 	}
 }

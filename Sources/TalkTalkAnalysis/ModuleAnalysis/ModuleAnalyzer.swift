@@ -18,6 +18,7 @@ public struct ModuleAnalyzer {
 	public let environment: Environment
 	let visitor: SourceFileAnalyzer
 	public let moduleEnvironment: [String: AnalysisModule]
+	public let importedModules: [AnalysisModule]
 
 	public init(
 		name: String,
@@ -30,17 +31,14 @@ public struct ModuleAnalyzer {
 		self.environment = Environment(isModuleScope: true)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
-
-		for module in importedModules {
-			environment.importModule(module)
-		}
-	}
-
-	public var errors: [AnalysisError] {
-		environment.errors
+		self.importedModules = importedModules
 	}
 
 	public func analyze() throws -> AnalysisModule {
+		for module in importedModules {
+			environment.importModule(module)
+		}
+
 		var analysisModule = AnalysisModule(name: name, files: files)
 
 		// Find all the top level stuff this module has to offer

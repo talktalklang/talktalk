@@ -1,11 +1,12 @@
-makeCounter = func() {
-	count = 0
-	func() {
+func makeCounter() {
+	var count = 0
+
+	return func() {
 		count = count + 1
 		count
 	}
 }
 
-counter = makeCounter()
+let counter = makeCounter()
 counter()
 print(counter())

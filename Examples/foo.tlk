@@ -1,7 +1,11 @@
-i = 1
-a = func(x) {
+let a = Array()
+a.append(123)
+
+let i = 1
+let a = func(x) {
 	i + x
 }(2)
-printf(a)
+
+print(a)
 
 

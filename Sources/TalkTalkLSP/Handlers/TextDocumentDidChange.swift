@@ -21,6 +21,28 @@ struct TextDocumentDidChange {
 		}
 
 		await source.update(text: params.contentChanges[0].text)
+		await server.setSource(uri: params.textDocument.uri, to: source)
 		await server.analyze()
+
+		// Update the diagnostics for the file:
+//		do {
+//			let diagnostics = try await server.diagnostics(for: source.uri)
+//			let params = try await PublishDiagnosticsParams(
+//				uri: source.uri,
+//				diagnostics: server.diagnostics()
+//			)
+//
+//			Log.info("Publishing \(diagnostics.count) \(diagnostics) after update")
+//
+//			await server.request(
+//				Request(
+//					id: nil,
+//					method: .textDocumentPublishDiagnostics,
+//					params: params
+//				)
+//			)
+//		} catch {
+//			Log.error("error publishing diagnostics: \(error)")
+//		}
 	}
 }

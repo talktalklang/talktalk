@@ -194,7 +194,7 @@ struct ModuleAnalysisTests {
 	}
 
 	@Test("Add file to analyzer") func addFile() throws {
-		var analyzer = try analyzer(
+		var analyzer = analyzer(
 			name: "A",
 			[
 				"""

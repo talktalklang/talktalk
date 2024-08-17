@@ -36,9 +36,10 @@ extension StandardLibraryTest {
 			importedModules: [stdlib.analysis]
 		)
 		let analyzed = try analyzer.analyze()
+		let errors = try analyzed.collectErrors()
 
-		if !analyzer.errors.isEmpty {
-			throw CompilerError.analysisError(analyzer.errors.map { "\($0)" }.joined(separator: ", "))
+		if !errors.isEmpty {
+			throw CompilerError.analysisError(errors.map { "\($0)" }.joined(separator: ", "))
 		}
 
 		let module = try ModuleCompiler(
