@@ -268,6 +268,21 @@ struct CompilerTests {
 		))
 	}
 
+	@Test("Operating on upvalues") func operateOnUpvalue() throws {
+		let wrapper = try compile(
+			"""
+			var a = 10
+			func foo(i) {
+				a = a + i
+				return a
+			}
+			return a(10)
+			"""
+		)
+
+		#expect(false)
+	}
+
 	@Test("Modifying upvalues") func modifyUpvalue() throws {
 		let wrapper = try compile(
 			"""
@@ -348,6 +363,55 @@ struct CompilerTests {
 		)
 
 		#expect(subchunk.disassemble() == subexpected)
+	}
+
+	@Test("Compiles factorial") func factorials() throws {
+		let chunk = try compile(
+			"""
+			func fact(n) {
+				if n <= 1 {
+					return 1
+				} else {
+					return n * fact(n - 1)
+				}
+			}
+
+			return fact(3)
+			"""
+		)
+
+		#expect(chunk.disassemble() == Instructions(
+			.op(.defClosure, line: 0, .closure(arity: 1, depth: 0, upvalues: [])),
+			.op(.constant, line: 8, .constant(.int(3))),
+			.op(.getLocal, line: 8, .local(slot: 1, name: "fact")),
+			.op(.call, line: 8),
+			.op(.return, line: 8),
+			.op(.return, line: 0)
+		))
+
+		#expect(chunk.getChunk(at: 0).disassemble() == Instructions(
+			.op(.setLocal, line: 0, .local(slot: 1, name: "n")),
+			.op(.defClosure, line: 0, .closure(arity: 1, depth: 0)),
+			.op(.constant, line: 1, .constant(.int(1))),
+			.op(.getLocal, line: 1, .local(slot: 1, name: "n")),
+			.op(.lessEqual, line: 1),
+			.op(.jumpUnless, line: 1, .jump(offset: 7)),
+			.op(.pop, line: 1),
+			.op(.constant, line: 2, .constant(.int(1))),
+			.op(.return, line: 2),
+			.op(.jump, line: 3, .jump(offset: 12)),
+
+			.op(.constant, line: 4, .constant(.int(1))),
+			.op(.getLocal, line: 4, .local(slot: 1, name: "n")),
+			.op(.subtract, line: 4),
+
+			.op(.getLocal, line: 4, .local(slot: 2, name: "fact")),
+			.op(.call, line: 4),
+			.op(.getLocal, line: 4, .local(slot: 1, name: "n")),
+			.op(.multiply, line: 4),
+			.op(.return, line: 4),
+			.op(.return, line: 6)
+		))
 	}
 
 	@Test("Cleans up locals") func cleansUpLocals() throws {

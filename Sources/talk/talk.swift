@@ -46,6 +46,7 @@ struct TalkCommand: TalkTalkCommand {
 			REPL.self,
 			Interpret.self,
 			LSP.self,
+			Run.self,
 			Compile.self,
 			AnalysisPrinter.self,
 		]

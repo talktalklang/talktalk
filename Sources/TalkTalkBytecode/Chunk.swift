@@ -97,6 +97,18 @@ public class Chunk: Codable {
 		return subchunks[index]
 	}
 
+	public func maybeGetChunk(at index: Int) -> Chunk? {
+		if let parent {
+			return parent.maybeGetChunk(at: index)
+		}
+
+		if subchunks.indices.contains(index) {
+			return subchunks[index]
+		} else {
+			return nil
+		}
+	}
+
 	public func getSubchunks(named names: Set<String>) -> [Chunk] {
 		var result: [Chunk] = []
 

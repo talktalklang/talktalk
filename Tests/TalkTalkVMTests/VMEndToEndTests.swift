@@ -26,6 +26,9 @@ struct VMEndToEndTests {
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
+
+		try print(AnalysisPrinter.format(analysisModule.analyzedFiles[0].syntax))
+
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
 		return try compiler.compile(mode: .executable)
 	}
@@ -205,25 +208,77 @@ struct VMEndToEndTests {
 		#expect(result == .int(30))
 	}
 
-	@Test("Works with counter") func counter() throws {
-		let module = try compile(
+	@Test("Referencing external functions") func externalFunctions() throws {
+		_ = try run(
 			"""
-			func makeCounter() {
-				var count = 0
-				func increment() {
-					count = count + 1
-					return count
+			func foo() {}
+			func bar() {
+				foo()
+			}
+			"""
+			,verbosity: .verbose)
+	}
+
+	@Test("Works with counter") func counter() throws {
+		let source = """
+		func makeCounter() {
+			var count = 0
+			func increment() {
+				count = count + 1
+				return count
+			}
+			return increment
+		}
+
+		var mycounter = makeCounter()
+		mycounter()
+		return mycounter()
+		"""
+
+		let module = try compile(source)
+
+		let result = try VirtualMachine.run(module: module, verbosity: .lineByLine(source)).get()
+		#expect(result == .int(2))
+	}
+
+	@Test("Operating on upvalues") func operateOnUpvalue() throws {
+		let result = try run(
+			"""
+			var a = 10
+			func foo(i) {
+				a = a + i
+				return a
+			}
+			return foo(10)
+			"""
+		)
+
+		#expect(result == .int(30))
+	}
+
+	@Test("Runs fib") func fib() throws {
+		let source = """
+			func fib(n) {
+				if (n <= 1) {
+					return n
 				}
-				return increment
+
+				return fib(n - 2) + fib(n - 1)
 			}
 
-			var mycounter = makeCounter()
-			mycounter()
-			return mycounter()
-			""")
+			var i = 0
+			var n = 0
+			while i < 10 {
+				n = fib(i)
+				i = i + 1
+			}
 
-		let result = try VirtualMachine.run(module: module).get()
-		#expect(result == .int(2))
+			return n
+		"""
+
+		let result = try run(source)
+
+		#expect(result == .int(34))
 	}
 
 	@Test("Doesn't leak out of closures") func closureLeak() throws {

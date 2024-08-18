@@ -139,7 +139,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	public func disassemble(in chunk: Chunk) -> String {
 		switch self {
 		case .closure:
-			"closure(\(chunk.getChunk(at: Int(closureValue!)).name))"
+			"closure(\(chunk.maybeGetChunk(at: Int(closureValue!))?.name))"
 		default:
 			description
 		}

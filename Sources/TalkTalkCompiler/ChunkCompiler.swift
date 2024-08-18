@@ -264,17 +264,24 @@ public class ChunkCompiler: AnalyzedVisitor {
 			arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth)
 		)
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
-
-		if let name = expr.name {
-			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
-		}
+		let subchunkID = chunk.addChunk(functionChunk)
 
 		// Define the params for this function
-		for (i, parameter) in expr.analyzedParams.paramsAnalyzed.enumerated() {
-			_ = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
+		for parameter in expr.analyzedParams.paramsAnalyzed {
+			let variable = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
 
 			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
-			functionChunk.emit(byte: Byte(i), line: parameter.location.line)
+			functionChunk.emit(byte: Byte(variable.slot), line: parameter.location.line)
+		}
+
+		if let name = expr.name {
+			// Define the function local in its enclosing scope
+			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
+
+			// Define the function inside its body for recursion
+			_ = functionCompiler.defineLocal(name: name.lexeme, compiler: functionCompiler, chunk: functionChunk)
+			functionChunk.emit(opcode: .defClosure, line: expr.location.line)
+			functionChunk.emit(byte: Byte(subchunkID), line: expr.location.line)
 		}
 
 		// Emit the function body
@@ -290,7 +297,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
 		let line = UInt32(expr.location.line)
-		let subchunkID = chunk.addChunk(functionChunk)
 		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
 
 		for upvalue in functionCompiler.upvalues {
@@ -543,6 +549,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Fill in the initial placeholder bytes now that we know how big the consequence block was
 		try chunk.patchJump(thenJumpLocation)
+
 		// Pop the condition off the stack (TODO: why again?)
 //		chunk.emit(opcode: .pop, line: expr.conditionAnalyzed.location.line)
 
