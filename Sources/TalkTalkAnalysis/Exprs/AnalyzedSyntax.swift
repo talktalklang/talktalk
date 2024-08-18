@@ -11,6 +11,7 @@ public protocol AnalyzedSyntax: Syntax, CustomDebugStringConvertible {
 	var typeID: TypeID { get }
 	var analyzedChildren: [any AnalyzedSyntax] { get }
 	var analysisErrors: [AnalysisError] { get }
+	var environment: Environment { get }
 
 	func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor
 }

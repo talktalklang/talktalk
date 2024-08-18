@@ -24,10 +24,12 @@ public struct ModuleCompiler {
 		self.moduleEnvironment = moduleEnvironment
 	}
 
-	public func compile(mode: CompilationMode) throws -> Module {
+	public func compile(mode: CompilationMode, allowErrors: Bool = false) throws -> Module {
 		let errors = try analysisModule.collectErrors()
 		if !errors.isEmpty {
-			throw CompilerError.analysisErrors("Cannot compile, found \(errors.count) analysis errors: \(errors.map(\.message))")
+			if !allowErrors {
+				throw CompilerError.analysisErrors("Cannot compile \(name), found \(errors.count) analysis errors: \(errors.map(\.message))")
+			}
 		}
 
 		let module = CompilingModule(

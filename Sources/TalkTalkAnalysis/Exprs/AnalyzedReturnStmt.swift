@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
+public struct AnalyzedReturnStmt: AnalyzedStmt, ReturnStmt {
 	public let typeID: TypeID
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
@@ -15,7 +15,7 @@ public struct AnalyzedReturnExpr: AnalyzedExpr, ReturnExpr {
 
 	public let environment: Environment
 
-	let expr: any ReturnExpr
+	let expr: any ReturnStmt
 
 	public var returnToken: Token { expr.returnToken }
 	public var value: (any Expr)? { expr.value }

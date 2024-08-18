@@ -6,5 +6,6 @@
 //
 
 public protocol VarLetDecl: Decl, Stmt {
+	var name: String { get }
 	var nameToken: Token { get }
 }

@@ -161,16 +161,6 @@ struct TalkTalkLexerTests {
 
 	@Test("Columns") func columns() {
 		var lexer = TalkTalkLexer(
-			//			"""
-//			struct Person {
-//				func greet() {
-//					print("sup")
-//				}
-//			}
-//
-//			person = Person()
-//			person.greet()
-//			"""
 			"""
 			123
 			456

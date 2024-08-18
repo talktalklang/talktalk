@@ -32,7 +32,7 @@ public actor Server {
 	var analysis: AnalysisModule
 
 	init() async throws {
-		self.stdlib = try await StandardLibrary.compile()
+		self.stdlib = try await StandardLibrary.compile(allowErrors: true)
 		Log.info("Compiled stdlib")
 
 		self.analyzer = ModuleAnalyzer(

@@ -13,7 +13,7 @@ import Testing
 
 extension [Instruction]: @retroactive CustomTestStringConvertible {
 	public var testDescription: String {
-		map(\.description).joined(separator: "\n")
+		"\n" + map(\.description).joined(separator: "\n")
 	}
 }
 
@@ -169,10 +169,9 @@ struct ModuleCompilerTests {
 		let mainChunk = try #require(module.main?.getChunk(at: 0))
 		#expect(mainChunk.disassemble() == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 0)),
-			.op(.call, line: 8, .simple),
+			.op(.call, line: 8),
 			.op(.setModuleValue, line: 8, .global(slot: 0)),
-			.op(.pop, line: 8, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.return, line: 0)
 		))
 
 		let structDef = module.structs[0]

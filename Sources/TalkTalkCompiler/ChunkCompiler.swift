@@ -66,15 +66,19 @@ public class ChunkCompiler: AnalyzedVisitor {
 			return
 		}
 
-		if expr.exprAnalyzed is AnalyzedDefExpr {
-			// Don't pop def expr values off because we might need the local var.
-			// TODO: This might want to be a different kind of statement instead of a special case.
-//			return
+		switch expr.exitBehavior {
+		case .pop:
+			// Pop the expr off the stack because this is a statement so we don't care about the
+			// return value
+			chunk.emit(opcode: .pop, line: expr.location.line)
+		case .return:
+			// If this is the only statement in a block, we can sometimes implicitly return
+			// its expr instead of just popping it (like in a function body). We don't want to
+			// do this for things like if/while statements tho.
+			chunk.emit(opcode: .return, line: expr.location.line)
+		case .none:
+			() // Leave the value on the stack
 		}
-
-		// Pop the expr off the stack because this is a statement so we don't care about the
-		// return value
-		chunk.emit(opcode: .pop, line: expr.location.line)
 	}
 
 	public func visit(_: AnalyzedImportStmt, _: Chunk) throws {
@@ -98,14 +102,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
-		var variable = resolveVariable(
+		let variable = resolveVariable(
 			receiver: expr.receiverAnalyzed,
 			chunk: chunk
 		)
-
-		if variable == nil, let receiver = expr.receiverAnalyzed.as(AnalyzedVarExpr.self) {
-			variable = defineLocal(name: receiver.name, compiler: self, chunk: chunk)
-		}
 
 		guard let variable else {
 			throw CompilerError.unknownIdentifier(
@@ -120,33 +120,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		chunk.emit(opcode: variable.setter, line: expr.location.line)
 		chunk.emit(byte: variable.slot, line: expr.location.line)
-
-		// If this is a global module value, we want to evaluate it lazily. This is nice because
-		// it doesn't incur startup overhead as well as lets us not worry so much about the order
-		// in which files are evaluated.
-		//
-		// We save a lil chunk that initializes the value along with the module that can get called
-		// when the global is referenced to set the initial value.
-		if variable.setter == .setModuleValue {
-			let initializerChunk = Chunk(name: "$init_\(variable.name)")
-			let initializerCompiler = ChunkCompiler(module: module)
-
-			// Emit actual value initialization into the chunk
-			try expr.valueAnalyzed.accept(initializerCompiler, initializerChunk)
-
-			// Set the module value so it can be used going forward
-			initializerChunk.emit(opcode: .setModuleValue, line: expr.location.line)
-			initializerChunk.emit(byte: variable.slot, line: expr.location.line)
-
-			// Return the actual value
-			initializerChunk.emit(opcode: .getModuleValue, line: expr.location.line)
-			initializerChunk.emit(byte: variable.slot, line: expr.location.line)
-
-			// Return from the initialization chunk
-			initializerChunk.emit(opcode: .return, line: expr.location.line)
-
-			module.valueInitializers[.value(variable.name)] = initializerChunk
-		}
 
 //		if variable.setter == .setUpvalue {
 //			chunk.emit(opcode: .pop, line: expr.location.line)
@@ -273,9 +246,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// Emit the init body
-		for expr in expr.bodyAnalyzed.declsAnalyzed {
-			try expr.accept(initCompiler, initChunk)
-		}
+		try initCompiler.visit(expr.bodyAnalyzed, initChunk)
 
 		// End the scope, which pops locals
 		initCompiler.endScope(chunk: initChunk)
@@ -307,9 +278,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// Emit the function body
-		for expr in expr.bodyAnalyzed.stmtsAnalyzed {
-			try expr.accept(functionCompiler, functionChunk)
-		}
+		try functionCompiler.visit(expr.bodyAnalyzed, functionChunk)
 
 		// End the scope, which pops or captures locals
 		functionCompiler.endScope(chunk: functionChunk)
@@ -366,7 +335,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 		fatalError("TODO")
 	}
 
-	public func visit(_ expr: AnalyzedReturnExpr, _ chunk: Chunk) throws {
+	public func visit(_: AnalyzedParam, _: Chunk) throws {
+		fatalError("TODO")
+	}
+
+	public func visit(_ expr: AnalyzedReturnStmt, _ chunk: Chunk) throws {
 		try expr.valueAnalyzed?.accept(self, chunk)
 		chunk.emit(opcode: .return, line: expr.location.line)
 	}
@@ -418,11 +391,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Go through the body and collect the chunks (we don't want to emit them into the
 		// outer chunk)
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
-//			if let exprStmt = decl as? AnalyzedExprStmt {
-//				// Unwrap expr stmts
-//				decl = exprStmt.exprAnalyzed as! any AnalyzedDecl
-//			}
-
 			switch decl {
 			case let decl as AnalyzedInitDecl:
 				if expr.structType.methods["init"]?.isSynthetic == true {
@@ -510,18 +478,42 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedVarDecl, _ chunk: Chunk) throws {
-		if let value = expr.valueAnalyzed {
-			let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+		if expr.environment.isModuleScope {
+			// If it's at module scope, that means it's a global, which gets lazily initialized
+			let variable = try emitLazyInitializer(for: expr, in: chunk)
 
+			if let value = expr.valueAnalyzed {
+				try value.accept(self, chunk)
+				chunk.emit(opcode: .setModuleValue, line: value.location.line)
+				chunk.emit(byte: variable.slot, line: value.location.line)
+			}
+
+			return
+		}
+
+		let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+		if let value = expr.valueAnalyzed {
 			try value.accept(self, chunk)
-			chunk.emit(opcode: variable.setter, line: value.location.line)
+			chunk.emit(opcode: .setLocal, line: value.location.line)
 			chunk.emit(byte: variable.slot, line: value.location.line)
 		}
 	}
 
 	public func visit(_ expr: AnalyzedLetDecl, _ chunk: Chunk) throws {
-		let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+		if expr.environment.isModuleScope {
+			// If it's at module scope, that means it's a global, which gets lazily initialized
+			let variable = try emitLazyInitializer(for: expr, in: chunk)
 
+			if let value = expr.valueAnalyzed {
+				try value.accept(self, chunk)
+				chunk.emit(opcode: .setModuleValue, line: value.location.line)
+				chunk.emit(byte: variable.slot, line: value.location.line)
+			}
+
+			return
+		}
+
+		let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
 		if let value = expr.valueAnalyzed {
 			try value.accept(self, chunk)
 			chunk.emit(opcode: .setLocal, line: value.location.line)
@@ -574,12 +566,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Lookup the variable by name. If we've got it in our locals, just return the slot
 	// for that variable. If we don't, search parent chunks to see if they've got it. If
 	// they do, we've got an upvalue.
-	public func resolveVariable(receiver: any Syntax, chunk: Chunk) -> Variable? {
+	public func resolveVariable(receiver: any AnalyzedSyntax, chunk: Chunk) -> Variable? {
 		var varName: String?
 
-		if let syntax = receiver as? VarExpr {
+		if let syntax = receiver as? any VarExpr {
 			varName = syntax.name
-		} else if let syntax = receiver as? VarDecl {
+		} else if let syntax = receiver as? VarLetDecl {
 			varName = syntax.name
 		}
 
@@ -744,6 +736,39 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return nil
 	}
 
+	private func emitLazyInitializer(for expr: any AnalyzedVarLetDecl, in chunk: Chunk) throws -> Variable {
+		// If this is a global module value, we want to evaluate it lazily. This is nice because
+		// it doesn't incur startup overhead as well as lets us not worry so much about the order
+		// in which files are evaluated.
+		//
+		// We save a lil chunk that initializes the value along with the module that can get called
+		// when the global is referenced to set the initial value.
+		guard let variable = resolveVariable(receiver: expr, chunk: chunk) else {
+			throw CompilerError.unknownIdentifier(expr.nameToken.lexeme)
+		}
+
+		let initializerChunk = Chunk(name: "$initialize_\(variable.name)")
+		let initializerCompiler = ChunkCompiler(module: module)
+
+		// Emit actual value initialization into the chunk
+		try expr.valueAnalyzed?.accept(initializerCompiler, initializerChunk)
+
+		// Set the module value so it can be used going forward
+		initializerChunk.emit(opcode: .setModuleValue, line: expr.location.line)
+		initializerChunk.emit(byte: variable.slot, line: expr.location.line)
+
+		// Return the actual value
+		initializerChunk.emit(opcode: .getModuleValue, line: expr.location.line)
+		initializerChunk.emit(byte: variable.slot, line: expr.location.line)
+
+		// Return from the initialization chunk
+		initializerChunk.emit(opcode: .return, line: expr.location.line)
+
+		module.valueInitializers[.value(variable.name)] = initializerChunk
+
+		return variable
+	}
+
 	private func defineLocal(
 		name: String,
 		compiler: ChunkCompiler,
@@ -801,16 +826,24 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		for (variable, property) in variables {
-			chunk.emit(opcode: .getLocal, line: 0)
-			chunk.emit(byte: Byte(variable.slot), line: 0)
-			chunk.emit(opcode: .getLocal, line: 0)
-			chunk.emit(byte: 0, line: 0)
-			chunk.emit(opcode: .setProperty, line: 0)
-			chunk.emit(byte: Byte(property.slot), line: 0)
+			// Put the parameter value onto the stack
+			chunk.emit(opcode: .getLocal, line: 9999)
+			chunk.emit(byte: Byte(variable.slot), line: 9999)
+
+			// Get self
+			chunk.emit(opcode: .getLocal, line: 9999)
+			chunk.emit(byte: 0, line: 9999)
+
+			// Set the property on self
+			chunk.emit(opcode: .setProperty, line: 9999)
+			chunk.emit(byte: Byte(property.slot), line: 9999)
+
+			chunk.emit(opcode: .pop, line: 9999)
+			chunk.emit(opcode: .pop, line: 9999)
 		}
 
 		compiler.endScope(chunk: chunk)
-		chunk.emit(opcode: .return, line: 0)
+		chunk.emit(opcode: .return, line: 9999)
 
 		return chunk
 	}

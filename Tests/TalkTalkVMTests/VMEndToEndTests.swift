@@ -118,15 +118,17 @@ struct VMEndToEndTests {
 	}
 
 	@Test("If expr") func ifExpr() throws {
-		#expect(
-			try run(
-				"""
-				return if false {
-					123
-				} else {
-					456
-				}
-				""") == .int(456))
+		let result = try run(
+		"""
+			return if false {
+				123
+			} else {
+				456
+			}
+			"""
+		, verbosity: .verbose)
+
+		#expect(result == .int(456))
 	}
 
 	@Test("Var expr") func varExpr() throws {
@@ -395,7 +397,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {

@@ -16,17 +16,20 @@ struct Pipeline {
 	let mode: CompilationMode
 	let analyses: [String: AnalysisModule]
 	let modules: [String: Module]
+	let allowErrors: Bool
 
 	public init(
 		compilationUnit: CompilationUnit,
 		mode: CompilationMode = .module,
 		analyses: [String: AnalysisModule],
-		modules: [String: Module]
+		modules: [String: Module],
+		allowErrors: Bool
 	) {
 		self.compilationUnit = compilationUnit
 		self.mode = mode
 		self.analyses = analyses
 		self.modules = modules
+		self.allowErrors = allowErrors
 	}
 
 	func run() async throws -> CompilationResult {
@@ -49,7 +52,7 @@ struct Pipeline {
 			name: compilationUnit.name,
 			analysisModule: analysisModule,
 			moduleEnvironment: modules
-		).compile(mode: mode)
+		).compile(mode: mode, allowErrors: allowErrors)
 
 		return CompilationResult(module: module, analysis: analysisModule)
 	}

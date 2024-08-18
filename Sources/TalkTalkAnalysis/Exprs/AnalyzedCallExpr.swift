@@ -9,6 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedArgument: Syntax, AnalyzedSyntax {
 	public var typeID: TypeID { expr.typeID }
+	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { expr.analyzedChildren }
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try expr.accept(visitor, scope)

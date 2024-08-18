@@ -80,7 +80,10 @@ public struct VirtualMachine {
 		stack.push(.reserved)
 
 		let frame = CallFrame(
-			closure: Closure(chunk: chunk, upvalues: []), returnTo: 0, stackOffset: 0, instances: [],
+			closure: Closure(chunk: chunk, upvalues: []),
+			returnTo: 0,
+			stackOffset: 0,
+			instances: [],
 			builtinInstances: []
 		)
 		frames.push(frame)
@@ -107,8 +110,12 @@ public struct VirtualMachine {
 					_ = dumpInstruction()
 				case let .lineByLine(string):
 					if let i = dumpInstruction() {
-						let line = string.components(separatedBy: .newlines)[Int(i.line)]
-						FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
+						if i.line < string.components(separatedBy: .newlines).count {
+							let line = string.components(separatedBy: .newlines)[Int(i.line)]
+							FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
+						} else {
+							FileHandle.standardError.write(Data(("       <lib>\n").utf8))
+						}
 					}
 				}
 			#endif
@@ -359,6 +366,8 @@ public struct VirtualMachine {
 					// If we don't have the global already, we lazily initialize it by running its initializer
 					call(inline: initializer)
 
+					module.values[slot] = stack.peek()
+
 					// Remove the initializer since it should only be called once
 					module.valueInitializers.removeValue(forKey: slot)
 				} else {
@@ -406,6 +415,8 @@ public struct VirtualMachine {
 						// and the instance ID. Using this, we can use the type we get from instance[instanceID]
 						// to lookup the method.
 						let boundMethod = Value.boundMethod(.init(slot), receiver)
+
+						
 						stack.push(boundMethod)
 					} else {
 						guard let value = instance.fields[Int(slot)] else {
@@ -424,11 +435,11 @@ public struct VirtualMachine {
 				checkType(instance: lhs, type: rhs)
 			case .setProperty:
 				let slot = readByte()
-				let instance = stack.peek()
-				let propertyValue = stack.peek(offset: 1)
+				let instance = stack.pop()
+				let propertyValue = stack.peek()
 
 				guard let (_, receiver) = instance.instanceValue else {
-					return runtimeError("Receiver is not a struct")
+					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
 				currentFrame.instances[Int(receiver)].fields[Int(slot)] = propertyValue

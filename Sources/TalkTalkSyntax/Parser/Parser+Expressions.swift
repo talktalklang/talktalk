@@ -163,13 +163,13 @@ extension Parser {
 		return ParseErrorSyntax(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
-	mutating func returning(_: Bool) -> any Expr {
-		let i = startLocation()
+	mutating func returning(_: Bool) -> any Stmt {
+		let i = startLocation(at: previous)
 
-		let returnToken = consume(.return)!
+		let returnToken = previous!
 		let value = parse(precedence: .none)
 
-		return ReturnExprSyntax(returnToken: returnToken, location: endLocation(i), value: value)
+		return ReturnStmtSyntax(returnToken: returnToken, location: endLocation(i), value: value)
 	}
 
 	mutating func structExpr(_: Bool) -> StructExpr {

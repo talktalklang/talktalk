@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl {
+public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl, AnalyzedVarLetDecl {
 	public let typeID: TypeID
 	let expr: LetDecl
 	public var analysisErrors: [AnalysisError]

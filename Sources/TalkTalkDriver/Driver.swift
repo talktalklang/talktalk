@@ -42,7 +42,8 @@ public struct Driver {
 	}
 
 	public func compile(
-		mode: CompilationMode = .module
+		mode: CompilationMode = .module,
+		allowErrors: Bool = false
 	) async throws -> [String: CompilationResult] {
 		var result: [String: CompilationResult] = [:]
 		for unit in compilationUnits {
@@ -50,7 +51,8 @@ public struct Driver {
 				compilationUnit: unit,
 				mode: mode,
 				analyses: analyses,
-				modules: modules
+				modules: modules,
+				allowErrors: allowErrors
 			).run()
 		}
 		return result

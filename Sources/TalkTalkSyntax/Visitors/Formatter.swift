@@ -278,7 +278,7 @@ public struct Formatter: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: any ReturnExpr, _ context: Context) throws -> String {
+	public func visit(_ expr: any ReturnStmt, _ context: Context) throws -> String {
 		context.lastType = expr
 
 		return try "return \(expr.value?.accept(self, context) ?? "")"

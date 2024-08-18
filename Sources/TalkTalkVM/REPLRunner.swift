@@ -39,7 +39,7 @@ public struct REPLRunner {
 		self.module = result.module
 		self.analysis = result.analysis
 		self.environment = Environment()
-		environment.canAutoReturn = false
+		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(
 			name: "REPL",
 			analysisModule: analysis,

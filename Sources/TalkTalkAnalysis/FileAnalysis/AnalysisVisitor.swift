@@ -21,7 +21,8 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedBlockStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedWhileStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedParamsExpr, _ context: Context) throws -> Value
-	func visit(_ expr: AnalyzedReturnExpr, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedParam, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedReturnStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedIdentifierExpr, _ context: Context) throws -> Value
 
 	func visit(_ expr: AnalyzedMemberExpr, _ context: Context) throws -> Value

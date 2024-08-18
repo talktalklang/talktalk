@@ -21,7 +21,7 @@ public class Environment {
 	public var importedModules: [AnalysisModule]
 	public var importedSymbols: [Symbol: Binding] = [:]
 	public var errors: [AnalysisError] = []
-	public var canAutoReturn = true
+	public var exprStmtExitBehavior: AnalyzedExprStmt.ExitBehavior = .pop
 
 	public private(set) var shouldReportErrors: Bool = true
 
@@ -52,9 +52,9 @@ public class Environment {
 		return error
 	}
 
-	public func withNoAutoReturn() -> Environment {
-		let environment = Environment(parent: self)
-		environment.canAutoReturn = false
+	public func withExitBehavior(_ behavior: AnalyzedExprStmt.ExitBehavior) -> Environment {
+		let environment = add()
+		environment.exprStmtExitBehavior = behavior
 		return environment
 	}
 

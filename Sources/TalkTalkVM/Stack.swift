@@ -51,8 +51,8 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
-	func peek(offset: Int = 0) -> Element {
-		storage[size - 1 - offset]
+	func peek(back: Int = 0) -> Element {
+		storage[size - 1 - back]
 	}
 
 	@inline(__always)
@@ -62,6 +62,6 @@ struct Stack<Element> {
 
 	@inline(__always)
 	func last(count: Int) -> [Element] {
-		(0 ..< size).map { i in peek(offset: count - i) }
+		(0 ..< size).map { i in peek(back: count - i) }
 	}
 }

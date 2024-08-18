@@ -1,4 +1,3 @@
-// Arrays are builtin
 struct Array<Element> {
 	var _storage: pointer
 	var count: int

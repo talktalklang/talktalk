@@ -33,6 +33,7 @@ public struct SourceFileAnalyzer: Visitor {
 		return AnalyzedExprStmt(
 			wrapped: expr,
 			exprAnalyzed: exprAnalyzed,
+			exitBehavior: context.exprStmtExitBehavior,
 			environment: context
 		)
 	}
@@ -87,6 +88,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let args = try expr.args.map {
 			try AnalyzedArgument(
+				environment: context,
 				label: $0.label,
 				expr: $0.value.accept(self, context) as! any AnalyzedExpr
 			)
@@ -372,14 +374,48 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any IfExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+		var errors: [AnalysisError] = []
+
+		switch expr.consequence.stmts.count {
+		case 0:
+			errors.append(.init(kind: .expressionCount("Expected one expression inside then block"), location: expr.consequence.location))
+		case 1:
+			()
+		default:
+			errors.append(
+				.init(
+					kind: .expressionCount("Only 1 expression is allowed in an if expression block"),
+					location: expr.consequence.stmts[expr.consequence.stmts.count-1].location
+				)
+			)
+		}
+
+		switch expr.alternative.stmts.count {
+		case 0:
+			errors.append(.init(kind: .expressionCount("Expected one expression inside then block"), location: expr.alternative.location))
+		case 1:
+			()
+		default:
+			errors.append(
+				.init(
+					kind: .expressionCount("Only 1 expression is allowed in an if expression block"),
+					location: expr.alternative.stmts[expr.alternative.stmts.count-1].location
+				)
+			)
+		}
+
+		// We always want if exprs to be able to return their value
+		let context = context.withExitBehavior(.none)
+
 		// TODO: Error if the branches don't match or condition isn't a bool
-		try AnalyzedIfExpr(
+		return try AnalyzedIfExpr(
 			typeID: expr.consequence.accept(self, context).typeID,
 			expr: expr,
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
 			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockStmt,
 			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockStmt,
-			environment: context
+			environment: context,
+			analysisErrors: errors
 		)
 	}
 
@@ -434,7 +470,10 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		// Visit the body with the innerEnvironment, finding captures as we go.
-		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
+		let exitBehavior: AnalyzedExprStmt.ExitBehavior = expr.body.stmts.count == 1 ? .return : .pop
+		innerEnvironment.exprStmtExitBehavior = exitBehavior
+
+		var bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
 
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
@@ -487,9 +526,9 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any ReturnExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: any ReturnStmt, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
-		return AnalyzedReturnExpr(
+		return AnalyzedReturnStmt(
 			typeID: TypeID(valueAnalyzed?.typeAnalyzed ?? .void),
 			environment: env,
 			expr: expr,
@@ -526,7 +565,7 @@ public struct SourceFileAnalyzer: Visitor {
 	{
 		// TODO: Validate condition is bool
 		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
-		let body = try visit(expr.body, context.withNoAutoReturn()) as! AnalyzedBlockStmt
+		let body = try visit(expr.body, context.withExitBehavior(.pop)) as! AnalyzedBlockStmt
 
 		return AnalyzedWhileStmt(
 			typeID: body.typeID,
@@ -546,19 +585,6 @@ public struct SourceFileAnalyzer: Visitor {
 			try bodyAnalyzed.append(bodyExpr.accept(self, context))
 		}
 
-		// Add an implicit return for single statement blocks
-		if context.canAutoReturn, stmt.stmts.count == 1, let exprStmt = bodyAnalyzed[0] as? AnalyzedExprStmt {
-			bodyAnalyzed[0] = AnalyzedReturnExpr(
-				typeID: exprStmt.typeID,
-				environment: context,
-				expr: ReturnExprSyntax(
-					returnToken: .synthetic(.return),
-					location: [exprStmt.location.start]
-				),
-				valueAnalyzed: exprStmt.exprAnalyzed
-			)
-		}
-
 		return AnalyzedBlockStmt(
 			stmt: stmt,
 			typeID: TypeID(bodyAnalyzed.last?.typeAnalyzed ?? .none),
@@ -575,9 +601,10 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any GenericParams, _: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: any GenericParams, _ environment: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedGenericParams(
 			wrapped: expr,
+			environment: environment,
 			typeID: TypeID(),
 			paramsAnalyzed: expr.params.map {
 				AnalyzedGenericParam(wrapped: $0)
@@ -920,9 +947,10 @@ public struct SourceFileAnalyzer: Visitor {
 		try AnalyzedIfStmt(
 			wrapped: expr,
 			typeID: TypeID(.void),
+			environment: context,
 			conditionAnalyzed: expr.condition.accept(self, context) as! AnalyzedExpr,
-			consequenceAnalyzed: expr.consequence.accept(self, context.withNoAutoReturn()) as! AnalyzedExpr,
-			alternativeAnalyzed: expr.alternative?.accept(self, context.withNoAutoReturn()) as? AnalyzedExpr
+			consequenceAnalyzed: expr.consequence.accept(self, context) as! AnalyzedExpr,
+			alternativeAnalyzed: expr.alternative?.accept(self, context) as? AnalyzedExpr
 		)
 	}
 

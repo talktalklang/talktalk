@@ -59,7 +59,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 	}
 
 	func dump(_ expr: any AnalyzedSyntax, _ extra: String = "") -> String {
-		"\(expr.location.start.line) | \(type(of: expr)): \(expr.typeID.current.description) \(expr.location.start.column)..<\(expr.location.end.column) \(extra)"
+		"\(expr.location.start.line) | \(type(of: expr)) -> \(expr.typeID.current.description) \(expr.location.start.column)..<\(expr.location.end.column) \(extra)"
 	}
 
 	func add(@StringBuilder _ content: () throws -> String) -> String {
@@ -80,7 +80,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 	@StringBuilder public func visit(_ expr: AnalyzedCallExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
-			dump(expr.calleeAnalyzed)
+			try expr.calleeAnalyzed.accept(self, ())
 			for arg in expr.argsAnalyzed {
 				dump(arg)
 			}
@@ -106,7 +106,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 	}
 
 	@StringBuilder public func visit(_ expr: AnalyzedLiteralExpr, _: Void) throws -> String {
-		dump(expr)
+		dump(expr, expr.description.debugDescription)
 		indent {
 			for child in expr.analyzedChildren {
 				try child.accept(self, ())
@@ -153,17 +153,15 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 	@StringBuilder public func visit(_ expr: AnalyzedFuncExpr, _: Void) throws -> String {
 		dump(expr, "name: \(expr.name?.lexeme ?? "<none>"), params: \(expr.analyzedParams.paramsAnalyzed.map(\.debugDescription))")
 		indent {
-			for child in expr.analyzedChildren {
-				try child.accept(self, ())
-			}
+			try expr.bodyAnalyzed.accept(self, ())
 		}
 	}
 
 	@StringBuilder public func visit(_ expr: AnalyzedBlockStmt, _: Void) throws -> String {
 		dump(expr)
 		indent {
-			for child in expr.analyzedChildren {
-				try child.accept(self, ())
+			for stmt in expr.stmtsAnalyzed {
+				try stmt.accept(self, ())
 			}
 		}
 	}
@@ -186,7 +184,11 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedReturnExpr, _: Void) throws -> String {
+	@StringBuilder public func visit(_ expr: AnalyzedParam, _: Void) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: AnalyzedReturnStmt, _: Void) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.analyzedChildren {

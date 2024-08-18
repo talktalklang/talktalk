@@ -8,9 +8,14 @@
 import TalkTalkSyntax
 
 public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, AnalyzedExpr {
+	public enum ExitBehavior {
+		case none, pop, `return`
+	}
+
 	var wrapped: any ExprStmt
 	public var exprAnalyzed: any AnalyzedExpr
 	public var typeID: TypeID { exprAnalyzed.typeID }
+	public var exitBehavior: ExitBehavior
 
 	public var analyzedChildren: [any AnalyzedSyntax] { [exprAnalyzed] }
 	public var environment: Environment

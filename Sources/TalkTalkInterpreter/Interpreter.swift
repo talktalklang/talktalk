@@ -56,6 +56,10 @@ public struct Interpreter: AnalyzedVisitor {
 		try expr.exprAnalyzed.accept(self, context)
 	}
 
+	public func visit(_ expr: AnalyzedParam, _: Scope) throws -> Value {
+		.none
+	}
+
 	public func visit(_: AnalyzedImportStmt, _: Scope) throws -> Value {
 		.none
 	}
@@ -233,7 +237,7 @@ public struct Interpreter: AnalyzedVisitor {
 		fatalError("TODO")
 	}
 
-	public func visit(_ expr: AnalyzedReturnExpr, _ context: Scope) throws -> Value {
+	public func visit(_ expr: AnalyzedReturnStmt, _ context: Scope) throws -> Value {
 		let value = try expr.valueAnalyzed?.accept(self, context)
 		throw Return.returning(value ?? .none)
 	}

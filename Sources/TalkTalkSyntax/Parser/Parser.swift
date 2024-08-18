@@ -36,8 +36,10 @@ public struct Parser {
 	public static func parse(_ source: SourceFile, allowErrors: Bool = false) throws -> [any Syntax] {
 		var parser = Parser(TalkTalkLexer(source))
 		let result = parser.parse()
-		if !parser.errors.isEmpty, !allowErrors {
-			throw ParserError.couldNotParse(parser.errors)
+		if !parser.errors.isEmpty {
+			if !allowErrors {
+				throw ParserError.couldNotParse(parser.errors)
+			}
 		}
 		return result
 	}
@@ -121,6 +123,10 @@ public struct Parser {
 
 		if didMatch(.var) {
 			return letVarDecl(.var)
+		}
+
+		if didMatch(.return) {
+			return returning(false)
 		}
 
 		if didMatch(.let) {

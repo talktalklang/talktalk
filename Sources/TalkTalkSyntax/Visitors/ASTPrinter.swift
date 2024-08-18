@@ -236,7 +236,7 @@ public struct ASTPrinter: Visitor {
 		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
 	}
 
-	@StringBuilder public func visit(_ expr: any ReturnExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any ReturnStmt, _ context: Context) throws -> String {
 		dump(expr)
 		if let value = expr.value {
 			indent {

@@ -228,8 +228,7 @@ struct TalkTalkParserTests {
 
 		let fn = try #require(ast as? FuncExpr)
 		#expect(fn.body.stmts[0]
-			.cast(ExprStmtSyntax.self).expr
-			.cast(ReturnExprSyntax.self).value?.description == "x")
+			.cast(ReturnStmtSyntax.self).value?.description == "x")
 	}
 
 	@Test("named func expr") func namedfuncexpr() throws {

@@ -70,7 +70,9 @@ struct AnalysisTests {
 	}
 
 	@Test("Types if expr") func ifExpr() {
-		#expect(ast("a = if true { 1 } else { 2 }").typeAnalyzed == .int)
+		let expr = ast("return if true { 1 } else { 2 }").cast(AnalyzedReturnStmt.self).valueAnalyzed!
+		#expect(expr is AnalyzedIfExpr)
+		#expect(expr.typeAnalyzed == .int)
 	}
 
 	@Test("Types if stmt") func ifStmt() {
@@ -94,6 +96,19 @@ struct AnalysisTests {
 		#expect(fn.typeAnalyzed == .function("_fn_x_17", .int, [.int("x")], []))
 	}
 
+	@Test("Sets implicitlyReturns for single expr statement func bodies") func implicitReturn() {
+		let fn = ast(
+			"""
+			func() { 123 }
+			""")
+
+		let stmt = fn
+			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
+			.cast(AnalyzedExprStmt.self)
+
+		#expect(stmt.exitBehavior == .return)
+	}
+
 	@Test("Types recursive func expr") func funcExprRecur() {
 		let fn = ast(
 			"""
@@ -102,7 +117,7 @@ struct AnalysisTests {
 
 		let passed = fn
 			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
-			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedCallExpr.self).callee.description == "foo"
 
 		#expect(passed)
@@ -112,9 +127,9 @@ struct AnalysisTests {
 		let fn = ast(
 			"""
 			func foo(x) { x + 1 }
-			foo
+			return foo
 			"""
-		).cast(AnalyzedExprStmt.self).exprAnalyzed
+		).cast(AnalyzedReturnStmt.self).valueAnalyzed!
 
 		#expect(fn.typeAnalyzed == .function("foo", .int, [.int("x")], []))
 	}
@@ -228,7 +243,7 @@ struct AnalysisTests {
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
-			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedFuncExpr.self)
 		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", .int, [.int("y")], ["x"]))
 
@@ -259,14 +274,12 @@ struct AnalysisTests {
 		#expect(fn.environment.captures.count == 0)
 
 		let counterFn = try #require(fn.returnsAnalyzed)
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
-			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
 			.cast(AnalyzedFuncExpr.self)
 
 		#expect(counterFn.environment.captures.count == 1)
 		#expect(counterFn.returnsAnalyzed!
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
-			.cast(AnalyzedReturnExpr.self).valueAnalyzed!
+			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
 			.cast(AnalyzedVarExpr.self).typeAnalyzed == .int)
 
 		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.typeAnalyzed

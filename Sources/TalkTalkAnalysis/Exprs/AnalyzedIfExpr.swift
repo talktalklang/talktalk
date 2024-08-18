@@ -15,6 +15,7 @@ public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
 	public var consequenceAnalyzed: AnalyzedBlockStmt
 	public var alternativeAnalyzed: AnalyzedBlockStmt
 	public let environment: Environment
+	public let analysisErrors: [AnalysisError]
 	public var analyzedChildren: [any AnalyzedSyntax] { [conditionAnalyzed, consequenceAnalyzed, alternativeAnalyzed] }
 
 	public var ifToken: Token { expr.ifToken }

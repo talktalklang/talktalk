@@ -5,12 +5,12 @@
 //  Created by Pat Nakajima on 7/31/24.
 //
 
-public protocol ReturnExpr: Expr {
+public protocol ReturnStmt: Stmt {
 	var returnToken: Token { get }
 	var value: (any Expr)? { get }
 }
 
-public struct ReturnExprSyntax: ReturnExpr {
+public struct ReturnStmtSyntax: ReturnStmt {
 	public var returnToken: Token
 	public var location: SourceLocation
 	public var value: (any Expr)?

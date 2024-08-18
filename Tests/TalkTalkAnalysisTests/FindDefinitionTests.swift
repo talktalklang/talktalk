@@ -160,7 +160,8 @@ struct FindDefinitionTests {
 		)
 
 		let found = module.findSymbol(line: 4, column: 8, path: "person.tlk")!
-			.cast(AnalyzedMemberExpr.self)
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.as(AnalyzedMemberExpr.self)
 		let node = try #require(found)
 		#expect(node.property == "name")
 		#expect(node.location.line == 4)

@@ -26,7 +26,6 @@ struct TextDocumentSemanticTokensFull {
 			// TODO: use module environment
 			let parsed = try await SourceFileAnalyzer.analyze(
 				Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true),
-
 				in: Environment()
 			)
 			let visitor = SemanticTokensVisitor()
@@ -197,7 +196,7 @@ struct SemanticTokensVisitor: Visitor {
 		}
 	}
 
-	func visit(_ expr: ReturnExpr, _ context: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: ReturnStmt, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.returnToken)]
 
 		if let value = expr.value {
@@ -240,7 +239,7 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	func visit(_ expr: VarDecl, _: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: VarDecl, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.token),
 		]
@@ -249,16 +248,24 @@ struct SemanticTokensVisitor: Visitor {
 			result.append(make(.type, from: token))
 		}
 
+		if let value = expr.value {
+			try result.append(contentsOf: value.accept(self, context))
+		}
+
 		return result
 	}
 
-	func visit(_ expr: LetDecl, _: Context) throws -> [RawSemanticToken] {
+	func visit(_ expr: LetDecl, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.token),
 		]
 
 		if let token = expr.typeDeclToken {
 			result.append(make(.type, from: token))
+		}
+
+		if let value = expr.value {
+			try result.append(contentsOf: value.accept(self, context))
 		}
 
 		return result

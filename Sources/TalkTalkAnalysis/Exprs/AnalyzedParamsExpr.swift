@@ -8,8 +8,8 @@
 import TalkTalkSyntax
 
 public class AnalyzedParam: Param, AnalyzedExpr, Typed {
-	public func accept<V>(_: V, _: V.Context) -> V.Value where V: AnalyzedVisitor {
-		fatalError("unreachable")
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: AnalyzedVisitor {
+		try visitor.visit(self, context)
 	}
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {

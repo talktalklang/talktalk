@@ -6,6 +6,7 @@ public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
 	let wrapped: any IfStmt
 
 	public var typeID: TypeID
+	public var environment: Environment
 	public var conditionAnalyzed: any AnalyzedExpr
 	public var consequenceAnalyzed: any AnalyzedExpr
 	public var alternativeAnalyzed: (any AnalyzedExpr)?

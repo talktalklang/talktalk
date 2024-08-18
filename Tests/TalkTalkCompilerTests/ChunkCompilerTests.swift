@@ -17,13 +17,13 @@ import Testing
 // and just requires opcode/line/metadata which tends to be more
 // interesting. It uses Metadata's length field to determine how much
 // to move the offset.
-struct Instructions: CustomStringConvertible {
+struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 	struct Expectation {
 		let opcode: Opcode
 		let line: UInt32
 		let metadata: any InstructionMetadata
 
-		static func op(_ opcode: Opcode, line: UInt32, _ metadata: any InstructionMetadata) -> Expectation {
+		static func op(_ opcode: Opcode, line: UInt32, _ metadata: any InstructionMetadata = .simple) -> Expectation {
 			Expectation(opcode: opcode, line: line, metadata: metadata)
 		}
 	}
@@ -44,6 +44,10 @@ struct Instructions: CustomStringConvertible {
 
 	var description: String {
 		instructions.map(\.description).joined(separator: "\n")
+	}
+
+	var testDescription: String {
+		"\n" + description
 	}
 
 	var instructions: [Instruction] {
@@ -71,6 +75,7 @@ struct CompilerTests {
 	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
 		let parsed = try Parser.parse(.init(path: "", text: string))
 		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init())
+
 		let analysisModule = inModule ? try! ModuleAnalyzer(
 			name: "CompilerTests",
 			files: [.tmp(string)],
@@ -162,7 +167,7 @@ struct CompilerTests {
 
 	@Test("while loops") func whileLoops() throws {
 		let chunk = try compile("""
-		i = 0
+		var i = 0
 		while i < 5 {
 			i = i + 1
 		}
@@ -171,7 +176,6 @@ struct CompilerTests {
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
 			.op(.setLocal, line: 0, .local(slot: 1, name: "i")),
-			.op(.pop, line: 0, .simple),
 
 			// Condition
 			.op(.constant, line: 1, .constant(.int(5))),
@@ -245,8 +249,8 @@ struct CompilerTests {
 
 		#expect(subchunk.disassemble() == Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.return, line: 1, .simple),
-			.op(.return, line: 2, .simple)
+			.op(.return, line: 1),
+			.op(.return, line: 2)
 		))
 	}
 
@@ -265,30 +269,39 @@ struct CompilerTests {
 	}
 
 	@Test("Modifying upvalues") func modifyUpvalue() throws {
-		let chunk = try compile(
+		let wrapper = try compile(
 			"""
-			var a = 10
-
 			func() {
-				a = 20
-			}()
+				var a = 10
 
-			return a
+				func() {
+					a = 20
+				}()
+
+				return a
+			}
 			"""
 		)
 
+		let chunk = wrapper.getChunk(at: 1)
+
 		#expect(chunk.disassemble() == Instructions(
-			.op(.constant, line: 0, .constant(.int(10))),
-			.op(.defClosure, line: 2, .closure(arity: 0, depth: 1, upvalues: [.capturing(1)])),
-			.op(.call, line: 4, .simple),
-			.op(.pop, line: 5, .simple),
-			.op(.getLocal, line: 6, .local(slot: 1, name: "a")),
-			.op(.return, line: 6, .simple)
+			.op(.constant, line: 1, .constant(.int(10))),
+			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+			.op(.defClosure, line: 3, .closure(arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.call, line: 3),
+			.op(.pop, line: 3),
+			.op(.getLocal, line: 7, .local(slot: 1, name: "a")),
+			.op(.return, line: 7),
+			.op(.return, line: 8)
 		))
 
-		let subchunk = chunk.getChunk(at: 0)
+		let subchunk = wrapper.getChunk(at: 0)
 		#expect(subchunk.disassemble() == Instructions(
-			.op(.setUpvalue, line: 3, .upvalue(slot: 1, name: "slot: 1")
+			.op(.constant, line: 4, .constant(.int(20))),
+			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+			.op(.return, line: 4),
+			.op(.return, line: 5) // func return
 		))
 	}
 
@@ -339,10 +352,10 @@ struct CompilerTests {
 
 	@Test("Cleans up locals") func cleansUpLocals() throws {
 		let chunk = try compile("""
-		a = 123
+		let a = 123
 		func() {
-			b = 456
-			a + b
+			let b = 456
+			return a + b
 		}
 		""", inModule: false)
 
@@ -350,7 +363,6 @@ struct CompilerTests {
 		let expected = Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
-			.op(.pop, line: 0, .simple),
 			.op(.defClosure, line: 1, .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
 			.op(.return, line: 0, .simple)
 		)
@@ -365,7 +377,6 @@ struct CompilerTests {
 			// Define 'b'
 			.op(.constant, line: 2, .constant(.int(456))),
 			.op(.setLocal, line: 2, .local(slot: 1, name: "b")),
-			.op(.pop, line: 2, .simple),
 
 			// Get 'b' to add to a
 			.op(.getLocal, line: 3, .local(slot: 1, name: "b")),
@@ -373,10 +384,10 @@ struct CompilerTests {
 			.op(.getUpvalue, line: 3, .upvalue(slot: 0, name: "a")),
 
 			// Do the addition
-			.op(.add, line: 3, .simple),
-			.op(.pop, line: 3, .simple),
+			.op(.add, line: 3),
+			.op(.return, line: 3),
 
-			.op(.return, line: 4, .simple)
+			.op(.return, line: 4)
 		)
 
 		#expect(subchunk.disassemble() == subexpected)

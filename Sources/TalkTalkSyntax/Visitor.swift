@@ -30,7 +30,7 @@ public protocol Visitor {
 	func visit(_ expr: LetDecl, _ context: Context) throws -> Value
 	func visit(_ expr: ParseError, _ context: Context) throws -> Value
 	func visit(_ expr: MemberExpr, _ context: Context) throws -> Value
-	func visit(_ expr: ReturnExpr, _ context: Context) throws -> Value
+	func visit(_ expr: ReturnStmt, _ context: Context) throws -> Value
 	func visit(_ expr: InitDecl, _ context: Context) throws -> Value
 	func visit(_ expr: ImportStmt, _ context: Context) throws -> Value
 	func visit(_ expr: TypeExpr, _ context: Context) throws -> Value
