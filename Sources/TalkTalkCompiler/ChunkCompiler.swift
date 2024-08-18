@@ -29,8 +29,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Track which locals have been created in this scope
 	public var localsCount = 1
 
-	// Tracks how many upvalues we currently have
-	public var upvalues: [(index: Byte, isLocal: Bool)] = []
+	public var upvalues: [(ancestorDepth: Byte, ancestorSlot: Byte)] = []
 
 	public init(module: CompilingModule, scopeDepth: Int = 0, parent: ChunkCompiler? = nil) {
 		self.module = module
@@ -228,21 +227,25 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(elseJump)
 	}
 
-	public func visit(_ expr: AnalyzedInitDecl, _ chunk: Chunk) throws {
-		guard let structName = expr.environment.getLexicalScope()?.scope.name else {
+	public func visit(_ expr: AnalyzedInitDecl, _ initChunk: Chunk) throws {
+		guard let structType = expr.environment.getLexicalScope()?.scope, let structName = structType.name else {
 			fatalError("no name for struct for init")
 		}
 
 		let symbol: Symbol = .method(structName, "init", expr.parameters.params.map(\.name))
-		let initChunk = Chunk(
-			name: symbol.description, parent: chunk, arity: Byte(expr.parameters.count),
-			depth: Byte(scopeDepth)
-		)
 		let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		// Define the actual params for this initializer
+//		for parameter in expr.parametersAnalyzed.paramsAnalyzed {
+//			_ = initCompiler.defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
+//		}
+
+		// Define the params for this function
 		for parameter in expr.parametersAnalyzed.paramsAnalyzed {
-			_ = defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
+			let variable = defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
+
+//			initChunk.emit(opcode: .setLocal, line: parameter.location.line)
+//			initChunk.emit(byte: Byte(variable.slot), line: parameter.location.line)
 		}
 
 		// Emit the init body
@@ -251,7 +254,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// End the scope, which pops locals
 		initCompiler.endScope(chunk: initChunk)
 
-		// We always want to emit a return at the end of a function
+		// We always want to emit return the instance at the end of init
+		initChunk.emit(opcode: .getLocal, line: UInt32(expr.location.end.line))
+		initChunk.emit(byte: 0, line: UInt32(expr.location.end.line))
 		initChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
 
 		// Save the chunk into the struct's methods
@@ -265,23 +270,25 @@ public class ChunkCompiler: AnalyzedVisitor {
 		)
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 		let subchunkID = chunk.addChunk(functionChunk)
+		var localSlot: Byte = 0
 
 		// Define the params for this function
 		for parameter in expr.analyzedParams.paramsAnalyzed {
-			let variable = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
+			_ = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
 
-			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
-			functionChunk.emit(byte: Byte(variable.slot), line: parameter.location.line)
+//			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
+//			functionChunk.emit(byte: Byte(variable.slot), line: parameter.location.line)
+		}
+
+		if let name = expr.name?.lexeme {
+			let variable = defineLocal(name: name, compiler: self, chunk: chunk)
+			localSlot = variable.slot
 		}
 
 		if let name = expr.name {
-			// Define the function local in its enclosing scope
-			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
-
 			// Define the function inside its body for recursion
 			_ = functionCompiler.defineLocal(name: name.lexeme, compiler: functionCompiler, chunk: functionChunk)
-			functionChunk.emit(opcode: .defClosure, line: expr.location.line)
-			functionChunk.emit(byte: Byte(subchunkID), line: expr.location.line)
+//			functionChunk.emitClosure(subchunkID: Byte(subchunkID), localSlot: variable.slot, line: expr.location.line)
 		}
 
 		// Emit the function body
@@ -297,11 +304,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
 		let line = UInt32(expr.location.line)
-		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
+		chunk.emitClosure(subchunkID: Byte(subchunkID), localSlot: localSlot, line: line)
 
 		for upvalue in functionCompiler.upvalues {
-			chunk.emit(byte: upvalue.isLocal ? 1 : 0, line: line)
-			chunk.emit(byte: upvalue.index, line: line)
+			chunk.emit(byte: upvalue.ancestorDepth, line: line)
+			chunk.emit(byte: upvalue.ancestorSlot, line: line)
 		}
 	}
 
@@ -403,35 +410,45 @@ public class ChunkCompiler: AnalyzedVisitor {
 					continue
 				}
 
+//				let symbol = Symbol.initializer(name, decl.parameters.params.map(\.name))
+//				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
+//				let declChunk = Chunk(
+//					name: symbol.description, parent: chunk, arity: Byte(decl.parameters.count),
+//					depth: Byte(scopeDepth)
+//				)
+//
+//				// Define the actual params for this initializer
+//				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
+//					_ = declCompiler.defineLocal(
+//						name: parameter.name, compiler: declCompiler, chunk: declChunk
+//					)
+//				}
+//
+//				// Emit the init body
+//				for expr in decl.bodyAnalyzed.declsAnalyzed {
+//					try expr.accept(declCompiler, declChunk)
+//				}
+//
+//				// End the scope, which pops locals
+//				declCompiler.endScope(chunk: declChunk)
+
+				// Make sure the instance is at the top of the stack and return it
+//				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
+//				declChunk.emit(byte: 0, line: UInt32(decl.location.end.line))
+//				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
+
 				let symbol = Symbol.initializer(name, decl.parameters.params.map(\.name))
-				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
-				let declChunk = Chunk(
-					name: symbol.description, parent: chunk, arity: Byte(decl.parameters.count),
+				let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
+				let initChunk = Chunk(
+					name: symbol.description,
+					parent: chunk,
+					arity: Byte(decl.parameters.count),
 					depth: Byte(scopeDepth)
 				)
 
-				// Define the actual params for this initializer
-				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
-					_ = declCompiler.defineLocal(
-						name: parameter.name, compiler: declCompiler, chunk: declChunk
-					)
-				}
-
-				// Emit the init body
-				for expr in decl.bodyAnalyzed.declsAnalyzed {
-					try expr.accept(declCompiler, declChunk)
-				}
-
-				// End the scope, which pops locals
-				declCompiler.endScope(chunk: declChunk)
-
-				// Make sure the instance is at the top of the stack and return it
-				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
-				declChunk.emit(byte: 0, line: UInt32(decl.location.end.line))
-				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
-
+				try initCompiler.visit(decl, initChunk)
 				let analysisMethod = expr.structType.methods["init"]!
-				methods[analysisMethod.slot] = declChunk
+				methods[analysisMethod.slot] = initChunk
 			case let decl as AnalyzedFuncExpr:
 				let symbol = Symbol.method(name, decl.name!.lexeme, decl.params.params.map(\.name))
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
@@ -697,20 +714,19 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// Search parent chunks for the variable
 	private func resolveUpvalue(named name: String, chunk: Chunk) -> Byte? {
-		guard let parent else { return nil }
+		// How far should we reach back in the call frame stack to find this variable
+		var depth: Byte = 1
+		var parent = parent
 
-		// If our immediate parent has the variable, we return an upvalue.
-		if let local = parent.resolveLocal(named: name) {
-			// Since it's in the immediate parent, we mark the upvalue as captured.
-			parent.captures.append(name)
-			return addUpvalue(local, isLocal: true, name: name, chunk: chunk)
-		}
+		while let nextParent = parent {
+			if let local = nextParent.resolveLocal(named: name) {
+				upvalues.append((ancestorDepth: depth, ancestorSlot: local))
+				chunk.upvalueNames.append(name)
+				return Byte(upvalues.count - 1)
+			}
 
-		// Check for upvalues in the parent. We don't need to mark the upvalue where it's found
-		// as captured since the immediate child of the owning scope will handle that in its
-		// resolveUpvalue call.
-		if let local = parent.resolveUpvalue(named: name, chunk: chunk) {
-			return addUpvalue(local, isLocal: false, name: name, chunk: chunk)
+			parent = nextParent.parent
+			depth += 1
 		}
 
 		return nil
@@ -793,19 +809,20 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.localsCount += 1
 		chunk.localNames.append(name)
 		compiler.locals.append(variable)
+
 		return variable
 	}
 
 	private func addUpvalue(_ index: Byte, isLocal: Bool, name: String, chunk: Chunk) -> Byte {
 		// If we've already got it, return it
-		for (i, upvalue) in upvalues.enumerated() {
-			if upvalue.index == index, upvalue.isLocal {
-				return Byte(i)
-			}
-		}
-
-		// Otherwise add a new one
-		upvalues.append((index: index, isLocal: isLocal))
+//		for (i, upvalue) in upvalues.enumerated() {
+//			if upvalue.index == index, upvalue.isLocal {
+//				return Byte(i)
+//			}
+//		}
+//
+//		// Otherwise add a new one
+//		upvalues.append((index: index, isLocal: isLocal))
 		chunk.upvalueNames.append(name)
 
 		return Byte(upvalues.count - 1)
@@ -825,17 +842,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Define the params for this function
 		var variables: [(Variable, Property)] = []
 		for (name, property) in structType.properties {
-			variables.append((compiler.defineLocal(
+			let variable = compiler.defineLocal(
 				name: name,
 				compiler: compiler,
 				chunk: chunk
-			), property))
-		}
+			)
 
-		for (variable, property) in variables {
-			// Put the parameter value onto the stack
+			variables.append((variable, property))
+
+			// Get the value to set the property as
 			chunk.emit(opcode: .getLocal, line: 9999)
-			chunk.emit(byte: Byte(variable.slot), line: 9999)
+			chunk.emit(byte: variable.slot, line: 9999)
 
 			// Get self
 			chunk.emit(opcode: .getLocal, line: 9999)
@@ -845,9 +862,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .setProperty, line: 9999)
 			chunk.emit(byte: Byte(property.slot), line: 9999)
 
-			chunk.emit(opcode: .pop, line: 9999)
+			// Pop self off the stack
 			chunk.emit(opcode: .pop, line: 9999)
 		}
+
+		// Put the instance on top of the stack to get popped
+		chunk.emit(opcode: .getLocal, line: 9999)
+		chunk.emit(byte: 0, line: 9999)
 
 		compiler.endScope(chunk: chunk)
 		chunk.emit(opcode: .return, line: 9999)

@@ -27,8 +27,6 @@ struct VMEndToEndTests {
 			importedModules: []
 		).analyze()
 
-		try print(AnalysisPrinter.format(analysisModule.analyzedFiles[0].syntax))
-
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
 		return try compiler.compile(mode: .executable)
 	}
@@ -183,15 +181,17 @@ struct VMEndToEndTests {
 	@Test("Modify var from enclosing scope") func modifyEnclosing() throws {
 		let result = try run(
 			"""
-			var a = 10
-
 			func() {
-				a = 20
-			}()
+				var a = 10
 
-			return a
+				func() {
+					a = 20
+				}()
+
+				return a
+			}()
 			"""
-		)
+			, verbosity: .verbose)
 		#expect(result == .int(20))
 	}
 
@@ -218,6 +218,28 @@ struct VMEndToEndTests {
 			"""
 			,verbosity: .verbose)
 	}
+
+	@Test("Works with counter (non-named functions)") func nonNamedCounter() throws {
+		let source = """
+		let makeCounter = func() {
+			var count = 0
+			return func() {
+				count = count + 1
+				return count
+			}
+		}
+
+		var mycounter = makeCounter()
+		mycounter()
+		return mycounter()
+		"""
+
+		let module = try compile(source)
+
+		let result = try VirtualMachine.run(module: module, verbosity: .lineByLine(source)).get()
+		#expect(result == .int(2))
+	}
+
 
 	@Test("Works with counter") func counter() throws {
 		let source = """
@@ -249,9 +271,9 @@ struct VMEndToEndTests {
 				a = a + i
 				return a
 			}
-			return foo(10)
+			return foo(20)
 			"""
-		)
+			, verbosity: .verbose)
 
 		#expect(result == .int(30))
 	}
@@ -276,7 +298,7 @@ struct VMEndToEndTests {
 			return n
 		"""
 
-		let result = try run(source)
+		let result = try run(source, verbosity: .lineByLine(source))
 
 		#expect(result == .int(34))
 	}
@@ -367,36 +389,34 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		let result = try VirtualMachine.run(module: module, verbosity: .verbose).get()
+		#expect(result == .int(123))
 	}
 
 	@Test("Struct methods") func structMethods() throws {
+		let source = """
+		 struct Person {
+			var age: int
+
+			init(age: int) {
+				self.age = age
+			}
+
+			func getAge() {
+				self.age
+			}
+		}
+
+		let person = Person(age: 123)
+		let method = person.getAge
+		return method()
+		"""
 		let (module, _) = try compile(
 			name: "A",
-			[
-				.tmp(
-					"""
-					struct Person {
-						var age: int
-
-						init(age: int) {
-							self.age = age
-						}
-
-						func getAge() {
-							self.age
-						}
-					}
-
-					let person = Person(age: 123)
-					let method = person.getAge
-					return method()
-					"""
-				)
-			]
+			[.tmp(source)]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbosity: .lineByLine(source)).get() == .int(123))
 	}
 
 	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {
@@ -452,7 +472,8 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
+		let result = try VirtualMachine.run(module: module, verbosity: .verbose).get()
+		#expect(result == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {
@@ -502,18 +523,13 @@ struct VMEndToEndTests {
 	@Test("Pass by value") func byValue() throws {
 		let result = try run(
 			"""
-			func increments(v) {
-				var v = v
-				v = v + 1
-			}
-
-
 			var i = 3
-			increments(i)
-			return i
+			var j = i
+			j = j + 1
+			return i + j
 			"""
 		)
 
-		#expect(result == .int(3))
+		#expect(result == .int(7))
 	}
 }

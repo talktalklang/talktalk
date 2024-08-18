@@ -135,8 +135,8 @@ public class CompilingModule {
 		for case (.struct(let name), var structType) in foundStructs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
 			// Copy struct methods, sorting by their index in the symbols table
 			let methods = structMethods[.struct(name)] ?? [:]
-			for case let (.method(_, _, _), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
-				structType.methods.append(chunk)
+			for case let (i, (.method(_, _, _), chunk)) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }).enumerated() {
+				structType.methods[i] = chunk
 			}
 
 			module.structs.append(structType)

@@ -36,7 +36,19 @@ public struct VirtualMachine {
 	}
 
 	// The frames stack
-	var frames: Stack<CallFrame>
+	var frames: Stack<CallFrame> {
+		willSet {
+			if frames.size != newValue.size, frames.size > 0, verbosity != .quiet {
+				log("       <- \(frames.peek().closure.chunk.name)()")
+			}
+		}
+
+		didSet {
+			if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
+				log("       -> \(frames.peek().closure.chunk.name)()")
+			}
+		}
+	}
 
 	// The current call frame
 	var currentFrame: CallFrame {
@@ -83,9 +95,11 @@ public struct VirtualMachine {
 			closure: Closure(chunk: chunk, upvalues: []),
 			returnTo: 0,
 			stackOffset: 0,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
 			instances: [],
 			builtinInstances: []
 		)
+
 		frames.push(frame)
 	}
 
@@ -112,9 +126,9 @@ public struct VirtualMachine {
 					if let i = dumpInstruction() {
 						if i.line < string.components(separatedBy: .newlines).count {
 							let line = string.components(separatedBy: .newlines)[Int(i.line)]
-							FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
+							log("       " + line)
 						} else {
-							FileHandle.standardError.write(Data(("       <lib>\n").utf8))
+							log("       <lib>\n")
 						}
 					}
 				}
@@ -296,21 +310,35 @@ public struct VirtualMachine {
 				}
 			case .getLocal:
 				let slot = readByte()
-				stack.push(stack[Int(slot) + currentFrame.stackOffset])
+
+				if let value = currentFrame.locals[Int(slot)] {
+					stack.push(value)
+				} else {
+					return runtimeError("Could not find local at slot \(slot) in frame: \(currentFrame.locals)")
+				}
+//				stack.push(stack[Int(slot) + currentFrame.stackOffset])
 			case .setLocal:
 				let slot = readByte()
-				stack[Int(slot) + currentFrame.stackOffset] = stack.peek()
+				currentFrame.locals[Int(slot)] = stack.peek()
+//				stack[Int(slot) + currentFrame.stackOffset] = stack.peek()
 			case .getUpvalue:
 				let slot = readByte()
-				let value = currentFrame.closure.upvalues[Int(slot)].value
+				let upvalue = currentFrame.closure.upvalues[Int(slot)]
+				guard let value = frames[frames.size - 1 - Int(upvalue.depth)].locals[Int(upvalue.slot)] else {
+					return runtimeError("Could not find upvalue: \(upvalue)")
+				}
+
 				stack.push(value)
 			case .setUpvalue:
 				let slot = readByte()
 				let upvalue = currentFrame.closure.upvalues[Int(slot)]
-				upvalue.value = stack.peek()
+				frames[frames.size - 1 - Int(upvalue.depth)].locals[Int(upvalue.slot)] = stack.peek()
 			case .defClosure:
 				// Read which subchunk this closure points to
 				let slot = readByte()
+
+				// Read the local slot if this is a named function
+				let localSlot = readByte()
 
 				// Load the subchunk TODO: We could probably just store the index in the closure?
 				let subchunk = chunk.getChunk(at: Int(slot))
@@ -318,26 +346,30 @@ public struct VirtualMachine {
 				// Capture upvalues
 				var upvalues: [Upvalue] = []
 				for _ in 0 ..< subchunk.upvalueCount {
-					let isLocal = readByte() == 1
-					let index = readByte()
+					let depth = readByte()
+					let slot = readByte()
+					upvalues.append(Upvalue(depth: depth, slot: slot))
 
-					if isLocal {
-						// If the upvalue is local, that means it is defined in the current call frame. That
-						// means we want to capture the value.
-						let value = stack[currentFrame.stackOffset + Int(index)]
-						let upvalue = captureUpvalue(value: value)
-						upvalues.append(upvalue)
-					} else {
-						// If it's not local, that means it's already been captured and the current call frame's
-						// knowledge of the value is an upvalue as well.
-						upvalues.append(currentFrame.closure.upvalues[Int(index)])
-					}
+//					if isLocal {
+//						// If the upvalue is local, that means it is defined in the current call frame. That
+//						// means we want to capture the value.
+//						let value = stack[Int(index)]
+//						let upvalue = captureUpvalue(value: value)
+//						upvalues.append(upvalue)
+//					} else {
+//						// If it's not local, that means it's already been captured and the current call frame's
+//						// knowledge of the value is an upvalue as well.
+//						upvalues.append(currentFrame.closure.upvalues[Int(index)])
+//					}
 				}
 
 				// Store the closure TODO: gc these when they're not needed anymore
 				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
 
-				// Push the closure Value onto the stack
+				if localSlot != 0 {
+					currentFrame.locals[Int(localSlot)] = .closure(.init(slot))
+				}
+
 				stack.push(.closure(.init(slot)))
 			case .call:
 				let callee = stack.pop()
@@ -416,7 +448,6 @@ public struct VirtualMachine {
 						// to lookup the method.
 						let boundMethod = Value.boundMethod(.init(slot), receiver)
 
-						
 						stack.push(boundMethod)
 					} else {
 						guard let value = instance.fields[Int(slot)] else {
@@ -491,12 +522,24 @@ public struct VirtualMachine {
 		let structType = module.structs[Int(instance.type.structValue!)]
 		let methodChunk = structType.methods[Int(boundMethod)]
 
-		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(
+		var frame = CallFrame(
+			closure: .init(
+				chunk: methodChunk,
+				upvalues: []
+			),
+			returnTo: ip,
+			stackOffset: 0,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
+		)
+
+		frame.locals[0] = Value.instance(
 			instance.type.structValue!,
 			instanceData
 		)
 
-		call(chunk: methodChunk)
+		frames.push(frame)
 	}
 
 	mutating func call(structValue: Value.IntValue) {
@@ -512,27 +555,51 @@ public struct VirtualMachine {
 		// Get the initializer
 		let initializer = structType.methods[structType.initializer]
 
-		// Add the instance to the stack
-		stack[stack.size - Int(initializer.arity) - 1] = instance
-
 		// Store the instance value
 		currentFrame.instances.append(
 			StructInstance(type: .struct(structValue), fieldCount: structType.propertyCount))
 
-		call(chunk: initializer)
+		var frame = CallFrame(
+			closure: .init(
+				chunk: initializer,
+				upvalues: []
+			),
+			returnTo: ip,
+			stackOffset: 0,
+			locals: .init(repeating: nil, count: Int(initializer.localsCount)),
+			instances: currentFrame.instances,
+			builtinInstances: currentFrame.builtinInstances
+		)
+
+		// The 0 index slot in locals is reserved for `self`
+		frame.locals[0] = instance
+
+		// Pass arguments into the initializer
+		for (i, argument) in stack.pop(count: Int(initializer.arity)).enumerated() {
+			frame.locals[i + 1] = argument
+		}
+
+		frames.push(frame)
 	}
 
 	mutating func call(chunk: Chunk) {
-		let frame = CallFrame(
+		var frame = CallFrame(
 			closure: .init(
 				chunk: chunk,
 				upvalues: []
 			),
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
 			instances: currentFrame.instances,
 			builtinInstances: currentFrame.builtinInstances
 		)
+
+		// Pass arguments into the initializer
+		for (i, argument) in stack.pop(count: Int(chunk.arity)).enumerated() {
+			frame.locals[i + 1] = argument
+		}
+
 
 		frames.push(frame)
 	}
@@ -545,6 +612,7 @@ public struct VirtualMachine {
 			),
 			returnTo: ip,
 			stackOffset: stack.size - 1,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
 			instances: currentFrame.instances,
 			builtinInstances: currentFrame.builtinInstances
 		)
@@ -556,13 +624,20 @@ public struct VirtualMachine {
 		// Find the called chunk from the closure id
 		let chunk = chunk.getChunk(at: closureID)
 
-		let frame = CallFrame(
+		var frame = CallFrame(
 			closure: closures[UInt64(closureID)]!,
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
 			instances: currentFrame.instances,
 			builtinInstances: currentFrame.builtinInstances
 		)
+
+		// Pass arguments into the initializer
+		for (i, argument) in stack.pop(count: Int(chunk.arity)).enumerated() {
+			frame.locals[i + 1] = argument
+		}
+
 
 		frames.push(frame)
 	}
@@ -571,13 +646,20 @@ public struct VirtualMachine {
 		let chunk = chunk.getChunk(at: chunkID)
 		let closure = Closure(chunk: chunk, upvalues: [])
 
-		let frame = CallFrame(
+		var frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
 			instances: currentFrame.instances,
 			builtinInstances: currentFrame.builtinInstances
 		)
+
+		// Pass arguments into the initializer
+		for (i, argument) in stack.pop(count: Int(chunk.arity)).enumerated() {
+			frame.locals[i + 1] = argument
+		}
+
 
 		frames.push(frame)
 	}
@@ -586,13 +668,20 @@ public struct VirtualMachine {
 		let chunk = module.chunks[moduleFunction]
 		let closure = Closure(chunk: chunk, upvalues: [])
 
-		let frame = CallFrame(
+		var frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1,
+			locals: .init(repeating: nil, count: Int(chunk.localsCount)),
 			instances: currentFrame.instances,
 			builtinInstances: currentFrame.builtinInstances
 		)
+
+		// Pass arguments into the initializer
+		for (i, argument) in stack.pop(count: Int(chunk.arity)).enumerated() {
+			frame.locals[i + 1] = argument
+		}
+
 
 		frames.push(frame)
 	}
@@ -651,30 +740,30 @@ public struct VirtualMachine {
 		return jump
 	}
 
-	mutating func captureUpvalue(value: Value) -> Upvalue {
-		var previousUpvalue: Upvalue? = nil
-		var upvalue = openUpvalues
-
-		while upvalue != nil /* , upvalue!.value > value */ {
-			previousUpvalue = upvalue
-			upvalue = upvalue!.next
-		}
-
-		if let upvalue, upvalue.value == value {
-			return upvalue
-		}
-
-		let createdUpvalue = Upvalue(value: value)
-		createdUpvalue.next = upvalue
-
-		if let previousUpvalue {
-			previousUpvalue.next = createdUpvalue
-		} else {
-			openUpvalues = createdUpvalue
-		}
-
-		return createdUpvalue
-	}
+//	mutating func captureUpvalue(value: Value) -> Upvalue {
+//		var previousUpvalue: Upvalue? = nil
+//		var upvalue = openUpvalues
+//
+//		while upvalue != nil /* , upvalue!.value > value */ {
+//			previousUpvalue = upvalue
+//			upvalue = upvalue!.next
+//		}
+//
+//		if let upvalue, upvalue.value == value {
+//			return upvalue
+//		}
+//
+//		let createdUpvalue = Upvalue(value: value)
+//		createdUpvalue.next = upvalue
+//
+//		if let previousUpvalue {
+//			previousUpvalue.next = createdUpvalue
+//		} else {
+//			openUpvalues = createdUpvalue
+//		}
+//
+//		return createdUpvalue
+//	}
 
 	func runtimeError(_ message: String) -> ExecutionResult {
 		.error(message)
@@ -682,7 +771,7 @@ public struct VirtualMachine {
 
 	@discardableResult mutating func dumpStack() -> String {
 		if stack.isEmpty { return "" }
-		var result = "       "
+		var result = "       Stack: "
 		for slot in stack.entries() {
 			if frames.size == 0 {
 				result += "[ \(slot.description) ]"
@@ -691,9 +780,22 @@ public struct VirtualMachine {
 			}
 		}
 
-		FileHandle.standardError.write(Data((result + "\n").utf8))
+		if frames.size > 0 {
+			result += "\n       Locals: "
+			for slot in currentFrame.locals {
+				result += "[ \(slot?.disassemble(in: chunk) ?? "<uninitialized>") ]"
+			}
+		}
+
+		result += "\n       Frame count: \(frames.size)"
+
+		log(result)
 
 		return result
+	}
+
+	mutating func log(_ string: String) {
+		FileHandle.standardError.write(Data((string + "\n").utf8))
 	}
 
 	mutating func dump() {

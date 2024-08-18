@@ -23,6 +23,8 @@ public struct CallFrame {
 	var returnTo: UInt64
 	var stackOffset: Int
 
+	var locals: ContiguousArray<Value?>
+
 	// Store instances created in this call frame. This is sort of a weird attempt
 	// to simulate lower level stuff that feels p leaky to me.
 	// TODO: We're gonna need to figure out how they can move between frames?

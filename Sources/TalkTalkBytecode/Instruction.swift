@@ -219,23 +219,15 @@ public extension InstructionMetadata where Self == VariableMetadata {
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 	public struct Upvalue: Equatable, Hashable {
-		public static func == (lhs: Upvalue, rhs: Upvalue) -> Bool {
-			lhs.isLocal == rhs.isLocal && lhs.index == rhs.index
-		}
+		var depth: Byte
+		var slot: Byte
 
-		var isLocal: Bool
-		var index: Byte
-
-		public static func capturing(_ index: Byte) -> Upvalue {
-			Upvalue(isLocal: true, index: index)
-		}
-
-		public static func inherited(_ index: Byte) -> Upvalue {
-			Upvalue(isLocal: false, index: index)
+		public static func upvalue(depth: Byte, slot: Byte) -> Upvalue {
+			Upvalue(depth: depth, slot: slot)
 		}
 
 		public var description: String {
-			"isLocal: \(isLocal) i: \(index)"
+			"depth: \(depth) slot: \(slot)"
 		}
 	}
 
@@ -259,7 +251,7 @@ public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 }
 
 public extension InstructionMetadata where Self == ClosureMetadata {
-	static func closure(name: String? = nil, arity: Byte, depth: Byte, upvalues: [ClosureMetadata.Upvalue] = []) -> ClosureMetadata {
+	static func closure(name: String = "", arity: Byte, depth: Byte, upvalues: [ClosureMetadata.Upvalue] = []) -> ClosureMetadata {
 		ClosureMetadata(name: name, arity: arity, depth: depth, upvalues: upvalues)
 	}
 }
@@ -293,7 +285,7 @@ public struct UpvalueMetadata: InstructionMetadata {
 	}
 
 	public var description: String {
-		"local: \(slot), name: \(name)"
+		"slot: \(slot), name: \(name)"
 	}
 }
 

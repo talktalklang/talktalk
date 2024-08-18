@@ -110,16 +110,23 @@ public struct Disassembler {
 	mutating func defClosureInstruction(start: Int) -> Instruction {
 		let closureSlot = chunk.code[current++]
 		let subchunk = chunk.getChunk(at: Int(closureSlot))
+		let localSlot = chunk.code[current++]
 
 		var upvalues: [ClosureMetadata.Upvalue] = []
 		for _ in 0 ..< subchunk.upvalueCount {
-			let isLocal = chunk.code[current++] == 1
-			let index = chunk.code[current++]
+			let depth = chunk.code[current++]
+			let slot = chunk.code[current++]
 
-			upvalues.append(ClosureMetadata.Upvalue(isLocal: isLocal, index: index))
+			upvalues.append(ClosureMetadata.Upvalue(depth: depth, slot: slot))
 		}
 
-		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
+		let name = if localSlot != 0 {
+			chunk.localNames[Int(localSlot)]
+		} else {
+			""
+		}
+
+		let metadata = ClosureMetadata(name: name, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
 		return Instruction(opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 

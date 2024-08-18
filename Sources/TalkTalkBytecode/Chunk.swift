@@ -173,10 +173,11 @@ public class Chunk: Codable {
 		write(byte: byte, line: line)
 	}
 
-	public func emitClosure(subchunkID: Byte, line: UInt32) {
+	public func emitClosure(subchunkID: Byte, localSlot: Byte, line: UInt32) {
 		// Emit the opcode to define a closure
 		write(.defClosure, line: line)
 		write(byte: subchunkID, line: line)
+		write(byte: localSlot, line: line)
 	}
 
 	public func emit(constant value: Value, line: UInt32) {

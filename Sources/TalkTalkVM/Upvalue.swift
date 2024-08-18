@@ -8,10 +8,12 @@
 import TalkTalkBytecode
 
 class Upvalue {
-	var value: Value
+	var depth: Byte
+	var slot: Byte
 	var next: Upvalue?
 
-	init(value: Value) {
-		self.value = value
+	init(depth: Byte, slot: Byte) {
+		self.depth = depth
+		self.slot = slot
 	}
 }
