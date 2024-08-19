@@ -119,14 +119,14 @@ struct VMEndToEndTests {
 
 	@Test("If expr") func ifExpr() throws {
 		let result = try run(
-		"""
+			"""
 			return if false {
 				123
 			} else {
 				456
 			}
 			"""
-		, verbosity: .verbose)
+		)
 
 		#expect(result == .int(456))
 	}
@@ -166,13 +166,13 @@ struct VMEndToEndTests {
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
 		let source = """
-			let	a10 = 10
-			let b20 = 20
-			return func() {
-				var c30 = 30
-				return a10 + b20 + c30
-			}()
-			"""
+		let	a10 = 10
+		let b20 = 20
+		return func() {
+			var c30 = 30
+			return a10 + b20 + c30
+		}()
+		"""
 		let result = try run(source)
 		#expect(result == .int(60))
 	}
@@ -224,6 +224,47 @@ struct VMEndToEndTests {
 
 		let result = try VirtualMachine.run(module: module).get()
 		#expect(result == .int(2))
+	}
+
+	@Test("Runs factorial") func factorials() throws {
+		let result = try run(
+			"""
+			func fact(n) {
+			 if n <= 1 {
+				return 1
+			 } else {
+				return n * fact(n - 1)
+			 }
+			}
+			return fact(3)
+			"""
+		)
+
+		#expect(result == .int(6))
+	}
+
+	@Test("Runs fib") func fib() throws {
+		let source = """
+			func fib(n) {
+				if (n <= 1) {
+					return n
+				}
+				return fib(n - 2) + fib(n - 1)
+			}
+
+			var i = 0
+			var n = 0
+			while i < 10 {
+				n = fib(i)
+				i = i + 1
+			}
+
+			return n
+		"""
+
+		let result = try run(source)
+
+		#expect(result == .int(34))
 	}
 
 	@Test("Doesn't leak out of closures") func closureLeak() throws {
@@ -397,7 +438,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {

@@ -315,6 +315,9 @@ public struct VirtualMachine {
 				// Load the subchunk TODO: We could probably just store the index in the closure?
 				let subchunk = chunk.getChunk(at: Int(slot))
 
+				// Push the closure Value onto the stack
+				stack.push(.closure(.init(slot)))
+
 				// Capture upvalues
 				var upvalues: [Upvalue] = []
 				for _ in 0 ..< subchunk.upvalueCount {
@@ -336,9 +339,6 @@ public struct VirtualMachine {
 
 				// Store the closure TODO: gc these when they're not needed anymore
 				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
-
-				// Push the closure Value onto the stack
-				stack.push(.closure(.init(slot)))
 			case .call:
 				let callee = stack.pop()
 				if callee.isCallable {

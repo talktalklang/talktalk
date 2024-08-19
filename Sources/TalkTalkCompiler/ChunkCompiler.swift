@@ -240,9 +240,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 		)
 		let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
-		// Define the actual params for this initializer
+		// Define the params for this init
 		for parameter in expr.parametersAnalyzed.paramsAnalyzed {
-			_ = defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
+			let variable = defineLocal(name: parameter.name, compiler: initCompiler, chunk: initChunk)
+
+			initChunk.emit(opcode: .setLocal, line: parameter.location.line)
+			initChunk.emit(byte: variable.slot, line: parameter.location.line)
 		}
 
 		// Emit the init body
@@ -265,16 +268,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 		)
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
-		if let name = expr.name {
-			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
-		}
-
 		// Define the params for this function
-		for (i, parameter) in expr.analyzedParams.paramsAnalyzed.enumerated() {
-			_ = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
+		for parameter in expr.analyzedParams.paramsAnalyzed {
+			let variable = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
 
 			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
-			functionChunk.emit(byte: Byte(i), line: parameter.location.line)
+			functionChunk.emit(byte: variable.slot, line: parameter.location.line)
+		}
+
+		if let name = expr.name {
+			// Define the function in its enclosing scope
+			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
 		}
 
 		// Emit the function body
