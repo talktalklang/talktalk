@@ -14,7 +14,6 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-		.package(url: "https://github.com/fumoboy007/msgpack-swift", branch: "main"),
 	],
 	targets: [
 		.executableTarget(
@@ -46,7 +45,7 @@ let package = Package(
 			name: "TalkTalkCore",
 			dependencies: [],
 			resources: [
-				.copy("../../Library/Standard"),
+				.process("../../Library"),
 			]
 		),
 		.target(
@@ -56,6 +55,7 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkDriver",
+				"TalkTalkSyntax"
 			]
 		),
 		.target(
@@ -64,8 +64,7 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				"TalkTalkBytecode",
-				.product(name: "DMMessagePack", package: "msgpack-swift"),
+				"TalkTalkBytecode"
 			]
 		),
 		.target(
@@ -134,7 +133,6 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				.product(name: "DMMessagePack", package: "msgpack-swift"),
 			]
 		),
 		.testTarget(

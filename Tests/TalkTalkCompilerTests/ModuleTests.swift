@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import MessagePack
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
@@ -30,21 +29,12 @@ struct ModuleTests {
 	@Test("Serialization/Deserialization") func encode() throws {
 		let (module, analysis) = compile(name: "Encoding", [.tmp("func foo() { 123 }"), .tmp("func main() { foo() }")])
 		let serialized = try module.serialize(with: analysis, with: JSONEncoder())
-		let msgpackSerialized = try module.serialize(with: analysis, with: MessagePackEncoder())
-
 		let deserializedModule = try Module.deserialize(from: serialized, with: JSONDecoder())
-		let deserializedMsgpackModule = try Module.deserialize(from: msgpackSerialized, with: MessagePackDecoder())
 
 		#expect(module.name == deserializedModule.name)
 		#expect(module.main == deserializedModule.main)
 		#expect(module.chunks == deserializedModule.chunks)
 		#expect(module.symbols == deserializedModule.symbols)
 		#expect(module.valueInitializers == deserializedModule.valueInitializers)
-
-		#expect(module.name == deserializedMsgpackModule.name)
-		#expect(module.main == deserializedMsgpackModule.main)
-		#expect(module.chunks == deserializedMsgpackModule.chunks)
-		#expect(module.symbols == deserializedMsgpackModule.symbols)
-		#expect(module.valueInitializers == deserializedMsgpackModule.valueInitializers)
 	}
 }

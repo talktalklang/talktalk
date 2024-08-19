@@ -5,8 +5,6 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-import TalkTalkSyntax
-
 actor SourceDocument {
 	let uri: String
 	let range: Range

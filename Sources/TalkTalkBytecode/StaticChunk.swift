@@ -9,9 +9,6 @@ public struct StaticChunk {
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
 	public var code: [Byte] = []
 
-	// Tracks the code array so we can output line numbers when disassambling
-	public var lines: [UInt32] = []
-
 	// Constant values emitted from literals found in the source
 	public var constants: [Value] = []
 
@@ -46,7 +43,6 @@ public struct StaticChunk {
 
 	public init(code: [Byte], lines: [UInt32], constants: [Value], data: [StaticData], arity: Byte, localsCount: Byte, upvalueCount: Byte, subchunks: [Chunk]) {
 		self.code = code
-		self.lines = lines
 		self.constants = constants
 		self.data = data
 		self.arity = arity

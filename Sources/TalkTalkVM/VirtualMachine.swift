@@ -13,7 +13,7 @@ public enum Verbosity: Equatable {
 	case lineByLine(String)
 }
 
-public struct VirtualMachine: ~Copyable {
+public struct VirtualMachine: Copyable {
 	// The module to run. Must be compiled in executable mode.
 	var module: Module
 

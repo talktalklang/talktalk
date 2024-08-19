@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import MessagePack
 import TalkTalkAnalysis
 import TalkTalkBytecode
 
@@ -20,9 +19,6 @@ public protocol ModuleDecoder {
 
 extension JSONEncoder: ModuleEncoder {}
 extension JSONDecoder: ModuleDecoder {}
-
-extension MessagePackEncoder: ModuleEncoder {}
-extension MessagePackDecoder: ModuleDecoder {}
 
 public extension Module {
 	// A helper for when we just want to run a chunk

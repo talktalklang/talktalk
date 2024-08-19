@@ -1,15 +1,6 @@
 {
-  "originHash" : "955a56eeebac1cd3844477cbc30eab5e32e68bf07f1d9850a3c2b6d1edf9a850",
+  "originHash" : "0a413140a27fc52bc515ecdcb2995dac37a31639ce732b78c5c16ecf4506e111",
   "pins" : [
-    {
-      "identity" : "msgpack-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/fumoboy007/msgpack-swift",
-      "state" : {
-        "branch" : "main",
-        "revision" : "a5aa8acc760a2eadfd45a9d6d30917c73e6134d4"
-      }
-    },
     {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
@@ -17,24 +8,6 @@
       "state" : {
         "revision" : "41982a3656a71c768319979febd796c6fd111d5c",
         "version" : "1.5.0"
-      }
-    },
-    {
-      "identity" : "swift-syntax",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax.git",
-      "state" : {
-        "revision" : "515f79b522918f83483068d99c68daeb5116342d",
-        "version" : "600.0.0-prerelease-2024-08-14"
-      }
-    },
-    {
-      "identity" : "swift-testing",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-testing",
-      "state" : {
-        "branch" : "main",
-        "revision" : "ade19543dd7a58048bc8909c0dcaa13bee252234"
       }
     }
   ],

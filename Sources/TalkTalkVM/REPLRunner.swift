@@ -12,7 +12,7 @@ import TalkTalkCore
 import TalkTalkDriver
 import TalkTalkSyntax
 
-public struct REPLRunner: ~Copyable {
+public struct REPLRunner: Copyable {
 	let driver: Driver
 	var module: Module
 	var analysis: AnalysisModule

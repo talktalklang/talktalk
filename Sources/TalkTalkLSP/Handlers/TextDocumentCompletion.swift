@@ -14,11 +14,6 @@ struct TextDocumentCompletion {
 		let params = request.params as! TextDocumentCompletionRequest
 		Log.info("handling completion request at \(params.position), trigger: \(params.context)")
 
-		guard let source = await server.getSource(params.textDocument.uri) else {
-			Log.error("no source found for \(params.textDocument.uri)")
-			return
-		}
-
 		let trigger: Completion.Trigger? = if let char = params.context.triggerCharacter {
 			.character(char)
 		} else {

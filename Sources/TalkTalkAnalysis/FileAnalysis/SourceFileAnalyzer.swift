@@ -473,7 +473,7 @@ public struct SourceFileAnalyzer: Visitor {
 		let exitBehavior: AnalyzedExprStmt.ExitBehavior = expr.body.stmts.count == 1 ? .return : .pop
 		innerEnvironment.exprStmtExitBehavior = exitBehavior
 
-		var bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
+		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
 
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
