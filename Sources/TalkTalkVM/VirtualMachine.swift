@@ -13,22 +13,14 @@ public enum Verbosity: Equatable {
 	case lineByLine(String)
 }
 
-public struct VirtualMachine {
+public struct VirtualMachine: ~Copyable {
 	// The module to run. Must be compiled in executable mode.
 	var module: Module
 
 	// Should we print disassembled instructions/stack dumps on each tick
 	var verbosity: Verbosity
 
-	var ip: UInt64 {
-		get {
-			currentFrame.ip
-		}
-
-		set {
-			currentFrame.ip = newValue
-		}
-	}
+	var ip: UInt64
 
 	// The code to run
 	var chunk: Chunk {
@@ -36,18 +28,16 @@ public struct VirtualMachine {
 	}
 
 	// The frames stack
-	var frames: Stack<CallFrame>
-
-	// The current call frame
-	var currentFrame: CallFrame {
-		get {
-			frames.peek()
-		}
-
-		set {
-			frames[frames.size - 1] = newValue
+	var frames: Stack<CallFrame> {
+		didSet {
+			self.ip = 0
+			if frames.isEmpty { return }
+			self.currentFrame = frames.peek()
 		}
 	}
+
+	// The current call frame
+	var currentFrame: CallFrame
 
 	// The stack
 	var stack: Stack<Value>
@@ -86,7 +76,10 @@ public struct VirtualMachine {
 			instances: [],
 			builtinInstances: []
 		)
+
 		frames.push(frame)
+		currentFrame = frame
+		ip = 0
 	}
 
 	public mutating func run() -> ExecutionResult {

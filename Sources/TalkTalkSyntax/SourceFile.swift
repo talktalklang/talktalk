@@ -19,6 +19,10 @@ public struct SourceFile {
 		self.path = path
 		self.text = text
 	}
+
+	public var filename: String {
+		path.components(separatedBy: "/").last!
+	}
 }
 
 extension SourceFile: ExpressibleByStringLiteral {

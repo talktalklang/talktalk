@@ -41,6 +41,7 @@ struct TalkCommand: TalkTalkCommand {
 		abstract: "The TalkTalk programming lanaguage",
 		version: version,
 		subcommands: [
+			Run.self,
 			AST.self,
 			Format.self,
 			REPL.self,

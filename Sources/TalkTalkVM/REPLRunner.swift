@@ -12,7 +12,7 @@ import TalkTalkCore
 import TalkTalkDriver
 import TalkTalkSyntax
 
-public struct REPLRunner {
+public struct REPLRunner: ~Copyable {
 	let driver: Driver
 	var module: Module
 	var analysis: AnalysisModule
@@ -23,19 +23,19 @@ public struct REPLRunner {
 	var compilingModule: CompilingModule
 
 	public static func run() async throws {
-		var runner = try await REPLRunner()
+		var runner = await REPLRunner()
 		try await runner.run()
 	}
 
-	public init() async throws {
-		let stdlib = try await StandardLibrary.compile()
+	public init() async {
+		let stdlib = try! await StandardLibrary.compile()
 		self.driver = Driver(
 			directories: [Library.replURL],
 			analyses: ["Standard": stdlib.analysis],
 			modules: ["Standard": stdlib.module]
 		)
 
-		let result = try await driver.compile(mode: .module)["REPL"]!
+		let result = try! await driver.compile(mode: .module)["REPL"]!
 		self.module = result.module
 		self.analysis = result.analysis
 		self.environment = Environment()

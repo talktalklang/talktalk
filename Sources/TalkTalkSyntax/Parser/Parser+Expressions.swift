@@ -152,8 +152,9 @@ extension Parser {
 			return LiteralExprSyntax(value: .string(string), location: [previous])
 		}
 
-		if didMatch(.int) {
-			return LiteralExprSyntax(value: .int(Int(previous.lexeme)!), location: [previous])
+		if didMatch(.int), let int = Int(previous.lexeme) {
+
+			return LiteralExprSyntax(value: .int(int), location: [previous])
 		}
 
 		if didMatch(.func) {
