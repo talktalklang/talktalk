@@ -41,7 +41,7 @@ public class Chunk: Codable {
 	public var upvalueCount: Byte = 0
 
 	// Other callable chunks
-	private var subchunks: [Chunk] = []
+	var subchunks: [Chunk] = []
 
 	// For debugging names used in this chunk
 	public var localNames: [String] = ["__reserved__"]

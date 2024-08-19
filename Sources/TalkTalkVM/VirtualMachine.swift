@@ -22,10 +22,13 @@ public struct VirtualMachine: ~Copyable {
 
 	var ip: UInt64
 
-	// The code to run
+	// A reference to the chunk that's being run
 	var chunk: Chunk {
 		currentFrame.closure.chunk
 	}
+
+	// The actual code that gets run
+	var staticChunk: StaticChunk
 
 	// The frames stack
 	var frames: Stack<CallFrame> {
@@ -33,6 +36,7 @@ public struct VirtualMachine: ~Copyable {
 			self.ip = 0
 			if frames.isEmpty { return }
 			self.currentFrame = frames.peek()
+			self.staticChunk = StaticChunk(chunk: currentFrame.closure.chunk)
 		}
 	}
 
@@ -78,8 +82,9 @@ public struct VirtualMachine: ~Copyable {
 		)
 
 		frames.push(frame)
-		currentFrame = frame
-		ip = 0
+		self.currentFrame = frame
+		self.staticChunk = StaticChunk(chunk: frame.closure.chunk)
+		self.ip = 0
 	}
 
 	public mutating func run() -> ExecutionResult {
@@ -202,8 +207,8 @@ public struct VirtualMachine: ~Copyable {
 				case let (.pointer(base, offset), .int(rhs)):
 					stack.push(.pointer(base, offset + rhs))
 				case let (.data(lhs), .data(rhs)):
-					let lhs = chunk.data[Int(lhs)]
-					let rhs = chunk.data[Int(rhs)]
+					let lhs = staticChunk.data[Int(lhs)]
+					let rhs = staticChunk.data[Int(rhs)]
 
 					guard lhs.kind == .string, lhs.kind == .string else {
 						return runtimeError("Cannot add two data operands: \(lhs), \(rhs)")
@@ -271,7 +276,7 @@ public struct VirtualMachine: ~Copyable {
 				stack.push(.bool(lhs >= rhs))
 			case .data:
 				let slot = readByte()
-				let data = chunk.data[Int(slot)]
+				let data = staticChunk.data[Int(slot)]
 				switch data.kind {
 				case .string:
 					stack.push(.string(String(data: Data(data.bytes), encoding: .utf8) ?? "<invalid string>"))
@@ -630,12 +635,12 @@ public struct VirtualMachine: ~Copyable {
 	}
 
 	mutating func readConstant() -> Value {
-		let value = chunk.constants[Int(readByte())]
+		let value = staticChunk.constants[Int(readByte())]
 		return value
 	}
 
 	mutating func readByte() -> Byte {
-		chunk.code[Int(ip++)]
+		staticChunk.code[Int(ip++)]
 	}
 
 	mutating func readUInt16() -> UInt64 {

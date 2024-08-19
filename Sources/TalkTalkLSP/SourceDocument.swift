@@ -12,14 +12,12 @@ actor SourceDocument {
 	let range: Range
 	var version: Int?
 	var text: String
-	var completer: Completer
 
 	init(textDocument: TextDocument) async {
 		await self.init(version: textDocument.version, uri: textDocument.uri, text: textDocument.text ?? "")
 	}
 
 	func update(text: String) async {
-		await completer.update(text: text)
 		self.text = text
 	}
 
@@ -29,6 +27,5 @@ actor SourceDocument {
 		self.range = Range(start: .init(line: 0, character: 0), end: .init(line: lines.count, character: lastLineCharacter))
 		self.text = text
 		self.uri = uri
-		self.completer = await Completer(source: SourceFile(path: uri, text: text))
 	}
 }
