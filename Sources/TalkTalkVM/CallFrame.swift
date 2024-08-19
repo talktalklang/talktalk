@@ -17,7 +17,11 @@ class Closure {
 	}
 }
 
-public struct CallFrame {
+public struct CallFrame: Equatable {
+	public static func == (lhs: CallFrame, rhs: CallFrame) -> Bool {
+		lhs.closure.chunk == rhs.closure.chunk
+	}
+
 	var ip: UInt64 = 0
 	var closure: Closure
 	var returnTo: UInt64

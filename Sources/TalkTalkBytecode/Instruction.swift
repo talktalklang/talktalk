@@ -71,6 +71,20 @@ public struct SimpleMetadata: InstructionMetadata {
 	}
 }
 
+public struct CaptureUpvalueMetadata: InstructionMetadata {
+	public let slot: Byte
+	public let name: String
+	public var length = 2
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+	
+	public var description: String {
+		"slot: \(slot), name: \(name)"
+	}
+}
+
 public struct ConstantMetadata: InstructionMetadata {
 	public var value: Value
 

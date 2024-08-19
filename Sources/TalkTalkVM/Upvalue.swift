@@ -8,12 +8,14 @@
 import TalkTalkBytecode
 
 class Upvalue {
-	var depth: Byte
-	var slot: Byte
+	enum State {
+		case open(owner: CallFrame, slot: Byte), closed(Value)
+	}
+
+	var state: State
 	var next: Upvalue?
 
-	init(depth: Byte, slot: Byte) {
-		self.depth = depth
-		self.slot = slot
+	init(state: State) {
+		self.state = state
 	}
 }

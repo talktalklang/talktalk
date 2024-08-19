@@ -39,13 +39,13 @@ public struct VirtualMachine {
 	var frames: Stack<CallFrame> {
 		willSet {
 			if frames.size != newValue.size, frames.size > 0, verbosity != .quiet {
-				log("       <- \(frames.peek().closure.chunk.name)()")
+				log("       <- \(frames.peek().closure.chunk.name), depth: \(frames.peek().closure.chunk.depth) locals: \(frames.peek().closure.chunk.localNames)")
 			}
 		}
 
 		didSet {
 			if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
-				log("       -> \(frames.peek().closure.chunk.name)()")
+				log("       -> \(frames.peek().closure.chunk.name), depth: \(frames.peek().closure.chunk.depth) locals: \(frames.peek().closure.chunk.localNames)")
 			}
 		}
 	}
@@ -72,6 +72,7 @@ public struct VirtualMachine {
 
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
+
 	public static func run(module: Module, verbosity: Verbosity = .quiet) -> ExecutionResult {
 		var vm = VirtualMachine(module: module, verbosity: verbosity)
 		return vm.run()
@@ -144,10 +145,19 @@ public struct VirtualMachine {
 			case .return:
 				// Remove the result from the stack temporarily while we clean it up
 				let result = stack.pop()
-
-				// TODO: Close upvalues
-
 				let calledFrame = frames.pop()
+
+				var previous = openUpvalues
+				while let next = previous {
+					if case let .open(owner: owner, slot: slot) = next.state {
+						if owner == calledFrame {
+							next.state = .closed(calledFrame.locals[Int(slot)]!)
+							previous?.next = next.next
+						}
+					}
+
+					previous = next.next
+				}
 
 				// Pop off values created on the stack by the called frame
 				while stack.size > calledFrame.stackOffset + 1 {
@@ -324,15 +334,39 @@ public struct VirtualMachine {
 			case .getUpvalue:
 				let slot = readByte()
 				let upvalue = currentFrame.closure.upvalues[Int(slot)]
-				guard let value = frames[frames.size - 1 - Int(upvalue.depth)].locals[Int(upvalue.slot)] else {
-					return runtimeError("Could not find upvalue: \(upvalue)")
-				}
 
-				stack.push(value)
+				switch upvalue.state {
+				case let .closed(value):
+					stack.push(value)
+				case let .open(owner: owner, slot: slot):
+					stack.push(owner.locals[Int(slot)]!)
+				}
 			case .setUpvalue:
 				let slot = readByte()
 				let upvalue = currentFrame.closure.upvalues[Int(slot)]
-				frames[frames.size - 1 - Int(upvalue.depth)].locals[Int(upvalue.slot)] = stack.peek()
+
+				switch upvalue.state {
+				case .closed(_):
+					upvalue.state = .closed(stack.peek())
+				case var .open(owner: owner, slot: slot):
+					owner.locals[Int(slot)] = stack.peek()
+				}
+
+			case .captureUpvalue:
+				let slot = readByte()
+				print("capturing upvalue: \(slot)")
+
+				// Close upvalues
+//				for upvalue in calledFrame.closure.upvalues {
+//					upvalue.value = calledFrame.locals[Int(upvalue.slot)]
+//
+//					if let openUpvalues {
+//						upvalue.next = openUpvalues
+//						self.openUpvalues = upvalue
+//					} else {
+//						openUpvalues = upvalue
+//					}
+//				}
 			case .defClosure:
 				// Read which subchunk this closure points to
 				let slot = readByte()
@@ -348,27 +382,38 @@ public struct VirtualMachine {
 				for _ in 0 ..< subchunk.upvalueCount {
 					let depth = readByte()
 					let slot = readByte()
-					upvalues.append(Upvalue(depth: depth, slot: slot))
 
-//					if isLocal {
-//						// If the upvalue is local, that means it is defined in the current call frame. That
-//						// means we want to capture the value.
-//						let value = stack[Int(index)]
-//						let upvalue = captureUpvalue(value: value)
-//						upvalues.append(upvalue)
-//					} else {
-//						// If it's not local, that means it's already been captured and the current call frame's
-//						// knowledge of the value is an upvalue as well.
-//						upvalues.append(currentFrame.closure.upvalues[Int(index)])
-//					}
+					let owner = frames[frames.size - 1 - Int(depth)]
+					var upvalue: Upvalue? = nil
+					var previous = openUpvalues
+
+					// See if we already have this upvalue open
+					while let nextUpvalue = previous {
+						if case let .open(owner: openOwner, slot: openSlot) = nextUpvalue.state,
+							 openSlot == slot, openOwner == owner {
+							upvalue = nextUpvalue
+							break
+						}
+
+						previous = nextUpvalue.next
+					}
+
+					if upvalue == nil {
+						upvalue = Upvalue(state: .open(owner: currentFrame, slot: slot))
+
+						if openUpvalues == nil {
+							openUpvalues = upvalue
+						} else {
+							upvalue!.next = openUpvalues
+							self.openUpvalues = upvalue
+						}
+					}
+
+					upvalues.append(upvalue!)
 				}
 
 				// Store the closure TODO: gc these when they're not needed anymore
 				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
-
-				if localSlot != 0 {
-					currentFrame.locals[Int(localSlot)] = .closure(.init(slot))
-				}
 
 				stack.push(.closure(.init(slot)))
 			case .call:

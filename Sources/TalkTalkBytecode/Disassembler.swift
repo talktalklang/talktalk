@@ -37,6 +37,8 @@ public struct Disassembler {
 		switch opcode {
 		case .constant:
 			return constantInstruction(start: index)
+		case .captureUpvalue:
+			return captureUpvalueInstruction(start: index)
 		case .defClosure:
 			return defClosureInstruction(start: index)
 		case .jump, .jumpUnless, .loop:
@@ -64,6 +66,13 @@ public struct Disassembler {
 		default:
 			return Instruction(opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
+	}
+
+	mutating func captureUpvalueInstruction(start: Int) -> Instruction {
+		let slot = chunk.code[current++]
+		let name = chunk.localNames[Int(slot)]
+		let metadata = CaptureUpvalueMetadata(slot: slot, name: name)
+		return Instruction(opcode: .captureUpvalue, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func constantInstruction(start: Int) -> Instruction {

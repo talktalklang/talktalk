@@ -24,7 +24,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public var locals: [Variable]
 
 	// Tracks which locals have been captured
-	public var captures: [String] = []
+//	public var captures: [String] = []
 
 	// Track which locals have been created in this scope
 	public var localsCount = 1
@@ -40,10 +40,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func endScope(chunk: Chunk) {
 		for i in 0 ..< locals.count {
-			let local = locals[locals.count - i - 1]
-			if local.depth <= scopeDepth { break }
-
-			chunk.emit(opcode: .pop, line: 0)
+			let local = locals[i]
+			if local.isCaptured {
+				chunk.emit(opcode: .captureUpvalue, line: chunk.lines.last!)
+				chunk.emit(byte: Byte(i), line: chunk.lines.last!)
+			}
 		}
 	}
 
@@ -287,7 +288,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		if let name = expr.name {
 			// Define the function inside its body for recursion
-			_ = functionCompiler.defineLocal(name: name.lexeme, compiler: functionCompiler, chunk: functionChunk)
+//			let variable = functionCompiler.defineLocal(name: name.lexeme, compiler: functionCompiler, chunk: functionChunk)
+//			let upvalue = functionCompiler.addUpvalue(localSlot, depth: 1, name: name.lexeme, chunk: functionChunk, owner: self)
+//			let slot = functionCompiler.resolveUpvalue(named: name.lexeme, chunk: functionChunk)
 //			functionChunk.emitClosure(subchunkID: Byte(subchunkID), localSlot: variable.slot, line: expr.location.line)
 		}
 
@@ -720,9 +723,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		while let nextParent = parent {
 			if let local = nextParent.resolveLocal(named: name) {
-				upvalues.append((ancestorDepth: depth, ancestorSlot: local))
-				chunk.upvalueNames.append(name)
-				return Byte(upvalues.count - 1)
+				return addUpvalue(local, depth: depth, name: name, chunk: chunk, owner: nextParent)
 			}
 
 			parent = nextParent.parent
@@ -813,17 +814,20 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return variable
 	}
 
-	private func addUpvalue(_ index: Byte, isLocal: Bool, name: String, chunk: Chunk) -> Byte {
-		// If we've already got it, return it
-//		for (i, upvalue) in upvalues.enumerated() {
-//			if upvalue.index == index, upvalue.isLocal {
-//				return Byte(i)
-//			}
-//		}
-//
-//		// Otherwise add a new one
-//		upvalues.append((index: index, isLocal: isLocal))
+	private func addUpvalue(_ slot: Byte, depth: Byte, name: String, chunk: Chunk, owner: ChunkCompiler) -> Byte {
+		for (i, upvalue) in upvalues.enumerated() {
+			// Check to see if we already have this upvalue. If so, just return the one we have
+			if upvalue.ancestorDepth == depth, upvalue.ancestorSlot == slot {
+				return Byte(i)
+			}
+		}
+
+		// Otherwise add it
+		upvalues.append((ancestorDepth: depth, ancestorSlot: slot))
 		chunk.upvalueNames.append(name)
+
+		// Tell the scope that owns the local that this variable is captured now
+		owner.locals[Int(slot)].isCaptured = true
 
 		return Byte(upvalues.count - 1)
 	}

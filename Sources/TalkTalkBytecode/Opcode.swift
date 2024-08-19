@@ -27,7 +27,7 @@ public enum Opcode: Byte {
 	     getLocal,
 
 	     // Upvalues (captures)
-	     getUpvalue, setUpvalue,
+	     getUpvalue, setUpvalue, captureUpvalue,
 
 	     // Module functions
 	     getModuleFunction, setModuleFunction,
