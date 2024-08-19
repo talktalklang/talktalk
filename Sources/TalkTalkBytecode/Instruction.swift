@@ -185,72 +185,63 @@ public extension InstructionMetadata where Self == GetPropertyMetadata {
 	}
 }
 
-public struct VariableMetadata: InstructionMetadata {
-	public enum VariableType {
-		case local, global, builtin, `struct`, property, builtinStruct
+public struct PropertyMetadata: InstructionMetadata {
+	public let slot: Int
+	public let length = 2
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
 	}
+	public var description: String {
+		"property: \(slot)"
+	}
+}
 
-	public var length: Int = 2
+public extension InstructionMetadata where Self == PropertyMetadata {
+	static func property(slot: Int) -> PropertyMetadata {
+		PropertyMetadata(slot: slot)
+	}
+}
 
-	public let slot: Byte
+public struct VariableMetadata: InstructionMetadata {
+	public var length: Int = 3
+
+	public let pointer: Pointer
 	public let name: String
-	public let type: VariableType
 
 	public func emit(into _: inout Chunk, from _: Instruction) {
 		fatalError("TODO")
 	}
 
 	public var description: String {
-		"slot: \(slot), name: \(name)"
+		"pointer: \(pointer), name: \(name)"
 	}
 }
 
 public extension InstructionMetadata where Self == VariableMetadata {
-	static func local(slot: Byte, name: String) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: name, type: .local)
+	static func variable(_ pointer: Pointer, name: String = "") -> VariableMetadata {
+		VariableMetadata(pointer: pointer, name: name)
 	}
 
-	static func global(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .global)
+	static func global(slot: Int) -> VariableMetadata {
+		VariableMetadata(pointer: .moduleValue(Byte(slot)), name: "")
 	}
 
-	static func builtin(slot: Byte, name: String) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: name, type: .builtin)
+	static func stack(_ slot: Int, _ name: String) -> VariableMetadata {
+		VariableMetadata(pointer: .stack(Byte(slot)), name: name)
 	}
 
-	static func builtinStruct(slot: Byte, name: String) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: name, type: .builtinStruct)
-	}
-
-	static func `struct`(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .struct)
-	}
-
-	static func property(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .property)
+	static func heap(_ slot: Int, _ name: String) -> VariableMetadata {
+		VariableMetadata(pointer: .heap(Byte(slot)), name: name)
 	}
 }
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
-	public struct Upvalue: Equatable, Hashable {
-		var depth: Byte
-		var slot: Byte
-
-		public static func upvalue(depth: Byte, slot: Byte) -> Upvalue {
-			Upvalue(depth: depth, slot: slot)
-		}
-
-		public var description: String {
-			"depth: \(depth) slot: \(slot)"
-		}
-	}
-
 	let name: String?
 	let arity: Byte
 	let depth: Byte
-	let upvalues: [Upvalue]
+
 	public var length: Int {
-		2 + (upvalues.count * 2)
+		2
 	}
 
 	public func emit(into _: inout Chunk, from _: Instruction) {
@@ -259,14 +250,14 @@ public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 
 	public var description: String {
 		var result = if let name { "name: \(name) " } else { "" }
-		result += "arity: \(arity) depth: \(depth) upvalues: [\(upvalues.map(\.description).joined(separator: ", "))]"
+		result += "arity: \(arity) depth: \(depth)"
 		return result
 	}
 }
 
 public extension InstructionMetadata where Self == ClosureMetadata {
-	static func closure(name: String = "", arity: Byte, depth: Byte, upvalues: [ClosureMetadata.Upvalue] = []) -> ClosureMetadata {
-		ClosureMetadata(name: name, arity: arity, depth: depth, upvalues: upvalues)
+	static func closure(name: String = "", arity: Byte, depth: Byte) -> ClosureMetadata {
+		ClosureMetadata(name: name, arity: arity, depth: depth)
 	}
 }
 
@@ -286,25 +277,5 @@ public struct CallMetadata: InstructionMetadata {
 public extension InstructionMetadata where Self == CallMetadata {
 	static func call(name: String) -> CallMetadata {
 		CallMetadata(name: name)
-	}
-}
-
-public struct UpvalueMetadata: InstructionMetadata {
-	public let slot: Byte
-	public let name: String
-	public var length: Int = 2
-
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
-
-	public var description: String {
-		"slot: \(slot), name: \(name)"
-	}
-}
-
-public extension InstructionMetadata where Self == UpvalueMetadata {
-	static func upvalue(slot: Byte, name: String) -> UpvalueMetadata {
-		UpvalueMetadata(slot: slot, name: name)
 	}
 }

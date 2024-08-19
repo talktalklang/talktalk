@@ -140,11 +140,11 @@ struct ModuleCompilerTests {
 		let initChunk = structDef.methods[0]
 
 		#expect(initChunk.disassemble() == Instructions(
-			.op(.getLocal, line: 4, .local(slot: 1, name: "age")),
-			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
+			.op(.getLocal, line: 4, .variable(.stack(1), name: "age")),
+			.op(.getLocal, line: 4, .variable(.stack(0), name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
+			.op(.getLocal, line: 6, .variable(.stack(0), name: "__reserved__")),
 			.op(.return, line: 6, .simple)
 		))
 	}
@@ -168,9 +168,9 @@ struct ModuleCompilerTests {
 		// Get the actual code, not the synthesized main
 		let mainChunk = try #require(module.main?.getChunk(at: 0))
 		#expect(mainChunk.disassemble() == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .variable(.moduleStruct(0))),
 			.op(.call, line: 8),
-			.op(.setModuleValue, line: 8, .global(slot: 0)),
+			.op(.setModuleValue, line: 8, .variable(.moduleValue(0))),
 			.op(.return, line: 0)
 		))
 
@@ -182,10 +182,10 @@ struct ModuleCompilerTests {
 		let initChunk = structDef.methods[0]
 		#expect(initChunk.disassemble() == Instructions(
 			.op(.constant, line: 4, .constant(.int(123))),
-			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
+			.op(.getLocal, line: 4, .variable(.stack(0), name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
+			.op(.getLocal, line: 6, .variable(.stack(0), name: "__reserved__")),
 			.op(.return, line: 6, .simple)
 		))
 	}

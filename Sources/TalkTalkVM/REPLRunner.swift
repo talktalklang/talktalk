@@ -68,7 +68,7 @@ public struct REPLRunner {
 
 		chunk.emit(opcode: .suspend, line: .zero)
 
-		return vm.run()
+		return try vm.run()
 	}
 
 	public mutating func run() async throws {

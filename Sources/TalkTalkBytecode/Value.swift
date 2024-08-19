@@ -25,28 +25,25 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case string(String)
 
 	// The block ID and the offset
-	case pointer(IntValue, IntValue)
+	case pointer(Heap.Pointer)
 
 	// The index of the closure
 	case closure(IntValue)
 
 	// The index of the builtin function
-	case builtin(IntValue)
-
-	// The index of the builtin struct
-	case builtinStruct(IntValue)
+	case builtin(Byte)
 
 	// The index of the module function in its lookup table
 	case moduleFunction(IntValue)
 
-	// The index of the struct in the module
-	case `struct`(IntValue)
+	// The struct object
+	case `struct`(Struct)
 
-	// The type of instance, the instance ID
-	case instance(IntValue, IntValue)
+	// The instance
+	case instance(Instance)
 
-	// The method slot, the type of instance
-	case boundMethod(IntValue, IntValue)
+	// The instance, the method slot
+	case boundMethod(Instance, IntValue)
 
 	case primitive(Primitive)
 
@@ -56,7 +53,6 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		switch self {
 		case .closure: true
 		case .builtin: true
-		case .builtinStruct: true
 		case .moduleFunction: true
 		case .struct: true
 		case .boundMethod: true
@@ -96,7 +92,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var builtinValue: IntValue? {
+	public var builtinValue: Byte? {
 		guard case let .builtin(result) = self else {
 			return nil
 		}
@@ -112,7 +108,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var structValue: IntValue? {
+	public var structValue: Struct? {
 		guard case let .struct(result) = self else {
 			return nil
 		}
@@ -120,26 +116,26 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var instanceValue: (IntValue, IntValue)? {
-		guard case let .instance(type, instance) = self else {
+	public var instanceValue: (Instance)? {
+		guard case let .instance(instance) = self else {
 			return nil
 		}
 
-		return (type, instance)
+		return (instance)
 	}
 
-	public var boundMethodValue: (slot: IntValue, instanceID: IntValue)? {
-		guard case let .boundMethod(methodSlot, instance) = self else {
+	public var boundMethodValue: (instance: Instance, methodSlot: IntValue)? {
+		guard case let .boundMethod(instance, methodSlot) = self else {
 			return nil
 		}
 
-		return (methodSlot, instance)
+		return (instance, methodSlot)
 	}
 
 	public func disassemble(in chunk: Chunk) -> String {
 		switch self {
 		case .closure:
-			"closure(\(chunk.maybeGetChunk(at: Int(closureValue!))?.name))"
+			"closure(\(chunk.maybeGetChunk(at: Int(closureValue!))?.name as Any))"
 		default:
 			description
 		}
@@ -173,8 +169,6 @@ extension Value: CustomStringConvertible {
 			"instance \(instanceValue!)"
 		case .boundMethod:
 			"bound method \(boundMethodValue!)"
-		case .builtinStruct:
-			"builtin struct"
 		case .pointer:
 			"pointer"
 		case .primitive:
@@ -194,10 +188,10 @@ extension Value: CustomStringConvertible {
 			true
 		case (.string(_), .primitive(.string)):
 			true
-		case (.pointer(_, _), .primitive(.pointer)):
+		case (.pointer(_), .primitive(.pointer)):
 			true
-		case let (.instance(slot, _), .struct(structSlot)):
-			slot == structSlot
+		case let (.instance(instance), .struct(structType)):
+			instance.type == structType
 		default:
 			false
 		}

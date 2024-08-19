@@ -67,7 +67,7 @@ struct VMEndToEndTests {
 
 	func runAsync(_ strings: String...) throws {
 		let module = try compile(strings)
-		_ = VirtualMachine.run(module: module)
+		_ = try VirtualMachine.run(module: module)
 	}
 
 	@Test("Adds") func adds() throws {
@@ -133,26 +133,30 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Var expr") func varExpr() throws {
-		#expect(
-			try run(
-				"""
+		let result = try run(
+		"""
+			func foo() {
 				var a = 10
 				let b = 20
 				a = a + b
 				return a
-				""") == .int(30))
+			}()
+			"""
+			, verbosity: .verbose)
+		#expect(result == .int(30))
 	}
 
 	@Test("Basic func/call expr") func funcExpr() throws {
-		#expect(
-			try run(
-				"""
-				let i = func() {
-					123
-				}()
+		let result = try run(
+		"""
+			let i = func() {
+				123
+			}()
 
-				return i + 1
-				""") == .int(124))
+			return i + 1
+			"""
+		, verbosity: .verbose)
+		#expect(result == .int(124))
 	}
 
 	@Test("Func arguments") func funcArgs() throws {
@@ -162,7 +166,8 @@ struct VMEndToEndTests {
 				func(i) {
 					i + 20
 				}(10)
-				""") == .int(30))
+				"""
+				, verbosity: .verbose) == .int(30))
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {

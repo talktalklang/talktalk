@@ -7,15 +7,15 @@
 
 import TalkTalkBytecode
 
-public struct Variable {
+public struct Variable: Equatable {
 	var name: String
-	var slot: Byte
+	var pointer: Pointer
 	var depth: Int
 	var isCaptured: Bool
 	var getter: Opcode
 	var setter: Opcode
 
 	static func reserved(depth: Int) -> Variable {
-		Variable(name: "__reserved__", slot: 0, depth: depth, isCaptured: false, getter: .getLocal, setter: .setLocal)
+		Variable(name: "__reserved__", pointer: .stack(0), depth: depth, isCaptured: false, getter: .getLocal, setter: .setLocal)
 	}
 }

@@ -7,33 +7,27 @@
 
 import TalkTalkBytecode
 
-class Closure {
-	var chunk: Chunk
-	let upvalues: [Upvalue]
-
-	public init(chunk: Chunk, upvalues: [Upvalue]) {
-		self.chunk = chunk
-		self.upvalues = upvalues
-	}
-}
-
 public struct CallFrame: Equatable {
-	public static func == (lhs: CallFrame, rhs: CallFrame) -> Bool {
-		lhs.closure.chunk == rhs.closure.chunk
+	public static func allocate(for chunk: Chunk, returnTo: UInt64, heap: Heap, arguments: [Value]) -> CallFrame {
+		let heapValues = heap.allocate(count: Int(chunk.heapValueCount))
+
+		var frame = CallFrame(chunk: chunk, returnTo: returnTo, heapPointers: heapValues)
+		for (i, argument) in arguments.enumerated() {
+			frame.locals[i+1] = argument
+		}
+		return frame
 	}
 
 	var ip: UInt64 = 0
-	var closure: Closure
+	var chunk: Chunk
+	var locals: [Value?]
+	var heapPointers: [Heap.Pointer]
 	var returnTo: UInt64
-	var stackOffset: Int
 
-	var locals: ContiguousArray<Value?>
-
-	// Store instances created in this call frame. This is sort of a weird attempt
-	// to simulate lower level stuff that feels p leaky to me.
-	// TODO: We're gonna need to figure out how they can move between frames?
-	var instances: [StructInstance]
-
-	// Store builtin instance separately because we call methods on them differently
-	var builtinInstances: [any BuiltinStruct]
+	private init(chunk: Chunk, returnTo: UInt64, heapPointers: [Heap.Pointer]) {
+		self.chunk = chunk
+		self.locals = Array(repeating: nil, count: Int(chunk.localsCount))
+		self.returnTo = returnTo
+		self.heapPointers = heapPointers
+	}
 }

@@ -37,42 +37,29 @@ public struct Disassembler {
 		switch opcode {
 		case .constant:
 			return constantInstruction(start: index)
-		case .captureUpvalue:
-			return captureUpvalueInstruction(start: index)
 		case .defClosure:
 			return defClosureInstruction(start: index)
 		case .jump, .jumpUnless, .loop:
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
-			return variableInstruction(opcode: opcode, start: index, type: .local)
+			return variableInstruction(opcode: opcode, start: index)
 		case .getModuleFunction, .setModuleFunction:
-			return variableInstruction(opcode: opcode, start: index, type: .global)
+			return variableInstruction(opcode: opcode, start: index)
 		case .getModuleValue, .setModuleValue:
-			return variableInstruction(opcode: opcode, start: index, type: .global)
+			return variableInstruction(opcode: opcode, start: index)
 		case .getStruct, .setStruct:
-			return variableInstruction(opcode: opcode, start: index, type: .struct)
-		case .getBuiltinStruct, .setBuiltinStruct:
-			return variableInstruction(opcode: opcode, start: index, type: .builtinStruct)
+			return variableInstruction(opcode: opcode, start: index)
 		case .getProperty:
-			return getPropertyInstruction(opcode: opcode, start: index, type: .property)
+			return getPropertyInstruction(opcode: opcode, start: index)
 		case .setProperty:
-			return variableInstruction(opcode: opcode, start: index, type: .property)
+			return variableInstruction(opcode: opcode, start: index)
 		case .setBuiltin, .getBuiltin:
-			return variableInstruction(opcode: opcode, start: index, type: .builtin)
+			return variableInstruction(opcode: opcode, start: index)
 		case .callChunkID:
-			return variableInstruction(opcode: opcode, start: index, type: .global)
-		case .getUpvalue, .setUpvalue:
-			return upvalueInstruction(opcode: opcode, start: index)
+			return variableInstruction(opcode: opcode, start: index)
 		default:
 			return Instruction(opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
-	}
-
-	mutating func captureUpvalueInstruction(start: Int) -> Instruction {
-		let slot = chunk.code[current++]
-		let name = chunk.localNames[Int(slot)]
-		let metadata = CaptureUpvalueMetadata(slot: slot, name: name)
-		return Instruction(opcode: .captureUpvalue, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func constantInstruction(start: Int) -> Instruction {
@@ -94,58 +81,36 @@ public struct Disassembler {
 		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
-	mutating func variableInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) -> Instruction {
-		let slot = chunk.code[current++]
+	mutating func variableInstruction(opcode: Opcode, start: Int) -> Instruction {
+		let a = chunk.code[current++]
+		let b = chunk.code[current++]
 
-		let name = switch type {
-		case .local:
-			chunk.localNames[Int(slot)]
-		case .global:
-			"slot: \(slot)"
-		case .builtin:
-			"builtin \(slot)"
-		case .struct:
-			"slot: \(slot)"
-		case .property:
-			"slot: \(slot)"
-		case .builtinStruct:
-			"slot: \(slot)"
-		}
+		let pointer = Pointer(bytes: (a, b))
 
-		let metadata = VariableMetadata(slot: slot, name: name, type: type)
+		let name = chunk.localNames[pointer] ?? ""
+
+		let metadata = VariableMetadata(pointer: pointer, name: name)
 		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func defClosureInstruction(start: Int) -> Instruction {
 		let closureSlot = chunk.code[current++]
 		let subchunk = chunk.getChunk(at: Int(closureSlot))
-		let localSlot = chunk.code[current++]
+		let localA = chunk.code[current++]
+		let localB = chunk.code[current++]
+		let localSlot = Pointer(bytes: (localA, localB))
 
-		var upvalues: [ClosureMetadata.Upvalue] = []
-		for _ in 0 ..< subchunk.upvalueCount {
-			let depth = chunk.code[current++]
-			let slot = chunk.code[current++]
-
-			upvalues.append(ClosureMetadata.Upvalue(depth: depth, slot: slot))
-		}
-
-		let name = if localSlot != 0 {
-			chunk.localNames[Int(localSlot)]
+		let name = if localSlot != .stack(0) {
+			chunk.localNames[localSlot]
 		} else {
 			""
 		}
 
-		let metadata = ClosureMetadata(name: name, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
+		let metadata = ClosureMetadata(name: name, arity: subchunk.arity, depth: subchunk.depth)
 		return Instruction(opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
-	mutating func upvalueInstruction(opcode: Opcode, start: Int) -> Instruction {
-		let slot = chunk.code[current++]
-		let metadata = UpvalueMetadata(slot: slot, name: chunk.upvalueNames[Int(slot)])
-		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
-	}
-
-	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type _: VariableMetadata.VariableType) -> Instruction {
+	mutating func getPropertyInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
 		let options = chunk.code[current++]
 

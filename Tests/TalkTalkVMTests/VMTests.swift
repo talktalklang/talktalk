@@ -26,7 +26,7 @@ struct VMTests {
 			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
 		])
 
-		let result = VirtualMachine.run(module: .main(chunk))
+		let result = try VirtualMachine.run(module: .main(chunk))
 		#expect(try result.get() == .int(123))
 	}
 
@@ -48,7 +48,7 @@ struct VMTests {
 			Instruction(opcode: .subtract, offset: 4, line: 1, metadata: .simple),
 		])
 
-		let result = VirtualMachine.run(module: .main(chunk))
+		let result = try VirtualMachine.run(module: .main(chunk))
 		#expect(try result.get() == .int(15))
 	}
 
@@ -59,7 +59,7 @@ struct VMTests {
 			Instruction(opcode: .divide, offset: 4, line: 1, metadata: .simple),
 		])
 
-		let result = VirtualMachine.run(module: .main(chunk))
+		let result = try VirtualMachine.run(module: .main(chunk))
 		#expect(try result.get() == .int(2))
 	}
 
@@ -70,7 +70,7 @@ struct VMTests {
 			Instruction(opcode: .multiply, offset: 4, line: 1, metadata: .simple),
 		])
 
-		let result = VirtualMachine.run(module: .main(chunk))
+		let result = try VirtualMachine.run(module: .main(chunk))
 		#expect(try result.get() == .int(200))
 	}
 }

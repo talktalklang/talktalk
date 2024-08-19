@@ -8,10 +8,10 @@ import Foundation
 
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
-public class Chunk: Codable {
+public class Chunk: Codable, @unchecked Sendable {
 	public enum CodingKeys: CodingKey {
 		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
-		case name, code, lines, constants, data, arity, depth, localsCount, upvalueCount, subchunks, localNames, upvalueNames
+		case name, code, lines, constants, data, arity, depth, localsCount, heapValueCount, subchunks, localNames
 	}
 
 	public let name: String
@@ -38,14 +38,13 @@ public class Chunk: Codable {
 	public var localsCount: Byte = 1
 
 	// How many upvalues does this chunk refer to
-	public var upvalueCount: Byte = 0
+	public var heapValueCount: Byte = 0
 
 	// Other callable chunks
 	private var subchunks: [Chunk] = []
 
 	// For debugging names used in this chunk
-	public var localNames: [String] = ["__reserved__"]
-	public var upvalueNames: [String] = []
+	public var localNames: [Pointer: String] = [.stack(0): "__reserved__"]
 
 	public init(name: String) {
 		self.name = name
@@ -64,11 +63,12 @@ public class Chunk: Codable {
 	}
 
 	@discardableResult public func dump() -> String {
-		var result = "[\(name) locals: \(localsCount), upvalues: \(upvalueCount)]\n"
+		var result = "[\(name) locals: \(localsCount), heap: \(heapValueCount)]\n"
 		result += disassemble().map(\.description).joined(separator: "\n") + "\n"
 
 		for subchunk in subchunks {
 			result += subchunk.dump()
+			print(subchunk.dump())
 		}
 
 		result += "\n"
@@ -165,7 +165,6 @@ public class Chunk: Codable {
 	}
 
 	public func emit(opcode: Opcode, line: UInt32) {
-		if opcode == .pop {}
 		write(byte: opcode.byte, line: line)
 	}
 
@@ -173,11 +172,15 @@ public class Chunk: Codable {
 		write(byte: byte, line: line)
 	}
 
-	public func emitClosure(subchunkID: Byte, localSlot: Byte, line: UInt32) {
+	public func emit(pointer: Pointer, line: UInt32) {
+		write(byte: pointer.bytes.0, line: line)
+		write(byte: pointer.bytes.1, line: line)
+	}
+
+	public func emitClosure(subchunkID: Byte, localSlot: Pointer, line: UInt32) {
 		// Emit the opcode to define a closure
 		write(.defClosure, line: line)
 		write(byte: subchunkID, line: line)
-		write(byte: localSlot, line: line)
 	}
 
 	public func emit(constant value: Value, line: UInt32) {
@@ -224,7 +227,7 @@ extension Chunk: Equatable {
 			\.constants,
 			\.lines,
 			\.arity,
-			\.upvalueCount,
+			\.heapValueCount,
 		]
 
 		for keypath in keypaths {

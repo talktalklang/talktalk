@@ -13,6 +13,9 @@ public enum Opcode: Byte {
 	     negate,
 	     not,
 
+			 // Memory operations
+			 alloca, malloca,
+
 	     // Callables
 	     call, callChunkID,
 
@@ -27,8 +30,6 @@ public enum Opcode: Byte {
 	     getLocal,
 
 	     // Upvalues (captures)
-	     getUpvalue, setUpvalue, captureUpvalue,
-
 	     // Module functions
 	     getModuleFunction, setModuleFunction,
 
@@ -40,11 +41,10 @@ public enum Opcode: Byte {
 	     getProperty, setProperty,
 
 	     // Type casting
-	     cast, `is`, primitive,
+	     `is`, primitive,
 
 	     // Builtins
 	     getBuiltin, setBuiltin,
-	     getBuiltinStruct, setBuiltinStruct,
 
 	     // Literals
 	     `true`,

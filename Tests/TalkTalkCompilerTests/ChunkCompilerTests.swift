@@ -175,11 +175,11 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
-			.op(.setLocal, line: 0, .local(slot: 1, name: "i")),
+			.op(.setLocal, line: 0, .stack(1, "i")),
 
 			// Condition
 			.op(.constant, line: 1, .constant(.int(5))),
-			.op(.getLocal, line: 1, .local(slot: 1, name: "i")),
+			.op(.getLocal, line: 1, .stack(1, "i")),
 			.op(.less, line: 1, .simple),
 
 			// Jump that skips the body if the condition isn't true
@@ -190,9 +190,9 @@ struct CompilerTests {
 
 			// Body
 			.op(.constant, line: 2, .constant(.int(1))),
-			.op(.getLocal, line: 2, .local(slot: 1, name: "i")),
+			.op(.getLocal, line: 2, .stack(1, "i")),
 			.op(.add, line: 2, .simple),
-			.op(.setLocal, line: 2, .local(slot: 1, name: "i")),
+			.op(.setLocal, line: 2, .stack(1, "i")),
 			.op(.pop, line: 2, .simple),
 			.op(.loop, line: 3, .loop(back: 20)),
 
@@ -283,15 +283,14 @@ struct CompilerTests {
 		let chunk = wrapper.getChunk(at: 0)
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 2, .closure(name: "foo", arity: 0, depth: 1, upvalues: [.upvalue(depth: 1, slot: 1)])),
+			.op(.setLocal, line: 1, .heap(1, "a")),
+			.op(.defClosure, line: 2, .closure(name: "foo", arity: 0, depth: 1)),
 			.op(.return, line: 5)
 		))
 
 		let inner = wrapper.getChunk(at: 1)
 		#expect(inner.disassemble() == Instructions(
 			.op(.constant, line: 3, .constant(.int(1))),
-			.op(.getUpvalue, line: 3, .upvalue(slot: 0, name: "a")),
 			.op(.add, line: 3),
 			.op(.return, line: 3),
 			.op(.return, line: 4)
@@ -317,11 +316,11 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 3, .closure(arity: 0, depth: 1, upvalues: [.upvalue(depth: 1, slot: 1)])),
+			.op(.setLocal, line: 1, .heap(1, "a")),
+			.op(.defClosure, line: 3, .closure(arity: 0, depth: 1)),
 			.op(.call, line: 3),
 			.op(.pop, line: 3),
-			.op(.getLocal, line: 7, .local(slot: 1, name: "a")),
+			.op(.getLocal, line: 7, .heap(1, "a")),
 			.op(.return, line: 7),
 			.op(.return, line: 8)
 		))
@@ -329,7 +328,6 @@ struct CompilerTests {
 		let subchunk = wrapper.getChunk(at: 1)
 		#expect(subchunk.disassemble() == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
-			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
 			.op(.return, line: 4),
 			.op(.return, line: 5) // func return
 		))
@@ -350,15 +348,14 @@ struct CompilerTests {
 
 		#expect(chunk.getChunk(at: 0).disassemble() == Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+			.op(.setLocal, line: 1, .heap(1, "a")),
 
 			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setLocal, line: 2, .local(slot: 2, name: "b")),
+			.op(.setLocal, line: 2, .heap(2, "b")),
 
 			.op(.defClosure, line: 3, .closure(
 				arity: 0,
-				depth: 1,
-				upvalues: [.upvalue(depth: 1, slot: 1), .upvalue(depth: 1, slot: 2)]
+				depth: 1
 			)),
 
 			.op(.pop, line: 3, .simple),
@@ -367,9 +364,7 @@ struct CompilerTests {
 
 		let subchunk = chunk.getChunk(at: 0).getChunk(at: 1)
 		let subexpected = Instructions(
-			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
 			.op(.pop, line: 4, .simple),
-			.op(.getUpvalue, line: 5, .upvalue(slot: 1, name: "b")),
 			.op(.pop, line: 5, .simple),
 			.op(.return, line: 6, .simple)
 		)
@@ -393,9 +388,9 @@ struct CompilerTests {
 		)
 
 		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0, .closure(name: "fact", arity: 1, depth: 0, upvalues: [])),
+			.op(.defClosure, line: 0, .closure(name: "fact", arity: 1, depth: 0)),
 			.op(.constant, line: 8, .constant(.int(3))),
-			.op(.getLocal, line: 8, .local(slot: 1, name: "fact")),
+			.op(.getLocal, line: 8, .stack(1, "fact")),
 			.op(.call, line: 8),
 			.op(.return, line: 8),
 			.op(.return, line: 0)
@@ -403,7 +398,7 @@ struct CompilerTests {
 
 		#expect(chunk.getChunk(at: 0).disassemble() == Instructions(
 			.op(.constant, line: 1, .constant(.int(1))),
-			.op(.getLocal, line: 1, .local(slot: 1, name: "n")),
+			.op(.getLocal, line: 1, .stack(1, "n")),
 			.op(.lessEqual, line: 1),
 			.op(.jumpUnless, line: 1, .jump(offset: 7)),
 			.op(.pop, line: 1),
@@ -412,12 +407,12 @@ struct CompilerTests {
 			.op(.jump, line: 3, .jump(offset: 12)),
 
 			.op(.constant, line: 4, .constant(.int(1))),
-			.op(.getLocal, line: 4, .local(slot: 1, name: "n")),
+			.op(.getLocal, line: 4, .stack(1, "n")),
 			.op(.subtract, line: 4),
 
-			.op(.getLocal, line: 4, .local(slot: 2, name: "fact")),
+			.op(.getLocal, line: 4, .stack(2, "fact")),
 			.op(.call, line: 4),
-			.op(.getLocal, line: 4, .local(slot: 1, name: "n")),
+			.op(.getLocal, line: 4, .stack(1, "n")),
 			.op(.multiply, line: 4),
 			.op(.return, line: 4),
 			.op(.return, line: 6)
@@ -436,8 +431,8 @@ struct CompilerTests {
 		let result = chunk.disassemble()
 		let expected = Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
-			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 1, .closure(arity: 0, depth: 0, upvalues: [.upvalue(depth: 1, slot: 1)])),
+			.op(.setLocal, line: 0, .heap(1, "a")),
+			.op(.defClosure, line: 1, .closure(arity: 0, depth: 0)),
 			.op(.return, line: 0, .simple)
 		)
 
@@ -445,17 +440,13 @@ struct CompilerTests {
 
 		let subchunk = chunk.getChunk(at: 0)
 
-		#expect(subchunk.upvalueCount == 1)
-
 		let subexpected = Instructions(
 			// Define 'b'
 			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setLocal, line: 2, .local(slot: 1, name: "b")),
+			.op(.setLocal, line: 2, .heap(1, "b")),
 
 			// Get 'b' to add to a
-			.op(.getLocal, line: 3, .local(slot: 1, name: "b")),
-			// Get 'a' from upvalue
-			.op(.getUpvalue, line: 3, .upvalue(slot: 0, name: "a")),
+			.op(.getLocal, line: 3, .heap(1, "b")),
 
 			// Do the addition
 			.op(.add, line: 3),
@@ -482,7 +473,7 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 8, .constant(.int(123))),
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .variable(.moduleStruct(0))),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
 			.op(.return, line: 0, .simple)
@@ -503,7 +494,7 @@ struct CompilerTests {
 		""", inModule: true)
 
 		#expect(chunk.disassemble() == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .variable(.moduleStruct(0))),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
 			.op(.return, line: 0, .simple)
@@ -523,7 +514,7 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 6, .constant(.int(123))),
-			.op(.getStruct, line: 6, .struct(slot: 0)),
+			.op(.getStruct, line: 6, .variable(.moduleStruct(0))),
 			.op(.call, line: 6, .simple),
 			.op(.getProperty, line: 6, .getProperty(slot: 0, options: [])),
 			.op(.pop, line: 6, .simple),
@@ -548,7 +539,8 @@ struct CompilerTests {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 10, .constant(.int(123))),
-			.op(.getStruct, line: 10, .struct(slot: 0)),
+			.op(.getStruct, line: 10, .variable(.moduleStruct(0)
+																				 )),
 			.op(.call, line: 10, .simple),
 			.op(.getProperty, line: 10, .getProperty(slot: 1, options: .isMethod)),
 			.op(.call, line: 10, .simple),
