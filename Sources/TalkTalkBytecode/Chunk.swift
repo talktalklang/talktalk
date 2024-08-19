@@ -8,10 +8,10 @@ import Foundation
 
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
-public class Chunk: Codable {
+public final class Chunk: Codable {
 	public enum CodingKeys: CodingKey {
 		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
-		case name, code, lines, constants, data, arity, depth, localsCount, upvalueCount, subchunks, localNames, upvalueNames
+		case name, code, lines, constants, data, arity, depth, localsCount, upvalueCount, localNames, upvalueNames
 	}
 
 	public let name: String
@@ -40,9 +40,6 @@ public class Chunk: Codable {
 	// How many upvalues does this chunk refer to
 	public var upvalueCount: Byte = 0
 
-	// Other callable chunks
-	var subchunks: [Chunk] = []
-
 	// For debugging names used in this chunk
 	public var localNames: [String] = ["__reserved__"]
 	public var upvalueNames: [String] = []
@@ -56,57 +53,6 @@ public class Chunk: Codable {
 		self.parent = parent
 		self.arity = arity
 		self.depth = depth
-	}
-
-	public func disassemble() -> [Instruction] {
-		var disassembler = Disassembler(chunk: self)
-		return disassembler.disassemble()
-	}
-
-	@discardableResult public func dump() -> String {
-		var result = "[\(name) locals: \(localsCount), upvalues: \(upvalueCount)]\n"
-		result += disassemble().map(\.description).joined(separator: "\n") + "\n"
-
-		for subchunk in subchunks {
-			result += subchunk.dump()
-		}
-
-		result += "\n"
-
-		FileHandle.standardError.write(Data(result.utf8))
-		return result
-	}
-
-	public func addChunk(_ chunk: Chunk) -> Int {
-		if let parent {
-			return parent.addChunk(chunk)
-		}
-
-		defer {
-			subchunks.append(chunk)
-		}
-
-		return subchunks.count
-	}
-
-	public func getChunk(at index: Int) -> Chunk {
-		if let parent {
-			return parent.getChunk(at: index)
-		}
-
-		return subchunks[index]
-	}
-
-	public func getSubchunks(named names: Set<String>) -> [Chunk] {
-		var result: [Chunk] = []
-
-		for (_, subchunk) in subchunks.enumerated() {
-			if names.contains(subchunk.name) {
-				result.append(subchunk)
-			}
-		}
-
-		return result
 	}
 
 	public func finalize() -> Chunk {

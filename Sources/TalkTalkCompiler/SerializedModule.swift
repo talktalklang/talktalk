@@ -12,10 +12,10 @@ public struct SerializedModule: Codable {
 	public let analysis: SerializedAnalysisModule
 
 	// The main chunk for this module
-	public var main: Chunk?
+	public var main: StaticChunk?
 
 	// The list of chunks in this module
-	public var chunks: [Chunk]
+	public var chunks: [StaticChunk]
 
 	// A list of symbols this module exports
 	public var symbols: [Symbol: Int]
@@ -25,5 +25,5 @@ public struct SerializedModule: Codable {
 
 	// If a global value hasn't been used yet, its initializer goes into
 	// here so it can be initialized lazily
-	public var valueInitializers: [Byte: Chunk]
+	public var valueInitializers: [Byte: StaticChunk]
 }

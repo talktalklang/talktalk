@@ -22,13 +22,8 @@ public struct VirtualMachine: Copyable {
 
 	var ip: UInt64
 
-	// A reference to the chunk that's being run
-	var chunk: Chunk {
-		currentFrame.closure.chunk
-	}
-
-	// The actual code that gets run
-	var staticChunk: StaticChunk
+	// The chunk that's being run
+	var chunk: StaticChunk
 
 	// The frames stack
 	var frames: Stack<CallFrame> {
@@ -36,7 +31,7 @@ public struct VirtualMachine: Copyable {
 			self.ip = 0
 			if frames.isEmpty { return }
 			self.currentFrame = frames.peek()
-			self.staticChunk = StaticChunk(chunk: currentFrame.closure.chunk)
+			self.chunk = currentFrame.closure.chunk
 		}
 	}
 
@@ -83,7 +78,7 @@ public struct VirtualMachine: Copyable {
 
 		frames.push(frame)
 		self.currentFrame = frame
-		self.staticChunk = StaticChunk(chunk: frame.closure.chunk)
+		self.chunk = frame.closure.chunk
 		self.ip = 0
 	}
 
@@ -91,7 +86,7 @@ public struct VirtualMachine: Copyable {
 		while true {
 			#if DEBUG
 				func dumpInstruction() -> Instruction? {
-					var disassembler = Disassembler(chunk: chunk)
+					var disassembler = Disassembler(chunk: chunk, module: module)
 					disassembler.current = Int(ip)
 					if let instruction = disassembler.next() {
 						dumpStack()
@@ -207,8 +202,8 @@ public struct VirtualMachine: Copyable {
 				case let (.pointer(base, offset), .int(rhs)):
 					stack.push(.pointer(base, offset + rhs))
 				case let (.data(lhs), .data(rhs)):
-					let lhs = staticChunk.data[Int(lhs)]
-					let rhs = staticChunk.data[Int(rhs)]
+					let lhs = chunk.data[Int(lhs)]
+					let rhs = chunk.data[Int(rhs)]
 
 					guard lhs.kind == .string, lhs.kind == .string else {
 						return runtimeError("Cannot add two data operands: \(lhs), \(rhs)")
@@ -276,7 +271,7 @@ public struct VirtualMachine: Copyable {
 				stack.push(.bool(lhs >= rhs))
 			case .data:
 				let slot = readByte()
-				let data = staticChunk.data[Int(slot)]
+				let data = chunk.data[Int(slot)]
 				switch data.kind {
 				case .string:
 					stack.push(.string(String(data: Data(data.bytes), encoding: .utf8) ?? "<invalid string>"))
@@ -311,7 +306,7 @@ public struct VirtualMachine: Copyable {
 				let slot = readByte()
 
 				// Load the subchunk TODO: We could probably just store the index in the closure?
-				let subchunk = chunk.getChunk(at: Int(slot))
+				let subchunk = module.chunks[Int(slot)]
 
 				// Push the closure Value onto the stack
 				stack.push(.closure(.init(slot)))
@@ -520,7 +515,7 @@ public struct VirtualMachine: Copyable {
 		call(chunk: initializer)
 	}
 
-	mutating func call(chunk: Chunk) {
+	mutating func call(chunk: StaticChunk) {
 		let frame = CallFrame(
 			closure: .init(
 				chunk: chunk,
@@ -535,7 +530,7 @@ public struct VirtualMachine: Copyable {
 		frames.push(frame)
 	}
 
-	mutating func call(inline: Chunk) {
+	mutating func call(inline: StaticChunk) {
 		let frame = CallFrame(
 			closure: .init(
 				chunk: inline,
@@ -552,7 +547,7 @@ public struct VirtualMachine: Copyable {
 
 	mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
-		let chunk = chunk.getChunk(at: closureID)
+		let chunk = module.chunks[closureID]
 
 		let frame = CallFrame(
 			closure: closures[UInt64(closureID)]!,
@@ -566,7 +561,7 @@ public struct VirtualMachine: Copyable {
 	}
 
 	mutating func call(chunkID: Int) {
-		let chunk = chunk.getChunk(at: chunkID)
+		let chunk = module.chunks[chunkID]
 		let closure = Closure(chunk: chunk, upvalues: [])
 
 		let frame = CallFrame(
@@ -635,12 +630,12 @@ public struct VirtualMachine: Copyable {
 	}
 
 	mutating func readConstant() -> Value {
-		let value = staticChunk.constants[Int(readByte())]
+		let value = chunk.constants[Int(readByte())]
 		return value
 	}
 
 	mutating func readByte() -> Byte {
-		staticChunk.code[Int(ip++)]
+		chunk.code[Int(ip++)]
 	}
 
 	mutating func readUInt16() -> UInt64 {
@@ -695,7 +690,7 @@ public struct VirtualMachine: Copyable {
 	}
 
 	mutating func dump() {
-		var disassembler = Disassembler(chunk: chunk)
+		var disassembler = Disassembler(chunk: chunk, module: module)
 		for instruction in disassembler.disassemble() {
 			let prefix = instruction.offset == ip ? "> " : "  "
 			print(prefix + instruction.description)

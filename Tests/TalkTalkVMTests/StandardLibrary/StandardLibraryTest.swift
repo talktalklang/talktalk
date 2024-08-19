@@ -28,7 +28,7 @@ extension StandardLibraryTest {
 		var moduleEnvironment = moduleEnvironment
 		moduleEnvironment["Standard"] = stdlib.module
 
-		let files: [ParsedSourceFile] = [.tmp(input)]
+		let files: [ParsedSourceFile] = [.tmp(input, "1.tlk")]
 		let analyzer = ModuleAnalyzer(
 			name: "StdLibTest",
 			files: Set(files),

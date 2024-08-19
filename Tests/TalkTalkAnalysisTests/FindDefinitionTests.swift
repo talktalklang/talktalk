@@ -35,7 +35,7 @@ struct FindDefinitionTests {
 			var person = Person()
 			person.greet()
 
-			""", path: "person.tlk")
+			""", "person.tlk")
 		)
 
 		let found = module.findSymbol(line: 7, column: 9, path: "person.tlk")!.cast(AnalyzedMemberExpr.self)
@@ -59,7 +59,7 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", path: "person.tlk")
+			""", "person.tlk")
 		)
 
 		let found = module.findSymbol(line: 5, column: 9, path: "person.tlk")!
@@ -85,7 +85,7 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", path: "person.tlk")
+			""", "person.tlk")
 		)
 
 		let found = module.findSymbol(line: 4, column: 15, path: "person.tlk")!
@@ -106,7 +106,7 @@ struct FindDefinitionTests {
 			var age = 123
 			age
 
-			""", path: "person.tlk")
+			""", "person.tlk")
 		)
 
 		let found = module.findSymbol(line: 1, column: 1, path: "person.tlk")!
@@ -131,7 +131,7 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", path: "person.tlk")
+			""", "person.tlk")
 		)
 
 		let found = module.findSymbol(line: 5, column: 3, path: "person.tlk")!
@@ -156,7 +156,7 @@ struct FindDefinitionTests {
 					self.name
 				}
 			}
-			""", path: "person.tlk")
+			""", "person.tlk")
 		)
 
 		let found = module.findSymbol(line: 4, column: 8, path: "person.tlk")!

@@ -59,7 +59,11 @@ public struct AnalysisModule {
 	public var functions: [String: ModuleFunction] = [:]
 
 	// The list of top level structs in this module
-	public var structs: [String: ModuleStruct] = [:]
+	public var structs: [String: ModuleStruct] = [:] {
+		didSet {
+			
+		}
+	}
 
 	// A list of modules this module imports
 //	public var imports: [String: ModuleGlobal] = [:]

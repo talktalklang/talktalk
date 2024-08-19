@@ -44,12 +44,12 @@ struct ModuleAnalysisTests {
 			func foo() {
 				bar()
 			}
-			"""),
+			""", "a"),
 			.tmp("""
 			func bar() {
 				123
 			}
-			""")
+			""", "a2")
 		)
 
 		#expect(analysisModule.name == "A")
@@ -89,10 +89,10 @@ struct ModuleAnalysisTests {
 			func foo() {
 				bar
 			}
-			"""),
+			""", "a"),
 			.tmp("""
 			let bar = 123
-			""")
+			""", "a2")
 		)
 
 		#expect(analysisModule.name == "A")
@@ -117,14 +117,14 @@ struct ModuleAnalysisTests {
 	}
 
 	@Test("Analyzes module function imports") func importing() throws {
-		let moduleA = try analyze(name: "A", .tmp("func foo() { 123 }"))
+		let moduleA = try analyze(name: "A", .tmp("func foo() { 123 }", "foo.tlk"))
 		let moduleB = try analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
 		import A
 
 		func bar() {
 			foo()
 		}
-		"""))
+		""", "a.tlk"))
 
 		// Make sure we're actually loading these
 		let foo = try #require(moduleA.moduleFunction(named: "foo"))
@@ -153,7 +153,7 @@ struct ModuleAnalysisTests {
 				age
 			}
 		}
-		"""))
+		""", "person.tlk"))
 
 		let structT = try #require(module.structs["Person"])
 		#expect(structT.properties.count == 1)
@@ -173,14 +173,14 @@ struct ModuleAnalysisTests {
 				age
 			}
 		}
-		"""))
+		""", "person.tlk"))
 
 		let moduleB = try analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
 		import A
 
 		person = Person(age: 123)
 		person.age
-		"""))
+		""", "person.tlk"))
 
 		let person = try #require(moduleB.values["person"])
 		#expect(person.typeID.type() == .instance(.struct("Person")))

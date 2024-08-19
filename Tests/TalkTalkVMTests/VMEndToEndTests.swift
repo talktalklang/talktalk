@@ -22,7 +22,7 @@ struct VMEndToEndTests {
 	func compile(_ strings: [String]) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: Set(strings.map { .tmp($0) }),
+			files: Set(strings.map { .tmp($0, "1.tlk") }),
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -143,15 +143,15 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Basic func/call expr") func funcExpr() throws {
-		#expect(
-			try run(
-				"""
-				let i = func() {
-					123
-				}()
+		let source = """
+		let i = func() {
+			123
+		}()
 
-				return i + 1
-				""") == .int(124))
+		return i + 1
+		"""
+		#expect(
+			try run(source) == .int(124))
 	}
 
 	@Test("Func arguments") func funcArgs() throws {
@@ -307,7 +307,7 @@ struct VMEndToEndTests {
 
 	@Test("Can run functions across modules") func crossModule() throws {
 		let (moduleA, analysisA) = try compile(
-			name: "A", [.tmp("func foo() { 123 }")], analysisEnvironment: [:], moduleEnvironment: [:]
+			name: "A", [.tmp("func foo() { 123 }", "1.tlk")], analysisEnvironment: [:], moduleEnvironment: [:]
 		)
 		let (moduleB, _) = try compile(
 			name: "B",
@@ -321,7 +321,7 @@ struct VMEndToEndTests {
 					}
 
 					return bar()
-					"""
+					""", "1.tlk"
 				)
 			],
 			analysisEnvironment: ["A": analysisA],
@@ -348,7 +348,7 @@ struct VMEndToEndTests {
 
 					let person = Person(age: 123)
 					return person.age
-					"""
+					""", "1.tlk"
 				)
 			]
 		)
@@ -377,7 +377,7 @@ struct VMEndToEndTests {
 					let person = Person(age: 123)
 					let method = person.getAge
 					return method()
-					"""
+					""", "1.tlk"
 				)
 			]
 		)
@@ -398,7 +398,7 @@ struct VMEndToEndTests {
 							self.age = age
 						}
 					}
-					"""
+					""", "1.tlk"
 				)
 			]
 		)
@@ -412,7 +412,7 @@ struct VMEndToEndTests {
 
 					let person = Person(age: 123)
 					return person.age
-					""")
+					""", "1.tlk")
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -433,7 +433,7 @@ struct VMEndToEndTests {
 
 					let person = Person(age: 123)
 					return person.age
-					"""
+					""", "1.tlk"
 				)
 			]
 		)
@@ -457,7 +457,7 @@ struct VMEndToEndTests {
 
 					let person = Person()
 					return person.age
-					"""
+					""", "1.tlk"
 				)
 			]
 		)

@@ -65,11 +65,12 @@ public class CompilingModule {
 	}
 
 	public func finalize(mode: CompilationMode) -> Module {
-		var chunks: [Chunk] = Array(repeating: Chunk(name: "_"), count: analysisModule.functions.count)
+		let chunkCount = analysisModule.functions.values.count(where: { $0.isImport }) + compiledChunks.count
+		var chunks: [StaticChunk] = Array(repeating: StaticChunk(chunk: .init(name: "_")), count: chunkCount)
 
 		// Go through the list of global chunks, sort by offset, add to the real module
 		for (i, chunk) in compiledChunks.sorted(by: { $0.key < $1.key }) {
-			chunks[i] = chunk
+			chunks[i] = StaticChunk(chunk: chunk)
 		}
 
 		// Copy chunks for imported functions into our module (at some point it'd be nice to just be able to call into those
@@ -90,7 +91,7 @@ public class CompilingModule {
 			chunks[offset] = module.chunks[moduleOffset]
 		}
 
-		var main: Chunk? = nil
+		var main: StaticChunk? = nil
 
 		if mode == .executable {
 			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then
@@ -98,7 +99,9 @@ public class CompilingModule {
 			if let existingMain = chunks.first(where: { $0.name == "main" }) {
 				main = existingMain
 			} else {
-				main = synthesizeMain()
+				let synthesized = synthesizeMain()
+				chunks.append(.init(chunk: synthesized))
+				main = StaticChunk(chunk: synthesized)
 			}
 		}
 
@@ -114,7 +117,7 @@ public class CompilingModule {
 
 		// Copy lazy value initializers
 		for (name, chunk) in valueInitializers {
-			module.valueInitializers[Byte(symbols[name]!)] = chunk
+			module.valueInitializers[Byte(symbols[name]!)] = StaticChunk(chunk: chunk)
 		}
 
 		let foundStructs = analysisModule.structs.map { (name, astruct) in
@@ -136,7 +139,7 @@ public class CompilingModule {
 			// Copy struct methods, sorting by their index in the symbols table
 			let methods = structMethods[.struct(name)] ?? [:]
 			for case let (.method(_, _, _), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
-				structType.methods.append(chunk)
+				structType.methods.append(StaticChunk(chunk: chunk))
 			}
 
 			module.structs.append(structType)
@@ -148,19 +151,7 @@ public class CompilingModule {
 	public func compile(file: AnalyzedSourceFile) throws {
 		var compiler = SourceFileCompiler(name: file.path, analyzedSyntax: file.syntax)
 		let chunk = try compiler.compile(in: self)
-
-		// Go through the compiled chunk's subchunks and pull global chunks out to the top level
-		let globalNames = Set(analysisModule.functions.values.map(\.name))
-		let hoistedChunks = chunk.getSubchunks(named: globalNames)
-
-		for chunk in hoistedChunks {
-			guard let offset = symbols[.function(chunk.name)] else {
-				fatalError("trying to hoist unknown function")
-			}
-
-			compiledChunks[offset] = chunk
-		}
-
+		compiledChunks[compiledChunks.count] = chunk
 		fileChunks.append(chunk)
 	}
 
@@ -176,15 +167,23 @@ public class CompilingModule {
 		return symbols[.value(name)]
 	}
 
+	public func addChunk(_ chunk: Chunk) -> Int {
+		compiledChunks[compiledChunks.count] = chunk
+		return compiledChunks.count - 1
+	}
+
 	// If a function named "main" isn't provided, we generate one that just runs all of the files
 	// that were compiled in the module.
 	func synthesizeMain() -> Chunk {
 		let main = Chunk(name: "main")
 
-		for (i, fileChunk) in fileChunks.enumerated() {
-			let offset = main.addChunk(fileChunk)
-			main.emit(opcode: .callChunkID, line: UInt32(i))
-			main.emit(byte: Byte(offset), line: UInt32(i))
+		for fileChunk in fileChunks {
+			guard let index = compiledChunks.first(where: { $1.name == fileChunk.name }) else {
+				fatalError("could not find compiled chunk for file: \(fileChunk.name)")
+			}
+
+			main.emit(opcode: .callChunkID, line: UInt32(index.key))
+			main.emit(byte: Byte(index.key), line: UInt32(index.key))
 		}
 
 		main.emit(opcode: .return, line: UInt32(fileChunks.count))

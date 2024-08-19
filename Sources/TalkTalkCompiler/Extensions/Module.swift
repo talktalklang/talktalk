@@ -22,7 +22,7 @@ extension JSONDecoder: ModuleDecoder {}
 
 public extension Module {
 	// A helper for when we just want to run a chunk
-	static func main(_ chunk: Chunk) -> Module {
+	static func main(_ chunk: StaticChunk) -> Module {
 		Module(name: "main", main: chunk, symbols: [:])
 	}
 

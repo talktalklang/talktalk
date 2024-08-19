@@ -9,10 +9,10 @@ public struct Module: Equatable, @unchecked Sendable {
 	// The name of the module. P straightforward.
 	public let name: String
 
-	public var main: Chunk?
+	public var main: StaticChunk?
 
 	// The list of chunks in this module
-	public var chunks: [Chunk] = []
+	public var chunks: [StaticChunk] = []
 
 	// The list of top level structs in this module
 	public var structs: [Struct] = []
@@ -25,19 +25,19 @@ public struct Module: Equatable, @unchecked Sendable {
 
 	// If a global value hasn't been used yet, its initializer goes into
 	// here so it can be initialized lazily
-	public var valueInitializers: [Byte: Chunk] = [:]
+	public var valueInitializers: [Byte: StaticChunk] = [:]
 
 	// Lists of global values used during execution
 	public var values: [Byte: Value] = [:]
 	public var functions: [Byte: Value] = [:]
 
-	public init(name: String, main: Chunk? = nil, symbols: [Symbol: Int]) {
+	public init(name: String, main: StaticChunk? = nil, symbols: [Symbol: Int]) {
 		self.name = name
 		self.main = main
 		self.symbols = symbols
 	}
 
-	public mutating func add(chunk: Chunk) {
+	public mutating func add(chunk: StaticChunk) {
 		chunks.append(chunk)
 	}
 }

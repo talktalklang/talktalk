@@ -294,7 +294,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
 		let line = UInt32(expr.location.line)
-		let subchunkID = chunk.addChunk(functionChunk)
+		let subchunkID = module.addChunk(functionChunk)
 		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
 
 		for upvalue in functionCompiler.upvalues {
@@ -473,7 +473,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		structType.initializer = initializer.slot
 
-		structType.methods = methods.map { $0! }
+		structType.methods = methods.map { StaticChunk(chunk: $0!) }
 		module.structs[.struct(name)] = structType
 	}
 

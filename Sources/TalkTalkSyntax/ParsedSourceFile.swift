@@ -15,7 +15,7 @@ public struct ParsedSourceFile: Hashable, Equatable {
 	public let path: String
 	public let syntax: [any Syntax]
 
-	public static func tmp(_ text: String, path: String = "/tmp/\(UUID().uuidString)") -> ParsedSourceFile {
+	public static func tmp(_ text: String, _ path: String) -> ParsedSourceFile {
 		ParsedSourceFile(
 			path: path,
 			syntax: try! Parser.parse(SourceFile(path: "", text: text))

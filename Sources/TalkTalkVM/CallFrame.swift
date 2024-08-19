@@ -8,10 +8,10 @@
 import TalkTalkBytecode
 
 class Closure {
-	var chunk: Chunk
+	var chunk: StaticChunk
 	let upvalues: [Upvalue]
 
-	public init(chunk: Chunk, upvalues: [Upvalue]) {
+	public init(chunk: StaticChunk, upvalues: [Upvalue]) {
 		self.chunk = chunk
 		self.upvalues = upvalues
 	}

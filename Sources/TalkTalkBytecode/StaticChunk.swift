@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/18/24.
 //
 
-public struct StaticChunk {
+public struct StaticChunk: Equatable, Codable {
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
 	public var code: [Byte] = []
 
@@ -26,39 +26,36 @@ public struct StaticChunk {
 	public var upvalueCount: Byte = 0
 
 	// Other callable chunks
-	private var subchunks: [StaticChunk] = []
+	public var subchunks: [StaticChunk] = []
+
+	// Debug info
+	internal var debugInfo: DebugInfo
+
+	struct DebugInfo: Equatable, Codable {
+		public var name: String
+		public var lines: [UInt32]
+		public var localNames: [String]
+		public var upvalueNames: [String]
+		public var depth: Byte
+	}
 
 	public init(chunk: Chunk) {
-		self.init(
-			code: chunk.code,
+		self.code = chunk.code
+		self.constants = chunk.constants
+		self.data = chunk.data
+		self.arity = chunk.arity
+		self.localsCount = chunk.localsCount
+		self.upvalueCount = chunk.upvalueCount
+		self.debugInfo = DebugInfo(
+			name: chunk.name,
 			lines: chunk.lines,
-			constants: chunk.constants,
-			data: chunk.data,
-			arity: chunk.arity,
-			localsCount: chunk.localsCount,
-			upvalueCount: chunk.upvalueCount,
-			subchunks: chunk.subchunks
+			localNames: chunk.localNames,
+			upvalueNames: chunk.upvalueNames,
+			depth: chunk.depth
 		)
 	}
 
-	public init(code: [Byte], lines: [UInt32], constants: [Value], data: [StaticData], arity: Byte, localsCount: Byte, upvalueCount: Byte, subchunks: [Chunk]) {
-		self.code = code
-		self.constants = constants
-		self.data = data
-		self.arity = arity
-		self.localsCount = localsCount
-		self.upvalueCount = upvalueCount
-		self.subchunks = subchunks.map {
-			StaticChunk(
-				code: $0.code,
-				lines: $0.lines,
-				constants: $0.constants,
-				data: $0.data,
-				arity: $0.arity,
-				localsCount: $0.localsCount,
-				upvalueCount: $0.upvalueCount,
-				subchunks: $0.subchunks
-			)
-		}
+	public var name: String {
+		debugInfo.name
 	}
 }

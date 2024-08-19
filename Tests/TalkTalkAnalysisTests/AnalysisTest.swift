@@ -32,7 +32,7 @@ public extension AnalysisTest {
 
 		let analyzer = ModuleAnalyzer(
 			name: "ErrorTests",
-			files: [.tmp(string)],
+			files: [.tmp(string, "error")],
 			moduleEnvironment: ["Standard": stdlib],
 			importedModules: [stdlib]
 		)

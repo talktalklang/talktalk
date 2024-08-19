@@ -7,7 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkBytecode
-import TalkTalkCompiler
+@testable import TalkTalkCompiler
 import TalkTalkSyntax
 import Testing
 
@@ -70,20 +70,27 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 	}
 }
 
-@MainActor
-struct CompilerTests {
-	func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
+actor CompilerTests {
+	var module: CompilingModule!
+
+	@discardableResult func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
 		let parsed = try Parser.parse(.init(path: "", text: string))
 		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init())
 
 		let analysisModule = inModule ? try! ModuleAnalyzer(
 			name: "CompilerTests",
-			files: [.tmp(string)],
+			files: [.tmp(string, "1.tlk")],
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze() : .empty("CompilerTests")
 		var compiler = SourceFileCompiler(name: "CompilerTests", analyzedSyntax: analyzed)
-		return try compiler.compile(in: CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:]))
+
+		self.module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
+		return try compiler.compile(in: module)
+	}
+
+	func disassemble(_ chunk: Chunk) -> [Instruction] {
+		chunk.disassemble(in: module.finalize(mode: .executable))
 	}
 
 	@Test("Empty program") func empty() throws {
@@ -240,7 +247,7 @@ struct CompilerTests {
 		}
 		""")
 
-		let subchunk = chunk.getChunk(at: 0)
+		let subchunk = module.compiledChunks[0]!
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
@@ -269,7 +276,7 @@ struct CompilerTests {
 	}
 
 	@Test("Modifying upvalues") func modifyUpvalue() throws {
-		let wrapper = try compile(
+		try compile(
 			"""
 			func() {
 				var a = 10
@@ -283,9 +290,8 @@ struct CompilerTests {
 			"""
 		)
 
-		let chunk = wrapper.getChunk(at: 1)
-
-		#expect(chunk.disassemble() == Instructions(
+		let chunk = module.compiledChunks[1]!
+		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
 			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
 			.op(.defClosure, line: 3, .closure(arity: 0, depth: 1, upvalues: [.capturing(1)])),
@@ -296,8 +302,8 @@ struct CompilerTests {
 			.op(.return, line: 8)
 		))
 
-		let subchunk = wrapper.getChunk(at: 0)
-		#expect(subchunk.disassemble() == Instructions(
+		let subchunk = module.compiledChunks[0]!
+		#expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
 			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
 			.op(.return, line: 4),
@@ -307,7 +313,7 @@ struct CompilerTests {
 
 	@Test("Non-capturing upvalue") func upvalue() throws {
 		// Using two locals in this test to make sure slot indexes get updated correctly
-		let chunk = try compile("""
+		try compile("""
 		func() {
 			let a = 123
 			let b = 456
@@ -318,7 +324,7 @@ struct CompilerTests {
 		}
 		""")
 
-		let result = chunk.getChunk(at: 1).disassemble()
+		let result = disassemble(module.compiledChunks[1]!)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
@@ -338,7 +344,7 @@ struct CompilerTests {
 
 		#expect(result == expected)
 
-		let subchunk = chunk.getChunk(at: 1).getChunk(at: 0)
+		let subchunk = module.compiledChunks[0]!
 		let subexpected = Instructions(
 			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
 			.op(.pop, line: 4, .simple),
@@ -359,7 +365,7 @@ struct CompilerTests {
 		}
 		""", inModule: false)
 
-		let result = chunk.disassemble()
+		let result = disassemble(chunk)
 		let expected = Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
@@ -369,7 +375,7 @@ struct CompilerTests {
 
 		#expect(result == expected)
 
-		let subchunk = chunk.getChunk(at: 0)
+		let subchunk = module.compiledChunks[0]!
 
 		#expect(subchunk.upvalueCount == 1)
 

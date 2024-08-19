@@ -45,7 +45,7 @@ let package = Package(
 			name: "TalkTalkCore",
 			dependencies: [],
 			resources: [
-				.process("../../Library"),
+				.copy("../../Library/Standard"),
 			]
 		),
 		.target(

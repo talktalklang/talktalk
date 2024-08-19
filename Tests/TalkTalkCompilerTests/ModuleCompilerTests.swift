@@ -50,40 +50,40 @@ struct ModuleCompilerTests {
 			func foo() {
 				bar()
 			}
-			"""),
+			""", "1.tlk"),
 			.tmp("""
 			func bar() {
 				123
 			}
-			"""),
+			""", "2.tlk"),
 		]
 
 		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
-		#expect(module.chunks.map(\.name).sorted() == ["fizz", "foo", "bar"].sorted())
+		#expect(module.chunks.map(\.name).sorted() == ["1.tlk", "2.tlk", "fizz", "foo", "bar", "main"].sorted())
 
 		// We want each global function to have its own chunk in the module
-		#expect(module.chunks.count == 3)
+		#expect(module.chunks.count == 6)
 	}
 
 	@Test("Can compile module global values") @MainActor func globalValues() throws {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
 			let fizz = 123
-			"""),
+			""", "1.tlk"),
 			.tmp("""
 			func bar() {
 				fizz
 			}
-			"""),
+			""", "2.tlk"),
 		]
 
 		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
-		#expect(module.chunks.map(\.name).sorted() == ["bar"].sorted())
-		#expect(module.chunks.count == 1)
+		#expect(module.chunks.map(\.name).sorted() == ["1.tlk", "2.tlk", "bar", "main"].sorted())
+		#expect(module.chunks.count == 4)
 
 		let fizzSlot = try #require(module.symbols[.value("fizz")])
 		#expect(module.valueInitializers[Byte(fizzSlot)] != nil)
@@ -93,7 +93,7 @@ struct ModuleCompilerTests {
 		let (moduleA, analysisA) = try compile(
 			name: "A",
 			[
-				.tmp("func foo() { 123 }"),
+				.tmp("func foo() { 123 }", "1.tlk"),
 			]
 		)
 		let (moduleB, _) = try compile(
@@ -105,15 +105,15 @@ struct ModuleCompilerTests {
 					func bar() {
 						foo()
 					}
-					"""
+					""", "1.tlk"
 				),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
 		)
 
-		#expect(moduleB.chunks.count == 2)
-		#expect(moduleB.chunks.map(\.name).sorted() == ["bar", "foo"].sorted())
+		#expect(moduleB.chunks.count == 4)
+		#expect(moduleB.chunks.map(\.name).sorted() == ["_", "bar", "foo", "main"].sorted())
 	}
 
 	@Test("Can compile structs") @MainActor func structs() throws {
@@ -129,7 +129,7 @@ struct ModuleCompilerTests {
 			}
 
 			let person = Person(age: 123)
-			"""),
+			""", "1.tlk"),
 		])
 
 		let structDef = module.structs[0]
@@ -162,11 +162,11 @@ struct ModuleCompilerTests {
 			}
 
 			let person = Person()
-			"""),
+			""", "1.tlk"),
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = try #require(module.main?.getChunk(at: 0))
+		let mainChunk = try #require(module.chunks[0])
 		#expect(mainChunk.disassemble() == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 0)),
 			.op(.call, line: 8),

@@ -46,7 +46,7 @@ public struct REPLRunner: Copyable {
 			moduleEnvironment: [:]
 		)
 		self.chunk = Chunk(name: "main")
-		module.main = chunk
+		module.main = StaticChunk(chunk: chunk)
 		self.compiler = ChunkCompiler(module: compilingModule)
 		self.vm = VirtualMachine(module: module)
 	}
@@ -67,6 +67,8 @@ public struct REPLRunner: Copyable {
 		}
 
 		chunk.emit(opcode: .suspend, line: .zero)
+
+		module.main = StaticChunk(chunk: chunk)
 
 		return vm.run()
 	}

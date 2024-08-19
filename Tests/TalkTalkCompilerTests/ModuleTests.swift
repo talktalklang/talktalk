@@ -27,7 +27,7 @@ struct ModuleTests {
 	}
 
 	@Test("Serialization/Deserialization") func encode() throws {
-		let (module, analysis) = compile(name: "Encoding", [.tmp("func foo() { 123 }"), .tmp("func main() { foo() }")])
+		let (module, analysis) = compile(name: "Encoding", [.tmp("func foo() { 123 }", "foo.tlk"), .tmp("func main() { foo() }", "main.tlk")])
 		let serialized = try module.serialize(with: analysis, with: JSONEncoder())
 		let deserializedModule = try Module.deserialize(from: serialized, with: JSONDecoder())
 

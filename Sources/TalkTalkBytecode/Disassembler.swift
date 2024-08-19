@@ -5,12 +5,84 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-public struct Disassembler {
-	public var current = 0
-	let chunk: Chunk
+import Foundation
 
-	public init(chunk: Chunk) {
+public protocol Disassemblable {
+	var name: String { get }
+	var code: [Byte] { get }
+	var lines: [UInt32] { get }
+	var constants: [Value] { get }
+	var arity: Byte { get }
+	var localsCount: Byte { get }
+	var localNames: [String] { get }
+	var upvalueNames: [String] { get }
+	var upvalueCount: Byte { get }
+	var depth: Byte { get }
+}
+
+public extension Disassemblable {
+	func disassemble(in module: Module? = nil) -> [Instruction] {
+		let module = module ?? {
+			var stubModule = Module(name: "Stub", symbols: [:])
+			stubModule.chunks = if let chunk = self as? Chunk {
+				[
+					StaticChunk(chunk: chunk)
+				]
+			} else {
+				[
+					self as! StaticChunk
+				]
+			}
+			return stubModule
+		}()
+
+		var disassembler = Disassembler(chunk: self, module: module)
+		return disassembler.disassemble()
+	}
+
+	@discardableResult func dump(in module: Module) -> String {
+		var result = "[\(name) locals: \(localsCount), upvalues: \(upvalueCount)]\n"
+		result += disassemble(in: module).map(\.description).joined(separator: "\n") + "\n"
+
+//		for subchunk in subchunks {
+//			result += subchunk.dump()
+//		}
+
+		result += "\n"
+
+		FileHandle.standardError.write(Data(result.utf8))
+		return result
+	}
+}
+
+extension StaticChunk: Disassemblable {
+	public var lines: [UInt32] {
+		debugInfo.lines
+	}
+	
+	public var localNames: [String] {
+		debugInfo.localNames
+	}
+	
+	public var upvalueNames: [String] {
+		debugInfo.upvalueNames
+	}
+	
+	public var depth: Byte {
+		debugInfo.depth
+	}
+}
+
+extension Chunk: Disassemblable {}
+
+public struct Disassembler<Chunk: Disassemblable> {
+	public var current = 0
+	let module: Module
+	let chunk: Disassemblable
+
+	public init(chunk: Chunk, module: Module) {
 		self.chunk = chunk
+		self.module = module
 	}
 
 	public mutating func disassemble() -> [Instruction] {
@@ -109,7 +181,7 @@ public struct Disassembler {
 
 	mutating func defClosureInstruction(start: Int) -> Instruction {
 		let closureSlot = chunk.code[current++]
-		let subchunk = chunk.getChunk(at: Int(closureSlot))
+		let subchunk = module.chunks[Int(closureSlot)]
 
 		var upvalues: [ClosureMetadata.Upvalue] = []
 		for _ in 0 ..< subchunk.upvalueCount {

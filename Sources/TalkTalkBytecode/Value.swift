@@ -136,10 +136,10 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return (methodSlot, instance)
 	}
 
-	public func disassemble(in chunk: Chunk) -> String {
+	public func disassemble(in chunk: StaticChunk) -> String {
 		switch self {
 		case .closure:
-			"closure(\(chunk.getChunk(at: Int(closureValue!)).name))"
+			"closure"
 		default:
 			description
 		}
