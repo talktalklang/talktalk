@@ -67,7 +67,7 @@ public class CompilingModule {
 
 			// Reserve offsets for struct methods
 			for (j, (methodName, method)) in structT.methods.enumerated() {
-				functionSymbols[.method(structT.name, methodName, method.params.map(\.key))] = j
+				functionSymbols[.method(structT.name, methodName, method.params.map(\.name))] = j
 			}
 		}
 	}
@@ -149,6 +149,11 @@ public class CompilingModule {
 			let methods = structMethods[.struct(name)] ?? [:]
 			for case let (.method(_, _, _), chunk) in methods.sorted(by: { functionSymbols[$0.key]! < functionSymbols[$1.key]! }) {
 				structType.methods.append(StaticChunk(chunk: chunk))
+			}
+
+			if module.symbols[.struct(name)] == nil {
+				// If we don't already have a symbol for this struct, add it
+				module.symbols[.struct(name)] = module.structs.count
 			}
 
 			module.structs.append(structType)

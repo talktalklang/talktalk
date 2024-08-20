@@ -13,7 +13,9 @@ struct DisassemblerTests {
 	@Test("Disassembles simple opcodes") func simple() {
 		let chunk = Chunk(name: "main")
 		chunk.emit(opcode: .true, line: 1)
-		
+
+		#expect(chunk.code == [28])
+
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .true, offset: 1, line: 1, metadata: .simple),
 		])

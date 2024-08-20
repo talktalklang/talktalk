@@ -383,7 +383,7 @@ struct AnalysisTests {
 
 		let structType = s.structType
 		let initializer = try #require(structType.methods["init"])
-		#expect(initializer.params.map(\.key) == ["age"])
+		#expect(initializer.params.map(\.name) == ["age"])
 	}
 
 	@Test("Types struct Self/self") func selfSelf() throws {

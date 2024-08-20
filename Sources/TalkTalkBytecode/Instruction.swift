@@ -107,6 +107,22 @@ public struct ConstantMetadata: InstructionMetadata {
 	}
 }
 
+public struct InitArrayMetadata: InstructionMetadata {
+	public var elementCount: Int
+
+	public var length: Int {
+		elementCount + 2
+	}
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		fatalError("TODO")
+	}
+	
+	public var description: String {
+		"Array (\(elementCount))"
+	}
+}
+
 public struct ObjectMetadata: InstructionMetadata {
 	public var value: StaticData
 

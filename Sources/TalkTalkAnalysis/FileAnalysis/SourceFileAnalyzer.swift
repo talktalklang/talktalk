@@ -179,9 +179,9 @@ public struct SourceFileAnalyzer: Visitor {
 					// See if we have a label for the arg (could maybe rely on positions here??)
 					guard let label = arg.label else { continue }
 					// Find the param definition from the init
-					guard let param = initFn.params[label.lexeme] else { continue }
+					guard let param = initFn.params.first(where: { $0.name == label.lexeme }) else { continue }
 
-					if case let .instance(paramInstanceType) = param.type(),
+					if case let .instance(paramInstanceType) = param.typeID.current,
 					   case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType
 					{
 						instanceType.boundGenericTypes[typeName] = arg.expr.typeID
@@ -758,8 +758,8 @@ public struct SourceFileAnalyzer: Visitor {
 								.params
 								.params
 								.map(\.name)
-								.reduce(into: [:]) { res, p in
-									res[p] = TypeID(.placeholder)
+								.reduce(into: []) { res, p in
+									res.append(ValueType.Param(name: p, typeID: TypeID(.placeholder)))
 								},
 							typeID: TypeID(
 								.function(
@@ -789,8 +789,8 @@ public struct SourceFileAnalyzer: Visitor {
 							.parameters
 							.params
 							.map(\.name)
-							.reduce(into: [:]) { res, p
-								in res[p] = TypeID(.placeholder)
+							.reduce(into: []) { res, p in
+								res.append(ValueType.Param(name: p, typeID: TypeID(.placeholder)))
 							},
 						typeID: TypeID(
 							.function(
@@ -828,7 +828,9 @@ public struct SourceFileAnalyzer: Visitor {
 				initializer: .init(
 					slot: structType.methods.count,
 					name: "init",
-					params: structType.properties.reduce(into: [:]) { res, prop in res[prop.key] = prop.value.typeID },
+					params: structType.properties.reduce(into: []) { res, prop in
+						res.append(ValueType.Param(name: prop.key, typeID: prop.value.typeID))
+					},
 					typeID: TypeID(
 						.function(
 							"init",
@@ -886,7 +888,9 @@ public struct SourceFileAnalyzer: Visitor {
 					method: Method(
 						slot: existing.slot,
 						name: funcExpr.name!.lexeme,
-						params: funcExpr.params.params.map(\.name).reduce(into: [:]) { res, p in res[p] = TypeID(.placeholder) },
+						params: funcExpr.params.params.map(\.name).reduce(into: []) { res, p in
+							res.append(.init(name: p, typeID: TypeID(.placeholder)))
+						},
 						typeID: funcExpr.typeID,
 						returnTypeID: funcExpr.returnType,
 						expr: funcExpr,
@@ -1007,11 +1011,17 @@ public struct SourceFileAnalyzer: Visitor {
 		let elementType = elements.map(\.typeID).first ?? TypeID(.placeholder)
 		let instanceType = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": elementType])
 
+		var errors: [AnalysisError] = []
+		if elements.count > 255 {
+			errors.append(.init(kind: .expressionCount("Array literals can only have 255 elements"), location: expr.location))
+		}
+
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
 			exprsAnalyzed: elements as! [any AnalyzedExpr],
 			wrapped: expr,
-			typeID: TypeID(.instance(instanceType))
+			typeID: TypeID(.instance(instanceType)),
+			analysisErrors: errors
 		)
 	}
 

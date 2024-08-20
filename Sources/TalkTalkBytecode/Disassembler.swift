@@ -131,9 +131,20 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getUpvalue, .setUpvalue:
 			return upvalueInstruction(opcode: opcode, start: index)
+		case .initArray:
+			return initArrayInstruction(start: index)
 		default:
 			return Instruction(opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
+	}
+
+	mutating func initArrayInstruction(start: Int) -> Instruction {
+		let count = chunk.code[current++]
+		for _ in 0..<count {
+			current++
+		}
+
+		return Instruction(opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: Int(count)))
 	}
 
 	mutating func constantInstruction(start: Int) -> Instruction {

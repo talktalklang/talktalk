@@ -9,7 +9,8 @@ public struct AnalyzedArrayLiteralExpr: ArrayLiteralExpr, AnalyzedExpr {
 	let wrapped: any ArrayLiteralExpr
 
 	public var typeID: TypeID
-	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
+	public var analyzedChildren: [any AnalyzedSyntax] { exprsAnalyzed }
+	public var analysisErrors: [AnalysisError]
 
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }

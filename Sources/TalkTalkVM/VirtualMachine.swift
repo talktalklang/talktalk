@@ -13,7 +13,7 @@ public enum Verbosity: Equatable {
 	case lineByLine(String)
 }
 
-public struct VirtualMachine: ~Copyable {
+public struct VirtualMachine {
 	// The module to run. Must be compiled in executable mode.
 	var module: Module
 
@@ -456,6 +456,23 @@ public struct VirtualMachine: ~Copyable {
 				stack[stack.size - 1] = .instance(receiver)
 			case .jumpPlaceholder:
 				()
+			case .initArray:
+				let count = readByte()
+				let arrayTypeSlot = module.symbols[.struct("Array")]!
+				let arrayType = module.structs[arrayTypeSlot]
+
+				let blockID = heap.allocate(count: Int(count))
+				for i in 0..<count {
+					heap.store(block: blockID, offset: Int(i), value: stack.pop())
+				}
+
+				let instance = Instance(type: arrayType, fields: [
+					.pointer(.init(blockID), 0),
+					.int(.init(count)),
+					.int(.init(count))
+				])
+
+				stack.push(.instance(instance))
 			}
 		}
 	}

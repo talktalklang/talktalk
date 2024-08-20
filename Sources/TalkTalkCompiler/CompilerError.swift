@@ -8,5 +8,5 @@
 import TalkTalkAnalysis
 
 public enum CompilerError: Error {
-	case unknownIdentifier(String), analysisError(String), analysisErrors(String)
+	case unknownIdentifier(String), analysisError(String), analysisErrors(String), typeError(String)
 }

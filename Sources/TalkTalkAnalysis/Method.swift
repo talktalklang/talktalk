@@ -18,7 +18,7 @@ public struct SerializedMethod: Codable {
 public struct Method: Member {
 	public let slot: Int
 	public let name: String
-	public let params: [String: TypeID]
+	public let params: [ValueType.Param]
 	public let typeID: TypeID
 	public let returnTypeID: TypeID
 	public let expr: any Syntax
@@ -28,7 +28,7 @@ public struct Method: Member {
 	public init(
 		slot: Int,
 		name: String,
-		params: [String: TypeID],
+		params: [ValueType.Param],
 		typeID: TypeID,
 		returnTypeID: TypeID,
 		expr: any Syntax,
