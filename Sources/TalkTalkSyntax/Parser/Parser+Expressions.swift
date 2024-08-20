@@ -120,11 +120,19 @@ extension Parser {
 
 		skip(.newline)
 
+		let typeDecl: (any TypeExpr)? = if didMatch(.forwardArrow) {
+			// We've got a type decl
+			typeExpr()
+		} else {
+			nil
+		}
+
 		let body = blockStmt(false)
 
 		let funcExpr = FuncExprSyntax(
 			funcToken: funcToken,
 			params: params,
+			typeDecl: typeDecl,
 			body: body,
 			i: lexer.current,
 			name: name,
@@ -138,7 +146,7 @@ extension Parser {
 		return funcExpr
 	}
 
-	mutating func arrayLiteral(_: Bool) -> any ArrayLiteralExpr {
+	mutating func arrayLiteral(_ canAssign: Bool) -> any Expr {
 		let i = startLocation()
 		_ = consume(.leftBracket)
 		var exprs: [any Expr] = []
@@ -157,7 +165,13 @@ extension Parser {
 
 		consume(.rightBracket, "expected ']' after array literal")
 
-		return ArrayLiteralExprSyntax(exprs: exprs, location: endLocation(i))
+		let arrayLiteral = ArrayLiteralExprSyntax(exprs: exprs, location: endLocation(i))
+
+		if check(.leftBracket) {
+			return subscriptCall(canAssign, arrayLiteral)
+		}
+
+		return arrayLiteral
 	}
 
 	mutating func literal(_: Bool) -> any Expr {

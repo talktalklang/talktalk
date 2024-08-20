@@ -22,6 +22,7 @@ public enum AnalysisErrorKind: Hashable {
 	case cannotReassignLet(variable: any AnalyzedExpr)
 	case invalidRedeclaration(variable: String, existing: Environment.Binding)
 	case expressionCount(String)
+	case unexpectedType(expected: ValueType, received: ValueType, message: String)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
@@ -47,6 +48,10 @@ public enum AnalysisErrorKind: Hashable {
 			hasher.combine(syntax.description.hashValue)
 		case let .invalidRedeclaration(variable: name, existing: _):
 			hasher.combine(name)
+		case let .unexpectedType(expected: expected, received: received, message: message):
+			hasher.combine(expected)
+			hasher.combine(received)
+			hasher.combine(message)
 		}
 	}
 
@@ -84,6 +89,8 @@ public struct AnalysisError: Hashable {
 			"Cannot re-assign let variable: \(syntax.description)"
 		case let .invalidRedeclaration(variable: name, existing: decl):
 			"Cannot re-declare \(name). (defined as \(decl.expr.description))."
+		case let .unexpectedType(expected: _, received: _, message: message):
+			message
 		case let .expressionCount(message):
 			message
 		}

@@ -163,7 +163,7 @@ public struct SourceFileAnalyzer: Visitor {
 					for (i, param) in structType.typeParameters.enumerated() {
 						let typeName = params.params[i].name
 						let type = context.type(named: typeName)
-						instanceType.boundGenericTypes[param.name] = type
+						instanceType.boundGenericTypes[param.name] = TypeID(type)
 					}
 				} else if context.shouldReportErrors {
 					errors.append(
@@ -184,7 +184,7 @@ public struct SourceFileAnalyzer: Visitor {
 					if case let .instance(paramInstanceType) = param.type(),
 					   case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType
 					{
-						instanceType.boundGenericTypes[typeName] = arg.expr.typeAnalyzed
+						instanceType.boundGenericTypes[typeName] = arg.expr.typeID
 					}
 				}
 			}
@@ -444,6 +444,7 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
+		var errors: [AnalysisError] = []
 		let innerEnvironment = env.add()
 
 		// Define our parameters in the environment so they're declared in the body. They're
@@ -473,7 +474,8 @@ public struct SourceFileAnalyzer: Visitor {
 					stmtsAnalyzed: [],
 					environment: env
 				),
-				returnsAnalyzed: nil,
+				analysisErrors: [],
+				returnType: TypeID(.placeholder),
 				environment: innerEnvironment
 			)
 			innerEnvironment.define(local: name.lexeme, as: stub, isMutable: false)
@@ -485,13 +487,30 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
 
+		var declaredType: TypeID?
+		if let typeDecl = expr.typeDecl {
+			let type = env.type(named: typeDecl.identifier.lexeme)
+			declaredType = TypeID(type)
+			if !type.isAssignable(from: bodyAnalyzed.typeID.current) {
+				errors.append(
+					.init(
+						kind: .unexpectedType(
+							expected: type,
+							received: bodyAnalyzed.typeAnalyzed,
+							message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."),
+						location: bodyAnalyzed.stmtsAnalyzed.last?.location ?? expr.location
+					)
+				)
+			}
+		}
+
 		// See if we can infer any types for our params from the environment after the body
 		// has been visited.
 		params.infer(from: innerEnvironment)
 
 		let analyzed = ValueType.function(
 			expr.name?.lexeme ?? expr.autoname,
-			bodyAnalyzed.typeID,
+			declaredType ?? bodyAnalyzed.typeID,
 			params.paramsAnalyzed.map { .init(name: $0.name, typeID: $0.typeID) },
 			innerEnvironment.captures.map(\.name)
 		)
@@ -501,7 +520,8 @@ public struct SourceFileAnalyzer: Visitor {
 			expr: expr,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
-			returnsAnalyzed: bodyAnalyzed.stmtsAnalyzed.last,
+			analysisErrors: errors,
+			returnType: declaredType ?? bodyAnalyzed.typeID,
 			environment: innerEnvironment
 		)
 
@@ -745,15 +765,20 @@ public struct SourceFileAnalyzer: Visitor {
 								.function(
 									name.lexeme,
 									TypeID(.placeholder),
-									[],
+									decl
+										.params
+										.params
+										.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
 									[]
 								)
 							),
+							returnTypeID: TypeID(.placeholder),
 							expr: decl,
 							isMutable: false
 						))
 				} else {
-					FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
+					()
+//					FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
 				}
 			case let decl as InitDecl:
 				structType.add(
@@ -771,17 +796,22 @@ public struct SourceFileAnalyzer: Visitor {
 							.function(
 								"init",
 								TypeID(.placeholder),
-								[],
+								decl
+									.parameters
+									.params
+									.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
 								[]
 							)
 						),
+						returnTypeID: TypeID(.placeholder),
 						expr: decl,
 						isMutable: false
 					))
 			case is ParseError:
 				()
 			default:
-				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
+				()
+//				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
 			}
 		}
 
@@ -807,6 +837,7 @@ public struct SourceFileAnalyzer: Visitor {
 							[]
 						)
 					),
+					returnTypeID: TypeID(.placeholder),
 					expr: expr,
 					isMutable: false,
 					isSynthetic: true
@@ -857,6 +888,7 @@ public struct SourceFileAnalyzer: Visitor {
 						name: funcExpr.name!.lexeme,
 						params: funcExpr.params.params.map(\.name).reduce(into: [:]) { res, p in res[p] = TypeID(.placeholder) },
 						typeID: funcExpr.typeID,
+						returnTypeID: funcExpr.returnType,
 						expr: funcExpr,
 						isMutable: false
 					))
@@ -875,9 +907,10 @@ public struct SourceFileAnalyzer: Visitor {
 		var errors: [AnalysisError] = []
 
 		if let existing = context.local(named: expr.name),
-			 let definition = existing.definition,
-			 definition.location.start != expr.location.start,
-			 context.shouldReportErrors {
+		   let definition = existing.definition,
+		   definition.location.start != expr.location.start,
+		   context.shouldReportErrors
+		{
 			errors.append(
 				.init(
 					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
@@ -918,8 +951,9 @@ public struct SourceFileAnalyzer: Visitor {
 		let type = TypeID(context.type(named: expr.typeDecl))
 
 		if let existing = context.local(named: expr.name),
-			 let definition = existing.definition,
-			 definition.location.start != expr.location.start {
+		   let definition = existing.definition,
+		   definition.location.start != expr.location.start
+		{
 			errors.append(
 				.init(
 					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
@@ -969,20 +1003,51 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any ArrayLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-		fatalError("TODO")
+		let elements = try expr.exprs.map { try $0.accept(self, context) }
+		let elementType = elements.map(\.typeID).first ?? TypeID(.placeholder)
+		let instanceType = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": elementType])
+
+		return AnalyzedArrayLiteralExpr(
+			environment: context,
+			exprsAnalyzed: elements as! [any AnalyzedExpr],
+			wrapped: expr,
+			typeID: TypeID(.instance(instanceType))
+		)
 	}
 
 	public func visit(_ expr: any SubscriptExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
+		let args = try expr.args.map { try $0.accept(self, context) } as! [AnalyzedArgument]
+
+		var result = AnalyzedSubscriptExpr(
+			receiverAnalyzed: receiver,
+			argsAnalyzed: args,
+			wrapped: expr,
+			typeID: TypeID(.placeholder),
+			environment: context,
+			analysisErrors: []
+		)
+
+		guard case let .instance(instance) = receiver.typeAnalyzed,
+					case let .struct(structName) = instance.ofType,
+					let structType = context.lookupStruct(named: structName),
+					let getMethod = structType.methods["get"] else {
+			result.analysisErrors = [
+				AnalysisError(kind: .noMemberFound(receiver: receiver, property: "get"), location: expr.location)
+			]
+
+			return result
+		}
+
+		result.typeID = getMethod.returnTypeID.resolve(with: instance)
+
+		return result
+	}
+
+	public func visit(_: any AssignmentStmt, _: Environment) throws -> any AnalyzedSyntax {
 		#warning("TODO")
 		fatalError("TODO")
 	}
-
-	public func visit(_ expr: any AssignmentStmt, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-		fatalError("TODO")
-	}
-
 
 	// GENERATOR_INSERTION
 

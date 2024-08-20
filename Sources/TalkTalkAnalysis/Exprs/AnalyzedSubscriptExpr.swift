@@ -10,9 +10,11 @@ public struct AnalyzedSubscriptExpr: SubscriptExpr, AnalyzedExpr {
 
 	public var typeID: TypeID
 	public var environment: Environment
+	public var analysisErrors: [AnalysisError]
 	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] + argsAnalyzed }
 
 	// Delegate these to the wrapped node
+	public var receiver: any Expr { wrapped.receiver }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 	public var args: [CallArgument] { wrapped.args }

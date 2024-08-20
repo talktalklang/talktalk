@@ -154,7 +154,8 @@ public actor Server {
 
 	func analyze() {
 		do {
-			analysis = try analyzer.analyze()
+			let newAnalysis = try analyzer.analyze()
+			self.analysis = newAnalysis
 		} catch {
 			Log.error("Error analyzing: \(error)")
 		}

@@ -4,7 +4,8 @@ import TalkTalkSyntax
 
 public struct AnalyzedArrayLiteralExpr: ArrayLiteralExpr, AnalyzedExpr {
 	public var environment: Environment
-	
+	public let exprsAnalyzed: [any AnalyzedExpr]
+
 	let wrapped: any ArrayLiteralExpr
 
 	public var typeID: TypeID

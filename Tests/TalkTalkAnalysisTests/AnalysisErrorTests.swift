@@ -135,4 +135,16 @@ struct AnalysisErrorTests: AnalysisTest {
 			#expect(variable.cast(AnalyzedVarExpr.self).name == "bar")
 		}
 	}
+
+	@Test("Errors when func doesn't return what it says it will") func badFuncReturn() async throws {
+		try await errors(
+			#_sourceLocation,
+			"""
+			func foo(name: int) -> int {
+				"nope"
+			}
+			""",
+			.unexpectedType(expected: .int, received: .instance(.struct("String")), message: "Cannot return String instance, expected int.")
+		)
+	}
 }

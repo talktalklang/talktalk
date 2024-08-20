@@ -219,6 +219,15 @@ struct TalkTalkParserTests {
 		#expect(bodyExpr.op == .plus)
 	}
 
+	@Test("func expr return annotation") func funcExprReturnAnnotation() throws {
+		let ast = parse("""
+		func foo() -> int { 123 }
+		""")[0]
+
+		let fn = try #require(ast as? FuncExpr)
+		#expect(fn.typeDecl?.identifier.lexeme == "int")
+	}
+
 	@Test("return expr") func returnExpr() throws {
 		let ast = parse("""
 		func() {

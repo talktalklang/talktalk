@@ -86,4 +86,13 @@ struct SubscriptsTests {
 		#expect(stmt.receiver.cast(SubscriptExprSyntax.self).args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
 		#expect(stmt.value.cast(LiteralExprSyntax.self).value == .int(456))
 	}
+
+	@Test("Array literal + subscript getter") func arrayAndSubscript() throws {
+		let stmt = try Parser.parse("[1][123]")[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(SubscriptExprSyntax.self)
+
+		#expect(stmt.receiver.cast(ArrayLiteralExprSyntax.self).exprs[0].cast(LiteralExprSyntax.self).value == .int(1))
+		#expect(stmt.args[0].cast(CallArgument.self).value.cast(LiteralExprSyntax.self).value == .int(123))
+	}
 }

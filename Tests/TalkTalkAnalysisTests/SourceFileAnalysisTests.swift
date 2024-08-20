@@ -175,7 +175,7 @@ struct AnalysisTests {
 			"""
 		)
 
-		#expect(ast.cast(AnalyzedFuncExpr.self).returnsAnalyzed?.typeAnalyzed == .pointer)
+		#expect(ast.cast(AnalyzedFuncExpr.self).returnType.current == .pointer)
 	}
 
 	@Test("Types functions") func closures() throws {
@@ -273,24 +273,14 @@ struct AnalysisTests {
 		let fn = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
 		#expect(fn.environment.captures.count == 0)
 
-		let counterFn = try #require(fn.returnsAnalyzed)
-			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
-			.cast(AnalyzedFuncExpr.self)
-
-		#expect(counterFn.environment.captures.count == 1)
-		#expect(counterFn.returnsAnalyzed!
-			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
-			.cast(AnalyzedVarExpr.self).typeAnalyzed == .int)
-
-		guard case let .function(_, counterReturns, counterParams, counterCaptures) = counterFn.typeAnalyzed
-		else {
-			#expect(Bool(false), "\(counterFn.typeAnalyzed)")
-			return
+		guard case let .function(_, returns, params, captures) = fn.returnType.current else {
+			#expect(Bool(false)) ; return
 		}
 
-		#expect(counterReturns.type() == .int)
-		#expect(counterCaptures.first == "count")
-		#expect(counterParams.isEmpty)
+		#expect(captures.count == 1)
+		#expect(returns.current == .int)
+		#expect(captures.first == "count")
+		#expect(params.isEmpty)
 	}
 
 	@Test("Errors on bad struct instantiating") func badStruct() {
@@ -336,8 +326,44 @@ struct AnalysisTests {
 		#expect(type.methods["init"] != nil)
 
 		#expect(type.properties["age"]!.typeID.type() == .int)
-		#expect(type.properties["age"]!.typeID.type() == .int)
 		#expect(type.methods["sup"]!.typeID.type() == .function("sup", .int, [], []))
+	}
+
+	@Test("Types calling struct methods on self", .disabled("we need to come back to this")) func selfMethodCalls() throws {
+		let ast = ast(
+			"""
+			struct Person<Thing> {
+				let age: i32
+
+				init(age: i32) {
+					self.age = age
+				}
+
+				func get(index) {
+					self.at(index)
+				}
+
+				func at(index) -> Thing {
+					123
+				}
+			}
+			""")
+
+		let s = try #require(ast as? AnalyzedStructDecl)
+		#expect(s.name == "Person")
+
+		guard case let .struct(name) = s.typeAnalyzed else {
+			#expect(Bool(false), "did not get struct type")
+			return
+		}
+
+		let stype = s.environment.lookupStruct(named: "Person")
+		let type = try #require(stype)
+		#expect(name == "Person")
+		#expect(type.methods["init"] != nil)
+
+		let returnType = TypeID(ValueType.generic(.struct("Person"), "Thing"))
+		#expect(type.methods["get"]!.typeID.type() == .function("get", returnType, [.init(name: "index", typeID: TypeID(.generic(.struct("Person"), "Thing")))], ["self"]))
 	}
 
 	@Test("Synthesizing init for structs") func synthesizingInitForStructs() throws {

@@ -15,7 +15,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     colon, dot, less, greater, minus, star, slash
 
 		// Multiple char tokens
-		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string
+		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow
 
 		// Keywords
 		case `func`, `true`, `false`, `return`,
@@ -105,7 +105,7 @@ public struct Lexer {
 		case ",": make(.comma)
 		case ":": make(.colon)
 		case ".": make(.dot)
-		case "-": make(.minus)
+		case "-": make(match(">") ? .forwardArrow : .minus)
 		case "<": make(match("=") ? .lessEqual : .less)
 		case ">": make(match("=") ? .greaterEqual : .greater)
 		case "\"": string()

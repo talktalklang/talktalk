@@ -33,6 +33,15 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 		current = type
 	}
 
+	// Try to resolve generic types to concrete types based on instance bindings
+	public func resolve(with instance: InstanceValueType) -> TypeID {
+		guard case let .generic(instance.ofType, typeParam) = current else {
+			return self
+		}
+
+		return instance.boundGenericTypes[typeParam] ?? self
+	}
+
 	public var description: String {
 		switch current {
 		case .none:

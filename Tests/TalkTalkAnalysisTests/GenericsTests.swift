@@ -60,7 +60,7 @@ struct GenericsTests {
 		}
 
 		#expect(instance.ofType == .struct("Wrapper"))
-		#expect((instance.boundGenericTypes["Wrapped"] ?? .none) == ValueType.int)
+		#expect((instance.boundGenericTypes["Wrapped"] ?? .none)?.current == ValueType.int)
 	}
 
 	@Test("Infers bound generic types") func inferBoundGenericTypes() throws {
@@ -82,6 +82,6 @@ struct GenericsTests {
 		}
 
 		#expect(instance.ofType == .struct("Wrapper"))
-		#expect((instance.boundGenericTypes["Wrapped"] ?? .none) == ValueType.int)
+		#expect((instance.boundGenericTypes["Wrapped"] ?? .none)?.current == ValueType.int)
 	}
 }

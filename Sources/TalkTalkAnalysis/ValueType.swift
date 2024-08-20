@@ -8,14 +8,18 @@
 import TalkTalkBytecode
 
 public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
+	public static func ==(lhs: InstanceValueType, rhs: InstanceValueType) -> Bool {
+		lhs.ofType == rhs.ofType && lhs.boundGenericTypes == rhs.boundGenericTypes
+	}
+
 	public static func `struct`(_ name: String) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
 	}
 
 	public var ofType: ValueType
-	public var boundGenericTypes: [String: ValueType]
+	public var boundGenericTypes: [String: TypeID]
 
-	public init(ofType: ValueType, boundGenericTypes: [String: ValueType]) {
+	public init(ofType: ValueType, boundGenericTypes: [String: TypeID]) {
 		self.ofType = ofType
 		self.boundGenericTypes = boundGenericTypes
 	}
@@ -75,11 +79,11 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		case .void:
 			return "void"
 		case let .struct(structType):
-			return "struct \(structType)"
+			return "\(structType)"
 		case .placeholder:
 			return "placeholder"
 		case let .instance(valueType):
-			return "instance \(valueType.ofType.description)"
+			return "\(valueType.ofType.description) instance"
 		case let .member(structType):
 			return "struct instance value \(structType)"
 		case let .generic(owner, name):
@@ -146,7 +150,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		case let .struct(string):
 			return other == .struct(string)
 		case let .generic(valueType, string):
-			return other == .generic(valueType, string)
+			return other == .generic(valueType, string) || other == .placeholder
 		case let .instance(instanceValueType):
 			return other == .instance(instanceValueType)
 		case let .member(valueType):

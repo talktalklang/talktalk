@@ -13,8 +13,9 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: AnalyzedBlockStmt
-	public let returnsAnalyzed: (any AnalyzedSyntax)?
+	public let returnType: TypeID
 	public let environment: Environment
+	public let analysisErrors: [AnalysisError]
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[bodyAnalyzed]
 	}
@@ -22,6 +23,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var name: Token?
 	public var funcToken: Token { expr.funcToken }
 	public var params: ParamsExpr { expr.params }
+	public var typeDecl: (any TypeExpr)? { expr.typeDecl }
 	public var body: any BlockStmt { expr.body }
 	public var i: Int { expr.i }
 	public var location: SourceLocation { expr.location }
@@ -32,7 +34,8 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		expr: FuncExpr,
 		analyzedParams: AnalyzedParamsExpr,
 		bodyAnalyzed: AnalyzedBlockStmt,
-		returnsAnalyzed: (any AnalyzedSyntax)?,
+		analysisErrors: [AnalysisError],
+		returnType: TypeID,
 		environment: Environment
 	) {
 		self.name = expr.name
@@ -40,7 +43,8 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		self.expr = expr
 		self.analyzedParams = analyzedParams
 		self.bodyAnalyzed = bodyAnalyzed
-		self.returnsAnalyzed = returnsAnalyzed
+		self.analysisErrors = analysisErrors
+		self.returnType = returnType
 		self.environment = environment
 	}
 

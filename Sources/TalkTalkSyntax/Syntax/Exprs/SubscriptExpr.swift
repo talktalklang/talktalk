@@ -2,6 +2,7 @@
 
 public protocol SubscriptExpr: Expr {
 	// Insert SubscriptExpr specific fields here
+	var receiver: any Expr { get }
 	var args: [CallArgument] { get }
 }
 

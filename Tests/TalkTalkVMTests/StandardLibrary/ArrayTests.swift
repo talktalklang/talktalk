@@ -34,7 +34,7 @@ struct ArrayTests: StandardLibraryTest {
 		var a = Array()
 		a.append(123)
 		a.append(456)
-		return a.at(1)
+		return a.get(1)
 		""").get()
 
 		#expect(result == .int(456))

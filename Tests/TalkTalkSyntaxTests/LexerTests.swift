@@ -128,6 +128,11 @@ struct TalkTalkLexerTests {
 		#expect(tokens.map(\.kind) == [.leftBracket, .rightBracket, .eof])
 	}
 
+	@Test("Forward arrow") func forwardArrow() async throws {
+		var lexer = Lexer("->")
+		#expect(lexer.collect().map(\.kind) == [.forwardArrow, .eof])
+	}
+
 	@Test("Comments") func comments() async throws {
 		var lexer = Lexer("""
 		// This is a comment
