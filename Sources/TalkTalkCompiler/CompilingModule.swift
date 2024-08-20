@@ -178,7 +178,7 @@ public class CompilingModule {
 		let main = Chunk(name: "main")
 
 		for fileChunk in fileChunks {
-			guard let index = compiledChunks.first(where: { $1.name == fileChunk.name }) else {
+			guard let index = compiledChunks.sorted(by: { $0.key < $1.key }).first(where: { $1.name == fileChunk.name }) else {
 				fatalError("could not find compiled chunk for file: \(fileChunk.name)")
 			}
 

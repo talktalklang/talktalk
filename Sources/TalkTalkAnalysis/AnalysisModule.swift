@@ -59,14 +59,10 @@ public struct AnalysisModule {
 	public var functions: [String: ModuleFunction] = [:]
 
 	// The list of top level structs in this module
-	public var structs: [String: ModuleStruct] = [:] {
-		didSet {
-			
-		}
-	}
+	public var structs: [String: ModuleStruct] = [:]
 
 	// A list of modules this module imports
-//	public var imports: [String: ModuleGlobal] = [:]
+	public var imports: [String: ModuleGlobal] = [:]
 
 	public func moduleValue(named name: String) -> ModuleValue? {
 		values[name]

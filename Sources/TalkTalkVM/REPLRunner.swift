@@ -67,8 +67,8 @@ public class REPLRunner: Copyable {
 		}
 
 		chunk.emit(opcode: .suspend, line: .zero)
-
-		module.main = StaticChunk(chunk: chunk)
+//		vm.module.main =
+		vm.chunk = StaticChunk(chunk: chunk)
 
 		return vm.run()
 	}

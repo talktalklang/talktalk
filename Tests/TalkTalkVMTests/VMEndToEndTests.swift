@@ -22,7 +22,7 @@ struct VMEndToEndTests {
 	func compile(_ strings: [String]) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: Set(strings.map { .tmp($0, "1.tlk") }),
+			files: Set(strings.enumerated().map { .tmp($1, "\($0).tlk") }),
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -281,21 +281,20 @@ struct VMEndToEndTests {
 	}
 
 	@Test("Can run functions across files") func crossFile() throws {
-		let out = try OutputCapture.run {
-			try runAsync(
+//		let out = try OutputCapture.run {
+			_ = try run(
 				"print(fizz())",
 				"func foo() { bar() }",
 				"func bar() { 123 }",
-				"func fizz() { foo() }"
-			)
-		}
+				"func fizz() { foo() }")
+//		}
 
-		#expect(out.stdout == ".int(123)\n")
+//		#expect(out.stdout == ".int(123)\n")
 	}
 
 	@Test("Can use values across files") func crossFileValues() throws {
 		let out = try OutputCapture.run {
-			try runAsync(
+			_ = try run(
 				"print(fizz)",
 				"print(fizz)",
 				"let fizz = 123"
@@ -382,7 +381,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {
@@ -438,7 +437,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {

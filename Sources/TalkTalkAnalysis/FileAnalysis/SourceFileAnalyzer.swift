@@ -339,13 +339,15 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
+		let errors: [AnalysisError] = context.shouldReportErrors ?
+			[AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location)] :
+			[]
+
 		return AnalyzedVarExpr(
 			typeID: TypeID(.any),
 			expr: expr,
 			environment: context,
-			analysisErrors: [
-				AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location),
-			],
+			analysisErrors: errors,
 			isMutable: false
 		)
 	}
