@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/18/24.
 //
 
-public struct StaticChunk: Equatable, Codable {
+public struct StaticChunk: Equatable, Codable, Sendable {
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
 	public var code: [Byte] = []
 

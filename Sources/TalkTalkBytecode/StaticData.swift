@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/14/24.
 //
 
-public struct StaticData: Codable, Hashable, Equatable {
-	public enum Kind: String, Codable {
+public struct StaticData: Codable, Hashable, Equatable, Sendable {
+	public enum Kind: String, Codable, Sendable {
 		case string = "String"
 	}
 

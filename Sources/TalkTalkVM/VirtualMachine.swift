@@ -26,12 +26,27 @@ public struct VirtualMachine: Copyable {
 	var chunk: StaticChunk
 
 	// The frames stack
-	var frames: Stack<CallFrame> {
+	var frames: Stack<CallFrame>
+	{
+		willSet {
+			#if DEBUG
+			if frames.size != newValue.size, frames.size > 0, verbosity != .quiet {
+				log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.localNames)")
+			}
+			#endif
+		}
+
 		didSet {
-			self.ip = 0
+			ip = 0
 			if frames.isEmpty { return }
-			self.currentFrame = frames.peek()
-			self.chunk = currentFrame.closure.chunk
+			currentFrame = frames.peek()
+			chunk = currentFrame.closure.chunk
+
+			#if DEBUG
+			if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
+				log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.localNames)")
+			}
+			#endif
 		}
 	}
 
@@ -71,9 +86,7 @@ public struct VirtualMachine: Copyable {
 		let frame = CallFrame(
 			closure: Closure(chunk: chunk, upvalues: []),
 			returnTo: 0,
-			stackOffset: 0,
-			instances: [],
-			builtinInstances: []
+			stackOffset: 0
 		)
 
 		frames.push(frame)
@@ -107,7 +120,7 @@ public struct VirtualMachine: Copyable {
 							let line = string.components(separatedBy: .newlines)[Int(i.line)]
 							FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
 						} else {
-							FileHandle.standardError.write(Data(("       <lib>\n").utf8))
+							FileHandle.standardError.write(Data("       <lib>\n".utf8))
 						}
 					}
 				}
@@ -149,11 +162,6 @@ public struct VirtualMachine: Copyable {
 
 				// Push the result back onto the stack
 				stack.push(result)
-
-				// Update frame instances to reflect changes that happened in last frame
-				for i in 0 ..< currentFrame.instances.count {
-					currentFrame.instances[i] = calledFrame.instances[i]
-				}
 
 				// Return to where we called from
 				ip = calledFrame.returnTo
@@ -384,10 +392,10 @@ public struct VirtualMachine: Copyable {
 				return runtimeError("Cannot set built in")
 			case .cast:
 				let slot = readByte()
-				call(structValue: .init(slot))
+				call(structValue: module.structs[Int(slot)])
 			case .getStruct:
 				let slot = readByte()
-				stack.push(.struct(.init(slot)))
+				stack.push(.struct(module.structs[Int(slot)]))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
@@ -400,20 +408,17 @@ public struct VirtualMachine: Copyable {
 				// Pop the receiver off the stack
 				let receiver = stack.pop()
 				switch receiver {
-				case let .instance(_, receiver):
-					let instance = currentFrame.instances[Int(receiver)]
-
+				case let .instance(instance):
 					if propertyOptions.contains(.isMethod) {
 						// If it's a method, we create a boundMethod value, which consists of the method slot
 						// and the instance ID. Using this, we can use the type we get from instance[instanceID]
 						// to lookup the method.
-						let boundMethod = Value.boundMethod(.init(slot), receiver)
+						let boundMethod = Value.boundMethod(instance, .init(slot))
 
-						
 						stack.push(boundMethod)
 					} else {
 						guard let value = instance.fields[Int(slot)] else {
-							fatalError("No value in slot: \(slot)")
+							return runtimeError("unitialized value in slot \(slot) for \(instance)")
 						}
 
 						stack.push(value)
@@ -431,11 +436,15 @@ public struct VirtualMachine: Copyable {
 				let instance = stack.pop()
 				let propertyValue = stack.peek()
 
-				guard let (_, receiver) = instance.instanceValue else {
+				guard var (receiver) = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
-				currentFrame.instances[Int(receiver)].fields[Int(slot)] = propertyValue
+				// Set the property
+				receiver.fields[Int(slot)] = propertyValue
+
+				// Put the updated instance back onto the stack
+				stack[stack.size - 1] = .instance(receiver)
 			case .jumpPlaceholder:
 				()
 			}
@@ -455,62 +464,38 @@ public struct VirtualMachine: Copyable {
 		case let .moduleFunction(moduleFunction):
 			call(moduleFunction: Int(moduleFunction))
 		case let .struct(structValue):
-			call(structValue: .init(structValue))
-		case let .boundMethod(methodSlot, instanceID):
-			call(boundMethod: methodSlot, on: instanceID)
+			call(structValue: structValue)
+		case let .boundMethod(instance, slot):
+			call(boundMethod: slot, on: instance)
 		default:
 			fatalError("\(callee) is not callable")
 		}
 	}
 
-	mutating func call(boundMethod methodSlot: Value.IntValue, onBuiltin instanceID: Value.IntValue) {
-		stack.pop() // Pop the method off the stack
-
-		let instance = currentFrame.builtinInstances[Int(instanceID)]
-		let arity = instance.arity(for: Int(methodSlot))
-		let args = stack.pop(count: arity)
-		let result = instance.call(Int(methodSlot), args)
-
-		// If the call returned a value (it's not void), push it on the stack
-		if let result {
-			stack.push(result)
-		}
-	}
-
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
-	mutating func call(boundMethod: Value.IntValue, on instanceData: Value.IntValue) {
-		let instance = currentFrame.instances[Int(instanceData)]
-		let structType = module.structs[Int(instance.type.structValue!)]
-		let methodChunk = structType.methods[Int(boundMethod)]
+	mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
+		let methodChunk = instance.type.methods[Int(boundMethod)]
 
-		stack[stack.size - Int(methodChunk.arity) - 1] = Value.instance(
-			instance.type.structValue!,
-			instanceData
-		)
+		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
 
 		call(chunk: methodChunk)
 	}
 
-	mutating func call(structValue: Value.IntValue) {
-		// Get the struct we're gonna be instantiating
-		let structType = module.structs[Int(structValue)]
-
-		// Figure out where in the instances "memory" the instance will live
-		let instanceID = Value.IntValue(currentFrame.instances.count)
-
+	mutating func call(structValue structType: Struct) {
 		// Create the instance Value
-		let instance = Value.instance(structValue, instanceID)
+		let instance = Value.instance(
+			Instance(
+				type: structType,
+				fields: Array(repeating: nil, count: structType.propertyCount)
+			)
+		)
 
 		// Get the initializer
 		let initializer = structType.methods[structType.initializer]
 
 		// Add the instance to the stack
 		stack[stack.size - Int(initializer.arity) - 1] = instance
-
-		// Store the instance value
-		currentFrame.instances.append(
-			StructInstance(type: .struct(structValue), fieldCount: structType.propertyCount))
 
 		call(chunk: initializer)
 	}
@@ -522,9 +507,7 @@ public struct VirtualMachine: Copyable {
 				upvalues: []
 			),
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances,
-			builtinInstances: currentFrame.builtinInstances
+			stackOffset: stack.size - Int(chunk.arity) - 1
 		)
 
 		frames.push(frame)
@@ -537,9 +520,7 @@ public struct VirtualMachine: Copyable {
 				upvalues: []
 			),
 			returnTo: ip,
-			stackOffset: stack.size - 1,
-			instances: currentFrame.instances,
-			builtinInstances: currentFrame.builtinInstances
+			stackOffset: stack.size - 1
 		)
 
 		frames.push(frame)
@@ -552,9 +533,7 @@ public struct VirtualMachine: Copyable {
 		let frame = CallFrame(
 			closure: closures[UInt64(closureID)]!,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances,
-			builtinInstances: currentFrame.builtinInstances
+			stackOffset: stack.size - Int(chunk.arity) - 1
 		)
 
 		frames.push(frame)
@@ -567,9 +546,7 @@ public struct VirtualMachine: Copyable {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances,
-			builtinInstances: currentFrame.builtinInstances
+			stackOffset: stack.size - Int(chunk.arity) - 1
 		)
 
 		frames.push(frame)
@@ -582,9 +559,7 @@ public struct VirtualMachine: Copyable {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1,
-			instances: currentFrame.instances,
-			builtinInstances: currentFrame.builtinInstances
+			stackOffset: stack.size - Int(chunk.arity) - 1
 		)
 
 		frames.push(frame)
@@ -699,5 +674,9 @@ public struct VirtualMachine: Copyable {
 				dumpStack()
 			}
 		}
+	}
+
+	func log(_ string: String) {
+		FileHandle.standardError.write(Data((string + "\n").utf8))
 	}
 }

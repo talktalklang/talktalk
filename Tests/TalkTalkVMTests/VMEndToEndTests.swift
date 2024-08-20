@@ -382,7 +382,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
 	}
 
 	@Test("Struct properties from other modules") func crossModuleStructProperties() throws {
@@ -438,7 +438,7 @@ struct VMEndToEndTests {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {

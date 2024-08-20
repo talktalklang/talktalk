@@ -5,6 +5,25 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
+public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
+	public static func ==(lhs: Instance, rhs: Instance) -> Bool {
+		lhs.type == rhs.type && lhs.fields == rhs.fields
+	}
+
+	public let type: Struct
+	public var fields: [Value?]
+
+	public init(type: Struct, fields: [Value?]) {
+		self.type = type
+		self.fields = fields
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(type)
+		hasher.combine(fields)
+	}
+}
+
 public enum Value: Equatable, Hashable, Codable, Sendable {
 	public typealias IntValue = Int32
 
@@ -40,13 +59,13 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case moduleFunction(IntValue)
 
 	// The index of the struct in the module
-	case `struct`(IntValue)
+	case `struct`(Struct)
 
 	// The type of instance, the instance ID
-	case instance(IntValue, IntValue)
+	case instance(Instance)
 
 	// The method slot, the type of instance
-	case boundMethod(IntValue, IntValue)
+	case boundMethod(Instance, IntValue)
 
 	case primitive(Primitive)
 
@@ -112,7 +131,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var structValue: IntValue? {
+	public var structValue: Struct? {
 		guard case let .struct(result) = self else {
 			return nil
 		}
@@ -120,20 +139,20 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var instanceValue: (IntValue, IntValue)? {
-		guard case let .instance(type, instance) = self else {
+	public var instanceValue: Instance? {
+		guard case let .instance(instance) = self else {
 			return nil
 		}
 
-		return (type, instance)
+		return instance
 	}
 
-	public var boundMethodValue: (slot: IntValue, instanceID: IntValue)? {
-		guard case let .boundMethod(methodSlot, instance) = self else {
+	public var boundMethodValue: (instance: Instance, slot: IntValue)? {
+		guard case let .boundMethod(instance, slot) = self else {
 			return nil
 		}
 
-		return (methodSlot, instance)
+		return (instance, slot)
 	}
 
 	public func disassemble(in chunk: StaticChunk) -> String {
@@ -170,7 +189,7 @@ extension Value: CustomStringConvertible {
 		case .struct:
 			"struct"
 		case .instance:
-			"instance \(instanceValue!)"
+			"instance \(instanceValue!.type.name)"
 		case .boundMethod:
 			"bound method \(boundMethodValue!)"
 		case .builtinStruct:
@@ -196,8 +215,8 @@ extension Value: CustomStringConvertible {
 			true
 		case (.pointer(_, _), .primitive(.pointer)):
 			true
-		case let (.instance(slot, _), .struct(structSlot)):
-			slot == structSlot
+		case let (.instance(instance), .struct(type)):
+			instance.type == type
 		default:
 			false
 		}
