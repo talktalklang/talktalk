@@ -18,11 +18,13 @@ public class CompilingModule {
 	let analysisModule: AnalysisModule
 
 	// The list of compiled chunks we have.
-	var compiledChunks: [Int: Chunk] = [:]
+	var compiledChunks: [Chunk] = []
 
 	// Stores globals with their offsets. This is useful for allowing us to calculate an offset
 	// for a global before it's been resolved.
-	var symbols: [Symbol: Int] = [:]
+	var functionSymbols: [Symbol: Int] = [:]
+
+	var valueSymbols: [Symbol: Int] = [:]
 
 	// The chunks created for each file being compiled. We can use these to synthesize a main function
 	// if none exists.
@@ -44,38 +46,39 @@ public class CompilingModule {
 		self.moduleEnvironment = moduleEnvironment
 
 		// Reserve offsets for module functions
-		for (i, (_, global)) in analysisModule.functions.sorted(by: { $0.key < $1.key }).enumerated() {
-			symbols[.function(global.name)] = i
+		var i = 0
+		for (_, global) in analysisModule.moduleFunctions.sorted(by: { $0.key < $1.key }) {
+			functionSymbols[.function(global.name)] = i++
+		}
+
+		// Reserve offsets for file functions
+		for file in analysisModule.analyzedFiles {
+			functionSymbols[.function(file.path)] = i++
 		}
 
 		// Reserve offsets for module values
 		for (i, (_, global)) in analysisModule.values.sorted(by: { $0.key < $1.key }).enumerated() {
-			symbols[.value(global.name)] = i
+			valueSymbols[.value(global.name)] = i
 		}
 
 		// Reserve offsets for struct values
 		for (i, (_, structT)) in analysisModule.structs.sorted(by: { $0.key < $1.key }).enumerated() {
-			symbols[.struct(structT.name)] = i
+			valueSymbols[.struct(structT.name)] = i
 
 			// Reserve offsets for struct methods
 			for (j, (methodName, method)) in structT.methods.enumerated() {
-				symbols[.method(structT.name, methodName, method.params.map(\.key))] = j
+				functionSymbols[.method(structT.name, methodName, method.params.map(\.key))] = j
 			}
 		}
 	}
 
 	public func finalize(mode: CompilationMode) -> Module {
-		let chunkCount = analysisModule.functions.values.count(where: { $0.isImport }) + compiledChunks.count
+		let chunkCount = analysisModule.moduleFunctions.values.count(where: { $0.isImport }) + compiledChunks.count //+ analysisModule.files.count
 		var chunks: [StaticChunk] = Array(repeating: StaticChunk(chunk: .init(name: "_")), count: chunkCount)
-
-		// Go through the list of global chunks, sort by offset, add to the real module
-		for (i, chunk) in compiledChunks.sorted(by: { $0.key < $1.key }) {
-			chunks[i] = StaticChunk(chunk: chunk)
-		}
 
 		// Copy chunks for imported functions into our module (at some point it'd be nice to just be able to call into those
 		// but we'll get there..)
-		for (name, global) in analysisModule.functions where global.isImport {
+		for (name, global) in analysisModule.moduleFunctions where global.isImport {
 			guard case let .external(analysis) = global.source else {
 				fatalError("attempted to import symbol from non-external module")
 			}
@@ -89,6 +92,12 @@ public class CompilingModule {
 			}
 
 			chunks[offset] = module.chunks[moduleOffset]
+		}
+
+		// Go through the list of global chunks, sort by offset, add to the real module
+		for chunk in compiledChunks {
+			let offset = functionSymbols[.function(chunk.name)]!
+			chunks[offset] = StaticChunk(chunk: chunk)
 		}
 
 		var main: StaticChunk? = nil
@@ -105,7 +114,7 @@ public class CompilingModule {
 			}
 		}
 
-		var module = Module(name: name, main: main, symbols: symbols)
+		var module = Module(name: name, main: main, symbols: functionSymbols)
 
 		// Set the module level function chunks
 		module.chunks = chunks
@@ -117,7 +126,7 @@ public class CompilingModule {
 
 		// Copy lazy value initializers
 		for (name, chunk) in valueInitializers {
-			module.valueInitializers[Byte(symbols[name]!)] = StaticChunk(chunk: chunk)
+			module.valueInitializers[Byte(valueSymbols[name]!)] = StaticChunk(chunk: chunk)
 		}
 
 		let foundStructs = analysisModule.structs.map { (name, astruct) in
@@ -135,10 +144,10 @@ public class CompilingModule {
 		}
 
 		// Copy struct types, sorting by their index in the symbols table
-		for case (.struct(let name), var structType) in foundStructs.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+		for case (.struct(let name), var structType) in foundStructs.sorted(by: { valueSymbols[$0.key]! < valueSymbols[$1.key]! }) {
 			// Copy struct methods, sorting by their index in the symbols table
 			let methods = structMethods[.struct(name)] ?? [:]
-			for case let (.method(_, _, _), chunk) in methods.sorted(by: { symbols[$0.key]! < symbols[$1.key]! }) {
+			for case let (.method(_, _, _), chunk) in methods.sorted(by: { functionSymbols[$0.key]! < functionSymbols[$1.key]! }) {
 				structType.methods.append(StaticChunk(chunk: chunk))
 			}
 
@@ -151,7 +160,7 @@ public class CompilingModule {
 	public func compile(file: AnalyzedSourceFile) throws {
 		var compiler = SourceFileCompiler(name: file.path, analyzedSyntax: file.syntax)
 		let chunk = try compiler.compile(in: self)
-		compiledChunks[compiledChunks.count] = chunk
+		compiledChunks.append(chunk)
 		fileChunks.append(chunk)
 	}
 
@@ -160,16 +169,18 @@ public class CompilingModule {
 	//
 	// If the analysis says that we don't have a global by this name, return nil.
 	public func moduleFunctionOffset(for name: String) -> Int? {
-		return symbols[.function(name)]
+		return functionSymbols[.function(name)]
 	}
 
 	public func moduleValueOffset(for name: String) -> Int? {
-		return symbols[.value(name)]
+		return valueSymbols[.value(name)]
 	}
 
 	public func addChunk(_ chunk: Chunk) -> Int {
-		compiledChunks[compiledChunks.count] = chunk
-		return compiledChunks.count - 1
+		let offset = functionSymbols[.function(chunk.name), default: functionSymbols.count]
+		functionSymbols[.function(chunk.name)] = offset
+		compiledChunks.append(chunk)
+		return offset
 	}
 
 	// If a function named "main" isn't provided, we generate one that just runs all of the files
@@ -178,12 +189,10 @@ public class CompilingModule {
 		let main = Chunk(name: "main")
 
 		for fileChunk in fileChunks {
-			guard let index = compiledChunks.sorted(by: { $0.key < $1.key }).first(where: { $1.name == fileChunk.name }) else {
-				fatalError("could not find compiled chunk for file: \(fileChunk.name)")
-			}
+			let offset = functionSymbols[.function(fileChunk.name)]!
 
-			main.emit(opcode: .callChunkID, line: UInt32(index.key))
-			main.emit(byte: Byte(index.key), line: UInt32(index.key))
+			main.emit(opcode: .callChunkID, line: UInt32(offset))
+			main.emit(byte: Byte(offset), line: UInt32(offset))
 		}
 
 		main.emit(opcode: .return, line: UInt32(fileChunks.count))

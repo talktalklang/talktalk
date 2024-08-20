@@ -247,10 +247,10 @@ actor CompilerTests {
 		}
 		""")
 
-		let subchunk = module.compiledChunks[0]!
+		let subchunk = module.compiledChunks[0]
 
 		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
+			.op(.defClosure, line: 0, .closure(name: "CompilerTests", arity: 0, depth: 0)),
 			.op(.return, line: 0, .simple)
 		))
 
@@ -269,7 +269,7 @@ actor CompilerTests {
 		""")
 
 		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0, .closure(arity: 0, depth: 0)),
+			.op(.defClosure, line: 0, .closure(name: "CompilerTests", arity: 0, depth: 0)),
 			.op(.call, line: 0, .simple),
 			.op(.return, line: 0, .simple)
 		))
@@ -290,11 +290,11 @@ actor CompilerTests {
 			"""
 		)
 
-		let chunk = module.compiledChunks[1]!
+		let chunk = module.compiledChunks[1]
 		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
 			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 3, .closure(arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1, upvalues: [.capturing(1)])),
 			.op(.call, line: 3),
 			.op(.pop, line: 3),
 			.op(.getLocal, line: 7, .local(slot: 1, name: "a")),
@@ -302,7 +302,7 @@ actor CompilerTests {
 			.op(.return, line: 8)
 		))
 
-		let subchunk = module.compiledChunks[0]!
+		let subchunk = module.compiledChunks[0]
 		#expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
 			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
@@ -324,7 +324,7 @@ actor CompilerTests {
 		}
 		""")
 
-		let result = disassemble(module.compiledChunks[1]!)
+		let result = disassemble(module.compiledChunks[1])
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
@@ -333,6 +333,7 @@ actor CompilerTests {
 			.op(.setLocal, line: 2, .local(slot: 2, name: "b")),
 
 			.op(.defClosure, line: 3, .closure(
+				name: "_fn__56",
 				arity: 0,
 				depth: 1,
 				upvalues: [.capturing(1), .capturing(2)]
@@ -344,7 +345,7 @@ actor CompilerTests {
 
 		#expect(result == expected)
 
-		let subchunk = module.compiledChunks[0]!
+		let subchunk = module.compiledChunks[0]
 		let subexpected = Instructions(
 			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
 			.op(.pop, line: 4, .simple),
@@ -369,13 +370,13 @@ actor CompilerTests {
 		let expected = Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 1, .closure(arity: 0, depth: 0, upvalues: [.capturing(1)])),
+			.op(.defClosure, line: 1, .closure(name: "_fn__49", arity: 0, depth: 0, upvalues: [.capturing(1)])),
 			.op(.return, line: 0, .simple)
 		)
 
 		#expect(result == expected)
 
-		let subchunk = module.compiledChunks[0]!
+		let subchunk = module.compiledChunks[0]
 
 		#expect(subchunk.upvalueCount == 1)
 

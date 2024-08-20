@@ -30,7 +30,7 @@ public struct Instruction {
 	}
 
 	public func dump() {
-		FileHandle.standardError.write(Data((description + "\n").utf8))
+		print(description)
 	}
 }
 
@@ -55,6 +55,24 @@ extension Instruction: Equatable {
 
 public extension InstructionMetadata where Self == SimpleMetadata {
 	static var simple: SimpleMetadata { .init() }
+}
+
+public struct FunctionMetadata: InstructionMetadata {
+	let name: String
+
+	public init(name: String) {
+		self.name = name
+	}
+
+	public var length: Int = 1
+
+	public var description: String {
+		"name: \(name)"
+	}
+
+	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
+		chunk.emit(opcode: instruction.opcode, line: instruction.line)
+	}
 }
 
 public struct SimpleMetadata: InstructionMetadata {
@@ -173,7 +191,7 @@ public extension InstructionMetadata where Self == GetPropertyMetadata {
 
 public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
-		case local, global, builtin, `struct`, property, builtinStruct
+		case local, global, builtin, `struct`, property, moduleFunction
 	}
 
 	public var length: Int = 2
@@ -202,10 +220,6 @@ public extension InstructionMetadata where Self == VariableMetadata {
 
 	static func builtin(slot: Byte, name: String) -> VariableMetadata {
 		VariableMetadata(slot: slot, name: name, type: .builtin)
-	}
-
-	static func builtinStruct(slot: Byte, name: String) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: name, type: .builtinStruct)
 	}
 
 	static func `struct`(slot: Byte) -> VariableMetadata {

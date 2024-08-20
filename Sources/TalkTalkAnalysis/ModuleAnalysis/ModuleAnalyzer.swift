@@ -107,7 +107,7 @@ public struct ModuleAnalyzer {
 			}
 
 			if case let .function(name) = name {
-				analysisModule.functions[name] = ModuleFunction(
+				analysisModule.moduleFunctions[name] = ModuleFunction(
 					name: name,
 					syntax: binding.expr,
 					typeID: binding.type,
@@ -144,7 +144,7 @@ public struct ModuleAnalyzer {
 			if let global = global as? ModuleValue {
 				analysisModule.values[name] = global
 			} else if let global = global as? ModuleFunction {
-				analysisModule.functions[name] = global
+				analysisModule.moduleFunctions[name] = global
 			} else if let structT = global as? ModuleStruct {
 				analysisModule.structs[structT.name] = structT
 			} else {

@@ -37,7 +37,7 @@ public struct SerializedAnalysisModule: Codable {
 			res[name] = SerializedAnalysisModule.serialize(global)
 		}
 
-		self.functions = analysisModule.functions.reduce(into: [:]) { res, value in
+		self.functions = analysisModule.moduleFunctions.reduce(into: [:]) { res, value in
 			let (name, global) = value
 			res[name] = SerializedAnalysisModule.serialize(global)
 		}
@@ -56,7 +56,10 @@ public struct AnalysisModule {
 	public var values: [String: ModuleValue] = [:]
 
 	// The list of top level functions in this module
-	public var functions: [String: ModuleFunction] = [:]
+	public var moduleFunctions: [String: ModuleFunction] = [:]
+
+	// The list of non-top level functions in this module
+	public var localFunctions: [String: ModuleFunction] = [:]
 
 	// The list of top level structs in this module
 	public var structs: [String: ModuleStruct] = [:]
@@ -69,7 +72,7 @@ public struct AnalysisModule {
 	}
 
 	public func moduleFunction(named name: String) -> ModuleFunction? {
-		functions[name]
+		moduleFunctions[name]
 	}
 
 	public func moduleGlobal(named name: String) -> (any ModuleGlobal)? {
@@ -78,6 +81,25 @@ public struct AnalysisModule {
 
 	public func moduleStruct(named name: String) -> ModuleStruct? {
 		structs[name]
+	}
+
+	public func collectLocalFunctions() -> [ModuleFunction] {
+		func collect(in syntax: any AnalyzedSyntax) -> [ModuleFunction] {
+			var result: [ModuleFunction] = []
+			if let syntax = syntax as? AnalyzedFuncExpr {
+				if let name = syntax.name?.lexeme {
+					result.append(ModuleFunction(name: name, syntax: syntax, typeID: syntax.typeID, source: .module))
+				}
+			}
+
+			for child in syntax.analyzedChildren {
+				result.append(contentsOf: collect(in: child))
+			}
+
+			return result
+		}
+
+		return analyzedFiles.flatMap(\.syntax).flatMap { collect(in: $0) }
 	}
 }
 

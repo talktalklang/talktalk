@@ -733,7 +733,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// Check CompilationModule for a global struct
 	private func resolveStruct(named name: String) -> Byte? {
-		if let offset = module.symbols[.struct(name)] {
+		if let offset = module.valueSymbols[.struct(name)] {
 			return Byte(offset)
 		}
 

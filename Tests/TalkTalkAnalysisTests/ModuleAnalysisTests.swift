@@ -53,7 +53,7 @@ struct ModuleAnalysisTests {
 		)
 
 		#expect(analysisModule.name == "A")
-		#expect(analysisModule.functions.count == 3)
+		#expect(analysisModule.moduleFunctions.count == 3)
 
 		// First make sure we can get a super basic function with no dependencies
 		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
@@ -97,7 +97,7 @@ struct ModuleAnalysisTests {
 
 		#expect(analysisModule.name == "A")
 		#expect(analysisModule.values.count == 1)
-		#expect(analysisModule.functions.count == 2)
+		#expect(analysisModule.moduleFunctions.count == 2)
 
 		// First make sure we can get a value
 		let bar = try #require(analysisModule.moduleValue(named: "bar"))
@@ -209,7 +209,7 @@ struct ModuleAnalysisTests {
 
 		var analysisModule = try analyzer.analyze()
 		#expect(analysisModule.name == "A")
-		#expect(analysisModule.functions.count == 2)
+		#expect(analysisModule.moduleFunctions.count == 2)
 
 		analysisModule = try analyzer.addFile(
 			"""
@@ -220,6 +220,6 @@ struct ModuleAnalysisTests {
 		)
 
 		#expect(analysisModule.name == "A")
-		#expect(analysisModule.functions.count == 3)
+		#expect(analysisModule.moduleFunctions.count == 3)
 	}
 }

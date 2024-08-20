@@ -116,13 +116,11 @@ public struct Disassembler<Chunk: Disassemblable> {
 		case .setLocal, .getLocal:
 			return variableInstruction(opcode: opcode, start: index, type: .local)
 		case .getModuleFunction, .setModuleFunction:
-			return variableInstruction(opcode: opcode, start: index, type: .global)
+			return variableInstruction(opcode: opcode, start: index, type: .moduleFunction)
 		case .getModuleValue, .setModuleValue:
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getStruct, .setStruct:
 			return variableInstruction(opcode: opcode, start: index, type: .struct)
-		case .getBuiltinStruct, .setBuiltinStruct:
-			return variableInstruction(opcode: opcode, start: index, type: .builtinStruct)
 		case .getProperty:
 			return getPropertyInstruction(opcode: opcode, start: index, type: .property)
 		case .setProperty:
@@ -171,8 +169,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 			"slot: \(slot)"
 		case .property:
 			"slot: \(slot)"
-		case .builtinStruct:
-			"slot: \(slot)"
+		case .moduleFunction:
+			module.chunks[Int(slot)].name
 		}
 
 		let metadata = VariableMetadata(slot: slot, name: name, type: type)
@@ -191,7 +189,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 			upvalues.append(ClosureMetadata.Upvalue(isLocal: isLocal, index: index))
 		}
 
-		let metadata = ClosureMetadata(name: nil, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
+		let metadata = ClosureMetadata(name: subchunk.name, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
 		return Instruction(opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 

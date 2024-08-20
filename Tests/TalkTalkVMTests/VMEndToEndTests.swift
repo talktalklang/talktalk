@@ -60,8 +60,8 @@ struct VMEndToEndTests {
 		return try VirtualMachine.run(module: module, verbosity: verbosity).get()
 	}
 
-	func returning(_ string: String) throws -> TalkTalkBytecode.Value {
-		try run("return \(string)")
+	func returning(_ string: String, verbosity: Verbosity = .quiet) throws -> TalkTalkBytecode.Value {
+		try run("return \(string)", verbosity: verbosity)
 	}
 
 	func runAsync(_ strings: String...) throws {
@@ -280,28 +280,23 @@ struct VMEndToEndTests {
 		}
 	}
 
-	@Test("Can run functions across files") func crossFile() throws {
-//		let out = try OutputCapture.run {
-			_ = try run(
-				"print(fizz())",
+	@Test("Can run functions across files") func runsFunctionsAcrossFiles() throws {
+		let result = try run(
+				"func main() { fizz() }",
 				"func foo() { bar() }",
 				"func bar() { 123 }",
 				"func fizz() { foo() }")
-//		}
 
-//		#expect(out.stdout == ".int(123)\n")
+		#expect(result == .int(123))
 	}
 
 	@Test("Can use values across files") func crossFileValues() throws {
-		let out = try OutputCapture.run {
-			_ = try run(
-				"print(fizz)",
-				"print(fizz)",
-				"let fizz = 123"
-			)
-		}
+		let result = try run(
+			"func main() { return fizz }",
+			"let fizz = 123"
+		)
 
-		#expect(out.stdout == ".int(123)\n.int(123)\n")
+		#expect(result == .int(123))
 	}
 
 	@Test("Can run functions across modules") func crossModule() throws {

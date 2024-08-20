@@ -73,6 +73,15 @@ public struct VirtualMachine: ~Copyable {
 		self.module = module
 		self.verbosity = verbosity
 
+		if verbosity == .verbose {
+			print("Loading module: \(module.name)")
+			for (i, chunk) in module.chunks.enumerated() {
+				print("\(i): ", terminator: "")
+				chunk.dump(in: module)
+			}
+			print("------------------------------------------------------")
+		}
+
 		guard let chunk = module.main else {
 			fatalError("no entrypoint found for module `\(module.name)`")
 		}
@@ -656,7 +665,7 @@ public struct VirtualMachine: ~Copyable {
 			if frames.size == 0 {
 				result += "[ \(slot.description) ]"
 			} else {
-				result += "[ \(slot.disassemble(in: chunk)) ]"
+				result += "[ \(slot.disassemble(in: module)) ]"
 			}
 		}
 

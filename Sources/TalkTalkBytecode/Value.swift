@@ -155,10 +155,12 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return (instance, slot)
 	}
 
-	public func disassemble(in chunk: StaticChunk) -> String {
+	public func disassemble(in module: Module) -> String {
 		switch self {
-		case .closure:
-			"closure"
+		case .closure(let id):
+			"closure(\(module.chunks[Int(id)].name))"
+		case .moduleFunction(let id):
+			"moduleFunction(\(module.chunks[Int(id)].name))"
 		default:
 			description
 		}
@@ -184,8 +186,8 @@ extension Value: CustomStringConvertible {
 			"closure"
 		case .builtin:
 			"builtin"
-		case .moduleFunction:
-			"module function"
+		case .moduleFunction(let id):
+			"module function \(id)"
 		case .struct:
 			"struct"
 		case .instance:

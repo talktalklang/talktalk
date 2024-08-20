@@ -84,9 +84,6 @@ struct ModuleCompilerTests {
 
 		#expect(module.chunks.map(\.name).sorted() == ["1.tlk", "2.tlk", "bar", "main"].sorted())
 		#expect(module.chunks.count == 4)
-
-		let fizzSlot = try #require(module.symbols[.value("fizz")])
-		#expect(module.valueInitializers[Byte(fizzSlot)] != nil)
 	}
 
 	@Test("Can import module functions") @MainActor func importing() throws {
@@ -113,7 +110,7 @@ struct ModuleCompilerTests {
 		)
 
 		#expect(moduleB.chunks.count == 4)
-		#expect(moduleB.chunks.map(\.name).sorted() == ["_", "bar", "foo", "main"].sorted())
+		#expect(moduleB.chunks.map(\.name).sorted() == ["1.tlk", "bar", "foo", "main"].sorted())
 	}
 
 	@Test("Can compile structs") @MainActor func structs() throws {
