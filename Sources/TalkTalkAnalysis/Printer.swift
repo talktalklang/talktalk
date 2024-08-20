@@ -77,6 +77,15 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		return copy.add(content)
 	}
 
+	@StringBuilder public func visit(_ expr: AnalyzedArrayLiteralExpr, _ context: Void) throws -> String {
+		dump(expr)
+		indent {
+			for child in expr.analyzedChildren {
+				try child.accept(self, context)
+			}
+		}
+	}
+
 	@StringBuilder public func visit(_ expr: AnalyzedCallExpr, _: Void) throws -> String {
 		dump(expr)
 		indent {
@@ -311,6 +320,18 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 			for child in expr.analyzedChildren {
 				try child.accept(self, ())
 			}
+		}
+	}
+
+	@StringBuilder public func visit(_ expr: AnalyzedSubscriptExpr, _ context: Void) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: AnalyzedAssignmentStmt, _ context: Void) throws -> String {
+		dump(expr)
+		indent {
+			try expr.assigneeAnalyzed.accept(self, context)
+			try expr.valueAnalyzed.accept(self, context)
 		}
 	}
 

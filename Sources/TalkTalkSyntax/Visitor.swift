@@ -23,7 +23,7 @@ public protocol Visitor {
 	func visit(_ expr: ParamsExpr, _ context: Context) throws -> Value
 	func visit(_ expr: Param, _ context: Context) throws -> Value
 	func visit(_ expr: GenericParams, _ context: Context) throws -> Value
-
+	func visit(_ expr: CallArgument, _ context: Context) throws -> Value
 	func visit(_ expr: StructExpr, _ context: Context) throws -> Value
 	func visit(_ expr: DeclBlock, _ context: Context) throws -> Value
 	func visit(_ expr: VarDecl, _ context: Context) throws -> Value
@@ -36,8 +36,10 @@ public protocol Visitor {
 	func visit(_ expr: TypeExpr, _ context: Context) throws -> Value
 	func visit(_ expr: ExprStmt, _ context: Context) throws -> Value
 	func visit(_ expr: IfStmt, _ context: Context) throws -> Value
-
 	func visit(_ expr: StructDecl, _ context: Context) throws -> Value
+	func visit(_ expr: ArrayLiteralExpr, _ context: Context) throws -> Value
+	func visit(_ expr: SubscriptExpr, _ context: Context) throws -> Value
+	func visit(_ expr: AssignmentStmt, _ context: Context) throws -> Value
 
 	// GENERATOR_INSERTION
 }

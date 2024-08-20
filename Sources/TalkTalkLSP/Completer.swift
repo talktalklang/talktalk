@@ -23,7 +23,7 @@ actor Completer {
 	}
 
 	func parse() {
-		let lexer = TalkTalkLexer(source)
+		let lexer = Lexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
 

@@ -82,6 +82,14 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 	}
 
+	public func visit(_ expr: CallArgument, _ context: Environment) throws -> any AnalyzedSyntax {
+		try AnalyzedArgument(
+			environment: context,
+			label: expr.label,
+			expr: expr.value.accept(self, context) as! any AnalyzedExpr
+		)
+	}
+
 	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let callee = try expr.callee.accept(self, context)
 		var errors: [AnalysisError] = []
@@ -171,7 +179,7 @@ public struct SourceFileAnalyzer: Visitor {
 					// See if we have a label for the arg (could maybe rely on positions here??)
 					guard let label = arg.label else { continue }
 					// Find the param definition from the init
-					guard let param = initFn.params[label] else { continue }
+					guard let param = initFn.params[label.lexeme] else { continue }
 
 					if case let .instance(paramInstanceType) = param.type(),
 					   case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType
@@ -959,6 +967,22 @@ public struct SourceFileAnalyzer: Visitor {
 	public func visit(_: any StructExpr, _: Environment) throws -> any AnalyzedSyntax {
 		fatalError("TODO")
 	}
+
+	public func visit(_ expr: any ArrayLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+	public func visit(_ expr: any SubscriptExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+	public func visit(_ expr: any AssignmentStmt, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
 
 	// GENERATOR_INSERTION
 

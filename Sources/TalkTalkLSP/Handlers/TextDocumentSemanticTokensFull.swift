@@ -93,6 +93,17 @@ struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
+	func visit(_ expr: CallArgument, _ context: Context) throws -> [RawSemanticToken] {
+		var result: [RawSemanticToken] = []
+		if let label = expr.label {
+			result.append(make(.parameter, from: label))
+		}
+
+		try result.append(contentsOf: expr.value.accept(self, context))
+
+		return result
+	}
+
 	func visit(_: ParseError, _: Context) throws -> [RawSemanticToken] {
 		[]
 	}
@@ -289,6 +300,21 @@ struct SemanticTokensVisitor: Visitor {
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
 	}
+
+	func visit(_ expr: any ArrayLiteralExpr, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+	func visit(_ expr: any SubscriptExpr, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+	func visit(_ expr: any AssignmentStmt, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
 
 	// GENERATOR_INSERTION
 }

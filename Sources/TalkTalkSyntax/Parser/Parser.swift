@@ -24,7 +24,7 @@ public struct Parser {
 
 	var parserRepeats: [Int: Int] = [:]
 
-	var lexer: TalkTalkLexer
+	var lexer: Lexer
 	var current: Token
 	var previous: Token!
 
@@ -34,7 +34,7 @@ public struct Parser {
 	public var errors: [SyntaxError] = []
 
 	public static func parse(_ source: SourceFile, allowErrors: Bool = false) throws -> [any Syntax] {
-		var parser = Parser(TalkTalkLexer(source))
+		var parser = Parser(Lexer(source))
 		let result = parser.parse()
 		if !parser.errors.isEmpty {
 			if !allowErrors {
@@ -44,7 +44,7 @@ public struct Parser {
 		return result
 	}
 
-	public init(_ lexer: TalkTalkLexer) {
+	public init(_ lexer: Lexer) {
 		var lexer = lexer
 		self.previous = lexer.next()
 		self.current = previous
@@ -180,6 +180,26 @@ public struct Parser {
 			params: params,
 			location: endLocation(i)
 		)
+	}
+
+	mutating func argumentList(terminator: Token.Kind = .rightParen) -> [CallArgument] {
+		var args: [CallArgument] = []
+		repeat {
+			let i = startLocation()
+			var name: Token?
+
+			if check(.identifier), checkNext(.colon) {
+				let identifier = consume(.identifier)!
+				consume(.colon)
+				name = identifier
+			}
+
+			let value = parse(precedence: .assignment)
+			args.append(CallArgument(location: endLocation(i), label: name, value: value))
+		} while didMatch(.comma)
+
+		consume(terminator, "expected '\(terminator)' after arguments")
+		return args
 	}
 
 	func upcoming(_ type: Token.Kind) -> Bool {

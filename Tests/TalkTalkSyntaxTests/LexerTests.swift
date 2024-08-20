@@ -3,7 +3,7 @@ import Testing
 
 struct TalkTalkLexerTests {
 	@Test("Int") func int() {
-		var lexer = TalkTalkLexer("1")
+		var lexer = Lexer("1")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [
@@ -18,7 +18,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Import") func importing() {
-		var lexer = TalkTalkLexer("import Test")
+		var lexer = Lexer("import Test")
 		let tokens = lexer.collect()
 		#expect(tokens.map(\.kind) == [
 			.import,
@@ -28,7 +28,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Symbols and ints and parens") func symbolsAndInts() async throws {
-		var lexer = TalkTalkLexer("10 ^ 20")
+		var lexer = Lexer("10 ^ 20")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [
@@ -47,7 +47,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Strings") func strings() throws {
-		var lexer = TalkTalkLexer(#""hello world""#)
+		var lexer = Lexer(#""hello world""#)
 		let tokens = lexer.collect()
 		#expect(tokens.map(\.kind) == [
 			.string,
@@ -58,28 +58,28 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Floats") func floats() async throws {
-		var lexer = TalkTalkLexer("1.23")
+		var lexer = Lexer("1.23")
 		let token = lexer.collect()[0]
 		#expect(token.kind == .float)
 		#expect(token.lexeme == "1.23")
 	}
 
 	@Test("Identifier") func identifier() async throws {
-		var lexer = TalkTalkLexer("foo12")
+		var lexer = Lexer("foo12")
 		let token = lexer.collect()[0]
 		#expect(token.kind == .identifier)
 		#expect(token.lexeme == "foo12")
 	}
 
 	@Test("Identifier starting with underscore") func identifierUnderscore() async throws {
-		var lexer = TalkTalkLexer("_foo12")
+		var lexer = Lexer("_foo12")
 		let token = lexer.collect()[0]
 		#expect(token.kind == .identifier)
 		#expect(token.lexeme == "_foo12")
 	}
 
 	@Test("eof") func eof() async throws {
-		var lexer = TalkTalkLexer("()")
+		var lexer = Lexer("()")
 		let tokens = lexer.collect()
 
 		#expect(tokens[0].kind == .leftParen)
@@ -93,7 +93,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("equals") func equals() throws {
-		var lexer = TalkTalkLexer("foo = 123")
+		var lexer = Lexer("foo = 123")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [
@@ -105,7 +105,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("anon func") func anonfunction() throws {
-		var lexer = TalkTalkLexer("func(x, y) { 10 }")
+		var lexer = Lexer("func(x, y) { 10 }")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [
@@ -122,8 +122,14 @@ struct TalkTalkLexerTests {
 		])
 	}
 
+	@Test("Brackets") func brackets() async throws {
+		var lexer = Lexer("[]")
+		let tokens = lexer.collect()
+		#expect(tokens.map(\.kind) == [.leftBracket, .rightBracket, .eof])
+	}
+
 	@Test("Comments") func comments() async throws {
-		var lexer = TalkTalkLexer("""
+		var lexer = Lexer("""
 		// This is a comment
 		func foo() {
 			10
@@ -160,7 +166,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("Columns") func columns() {
-		var lexer = TalkTalkLexer(
+		var lexer = Lexer(
 			"""
 			123
 			456
@@ -191,7 +197,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("func") func function() async throws {
-		var lexer = TalkTalkLexer("""
+		var lexer = Lexer("""
 		func foo() {
 			10
 		}
@@ -226,7 +232,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("while") func whilekeyword() {
-		var lexer = TalkTalkLexer("while { }")
+		var lexer = Lexer("while { }")
 		let tokens = lexer.collect()
 
 		#expect(tokens.map(\.kind) == [
@@ -238,7 +244,7 @@ struct TalkTalkLexerTests {
 	}
 
 	@Test("newline collapsing") func newline() async throws {
-		var lexer = TalkTalkLexer("""
+		var lexer = Lexer("""
 
 
 		""")

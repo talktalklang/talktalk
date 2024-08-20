@@ -21,7 +21,7 @@ public struct AnalyzedArgument: Syntax, AnalyzedSyntax {
 		try expr.accept(visitor, context)
 	}
 
-	public let label: String?
+	public let label: Token?
 	public let expr: any AnalyzedExpr
 }
 

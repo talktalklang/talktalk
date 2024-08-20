@@ -63,6 +63,10 @@ extension Token.Kind {
 		case .float: .init({ $0.literal($1) }, nil, .none)
 		case .string: .init({ $0.literal($1) }, nil, .none)
 
+		// []
+		case .leftBracket: .init({ $0.arrayLiteral($1) }, .init({ $0.subscriptCall($1, $2) }), .call)
+
+		case .rightBracket: .none
 		case .return: .none
 		case .else: .none
 		case .equals: .none

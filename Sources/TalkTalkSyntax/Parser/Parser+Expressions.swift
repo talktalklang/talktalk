@@ -138,6 +138,28 @@ extension Parser {
 		return funcExpr
 	}
 
+	mutating func arrayLiteral(_: Bool) -> any ArrayLiteralExpr {
+		let i = startLocation()
+		_ = consume(.leftBracket)
+		var exprs: [any Expr] = []
+
+		repeat {
+			skip(.newline)
+			if check(.rightBracket) {
+				// If we get a comma right before a right bracket, it's just a trailing comma
+				// and we can bail out of the loop.
+				break
+			}
+			skip(.newline)
+			exprs.append(parse(precedence: .assignment))
+			skip(.newline)
+		} while didMatch(.comma)
+
+		consume(.rightBracket, "expected ']' after array literal")
+
+		return ArrayLiteralExprSyntax(exprs: exprs, location: endLocation(i))
+	}
+
 	mutating func literal(_: Bool) -> any Expr {
 		if didMatch(.true) {
 			return LiteralExprSyntax(value: .bool(true), location: [previous])
@@ -263,23 +285,27 @@ extension Parser {
 
 		var args: [CallArgument] = []
 		if !didMatch(.rightParen) {
-			repeat {
-				var name: String?
-
-				if check(.identifier), checkNext(.colon) {
-					let identifier = consume(.identifier)!
-					consume(.colon)
-					name = identifier.lexeme
-				}
-
-				let value = parse(precedence: .assignment)
-				args.append(CallArgument(label: name, value: value))
-			} while didMatch(.comma)
-
-			consume(.rightParen, "expected ')' after arguments")
+			args = argumentList()
 		}
 
 		return CallExprSyntax(callee: lhs, args: args, location: endLocation(i))
+	}
+
+	mutating func subscriptCall(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
+		let i = startLocation(at: lhs.location.start)
+		consume(.leftBracket)
+
+		let args = argumentList(terminator: .rightBracket)
+
+		if didMatch(.equals), canAssign {
+			let assignee = SubscriptExprSyntax(receiver: lhs, args: args, location: endLocation(i))
+			let value = parse(precedence: .assignment)
+			return DefExprSyntax(receiver: assignee, value: value, location: [assignee.location.start, value.location.end])
+		} else if didMatch(.equals) {
+			return error(at: current, .cannotAssign, expectation: .none)
+		} else {
+			return SubscriptExprSyntax(receiver: lhs, args: args, location: endLocation(i))
+		}
 	}
 
 	mutating func dot(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {

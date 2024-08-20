@@ -10,6 +10,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		// Single char tokens
 		case leftParen, rightParen,
 		     leftBrace, rightBrace,
+				 leftBracket, rightBracket,
 		     symbol, plus, equals, comma, bang,
 		     colon, dot, less, greater, minus, star, slash
 
@@ -58,7 +59,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 	}
 }
 
-public struct TalkTalkLexer {
+public struct Lexer {
 	let path: String
 	let source: ContiguousArray<Character>
 
@@ -94,6 +95,8 @@ public struct TalkTalkLexer {
 		case ")": make(.rightParen)
 		case "{": make(.leftBrace)
 		case "}": make(.rightBrace)
+		case "[": make(.leftBracket)
+		case "]": make(.rightBracket)
 		case "=": make(match("=") ? .equalEqual : .equals)
 		case "!": make(match("=") ? .bangEqual : .bang)
 		case "*": make(.star)

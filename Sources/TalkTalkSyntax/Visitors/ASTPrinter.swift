@@ -136,6 +136,13 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
+	@StringBuilder public func visit(_ expr: CallArgument, _ context: Context) throws -> String {
+		dump(expr, "name: \(expr.label?.lexeme ?? "<none>")")
+		indent {
+			try expr.value.accept(self, context)
+		}
+	}
+
 	@StringBuilder public func visit(_ expr: any DefExpr, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
@@ -262,6 +269,18 @@ public struct ASTPrinter: Visitor {
 			}
 		}
 	}
+
+	@StringBuilder public func visit(_ expr: any ArrayLiteralExpr, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: any SubscriptExpr, _ context: Context) throws -> String {
+		dump(expr)
+	}
+	@StringBuilder public func visit(_ expr: any AssignmentStmt, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 
 	// GENERATOR_INSERTION
 }

@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct TalkTalkParserTests {
 	func parse(_ source: String, errors: [SyntaxError] = []) -> [Syntax] {
-		let lexer = TalkTalkLexer(.init(path: "", text: source))
+		let lexer = Lexer(.init(path: "", text: source))
 		var parser = Parser(lexer)
 		let result = parser.parse()
 
@@ -29,7 +29,7 @@ struct TalkTalkParserTests {
 	}
 
 	@Test("Doesn't return an error on a blank file") func blank() {
-		let lexer = TalkTalkLexer(.init(path: "", text: """
+		let lexer = Lexer(.init(path: "", text: """
 
 		\("   " /* whitespace */ )
 		"""))
@@ -316,7 +316,7 @@ struct TalkTalkParserTests {
 
 		let fooInit = fooDef.value.cast(CallExprSyntax.self)
 		#expect(fooInit.callee.description == "Foo")
-		#expect(fooInit.args[0].label == "age")
+		#expect(fooInit.args[0].label?.lexeme == "age")
 		#expect(fooInit.args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let fooMember = ast[2].cast(ExprStmtSyntax.self).expr.cast(MemberExprSyntax.self)
@@ -350,7 +350,7 @@ struct TalkTalkParserTests {
 
 		let fooInit = fooDef.value.cast(CallExprSyntax.self)
 		#expect(fooInit.callee.description == "Foo")
-		#expect(fooInit.args[0].label == "age")
+		#expect(fooInit.args[0].label?.lexeme == "age")
 		#expect(fooInit.args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let fooMember = ast[2].cast(ExprStmtSyntax.self).expr.cast(MemberExprSyntax.self)
