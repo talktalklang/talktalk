@@ -4,55 +4,90 @@
 //
 //  Created by Pat Nakajima on 7/3/24.
 //
-import TalkTalkBytecode
-
 struct Stack<Element> {
-	private var storage: ContiguousArray<Element>
+	final class Storage: ManagedBuffer<Void, Element> {
+		fileprivate func copy(count: Int) -> Storage {
+			withUnsafeMutablePointers { _, elements in
+				Storage.create(minimumCapacity: count) { newBuffer in
+					newBuffer.withUnsafeMutablePointerToElements { newElements in
+						newElements.initialize(from: elements, count: count)
+					}
+				} as! Storage
+			}
+		}
 
-	init(capacity _: Int) {
-		self.storage = .init()
+		fileprivate func resize(newSize: Int, oldSize: Int) -> Storage {
+			withUnsafeMutablePointers { _, oldElements in
+				Storage.create(minimumCapacity: newSize) { newBuf in
+					newBuf.withUnsafeMutablePointerToElements { newElements in
+						newElements.moveInitialize(from: oldElements, count: oldSize)
+					}
+				} as! Storage
+			}
+		}
+	}
+
+	private var storage: Storage
+	public var size: Int = 0
+
+	init(capacity: Int) {
+		self.storage = Storage.create(minimumCapacity: capacity) { _ in } as! Storage
 	}
 
 	subscript(_ index: Int) -> Element {
 		get {
-			storage[index]
+			storage.withUnsafeMutablePointerToElements {
+				$0[index]
+			}
 		}
 
 		set {
-			storage[index] = newValue
+			storage.withUnsafeMutablePointerToElements {
+				$0[index] = newValue
+			}
 		}
 	}
 
-	var size: Int {
-		storage.count
-	}
+	mutating func entries() -> [Element] {
+		let storage = isKnownUniquelyReferenced(&storage) ? storage : storage.copy(count: size)
 
-	mutating func entries() -> ContiguousArray<Element> {
-		storage
+		return storage.withUnsafeMutablePointers { _, elements in
+			(0 ..< size).map { i in
+				elements[i]
+			}
+		}
 	}
 
 	mutating func reset() {
-		storage = []
+		size = 0
 	}
 
 	@inline(__always)
 	var isEmpty: Bool {
-		storage.isEmpty
+		size == 0
 	}
 
 	@inline(__always)
 	mutating func push(_ element: Element) {
-		storage.append(element)
+		storage.withUnsafeMutablePointers {
+			defer { size += 1 }
+			($1 + size).initialize(to: element)
+		}
 	}
 
 	@inline(__always)
 	@discardableResult mutating func pop() -> Element {
-		storage.popLast()!
+		storage.withUnsafeMutablePointers {
+			size -= 1
+			return ($1 + size).pointee
+		}
 	}
 
 	@inline(__always)
-	func peek(back: Int = 0) -> Element {
-		storage[size - 1 - back]
+	func peek(offset: Int = 0) -> Element {
+		storage.withUnsafeMutablePointers {
+			($1 + size - 1 - offset).pointee
+		}
 	}
 
 	@inline(__always)
@@ -62,6 +97,6 @@ struct Stack<Element> {
 
 	@inline(__always)
 	func last(count: Int) -> [Element] {
-		(0 ..< size).map { i in peek(back: count - i) }
+		(0 ..< size).map { i in peek(offset: count - i) }
 	}
 }

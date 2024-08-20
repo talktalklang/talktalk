@@ -13,7 +13,7 @@ public enum Verbosity: Equatable {
 	case lineByLine(String)
 }
 
-public struct VirtualMachine: Copyable {
+public struct VirtualMachine: ~Copyable {
 	// The module to run. Must be compiled in executable mode.
 	var module: Module
 
@@ -436,7 +436,7 @@ public struct VirtualMachine: Copyable {
 				let instance = stack.pop()
 				let propertyValue = stack.peek()
 
-				guard var (receiver) = instance.instanceValue else {
+				guard let (receiver) = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
@@ -451,11 +451,11 @@ public struct VirtualMachine: Copyable {
 		}
 	}
 
-	mutating func checkType(instance: Value, type: Value) {
+	private mutating func checkType(instance: Value, type: Value) {
 		stack.push(.bool(instance.is(type)))
 	}
 
-	mutating func call(_ callee: Value) {
+	private mutating func call(_ callee: Value) {
 		switch callee {
 		case let .closure(chunkID):
 			call(closureID: Int(chunkID))
@@ -474,7 +474,7 @@ public struct VirtualMachine: Copyable {
 
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
-	mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
+	private mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
 		let methodChunk = instance.type.methods[Int(boundMethod)]
 
 		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
@@ -482,7 +482,7 @@ public struct VirtualMachine: Copyable {
 		call(chunk: methodChunk)
 	}
 
-	mutating func call(structValue structType: Struct) {
+	private mutating func call(structValue structType: Struct) {
 		// Create the instance Value
 		let instance = Value.instance(
 			Instance(
@@ -500,7 +500,7 @@ public struct VirtualMachine: Copyable {
 		call(chunk: initializer)
 	}
 
-	mutating func call(chunk: StaticChunk) {
+	private mutating func call(chunk: StaticChunk) {
 		let frame = CallFrame(
 			closure: .init(
 				chunk: chunk,
@@ -513,7 +513,7 @@ public struct VirtualMachine: Copyable {
 		frames.push(frame)
 	}
 
-	mutating func call(inline: StaticChunk) {
+	private mutating func call(inline: StaticChunk) {
 		let frame = CallFrame(
 			closure: .init(
 				chunk: inline,
@@ -526,7 +526,7 @@ public struct VirtualMachine: Copyable {
 		frames.push(frame)
 	}
 
-	mutating func call(closureID: Int) {
+	private mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
 		let chunk = module.chunks[closureID]
 
@@ -539,7 +539,7 @@ public struct VirtualMachine: Copyable {
 		frames.push(frame)
 	}
 
-	mutating func call(chunkID: Int) {
+	private mutating func call(chunkID: Int) {
 		let chunk = module.chunks[chunkID]
 		let closure = Closure(chunk: chunk, upvalues: [])
 
@@ -552,7 +552,7 @@ public struct VirtualMachine: Copyable {
 		frames.push(frame)
 	}
 
-	mutating func call(moduleFunction: Int) {
+	private mutating func call(moduleFunction: Int) {
 		let chunk = module.chunks[moduleFunction]
 		let closure = Closure(chunk: chunk, upvalues: [])
 
@@ -565,7 +565,7 @@ public struct VirtualMachine: Copyable {
 		frames.push(frame)
 	}
 
-	func inspect(_ value: Value) -> String {
+	private func inspect(_ value: Value) -> String {
 		switch value {
 		case let .string(string):
 			string
@@ -574,7 +574,7 @@ public struct VirtualMachine: Copyable {
 		}
 	}
 
-	mutating func call(builtin: Int) {
+	private mutating func call(builtin: Int) {
 		guard let builtin = BuiltinFunction(rawValue: builtin) else {
 			fatalError("no builtin at index: \(builtin)")
 		}
@@ -604,22 +604,23 @@ public struct VirtualMachine: Copyable {
 		}
 	}
 
-	mutating func readConstant() -> Value {
+	private mutating func readConstant() -> Value {
 		let value = chunk.constants[Int(readByte())]
 		return value
 	}
 
-	mutating func readByte() -> Byte {
-		chunk.code[Int(ip++)]
+	private mutating func readByte() -> Byte {
+		defer { ip += 1 }
+		return chunk.code[Int(ip)]
 	}
 
-	mutating func readUInt16() -> UInt64 {
+	private mutating func readUInt16() -> UInt64 {
 		var jump = UInt64(readByte() << 8)
 		jump |= UInt64(readByte())
 		return jump
 	}
 
-	mutating func captureUpvalue(value: Value) -> Upvalue {
+	private mutating func captureUpvalue(value: Value) -> Upvalue {
 		var previousUpvalue: Upvalue? = nil
 		var upvalue = openUpvalues
 
@@ -644,11 +645,11 @@ public struct VirtualMachine: Copyable {
 		return createdUpvalue
 	}
 
-	func runtimeError(_ message: String) -> ExecutionResult {
+	private func runtimeError(_ message: String) -> ExecutionResult {
 		.error(message)
 	}
 
-	@discardableResult mutating func dumpStack() -> String {
+	@discardableResult private mutating func dumpStack() -> String {
 		if stack.isEmpty { return "" }
 		var result = "       "
 		for slot in stack.entries() {
@@ -664,7 +665,7 @@ public struct VirtualMachine: Copyable {
 		return result
 	}
 
-	mutating func dump() {
+	private mutating func dump() {
 		var disassembler = Disassembler(chunk: chunk, module: module)
 		for instruction in disassembler.disassemble() {
 			let prefix = instruction.offset == ip ? "> " : "  "
@@ -676,7 +677,7 @@ public struct VirtualMachine: Copyable {
 		}
 	}
 
-	func log(_ string: String) {
+	private func log(_ string: String) {
 		FileHandle.standardError.write(Data((string + "\n").utf8))
 	}
 }

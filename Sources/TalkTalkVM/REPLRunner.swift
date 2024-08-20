@@ -12,7 +12,7 @@ import TalkTalkCore
 import TalkTalkDriver
 import TalkTalkSyntax
 
-public struct REPLRunner: Copyable {
+public class REPLRunner: Copyable {
 	let driver: Driver
 	var module: Module
 	var analysis: AnalysisModule
@@ -23,7 +23,7 @@ public struct REPLRunner: Copyable {
 	var compilingModule: CompilingModule
 
 	public static func run() async throws {
-		var runner = await REPLRunner()
+		let runner = await REPLRunner()
 		try await runner.run()
 	}
 
@@ -51,7 +51,7 @@ public struct REPLRunner: Copyable {
 		self.vm = VirtualMachine(module: module)
 	}
 
-	public mutating func evaluate(_ line: String, index _: Int) throws -> VirtualMachine.ExecutionResult {
+	public func evaluate(_ line: String, index _: Int) throws -> VirtualMachine.ExecutionResult {
 		if line.isEmpty { return .error("No input") }
 
 		let parsed = try Parser.parse(SourceFile(path: "<repl>", text: line))
@@ -73,7 +73,7 @@ public struct REPLRunner: Copyable {
 		return vm.run()
 	}
 
-	public mutating func run() async throws {
+	public func run() async throws {
 		print("hey welcome to the talktalk repl. it’s gonna be great.")
 
 		var i = 0

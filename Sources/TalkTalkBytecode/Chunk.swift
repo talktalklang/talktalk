@@ -17,7 +17,7 @@ public final class Chunk: Codable {
 	public let name: String
 
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
-	public var code: [Byte] = []
+	public var code: ContiguousArray<Byte> = []
 
 	// Tracks the code array so we can output line numbers when disassambling
 	public var lines: [UInt32] = []

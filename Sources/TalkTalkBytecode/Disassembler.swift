@@ -9,7 +9,7 @@ import Foundation
 
 public protocol Disassemblable {
 	var name: String { get }
-	var code: [Byte] { get }
+	var code: ContiguousArray<Byte> { get }
 	var lines: [UInt32] { get }
 	var constants: [Value] { get }
 	var arity: Byte { get }

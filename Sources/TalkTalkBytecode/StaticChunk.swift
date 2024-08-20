@@ -5,31 +5,32 @@
 //  Created by Pat Nakajima on 8/18/24.
 //
 
-public struct StaticChunk: Equatable, Codable, Sendable {
+public final class StaticChunk: Equatable, Codable, Sendable {
+	public static func ==(lhs: StaticChunk, rhs: StaticChunk) -> Bool {
+		lhs.code == rhs.code
+	}
+
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
-	public var code: [Byte] = []
+	public let code: ContiguousArray<Byte>
 
 	// Constant values emitted from literals found in the source
-	public var constants: [Value] = []
+	public let constants: [Value]
 
 	// Larger blobs of data like strings from literals found in the source
-	public var data: [StaticData] = []
+	public let data: [StaticData]
 
 	// How many arguments should this chunk expect
-	public var arity: Byte = 0
+	public let arity: Byte
 
 	// How many locals does this chunk worry about? We start at 1 to reserve 0
 	// for things like `self`.
-	public var localsCount: Byte = 1
+	public let localsCount: Byte
 
 	// How many upvalues does this chunk refer to
-	public var upvalueCount: Byte = 0
-
-	// Other callable chunks
-	public var subchunks: [StaticChunk] = []
+	public let upvalueCount: Byte
 
 	// Debug info
-	internal var debugInfo: DebugInfo
+	internal let debugInfo: DebugInfo
 
 	struct DebugInfo: Equatable, Codable {
 		public var name: String
