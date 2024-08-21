@@ -72,4 +72,14 @@ struct ArrayTests: StandardLibraryTest {
 
 		#expect(result == .int(6))
 	}
+
+	@Test("can set array value with subscript", .disabled("Come back to this")) func arraySubscriptSet() async throws {
+		let result = try await run("""
+			var a = [1,2,3,4,5,6]
+			a[0] = 123
+			return a[0]
+		""").get()
+
+		#expect(result == .int(123))
+	}
 }

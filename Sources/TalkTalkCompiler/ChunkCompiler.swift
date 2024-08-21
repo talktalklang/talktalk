@@ -113,6 +113,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the value onto the stack
 		try expr.valueAnalyzed.accept(self, chunk)
 
+		if expr.receiver is SubscriptExprSyntax {
+			throw CompilerError.typeError("Setting via subscripts doesn't work yet.")
+		}
+
 		let variable = resolveVariable(
 			receiver: expr.receiverAnalyzed,
 			chunk: chunk
