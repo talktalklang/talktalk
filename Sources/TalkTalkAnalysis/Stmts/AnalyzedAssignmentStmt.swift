@@ -9,7 +9,7 @@ public struct AnalyzedAssignmentStmt: AssignmentStmt, AnalyzedStmt {
 
 	public var typeID: TypeID
 	public var environment: Environment
-	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
+	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }

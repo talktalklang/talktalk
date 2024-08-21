@@ -82,4 +82,19 @@ struct ArrayTests: StandardLibraryTest {
 
 		#expect(result == .int(123))
 	}
+
+	@Test("Can iterate over array") func arrayIteration() async throws {
+		let result = try await run("""
+		var result = 0
+		let a = [1,2,3]
+		var i = 0
+		while i < a.count {
+			result = a[i]
+			i = i + 1
+		}
+		return result
+		""").get()
+
+		#expect(result == .int(3))
+	}
 }

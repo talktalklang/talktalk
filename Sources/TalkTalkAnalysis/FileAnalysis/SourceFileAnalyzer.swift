@@ -1002,8 +1002,8 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_: any StructExpr, _: Environment) throws -> any AnalyzedSyntax {
-		fatalError("TODO")
+	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+		AnalyzedErrorSyntax(typeID: TypeID(.error("TODO")), expr: ParseErrorSyntax(location: expr.location, message: "TODO", expectation: .none), environment: context)
 	}
 
 	public func visit(_ expr: any ArrayLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
