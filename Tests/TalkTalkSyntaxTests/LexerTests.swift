@@ -258,4 +258,9 @@ struct TalkTalkLexerTests {
 		#expect(tokens[0].kind == .newline)
 		#expect(tokens[1].kind == .eof)
 	}
+
+	@Test("+=") func addAssignOp() async throws {
+		var lexer = Lexer("+=")
+		#expect(lexer.collect().map(\.kind) == [.plusEquals, .eof])
+	}
 }

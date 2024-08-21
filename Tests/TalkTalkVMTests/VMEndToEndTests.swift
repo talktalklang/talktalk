@@ -496,4 +496,28 @@ struct VMEndToEndTests {
 
 		#expect(result == .int(3))
 	}
+
+	@Test("+=") func plusEquals() throws {
+		let result = try run(
+			"""
+			var a = 10
+			a += 20
+			return a
+			"""
+		)
+
+		#expect(result == .int(30))
+	}
+
+	@Test("+=") func plusMinus() throws {
+		let result = try run(
+			"""
+			var a = 20
+			a -= 10
+			return a
+			"""
+		)
+
+		#expect(result == .int(10))
+	}
 }

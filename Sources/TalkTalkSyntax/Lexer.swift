@@ -15,7 +15,8 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     colon, dot, less, greater, minus, star, slash
 
 		// Multiple char tokens
-		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow
+		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow,
+				 plusEquals, minusEquals
 
 		// Keywords
 		case `func`, `true`, `false`, `return`,
@@ -101,11 +102,11 @@ public struct Lexer {
 		case "!": make(match("=") ? .bangEqual : .bang)
 		case "*": make(.star)
 		case "/": make(.slash)
-		case "+": make(.plus)
+		case "+": make(match("=") ? .plusEquals : .plus)
 		case ",": make(.comma)
 		case ":": make(.colon)
 		case ".": make(.dot)
-		case "-": make(match(">") ? .forwardArrow : .minus)
+		case "-": minus()
 		case "<": make(match("=") ? .lessEqual : .less)
 		case ">": make(match("=") ? .greaterEqual : .greater)
 		case "\"": string()
@@ -136,6 +137,18 @@ public struct Lexer {
 	}
 
 	// MARK: Recognizers
+
+	mutating func minus() -> Token {
+		if match(">") {
+			return make(.forwardArrow)
+		}
+
+		if match("=") {
+			return make(.minusEquals)
+		}
+
+		return make(.minus)
+	}
 
 	mutating func string() -> Token {
 		while peek() != "\"" {

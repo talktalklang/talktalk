@@ -362,6 +362,26 @@ extension Parser {
 		)
 	}
 
+	// Convert `a += 1` to `a = a + 1` and `a -= 1` to `a = a - 1`
+	mutating func incDecOp(_: Bool, _ lhs: any Expr) -> any Expr {
+		let op = current
+		advance()
+		let i = startLocation(at: op)
+
+		guard let lhs = lhs as? VarExprSyntax else {
+			return error(at: previous, .cannotAssign, expectation: .identifier)
+		}
+
+		let add = parse(precedence: .assignment)
+		let binaryExpr = if op.kind == .plusEquals {
+			BinaryExprSyntax(lhs: lhs, rhs: add, op: .plus, location: add.location)
+		} else {
+			BinaryExprSyntax(lhs: lhs, rhs: add, op: .minus, location: add.location)
+		}
+
+		return DefExprSyntax(receiver: lhs, value: binaryExpr, location: endLocation(i))
+	}
+
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: lhs.location.start)
 
