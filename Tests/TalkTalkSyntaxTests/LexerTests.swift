@@ -263,4 +263,9 @@ struct TalkTalkLexerTests {
 		var lexer = Lexer("+=")
 		#expect(lexer.collect().map(\.kind) == [.plusEquals, .eof])
 	}
+
+	@Test("+=") func subAssignOp() async throws {
+		var lexer = Lexer("-=")
+		#expect(lexer.collect().map(\.kind) == [.minusEquals, .eof])
+	}
 }

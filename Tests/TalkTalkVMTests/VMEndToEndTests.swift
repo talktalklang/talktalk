@@ -11,6 +11,7 @@ import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkSyntax
 import TalkTalkVM
+import TalkTalkCore
 import Testing
 
 @MainActor
@@ -20,11 +21,28 @@ struct VMEndToEndTests {
 	}
 
 	func compile(_ strings: [String]) throws -> Module {
+		let stdlib = try ModuleAnalyzer(
+			name: "Standard",
+			files: Set(Library.files(for: Library.standardLibraryURL).map {
+				try ParsedSourceFile(
+					path: $0.path,
+					syntax: Parser.parse(
+						SourceFile(
+							path: $0.path,
+							text: String(contentsOf: $0, encoding: .utf8)
+						)
+					)
+				)
+			}),
+			moduleEnvironment: [:],
+			importedModules: []
+		).analyze()
+
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
 			files: Set(strings.enumerated().map { .tmp($1, "\($0).tlk") }),
 			moduleEnvironment: [:],
-			importedModules: []
+			importedModules: [stdlib]
 		).analyze()
 		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
 		return try compiler.compile(mode: .executable)
@@ -497,6 +515,20 @@ struct VMEndToEndTests {
 		#expect(result == .int(3))
 	}
 
+	@Test("This was crashing") func crashing() throws {
+		_ = try run(
+			"""
+			let a = [1,2,3]
+			var i = 0
+
+			while i < a.count {
+				print(a[i])
+				i -= 1
+			}
+			"""
+		)
+	}
+
 	@Test("+=") func plusEquals() throws {
 		let result = try run(
 			"""
@@ -509,7 +541,7 @@ struct VMEndToEndTests {
 		#expect(result == .int(30))
 	}
 
-	@Test("+=") func plusMinus() throws {
+	@Test("-=") func plusMinus() throws {
 		let result = try run(
 			"""
 			var a = 20
