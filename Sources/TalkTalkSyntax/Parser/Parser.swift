@@ -109,6 +109,8 @@ public struct Parser {
 	}
 
 	mutating func stmt() -> any Stmt {
+		skip(.semicolon)
+
 		if didMatch(.import) {
 			return importStmt()
 		}

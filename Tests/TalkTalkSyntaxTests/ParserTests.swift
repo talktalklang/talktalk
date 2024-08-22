@@ -55,6 +55,16 @@ struct TalkTalkParserTests {
 		#expect(parse(#""hello world""#)[0].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .string("hello world"))
 	}
 
+	@Test("Can separate statements with semicolons") func semicolons() throws {
+		let parsed = parse("""
+		let foo ; 123
+		""")
+
+		#expect(parsed.count == 2)
+		#expect(parsed[0].cast(LetDeclSyntax.self).name == "foo")
+		#expect(parsed[1].cast(ExprStmtSyntax.self).expr.cast(LiteralExprSyntax.self).value == .int(123))
+	}
+
 	@Test("Don't crash on incomplete string") func incompleteString() throws {
 		#expect(parse(#""hello "#, errors: [
 			SyntaxError(
