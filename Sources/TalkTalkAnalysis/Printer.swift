@@ -327,14 +327,6 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: AnalyzedAssignmentStmt, _ context: Void) throws -> String {
-		dump(expr)
-		indent {
-			try expr.assigneeAnalyzed.accept(self, context)
-			try expr.valueAnalyzed.accept(self, context)
-		}
-	}
-
 	// GENERATOR_INSERTION
 
 	public typealias Context = Void

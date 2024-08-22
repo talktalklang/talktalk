@@ -462,7 +462,7 @@ public struct SourceFileAnalyzer: Visitor {
 		if case let .error(err) = type {
 			return error(at: expr, err, environment: context, expectation: .type)
 		} else {
-			if let primitive = type.primitive {
+			if type.primitive != nil {
 				return AnalyzedTypeExpr(
 					wrapped: expr,
 					symbol: .primitive(type.description),
@@ -1144,12 +1144,6 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return result
 	}
-
-	public func visit(_: any AssignmentStmt, _: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-		fatalError("TODO")
-	}
-
 	// GENERATOR_INSERTION
 
 	private func infer(_ exprs: [any AnalyzedExpr], in env: Environment) {

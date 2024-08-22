@@ -44,7 +44,7 @@ struct Run: TalkTalkCommand {
 			moduleEnvironment: ["Standard": stdlib.module]
 		).compile(mode: .executable)
 
-		if let error = VirtualMachine.run(module: module).error() {
+		if case .error(_) = VirtualMachine.run(module: module)  {
 			throw ExitCode.failure
 		} else {
 			throw ExitCode.success

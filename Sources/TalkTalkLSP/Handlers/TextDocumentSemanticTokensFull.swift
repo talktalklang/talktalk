@@ -309,10 +309,5 @@ struct SemanticTokensVisitor: Visitor {
 		try expr.args.flatMap { try $0.accept(self, context) }
 	}
 
-	func visit(_ expr: any AssignmentStmt, _ context: Context) throws -> [RawSemanticToken] {
-		return []
-	}
-
-
 	// GENERATOR_INSERTION
 }

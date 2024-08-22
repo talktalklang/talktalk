@@ -358,16 +358,6 @@ public class Environment {
 		assert(isModuleScope, "trying to import binding into non-module scope environment")
 
 		importedSymbols[symbol] = binding
-
-		if case let .struct(structName) = symbol.kind {
-			// Import the methods as well
-			let module = importedModules.first(where: { $0.name == moduleName })!
-			let structType = module.structs[structName]!
-			for method in structType.methods {
-//				_ = symbolGenerator.import(method.value.symbol, from: moduleName)
-			}
-		}
-
 		_ = symbolGenerator.import(symbol, from: moduleName)
 	}
 

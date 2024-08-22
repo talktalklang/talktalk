@@ -607,8 +607,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(opcode: .call, line: expr.location.line)
 	}
 
-	public func visit(_: AnalyzedAssignmentStmt, _: Chunk) throws {}
-
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers
