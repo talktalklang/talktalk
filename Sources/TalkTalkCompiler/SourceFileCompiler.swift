@@ -14,10 +14,10 @@ public struct SourceFileCompiler {
 	public var chunk: Chunk
 	public let analyzedSyntax: [any AnalyzedSyntax]
 
-	public init(name: String, analyzedSyntax: [any AnalyzedSyntax]) {
+	public init(name: String, module: String, analyzedSyntax: [any AnalyzedSyntax]) {
 		self.name = name
 		self.analyzedSyntax = analyzedSyntax
-		self.chunk = Chunk(name: name)
+		self.chunk = Chunk(name: name, symbol: .function(module, name, [], namespace: []))
 	}
 
 	public mutating func compile(in module: CompilingModule) throws -> Chunk {

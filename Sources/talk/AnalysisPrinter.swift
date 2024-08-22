@@ -22,7 +22,7 @@ struct AnalysisPrinter: TalkTalkCommand {
 	func run() async throws {
 		let source = try get(input: input)
 		let parsed = try Parser.parse(source)
-		let context = SourceFileAnalyzer.Context()
+		let context = SourceFileAnalyzer.Context(symbolGenerator: .init(moduleName: "", parent: nil))
 		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: context)
 		try print(TalkTalkAnalysis.AnalysisPrinter.format(analyzed))
 	}

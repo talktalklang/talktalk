@@ -22,11 +22,18 @@ public class Environment {
 	public var importedSymbols: [Symbol: Binding] = [:]
 	public var errors: [AnalysisError] = []
 	public var exprStmtExitBehavior: AnalyzedExprStmt.ExitBehavior = .pop
+	public var symbolGenerator: SymbolGenerator
 
 	public private(set) var shouldReportErrors: Bool = true
 
-	public init(isModuleScope: Bool = false, importedModules: [AnalysisModule] = [], parent: Environment? = nil) {
+	public init(
+		isModuleScope: Bool = false,
+		symbolGenerator: SymbolGenerator = .init(moduleName: "None", parent: nil),
+		importedModules: [AnalysisModule] = [],
+		parent: Environment? = nil)
+	{
 		self.isModuleScope = isModuleScope
+		self.symbolGenerator = symbolGenerator
 		self.parent = parent
 		self.locals = [:]
 		self.captures = []
@@ -53,7 +60,7 @@ public class Environment {
 	}
 
 	public func withExitBehavior(_ behavior: AnalyzedExprStmt.ExitBehavior) -> Environment {
-		let environment = add()
+		let environment = add(namespace: nil)
 		environment.exprStmtExitBehavior = behavior
 		return environment
 	}
@@ -146,7 +153,11 @@ public class Environment {
 					name: "Self",
 					expr: AnalyzedVarExpr(
 						typeID: TypeID(scope.type),
-						expr: VarExprSyntax(token: .synthetic(.self), location: [.synthetic(.self)]),
+						expr: VarExprSyntax(
+							token: .synthetic(.self),
+							location: [.synthetic(.self)]
+						),
+						symbol: symbolGenerator.value("Self", source: .internal),
 						environment: self,
 						analysisErrors: [],
 						isMutable: false
@@ -175,20 +186,18 @@ public class Environment {
 			}
 		}
 
-		if name == "foo" {}
-
 		for module in importedModules {
 			var symbol: Symbol?
 			var global: (any ModuleGlobal)?
 
 			if let value = module.moduleValue(named: name) {
-				symbol = .value(name)
+				symbol = symbolGenerator.value(name, source: .external(module.name))
 				global = value
 			} else if let function = module.moduleFunction(named: name) {
-				symbol = .function(name)
+				symbol = function.symbol
 				global = function
 			} else if let type = module.moduleStruct(named: name) {
-				symbol = .struct(name)
+				symbol = symbolGenerator.struct(name, source: .external(module.name))
 				global = type
 			}
 
@@ -203,7 +212,7 @@ public class Environment {
 				externalModule: module
 			)
 
-			importBinding(as: symbol, binding: binding)
+			importBinding(as: symbol, from: module.name, binding: binding)
 
 			return binding
 		}
@@ -221,7 +230,7 @@ public class Environment {
 		}
 
 		// See if we already know about this somewhere else, if so, use it.
-		if let binding = importedSymbols[.struct(name)],
+		if let binding = importedSymbols.first(where: { $0.key.kind == .struct(name) })?.value,
 		   let externalModule = binding.externalModule,
 		   let moduleStruct = externalModule.structs[name]
 		{
@@ -241,7 +250,8 @@ public class Environment {
 		for module in importedModules {
 			if let moduleStruct = module.moduleStruct(named: name) {
 				importBinding(
-					as: .struct(name),
+					as: symbolGenerator.struct(name, source: .external(module.name)),
+					from: module.name,
 					binding: Binding(
 						name: name,
 						expr: moduleStruct.syntax,
@@ -304,13 +314,17 @@ public class Environment {
 	}
 
 	public func addLexicalScope(scope: StructType, type: ValueType, expr: any Syntax) -> Environment {
-		let environment = Environment(parent: self)
+		let environment = Environment(symbolGenerator: symbolGenerator.new(namespace: scope.name ?? "\(scope)"), parent: self)
 		environment.lexicalScope = LexicalScope(scope: scope, type: type, expr: expr)
 		return environment
 	}
 
-	public func add() -> Environment {
-		Environment(parent: self)
+	public func add(namespace: String?) -> Environment {
+		if let namespace {
+			Environment(symbolGenerator: symbolGenerator.new(namespace: namespace), parent: self)
+		} else {
+			Environment(symbolGenerator: symbolGenerator, parent: self)
+		}
 	}
 
 	func capture(name: String) -> Capture? {
@@ -327,15 +341,16 @@ public class Environment {
 		return nil
 	}
 
-	func importBinding(as symbol: Symbol, binding: Binding) {
+	func importBinding(as symbol: Symbol, from moduleName: String, binding: Binding) {
 		if let parent {
-			parent.importBinding(as: symbol, binding: binding)
+			parent.importBinding(as: symbol, from: moduleName, binding: binding)
 			return
 		}
 
 		assert(isModuleScope, "trying to import binding into non-module scope environment")
 
 		importedSymbols[symbol] = binding
+		_ = symbolGenerator.import(symbol, from: moduleName)
 	}
 
 	func global(named name: String) -> Binding? {

@@ -17,11 +17,11 @@ public extension Environment {
 					expr: AnalyzedLiteralExpr(
 						typeID: TypeID(),
 						expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)]),
-						environment: .init()
+						environment: .init(symbolGenerator: .init(moduleName: "", parent: nil))
 					),
 					type: TypeID(.bool)
 				),
-				environment: .init()
+				environment: .init(symbolGenerator: .init(moduleName: "", parent: nil))
 			)
 		}
 

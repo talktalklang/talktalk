@@ -18,7 +18,7 @@ public struct SerializedModule: Codable {
 	public var chunks: [StaticChunk]
 
 	// A list of symbols this module exports
-	public var symbols: [Symbol: Int]
+	public var symbols: [Symbol: SymbolInfo]
 
 	// A list of modules this module imports
 	public var imports: [String] = []

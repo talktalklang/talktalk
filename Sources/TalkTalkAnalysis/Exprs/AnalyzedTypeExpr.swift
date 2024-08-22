@@ -5,11 +5,13 @@
 //  Created by Pat Nakajima on 8/11/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
 	let wrapped: any TypeExpr
 
+	public let symbol: Symbol
 	public let typeID: TypeID
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public var environment: Environment

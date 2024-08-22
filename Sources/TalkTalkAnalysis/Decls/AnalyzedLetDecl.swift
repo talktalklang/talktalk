@@ -5,9 +5,11 @@
 //  Created by Pat Nakajima on 7/30/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl, AnalyzedVarLetDecl {
+	public let symbol: Symbol?
 	public let typeID: TypeID
 	let expr: LetDecl
 	public var analysisErrors: [AnalysisError]

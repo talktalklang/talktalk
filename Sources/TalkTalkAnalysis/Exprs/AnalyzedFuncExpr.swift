@@ -5,12 +5,14 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public let typeID: TypeID
 	let expr: FuncExpr
 
+	public let symbol: Symbol
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: AnalyzedBlockStmt
 	public let returnType: TypeID
@@ -30,6 +32,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var children: [any Syntax] { expr.children }
 
 	public init(
+		symbol: Symbol,
 		type: TypeID,
 		expr: FuncExpr,
 		analyzedParams: AnalyzedParamsExpr,
@@ -38,6 +41,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		returnType: TypeID,
 		environment: Environment
 	) {
+		self.symbol = symbol
 		self.name = expr.name
 		self.typeID = type
 		self.expr = expr

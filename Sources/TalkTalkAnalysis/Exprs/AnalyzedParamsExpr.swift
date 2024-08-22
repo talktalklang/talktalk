@@ -42,7 +42,7 @@ public extension Param where Self == AnalyzedParam {
 	static func int(_ name: String) -> AnalyzedParam {
 		let t = TypeID()
 		t.update(.int)
-		return AnalyzedParam(type: t, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]), environment: .init())
+		return AnalyzedParam(type: t, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]), environment: .init(symbolGenerator: .init(moduleName: "", parent: nil)))
 	}
 }
 
@@ -91,7 +91,7 @@ extension AnalyzedParamsExpr: ExpressibleByArrayLiteral {
 		self.environment = if let element = elements.first {
 			element.environment
 		} else {
-			.init()
+			.init(symbolGenerator: .init(moduleName: "", parent: nil))
 		}
 	}
 

@@ -5,11 +5,13 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	let wrapped: InitDecl
 
+	public let symbol: Symbol
 	public let typeID: TypeID
 	public var environment: Environment
 	public var parametersAnalyzed: AnalyzedParamsExpr

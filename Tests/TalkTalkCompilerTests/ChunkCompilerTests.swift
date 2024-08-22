@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import TalkTalkAnalysis
+@testable import TalkTalkAnalysis
 import TalkTalkBytecode
 @testable import TalkTalkCompiler
 import TalkTalkSyntax
@@ -70,23 +70,22 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 	}
 }
 
-actor CompilerTests {
+actor CompilerTests: CompilerTest {
 	var module: CompilingModule!
 
-	@discardableResult func compile(_ string: String, inModule: Bool = false) throws -> Chunk {
+	@discardableResult func compile(_ string: String) throws -> Chunk {
 		let parsed = try Parser.parse(.init(path: "", text: string))
-		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init())
+		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init(symbolGenerator: .init(moduleName: "CompilerTests", parent: nil)))
 
-		let analysisModule = inModule ? try! ModuleAnalyzer(
+		let analysisModule = try ModuleAnalyzer(
 			name: "CompilerTests",
 			files: [.tmp(string, "1.tlk")],
 			moduleEnvironment: [:],
 			importedModules: []
-		).analyze() : .empty("CompilerTests")
-		var compiler = SourceFileCompiler(name: "CompilerTests", analyzedSyntax: analyzed)
+		).analyze()
 
 		self.module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
-		return try compiler.compile(in: module)
+		return try module.compile(file: AnalyzedSourceFile(path: "1.tlk", syntax: analyzed))
 	}
 
 	func disassemble(_ chunk: Chunk) -> [Instruction] {
@@ -135,7 +134,7 @@ actor CompilerTests {
 	@Test("Def expr") func defExpr() throws {
 		let chunk = try compile("""
 		i = 123
-		""", inModule: true)
+		""")
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
@@ -151,7 +150,7 @@ actor CompilerTests {
 		x
 		y = 456
 		y
-		""", inModule: true)
+		""")
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
@@ -241,20 +240,21 @@ actor CompilerTests {
 	}
 
 	@Test("Func expr") func funcExpr() throws {
-		let chunk = try compile("""
+		_ = try compile("""
 		func() {
 			123
 		}
 		""")
 
+		let chunk = module.compiledChunks[1]
 		let subchunk = module.compiledChunks[0]
 
-		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0, .closure(name: "CompilerTests", arity: 0, depth: 0)),
+		#expect(disassemble(chunk) == Instructions(
+			.op(.defClosure, line: 0, .closure(name: "_fn__15", arity: 0, depth: 0)),
 			.op(.return, line: 0, .simple)
 		))
 
-		#expect(subchunk.disassemble() == Instructions(
+		#expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.return, line: 1),
 			.op(.return, line: 2)
@@ -268,8 +268,8 @@ actor CompilerTests {
 		}()
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
-			.op(.defClosure, line: 0, .closure(name: "CompilerTests", arity: 0, depth: 0)),
+		#expect(disassemble(chunk) == Instructions(
+			.op(.defClosure, line: 0, .closure(name: "_fn__16", arity: 0, depth: 0)),
 			.op(.call, line: 0, .simple),
 			.op(.return, line: 0, .simple)
 		))
@@ -364,7 +364,7 @@ actor CompilerTests {
 			let b = 456
 			return a + b
 		}
-		""", inModule: false)
+		""")
 
 		let result = disassemble(chunk)
 		let expected = Instructions(
@@ -411,7 +411,7 @@ actor CompilerTests {
 		}
 
 		Person(age: 123)
-		""", inModule: true)
+		""")
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 8, .constant(.int(123))),
@@ -433,7 +433,7 @@ actor CompilerTests {
 		}
 
 		Person()
-		""", inModule: true)
+		""")
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 0)),
@@ -452,7 +452,7 @@ actor CompilerTests {
 		}
 
 		Person(age: 123).age
-		""", inModule: true)
+		""")
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 6, .constant(.int(123))),
@@ -477,7 +477,7 @@ actor CompilerTests {
 		}
 
 		Person(age: 123).getAge()
-		""", inModule: true)
+		""")
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 10, .constant(.int(123))),

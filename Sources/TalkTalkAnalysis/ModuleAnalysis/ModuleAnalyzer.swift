@@ -6,6 +6,7 @@
 //
 
 import TalkTalkCore
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct ModuleAnalyzer {
@@ -28,7 +29,7 @@ public struct ModuleAnalyzer {
 	) {
 		self.name = name
 		self.files = files
-		self.environment = Environment(isModuleScope: true)
+		self.environment = Environment(isModuleScope: true, symbolGenerator: .init(moduleName: name, parent: nil))
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = importedModules
@@ -84,7 +85,10 @@ public struct ModuleAnalyzer {
 		//
 		// We also need to make sure the files are in the correct order.
 		analysisModule.analyzedFiles = try files.map {
-			try AnalyzedSourceFile(
+			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal)
+			analysisModule.symbols[sym] = environment.symbolGenerator[sym]
+
+			return try AnalyzedSourceFile(
 				path: $0.path,
 				syntax: SourceFileAnalyzer.analyze(
 					$0.syntax,
@@ -97,31 +101,37 @@ public struct ModuleAnalyzer {
 		// other symbols.
 		importSymbols(into: &analysisModule)
 
+		for symbol in environment.symbolGenerator.symbols {
+			analysisModule.symbols[symbol] = environment.symbolGenerator[symbol]
+		}
+
 		return analysisModule
 	}
 
 	private func importSymbols(into analysisModule: inout AnalysisModule) {
-		for (name, binding) in environment.importedSymbols {
+		for (symbol, binding) in environment.importedSymbols {
 			guard let module = binding.externalModule else {
 				fatalError("could not get module for symbol `\(name)`")
 			}
 
-			if case let .function(name) = name {
+			if case let .function(name, _) = symbol.kind {
 				analysisModule.moduleFunctions[name] = ModuleFunction(
 					name: name,
+					symbol: symbol,
 					syntax: binding.expr,
 					typeID: binding.type,
 					source: .external(module)
 				)
-			} else if case let .value(name) = name {
+			} else if case let .value(name) = symbol.kind {
 				analysisModule.values[name] = ModuleValue(
 					name: name,
+					symbol: symbol,
 					syntax: binding.expr,
 					typeID: binding.type,
 					source: .external(module),
 					isMutable: false
 				)
-			} else if case let .struct(name) = name,
+			} else if case let .struct(name) = symbol.kind,
 				let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
@@ -182,20 +192,22 @@ public struct ModuleAnalyzer {
 
 		switch syntax {
 		case let syntax as VarDecl:
-			let analyzed = try visitor.visit(syntax, environment)
+			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedVarDecl
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
+				symbol: analyzed.symbol!,
 				syntax: syntax,
 				typeID: analyzed.typeID,
 				source: .module,
 				isMutable: true
 			)
 		case let syntax as LetDecl:
-			let analyzed = try visitor.visit(syntax, environment)
+			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedLetDecl
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
+				symbol: analyzed.symbol!,
 				syntax: syntax,
 				typeID: analyzed.typeID,
 				source: .module,
@@ -204,9 +216,10 @@ public struct ModuleAnalyzer {
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
-				let analyzed = try visitor.visit(syntax, environment)
+				let analyzed = try visitor.visit(syntax, environment) as! AnalyzedFuncExpr
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
+					symbol: analyzed.symbol,
 					syntax: syntax,
 					typeID: analyzed.typeID,
 					source: .module
@@ -214,11 +227,12 @@ public struct ModuleAnalyzer {
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
-			let analyzed = try visitor.visit(syntax, environment)
+			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedDefExpr
 
-			if let syntax = syntax.receiver as? VarExprSyntax {
+			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
+					symbol: syntax.symbol,
 					syntax: syntax,
 					typeID: analyzed.typeID,
 					source: .module,

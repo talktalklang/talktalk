@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TalkTalkBytecode
 import TalkTalkAnalysis
 import TalkTalkCompiler
 import TalkTalkDriver

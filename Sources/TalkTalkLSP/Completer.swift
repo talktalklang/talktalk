@@ -28,7 +28,7 @@ actor Completer {
 		let parsed = parser.parse()
 
 		do {
-			let environment: Environment = .init() // TODO: use module environment
+			let environment: Environment = .init(symbolGenerator: .init(moduleName: "Completer", parent: nil)) // TODO: use module environment
 			let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 			lastSuccessfulExprs = analyzed
 		} catch {

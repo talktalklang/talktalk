@@ -38,14 +38,14 @@ public class REPLRunner: Copyable {
 		let result = try! await driver.compile(mode: .module)["REPL"]!
 		self.module = result.module
 		self.analysis = result.analysis
-		self.environment = Environment()
+		self.environment = Environment(symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(
 			name: "REPL",
 			analysisModule: analysis,
 			moduleEnvironment: [:]
 		)
-		self.chunk = Chunk(name: "main")
+		self.chunk = Chunk(name: "main", symbol: .function("REPL", "main", [], namespace: []))
 		module.main = StaticChunk(chunk: chunk)
 		self.compiler = ChunkCompiler(module: compilingModule)
 		self.vm = VirtualMachine(module: module)

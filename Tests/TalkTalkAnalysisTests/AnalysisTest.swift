@@ -12,7 +12,7 @@ import TalkTalkSyntax
 public protocol AnalysisTest {}
 
 public extension AnalysisTest {
-	func ast(_ string: String) async throws -> any AnalyzedSyntax {
+	func analyze(_ string: String) async throws -> AnalysisModule {
 		let stdlib = try ModuleAnalyzer(
 			name: "Standard",
 			files: Set(Library.files(for: Library.standardLibraryURL).map {
@@ -31,13 +31,17 @@ public extension AnalysisTest {
 		).analyze()
 
 		let analyzer = ModuleAnalyzer(
-			name: "ErrorTests",
-			files: [.tmp(string, "error")],
+			name: "AnalysisTest",
+			files: [.tmp(string, "Analysis.tlk")],
 			moduleEnvironment: ["Standard": stdlib],
 			importedModules: [stdlib]
 		)
 
-		let syntax = try analyzer.analyze().analyzedFiles[0].syntax
+		return try analyzer.analyze()
+	}
+
+	func ast(_ string: String) async throws -> any AnalyzedSyntax {
+		let syntax = try await analyze(string).analyzedFiles[0].syntax
 		return syntax.last!
 	}
 }

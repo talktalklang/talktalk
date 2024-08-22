@@ -181,7 +181,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 		case .property:
 			"slot: \(slot)"
 		case .moduleFunction:
-			module.chunks[Int(slot)].name
+			"slot: \(slot)"
 		}
 
 		let metadata = VariableMetadata(slot: slot, name: name, type: type)

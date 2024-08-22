@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 7/26/24.
 //
 import Foundation
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 // Analyze the AST, trying to figure out types and also checking for errors
@@ -133,7 +134,7 @@ public struct SourceFileAnalyzer: Visitor {
 				// Don't try this on recursive functions, it doesn't end well. Well actually
 				// it just doesn't end.
 				if let funcExpr, funcExpr.name?.lexeme != funcName {
-					let env = funcExpr.environment.add()
+					let env = funcExpr.environment.add(namespace: funcName)
 					for param in params {
 						env.update(local: param.name, as: param.typeID.current)
 					}
@@ -338,9 +339,16 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> Value {
 		if let binding = context.lookup(expr.name) {
+			let symbol = if case .struct(_) = binding.type.current {
+				context.symbolGenerator.struct(expr.name, source: .internal)
+			} else {
+				context.symbolGenerator.value(expr.name, source: .internal)
+			}
+
 			return AnalyzedVarExpr(
 				typeID: binding.type,
 				expr: expr,
+				symbol: symbol,
 				environment: context,
 				analysisErrors: [],
 				isMutable: binding.isMutable
@@ -351,9 +359,11 @@ public struct SourceFileAnalyzer: Visitor {
 			[AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location)] :
 			[]
 
+
 		return AnalyzedVarExpr(
 			typeID: TypeID(.any),
 			expr: expr,
+			symbol: context.symbolGenerator.value(expr.name, source: .internal),
 			environment: context,
 			analysisErrors: errors,
 			isMutable: false
@@ -435,8 +445,18 @@ public struct SourceFileAnalyzer: Visitor {
 		if case let .error(err) = type {
 			return error(at: expr, err, environment: context, expectation: .type)
 		} else {
+			if let primitive = type.primitive {
+				return AnalyzedTypeExpr(
+					wrapped: expr,
+					symbol: .primitive(type.description),
+					typeID: TypeID(type),
+					environment: context
+				)
+			}
+
 			return AnalyzedTypeExpr(
 				wrapped: expr,
+				symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
 				typeID: TypeID(type),
 				environment: context
 			)
@@ -445,13 +465,19 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
-		let innerEnvironment = env.add()
+		let innerEnvironment = env.add(namespace: expr.autoname)
 
 		// Define our parameters in the environment so they're declared in the body. They're
 		// just placeholders for now.
 		var params = try visit(expr.params, env) as! AnalyzedParamsExpr
 		for param in params.paramsAnalyzed {
 			innerEnvironment.define(parameter: param.name, as: param)
+		}
+
+		let symbol = if let scope = env.getLexicalScope() {
+			env.symbolGenerator.method(scope.scope.name ?? scope.expr.description, expr.autoname, parameters: params.paramsAnalyzed.map(\.name), source: .internal)
+		} else {
+			env.symbolGenerator.function(expr.autoname, parameters: params.paramsAnalyzed.map(\.name), source: .internal)
 		}
 
 		if let name = expr.name {
@@ -465,6 +491,7 @@ public struct SourceFileAnalyzer: Visitor {
 				[]
 			)
 			let stub = AnalyzedFuncExpr(
+				symbol: symbol,
 				type: TypeID(stubType),
 				expr: expr,
 				analyzedParams: params,
@@ -516,6 +543,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 
 		let funcExpr = AnalyzedFuncExpr(
+			symbol: symbol,
 			type: TypeID(analyzed),
 			expr: expr,
 			analyzedParams: params,
@@ -536,7 +564,7 @@ public struct SourceFileAnalyzer: Visitor {
 	public func visit(_ expr: any InitDecl, _ context: Environment) throws -> any AnalyzedSyntax {
 		let paramsAnalyzed = try expr.parameters.accept(self, context) as! AnalyzedParamsExpr
 
-		let innerEnvironment = context.add()
+		let innerEnvironment = context.add(namespace: "init")
 		for param in paramsAnalyzed.paramsAnalyzed {
 			innerEnvironment.define(parameter: param.name, as: param)
 		}
@@ -549,6 +577,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return AnalyzedInitDecl(
 			wrapped: expr,
+			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
 			typeID: TypeID(.struct(lexicalScope.scope.name!)),
 			environment: innerEnvironment,
 			parametersAnalyzed: paramsAnalyzed,
@@ -675,7 +704,8 @@ public struct SourceFileAnalyzer: Visitor {
 					token: .synthetic(.self),
 					location: [.synthetic(.self)]
 				),
-				environment: context,
+				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
+				environment: bodyContext,
 				analysisErrors: [],
 				isMutable: false
 			),
@@ -849,6 +879,7 @@ public struct SourceFileAnalyzer: Visitor {
 		let lexicalScope = bodyContext.getLexicalScope()!
 
 		let analyzed = AnalyzedStructDecl(
+			symbol: context.symbolGenerator.struct(expr.name, source: .internal),
 			wrapped: expr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
 			structType: structType,
@@ -934,8 +965,19 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
+		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
+		// not locals inside methods.
+		let symbol: Symbol? = if let scope = context.lexicalScope {
+			context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+		} else if context.isModuleScope {
+			context.symbolGenerator.value(expr.name, source: .internal)
+		} else {
+			nil
+		}
+
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		let decl = AnalyzedVarDecl(
+			symbol: symbol,
 			typeID: TypeID(type),
 			expr: expr,
 			analysisErrors: errors,
@@ -976,7 +1018,18 @@ public struct SourceFileAnalyzer: Visitor {
 			valueType = value.typeID
 		}
 
+		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
+		// not locals inside methods.
+		let symbol: Symbol? = if let scope = context.lexicalScope {
+			context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+		} else if context.isModuleScope {
+			context.symbolGenerator.value(expr.name, source: .internal)
+		} else {
+			nil
+		}
+
 		let decl = AnalyzedLetDecl(
+			symbol: symbol,
 			typeID: valueType,
 			expr: expr,
 			analysisErrors: errors,

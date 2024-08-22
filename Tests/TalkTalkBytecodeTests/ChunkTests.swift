@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct ChunkTests {
 	@Test("Opcode") func opcode() {
-		let chunk = Chunk(name: "main")
+		let chunk = Chunk(name: "main", symbol: .function("ChunkTests", "main", []))
 		chunk.emit(opcode: .true, line: 1)
 
 		#expect(chunk.code == [
@@ -20,7 +20,7 @@ struct ChunkTests {
 	}
 
 	@Test("Emit constant") func emitConstant() {
-		let chunk = Chunk(name: "main")
+		let chunk = Chunk(name: "main", symbol: .function("ChunkTests", "main", []))
 		chunk.emit(constant: .int(123), line: 1)
 
 		#expect(chunk.code == [

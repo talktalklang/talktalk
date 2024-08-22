@@ -458,7 +458,7 @@ public struct VirtualMachine {
 				()
 			case .initArray:
 				let count = readByte()
-				let arrayTypeSlot = module.symbols[.struct("Array")]!
+				let arrayTypeSlot = module.symbols[.struct(module.name, "Array", namespace: [])]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
 				let blockID = heap.allocate(count: Int(count))

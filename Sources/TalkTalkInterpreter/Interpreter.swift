@@ -23,7 +23,7 @@ public struct Interpreter: AnalyzedVisitor {
 	public init(_ code: String) {
 		let lexer = Lexer(SourceFile(path: "", text: code))
 		var parser = Parser(lexer)
-		self.parsed = try! SourceFileAnalyzer.analyze(parser.parse(), in: .init())
+		self.parsed = try! SourceFileAnalyzer.analyze(parser.parse(), in: .init(symbolGenerator: .init(moduleName: "Interpreter", parent: nil)))
 
 		if !parser.errors.isEmpty {
 			for error in parser.errors {

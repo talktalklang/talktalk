@@ -18,30 +18,7 @@ extension [Instruction]: @retroactive CustomTestStringConvertible {
 }
 
 @MainActor
-struct ModuleCompilerTests {
-	func compile(
-		name: String,
-		_ files: [ParsedSourceFile],
-		analysisEnvironment: [String: AnalysisModule] = [:],
-		moduleEnvironment: [String: Module] = [:]
-	) throws -> (Module, AnalysisModule) {
-		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
-		let analyzed = try ModuleAnalyzer(
-			name: name,
-			files: Set(files),
-			moduleEnvironment: analysis,
-			importedModules: Array(analysisEnvironment.values)
-		).analyze()
-
-		let module = try ModuleCompiler(
-			name: name,
-			analysisModule: analyzed,
-			moduleEnvironment: moduleEnvironment
-		).compile(mode: .executable)
-
-		return (module, analyzed)
-	}
-
+struct ModuleCompilerTests: CompilerTest {
 	@Test("Can compile module functions") @MainActor func basic() throws {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
@@ -126,7 +103,7 @@ struct ModuleCompilerTests {
 			}
 
 			let person = Person(age: 123)
-			""", "1.tlk"),
+			""", "struct.tlk"),
 		])
 
 		let structDef = module.structs[0]
@@ -134,9 +111,9 @@ struct ModuleCompilerTests {
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
 
-		let initChunk = structDef.methods[0]
+		let initChunk = module.chunks[0]
 
-		#expect(initChunk.disassemble() == Instructions(
+		#expect(initChunk.disassemble(in: module) == Instructions(
 			.op(.getLocal, line: 4, .local(slot: 1, name: "age")),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
@@ -163,11 +140,11 @@ struct ModuleCompilerTests {
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = try #require(module.chunks[0])
-		#expect(mainChunk.disassemble() == Instructions(
+		let mainChunk = try #require(module.chunks[1])
+		#expect(mainChunk.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 0)),
 			.op(.call, line: 8),
-			.op(.setModuleValue, line: 8, .global(slot: 0)),
+			.op(.setModuleValue, line: 8, .global(slot: 2)),
 			.op(.return, line: 0)
 		))
 
@@ -176,7 +153,7 @@ struct ModuleCompilerTests {
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
 
-		let initChunk = structDef.methods[0]
+		let initChunk = module.chunks[0]
 		#expect(initChunk.disassemble() == Instructions(
 			.op(.constant, line: 4, .constant(.int(123))),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),

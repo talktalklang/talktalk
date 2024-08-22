@@ -5,39 +5,95 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-public enum Symbol: Hashable, Codable, CustomStringConvertible {
-	// (Function name)
-	case function(String)
+public struct SymbolInfo: Equatable, Codable {
+	public enum Source: Equatable, Codable {
+		case `internal`, external(String)
+	}
 
-	// (Variable name)
-	case value(String)
+	// What symbol is this
+	public let symbol: Symbol
 
-	// (Struct name, Offset)
-	case `struct`(String)
+	// What slot should this symbol go into in a chunk.
+	public let slot: Int
 
-	// (Struct name, Method name, Param names, Offset)
-	case method(String, String, [String])
+	// Where did this come from
+	public let source: Source
 
-	// (Struct name, Property name, Offset)
-	case property(String, String)
+	public init(symbol: Symbol, slot: Int, source: Source) {
+		self.symbol = symbol
+		self.slot = slot
+		self.source = source
+	}
+}
 
-	// (Struct name, Param names, Int)
-	case initializer(String, [String])
+public struct Symbol: Hashable, Codable, CustomStringConvertible {
+	public enum Kind: Hashable, Codable {
+		case primitive(String)
+
+		// (Function name)
+		case function(String, [String])
+
+		// (Variable name)
+		case value(String)
+
+		// (Struct name, Offset)
+		case `struct`(String)
+
+		// (Struct name, Method name, Param names, Offset)
+		case method(String, String, [String])
+
+		// (Struct name, Property name, Offset)
+		case property(String, String)
+	}
+
+	public static func primitive(_ name: String) -> Symbol {
+		Symbol(module: "[builtin]", kind: .primitive(name), namespace: [])
+	}
+
+	public static func function(_ module: String, _ name: String, _ params: [String], namespace: [String] = []) -> Symbol {
+		Symbol(module: module, kind: .function(name, params), namespace: namespace)
+	}
+
+	public static func value(_ module: String, _ name: String, namespace: [String] = []) -> Symbol {
+		Symbol(module: module, kind: .value(name), namespace: namespace)
+	}
+
+	public static func `struct`(_ module: String, _ name: String, namespace: [String] = []) -> Symbol {
+		Symbol(module: module, kind: .struct(name), namespace: namespace)
+	}
+
+	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], namespace: [String] = []) -> Symbol {
+		Symbol(module: module, kind: .method(type, name, params), namespace: namespace)
+	}
+
+	public static func property(_ module: String, _ type: String, _ name: String, namespace: [String] = []) -> Symbol {
+		Symbol(module: module, kind: .property(type, name), namespace: namespace)
+	}
+
+	public let namespace: [String]
+	public let module: String
+	public let kind: Kind
+
+	public init(module: String, kind: Kind, namespace: [String]) {
+		self.module = module
+		self.kind = kind
+		self.namespace = namespace
+	}
 
 	public var description: String {
-		switch self {
-		case let .function(name):
-			"$F$\(name)"
+		switch kind {
+		case let .primitive(name):
+			"\(name)"
+		case let .function(name, params):
+			"$F\(module)$\(name)$\(params.joined(separator: "_"))"
 		case let .value(name):
-			"$V$\(name)"
+			"$V\(module)$\(name)"
 		case let .struct(name):
-			"$S$\(name)"
+			"$S\(module)$\(name)"
 		case let .property(type, name):
-			"$P$\(type)$\(name)"
+			"$P\(module)$\(type)$\(name)"
 		case let .method(type, name, params):
-			"$M$\(type)$\(name)$\(params.joined(separator: "_"))"
-		case let .initializer(type, params):
-			"$I$\(type)$\(params.joined(separator: "_"))"
+			"$M\(module)$\(type)$\(name)$\(params.joined(separator: "_"))"
 		}
 	}
 }

@@ -16,7 +16,7 @@ public protocol FuncExpr: Expr {
 
 public extension FuncExpr {
 	var autoname: String {
-		"_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
+		name?.lexeme ?? "_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
 	}
 }
 

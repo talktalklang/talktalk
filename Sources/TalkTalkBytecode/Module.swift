@@ -18,7 +18,7 @@ public struct Module: Equatable, @unchecked Sendable {
 	public var structs: [Struct] = []
 
 	// A list of symbols this module exports
-	public var symbols: [Symbol: Int]
+	public var symbols: [Symbol: SymbolInfo]
 
 	// A list of modules this module imports
 	public var imports: [Module] = []
@@ -31,7 +31,7 @@ public struct Module: Equatable, @unchecked Sendable {
 	public var values: [Byte: Value] = [:]
 	public var functions: [Byte: Value] = [:]
 
-	public init(name: String, main: StaticChunk? = nil, symbols: [Symbol: Int]) {
+	public init(name: String, main: StaticChunk? = nil, symbols: [Symbol: SymbolInfo]) {
 		self.name = name
 		self.main = main
 		self.symbols = symbols

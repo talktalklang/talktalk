@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct DisassemblerTests {
 	@Test("Disassembles simple opcodes") func simple() {
-		let chunk = Chunk(name: "main")
+		let chunk = Chunk(name: "main", symbol: .function("DisassemblerTests", "main", []))
 		chunk.emit(opcode: .true, line: 1)
 
 		#expect(chunk.code == [28])
@@ -22,7 +22,7 @@ struct DisassemblerTests {
 	}
 
 	@Test("Disassembles constant opcodes") func constant() {
-		let chunk = Chunk(name: "main")
+		let chunk = Chunk(name: "main", symbol: .function("DisassemblerTests", "main", []))
 		chunk.emit(constant: .int(123), line: 1)
 		chunk.emit(opcode: .return, line: 2)
 

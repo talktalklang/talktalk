@@ -7,6 +7,7 @@
 
 import Foundation
 import TalkTalkSyntax
+import TalkTalkBytecode
 
 public struct SerializedAnalysisModule: Codable {
 	public let name: String
@@ -49,6 +50,9 @@ public struct AnalysisModule {
 
 	public var files: Set<ParsedSourceFile>
 
+	// Keep track of all the different symbols in this module
+	public var symbols: [Symbol: SymbolInfo] = [:]
+
 	// The list of analyzed files for this module (this is built up by the module analyzer)
 	public var analyzedFiles: [AnalyzedSourceFile] = []
 
@@ -88,7 +92,15 @@ public struct AnalysisModule {
 			var result: [ModuleFunction] = []
 			if let syntax = syntax as? AnalyzedFuncExpr {
 				if let name = syntax.name?.lexeme {
-					result.append(ModuleFunction(name: name, syntax: syntax, typeID: syntax.typeID, source: .module))
+					result.append(
+						ModuleFunction(
+							name: name,
+							symbol: syntax.symbol,
+							syntax: syntax,
+							typeID: syntax.typeID,
+							source: .module
+						)
+					)
 				}
 			}
 
@@ -100,6 +112,20 @@ public struct AnalysisModule {
 		}
 
 		return analyzedFiles.flatMap(\.syntax).flatMap { collect(in: $0) }
+	}
+
+	public func lookup(function name: String) -> SymbolInfo? {
+		for (symbol, info) in symbols {
+			if case let .function(fnName, _) = symbol.kind, name == fnName {
+				return info
+			}
+		}
+
+		return nil
+	}
+
+	public func lookup(symbol kind: Symbol.Kind, namespace: [String]) -> SymbolInfo? {
+		symbols[Symbol(module: name, kind: kind, namespace: namespace)]
 	}
 }
 
