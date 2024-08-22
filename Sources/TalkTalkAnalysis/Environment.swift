@@ -364,7 +364,7 @@ public class Environment {
 			let module = importedModules.first(where: { $0.name == moduleName })!
 			let structType = module.structs[structName]!
 			for method in structType.methods {
-				_ = symbolGenerator.import(method.value.symbol, from: moduleName)
+//				_ = symbolGenerator.import(method.value.symbol, from: moduleName)
 			}
 		}
 

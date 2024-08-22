@@ -14,7 +14,7 @@ struct DisassemblerTests {
 		let chunk = Chunk(name: "main", symbol: .function("DisassemblerTests", "main", []))
 		chunk.emit(opcode: .true, line: 1)
 
-		#expect(chunk.code == [28])
+		#expect(chunk.code == [29])
 
 		#expect(chunk.disassemble() == [
 			Instruction(opcode: .true, offset: 1, line: 1, metadata: .simple),

@@ -456,12 +456,13 @@ public struct VirtualMachine {
 			case .jumpPlaceholder:
 				()
 			case .get:
-				let getSlot = module.symbols[.method("Standard", "Array", "get", ["index"])]!.slot
 				let instance = stack.pop()
 				guard let (receiver) = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
+				// TODO: this sux
+				let getSlot = receiver.type.methods.firstIndex(where: { $0.name.contains("$get$index") })!
 				call(boundMethod: .init(getSlot), on: receiver)
 			case .initArray:
 				let count = readByte()
@@ -508,10 +509,8 @@ public struct VirtualMachine {
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
 	private mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
-		let methodChunk = module.chunks[Int(boundMethod)]
-
+		let methodChunk = instance.type.methods[Int(boundMethod)]
 		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
-
 		call(chunk: methodChunk)
 	}
 
@@ -525,12 +524,11 @@ public struct VirtualMachine {
 		)
 
 		// Get the initializer
-		guard let symbol = structType.initializerSymbol,
-					let initializerSlot = module.symbols[symbol]?.slot else {
+		guard let slot = structType.initializerSlot else {
 			fatalError("no initializer found for \(structType.name)")
 		}
 
-		let initializer = module.chunks[initializerSlot]
+		let initializer = structType.methods[slot]
 
 		// Add the instance to the stack
 		stack[stack.size - Int(initializer.arity) - 1] = instance
@@ -619,7 +617,7 @@ public struct VirtualMachine {
 
 		switch builtin {
 		case .print:
-			let value = stack.peek()
+			let value = stack.pop()
 			print(inspect(value))
 		case ._allocate:
 			if case let .int(count) = stack.pop() { // Get the capacity

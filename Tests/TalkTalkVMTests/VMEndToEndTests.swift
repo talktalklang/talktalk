@@ -56,9 +56,31 @@ struct VMEndToEndTests {
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:]
 	) throws -> (Module, AnalysisModule) {
-		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in
+		let stdlib = try ModuleAnalyzer(
+			name: "Standard",
+			files: Set(Library.files(for: Library.standardLibraryURL).map {
+				try ParsedSourceFile(
+					path: $0.path,
+					syntax: Parser.parse(
+						SourceFile(
+							path: $0.path,
+							text: String(contentsOf: $0, encoding: .utf8)
+						)
+					)
+				)
+			}),
+			moduleEnvironment: [:],
+			importedModules: []
+		).analyze()
+
+		let stdlibModule = try ModuleCompiler(name: "Standard", analysisModule: stdlib).compile(mode: .module)
+
+		var analysis = moduleEnvironment.reduce(into: [:]) { res, tup in
 			res[tup.key] = analysisEnvironment[tup.key]
 		}
+		analysis["Standard"] = stdlib
+		var moduleEnvironment = moduleEnvironment
+		moduleEnvironment["Standard"] = stdlibModule
 
 		let analyzed = try ModuleAnalyzer(
 			name: name,

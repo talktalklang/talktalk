@@ -111,7 +111,7 @@ struct ModuleCompilerTests: CompilerTest {
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
 
-		let initChunk = module.chunks[0]
+		let initChunk = structDef.methods[0]
 
 		#expect(initChunk.disassemble(in: module) == Instructions(
 			.op(.getLocal, line: 4, .local(slot: 1, name: "age")),
@@ -144,7 +144,7 @@ struct ModuleCompilerTests: CompilerTest {
 		#expect(mainChunk.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 0)),
 			.op(.call, line: 8),
-			.op(.setModuleValue, line: 8, .global(slot: 2)),
+			.op(.setModuleValue, line: 8, .global(slot: 1)),
 			.op(.return, line: 0)
 		))
 
@@ -153,7 +153,7 @@ struct ModuleCompilerTests: CompilerTest {
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
 
-		let initChunk = module.chunks[0]
+		let initChunk = structDef.methods[0]
 		#expect(initChunk.disassemble() == Instructions(
 			.op(.constant, line: 4, .constant(.int(123))),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),

@@ -265,7 +265,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// We always want to emit a return at the end of a function
 		chunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
 
-		// Save the chunk
 		_ = module.addChunk(chunk)
 	}
 
@@ -304,7 +303,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
 		let line = UInt32(expr.location.line)
-		let subchunkID = module.addChunk(functionChunk)
+		let subchunkID = module.analysisModule.symbols[expr.symbol]!.slot
+		_ = module.addChunk(functionChunk)
 		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
 
 		for upvalue in functionCompiler.upvalues {
@@ -364,7 +364,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let slot = if let property = expr.memberAnalyzed as? Property {
 			property.slot
 		} else if let method = expr.memberAnalyzed as? Method {
-			module.analysisModule.symbols[method.symbol]!.slot
+			method.slot
 		} else {
 			fatalError("unknown member: \(expr.memberAnalyzed)")
 		}
@@ -403,6 +403,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedStructDecl, _ chunk: Chunk) throws {
 		let name = expr.name
 		var structType = Struct(name: name, propertyCount: expr.structType.properties.count)
+		var methods: [StaticChunk?] = Array(repeating: nil, count: expr.structType.methods.count)
 
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
 			switch decl {
@@ -411,29 +412,70 @@ public class ChunkCompiler: AnalyzedVisitor {
 					continue
 				}
 
-				let symbol = decl.symbol
-				let initChunk = Chunk(
+				let symbol = Symbol.method(module.name, name, "init", decl.parameters.params.map(\.name))
+				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
+				let declChunk = Chunk(
 					name: symbol.description,
 					symbol: symbol,
 					parent: chunk,
 					arity: Byte(decl.parameters.count),
 					depth: Byte(scopeDepth)
 				)
-				let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
-				try initCompiler.visit(decl, initChunk)
 
-				structType.initializerSymbol = symbol
+				// Define the actual params for this initializer
+				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
+					_ = declCompiler.defineLocal(
+						name: parameter.name, compiler: declCompiler, chunk: declChunk
+					)
+				}
+
+				// Emit the init body
+				for expr in decl.bodyAnalyzed.declsAnalyzed {
+					try expr.accept(declCompiler, declChunk)
+				}
+
+				// End the scope, which pops locals
+				declCompiler.endScope(chunk: declChunk)
+
+				// Make sure the instance is at the top of the stack and return it
+				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
+				declChunk.emit(byte: 0, line: UInt32(decl.location.end.line))
+				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
+
+				let analysisMethod = expr.structType.methods["init"]!
+				methods[analysisMethod.slot] = StaticChunk(chunk: declChunk)
+				structType.initializerSlot = analysisMethod.slot
 			case let decl as AnalyzedFuncExpr:
-				let symbol = decl.symbol
+				let symbol = Symbol.method(module.name, name, decl.name!.lexeme, decl.params.params.map(\.name))
+				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
 					symbol: symbol,
-					parent: chunk, arity: Byte(decl.params.count),
+					parent: chunk,
+					arity: Byte(decl.params.count),
 					depth: Byte(scopeDepth)
 				)
 
-				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
-				try declCompiler.visit(decl, declChunk)
+				// Define the params for this function
+				for parameter in decl.analyzedParams.paramsAnalyzed {
+					_ = declCompiler.defineLocal(
+						name: parameter.name,
+						compiler: declCompiler,
+						chunk: declChunk
+					)
+				}
+
+				// Emit the body
+				for expr in decl.bodyAnalyzed.stmtsAnalyzed {
+					try expr.accept(declCompiler, declChunk)
+				}
+
+				// End the scope, which pops locals
+				declCompiler.endScope(chunk: declChunk)
+				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
+
+				let analysisMethod = expr.structType.methods[decl.name!.lexeme]!
+				methods[analysisMethod.slot] = StaticChunk(chunk: declChunk)
 			case is AnalyzedVarDecl: ()
 			case is AnalyzedLetDecl: ()
 			default:
@@ -443,11 +485,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		let initializer = expr.structType.methods["init"]!
 		if initializer.isSynthetic {
-			structType.initializerSymbol = initializer.symbol
+			structType.initializerSlot = initializer.slot
 			let chunk = synthesizeInit(for: expr.structType)
-			_ = module.addChunk(chunk)
+//			_ = module.addChunk(chunk)
+			methods[initializer.slot] = StaticChunk(chunk: chunk)
 		}
 
+		structType.methods = methods.map(\.unsafelyUnwrapped)
 		module.structs[expr.symbol] = structType
 	}
 
@@ -553,10 +597,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try expr.receiverAnalyzed.accept(self, chunk)
 
 		// Emit the `get` method
-		chunk.emit(opcode: .get, line: expr.location.line)
+		chunk.emit(opcode: .getProperty, line: expr.location.line)
+		chunk.emit(byte: Byte(getMethod.slot), line: expr.location.line)
+		chunk.emit(byte: PropertyOptions.isMethod.rawValue, line: expr.location.line)
+
+//		chunk.emit(opcode: .get, line: expr.location.line)
 
 		// Call it
-//		chunk.emit(opcode: .call, line: expr.location.line)
+		chunk.emit(opcode: .call, line: expr.location.line)
 	}
 
 	public func visit(_: AnalyzedAssignmentStmt, _: Chunk) throws {}

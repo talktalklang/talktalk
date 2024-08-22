@@ -804,6 +804,7 @@ public struct SourceFileAnalyzer: Visitor {
 						method: Method(
 							symbol: .method(context.moduleName, structType.name!, name.lexeme, decl.params.params.map(\.name)),
 							name: name.lexeme,
+							slot: structType.methods.count,
 							params: decl
 								.params
 								.params
@@ -835,6 +836,7 @@ public struct SourceFileAnalyzer: Visitor {
 					initializer: .init(
 						symbol: .method(context.moduleName, structType.name!, "init", decl.parameters.params.map(\.name)),
 						name: "init",
+						slot: structType.methods.count,
 						params: decl
 							.parameters
 							.params
@@ -878,6 +880,7 @@ public struct SourceFileAnalyzer: Visitor {
 				initializer: .init(
 					symbol: context.symbolGenerator.method(structType.name!, "init", parameters: structType.properties.reduce(into: []) { $0.append($1.key) }, source: .internal),
 					name: "init",
+					slot: structType.methods.count,
 					params: structType.properties.reduce(into: []) { res, prop in
 						res.append(ValueType.Param(name: prop.key, typeID: prop.value.typeID))
 					},
@@ -939,6 +942,7 @@ public struct SourceFileAnalyzer: Visitor {
 					method: Method(
 						symbol: funcExpr.symbol,
 						name: funcExpr.name!.lexeme,
+						slot: existing.slot,
 						params: funcExpr.params.params.map(\.name).reduce(into: []) { res, p in
 							res.append(.init(name: p, typeID: TypeID(.placeholder)))
 						},

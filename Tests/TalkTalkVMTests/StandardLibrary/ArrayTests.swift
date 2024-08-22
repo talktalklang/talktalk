@@ -25,7 +25,7 @@ struct ArrayTests: StandardLibraryTest {
 		return a.count
 		"""
 
-		let result = try await run(source, verbosity: .verbose).get()
+		let result = try await run(source).get()
 
 		#expect(result == .int(1))
 	}
@@ -52,7 +52,7 @@ struct ArrayTests: StandardLibraryTest {
 		 a.append(6)
 		 return a[5]
 		"""
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source).get()
 
 		#expect(result == .int(6))
 	}
@@ -61,7 +61,7 @@ struct ArrayTests: StandardLibraryTest {
 		let result = try await run("""
 			var a = [1,2,3,4,5,6]
 			return a[5]
-			""", verbosity: .verbose).get()
+			""").get()
 
 		#expect(result == .int(6))
 	}
@@ -70,7 +70,7 @@ struct ArrayTests: StandardLibraryTest {
 		let result = try await run("""
 			var a = [1,2,3,4,5,6]
 			return a[5]
-		""", verbosity: .verbose).get()
+		""").get()
 
 		#expect(result == .int(6))
 	}
@@ -80,7 +80,7 @@ struct ArrayTests: StandardLibraryTest {
 			var a = [1,2,3,4,5,6]
 			a[0] = 123
 			return a[0]
-		""", verbosity: .verbose).get()
+		""").get()
 
 		#expect(result == .int(123))
 	}
@@ -95,7 +95,7 @@ struct ArrayTests: StandardLibraryTest {
 			i = i + 1
 		}
 		return result
-		""", verbosity: .verbose).get()
+		""").get()
 
 		#expect(result == .int(3))
 	}

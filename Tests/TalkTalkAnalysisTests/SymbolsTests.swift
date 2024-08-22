@@ -80,7 +80,7 @@ struct SymbolsTests: AnalysisTest {
 		struct Person {}
 		""")
 
-		#expect(analysis.symbols.count == 3)
+		#expect(analysis.symbols.count == 4)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
 	}
@@ -92,7 +92,7 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 4)
+		#expect(analysis.symbols.count == 5)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"])] != nil)
 		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
@@ -108,11 +108,7 @@ struct SymbolsTests: AnalysisTest {
 		method()
 		""")
 
-		#expect(analysis.symbols.count == 5)
-
-		print(analysis.symbols)
-		print()
-
+		#expect(analysis.symbols.count == 6)
 		#expect(analysis.symbols[.value("AnalysisTest", "method")] != nil)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"])] != nil)
@@ -126,7 +122,7 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 4)
+		#expect(analysis.symbols.count == 5)
 		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.property("AnalysisTest", "Person", "age", namespace: ["Person"])] != nil)
@@ -156,7 +152,7 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 5)
+		#expect(analysis.symbols.count == 6)
 		#expect(analysis.symbols[.property("AnalysisTest", "Person", "age", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 	}

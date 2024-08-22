@@ -38,32 +38,6 @@ public class CompilingModule {
 		self.name = name
 		self.analysisModule = analysisModule
 		self.moduleEnvironment = moduleEnvironment
-
-		// Reserve offsets for module functions
-//		var i = 0
-//		for (_, global) in analysisModule.moduleFunctions.sorted(by: { $0.key < $1.key }) {
-//			functionSymbols[.function(global.name)] = i++
-//		}
-//
-//		// Reserve offsets for file functions
-//		for file in analysisModule.analyzedFiles {
-//			functionSymbols[.function(file.path)] = i++
-//		}
-//
-//		// Reserve offsets for module values
-//		for (i, (_, global)) in analysisModule.values.sorted(by: { $0.key < $1.key }).enumerated() {
-//			valueSymbols[.value(global.name)] = i
-//		}
-//
-//		// Reserve offsets for struct values
-//		for (i, (_, structT)) in analysisModule.structs.sorted(by: { $0.key < $1.key }).enumerated() {
-//			valueSymbols[.struct(structT.name)] = i
-//
-//			// Reserve offsets for struct methods
-//			for (j, (methodName, method)) in structT.methods.enumerated() {
-//				functionSymbols[.method(structT.name, methodName, method.params.map(\.name))] = j
-//			}
-//		}
 	}
 
 	public func finalize(mode: CompilationMode) -> Module {
@@ -101,19 +75,20 @@ public class CompilingModule {
 
 				fatalError("could not find compiled chunk for: \(symbol.description)")
 			case .method:
-				if let chunk = compiledChunks.first(where: { $0.symbol == symbol }) {
-					chunks[info.slot] = StaticChunk(chunk: chunk)
-					continue
-				}
-
-				if case let .external(name) = info.source,
-					 let module = moduleEnvironment[name],
-					 let moduleInfo = module.symbols[symbol] {
-					chunks[info.slot] = module.chunks[moduleInfo.slot]
-					continue
-				}
-
-				fatalError("could not find compiled chunk for: \(symbol.description)")
+				()
+//				if let chunk = compiledChunks.first(where: { $0.symbol == symbol }) {
+//					chunks[info.slot] = StaticChunk(chunk: chunk)
+//					continue
+//				}
+//
+//				if case let .external(name) = info.source,
+//					 let module = moduleEnvironment[name],
+//					 let moduleInfo = module.symbols[symbol] {
+//					chunks[info.slot] = module.chunks[moduleInfo.slot]
+//					continue
+//				}
+//
+//				fatalError("could not find compiled chunk for: \(symbol.description)")
 			case .property:
 				() // Nothing to do here
 			case .struct:
@@ -153,7 +128,7 @@ public class CompilingModule {
 				module.main = existingMain
 			} else {
 				let synthesized = synthesizeMain()
-				chunks.append(.init(chunk: synthesized))
+				module.chunks.append(.init(chunk: synthesized))
 				module.main = StaticChunk(chunk: synthesized)
 			}
 		}

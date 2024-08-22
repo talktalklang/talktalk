@@ -19,6 +19,7 @@ public struct SerializedMethod: Codable {
 public struct Method: Member {
 	public let symbol: Symbol
 	public let name: String
+	public let slot: Int
 	public let params: [ValueType.Param]
 	public let typeID: TypeID
 	public let returnTypeID: TypeID
@@ -29,6 +30,7 @@ public struct Method: Member {
 	public init(
 		symbol: Symbol,
 		name: String,
+		slot: Int,
 		params: [ValueType.Param],
 		typeID: TypeID,
 		returnTypeID: TypeID,
@@ -38,6 +40,7 @@ public struct Method: Member {
 	) {
 		self.symbol = symbol
 		self.name = name
+		self.slot = slot
 		self.params = params
 		self.typeID = typeID
 		self.returnTypeID = returnTypeID

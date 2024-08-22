@@ -29,8 +29,6 @@ struct Array<Element> {
 		var i = 0
 		while i < self.count {
 			_storePtr(newStorage, self[i])
-			print("copying value")
-			print(self[i])
 			i = i + 1
 		}
 
