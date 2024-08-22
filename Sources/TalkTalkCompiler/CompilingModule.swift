@@ -41,7 +41,7 @@ public class CompilingModule {
 	}
 
 	public func finalize(mode: CompilationMode) -> Module {
-		var chunkCount = analysisModule.symbols.keys.count(where: { symbol in
+		let chunkCount = analysisModule.symbols.keys.count(where: { symbol in
 			if case .function(_, _) = symbol.kind {
 				return true
 			} else if case .method(_, _, _) = symbol.kind {
@@ -52,7 +52,6 @@ public class CompilingModule {
 		})
 
 		var chunks: [StaticChunk] = Array(repeating: StaticChunk(chunk: .init(name: "_", symbol: .function(name, "_", [], namespace: []))), count: chunkCount)
-		var main: StaticChunk? = nil
 		var moduleStructs: [Struct] = Array(repeating: Struct(name: "_", propertyCount: 0), count: analysisModule.structs.count)
 
 		for (symbol, info) in analysisModule.symbols {
@@ -115,7 +114,7 @@ public class CompilingModule {
 			}
 		}
 
-		var module = Module(name: name, main: main, symbols: analysisModule.symbols)
+		var module = Module(name: name, main: nil, symbols: analysisModule.symbols)
 
 		// Set the module level function chunks
 		module.chunks = chunks

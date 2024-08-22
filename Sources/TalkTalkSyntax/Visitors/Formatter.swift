@@ -329,8 +329,8 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: any SubscriptExpr, _ context: Context) throws -> String {
-		var result = try expr.receiver.accept(self, context)
-		var args = try expr.args.map({ try $0.accept(self, context) }).joined(separator: ", ")
+		let result = try expr.receiver.accept(self, context)
+		let args = try expr.args.map({ try $0.accept(self, context) }).joined(separator: ", ")
 		return result + "[\(args)]"
 	}
 

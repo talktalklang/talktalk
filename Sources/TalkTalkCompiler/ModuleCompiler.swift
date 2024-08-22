@@ -37,7 +37,7 @@ public struct ModuleCompiler {
 		)
 
 		for file in analysisModule.analyzedFiles {
-			try module.compile(file: file)
+			_ = try module.compile(file: file)
 		}
 
 		return module.finalize(mode: mode)
