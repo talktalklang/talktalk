@@ -175,7 +175,13 @@ public struct Disassembler<Chunk: Disassemblable> {
 		case .global:
 			"slot: \(slot)"
 		case .builtin:
-			"builtin \(slot)"
+			[
+				"print",
+				"_allocate",
+				"_free",
+				"_deref",
+				"_storePtr",
+			][Int(slot)]
 		case .struct:
 			"slot: \(slot)"
 		case .property:

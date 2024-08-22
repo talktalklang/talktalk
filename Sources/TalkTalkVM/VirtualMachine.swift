@@ -363,11 +363,8 @@ public struct VirtualMachine {
 				call(chunkID: Int(slot))
 			case .getModuleFunction:
 				let slot = readByte()
-				if let global = module.functions[slot] {
-					stack.push(global)
-				} else {
-					return runtimeError("No module function at slot: \(slot)")
-				}
+				let moduleFunction = Value.moduleFunction(.init(slot))
+				stack.push(moduleFunction)
 			case .setModuleFunction:
 				return runtimeError("cannot set module functions")
 			case .getModuleValue:

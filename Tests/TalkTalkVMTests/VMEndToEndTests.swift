@@ -319,7 +319,7 @@ struct VMEndToEndTests {
 		#expect(result == .int(123))
 	}
 
-	@Test("Can run functions across modules") func crossModule() throws {
+	@Test("Can run functions across modules") func AcrossModule() throws {
 		let (moduleA, analysisA) = try compile(
 			name: "A", [.tmp("func foo() { 123 }", "1.tlk")], analysisEnvironment: [:], moduleEnvironment: [:]
 		)
@@ -525,7 +525,7 @@ struct VMEndToEndTests {
 
 			while i < a.count {
 				print(a[i])
-				i -= 1
+				i += 1
 			}
 			"""
 		)

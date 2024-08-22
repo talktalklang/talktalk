@@ -50,7 +50,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// MARK: Visitor methods
 
-	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws -> Void {
+	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws {
 		// Put the element values of this array onto the stack. We reverse it because the VM
 		// builds up the array by popping values off
 		for element in expr.exprsAnalyzed.reversed() {
@@ -441,6 +441,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 			}
 		}
 
+		let initializer = expr.structType.methods["init"]!
+		if initializer.isSynthetic {
+			structType.initializerSymbol = initializer.symbol
+			let chunk = synthesizeInit(for: expr.structType)
+			_ = module.addChunk(chunk)
+		}
+
 		module.structs[expr.symbol] = structType
 	}
 
@@ -530,9 +537,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedSubscriptExpr, _ chunk: Chunk) throws {
 		guard case let .instance(instance) = expr.receiverAnalyzed.typeAnalyzed,
-					case let .struct(name) = instance.ofType,
-					let structType = expr.environment.lookupStruct(named: name),
-					let getMethod = structType.methods["get"] else {
+		      case let .struct(name) = instance.ofType,
+		      let structType = expr.environment.lookupStruct(named: name),
+		      let getMethod = structType.methods["get"]
+		else {
 			throw CompilerError.typeError("\(expr.receiverAnalyzed.description) has no method: `get` for subscript")
 		}
 
@@ -551,7 +559,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 //		chunk.emit(opcode: .call, line: expr.location.line)
 	}
 
-	public func visit(_ expr: AnalyzedAssignmentStmt, _ context: Chunk) throws {}
+	public func visit(_: AnalyzedAssignmentStmt, _: Chunk) throws {}
 
 	// GENERATOR_INSERTION
 
@@ -606,7 +614,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let symbol, let slot = resolveModuleFunction(named: symbol) {
+			if let slot = resolveModuleFunction(named: varName) {
 				return Variable(
 					name: varName,
 					slot: slot,
@@ -663,7 +671,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		if let syntax = receiver as? AnalyzedMemberExpr,
-			 let property = syntax.memberAnalyzed as? Property {
+		   let property = syntax.memberAnalyzed as? Property
+		{
 			return Variable(
 				name: syntax.property,
 				slot: Byte(property.slot),
@@ -708,8 +717,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	// Check the CompilingModule for a global function.
-	private func resolveModuleFunction(named symbol: Symbol) -> Byte? {
-		if let offset = module.moduleFunctionOffset(for: symbol) {
+	private func resolveModuleFunction(named name: String) -> Byte? {
+		if let offset = module.moduleFunctionOffset(for: name) {
 			return Byte(offset)
 		}
 
@@ -727,7 +736,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// Check CompilationModule for a global struct
 	private func resolveStruct(named symbol: Symbol) -> Byte? {
-		guard case .struct(_) = symbol.kind else {
+		guard case .struct = symbol.kind else {
 			return nil
 		}
 

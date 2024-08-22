@@ -27,9 +27,6 @@ public struct Module: Equatable, @unchecked Sendable {
 	// here so it can be initialized lazily
 	public var valueInitializers: [Byte: StaticChunk] = [:]
 
-	// Lists of global values used during execution
-	public var functions: [Byte: Value] = [:]
-
 	public init(name: String, main: StaticChunk? = nil, symbols: [Symbol: SymbolInfo]) {
 		self.name = name
 		self.main = main

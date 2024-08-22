@@ -4,6 +4,7 @@
 //
 //  Created by Pat Nakajima on 8/21/24.
 //
+import Foundation
 
 public class SymbolGenerator {
 	public let moduleName: String

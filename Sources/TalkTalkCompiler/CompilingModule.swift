@@ -67,7 +67,7 @@ public class CompilingModule {
 	}
 
 	public func finalize(mode: CompilationMode) -> Module {
-		let chunkCount = analysisModule.symbols.keys.count(where: { symbol in
+		var chunkCount = analysisModule.symbols.keys.count(where: { symbol in
 			if case .function(_, _) = symbol.kind {
 				return true
 			} else if case .method(_, _, _) = symbol.kind {
@@ -81,20 +81,6 @@ public class CompilingModule {
 		var main: StaticChunk? = nil
 		var moduleStructs: [Struct] = Array(repeating: Struct(name: "_", propertyCount: 0), count: analysisModule.structs.count)
 
-		if mode == .executable {
-			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then
-			// we can use that. Otherwise synthesize one out of the files in the module.
-			if let existingMain = chunks.first(where: { $0.name == "main" }) {
-				main = existingMain
-			} else {
-				let synthesized = synthesizeMain()
-				chunks.append(.init(chunk: synthesized))
-				main = StaticChunk(chunk: synthesized)
-			}
-		}
-
-		var module = Module(name: name, main: main, symbols: analysisModule.symbols)
-
 		for (symbol, info) in analysisModule.symbols {
 			if info.isBuiltin { continue }
 
@@ -105,6 +91,7 @@ public class CompilingModule {
 					continue
 				}
 
+				// Copy the external method into our chunks, using the slot we want
 				if case let .external(name) = info.source,
 					 let module = moduleEnvironment[name],
 					 let moduleInfo = module.symbols[symbol] {
@@ -153,15 +140,23 @@ public class CompilingModule {
 			}
 		}
 
+		var module = Module(name: name, main: main, symbols: analysisModule.symbols)
+
 		// Set the module level function chunks
 		module.chunks = chunks
-
 		module.structs = moduleStructs
 
-//		// Set offets for moduleFunction values
-//		for (i, _) in module.chunks.enumerated() {
-//			module.functions[Byte(i)] = .moduleFunction(Value.IntValue(i))
-//		}
+		if mode == .executable {
+			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then
+			// we can use that. Otherwise synthesize one out of the files in the module.
+			if let existingMain = chunks.first(where: { $0.name == "main" }) {
+				module.main = existingMain
+			} else {
+				let synthesized = synthesizeMain()
+				chunks.append(.init(chunk: synthesized))
+				module.main = StaticChunk(chunk: synthesized)
+			}
+		}
 
 		// Copy lazy value initializers
 		for (name, chunk) in valueInitializers {
@@ -184,11 +179,13 @@ public class CompilingModule {
 	// return what we have. Otherwise, figure out what the offset will be and return that.
 	//
 	// If the analysis says that we don't have a global by this name, return nil.
-	public func moduleFunctionOffset(for symbol: Symbol) -> Int? {
-		if case .function = symbol.kind {
-			return analysisModule.symbols[symbol]?.slot
+	public func moduleFunctionOffset(for string: String) -> Int? {
+		for (symbol, info) in analysisModule.symbols {
+			if case .function(string, _) = symbol.kind {
+				return info.slot
+			}
 		}
-
+		
 		return nil
 	}
 

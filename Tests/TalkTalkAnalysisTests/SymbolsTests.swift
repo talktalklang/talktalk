@@ -94,7 +94,28 @@ struct SymbolsTests: AnalysisTest {
 
 		#expect(analysis.symbols.count == 4)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
-		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"], namespace: ["Person"])] != nil)
+		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"])] != nil)
+		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
+	}
+
+	@Test("Does not generate a method symbol for free bound methods") func boundMethods() async throws {
+		let analysis = try await analyze("""
+		struct Person {
+			func greet(name) {}
+		}
+
+		let method = Person().greet
+		method()
+		""")
+
+		#expect(analysis.symbols.count == 5)
+
+		print(analysis.symbols)
+		print()
+
+		#expect(analysis.symbols[.value("AnalysisTest", "method")] != nil)
+		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
+		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"])] != nil)
 		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
 	}
 

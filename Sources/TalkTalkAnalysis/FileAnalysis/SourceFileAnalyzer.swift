@@ -344,15 +344,14 @@ public struct SourceFileAnalyzer: Visitor {
 			if case let .struct(name) = binding.type.current {
 				if let module = binding.externalModule {
 					symbol = module.structs[name]!.symbol
-					module.structs[name]?.methods
-//				} else {
-//					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
+				} else {
+					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
 				}
-			} else if case let .function(name, _, params, _) = binding.type.current {
+			} else if case let .function(name, _, _, _) = binding.type.current {
 				if let module = binding.externalModule {
 					symbol = module.moduleFunction(named: name)!.symbol
-//				} else {
-//					symbol = context.symbolGenerator.function(expr.name, parameters: params.map(\.name), source: .internal)
+				} else if binding.isGlobal {
+					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
 			} else {
 				if let module = binding.externalModule {
@@ -700,6 +699,8 @@ public struct SourceFileAnalyzer: Visitor {
 			}
 		}
 
+		let symbol = context.symbolGenerator.struct(expr.name, source: .internal)
+
 		let structType = StructType(
 			name: expr.name,
 			properties: [:],
@@ -875,7 +876,7 @@ public struct SourceFileAnalyzer: Visitor {
 		if structType.methods["init"] == nil {
 			structType.add(
 				initializer: .init(
-					symbol: .method(context.moduleName, structType.name!, "init", structType.properties.reduce(into: []) { $0.append($1.key) }),
+					symbol: context.symbolGenerator.method(structType.name!, "init", parameters: structType.properties.reduce(into: []) { $0.append($1.key) }, source: .internal),
 					name: "init",
 					params: structType.properties.reduce(into: []) { res, prop in
 						res.append(ValueType.Param(name: prop.key, typeID: prop.value.typeID))
@@ -898,7 +899,7 @@ public struct SourceFileAnalyzer: Visitor {
 		let lexicalScope = bodyContext.getLexicalScope()!
 
 		let analyzed = AnalyzedStructDecl(
-			symbol: context.symbolGenerator.struct(expr.name, source: .internal),
+			symbol: symbol,
 			wrapped: expr,
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
 			structType: structType,

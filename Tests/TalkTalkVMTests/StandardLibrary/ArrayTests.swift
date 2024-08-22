@@ -7,6 +7,7 @@
 
 import Testing
 
+@MainActor
 struct ArrayTests: StandardLibraryTest {
 	@Test("Can be created") func create() async throws {
 		let result = try await run("""
@@ -40,18 +41,18 @@ struct ArrayTests: StandardLibraryTest {
 		#expect(result == .int(456))
 	}
 
-	@Test("can add more than 4 items") func subscripts() async throws {
+	@Test("can add more than 4 items") func resizingTest() async throws {
 		let source = """
 		 var a = Array()
-			 a.append(1)
-			 a.append(2)
-			 a.append(3)
-			 a.append(4)
-			 a.append(5)
-			 a.append(6)
-			 return a[5]
+		 a.append(1)
+		 a.append(2)
+		 a.append(3)
+		 a.append(4)
+		 a.append(5)
+		 a.append(6)
+		 return a[5]
 		"""
-		let result = try await run(source, verbosity: .verbose).get()
+		let result = try await run(source, verbosity: .lineByLine(source)).get()
 
 		#expect(result == .int(6))
 	}
