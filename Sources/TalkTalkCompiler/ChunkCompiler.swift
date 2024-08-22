@@ -361,7 +361,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(opcode: .getProperty, line: expr.location.line)
 
 		// Emit the property's slot
-		let slot = expr.memberAnalyzed.slot
+		let slot = if let property = expr.memberAnalyzed as? Property {
+			property.slot
+		} else if let method = expr.memberAnalyzed as? Method {
+			module.analysisModule.symbols[method.symbol]!.slot
+		} else {
+			fatalError("unknown member: \(expr.memberAnalyzed)")
+		}
+
 		chunk.emit(byte: Byte(slot), line: expr.location.line)
 
 		// Emit the property's optionset
@@ -396,7 +403,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedStructDecl, _ chunk: Chunk) throws {
 		let name = expr.name
 		var structType = Struct(name: name, propertyCount: expr.structType.properties.count)
-		var methods: [Chunk?] = Array(repeating: nil, count: expr.structType.methods.count)
 
 		for decl in expr.bodyAnalyzed.declsAnalyzed {
 			switch decl {
@@ -416,11 +422,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				let initCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 				try initCompiler.visit(decl, initChunk)
 
-				let slot = module.analysisModule.symbols[symbol]!.slot
-				methods[slot] = chunk
+				structType.initializerSymbol = symbol
 			case let decl as AnalyzedFuncExpr:
 				let symbol = decl.symbol
-				let slot = module.analysisModule.symbols[symbol]!.slot
 				let declChunk = Chunk(
 					name: symbol.description,
 					symbol: symbol,
@@ -430,22 +434,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				try declCompiler.visit(decl, declChunk)
-				methods[slot] = chunk
 			case is AnalyzedVarDecl: ()
 			case is AnalyzedLetDecl: ()
 			default:
 				fatalError("unknown decl: \(decl)")
 			}
 		}
-
-		let initializer = expr.structType.methods["init"]!
-
-		if initializer.isSynthetic {
-			methods[initializer.slot] = synthesizeInit(for: expr.structType)
-		}
-
-		structType.initializer = initializer.slot
-		structType.methods = methods.map { StaticChunk(chunk: $0!) }
 
 		module.structs[expr.symbol] = structType
 	}
@@ -551,12 +545,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try expr.receiverAnalyzed.accept(self, chunk)
 
 		// Emit the `get` method
-		chunk.emit(opcode: .getProperty, line: expr.location.line)
-		chunk.emit(byte: Byte(getMethod.slot), line: expr.location.line)
-		chunk.emit(byte: PropertyOptions.isMethod.rawValue, line: expr.location.line)
+		chunk.emit(opcode: .get, line: expr.location.line)
 
 		// Call it
-		chunk.emit(opcode: .call, line: expr.location.line)
+//		chunk.emit(opcode: .call, line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedAssignmentStmt, _ context: Chunk) throws {}
@@ -670,10 +662,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 			}
 		}
 
-		if let syntax = receiver as? AnalyzedMemberExpr {
+		if let syntax = receiver as? AnalyzedMemberExpr,
+			 let property = syntax.memberAnalyzed as? Property {
 			return Variable(
 				name: syntax.property,
-				slot: Byte(syntax.memberAnalyzed.slot),
+				slot: Byte(property.slot),
 				depth: scopeDepth,
 				isCaptured: false,
 				getter: .getProperty,

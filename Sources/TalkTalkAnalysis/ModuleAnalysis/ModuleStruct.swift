@@ -12,6 +12,7 @@ import TalkTalkSyntax
 // module boundaries.
 public struct ModuleStruct: ModuleGlobal {
 	public var name: String
+	public var symbol: Symbol
 	public var syntax: any Syntax
 	public var typeID: TypeID
 	public var source: ModuleSource

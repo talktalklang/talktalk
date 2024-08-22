@@ -41,6 +41,10 @@ public class Environment {
 		self.importedModules = importedModules
 	}
 
+	public var moduleName: String {
+		symbolGenerator.moduleName
+	}
+
 	public func ignoringErrors(perform: () throws -> Void) throws {
 		defer { self.shouldReportErrors = true }
 		self.shouldReportErrors = false
@@ -191,13 +195,13 @@ public class Environment {
 			var global: (any ModuleGlobal)?
 
 			if let value = module.moduleValue(named: name) {
-				symbol = symbolGenerator.value(name, source: .external(module.name))
+				symbol = value.symbol
 				global = value
 			} else if let function = module.moduleFunction(named: name) {
 				symbol = function.symbol
 				global = function
 			} else if let type = module.moduleStruct(named: name) {
-				symbol = symbolGenerator.struct(name, source: .external(module.name))
+				symbol = type.symbol
 				global = type
 			}
 
@@ -230,17 +234,19 @@ public class Environment {
 		}
 
 		// See if we already know about this somewhere else, if so, use it.
-		if let binding = importedSymbols.first(where: { $0.key.kind == .struct(name) })?.value,
-		   let externalModule = binding.externalModule,
-		   let moduleStruct = externalModule.structs[name]
-		{
-			return StructType(
-				name: name,
-				properties: moduleStruct.properties,
-				methods: moduleStruct.methods,
-				typeParameters: moduleStruct.typeParameters
-			)
-		}
+//		if let binding = importedSymbols.first(where: { $0.key.kind == .struct(name) })?.value,
+//		   let externalModule = binding.externalModule,
+//		   let moduleStruct = externalModule.structs[name]
+//		{
+//			importBinding(as: moduleStruct.symbol, from: externalModule.name, binding: binding)
+//
+//			return StructType(
+//				name: name,
+//				properties: moduleStruct.properties,
+//				methods: moduleStruct.methods,
+//				typeParameters: moduleStruct.typeParameters
+//			)
+//		}
 
 		if let builtinStruct = BuiltinStruct.lookup(name: name) {
 			return builtinStruct.structType()
@@ -250,7 +256,7 @@ public class Environment {
 		for module in importedModules {
 			if let moduleStruct = module.moduleStruct(named: name) {
 				importBinding(
-					as: symbolGenerator.struct(name, source: .external(module.name)),
+					as: moduleStruct.symbol,
 					from: module.name,
 					binding: Binding(
 						name: name,
@@ -293,13 +299,15 @@ public class Environment {
 		local: String,
 		as expr: any AnalyzedExpr,
 		definition: (any AnalyzedExpr)? = nil,
-		isMutable: Bool
+		isMutable: Bool,
+		isGlobal: Bool = false
 	) {
 		locals[local] = Binding(
 			name: local,
 			expr: expr,
 			definition: definition,
 			type: expr.typeID,
+			isGlobal: isGlobal,
 			isMutable: isMutable
 		)
 	}
@@ -350,6 +358,16 @@ public class Environment {
 		assert(isModuleScope, "trying to import binding into non-module scope environment")
 
 		importedSymbols[symbol] = binding
+
+		if case let .struct(structName) = symbol.kind {
+			// Import the methods as well
+			let module = importedModules.first(where: { $0.name == moduleName })!
+			let structType = module.structs[structName]!
+			for method in structType.methods {
+				_ = symbolGenerator.import(method.value.symbol, from: moduleName)
+			}
+		}
+
 		_ = symbolGenerator.import(symbol, from: moduleName)
 	}
 

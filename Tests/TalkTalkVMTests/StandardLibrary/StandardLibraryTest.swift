@@ -26,7 +26,9 @@ extension StandardLibraryTest {
 	) async throws -> VirtualMachine.ExecutionResult {
 		let stdlib = try await StandardLibrary.compile()
 		var moduleEnvironment = moduleEnvironment
+		var analysisEnvironment = analysisEnvironment
 		moduleEnvironment["Standard"] = stdlib.module
+		analysisEnvironment["Standard"] = stdlib.analysis
 
 		let files: [ParsedSourceFile] = [.tmp(input, "1.tlk")]
 		let analyzer = ModuleAnalyzer(

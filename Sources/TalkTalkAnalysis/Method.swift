@@ -5,10 +5,11 @@
 //  Created by Pat Nakajima on 8/9/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct SerializedMethod: Codable {
-	public let slot: Int
+	public let symbol: Symbol
 	public let name: String
 	public let params: [String]
 	public let type: ValueType
@@ -16,7 +17,7 @@ public struct SerializedMethod: Codable {
 }
 
 public struct Method: Member {
-	public let slot: Int
+	public let symbol: Symbol
 	public let name: String
 	public let params: [ValueType.Param]
 	public let typeID: TypeID
@@ -26,7 +27,7 @@ public struct Method: Member {
 	public let isSynthetic: Bool
 
 	public init(
-		slot: Int,
+		symbol: Symbol,
 		name: String,
 		params: [ValueType.Param],
 		typeID: TypeID,
@@ -35,7 +36,7 @@ public struct Method: Member {
 		isMutable: Bool = false,
 		isSynthetic: Bool = false
 	) {
-		self.slot = slot
+		self.symbol = symbol
 		self.name = name
 		self.params = params
 		self.typeID = typeID

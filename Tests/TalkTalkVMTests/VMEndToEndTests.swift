@@ -38,13 +38,15 @@ struct VMEndToEndTests {
 			importedModules: []
 		).analyze()
 
+		let stdlibModule = try ModuleCompiler(name: "Standard", analysisModule: stdlib).compile(mode: .module)
+
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
 			files: Set(strings.enumerated().map { .tmp($1, "\($0).tlk") }),
-			moduleEnvironment: [:],
+			moduleEnvironment: ["Standard": stdlib],
 			importedModules: [stdlib]
 		).analyze()
-		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule)
+		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule, moduleEnvironment: ["Standard": stdlibModule])
 		return try compiler.compile(mode: .executable)
 	}
 

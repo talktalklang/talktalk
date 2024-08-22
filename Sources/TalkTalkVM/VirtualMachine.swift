@@ -62,6 +62,8 @@ public struct VirtualMachine {
 	// Closure storage
 	var closures: [UInt64: Closure] = [:]
 
+	var globalValues: [Byte: Value] = [:]
+
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
 	public static func run(module: Module, verbosity: Verbosity = .quiet) -> ExecutionResult {
@@ -370,13 +372,13 @@ public struct VirtualMachine {
 				return runtimeError("cannot set module functions")
 			case .getModuleValue:
 				let slot = readByte()
-				if let global = module.values[slot] {
+				if let global = globalValues[slot] {
 					stack.push(global)
 				} else if let initializer = module.valueInitializers[slot] {
 					// If we don't have the global already, we lazily initialize it by running its initializer
 					call(inline: initializer)
 
-					module.values[slot] = stack.peek()
+					globalValues[slot] = stack.peek()
 
 					// Remove the initializer since it should only be called once
 					module.valueInitializers.removeValue(forKey: slot)
@@ -385,7 +387,7 @@ public struct VirtualMachine {
 				}
 			case .setModuleValue:
 				let slot = readByte()
-				module.values[slot] = stack.peek()
+				globalValues[slot] = stack.peek()
 
 				// Remove the lazy initializer for this value since we've already initialized it
 				module.valueInitializers.removeValue(forKey: slot)
@@ -427,7 +429,7 @@ public struct VirtualMachine {
 						stack.push(boundMethod)
 					} else {
 						guard let value = instance.fields[Int(slot)] else {
-							return runtimeError("unitialized value in slot \(slot) for \(instance)")
+							return runtimeError("uninitialized value in slot \(slot) for \(instance)")
 						}
 
 						stack.push(value)
@@ -456,9 +458,17 @@ public struct VirtualMachine {
 				stack[stack.size - 1] = .instance(receiver)
 			case .jumpPlaceholder:
 				()
+			case .get:
+				let getSlot = module.symbols[.method("Standard", "Array", "get", ["index"])]!.slot
+				let instance = stack.pop()
+				guard let (receiver) = instance.instanceValue else {
+					return runtimeError("Receiver is not a struct: \(instance)")
+				}
+
+				call(boundMethod: .init(getSlot), on: receiver)
 			case .initArray:
 				let count = readByte()
-				let arrayTypeSlot = module.symbols[.struct(module.name, "Array", namespace: [])]!.slot
+				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
 				let blockID = heap.allocate(count: Int(count))
@@ -501,7 +511,7 @@ public struct VirtualMachine {
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
 	private mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
-		let methodChunk = instance.type.methods[Int(boundMethod)]
+		let methodChunk = module.chunks[Int(boundMethod)]
 
 		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
 
@@ -518,7 +528,12 @@ public struct VirtualMachine {
 		)
 
 		// Get the initializer
-		let initializer = structType.methods[structType.initializer]
+		guard let symbol = structType.initializerSymbol,
+					let initializerSlot = module.symbols[symbol]?.slot else {
+			fatalError("no initializer found for \(structType.name)")
+		}
+
+		let initializer = module.chunks[initializerSlot]
 
 		// Add the instance to the stack
 		stack[stack.size - Int(initializer.arity) - 1] = instance

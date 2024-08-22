@@ -19,15 +19,18 @@ public struct SymbolInfo: Equatable, Codable {
 	// Where did this come from
 	public let source: Source
 
-	public init(symbol: Symbol, slot: Int, source: Source) {
+	public let isBuiltin: Bool
+
+	public init(symbol: Symbol, slot: Int, source: Source, isBuiltin: Bool) {
 		self.symbol = symbol
 		self.slot = slot
 		self.source = source
+		self.isBuiltin = isBuiltin
 	}
 }
 
-public struct Symbol: Hashable, Codable, CustomStringConvertible {
-	public enum Kind: Hashable, Codable {
+public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
+	public enum Kind: Hashable, Codable, Sendable {
 		case primitive(String)
 
 		// (Function name)

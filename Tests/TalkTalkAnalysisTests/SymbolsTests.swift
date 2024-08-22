@@ -112,7 +112,19 @@ struct SymbolsTests: AnalysisTest {
 		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
 	}
 
-	@Test("Does not create a symbol for local variables") func propsVsValues() async throws {
+	@Test("Does not create a symbol for local varialbes in functions") func locals() async throws {
+		let analysis = try await analyze("""
+		func() {
+			var a = 123
+		}
+		""")
+
+		#expect(analysis.symbols.count == 2)
+		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+		#expect(analysis.symbols[.function("AnalysisTest", "_fn__23", [])] != nil)
+	}
+
+	@Test("Does not create a symbol for local variables in methods") func propsVsValues() async throws {
 		let analysis = try await analyze("""
 		struct Person {
 			var age: int

@@ -339,10 +339,29 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> Value {
 		if let binding = context.lookup(expr.name) {
-			let symbol = if case .struct(_) = binding.type.current {
-				context.symbolGenerator.struct(expr.name, source: .internal)
+			var symbol: Symbol? = nil
+
+			if case let .struct(name) = binding.type.current {
+				if let module = binding.externalModule {
+					symbol = module.structs[name]!.symbol
+					module.structs[name]?.methods
+//				} else {
+//					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
+				}
+			} else if case let .function(name, _, params, _) = binding.type.current {
+				if let module = binding.externalModule {
+					symbol = module.moduleFunction(named: name)!.symbol
+//				} else {
+//					symbol = context.symbolGenerator.function(expr.name, parameters: params.map(\.name), source: .internal)
+				}
 			} else {
-				context.symbolGenerator.value(expr.name, source: .internal)
+				if let module = binding.externalModule {
+					symbol = module.values[expr.name]!.symbol
+				} else {
+					if binding.isGlobal {
+						symbol = context.symbolGenerator.value(expr.name, source: .internal, namespace: [])
+					}
+				}
 			}
 
 			return AnalyzedVarExpr(
@@ -358,7 +377,6 @@ public struct SourceFileAnalyzer: Visitor {
 		let errors: [AnalysisError] = context.shouldReportErrors ?
 			[AnalysisError(kind: .undefinedVariable(expr.name), location: expr.location)] :
 			[]
-
 
 		return AnalyzedVarExpr(
 			typeID: TypeID(.any),
@@ -524,7 +542,8 @@ public struct SourceFileAnalyzer: Visitor {
 						kind: .unexpectedType(
 							expected: type,
 							received: bodyAnalyzed.typeAnalyzed,
-							message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."),
+							message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."
+						),
 						location: bodyAnalyzed.stmtsAnalyzed.last?.location ?? expr.location
 					)
 				)
@@ -782,7 +801,7 @@ public struct SourceFileAnalyzer: Visitor {
 				if let name = decl.name {
 					structType.add(
 						method: Method(
-							slot: structType.methods.count,
+							symbol: .method(context.moduleName, structType.name!, name.lexeme, decl.params.params.map(\.name)),
 							name: name.lexeme,
 							params: decl
 								.params
@@ -813,7 +832,7 @@ public struct SourceFileAnalyzer: Visitor {
 			case let decl as InitDecl:
 				structType.add(
 					initializer: .init(
-						slot: structType.methods.count,
+						symbol: .method(context.moduleName, structType.name!, "init", decl.parameters.params.map(\.name)),
 						name: "init",
 						params: decl
 							.parameters
@@ -856,7 +875,7 @@ public struct SourceFileAnalyzer: Visitor {
 		if structType.methods["init"] == nil {
 			structType.add(
 				initializer: .init(
-					slot: structType.methods.count,
+					symbol: .method(context.moduleName, structType.name!, "init", structType.properties.reduce(into: []) { $0.append($1.key) }),
 					name: "init",
 					params: structType.properties.reduce(into: []) { res, prop in
 						res.append(ValueType.Param(name: prop.key, typeID: prop.value.typeID))
@@ -917,7 +936,7 @@ public struct SourceFileAnalyzer: Visitor {
 			{
 				lexicalScope.scope.add(
 					method: Method(
-						slot: existing.slot,
+						symbol: funcExpr.symbol,
 						name: funcExpr.name!.lexeme,
 						params: funcExpr.params.params.map(\.name).reduce(into: []) { res, p in
 							res.append(.init(name: p, typeID: TypeID(.placeholder)))
@@ -967,12 +986,13 @@ public struct SourceFileAnalyzer: Visitor {
 
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
-		let symbol: Symbol? = if let scope = context.lexicalScope {
-			context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+		var isGlobal = false
+		var symbol: Symbol?
+		if let scope = context.lexicalScope {
+			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
 		} else if context.isModuleScope {
-			context.symbolGenerator.value(expr.name, source: .internal)
-		} else {
-			nil
+			isGlobal = true
+			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
@@ -986,7 +1006,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 
 		if let value {
-			context.define(local: expr.name, as: value, definition: decl, isMutable: true)
+			context.define(local: expr.name, as: value, definition: decl, isMutable: true, isGlobal: isGlobal)
 		}
 
 		return decl
@@ -1020,12 +1040,13 @@ public struct SourceFileAnalyzer: Visitor {
 
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
-		let symbol: Symbol? = if let scope = context.lexicalScope {
-			context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+		var isGlobal = false
+		var symbol: Symbol?
+		if let scope = context.lexicalScope {
+			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
 		} else if context.isModuleScope {
-			context.symbolGenerator.value(expr.name, source: .internal)
-		} else {
-			nil
+			isGlobal = true
+			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
 		let decl = AnalyzedLetDecl(
@@ -1038,7 +1059,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 
 		if let value {
-			context.define(local: expr.name, as: value, definition: decl, isMutable: false)
+			context.define(local: expr.name, as: value, definition: decl, isMutable: false, isGlobal: isGlobal)
 		}
 
 		return decl
@@ -1069,6 +1090,17 @@ public struct SourceFileAnalyzer: Visitor {
 			errors.append(.init(kind: .expressionCount("Array literals can only have 255 elements"), location: expr.location))
 		}
 
+		context.importBinding(
+			as: .struct("Standard", "Array"),
+			from: "Standard",
+			binding: .init(
+				name: "Array",
+				expr: expr,
+				type: TypeID(.instance(.struct("Array"))),
+				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
+			)
+		)
+
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
 			exprsAnalyzed: elements as! [any AnalyzedExpr],
@@ -1092,11 +1124,12 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 
 		guard case let .instance(instance) = receiver.typeAnalyzed,
-					case let .struct(structName) = instance.ofType,
-					let structType = context.lookupStruct(named: structName),
-					let getMethod = structType.methods["get"] else {
+		      case let .struct(structName) = instance.ofType,
+		      let structType = context.lookupStruct(named: structName),
+		      let getMethod = structType.methods["get"]
+		else {
 			result.analysisErrors = [
-				AnalysisError(kind: .noMemberFound(receiver: receiver, property: "get"), location: expr.location)
+				AnalysisError(kind: .noMemberFound(receiver: receiver, property: "get"), location: expr.location),
 			]
 
 			return result

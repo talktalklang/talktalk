@@ -10,7 +10,7 @@ struct Array<Element> {
 	}
 
 	func get(index) -> Element {
-		self.at(index)
+		return _deref(self._storage + index)
 	}
 
 	func append(item) {
@@ -22,17 +22,13 @@ struct Array<Element> {
 		self.count = self.count + 1
 	}
 
-	func at(index: int) -> Element {
-		return _deref(self._storage + index)
-	}
-
 	func resize() {
 		var newCapacity = self.capacity * 2
 		var newStorage = _allocate(newCapacity)
 
 		var i = 0
 		while i < self.count {
-			_storePtr(newStorage, self.at(i))
+			_storePtr(newStorage, self[i])
 			i = i + 1
 		}
 

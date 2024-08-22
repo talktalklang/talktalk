@@ -46,6 +46,7 @@ public struct ModuleAnalyzer {
 				for (name, structType) in module.structs {
 					analysisModule.structs[name] = ModuleStruct(
 						name: name,
+						symbol: structType.symbol,
 						syntax: structType.syntax,
 						typeID: structType.typeID,
 						source: .external(module),
@@ -101,8 +102,8 @@ public struct ModuleAnalyzer {
 		// other symbols.
 		importSymbols(into: &analysisModule)
 
-		for symbol in environment.symbolGenerator.symbols {
-			analysisModule.symbols[symbol] = environment.symbolGenerator[symbol]
+		for (symbol, info) in environment.symbolGenerator.symbols {
+			analysisModule.symbols[symbol] = info
 		}
 
 		return analysisModule
@@ -132,10 +133,11 @@ public struct ModuleAnalyzer {
 					isMutable: false
 				)
 			} else if case let .struct(name) = symbol.kind,
-				let structType = binding.externalModule?.structs[name]
+								let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
+					symbol: symbol,
 					syntax: binding.expr,
 					typeID: binding.type,
 					source: .external(module),
@@ -232,7 +234,7 @@ public struct ModuleAnalyzer {
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
-					symbol: syntax.symbol,
+					symbol: syntax.symbol!,
 					syntax: syntax,
 					typeID: analyzed.typeID,
 					source: .module,
@@ -250,6 +252,7 @@ public struct ModuleAnalyzer {
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
 				name: name,
+				symbol: analyzedStructDecl.symbol,
 				syntax: syntax,
 				typeID: analyzedStructDecl.typeID,
 				source: .module,

@@ -47,7 +47,7 @@ public enum Opcode: Byte {
 	     getBuiltinStruct, setBuiltinStruct,
 
 			 // Arrays
-			 initArray,
+			 initArray, get,
 
 	     // Literals
 	     `true`,

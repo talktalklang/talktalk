@@ -67,10 +67,19 @@ public class CompilingModule {
 	}
 
 	public func finalize(mode: CompilationMode) -> Module {
-		let chunkCount = analysisModule.moduleFunctions.values.count(where: { $0.isImport }) + compiledChunks.count // + analysisModule.files.count
+		let chunkCount = analysisModule.symbols.keys.count(where: { symbol in
+			if case .function(_, _) = symbol.kind {
+				return true
+			} else if case .method(_, _, _) = symbol.kind {
+				return true
+			} else {
+				return false
+			}
+		})
+
 		var chunks: [StaticChunk] = Array(repeating: StaticChunk(chunk: .init(name: "_", symbol: .function(name, "_", [], namespace: []))), count: chunkCount)
 		var main: StaticChunk? = nil
-		var moduleStructs: [Struct] = Array(repeating: Struct(name: "_", propertyCount: 0), count: structs.count)
+		var moduleStructs: [Struct] = Array(repeating: Struct(name: "_", propertyCount: 0), count: analysisModule.structs.count)
 
 		if mode == .executable {
 			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then
@@ -87,6 +96,8 @@ public class CompilingModule {
 		var module = Module(name: name, main: main, symbols: analysisModule.symbols)
 
 		for (symbol, info) in analysisModule.symbols {
+			if info.isBuiltin { continue }
+
 			switch symbol.kind {
 			case .function:
 				if let chunk = compiledChunks.first(where: { $0.symbol == symbol }) {
@@ -103,19 +114,40 @@ public class CompilingModule {
 
 				fatalError("could not find compiled chunk for: \(symbol.description)")
 			case .method:
-				guard let chunk = compiledChunks.first(where: { $0.symbol == symbol }) else {
-					fatalError("could not find compiled chunk for: \(symbol.description)")
+				if let chunk = compiledChunks.first(where: { $0.symbol == symbol }) {
+					chunks[info.slot] = StaticChunk(chunk: chunk)
+					continue
 				}
 
-				chunks[info.slot] = StaticChunk(chunk: chunk)
+				if case let .external(name) = info.source,
+					 let module = moduleEnvironment[name],
+					 let moduleInfo = module.symbols[symbol] {
+					chunks[info.slot] = module.chunks[moduleInfo.slot]
+					continue
+				}
+
+				fatalError("could not find compiled chunk for: \(symbol.description)")
 			case .property:
 				() // Nothing to do here
 			case .struct:
-				guard let structType = structs[symbol] else {
-					fatalError("could not find struct for: \(symbol.description)")
+				switch info.source {
+				case .internal:
+					guard let structType = structs[symbol] else {
+						fatalError("could not find struct for: \(symbol.description)")
+					}
+
+					moduleStructs[info.slot] = structType
+				case .external(let name):
+					guard let module = moduleEnvironment[name],
+								let moduleInfo = module.symbols[symbol] else {
+						fatalError("could not find struct for: \(symbol.description)")
+					}
+
+					moduleStructs[info.slot] = module.structs[moduleInfo.slot]
 				}
 
-				moduleStructs[info.slot] = structType
+				
+
 			case .value(_), .primitive:
 				()
 			}

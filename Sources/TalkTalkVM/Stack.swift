@@ -83,7 +83,7 @@ struct Stack<Element> {
 		}
 	}
 
-	@inline(__always)
+//	@inline(__always)
 	func peek(offset: Int = 0) -> Element {
 		storage.withUnsafeMutablePointers {
 			($1 + size - 1 - offset).pointee

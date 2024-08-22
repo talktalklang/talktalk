@@ -11,7 +11,7 @@ import TalkTalkSyntax
 public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	public let typeID: TypeID
 	let expr: VarExpr
-	public let symbol: Symbol
+	public let symbol: Symbol?
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 	public var analysisErrors: [AnalysisError]
