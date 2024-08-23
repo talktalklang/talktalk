@@ -168,6 +168,13 @@ extension Parser {
 
 			if didMatch(.colon) || isDictionary {
 				isDictionary = true
+
+				if exprs.isEmpty, check(.rightBracket) {
+					// If the first time we encounter a colon is immediately followed by a right bracket,
+					// it's an empty dictionary literal
+					break
+				}
+
 				let value = parse(precedence: .assignment)
 				exprs.append(DictionaryElementExprSyntax(key: expr, value: value, location: [expr.location.start, value.location.end]))
 			} else {

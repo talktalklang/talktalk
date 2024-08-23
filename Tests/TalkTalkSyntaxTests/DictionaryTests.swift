@@ -9,6 +9,17 @@ import Testing
 import TalkTalkSyntax
 
 struct DictionaryTests {
+	@Test("Empty dictionary") func empty() throws {
+		let parsed = try Parser.parse(
+	 """
+	 [:]
+	 """
+		)[0].cast(ExprStmtSyntax.self).expr
+
+		let dictionaryLiteral = try #require(parsed as? DictionaryLiteralExprSyntax)
+		#expect(dictionaryLiteral.elements.count == 0)
+	}
+
 	@Test("Basic dictionary") func basic() throws {
 		let parsed = try Parser.parse(
 			"""
