@@ -20,7 +20,7 @@ public struct Method: Member {
 	public let symbol: Symbol
 	public let name: String
 	public let slot: Int
-	public let params: [ValueType.Param]
+	public let params: [AnalyzedParam]
 	public let typeID: TypeID
 	public let returnTypeID: TypeID
 	public let expr: any Syntax
@@ -31,7 +31,7 @@ public struct Method: Member {
 		symbol: Symbol,
 		name: String,
 		slot: Int,
-		params: [ValueType.Param],
+		params: [AnalyzedParam],
 		typeID: TypeID,
 		returnTypeID: TypeID,
 		expr: any Syntax,

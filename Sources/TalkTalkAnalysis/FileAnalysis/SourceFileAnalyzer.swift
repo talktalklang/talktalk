@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 // Analyze the AST, trying to figure out types and also checking for errors
-public struct SourceFileAnalyzer: Visitor {
+public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public typealias Context = Environment
 	public typealias Value = any AnalyzedSyntax
 
@@ -92,137 +92,7 @@ public struct SourceFileAnalyzer: Visitor {
 	}
 
 	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		let callee = try expr.callee.accept(self, context)
-		var errors: [AnalysisError] = []
-
-		let args = try expr.args.map {
-			try AnalyzedArgument(
-				environment: context,
-				label: $0.label,
-				expr: $0.value.accept(self, context) as! any AnalyzedExpr
-			)
-		}
-
-		let type: TypeID
-		let arity: Int
-
-		switch callee.typeAnalyzed {
-		case let .function(funcName, returning, params, _):
-			if params.count == args.count {
-				// Try to infer param types, or check types if we already have one
-				for (i, param) in params.enumerated() {
-					if case .placeholder = param.typeID.type() {
-						param.typeID.update(args[i].expr.typeAnalyzed)
-					} else if context.shouldReportErrors {
-						errors.append(contentsOf: checkAssignment(to: param, value: args[i].expr, in: context))
-					}
-				}
-			}
-
-			var returning = returning
-			if returning.type() == .placeholder {
-				var funcExpr: AnalyzedFuncExpr? = nil
-
-				if let callee = callee.as(AnalyzedFuncExpr.self) {
-					funcExpr = callee
-				} else if let callee = callee.as(AnalyzedVarExpr.self),
-				          let calleeFunc = context.lookup(callee.name)?.expr.as(AnalyzedFuncExpr.self)
-				{
-					funcExpr = calleeFunc
-				}
-
-				// Don't try this on recursive functions, it doesn't end well. Well actually
-				// it just doesn't end.
-				if let funcExpr, funcExpr.name?.lexeme != funcName {
-					let env = funcExpr.environment.add(namespace: funcName)
-					for param in params {
-						env.update(local: param.name, as: param.typeID.current)
-					}
-					// Try to infer return type now that we know what a param is
-					returning = try visit(funcExpr.bodyAnalyzed, env).typeID
-				}
-			}
-
-			type = returning
-			arity = params.count
-		case let .struct(t):
-			guard let structType = context.lookupStruct(named: t) else {
-				return error(
-					at: callee, "could not find struct named: \(t)",
-					environment: context,
-					expectation: .decl
-				)
-			}
-
-			var instanceType = InstanceValueType.struct(t)
-
-			if let callee = callee as? AnalyzedTypeExpr,
-			   let params = callee.genericParams, !params.isEmpty
-			{
-				// Fill in type parameters if they're explicitly annotated. If they're not we'll have to try to infer them.
-				if params.count == structType.typeParameters.count {
-					for (i, param) in structType.typeParameters.enumerated() {
-						let type = try params.params[i].type.accept(self, context).typeID
-						instanceType.boundGenericTypes[param.name] = type
-					}
-				} else if context.shouldReportErrors {
-					errors.append(
-						context.report(.typeParameterError(
-							expected: structType.typeParameters.count,
-							received: params.count
-						), at: expr.location)
-					)
-				}
-			} else if !structType.typeParameters.isEmpty, let initFn = structType.methods["init"] {
-				// Try to infer type parameters from init
-				for arg in args {
-					// See if we have a label for the arg (could maybe rely on positions here??)
-					guard let label = arg.label else { continue }
-					// Find the param definition from the init
-					guard let param = initFn.params.first(where: { $0.name == label.lexeme }) else { continue }
-
-					if case let .instance(paramInstanceType) = param.typeID.current,
-					   case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType
-					{
-						instanceType.boundGenericTypes[typeName] = arg.expr.typeID
-					}
-				}
-			}
-
-			// TODO: also type check args better?
-
-			type = TypeID(.instance(instanceType))
-			arity = structType.methods["init"]!.params.count
-		default:
-			type = TypeID(.any)
-			arity = -1
-
-			// Append the callee not callable error if we don't already have an error
-			// on this callee node.
-			if callee.analysisErrors.isEmpty {
-				errors.append(
-					AnalysisError(
-						kind: .unknownError("Callee not callable: \(callee.typeAnalyzed)"),
-						location: callee.location
-					)
-				)
-			}
-		}
-
-		if arity != args.count {
-			errors.append(
-				context.report(.argumentError(expected: arity, received: args.count), at: expr.location)
-			)
-		}
-
-		return AnalyzedCallExpr(
-			typeID: type,
-			expr: expr,
-			calleeAnalyzed: callee as! any AnalyzedExpr,
-			argsAnalyzed: args,
-			analysisErrors: errors,
-			environment: context
-		)
+		try CallExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
 
 	public func visit(_ expr: any MemberExpr, _ context: Environment) throws
@@ -395,7 +265,7 @@ public struct SourceFileAnalyzer: Visitor {
 		{
 			// This is pointer arithmetic
 			// TODO: More generic handling of different operand types
-			rhs.typeID.current = .int
+			rhs.typeID.update(.int, location: expr.location)
 		} else {
 			infer([lhs, rhs], in: env)
 		}
@@ -691,230 +561,7 @@ public struct SourceFileAnalyzer: Visitor {
 	public func visit(_ expr: any StructDecl, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		var typeParameters: [TypeParameter] = []
-		if let genericParams = expr.genericParams {
-			for param in genericParams.params {
-				typeParameters.append(.init(name: param.type.identifier.lexeme, type: .placeholder))
-			}
-		}
-
-		let symbol = context.symbolGenerator.struct(expr.name, source: .internal)
-
-		let structType = StructType(
-			name: expr.name,
-			properties: [:],
-			methods: [:],
-			typeParameters: typeParameters
-		)
-
-		let bodyContext = context.addLexicalScope(
-			scope: structType,
-			type: .struct(expr.name),
-			expr: expr
-		)
-
-		bodyContext.define(
-			local: "self",
-			as: AnalyzedVarExpr(
-				typeID: TypeID(
-					.instance(.struct(expr.name))
-				),
-				expr: VarExprSyntax(
-					token: .synthetic(.self),
-					location: [.synthetic(.self)]
-				),
-				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
-				environment: bodyContext,
-				analysisErrors: [],
-				isMutable: false
-			),
-
-			isMutable: false
-		)
-
-		context.define(struct: expr.name, as: structType)
-		bodyContext.define(struct: expr.name, as: structType)
-
-		// Do a first pass over the body decls so we have a basic idea of what's available in
-		// this struct.
-		for decl in expr.body.decls {
-			switch decl {
-			case let decl as VarDecl:
-				var type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme)
-
-				if case .struct = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				if case .generic = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				let property = Property(
-					slot: structType.properties.count,
-					name: decl.name,
-					typeID: TypeID(type),
-					expr: decl,
-					isMutable: true
-				)
-				structType.add(property: property)
-			case let decl as LetDecl:
-				var type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme)
-
-				if case .struct = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				if case .generic = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				structType.add(
-					property: Property(
-						slot: structType.properties.count,
-						name: decl.name,
-						typeID: TypeID(type),
-						expr: decl,
-						isMutable: false
-					))
-			case let decl as FuncExpr:
-				if let name = decl.name {
-					structType.add(
-						method: Method(
-							symbol: .method(context.moduleName, structType.name!, name.lexeme, decl.params.params.map(\.name)),
-							name: name.lexeme,
-							slot: structType.methods.count,
-							params: decl
-								.params
-								.params
-								.map(\.name)
-								.reduce(into: []) { res, p in
-									res.append(ValueType.Param(name: p, typeID: TypeID(.placeholder)))
-								},
-							typeID: TypeID(
-								.function(
-									name.lexeme,
-									TypeID(.placeholder),
-									decl
-										.params
-										.params
-										.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
-									[]
-								)
-							),
-							returnTypeID: TypeID(.placeholder),
-							expr: decl,
-							isMutable: false
-						))
-				} else {
-					()
-//					FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
-				}
-			case let decl as InitDecl:
-				structType.add(
-					initializer: .init(
-						symbol: .method(context.moduleName, structType.name!, "init", decl.parameters.params.map(\.name)),
-						name: "init",
-						slot: structType.methods.count,
-						params: decl
-							.parameters
-							.params
-							.map(\.name)
-							.reduce(into: []) { res, p in
-								res.append(ValueType.Param(name: p, typeID: TypeID(.placeholder)))
-							},
-						typeID: TypeID(
-							.function(
-								"init",
-								TypeID(.placeholder),
-								decl
-									.parameters
-									.params
-									.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
-								[]
-							)
-						),
-						returnTypeID: TypeID(.placeholder),
-						expr: decl,
-						isMutable: false
-					))
-			case is ParseError:
-				()
-			default:
-				()
-//				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
-			}
-		}
-
-		// Do a second pass to try to fill in method returns
-		let bodyAnalyzed = try visit(expr.body, bodyContext)
-
-		let type: ValueType = .struct(
-			structType.name ?? expr.description
-		)
-
-		// See if there's an initializer defined. If not, generate one.
-		if structType.methods["init"] == nil {
-			structType.add(
-				initializer: .init(
-					symbol: context.symbolGenerator.method(structType.name!, "init", parameters: structType.properties.reduce(into: []) { $0.append($1.key) }, source: .internal),
-					name: "init",
-					slot: structType.methods.count,
-					params: structType.properties.reduce(into: []) { res, prop in
-						res.append(ValueType.Param(name: prop.key, typeID: prop.value.typeID))
-					},
-					typeID: TypeID(
-						.function(
-							"init",
-							TypeID(.placeholder),
-							[],
-							[]
-						)
-					),
-					returnTypeID: TypeID(.placeholder),
-					expr: expr,
-					isMutable: false,
-					isSynthetic: true
-				))
-		}
-
-		let lexicalScope = bodyContext.getLexicalScope()!
-
-		let analyzed = AnalyzedStructDecl(
-			symbol: symbol,
-			wrapped: expr,
-			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
-			structType: structType,
-			lexicalScope: lexicalScope,
-			typeID: TypeID(type),
-			environment: context
-		)
-
-		context.define(local: expr.name, as: analyzed, isMutable: false)
-
-		bodyContext.lexicalScope = lexicalScope
-
-		return analyzed
+		try StructDeclAnalyzer(decl: expr, visitor: self, context: context).analyze()
 	}
 
 	public func visit(_ expr: any DeclBlock, _ context: Environment) throws
@@ -942,9 +589,7 @@ public struct SourceFileAnalyzer: Visitor {
 						symbol: funcExpr.symbol,
 						name: funcExpr.name!.lexeme,
 						slot: existing.slot,
-						params: funcExpr.params.params.map(\.name).reduce(into: []) { res, p in
-							res.append(.init(name: p, typeID: TypeID(.placeholder)))
-						},
+						params: funcExpr.analyzedParams.paramsAnalyzed,
 						typeID: funcExpr.typeID,
 						returnTypeID: funcExpr.returnType,
 						expr: funcExpr,
@@ -1006,7 +651,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
-			typeID: type,
+			typeID: valueType,
 			expr: expr,
 			analysisErrors: errors,
 			valueAnalyzed: value,
@@ -1160,8 +805,8 @@ public struct SourceFileAnalyzer: Visitor {
 
 		for element in elementsAnalyzed {
 			// TODO: Handle heterogenous types
-			keyType.update(element.keyAnalyzed.typeID.current)
-			valueType.update(element.valueAnalyzed.typeID.current)
+			keyType.update(element.keyAnalyzed.typeID.current, location: expr.location)
+			valueType.update(element.valueAnalyzed.typeID.current, location: expr.location)
 		}
 
 		let instance = InstanceValueType(
@@ -1217,94 +862,5 @@ public struct SourceFileAnalyzer: Visitor {
 
 	// GENERATOR_INSERTION
 
-	private func infer(_ exprs: [any AnalyzedExpr], in env: Environment) {
-		let type = exprs.map(\.typeID.current).max(by: { $0.specificity < $1.specificity }) ?? .placeholder
-
-		for var expr in exprs {
-			if let exprStmt = expr as? AnalyzedExprStmt {
-				// Unwrap expr stmt
-				expr = exprStmt.exprAnalyzed
-			}
-
-			if let expr = expr as? AnalyzedVarExpr {
-				expr.typeID.update(type)
-				env.update(local: expr.name, as: type)
-				if let capture = env.captures.first(where: { $0.name == expr.name }) {
-					capture.binding.type.update(type)
-				}
-			}
-		}
-	}
-
-	public func checkAssignment(
-		to receiver: any Typed,
-		value: any AnalyzedExpr,
-		in env: Environment
-	) -> [AnalysisError] {
-		var errors: [AnalysisError] = []
-
-		if !env.shouldReportErrors {
-			return errors
-		}
-
-		errors.append(contentsOf: checkMutability(of: receiver, in: env))
-
-		if value.typeID.current == .placeholder {
-			value.typeID.current = receiver.typeID.current
-		}
-
-		if receiver.typeID.current.isAssignable(from: value.typeAnalyzed) {
-			receiver.typeID.current = value.typeID.current
-			return errors
-		}
-
-		errors.append(
-			AnalysisError(
-				kind: .typeCannotAssign(
-					expected: receiver.typeID,
-					received: value.typeID
-				),
-				location: value.location
-			)
-		)
-
-		return errors
-	}
-
-	func checkMutability(of receiver: any Typed, in env: Environment) -> [AnalysisError] {
-		switch receiver {
-		case let receiver as AnalyzedVarExpr:
-			let binding = env.lookup(receiver.name)
-
-			if !receiver.isMutable || (binding?.isMutable == false) {
-				return [
-					AnalysisError(
-						kind: .cannotReassignLet(variable: receiver),
-						location: receiver.location
-					),
-				]
-			}
-		case let receiver as AnalyzedMemberExpr:
-			if !receiver.isMutable {
-				return [AnalysisError(
-					kind: .cannotReassignLet(variable: receiver),
-					location: receiver.location
-				)]
-			}
-		default:
-			()
-		}
-
-		return []
-	}
-
-	public func error(
-		at expr: any Syntax, _ message: String, environment: Environment, expectation: ParseExpectation
-	) -> AnalyzedErrorSyntax {
-		AnalyzedErrorSyntax(
-			typeID: TypeID(.error(message)),
-			expr: ParseErrorSyntax(location: expr.location, message: message, expectation: expectation),
-			environment: environment
-		)
-	}
+	
 }

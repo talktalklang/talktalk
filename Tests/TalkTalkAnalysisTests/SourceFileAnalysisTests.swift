@@ -418,7 +418,7 @@ struct AnalysisTests {
 		}
 
 		#expect(name == "sup")
-		#expect(returns == .instance(.struct("Person")))
+		#expect(returns.current == .instance(.struct("Person")))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {

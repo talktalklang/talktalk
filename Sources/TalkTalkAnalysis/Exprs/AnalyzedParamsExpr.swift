@@ -41,7 +41,7 @@ public class AnalyzedParam: Param, AnalyzedExpr, Typed {
 public extension Param where Self == AnalyzedParam {
 	static func int(_ name: String) -> AnalyzedParam {
 		let t = TypeID()
-		t.update(.int)
+		t.update(.int, location: [.synthetic(.identifier, lexeme: name)])
 		return AnalyzedParam(type: t, expr: ParamSyntax(name: name, location: [.synthetic(.identifier, lexeme: name)]), environment: .init(symbolGenerator: .init(moduleName: "", parent: nil)))
 	}
 }
@@ -64,7 +64,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 		for (i, name) in paramsAnalyzed.enumerated() {
 			if let binding = env.infer(name.name) {
 				let typeID = paramsAnalyzed[i].typeID
-				typeID.update(binding.type.type())
+				typeID.update(binding.type.type(), location: location)
 			}
 		}
 	}

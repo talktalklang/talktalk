@@ -280,7 +280,7 @@ public class Environment {
 
 	public func update(local: String, as type: ValueType) {
 		if let current = locals[local] {
-			current.type.update(type)
+			current.type.update(type, location: current.expr.location)
 			locals[local] = current
 		}
 

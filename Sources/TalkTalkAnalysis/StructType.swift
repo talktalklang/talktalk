@@ -20,7 +20,7 @@ public class StructType {
 	public let name: String?
 	public private(set) var properties: [String: Property]
 	public private(set) var methods: [String: Method]
-	public private(set) var typeParameters: [TypeParameter]
+	public var typeParameters: [TypeParameter]
 
 	public init(
 		name: String? = nil,

@@ -44,7 +44,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 		}
 
 		#expect(instance.ofType == .struct("Array"))
-		#expect(instance.boundGenericTypes["Element"] == .instance(.struct("String")))
+		#expect(instance.boundGenericTypes["Element"]?.current == .instance(.struct("String")))
 	}
 
 	@Test("Types array subscript") func arraySubscript() async throws {

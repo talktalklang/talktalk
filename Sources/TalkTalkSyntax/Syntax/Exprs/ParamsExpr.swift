@@ -24,6 +24,12 @@ public extension ParamsExpr {
 	}
 }
 
+public extension Param where Self == ParamSyntax {
+	static func synthetic(name: String) -> Param {
+		ParamSyntax(name: name, location: [.synthetic(.identifier)])
+	}
+}
+
 public struct ParamSyntax: Param {
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
