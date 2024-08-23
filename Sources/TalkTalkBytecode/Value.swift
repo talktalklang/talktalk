@@ -25,17 +25,15 @@ public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
 }
 
 public enum Value: Equatable, Hashable, Codable, Sendable {
-	public typealias IntValue = Int32
-
 	// Just a value that goes on the stack
 	case reserved
 
-	case int(IntValue)
+	case int(Int)
 
 	case bool(Bool)
 
 	// The index of some embedded data in the chunk
-	case data(IntValue)
+	case data(Int)
 
 	// In case we wanna play with bytes?
 	case byte(Byte)
@@ -44,19 +42,19 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case string(String)
 
 	// The block ID and the offset
-	case pointer(IntValue, IntValue)
+	case pointer(Int, Int)
 
 	// The index of the closure
-	case closure(IntValue)
+	case closure(Int)
 
 	// The index of the builtin function
-	case builtin(IntValue)
+	case builtin(Int)
 
 	// The index of the builtin struct
-	case builtinStruct(IntValue)
+	case builtinStruct(Int)
 
 	// The index of the module function in its lookup table
-	case moduleFunction(IntValue)
+	case moduleFunction(Int)
 
 	// The index of the struct in the module
 	case `struct`(Struct)
@@ -65,7 +63,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case instance(Instance)
 
 	// The method slot, the type of instance
-	case boundMethod(Instance, IntValue)
+	case boundMethod(Instance, Int)
 
 	case primitive(Primitive)
 
@@ -83,7 +81,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		}
 	}
 
-	public var intValue: IntValue? {
+	public var intValue: Int? {
 		guard case let .int(int) = self else {
 			return nil
 		}
@@ -99,7 +97,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return bool
 	}
 
-	public var dataValue: IntValue? {
+	public var dataValue: Int? {
 		guard case let .data(data) = self else {
 			return nil
 		}
@@ -107,7 +105,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return data
 	}
 
-	public var closureValue: IntValue? {
+	public var closureValue: Int? {
 		guard case let .closure(result) = self else {
 			return nil
 		}
@@ -115,7 +113,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var builtinValue: IntValue? {
+	public var builtinValue: Int? {
 		guard case let .builtin(result) = self else {
 			return nil
 		}
@@ -123,7 +121,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var moduleFunctionValue: IntValue? {
+	public var moduleFunctionValue: Int? {
 		guard case let .moduleFunction(result) = self else {
 			return nil
 		}
@@ -147,7 +145,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return instance
 	}
 
-	public var boundMethodValue: (instance: Instance, slot: IntValue)? {
+	public var boundMethodValue: (instance: Instance, slot: Int)? {
 		guard case let .boundMethod(instance, slot) = self else {
 			return nil
 		}

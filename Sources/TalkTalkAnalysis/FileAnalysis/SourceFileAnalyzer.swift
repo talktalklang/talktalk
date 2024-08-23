@@ -162,9 +162,8 @@ public struct SourceFileAnalyzer: Visitor {
 				// Fill in type parameters if they're explicitly annotated. If they're not we'll have to try to infer them.
 				if params.count == structType.typeParameters.count {
 					for (i, param) in structType.typeParameters.enumerated() {
-						let typeName = params.params[i].name
-						let type = context.type(named: typeName)
-						instanceType.boundGenericTypes[param.name] = TypeID(type)
+						let type = try params.params[i].type.accept(self, context).typeID
+						instanceType.boundGenericTypes[param.name] = type
 					}
 				} else if context.shouldReportErrors {
 					errors.append(
@@ -247,7 +246,7 @@ public struct SourceFileAnalyzer: Visitor {
 			member = structType.properties[propertyName] ?? structType.methods[propertyName]
 		default:
 			return error(
-				at: expr, "Cannot access property `\(propertyName)` on `\(receiver)`",
+				at: expr, "Cannot access property `\(propertyName)` on `\(receiver)` (\(receiver.typeAnalyzed.description))",
 				environment: context,
 				expectation: .member
 			)
@@ -695,7 +694,7 @@ public struct SourceFileAnalyzer: Visitor {
 		var typeParameters: [TypeParameter] = []
 		if let genericParams = expr.genericParams {
 			for param in genericParams.params {
-				typeParameters.append(.init(name: param.name, type: .placeholder))
+				typeParameters.append(.init(name: param.type.identifier.lexeme, type: .placeholder))
 			}
 		}
 
@@ -741,7 +740,7 @@ public struct SourceFileAnalyzer: Visitor {
 		for decl in expr.body.decls {
 			switch decl {
 			case let decl as VarDecl:
-				var type = bodyContext.type(named: decl.typeDecl)
+				var type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme)
 
 				if case .struct = type {
 					type = .instance(
@@ -770,7 +769,7 @@ public struct SourceFileAnalyzer: Visitor {
 				)
 				structType.add(property: property)
 			case let decl as LetDecl:
-				var type = bodyContext.type(named: decl.typeDecl)
+				var type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme)
 
 				if case .struct = type {
 					type = .instance(
@@ -978,13 +977,18 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
-		let type = context.type(named: expr.typeDecl)
+		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme))
+		var valueType = type
+		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
+		if let value, valueType.current == .placeholder {
+			valueType = value.typeID
+		}
 
-		if case .error = type, context.shouldReportErrors {
+		if case .error = type.current, context.shouldReportErrors {
 			errors.append(
 				.init(
-					kind: .typeNotFound(expr.typeDecl ?? "<no type name>"),
-					location: [expr.typeDeclToken ?? expr.location.start]
+					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),
+					location: [expr.typeExpr?.location.start ?? expr.location.start]
 				)
 			)
 		}
@@ -1000,10 +1004,9 @@ public struct SourceFileAnalyzer: Visitor {
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
-		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
-			typeID: TypeID(type),
+			typeID: type,
 			expr: expr,
 			analysisErrors: errors,
 			valueAnalyzed: value,
@@ -1019,7 +1022,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 	public func visit(_ expr: any LetDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
-		let type = TypeID(context.type(named: expr.typeDecl))
+		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme))
 
 		if let existing = context.local(named: expr.name),
 		   let definition = existing.definition,
@@ -1034,7 +1037,12 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		if case .error = type.current {
-			errors.append(.init(kind: .typeNotFound(expr.typeDecl ?? "<no type name>"), location: [expr.typeDeclToken ?? expr.location.start]))
+			errors.append(
+				.init(
+					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),
+					location: [expr.typeExpr?.location.start ?? expr.location.start]
+				)
+			)
 		}
 
 		var valueType = type
@@ -1145,13 +1153,66 @@ public struct SourceFileAnalyzer: Visitor {
 		return result
 	}
 	public func visit(_ expr: any DictionaryLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		let elementsAnalyzed = try expr.elements.map { try $0.accept(self, context) } as! [AnalyzedDictionaryElementExpr]
+
+		let keyType = TypeID()
+		let valueType = TypeID()
+
+		for element in elementsAnalyzed {
+			// TODO: Handle heterogenous types
+			keyType.update(element.keyAnalyzed.typeID.current)
+			valueType.update(element.valueAnalyzed.typeID.current)
+		}
+
+		let instance = InstanceValueType(
+			ofType: .struct("Dictionary"),
+			boundGenericTypes: [
+				"Key": keyType,
+				"Value": valueType
+			]
+		)
+
+		context.importBinding(
+			as: .struct("Standard", "Array"),
+			from: "Standard",
+			binding: .init(
+				name: "Array",
+				expr: expr,
+				type: TypeID(.instance(.struct("Array"))),
+				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
+			)
+		)
+
+		context.importBinding(
+			as: .struct("Standard", "Dictionary"),
+			from: "Standard",
+			binding: .init(
+				name: "Dictionary",
+				expr: expr,
+				type: TypeID(.instance(.struct("Dictionary"))),
+				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
+			)
+		)
+		
+
+		return AnalyzedDictionaryLiteralExpr(
+			elementsAnalyzed: elementsAnalyzed,
+			wrapped: expr,
+			typeID: TypeID(.instance(instance)),
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: any DictionaryElementExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		let key = try expr.key.accept(self, context) as! any AnalyzedExpr
+		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
+		return AnalyzedDictionaryElementExpr(
+			keyAnalyzed: key,
+			valueAnalyzed: value,
+			wrapped: expr,
+			typeID: TypeID(),
+			environment: context
+		)
 	}
 
 	// GENERATOR_INSERTION

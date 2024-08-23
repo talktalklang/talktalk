@@ -108,11 +108,11 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any GenericParams, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: any GenericParams, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for param in expr.params {
-				param.name
+				try param.type.accept(self, context)
 			}
 		}
 	}
@@ -235,12 +235,12 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any VarDecl, _: Context) throws -> String {
-		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
+	@StringBuilder public func visit(_ expr: any VarDecl, _ context: Context) throws -> String {
+		try dump(expr, "name: \(expr.name), type: \(expr.typeExpr?.accept(self, context) ?? "<not specified>")")
 	}
 
-	@StringBuilder public func visit(_ expr: any LetDecl, _: Context) throws -> String {
-		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
+	@StringBuilder public func visit(_ expr: any LetDecl, _ context: Context) throws -> String {
+		try dump(expr, "name: \(expr.name), type: \(expr.typeExpr?.accept(self, context) ?? "<not specified>")")
 	}
 
 	@StringBuilder public func visit(_ expr: any ReturnStmt, _ context: Context) throws -> String {

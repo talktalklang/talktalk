@@ -256,9 +256,16 @@ extension Parser {
 
 	mutating func genericParams() -> GenericParamsSyntax {
 		let i = startLocation(at: previous)
-		let params = parameterList(terminator: .greater)
+
+		var types: [any TypeExpr] = []
+		repeat {
+			types.append(typeExpr())
+		} while didMatch(.comma)
+
+		consume(.greater)
+
 		return GenericParamsSyntax(
-			params: params.params.map { GenericParamSyntax(name: $0.name) },
+			params: types.map { GenericParamSyntax(type: $0) },
 			location: endLocation(i)
 		)
 	}

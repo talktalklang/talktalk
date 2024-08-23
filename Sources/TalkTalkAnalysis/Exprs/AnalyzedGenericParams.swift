@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedGenericParam {
 	let wrapped: any GenericParam
-	public var name: String { wrapped.name }
+	public var type: any TypeExpr { wrapped.type }
 }
 
 public struct AnalyzedGenericParams: GenericParams, AnalyzedSyntax {

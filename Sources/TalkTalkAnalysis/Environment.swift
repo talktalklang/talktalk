@@ -176,7 +176,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: method.expr,
-						type: TypeID(.member(scope.type))
+						type: TypeID(.member(.instance(InstanceValueType(ofType: scope.type, boundGenericTypes: [:]))))
 					)
 				}
 
@@ -184,7 +184,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: property.expr,
-						type: TypeID(.member(scope.type))
+						type: TypeID(.member(.instance(InstanceValueType(ofType: scope.type, boundGenericTypes: [:]))))
 					)
 				}
 			}

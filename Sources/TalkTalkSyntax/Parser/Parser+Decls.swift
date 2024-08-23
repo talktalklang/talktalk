@@ -15,9 +15,9 @@ public extension Parser {
 			return error(at: current, .unexpectedToken(expected: .identifier, got: current), expectation: .identifier)
 		}
 
-		var typeDecl: Token?
+		var typeExpr: (any TypeExpr)? = nil
 		if didMatch(.colon) {
-			typeDecl = consume(.identifier, "expected type name after ':'")
+			typeExpr = self.typeExpr()
 		}
 
 		var value: (any Expr)?
@@ -30,8 +30,7 @@ public extension Parser {
 				token: token,
 				name: nameToken.lexeme,
 				nameToken: nameToken,
-				typeDecl: typeDecl?.lexeme,
-				typeDeclToken: nameToken,
+				typeExpr: typeExpr,
 				value: value,
 				location: endLocation(i)
 			)
@@ -40,8 +39,7 @@ public extension Parser {
 				token: token,
 				name: nameToken.lexeme,
 				nameToken: nameToken,
-				typeDecl: typeDecl?.lexeme,
-				typeDeclToken: nameToken,
+				typeExpr: typeExpr,
 				value: value,
 				location: endLocation(i)
 			)

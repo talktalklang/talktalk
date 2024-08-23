@@ -12,10 +12,10 @@ import TalkTalkSyntax
 struct TextDocumentSemanticTokensFull {
 	var request: Request
 
-	func handle(_ handler: Server) async {
+	func handle(_ server: Server) async {
 		let params = request.params as! TextDocumentSemanticTokensFullRequest
 
-		guard let source = await handler.sources[params.textDocument.uri] else {
+		guard let source = await server.sources[params.textDocument.uri] else {
 			Log.error("no source for \(params.textDocument.uri)")
 			return
 		}
@@ -30,6 +30,7 @@ struct TextDocumentSemanticTokensFull {
 			)
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }
+			Log.info("Parsed \(tokens.count) tokens")
 		} catch {
 			Log.error("error parsing semantic tokens: \(error)")
 			return
@@ -53,7 +54,7 @@ struct TextDocumentSemanticTokensFull {
 
 		let relativeTokens = RelativeSemanticToken.generate(from: tokens)
 		let response = TextDocumentSemanticTokens(data: Array(relativeTokens.map(\.serialized).joined()))
-		await handler.respond(to: request.id, with: response)
+		await server.respond(to: request.id, with: response)
 	}
 }
 
@@ -255,10 +256,6 @@ struct SemanticTokensVisitor: Visitor {
 			make(.keyword, from: expr.token),
 		]
 
-		if let token = expr.typeDeclToken {
-			result.append(make(.type, from: token))
-		}
-
 		if let value = expr.value {
 			try result.append(contentsOf: value.accept(self, context))
 		}
@@ -270,10 +267,6 @@ struct SemanticTokensVisitor: Visitor {
 		var result = [
 			make(.keyword, from: expr.token),
 		]
-
-		if let token = expr.typeDeclToken {
-			result.append(make(.type, from: token))
-		}
 
 		if let value = expr.value {
 			try result.append(contentsOf: value.accept(self, context))
@@ -310,13 +303,13 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: any DictionaryLiteralExpr, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		fatalError("TODO")
+		try expr.elements.flatMap { try $0.accept(self, context) }
 	}
 
 	func visit(_ expr: any DictionaryElementExpr, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		fatalError("TODO")
+		var results = try expr.key.accept(self, context)
+		try results.append(contentsOf: expr.value.accept(self, context))
+		return results
 	}
 
 	// GENERATOR_INSERTION

@@ -1,13 +1,13 @@
 import Foundation
 
-class LSPRequestParser {
+actor LSPRequestParser {
 	enum State {
 		case contentLength, length, split, body(Int)
 	}
 
 	var buffer: [UInt8] = []
 	var state: State = .contentLength
-	var callback: @Sendable (Request) async -> Void = { _ in }
+	var server: Server
 
 	var current = 0
 	var currentLength: [UInt8] = []
@@ -16,6 +16,10 @@ class LSPRequestParser {
 	let contentLengthArray = Array("Content-Length: ").map { $0.asciiValue! }
 	let cr: UInt8 = 13
 	let newline: UInt8 = 10
+
+	init(server: Server) {
+		self.server = server
+	}
 
 	func parse(data: Data) async {
 		buffer.append(contentsOf: data)
@@ -120,7 +124,8 @@ class LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			await callback(request)
+			Log.info("Finished parsing request: \(request.method)")
+			await server.enqueue(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")
@@ -143,9 +148,8 @@ struct Handler {
 	var requests: AsyncStream<Request>?
 	var continuation: AsyncStream<Request>.Continuation?
 
-	init(callback: @Sendable @escaping (Request) async -> Void) {
-		self.parser = .init()
-		parser.callback = callback
+	init(server: Server) {
+		self.parser = LSPRequestParser(server: server)
 	}
 
 	mutating func handle(data: Data) async {

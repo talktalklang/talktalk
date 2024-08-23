@@ -46,7 +46,7 @@ public struct Driver {
 		allowErrors: Bool = false
 	) async throws -> [String: CompilationResult] {
 		var result: [String: CompilationResult] = [:]
-		for unit in compilationUnits {
+		for unit in compilationUnits.sorted(by: { $0.name < $1.name }) {
 			result[unit.name] = try await Pipeline(
 				compilationUnit: unit,
 				mode: mode,

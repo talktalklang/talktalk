@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import TalkTalkBytecode
 import TalkTalkAnalysis
+import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkDriver
 import TalkTalkSyntax
@@ -21,8 +21,7 @@ public actor Server {
 	let stdout = FileHandle.standardOutput
 
 	// Keep track of requests in progress
-	var queue: [Request] = []
-	var worker: Task<Void, Never>?
+	var queue = AsyncQueue()
 	var cancelled: Set<RequestID> = []
 
 	// Keep track of our files
@@ -33,17 +32,17 @@ public actor Server {
 	var analysis: AnalysisModule
 
 	init() async throws {
-		self.stdlib = try await StandardLibrary.compile(allowErrors: true)
+		stdlib = try await StandardLibrary.compile(allowErrors: true)
 		Log.info("Compiled stdlib")
 
-		self.analyzer = ModuleAnalyzer(
+		analyzer = ModuleAnalyzer(
 			name: "LSP",
 			files: [],
 			moduleEnvironment: ["Standard": stdlib.analysis],
 			importedModules: [stdlib.analysis]
 		)
 
-		self.analysis = try analyzer.analyze()
+		analysis = try analyzer.analyze()
 	}
 
 	var analyzedFilePaths: [String] {
@@ -76,50 +75,32 @@ public actor Server {
 		}
 	}
 
-	nonisolated func enqueue(_ request: Request) {
-		Task {
-			await _enqueue(request)
-			await work()
+	func enqueue(_ request: Request) {
+		Log.info("Enqueuing request: \(request.method)")
+		queue.addOperation(priority: .high) {
+			await self.run(request)
 		}
 	}
 
-	func work() {
-		if worker != nil { return }
-
-		worker = Task {
-			while !queue.isEmpty {
-				await Task.yield()
-
-				Log.info("queue depth is \(queue.count), (\(cancelled.count) cancelled)")
-				let next = queue.removeFirst()
-
-				if let id = next.id, cancelled.contains(id) {
-					Log.info("skipping canceled job (\(id))")
-					cancelled.remove(id)
-					continue
-				}
-
-				await self.perform(next)
-			}
-
-			self.worker = nil
-			Log.info("done processing jobs")
+	func run(_ request: Request) async {
+		if let id = request.id, cancelled.contains(id) {
+			Log.info("skipping canceled job (\(id))")
+			cancelled.remove(id)
+			return
 		}
+
+		await perform(request)
 	}
 
-	func _enqueue(_ request: Request) {
-		queue.append(request)
-	}
-
-	func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
-		analyze()
+	func diagnostics(for uri: String? = nil) async throws -> [Diagnostic] {
+		await analyze()
 		return try analysis.collectErrors(for: uri).map {
 			$0.diagnostic()
 		}
 	}
 
 	func perform(_ request: Request) async {
-		Log.info("handling request: \(request.method)")
+		Log.info("-> \(request.method)")
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -153,10 +134,19 @@ public actor Server {
 		}
 	}
 
-	func analyze() {
+	func analyze() async {
 		do {
-			let newAnalysis = try analyzer.analyze()
-			self.analysis = newAnalysis
+			stdlib = try await StandardLibrary.compile(allowErrors: true)
+			Log.info("Compiled stdlib")
+
+			analyzer = ModuleAnalyzer(
+				name: "LSP",
+				files: [],
+				moduleEnvironment: ["Standard": stdlib.analysis],
+				importedModules: [stdlib.analysis]
+			)
+
+			analysis = try analyzer.analyze()
 		} catch {
 			Log.error("Error analyzing: \(error)")
 		}

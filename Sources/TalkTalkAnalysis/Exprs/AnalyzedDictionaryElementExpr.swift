@@ -3,15 +3,18 @@
 import TalkTalkSyntax
 
 public struct AnalyzedDictionaryElementExpr: DictionaryElementExpr, AnalyzedExpr {
-	public var keyAnalyzed: any Expr
-	public var valueAnalyzed: any Expr
+	public var keyAnalyzed: any AnalyzedExpr
+	public var valueAnalyzed: any AnalyzedExpr
+
 	let wrapped: any DictionaryElementExpr
 
 	public var typeID: TypeID
 	public var environment: Environment
-	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
+	public var analyzedChildren: [any AnalyzedSyntax] { [keyAnalyzed, valueAnalyzed] }
 
 	// Delegate these to the wrapped node
+	public var key: any Expr { wrapped.key }
+	public var value: any Expr { wrapped.value }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 

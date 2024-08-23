@@ -1,2 +1,22 @@
-struct Dictionary<Key, Value> {
+// TODO: It'd be nice if this struct could be nested in Dictionary
+struct DictionaryEntry<K, V> {
+	let key: K
+	let value: V
 }
+
+struct Dictionary<Key, Value> {
+	var storage: Array<DictionaryEntry<Key, Value>>
+
+	init(count: int, keys: Array<Key>, values: Array<Value>) {
+		self.storage = _allocate(count)
+	}
+
+	func get(index) -> Value {
+		self.storage[index].value
+	}
+
+	func set(index, value) {
+		print("hello")
+	}
+}
+

@@ -2,6 +2,8 @@
 
 public protocol DictionaryElementExpr: Expr {
 	// Insert DictionaryElementExpr specific fields here
+	var key: any Expr { get }
+	var value: any Expr { get }
 }
 
 public struct DictionaryElementExprSyntax: DictionaryElementExpr {

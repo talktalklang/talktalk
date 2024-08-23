@@ -6,11 +6,11 @@
 //
 
 public protocol GenericParam {
-	var name: String { get }
+	var type: any TypeExpr { get }
 }
 
 public struct GenericParamSyntax: GenericParam {
-	public var name: String
+	public var type: any TypeExpr
 }
 
 public protocol GenericParams: Syntax {

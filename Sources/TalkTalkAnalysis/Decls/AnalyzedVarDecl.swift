@@ -23,8 +23,7 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl, AnalyzedVarL
 	public var token: Token { expr.token }
 	public var name: String { expr.name }
 	public var nameToken: Token { expr.nameToken }
-	public var typeDecl: String? { expr.typeDecl }
-	public var typeDeclToken: Token? { expr.typeDeclToken }
+	public var typeExpr: (any TypeExpr)? { expr.typeExpr }
 	public var value: (any Expr)? { expr.value }
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }

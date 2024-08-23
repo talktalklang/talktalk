@@ -461,9 +461,9 @@ public struct VirtualMachine {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
-				// TODO: this sux
+				// TODO: Make this user-implementable
 				let getSlot = receiver.type.methods.firstIndex(where: { $0.name.contains("$get$index") })!
-				call(boundMethod: .init(getSlot), on: receiver)
+				call(boundMethod: getSlot, on: receiver)
 			case .initArray:
 				let count = readByte()
 				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
@@ -481,6 +481,40 @@ public struct VirtualMachine {
 				])
 
 				stack.push(.instance(instance))
+			case .initDict:
+				let count = readByte()
+				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
+				let dictType = module.structs[dictTypeSlot]
+
+				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
+				let arrayType = module.structs[arrayTypeSlot]
+
+				let keysBlockID = heap.allocate(count: Int(count))
+				let valuesBlockID = heap.allocate(count: Int(count))
+				for i in 0..<count {
+					let key = stack.pop()
+					let value = stack.pop()
+					heap.store(block: keysBlockID, offset: Int(i), value: key)
+					heap.store(block: valuesBlockID, offset: Int(i), value: value)
+				}
+
+				let keysArray = Instance(type: arrayType, fields: [
+					.pointer(keysBlockID, 0),
+					.int(.init(count)),
+					.int(.init(count))
+				])
+
+				let valuesArray = Instance(type: arrayType, fields: [
+					.pointer(valuesBlockID, 0),
+					.int(.init(count)),
+					.int(.init(count))
+				])
+
+				stack.push(.instance(valuesArray))
+				stack.push(.instance(keysArray))
+				stack.push(.int(Int(count)))
+
+				call(structValue: dictType)
 			}
 		}
 	}
@@ -508,7 +542,7 @@ public struct VirtualMachine {
 
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
-	private mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
+	private mutating func call(boundMethod: Int, on instance: Instance) {
 		let methodChunk = instance.type.methods[Int(boundMethod)]
 		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
 		call(chunk: methodChunk)
@@ -637,6 +671,9 @@ public struct VirtualMachine {
 			if case let .pointer(blockID, offset) = stack.pop() {
 				heap.store(block: Int(blockID), offset: Int(offset), value: value)
 			}
+		case ._hash:
+			let value = stack.pop()
+			stack.push(.int(.init(value.hashValue)))
 		}
 	}
 

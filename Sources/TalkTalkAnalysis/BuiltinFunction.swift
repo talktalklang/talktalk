@@ -18,6 +18,7 @@ public struct BuiltinFunction {
 			._free,
 			._deref,
 			._storePtr,
+			._hash
 		]
 	}
 
@@ -100,6 +101,18 @@ public struct BuiltinFunction {
 				TypeID(.placeholder),
 				[.init(name: "addr", typeID: TypeID(.pointer)),
 				 .init(name: "value", typeID: TypeID())],
+				[]
+			)
+		)
+	}
+
+	public static var _hash: BuiltinFunction {
+		BuiltinFunction(
+			name: "_hash",
+			type: .function(
+				"_hash",
+				TypeID(.int),
+				[.init(name: "value", typeID: TypeID(.any))],
 				[]
 			)
 		)
