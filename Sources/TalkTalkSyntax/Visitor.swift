@@ -40,5 +40,7 @@ public protocol Visitor {
 	func visit(_ expr: ArrayLiteralExpr, _ context: Context) throws -> Value
 	func visit(_ expr: SubscriptExpr, _ context: Context) throws -> Value
 
+	func visit(_ expr: DictionaryLiteralExpr, _ context: Context) throws -> Value
+	func visit(_ expr: DictionaryElementExpr, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

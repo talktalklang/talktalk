@@ -278,5 +278,13 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
+	@StringBuilder public func visit(_ expr: any DictionaryLiteralExpr, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: any DictionaryElementExpr, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	// GENERATOR_INSERTION
 }

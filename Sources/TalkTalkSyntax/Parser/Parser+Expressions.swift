@@ -151,27 +151,43 @@ extension Parser {
 		_ = consume(.leftBracket)
 		var exprs: [any Expr] = []
 
+		var isDictionary = false
+
 		repeat {
 			skip(.newline)
+
 			if check(.rightBracket) {
 				// If we get a comma right before a right bracket, it's just a trailing comma
 				// and we can bail out of the loop.
 				break
 			}
+
 			skip(.newline)
-			exprs.append(parse(precedence: .assignment))
+			let expr = parse(precedence: .assignment)
 			skip(.newline)
+
+			if didMatch(.colon) || isDictionary {
+				isDictionary = true
+				let value = parse(precedence: .assignment)
+				exprs.append(DictionaryElementExprSyntax(key: expr, value: value, location: [expr.location.start, value.location.end]))
+			} else {
+				exprs.append(expr)
+			}
 		} while didMatch(.comma)
 
-		consume(.rightBracket, "expected ']' after array literal")
+		consume(.rightBracket, "expected ']' after \(isDictionary ? "dictionary" : "array") literal")
 
-		let arrayLiteral = ArrayLiteralExprSyntax(exprs: exprs, location: endLocation(i))
-
-		if check(.leftBracket) {
-			return subscriptCall(canAssign, arrayLiteral)
+		let literal: any Expr = if isDictionary {
+			DictionaryLiteralExprSyntax(elements: exprs as! [any DictionaryElementExpr], location: endLocation(i))
+		} else {
+			ArrayLiteralExprSyntax(exprs: exprs, location: endLocation(i))
 		}
 
-		return arrayLiteral
+		if check(.leftBracket) {
+			return subscriptCall(canAssign, literal)
+		}
+
+		return literal
 	}
 
 	mutating func literal(_: Bool) -> any Expr {

@@ -309,5 +309,15 @@ struct SemanticTokensVisitor: Visitor {
 		try expr.args.flatMap { try $0.accept(self, context) }
 	}
 
+	func visit(_ expr: any DictionaryLiteralExpr, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
+	func visit(_ expr: any DictionaryElementExpr, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		fatalError("TODO")
+	}
+
 	// GENERATOR_INSERTION
 }

@@ -1144,6 +1144,16 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return result
 	}
+	public func visit(_ expr: any DictionaryLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: any DictionaryElementExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
 	// GENERATOR_INSERTION
 
 	private func infer(_ exprs: [any AnalyzedExpr], in env: Environment) {
