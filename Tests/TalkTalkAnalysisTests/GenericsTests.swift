@@ -120,7 +120,7 @@ struct GenericsTests {
 		let method = callExpr.calleeAnalyzed
 			.cast(AnalyzedMemberExpr.self).memberAnalyzed as! Method
 
-		guard case let .function("value", methodTypeID, [], []) = method.typeID.current else {
+		guard case let .function("value", methodTypeID, [], ["self"]) = method.typeID.current else {
 			#expect(Bool(false), "did not get correct method") ; return
 		}
 

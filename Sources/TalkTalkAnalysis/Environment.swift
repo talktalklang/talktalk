@@ -152,32 +152,6 @@ public class Environment {
 		}
 
 		if let scope = getLexicalScope() {
-			if name == "self" {
-				let instance = InstanceValueType(
-					ofType: .struct(scope.scope.name!),
-					boundGenericTypes: scope.scope.typeParameters.reduce(into: [:]) { res, typeParameter in
-						res[typeParameter.name] = TypeID(.placeholder)
-					}
-				)
-
-				return Binding(
-					name: "self",
-					expr: AnalyzedVarExpr(
-						typeID: TypeID(.instance(instance)),
-						expr: VarExprSyntax(
-							token: .synthetic(.self),
-							location: [.synthetic(.self)]
-						),
-						symbol: symbolGenerator.value("self", source: .internal),
-						environment: self,
-						analysisErrors: [],
-						isMutable: false
-					),
-					type: TypeID(.instance(instance)),
-					isMutable: false
-				)
-			}
-
 			if name == "Self" {
 				return Binding(
 					name: "Self",

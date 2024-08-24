@@ -37,22 +37,22 @@ struct StructDeclAnalyzer: Analyzer {
 
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
 
-//		bodyContext.define(
-//			local: "self",
-//			as: AnalyzedVarExpr(
-//				typeID: TypeID(.instance(instance)),
-//				expr: VarExprSyntax(
-//					token: .synthetic(.self),
-//					location: [.synthetic(.self)]
-//				),
-//				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
-//				environment: bodyContext,
-//				analysisErrors: [],
-//				isMutable: false
-//			),
-//
-//			isMutable: false
-//		)
+		bodyContext.define(
+			local: "self",
+			as: AnalyzedVarExpr(
+				typeID: TypeID(.instance(.struct(structType.name!))),
+				expr: VarExprSyntax(
+					token: .synthetic(.self),
+					location: [.synthetic(.self)]
+				),
+				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
+				environment: bodyContext,
+				analysisErrors: [],
+				isMutable: false
+			),
+
+			isMutable: false
+		)
 
 		context.define(struct: decl.name, as: structType)
 		bodyContext.define(struct: decl.name, as: structType)
