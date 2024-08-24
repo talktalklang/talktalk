@@ -23,6 +23,7 @@ public class Environment {
 	public var errors: [AnalysisError] = []
 	public var exprStmtExitBehavior: AnalyzedExprStmt.ExitBehavior = .pop
 	public var symbolGenerator: SymbolGenerator
+	public var isInTypeParameters: Bool = false
 
 	public private(set) var shouldReportErrors: Bool = true
 
@@ -97,7 +98,7 @@ public class Environment {
 		return parent?.infer(name)
 	}
 
-	public func type(named name: String?) -> ValueType {
+	public func type(named name: String?, asInstance: Bool = false) -> ValueType? {
 		guard let name else {
 			return .placeholder
 		}
@@ -116,12 +117,24 @@ public class Environment {
 			   let scopeName = scope.name,
 			   let typeParameter = scope.typeParameters.first(where: { $0.name == name })
 			{
-				return .generic(.struct(scopeName), typeParameter.name)
+				if asInstance {
+					return .instance(InstanceValueType(
+						ofType: .generic(.struct(scopeName), typeParameter.name),
+						boundGenericTypes: [:]
+					))
+				} else {
+					return .generic(.struct(scopeName), typeParameter.name)
+				}
+
 			} else if let structType = lookupStruct(named: name) {
-				return .struct(structType.name ?? "<anon struct>")
+				if asInstance {
+					return .instance(.struct(structType.name ?? "<anon struct>"))
+				} else {
+					return .struct(structType.name ?? "<anon struct>")
+				}
 			}
 
-			return .error("unknown type: \(name)")
+			return nil
 		}
 	}
 
@@ -350,6 +363,10 @@ public class Environment {
 	}
 
 	func importBinding(as symbol: Symbol, from moduleName: String, binding: Binding) {
+		if moduleName == self.moduleName {
+			return
+		}
+
 		if let parent {
 			parent.importBinding(as: symbol, from: moduleName, binding: binding)
 			return

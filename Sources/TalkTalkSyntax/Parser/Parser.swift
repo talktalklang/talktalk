@@ -54,6 +54,7 @@ public struct Parser {
 
 	public mutating func parse() -> [any Syntax] {
 		var results: [any Syntax] = []
+		skip(.newline)
 
 		while current.kind != .eof {
 			skip(.newline)

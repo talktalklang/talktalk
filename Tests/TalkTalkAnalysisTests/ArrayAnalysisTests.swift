@@ -47,13 +47,14 @@ struct ArrayAnalysisTests: AnalysisTest {
 		#expect(instance.boundGenericTypes["Element"]?.current == .instance(.struct("String")))
 	}
 
-	@Test("Types array subscript") func arraySubscript() async throws {
+	@Test("Types array subscript") func subscriptArray() async throws {
 		let result1 = try await ast("""
 		[123][0]
 		""")
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedSubscriptExpr.self)
 
+		#expect(result1.receiverAnalyzed.typeID.current == ValueType.instance(.struct("Array", ["Element": TypeID(.int)])))
 		#expect(result1.typeAnalyzed == .int)
 
 		let result2 = try await ast("""
@@ -70,10 +71,10 @@ struct ArrayAnalysisTests: AnalysisTest {
 		struct WrapperEntry {}
 
 		struct Wrapper {
-			var storage: Array<WrapperEntry>
+			var store: Array<WrapperEntry>
 
 			func get(i) {
-				self.storage[i]
+				self.store[i]
 			}
 		}
 		""")

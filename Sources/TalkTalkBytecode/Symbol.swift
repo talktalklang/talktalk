@@ -47,6 +47,9 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 
 		// (Struct name, Property name, Offset)
 		case property(String, String)
+
+		// (Type name)
+		case genericType(String)
 	}
 
 	public static func primitive(_ name: String) -> Symbol {
@@ -97,6 +100,8 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 			"$P\(module)$\(type)$\(name)"
 		case let .method(type, name, params):
 			"$M\(module)$\(type)$\(name)$\(params.joined(separator: "_"))"
+		case let .genericType(name):
+			"$G\(module)$\(name)"
 		}
 	}
 }

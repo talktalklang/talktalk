@@ -12,8 +12,8 @@ public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 		lhs.ofType == rhs.ofType && lhs.boundGenericTypes == rhs.boundGenericTypes
 	}
 
-	public static func `struct`(_ name: String) -> InstanceValueType {
-		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
+	public static func `struct`(_ name: String, _ boundGenericTypes: [String: TypeID] = [:]) -> InstanceValueType {
+		InstanceValueType(ofType: .struct(name), boundGenericTypes: boundGenericTypes)
 	}
 
 	public var ofType: ValueType
@@ -146,7 +146,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		}
 	}
 
-	func isAssignable(from other: ValueType) -> Bool {
+	public func isAssignable(from other: ValueType) -> Bool {
 		switch self {
 		case .none:
 			return false

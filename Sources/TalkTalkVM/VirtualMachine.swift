@@ -481,40 +481,40 @@ public struct VirtualMachine {
 				])
 
 				stack.push(.instance(instance))
-			case .initDict:
-				let count = readByte()
-				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
-				let dictType = module.structs[dictTypeSlot]
-
-				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
-				let arrayType = module.structs[arrayTypeSlot]
-
-				let keysBlockID = heap.allocate(count: Int(count))
-				let valuesBlockID = heap.allocate(count: Int(count))
-				for i in 0..<count {
-					let key = stack.pop()
-					let value = stack.pop()
-					heap.store(block: keysBlockID, offset: Int(i), value: key)
-					heap.store(block: valuesBlockID, offset: Int(i), value: value)
-				}
-
-				let keysArray = Instance(type: arrayType, fields: [
-					.pointer(keysBlockID, 0),
-					.int(.init(count)),
-					.int(.init(count))
-				])
-
-				let valuesArray = Instance(type: arrayType, fields: [
-					.pointer(valuesBlockID, 0),
-					.int(.init(count)),
-					.int(.init(count))
-				])
-
-				stack.push(.instance(valuesArray))
-				stack.push(.instance(keysArray))
-				stack.push(.int(Int(count)))
-
-				call(structValue: dictType)
+			case .initDict: ()
+//				let count = readByte()
+//				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
+//				let dictType = module.structs[dictTypeSlot]
+//
+//				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
+//				let arrayType = module.structs[arrayTypeSlot]
+//
+//				let keysBlockID = heap.allocate(count: Int(count))
+//				let valuesBlockID = heap.allocate(count: Int(count))
+//				for i in 0..<count {
+//					let key = stack.pop()
+//					let value = stack.pop()
+//					heap.store(block: keysBlockID, offset: Int(i), value: key)
+//					heap.store(block: valuesBlockID, offset: Int(i), value: value)
+//				}
+//
+//				let keysArray = Instance(type: arrayType, fields: [
+//					.pointer(keysBlockID, 0),
+//					.int(.init(count)),
+//					.int(.init(count))
+//				])
+//
+//				let valuesArray = Instance(type: arrayType, fields: [
+//					.pointer(valuesBlockID, 0),
+//					.int(.init(count)),
+//					.int(.init(count))
+//				])
+//
+//				stack.push(.instance(valuesArray))
+//				stack.push(.instance(keysArray))
+//				stack.push(.int(Int(count)))
+//
+//				call(structValue: dictType)
 			}
 		}
 	}

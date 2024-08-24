@@ -109,7 +109,7 @@ public class CompilingModule {
 
 				
 
-			case .value(_), .primitive:
+			case .value(_), .primitive, .genericType(_):
 				()
 			}
 		}

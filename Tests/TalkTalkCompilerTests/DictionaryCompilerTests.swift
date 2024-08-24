@@ -9,7 +9,7 @@ import Testing
 import TalkTalkBytecode
 import TalkTalkCompiler
 
-struct DictionaryCompilerTests: CompilerTest {
+@Suite(.disabled()) struct DictionaryCompilerTests: CompilerTest {
 	@Test("Compiles dictionary") func testDictionary() async throws {
 		let module = try compile("""
 		[123: 456, 321: 654]

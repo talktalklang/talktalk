@@ -284,27 +284,34 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: any TypeExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		let type = context.type(named: expr.identifier.lexeme)
+		guard let type = context.type(named: expr.identifier.lexeme) else {
+			return error(at: expr, "No type found named: \(expr.identifier.lexeme)", environment: context, expectation: .type)
+		}
 
-		if case let .error(err) = type {
-			return error(at: expr, err, environment: context, expectation: .type)
-		} else {
-			if type.primitive != nil {
-				return AnalyzedTypeExpr(
-					wrapped: expr,
-					symbol: .primitive(type.description),
-					typeID: TypeID(type),
-					environment: context
-				)
-			}
-
+		if type.primitive != nil {
 			return AnalyzedTypeExpr(
 				wrapped: expr,
-				symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
+				symbol: .primitive(type.description),
 				typeID: TypeID(type),
 				environment: context
 			)
 		}
+
+		if context.isInTypeParameters {
+			return AnalyzedTypeExpr(
+				wrapped: expr,
+				symbol: context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal),
+				typeID: TypeID(type),
+				environment: context
+			)
+		}
+
+		return AnalyzedTypeExpr(
+			wrapped: expr,
+			symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
+			typeID: TypeID(type),
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: any FuncExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
@@ -485,8 +492,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			)
 		}
 
-		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme))
-		var valueType = type
+		let type = context.type(named: expr.typeExpr?.identifier.lexeme, asInstance: true) ?? .error("Could not find type named: \(expr.typeExpr?.identifier.lexeme ?? "<no name>")")
+		var valueType = TypeID(type)
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		if let value, valueType.current == .placeholder {
 			valueType.infer(from: value.typeID)
@@ -530,7 +537,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: any LetDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
-		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme))
+		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme) ?? .error("Could not find type from \(expr)"))
 
 		if let existing = context.local(named: expr.name),
 		   let definition = existing.definition,
@@ -632,34 +639,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: any SubscriptExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
-		let args = try expr.args.map { try $0.accept(self, context) } as! [AnalyzedArgument]
-
-		var result = AnalyzedSubscriptExpr(
-			receiverAnalyzed: receiver,
-			argsAnalyzed: args,
-			wrapped: expr,
-			typeID: TypeID(.placeholder),
-			environment: context,
-			analysisErrors: []
-		)
-
-		guard case let .instance(instance) = receiver.typeAnalyzed,
-		      case let .struct(structName) = instance.ofType,
-		      let structType = context.lookupStruct(named: structName),
-		      let getMethod = structType.methods["get"]
-		else {
-			result.analysisErrors = [
-				AnalysisError(kind: .noMemberFound(receiver: receiver, property: "get"), location: expr.location),
-			]
-
-			return result
-		}
-
-		result.typeID = getMethod.returnTypeID.resolve(with: instance)
-
-		return result
+		try SubscriptExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
+
 	public func visit(_ expr: any DictionaryLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
 		let elementsAnalyzed = try expr.elements.map { try $0.accept(self, context) } as! [AnalyzedDictionaryElementExpr]
 
@@ -673,35 +655,34 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 
 		let instance = InstanceValueType(
-			ofType: .struct("Dictionary"),
+			ofType: .struct("Array"),
 			boundGenericTypes: [
 				"Key": keyType,
 				"Value": valueType
 			]
 		)
 
-		context.importBinding(
-			as: .struct("Standard", "Array"),
-			from: "Standard",
-			binding: .init(
-				name: "Array",
-				expr: expr,
-				type: TypeID(.instance(.struct("Array"))),
-				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
-			)
-		)
+//		context.importBinding(
+//			as: .struct("Standard", "Array"),
+//			from: "Standard",
+//			binding: .init(
+//				name: "Array",
+//				expr: expr,
+//				type: TypeID(.instance(.struct("Array"))),
+//				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
+//			)
+//		)
 
-		context.importBinding(
-			as: .struct("Standard", "Dictionary"),
-			from: "Standard",
-			binding: .init(
-				name: "Dictionary",
-				expr: expr,
-				type: TypeID(.instance(.struct("Dictionary"))),
-				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
-			)
-		)
-		
+//		context.importBinding(
+//			as: .struct("Standard", "Dictionary"),
+//			from: "Standard",
+//			binding: .init(
+//				name: "Dictionary",
+//				expr: expr,
+//				type: TypeID(.instance(.struct("Dictionary"))),
+//				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
+//			)
+//		)
 
 		return AnalyzedDictionaryLiteralExpr(
 			elementsAnalyzed: elementsAnalyzed,
@@ -724,6 +705,4 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	// GENERATOR_INSERTION
-
-	
 }

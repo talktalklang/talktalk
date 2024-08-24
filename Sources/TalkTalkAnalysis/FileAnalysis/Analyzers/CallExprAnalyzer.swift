@@ -38,8 +38,9 @@ struct CallExprAnalyzer: Analyzer {
 			if let variable = args[0].expr.as(AnalyzedVarExpr.self) {
 				switch args[1].expr {
 				case let arg as AnalyzedVarExpr:
-					let type = context.type(named: arg.name)
-					variable.typeID.update(type, location: variable.location)
+					if let type = context.type(named: arg.name, asInstance: true) {
+						variable.typeID.update(type, location: variable.location)
+					}
 				case let arg as AnalyzedTypeExpr:
 					if case let .struct(name) = arg.typeAnalyzed {
 						variable.typeID.update(.instance(.struct(name)), location: variable.location)
@@ -171,6 +172,11 @@ struct CallExprAnalyzer: Analyzer {
 				)
 			}
 		} else if !structType.typeParameters.isEmpty, let initFn = structType.methods["init"] {
+			// Start out by just filling in the bound generic types with placeholders
+			for typeParameter in structType.typeParameters {
+				instanceType.boundGenericTypes[typeParameter.name] = TypeID(.placeholder)
+			}
+
 			// Try to infer type parameters from init
 			for (i, arg) in args.enumerated() {
 				// See if we have a label for the arg (could maybe rely on positions here??)
@@ -180,7 +186,7 @@ struct CallExprAnalyzer: Analyzer {
 				if case let .instance(paramInstanceType) = param.typeID.current,
 				   case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType
 				{
-					instanceType.boundGenericTypes[typeName] = arg.expr.typeID
+					instanceType.boundGenericTypes[typeName]?.infer(from: arg.expr.typeID)
 				}
 
 				// If the parameter type is generic and we know the type of the argument, we can use that to

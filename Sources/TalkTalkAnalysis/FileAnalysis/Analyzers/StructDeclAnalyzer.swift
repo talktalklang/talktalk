@@ -31,7 +31,9 @@ struct StructDeclAnalyzer: Analyzer {
 		if let genericParams = decl.genericParams {
 			for (i, param) in genericParams.params.enumerated() {
 				// Go through and actually analyze the type params
-				structType.typeParameters[i].type = try param.type.accept(visitor, bodyContext) as! AnalyzedTypeExpr
+				let environment = bodyContext.add(namespace: nil)
+				environment.isInTypeParameters = true
+				structType.typeParameters[i].type = try param.type.accept(visitor, environment) as! AnalyzedTypeExpr
 			}
 		}
 
@@ -62,63 +64,28 @@ struct StructDeclAnalyzer: Analyzer {
 		for decl in decl.body.decls {
 			switch decl {
 			case let decl as VarDecl:
-				var type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme)
-
-				if case .struct = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				if case .generic = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				let property = Property(
-					slot: structType.properties.count,
-					name: decl.name,
-					typeID: TypeID(type),
-					expr: decl,
-					isMutable: true
-				)
-				structType.add(property: property)
-			case let decl as LetDecl:
-				var type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme)
-
-				if case .struct = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				if case .generic = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				structType.add(
-					property: Property(
+				if let type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme, asInstance: true) {
+					
+					let property = Property(
 						slot: structType.properties.count,
 						name: decl.name,
 						typeID: TypeID(type),
 						expr: decl,
-						isMutable: false
-					))
+						isMutable: true
+					)
+					structType.add(property: property)
+				}
+			case let decl as LetDecl:
+				if let type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme, asInstance: true) {
+					structType.add(
+						property: Property(
+							slot: structType.properties.count,
+							name: decl.name,
+							typeID: TypeID(type),
+							expr: decl,
+							isMutable: false
+						))
+				}
 			case let decl as FuncExpr:
 				if let name = decl.name {
 					try structType.add(

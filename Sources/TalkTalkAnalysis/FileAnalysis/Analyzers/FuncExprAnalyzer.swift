@@ -65,19 +65,20 @@ struct FuncExprAnalyzer {
 
 		var declaredType: TypeID?
 		if let typeDecl = expr.typeDecl {
-			let type = context.type(named: typeDecl.identifier.lexeme)
-			declaredType = TypeID(type)
-			if !type.isAssignable(from: bodyAnalyzed.typeID.current) {
-				errors.append(
-					.init(
-						kind: .unexpectedType(
-							expected: type,
-							received: bodyAnalyzed.typeAnalyzed,
-							message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."
-						),
-						location: bodyAnalyzed.stmtsAnalyzed.last?.location ?? expr.location
+			if let type = context.type(named: typeDecl.identifier.lexeme) {
+				declaredType = TypeID(type)
+				if !type.isAssignable(from: bodyAnalyzed.typeID.current) {
+					errors.append(
+						.init(
+							kind: .unexpectedType(
+								expected: type,
+								received: bodyAnalyzed.typeAnalyzed,
+								message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."
+							),
+							location: bodyAnalyzed.stmtsAnalyzed.last?.location ?? expr.location
+						)
 					)
-				)
+				}
 			}
 		}
 

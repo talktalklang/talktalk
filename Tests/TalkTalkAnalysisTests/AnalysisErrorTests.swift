@@ -41,7 +41,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			var a = "foo"
 			a = 123
 			""",
-			.typeCannotAssign(expected: TypeID(.instance(.struct("String"))), received: .int)
+			.typeCannotAssign(expected: TypeID(.instance(.struct("String"))), received: TypeID(.int))
 		)
 	}
 
@@ -56,7 +56,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			var person = Person(name: "Pat")
 			person.name = 123
 			""",
-			.typeCannotAssign(expected: TypeID(.instance(.struct("String"))), received: .int)
+			.typeCannotAssign(expected: TypeID(.instance(.struct("String"))), received: TypeID(.int))
 		)
 	}
 
@@ -67,7 +67,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			func foo(name: int) {}
 			foo("sup")
 			""",
-			.typeCannotAssign(expected: .int, received: TypeID(.instance(.struct("String"))))
+			.typeCannotAssign(expected: TypeID(.int), received: TypeID(.instance(.struct("String"))))
 		)
 	}
 

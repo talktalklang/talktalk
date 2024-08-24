@@ -159,7 +159,13 @@ public struct Formatter: Visitor {
 		if let name = expr.name {
 			result += " " + name.lexeme
 		}
+
 		result += try "(" + visit(expr.params, context) + ") "
+
+		if let typeDecl = expr.typeDecl {
+			result += try ("-> " + typeDecl.accept(self, context)) + " "
+		}
+
 		result += try visit(expr.body, context)
 
 		context.lastType = expr

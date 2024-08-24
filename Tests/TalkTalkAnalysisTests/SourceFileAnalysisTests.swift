@@ -9,33 +9,6 @@
 import TalkTalkSyntax
 import Testing
 
-extension TypeID {
-	static var int: TypeID {
-		TypeID(.int)
-	}
-
-	static func `struct`(_ name: String) -> TypeID {
-		TypeID(.struct(name))
-	}
-
-	static func instance(_ type: ValueType) -> TypeID {
-		TypeID(.instance(
-			.init(ofType: type, boundGenericTypes: [:])
-		))
-	}
-
-	static func function(
-		_ name: String,
-		_ returning: TypeID,
-		_ params: [ValueType.Param],
-		_ captures: [String]
-	) -> TypeID {
-		TypeID(
-			.function(name, returning, params, captures)
-		)
-	}
-}
-
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
 		let parsed = try! Parser.parse(.init(path: "", text: string))
@@ -93,7 +66,7 @@ struct AnalysisTests {
 			func(x) { x + 1 }
 			""")
 
-		#expect(fn.typeAnalyzed == .function("_fn_x_17", .int, [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function("_fn_x_17", TypeID(.int), [.int("x")], []))
 	}
 
 	@Test("Sets implicitlyReturns for single expr statement func bodies") func implicitReturn() {
@@ -131,7 +104,7 @@ struct AnalysisTests {
 			"""
 		).cast(AnalyzedReturnStmt.self).valueAnalyzed!
 
-		#expect(fn.typeAnalyzed == .function("foo", .int, [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function("foo", TypeID(.int), [.int("x")], []))
 	}
 
 	@Test("Types simple calls") func funcSimpleCalls() {
@@ -193,7 +166,7 @@ struct AnalysisTests {
 			.cast(AnalyzedCallExpr.self).calleeAnalyzed
 			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
-		let expected: ValueType = .function("_fn_x_33", .int, [.int("x")], ["i"])
+		let expected: ValueType = .function("_fn_x_33", TypeID(.int), [.int("x")], ["i"])
 		#expect(result == expected)
 	}
 
@@ -231,12 +204,12 @@ struct AnalysisTests {
 			fn.typeAnalyzed
 				== .function(
 					"_fn_x_43",
-					.function(
+					TypeID(.function(
 						"_fn_y_41",
-						.int,
+						TypeID(.int),
 						[.int("y")],
 						["x"]
-					),
+					)),
 					[.int("x")],
 					[]
 				))
@@ -245,7 +218,7 @@ struct AnalysisTests {
 		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedFuncExpr.self)
-		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", .int, [.int("y")], ["x"]))
+		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", TypeID(.int), [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
@@ -326,7 +299,7 @@ struct AnalysisTests {
 		#expect(type.methods["init"] != nil)
 
 		#expect(type.properties["age"]!.typeID.type() == .int)
-		#expect(type.methods["sup"]!.typeID.type() == .function("sup", .int, [], []))
+		#expect(type.methods["sup"]!.typeID.type() == .function("sup", TypeID(.int), [], []))
 	}
 
 	@Test("Types calling struct methods on self", .disabled("we need to come back to this")) func selfMethodCalls() throws {
@@ -410,7 +383,7 @@ struct AnalysisTests {
 
 		let type = try #require(s.environment.lookupStruct(named: name))
 		#expect(name == "Person")
-		#expect(type.methods["typeSup"]!.typeID.type() == .function("typeSup", .struct("Person"), [], []))
+		#expect(type.methods["typeSup"]!.typeID.type() == .function("typeSup", TypeID(.struct("Person")), [], []))
 
 		guard case let .function(name, returns, _, _) = type.methods["sup"]!.typeID.type() else {
 			#expect(Bool(false))
