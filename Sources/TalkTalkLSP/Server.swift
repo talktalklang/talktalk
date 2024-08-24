@@ -21,7 +21,8 @@ public actor Server {
 	let stdout = FileHandle.standardOutput
 
 	// Keep track of requests in progress
-	var queue = AsyncQueue()
+	var queue: [Request] = []
+	var worker: Task<Void, Never>?
 	var cancelled: Set<RequestID> = []
 
 	// Keep track of our files
@@ -75,21 +76,39 @@ public actor Server {
 		}
 	}
 
-	func enqueue(_ request: Request) {
-		Log.info("Enqueuing request: \(request.method)")
-		queue.addOperation(priority: .high) {
-			await self.run(request)
+	nonisolated func enqueue(_ request: Request) {
+		Task {
+			await _enqueue(request)
+			await work()
 		}
 	}
 
-	func run(_ request: Request) async {
-		if let id = request.id, cancelled.contains(id) {
-			Log.info("skipping canceled job (\(id))")
-			cancelled.remove(id)
-			return
-		}
+	func work() {
+		if worker != nil { return }
 
-		await perform(request)
+		worker = Task {
+			while !queue.isEmpty {
+				await Task.yield()
+
+				Log.info("queue depth is \(queue.count), (\(cancelled.count) cancelled)")
+				let next = queue.removeFirst()
+
+				if let id = next.id, cancelled.contains(id) {
+					Log.info("skipping canceled job (\(id))")
+					cancelled.remove(id)
+					continue
+				}
+
+				await self.perform(next)
+			}
+
+			self.worker = nil
+			Log.info("done processing jobs")
+		}
+	}
+
+	func _enqueue(_ request: Request) {
+		queue.append(request)
 	}
 
 	func diagnostics(for uri: String? = nil) async throws -> [Diagnostic] {
