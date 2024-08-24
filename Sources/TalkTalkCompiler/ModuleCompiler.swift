@@ -27,7 +27,7 @@ public struct ModuleCompiler {
 	public func compile(mode: CompilationMode, allowErrors: Bool = false) throws -> Module {
 		let errors = try analysisModule.collectErrors()
 		if !errors.isEmpty, !allowErrors {
-			throw CompilerError.analysisErrors("Cannot compile \(name), found \(errors.count) analysis errors: \(errors.map(\.description))")
+			throw CompilerError.analysisErrors("Cannot compile \(name), found \(errors.count) analysis errors: \(errors.all.map(\.description))")
 		}
 
 		let module = CompilingModule(

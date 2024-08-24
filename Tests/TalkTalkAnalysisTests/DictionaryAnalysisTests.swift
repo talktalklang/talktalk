@@ -8,7 +8,7 @@
 import Testing
 import TalkTalkAnalysis
 
-@Suite(.disabled()) struct DictionaryAnalysisTests: AnalysisTest {
+@Suite() struct DictionaryAnalysisTests: AnalysisTest {
 	@Test("Basic") func basic() async throws {
 		let result = try await ast("""
 		[:]
@@ -26,7 +26,7 @@ import TalkTalkAnalysis
 		let instance = InstanceValueType(
 			ofType: .struct("Dictionary"),
 			boundGenericTypes: [
-				"Key": TypeID(.instance(.struct("String"))),
+				"Key": TypeID(.instance(.struct("String", [:]))),
 				"Value": TypeID(.int)
 			]
 		)

@@ -42,7 +42,7 @@ struct StructDeclAnalyzer: Analyzer {
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				typeID: TypeID(.instance(.struct(structType.name!))),
+				typeID: TypeID(.instance(.struct(structType.name!, structType.placeholderGenericTypes()))),
 				expr: VarExprSyntax(
 					token: .synthetic(.self),
 					location: [.synthetic(.self)]

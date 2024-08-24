@@ -34,6 +34,12 @@ public class StructType {
 		self.typeParameters = typeParameters
 	}
 
+	func placeholderGenericTypes() -> [String: TypeID] {
+		typeParameters.reduce(into: [:]) { res, param in
+			res[param.name] = TypeID(.placeholder)
+		}
+	}
+
 	public func add(property: Property) {
 		properties[property.name] = property
 	}

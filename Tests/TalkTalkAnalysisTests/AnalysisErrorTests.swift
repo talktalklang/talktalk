@@ -12,9 +12,9 @@ import Testing
 
 struct AnalysisErrorTests: AnalysisTest {
 	func errors(
-		_ at: Testing.SourceLocation = #_sourceLocation,
 		_ string: String,
-		_ kinds: AnalysisErrorKind...
+		_ kinds: AnalysisErrorKind...,
+		at: Testing.SourceLocation = #_sourceLocation
 	) async throws {
 		try await #expect(ast(string).collectErrors().map(\.kind) == kinds, sourceLocation: at)
 	}
@@ -27,16 +27,15 @@ struct AnalysisErrorTests: AnalysisTest {
 	}
 
 	@Test("Undefined variable") func undefVar() async throws {
-		try await errors(#_sourceLocation, "foo", .undefinedVariable("foo"))
+		try await errors("foo", .undefinedVariable("foo"))
 	}
 
 	@Test("Undefined variable") func foo() async throws {
-		try await errors(#_sourceLocation, "foo", .undefinedVariable("foo"))
+		try await errors("foo", .undefinedVariable("foo"))
 	}
 
 	@Test("Assigning to wrong type local") func assignType() async throws {
 		try await errors(
-			#_sourceLocation,
 			"""
 			var a = "foo"
 			a = 123
@@ -47,7 +46,6 @@ struct AnalysisErrorTests: AnalysisTest {
 
 	@Test("Assigning to wrong type member") func assignTypeMember() async throws {
 		try await errors(
-			#_sourceLocation,
 			"""
 			struct Person {
 				var name: String
@@ -62,7 +60,6 @@ struct AnalysisErrorTests: AnalysisTest {
 
 	@Test("Assigning to wrong type param") func assignTypeParam() async throws {
 		try await errors(
-			#_sourceLocation,
 			"""
 			func foo(name: int) {}
 			foo("sup")
@@ -138,13 +135,24 @@ struct AnalysisErrorTests: AnalysisTest {
 
 	@Test("Errors when func doesn't return what it says it will") func badFuncReturn() async throws {
 		try await errors(
-			#_sourceLocation,
 			"""
 			func foo(name: int) -> int {
 				"nope"
 			}
 			""",
 			.unexpectedType(expected: .int, received: .instance(.struct("String")), message: "Cannot return String instance, expected int.")
+		)
+	}
+
+	@Test("Errors with undefined func call inside another func") func nestedBadFunc() async throws {
+		try await errors(
+			"""
+			func foo() {
+				nope()
+			}
+			""",
+			.argumentError(expected: -1, received: 0),
+			.undefinedVariable("nope")
 		)
 	}
 }

@@ -1,15 +1,15 @@
 // TODO: It'd be nice if this struct could be nested in Dictionary
-//struct DictionaryEntry<K, V> {
-//	let key: K
-//	let value: V
-//}
+struct DictionaryEntry<K, V> {
+	let key: K
+	let value: V
+}
 
-//struct Dictionary<Key, Value> {
-//	var storage: Array<DictionaryEntry<Key, Value>>
+struct Dictionary<Key, Value> {
+	var storage: Array<DictionaryEntry<Key, Value>>
 
-//	init(count: int, keys: Array<Key>, values: Array<Value>) {
-//		self.storage = Array<DictionaryEntry<Key, Value>>()
-//	}
+	init(count: int, keys: Array<Key>, values: Array<Value>) {
+		self.storage = Array<DictionaryEntry<Key, Value>>()
+	}
 
 //	func get(index) -> Value {
 //		var entry = self.storage[index]
@@ -20,5 +20,5 @@
 //	func set(index, value) {
 //		print("hello")
 //	}
-//}
+}
 

@@ -146,14 +146,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		case .none:
 			TypeID(.none)
 		case .string:
-			TypeID(.instance(.struct("String")))
+			TypeID(.instance(.struct("String", [:])))
 		}
 
-		if typeID.current == .instance(.struct("String")) {
+		if typeID.current == .instance(.struct("String", [:])) {
 			_ = context.lookupStruct(named: "String")
 		}
 
-		if typeID.current == .instance(.struct("Int")) {
+		if typeID.current == .instance(.struct("Int", [:])) {
 			_ = context.lookupStruct(named: "Int")
 		}
 
@@ -624,7 +624,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			binding: .init(
 				name: "Array",
 				expr: expr,
-				type: TypeID(.instance(.struct("Array"))),
+				type: TypeID(.instance(.struct("Array", ["Element": TypeID(.placeholder)]))),
 				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
 			)
 		)
@@ -655,7 +655,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 
 		let instance = InstanceValueType(
-			ofType: .struct("Array"),
+			ofType: .struct("Dictionary"),
 			boundGenericTypes: [
 				"Key": keyType,
 				"Value": valueType

@@ -12,7 +12,7 @@ public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 		lhs.ofType == rhs.ofType && lhs.boundGenericTypes == rhs.boundGenericTypes
 	}
 
-	public static func `struct`(_ name: String, _ boundGenericTypes: [String: TypeID] = [:]) -> InstanceValueType {
+	public static func `struct`(_ name: String, _ boundGenericTypes: [String: TypeID]) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: boundGenericTypes)
 	}
 

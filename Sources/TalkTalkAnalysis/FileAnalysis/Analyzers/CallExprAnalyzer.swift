@@ -42,8 +42,9 @@ struct CallExprAnalyzer: Analyzer {
 						variable.typeID.update(type, location: variable.location)
 					}
 				case let arg as AnalyzedTypeExpr:
-					if case let .struct(name) = arg.typeAnalyzed {
-						variable.typeID.update(.instance(.struct(name)), location: variable.location)
+					if case let .struct(name) = arg.typeAnalyzed,
+						 let structType = context.lookupStruct(named: name) {
+						variable.typeID.update(.instance(.struct(name, structType.placeholderGenericTypes())), location: variable.location)
 					} else {
 						variable.typeID.update(arg.typeAnalyzed, location: variable.location)
 					}
@@ -152,22 +153,38 @@ struct CallExprAnalyzer: Analyzer {
 			))
 		}
 
-		var instanceType = InstanceValueType.struct(name)
+		var instanceType = InstanceValueType.struct(name, structType.placeholderGenericTypes())
 
 		if let callee = callee as? AnalyzedTypeExpr,
-		   let params = callee.genericParams, !params.isEmpty
+		   let calleeGenericParams = callee.genericParams, !calleeGenericParams.isEmpty
 		{
 			// Fill in type parameters if they're explicitly annotated. If they're not we'll have to try to infer them.
-			if params.count == structType.typeParameters.count {
-				for (i, param) in structType.typeParameters.enumerated() {
-					let type = try params.params[i].type.accept(visitor, context).typeID
-					instanceType.boundGenericTypes[param.name] = type
+			if calleeGenericParams.count == structType.typeParameters.count {
+				for (i, structTypeParam) in structType.typeParameters.enumerated() {
+					// We always get back a Type from visiting a TypeExpr (duh) but we want an instance for the case where
+					// the type is a Struct. But if it's a primitive (like an int) then we can just set it directly.
+					let type = try calleeGenericParams.params[i].type.accept(visitor, context).typeID
+
+					if case let .struct(name) = type.current {
+						if let structType = context.lookupStruct(named: name) {
+							// Reserve placeholders for the type parameters of this struct
+							let structTypeParams: [String: TypeID] = structType.typeParameters.reduce(into: [:]) { res, param in
+								res[param.name] = TypeID(.placeholder)
+							}
+
+							type.update(.instance(.struct(name, structTypeParams)), location: callee.location)
+						} else {
+							errors.append(.init(kind: .typeNotFound(name), location: callee.location))
+						}
+					}
+
+					instanceType.boundGenericTypes[structTypeParam.name] = type
 				}
 			} else if context.shouldReportErrors {
 				errors.append(
 					context.report(.typeParameterError(
 						expected: structType.typeParameters.count,
-						received: params.count
+						received: calleeGenericParams.count
 					), at: expr.location)
 				)
 			}

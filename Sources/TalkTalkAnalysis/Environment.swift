@@ -128,7 +128,7 @@ public class Environment {
 
 			} else if let structType = lookupStruct(named: name) {
 				if asInstance {
-					return .instance(.struct(structType.name ?? "<anon struct>"))
+					return .instance(.struct(structType.name ?? "<anon struct>", structType.placeholderGenericTypes()))
 				} else {
 					return .struct(structType.name ?? "<anon struct>")
 				}
