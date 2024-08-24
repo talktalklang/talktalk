@@ -30,6 +30,9 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 	// can be updated if this type id is updated
 	private var inferrenceChildren: Set<TypeID> = []
 
+	// Can this type ID be updated?
+	private var immutable: Bool = false
+
 	var id: UUID
 
 	public init(inferredFrom: TypeID) {
@@ -38,12 +41,16 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 		self.inferredFrom = inferredFrom
 	}
 
-	public init(_ initial: ValueType = .placeholder) {
+	public init(_ initial: ValueType = .placeholder, immutable: Bool = false) {
 		self.id = UUID()
 		self.current = initial
+		self.immutable = immutable
 	}
 
 	public func infer(from other: TypeID) {
+		if immutable {
+			fatalError("cannot set inference on immutable typeID")
+		}
 //		assert(inferredFrom == nil, "inferredFrom is already set to \(inferredFrom!.description), was attempting to set to \(other.description)")
 
 		// Set our own inferred from

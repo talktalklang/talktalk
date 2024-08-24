@@ -434,4 +434,16 @@ struct AnalysisTests {
 
 		#expect(varDecl.analysisErrors.count == 1)
 	}
+
+	@Test("Can cast") func cast() throws {
+		let ast = ast(
+			"""
+			var a = "sup"
+			_cast(a, int)
+			a
+			"""
+		)
+
+		#expect(ast.cast(AnalyzedExprStmt.self).exprAnalyzed.typeID.current == .int)
+	}
 }

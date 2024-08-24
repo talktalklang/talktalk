@@ -13,7 +13,6 @@ public enum Log {
 	}
 
 	public static func error(_ message: String) {
-		FileHandle.standardError.write(Data((message + "\n").utf8))
 		log("[error] " + message)
 	}
 

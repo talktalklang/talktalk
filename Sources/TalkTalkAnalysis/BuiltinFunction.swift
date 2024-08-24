@@ -18,7 +18,8 @@ public struct BuiltinFunction {
 			._free,
 			._deref,
 			._storePtr,
-			._hash
+			._hash,
+			._cast
 		]
 	}
 
@@ -59,7 +60,7 @@ public struct BuiltinFunction {
 	public static var _allocate: BuiltinFunction {
 		BuiltinFunction(
 			name: "_allocate",
-			type: .function("_allocate", TypeID(.pointer), [.int("size")], [])
+			type: .function("_allocate", TypeID(.pointer, immutable: true), [.int("size")], [])
 		)
 	}
 
@@ -113,6 +114,21 @@ public struct BuiltinFunction {
 				"_hash",
 				TypeID(.int),
 				[.init(name: "value", typeID: TypeID(.any))],
+				[]
+			)
+		)
+	}
+
+	public static var _cast: BuiltinFunction {
+		BuiltinFunction(
+			name: "_cast",
+			type: .function(
+				"_cast",
+				TypeID(.generic(.void, "T")),
+				[
+					.init(name: "variable", typeID: TypeID(.any)),
+					.init(name: "type", typeID: TypeID(.generic(.void, "T")))
+				],
 				[]
 			)
 		)

@@ -26,6 +26,7 @@ public struct Method: Member {
 	public let expr: any Syntax
 	public let isMutable: Bool
 	public let isSynthetic: Bool
+	public var boundGenericParameters: [String: TypeID] = [:]
 
 	public init(
 		symbol: Symbol,

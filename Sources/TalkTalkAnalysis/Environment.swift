@@ -30,8 +30,8 @@ public class Environment {
 		isModuleScope: Bool = false,
 		symbolGenerator: SymbolGenerator = .init(moduleName: "None", parent: nil),
 		importedModules: [AnalysisModule] = [],
-		parent: Environment? = nil)
-	{
+		parent: Environment? = nil
+	) {
 		self.isModuleScope = isModuleScope
 		self.symbolGenerator = symbolGenerator
 		self.parent = parent
@@ -47,7 +47,7 @@ public class Environment {
 
 	public func ignoringErrors(perform: () throws -> Void) throws {
 		defer { self.shouldReportErrors = true }
-		self.shouldReportErrors = false
+		shouldReportErrors = false
 		try perform()
 	}
 
@@ -152,6 +152,32 @@ public class Environment {
 		}
 
 		if let scope = getLexicalScope() {
+			if name == "self" {
+				let instance = InstanceValueType(
+					ofType: .struct(scope.scope.name!),
+					boundGenericTypes: scope.scope.typeParameters.reduce(into: [:]) { res, typeParameter in
+						res[typeParameter.name] = TypeID(.placeholder)
+					}
+				)
+
+				return Binding(
+					name: "self",
+					expr: AnalyzedVarExpr(
+						typeID: TypeID(.instance(instance)),
+						expr: VarExprSyntax(
+							token: .synthetic(.self),
+							location: [.synthetic(.self)]
+						),
+						symbol: symbolGenerator.value("self", source: .internal),
+						environment: self,
+						analysisErrors: [],
+						isMutable: false
+					),
+					type: TypeID(.instance(instance)),
+					isMutable: false
+				)
+			}
+
 			if name == "Self" {
 				return Binding(
 					name: "Self",

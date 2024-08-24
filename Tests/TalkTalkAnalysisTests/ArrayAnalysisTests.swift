@@ -64,4 +64,25 @@ struct ArrayAnalysisTests: AnalysisTest {
 
 		#expect(result2.typeAnalyzed == .instance(.struct("String")))
 	}
+
+	@Test("Types array elements when it's a generic property") func typesArrayElementWhenProperty() async throws {
+		let ast = try await ast("""
+		struct WrapperEntry {}
+
+		struct Wrapper {
+			var storage: Array<WrapperEntry>
+
+			func get(i) {
+				self.storage[i]
+			}
+		}
+		""")
+
+		let structDecl = try #require(ast as? AnalyzedStructDecl)
+		let funcDecl = try #require(structDecl.bodyAnalyzed.declsAnalyzed.last as? AnalyzedFuncExpr)
+		let exprStmt = funcDecl.bodyAnalyzed.stmtsAnalyzed[0].cast(AnalyzedExprStmt.self).exprAnalyzed
+		let subscriptExpr = exprStmt.cast(AnalyzedSubscriptExpr.self)
+
+		#expect(subscriptExpr.typeID.current == .instance(.struct("WrapperEntry")))
+	}
 }

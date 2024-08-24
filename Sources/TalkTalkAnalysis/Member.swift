@@ -13,4 +13,5 @@ public protocol Member {
 	var typeID: TypeID { get }
 	var expr: any Syntax { get }
 	var isMutable: Bool { get }
+	var boundGenericParameters: [String: TypeID] { get }
 }

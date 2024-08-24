@@ -8,11 +8,13 @@ struct Dictionary<Key, Value> {
 	var storage: Array<DictionaryEntry<Key, Value>>
 
 	init(count: int, keys: Array<Key>, values: Array<Value>) {
-		self.storage = _allocate(count)
+		self.storage = Array<DictionaryEntry<Key, Value>>()
 	}
 
 	func get(index) -> Value {
-		self.storage[index].value
+		var entry = self.storage[index]
+		_cast(entry, DictionaryEntry<Key, Value>)
+		return entry.value
 	}
 
 	func set(index, value) {

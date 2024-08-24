@@ -307,103 +307,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 	}
 
-	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
-		var errors: [AnalysisError] = []
-		let innerEnvironment = env.add(namespace: expr.autoname)
-
-		// Define our parameters in the environment so they're declared in the body. They're
-		// just placeholders for now.
-		var params = try visit(expr.params, env) as! AnalyzedParamsExpr
-		for param in params.paramsAnalyzed {
-			innerEnvironment.define(parameter: param.name, as: param)
-		}
-
-		let symbol = if let scope = env.getLexicalScope() {
-			env.symbolGenerator.method(scope.scope.name ?? scope.expr.description, expr.autoname, parameters: params.paramsAnalyzed.map(\.name), source: .internal)
-		} else {
-			env.symbolGenerator.function(expr.autoname, parameters: params.paramsAnalyzed.map(\.name), source: .internal)
-		}
-
-		if let name = expr.name {
-			// If it's a named function, define a stub inside the function to allow for recursion
-			let stubType = ValueType.function(
-				name.lexeme,
-				TypeID(.placeholder),
-				params.paramsAnalyzed.map {
-					.init(name: $0.name, typeID: $0.typeID)
-				},
-				[]
-			)
-			let stub = AnalyzedFuncExpr(
-				symbol: symbol,
-				type: TypeID(stubType),
-				expr: expr,
-				analyzedParams: params,
-				bodyAnalyzed: .init(
-					stmt: expr.body,
-					typeID: TypeID(),
-					stmtsAnalyzed: [],
-					environment: env
-				),
-				analysisErrors: [],
-				returnType: TypeID(.placeholder),
-				environment: innerEnvironment
-			)
-			innerEnvironment.define(local: name.lexeme, as: stub, isMutable: false)
-		}
-
-		// Visit the body with the innerEnvironment, finding captures as we go.
-		let exitBehavior: AnalyzedExprStmt.ExitBehavior = expr.body.stmts.count == 1 ? .return : .pop
-		innerEnvironment.exprStmtExitBehavior = exitBehavior
-
-		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
-
-		var declaredType: TypeID?
-		if let typeDecl = expr.typeDecl {
-			let type = env.type(named: typeDecl.identifier.lexeme)
-			declaredType = TypeID(type)
-			if !type.isAssignable(from: bodyAnalyzed.typeID.current) {
-				errors.append(
-					.init(
-						kind: .unexpectedType(
-							expected: type,
-							received: bodyAnalyzed.typeAnalyzed,
-							message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."
-						),
-						location: bodyAnalyzed.stmtsAnalyzed.last?.location ?? expr.location
-					)
-				)
-			}
-		}
-
-		// See if we can infer any types for our params from the environment after the body
-		// has been visited.
-		params.infer(from: innerEnvironment)
-
-		let analyzed = ValueType.function(
-			expr.name?.lexeme ?? expr.autoname,
-			declaredType ?? bodyAnalyzed.typeID,
-			params.paramsAnalyzed.map { .init(name: $0.name, typeID: $0.typeID) },
-			innerEnvironment.captures.map(\.name)
-		)
-
-		let funcExpr = AnalyzedFuncExpr(
-			symbol: symbol,
-			type: TypeID(analyzed),
-			expr: expr,
-			analyzedParams: params,
-			bodyAnalyzed: bodyAnalyzed,
-			analysisErrors: errors,
-			returnType: declaredType ?? bodyAnalyzed.typeID,
-			environment: innerEnvironment
-		)
-
-		if let name = expr.name {
-			innerEnvironment.define(local: name.lexeme, as: funcExpr, isMutable: false)
-			env.define(local: name.lexeme, as: funcExpr, isMutable: false)
-		}
-
-		return funcExpr
+	public func visit(_ expr: any FuncExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+		try FuncExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
 
 	public func visit(_ expr: any InitDecl, _ context: Environment) throws -> any AnalyzedSyntax {
@@ -584,10 +489,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		var valueType = type
 		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		if let value, valueType.current == .placeholder {
-			valueType = value.typeID
+			valueType.infer(from: value.typeID)
 		}
 
-		if case .error = type.current, context.shouldReportErrors {
+		if case .error = valueType.current, context.shouldReportErrors {
 			errors.append(
 				.init(
 					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),

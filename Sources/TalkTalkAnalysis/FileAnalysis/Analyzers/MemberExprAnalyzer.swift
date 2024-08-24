@@ -71,15 +71,22 @@ struct MemberExprAnalyzer: Analyzer {
 	}
 
 	func inferGenerics(memberTypeID: TypeID, typeExpr: TypeExpr, receiverType: StructType, receiverInstance: InstanceValueType) {
-		if case var .instance(memberInstance) = memberTypeID.current,
-			 case let .struct(memberStructName) = memberInstance.ofType,
+		guard case var .instance(memberInstance) = memberTypeID.current else {
+			return
+		}
+
+		if case let .struct(memberStructName) = memberInstance.ofType,
 			 let memberStruct = context.lookupStruct(named: memberStructName) {
 
 			// Get the list of generic params this member has declared as part of its property
 			for (i, genericParam) in (typeExpr.genericParams?.params ?? []).enumerated() {
+				guard receiverType.typeParameters.count > i, memberStruct.typeParameters.count > i else {
+					continue
+				}
+
 				inferGenerics(memberTypeID: memberTypeID, typeExpr: genericParam.type, receiverType: memberStruct, receiverInstance: receiverInstance)
 
-				if let receiverType = receiverInstance.boundGenericTypes[receiverType.typeParameters[0].name] {
+				if let receiverType = receiverInstance.boundGenericTypes[receiverType.typeParameters[i].name] {
 					let memberTypeName = memberStruct.typeParameters[i].name
 					memberInstance.boundGenericTypes[memberTypeName] = receiverType
 				}

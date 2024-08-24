@@ -23,6 +23,19 @@ public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 		self.ofType = ofType
 		self.boundGenericTypes = boundGenericTypes
 	}
+
+	public func assignableTo(_ other: Any) -> Bool {
+		if let other = other as? InstanceValueType {
+			return other.ofType.isAssignable(from: ofType) &&
+				other.boundGenericTypes.keys.sorted() == boundGenericTypes.keys.sorted() &&
+			other.boundGenericTypes.allSatisfy({ (name, typeID) in
+				guard let ourType = boundGenericTypes[name]?.current else { return false }
+				return typeID.current.isAssignable(from: ourType)
+			})
+		}
+
+		return false
+	}
 }
 
 public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
@@ -156,7 +169,11 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		case let .generic(valueType, string):
 			return true // TODO: Be more stringent here
 		case let .instance(instanceValueType):
-			return other == .instance(instanceValueType)
+			if case let .instance(otherInstanceValueType) = other {
+				return otherInstanceValueType.assignableTo(instanceValueType)
+			}
+
+			return false
 		case let .member(valueType):
 			return other == .member(valueType)
 		case .error:

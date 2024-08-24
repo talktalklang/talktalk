@@ -66,7 +66,7 @@ public struct AnalysisError: Hashable {
 	}
 
 	public var description: String {
-		"\(message) at ln \(location.line), col \(location.start.column)"
+		"\(location.path): \(message) at ln \(location.line), col \(location.start.column)"
 	}
 
 	public var message: String {

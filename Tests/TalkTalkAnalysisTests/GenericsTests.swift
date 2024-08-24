@@ -89,6 +89,45 @@ struct GenericsTests {
 		#expect((instance.boundGenericTypes["Wrapped"] ?? .none)?.current == ValueType.int)
 	}
 
+	@Test("Infers generic member types from `self`") func inferSelfMembers() throws {
+		let ast = asts("""
+		struct Wrapper<Wrapped> {
+			var wrapped: Wrapped
+
+			init(wrapped: Wrapped) {
+				self.wrapped = wrapped
+			}
+
+			func value() {
+				self.wrapped
+			}
+		}
+
+		let wrapper = Wrapper(wrapped: 123)
+		wrapper
+		wrapper.value()
+		""")
+
+		let varExpr = ast[2].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedVarExpr.self)
+		guard case let .instance(instance) = varExpr.typeID.current else {
+			#expect(Bool(false), "did not get instance") ; return
+		}
+		#expect(instance.ofType == .struct("Wrapper"))
+		#expect(instance.boundGenericTypes["Wrapped"]?.current == .int)
+
+		let exprStmt = ast[3].cast(AnalyzedExprStmt.self)
+		let callExpr = exprStmt.exprAnalyzed.cast(AnalyzedCallExpr.self)
+		let method = callExpr.calleeAnalyzed
+			.cast(AnalyzedMemberExpr.self).memberAnalyzed as! Method
+
+		guard case let .function("value", methodTypeID, [], []) = method.typeID.current else {
+			#expect(Bool(false), "did not get correct method") ; return
+		}
+
+		let current = methodTypeID.current
+		#expect(current == .int)
+	}
+
 	@Test("Infers nested generic types") func inferNested() throws {
 		let ast = asts("""
 		struct Inner<InnerWrapped> {

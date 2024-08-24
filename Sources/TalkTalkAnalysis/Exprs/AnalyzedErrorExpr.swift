@@ -23,6 +23,7 @@ public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 	public var location: SourceLocation { expr.location }
 	public var children: [any Syntax] { expr.children }
 	public var expectation: ParseExpectation { wrapped.expectation }
+	public var boundGenericParameters: [String: TypeID] = [:]
 
 	public init(typeID: TypeID, expr: any ParseError, environment: Environment) {
 		self.typeID = typeID
