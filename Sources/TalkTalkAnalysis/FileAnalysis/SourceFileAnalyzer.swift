@@ -98,49 +98,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: any MemberExpr, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		let receiver = try expr.receiver.accept(self, context)
-		let propertyName = expr.property
-
-		var member: (any Member)? = nil
-		switch receiver.typeAnalyzed {
-		case let .instance(instanceType):
-			guard case let .struct(name) = instanceType.ofType,
-			      let structType = context.lookupStruct(named: name)
-			else {
-				return error(
-					at: expr, "Could not find type of \(instanceType)", environment: context,
-					expectation: .identifier
-				)
-			}
-
-			member = structType.properties[propertyName] ?? structType.methods[propertyName]
-		default:
-			return error(
-				at: expr, "Cannot access property `\(propertyName)` on `\(receiver)` (\(receiver.typeAnalyzed.description))",
-				environment: context,
-				expectation: .member
-			)
-		}
-
-		var errors: [AnalysisError] = []
-		if member == nil, context.shouldReportErrors {
-			errors.append(
-				.init(
-					kind: .noMemberFound(receiver: receiver, property: propertyName),
-					location: receiver.location
-				)
-			)
-		}
-
-		return AnalyzedMemberExpr(
-			typeID: member?.typeID ?? TypeID(.error("no member found")),
-			expr: expr,
-			environment: context,
-			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			memberAnalyzed: member ?? error(at: expr, "no member found", environment: context, expectation: .member),
-			analysisErrors: errors,
-			isMutable: member?.isMutable ?? false
-		)
+		try MemberExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
 
 	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {

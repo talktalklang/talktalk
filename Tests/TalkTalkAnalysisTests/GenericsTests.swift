@@ -140,13 +140,34 @@ struct GenericsTests {
 		}
 		#expect(wrapperInstance.boundGenericTypes["Wrapped"]?.current == .int)
 
+		print("Starting property tests.")
 
-		let memberExpr = ast[6].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedMemberExpr.self)
-		guard case let .instance(memberWrapperInstance) = memberExpr.receiverAnalyzed.typeAnalyzed else {
+		let middleInnerExpr = ast[6].cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedMemberExpr.self)
+
+		guard case let .instance(innerMember) = middleInnerExpr.memberAnalyzed.typeID.current else {
+			#expect(Bool(false), "did not get inner member instance") ; return
+		}
+		#expect(innerMember.ofType == .struct("Inner"))
+		#expect(innerMember.boundGenericTypes["InnerWrapped"]?.current == .int)
+
+
+		guard case let .instance(middleMember) = middleInnerExpr.receiverAnalyzed.typeID.current else {
+			#expect(Bool(false), "did not get middle member instance") ; return
+		}
+		#expect(middleMember.ofType == .struct("Middle"))
+		#expect(middleMember.boundGenericTypes["MiddleWrapped"]?.current == .int)
+
+		let wrapperExpr = middleInnerExpr.receiverAnalyzed
+			.cast(AnalyzedMemberExpr.self).receiverAnalyzed
+			.cast(AnalyzedVarExpr.self)
+
+		guard case let .instance(wrapperExprInstance) = wrapperExpr.typeAnalyzed else {
 			#expect(Bool(false), "did not get wrapper instance") ; return
 		}
-		print(memberExpr)
-		#expect(memberWrapperInstance.boundGenericTypes["Wrapped"]?.current == .int)
+		#expect(wrapperExprInstance.ofType == .struct("Wrapper"))
+		#expect(wrapperExprInstance.boundGenericTypes["Wrapped"]?.current == .int)
+
 //
 //		guard case let .instance(middleInstance) = wrapperInstance.boundGenericTypes["Wrapped"]?.current else {
 //			#expect(Bool(false), "did not get wrapper instance") ; return
