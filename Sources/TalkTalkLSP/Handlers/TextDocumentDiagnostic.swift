@@ -33,6 +33,8 @@ struct TextDocumentDiagnostic: Decodable {
 	func handle(_ server: Server) async {
 		let params = request.params as! TextDocumentDiagnosticRequest
 
+		Log.info("requesting diagnostics for \(params.textDocument.uri)")
+
 		do {
 			let diagnostics = try await server.diagnostics(for: params.textDocument.uri)
 			Log.info("Diagnostic count: \(diagnostics.count)")

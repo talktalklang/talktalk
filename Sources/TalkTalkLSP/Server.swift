@@ -113,7 +113,12 @@ public actor Server {
 
 	func diagnostics(for uri: String? = nil) async throws -> [Diagnostic] {
 		await analyze()
-		return try analysis.collectErrors(for: uri).map {
+
+		let errorResult = try analysis.collectErrors(for: uri)
+
+		Log.info("error result, \(errorResult.count) total, \(errorResult.file.count) file")
+
+		return errorResult.file.map {
 			$0.diagnostic()
 		}
 	}
@@ -160,7 +165,7 @@ public actor Server {
 
 			analyzer = ModuleAnalyzer(
 				name: "LSP",
-				files: [],
+				files: analyzer.files,
 				moduleEnvironment: ["Standard": stdlib.analysis],
 				importedModules: [stdlib.analysis]
 			)
