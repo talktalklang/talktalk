@@ -13,7 +13,7 @@ struct StructDeclAnalyzer: Analyzer {
 	let context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
-		var structType = StructType(
+		let structType = StructType(
 			name: decl.name,
 			properties: [:],
 			methods: [:],
@@ -65,7 +65,7 @@ struct StructDeclAnalyzer: Analyzer {
 			switch decl {
 			case let decl as VarDecl:
 				if let type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme, asInstance: true) {
-					
+					print("Defining \(decl.name) property for \(structType.name)")
 					let property = Property(
 						slot: structType.properties.count,
 						name: decl.name,
@@ -74,6 +74,8 @@ struct StructDeclAnalyzer: Analyzer {
 						isMutable: true
 					)
 					structType.add(property: property)
+				} else {
+					
 				}
 			case let decl as LetDecl:
 				if let type = bodyContext.type(named: decl.typeExpr?.identifier.lexeme, asInstance: true) {

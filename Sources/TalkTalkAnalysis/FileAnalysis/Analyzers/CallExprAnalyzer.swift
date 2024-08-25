@@ -65,6 +65,7 @@ struct CallExprAnalyzer: Analyzer {
 						if param.name == "item" {
 
 						}
+						// FIXME: This is binding too globally. We need to figure out a way to scope this more locally
 						param.typeID.update(args[i].expr.typeAnalyzed, location: callee.location)
 					} else if context.shouldReportErrors {
 						errors.append(contentsOf: checkAssignment(to: param, value: args[i].expr, in: context))
