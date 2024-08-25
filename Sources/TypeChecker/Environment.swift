@@ -5,20 +5,32 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-struct Environment {
-	private var types: [String: Type] = [:]
+import TalkTalkSyntax
 
-	subscript(_ name: String) -> Type? {
+class Environment {
+	private var types: [SyntaxID: InferenceResult] = [:]
+
+	subscript(_ syntax: any Syntax) -> InferenceResult? {
 		get {
-			types[name]
+			types[syntax.id]
 		}
 
 		set {
-			types[name] = newValue
+			types[syntax.id] = newValue
 		}
 	}
 
-	mutating func extend(_ name: String, type: Type) {
-		types[name] = type
+	func extend(_ syntax: any Syntax, with: InferenceResult) {
+		types[syntax.id] = with
+	}
+
+	func lookupVariable(named name: String) -> InferenceType? {
+		for (_, type) in types {
+			if case let .type(.variable(variable)) = type, variable.name == name {
+				return .variable(variable)
+			}
+		}
+
+		return nil
 	}
 }

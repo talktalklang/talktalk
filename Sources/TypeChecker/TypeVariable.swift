@@ -1,12 +1,16 @@
 //
-//  TypeVariable.swift
+//  Variable.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-import Foundation
+struct TypeVariable: Equatable {
+	var id: VariableID
+	var name: String
 
-struct TypeVariable: Identifiable {
-	let id: UUID
+	init(_ name: String, _ id: VariableID) {
+		self.id = id
+		self.name = name
+	}
 }
