@@ -221,16 +221,17 @@ actor CompilerTests: CompilerTest {
 			// The condition
 			.op(.false, line: 0, .simple),
 			// How far to jump if the condition is false
-			.op(.jumpUnless, line: 0, .jump(offset: 7)),
-			// Pop the condition
-			.op(.pop, line: 0, .simple),
+			.op(.jumpUnless, line: 0, .jump(offset: 6)),
 
 			// If we're not jumping, here's the value of the consequence block
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 3)),
+			.op(.jump, line: 2, .jump(offset: 4)),
+
+			// Pop the condition
+			.op(.pop, line: 0, .simple),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),

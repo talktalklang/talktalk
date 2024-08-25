@@ -42,7 +42,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case string(String)
 
 	// The block ID and the offset
-	case pointer(Int, Int)
+	case pointer(Heap.Pointer)
 
 	// The index of the closure
 	case closure(Int)
@@ -213,7 +213,7 @@ extension Value: CustomStringConvertible {
 			true
 		case (.string(_), .primitive(.string)):
 			true
-		case (.pointer(_, _), .primitive(.pointer)):
+		case (.pointer(_), .primitive(.pointer)):
 			true
 		case let (.instance(instance), .struct(type)):
 			instance.type == type

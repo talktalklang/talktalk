@@ -19,6 +19,19 @@ struct ArrayAnalysisTests: AnalysisTest {
 		#expect(result.typeAnalyzed == .instance(instance))
 	}
 
+	@Test("Works with array append") func arrayAppend() async throws {
+		let result = try await ast("""
+		var d = [:]
+		var a = []
+		a.append(123)
+		a
+		""")
+			.cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedVarExpr.self)
+
+		let instance = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": TypeID(.placeholder)])
+		#expect(result.typeAnalyzed == .instance(instance))
+	}
+
 	@Test("Types array literal") func arrayLiteralTyped() async throws {
 		let result = try await ast("""
 		var a = [1,2,3]

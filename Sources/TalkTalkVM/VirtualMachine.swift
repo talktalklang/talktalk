@@ -223,8 +223,8 @@ public struct VirtualMachine {
 					stack.push(.int(lhs + rhs))
 				case let (.string(lhs), .string(rhs)):
 					stack.push(.string(lhs + rhs))
-				case let (.pointer(base, offset), .int(rhs)):
-					stack.push(.pointer(base, offset + rhs))
+				case let (.pointer(pointer), .int(rhs)):
+					stack.push(.pointer(pointer + rhs))
 				case let (.data(lhs), .data(rhs)):
 					let lhs = chunk.data[Int(lhs)]
 					let rhs = chunk.data[Int(rhs)]
@@ -234,13 +234,13 @@ public struct VirtualMachine {
 					}
 
 					let bytes = lhs.bytes + rhs.bytes
-					let addr = heap.allocate(count: bytes.count)
+					let pointer = heap.allocate(count: bytes.count)
 
 					for i in 0 ..< bytes.count {
-						heap.store(block: addr, offset: i, value: .byte(bytes[i]))
+						heap.store(pointer: pointer + i, value: Value.byte(bytes[i]))
 					}
 
-					stack.push(.pointer(.init(addr), 0))
+					stack.push(.pointer(pointer))
 				default:
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
@@ -471,17 +471,20 @@ public struct VirtualMachine {
 				call(boundMethod: getSlot, on: receiver)
 			case .initArray:
 				let count = readByte()
-				let capacity = max(count, 0)
+
+				// We need to set the capacity to at least 1 or else trying to resize it will multiply 0 by 2
+				// which means we never actually get more capacity.
+				let capacity = max(count, 1)
 				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
-				let blockID = heap.allocate(count: Int(capacity))
+				let pointer = heap.allocate(count: Int(capacity))
 				for i in 0..<count {
-					heap.store(block: blockID, offset: Int(i), value: stack.pop())
+					heap.store(pointer: pointer + Int(i), value: stack.pop())
 				}
 
 				let instance = Instance(type: arrayType, fields: [
-					.pointer(.init(blockID), 0),
+					.pointer(pointer),
 					.int(.init(count)),
 					.int(.init(capacity))
 				])
@@ -632,12 +635,12 @@ public struct VirtualMachine {
 			print(inspect(value))
 		case ._allocate:
 			if case let .int(count) = stack.pop() { // Get the capacity
-				let address = heap.allocate(count: Int(count))
-				stack.push(.pointer(.init(address), .init(0)))
+				let pointer = heap.allocate(count: Int(count))
+				stack.push(.pointer(pointer))
 			}
 		case ._deref:
-			if case let .pointer(blockID, offset) = stack.pop(),
-			   let value = heap.dereference(block: Int(blockID), offset: Int(offset))
+			if case let .pointer(pointer) = stack.pop(),
+				 let value = heap.dereference(pointer: pointer)
 			{
 				stack.push(value)
 			}
@@ -645,8 +648,8 @@ public struct VirtualMachine {
 			() // TODO:
 		case ._storePtr:
 			let value = stack.pop()
-			if case let .pointer(blockID, offset) = stack.pop() {
-				heap.store(block: Int(blockID), offset: Int(offset), value: value)
+			if case let .pointer(pointer) = stack.pop() {
+				heap.store(pointer: pointer, value: value)
 			}
 		case ._hash:
 			let value = stack.pop()

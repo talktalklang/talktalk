@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-public struct SourceLocation: Sendable, Equatable, Hashable {
+public struct SourceLocation: Sendable, Equatable, Hashable, Codable {
 	public let path: String
 	public let start: Token
 	public let end: Token

@@ -33,6 +33,8 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 	// Can this type ID be updated?
 	private var immutable: Bool = false
 
+	public var updatedLocation: SourceLocation?
+
 	var id: UUID
 
 	public init(inferredFrom: TypeID) {
@@ -75,6 +77,7 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 
 	public func update(_ type: ValueType, from child: TypeID? = nil, location: SourceLocation) -> [AnalysisError] {
 		current = type
+		updatedLocation = location
 
 		var errors: [AnalysisError] = []
 

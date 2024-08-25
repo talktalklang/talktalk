@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public class AnalyzedParam: Param, AnalyzedExpr, Typed {
+public struct AnalyzedParam: Param, AnalyzedExpr, Typed {
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, context)
 	}

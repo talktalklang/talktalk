@@ -20,19 +20,19 @@ struct ArrayTests: StandardLibraryTest {
 
 	@Test("append increments count") func append() async throws {
 		let source = """
-		var a = Array()
+		var a = []
 		a.append(123)
 		return a.count
 		"""
 
-		let result = try await run(source).get()
+		let result = try await run(source, verbosity: .verbose).get()
 
 		#expect(result == .int(1))
 	}
 
 	@Test("can get items at index") func get() async throws {
 		let result = try await run("""
-		var a = Array()
+		var a = []
 		a.append(123)
 		a.append(456)
 		return a.get(1)
@@ -43,7 +43,7 @@ struct ArrayTests: StandardLibraryTest {
 
 	@Test("can add more than 4 items") func resizingTest() async throws {
 		let source = """
-		 var a = Array()
+		 var a = []
 		 a.append(1)
 		 a.append(2)
 		 a.append(3)

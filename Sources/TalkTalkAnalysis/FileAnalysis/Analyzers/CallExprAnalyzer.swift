@@ -62,6 +62,9 @@ struct CallExprAnalyzer: Analyzer {
 				// Try to infer param types, or check types if we already have one
 				for (i, param) in params.enumerated() {
 					if case .placeholder = param.typeID.type() {
+						if param.name == "item" {
+
+						}
 						param.typeID.update(args[i].expr.typeAnalyzed, location: callee.location)
 					} else if context.shouldReportErrors {
 						errors.append(contentsOf: checkAssignment(to: param, value: args[i].expr, in: context))
