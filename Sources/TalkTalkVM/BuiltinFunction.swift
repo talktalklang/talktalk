@@ -6,5 +6,5 @@
 //
 
 enum BuiltinFunction: Int {
-	case print, _allocate, _free, _deref, _storePtr, _hash
+	case print, _allocate, _free, _deref, _storePtr, _hash, _cast
 }

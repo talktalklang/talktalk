@@ -4,6 +4,56 @@
 //
 //  Created by Pat Nakajima on 7/3/24.
 //
+struct DebugStack<Element> {
+	var storage: [Element] = []
+
+	subscript(_ index: Int) -> Element {
+		get {
+			storage[index]
+		}
+
+		set {
+			storage[index] = newValue
+		}
+	}
+
+	init(capacity: Int) {
+		self.storage = []
+	}
+
+	var size: Int {
+		storage.count
+	}
+
+	mutating func entries() -> [Element] {
+		storage
+	}
+
+	mutating func reset() {
+		storage.removeAll()
+	}
+
+	var isEmpty: Bool {
+		storage.isEmpty
+	}
+
+	mutating func push(_ element: Element) {
+		storage.append(element)
+	}
+
+	@discardableResult mutating func pop() -> Element {
+		storage.removeLast()
+	}
+
+	func peek(offset: Int = 0) -> Element {
+		storage.last!
+	}
+
+	mutating func pop(count: Int) -> [Element] {
+		(0..<count).map { _ in storage.popLast()! }
+	}
+}
+
 struct Stack<Element> {
 	final class Storage: ManagedBuffer<Void, Element> {
 		fileprivate func copy(count: Int) -> Storage {

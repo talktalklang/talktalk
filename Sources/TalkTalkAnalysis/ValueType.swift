@@ -27,10 +27,12 @@ public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 	public func assignableTo(_ other: Any) -> Bool {
 		if let other = other as? InstanceValueType {
 			return other.ofType.isAssignable(from: ofType) &&
-				other.boundGenericTypes.keys.sorted() == boundGenericTypes.keys.sorted() &&
 			other.boundGenericTypes.allSatisfy({ (name, typeID) in
-				guard let ourType = boundGenericTypes[name]?.current else { return false }
-				return typeID.current.isAssignable(from: ourType)
+				if let ourType = boundGenericTypes[name]?.current {
+					return typeID.current.isAssignable(from: ourType)
+				}
+
+				return true
 			})
 		}
 

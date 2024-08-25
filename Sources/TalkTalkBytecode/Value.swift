@@ -186,8 +186,8 @@ extension Value: CustomStringConvertible {
 			"builtin"
 		case .moduleFunction(let id):
 			"module function \(id)"
-		case .struct:
-			"struct"
+		case let .struct(type):
+			"\(type.name).Type"
 		case .instance:
 			"instance \(instanceValue!.type.name)"
 		case .boundMethod:

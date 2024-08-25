@@ -13,12 +13,14 @@ public protocol InstructionMetadata: CustomStringConvertible, Hashable {
 }
 
 public struct Instruction {
+	public let path: String
 	public let line: UInt32
 	public let offset: Int
 	public let opcode: Opcode
 	public let metadata: any InstructionMetadata
 
-	public init(opcode: Opcode, offset: Int, line: UInt32, metadata: any InstructionMetadata) {
+	public init(path: String, opcode: Opcode, offset: Int, line: UInt32, metadata: any InstructionMetadata) {
+		self.path = path
 		self.line = line
 		self.opcode = opcode
 		self.offset = offset

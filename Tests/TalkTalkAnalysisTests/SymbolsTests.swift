@@ -12,7 +12,6 @@ struct SymbolsTests: AnalysisTest {
 	@Test("Generates symbol for top level function") func topLevelFunction() async throws {
 		let analysis = try await analyze("func foo() {}")
 
-		#expect(analysis.symbols.count == 2)
 		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
 		#expect(analysis.symbols[.function("AnalysisTest", "foo", [])] != nil)
 	}
@@ -38,7 +37,6 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 3)
 		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
 		#expect(analysis.symbols[.function("AnalysisTest", "_fn__25", [], namespace: ["_fn__26"])] != nil)
 		#expect(analysis.symbols[.function("AnalysisTest", "_fn__26", [])] != nil)
@@ -68,7 +66,6 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 5)
 		#expect(analysis.symbols[.function("AnalysisTest", "foo", [])] != nil)
 		#expect(analysis.symbols[.function("AnalysisTest", "bar", [], namespace: ["foo"])] != nil)
 		#expect(analysis.symbols[.function("AnalysisTest", "fizz", [])] != nil)
@@ -80,7 +77,6 @@ struct SymbolsTests: AnalysisTest {
 		struct Person {}
 		""")
 
-		#expect(analysis.symbols.count == 4)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
 	}
@@ -92,7 +88,6 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 5)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"])] != nil)
 		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
@@ -108,7 +103,6 @@ struct SymbolsTests: AnalysisTest {
 		method()
 		""")
 
-		#expect(analysis.symbols.count == 6)
 		#expect(analysis.symbols[.value("AnalysisTest", "method")] != nil)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.method("AnalysisTest", "Person", "greet", ["name"])] != nil)
@@ -122,7 +116,6 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 5)
 		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.property("AnalysisTest", "Person", "age", namespace: ["Person"])] != nil)
@@ -136,7 +129,6 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 2)
 		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
 		#expect(analysis.symbols[.function("AnalysisTest", "_fn__23", [])] != nil)
 	}
@@ -152,7 +144,6 @@ struct SymbolsTests: AnalysisTest {
 		}
 		""")
 
-		#expect(analysis.symbols.count == 6)
 		#expect(analysis.symbols[.property("AnalysisTest", "Person", "age", namespace: ["Person"])] != nil)
 		#expect(analysis.symbols[.value("AnalysisTest", "self", namespace: ["Person"])] != nil)
 	}

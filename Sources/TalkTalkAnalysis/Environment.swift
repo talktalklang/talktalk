@@ -42,6 +42,63 @@ public class Environment {
 		self.importedModules = importedModules
 	}
 
+	public static func topLevel(_ moduleName: String) -> Environment {
+		Environment(isModuleScope: true, symbolGenerator: .init(moduleName: moduleName, parent: nil))
+	}
+
+	func importStdlib() {
+		_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
+
+		if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Array"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Array",
+					expr: IdentifierExprSyntax(name: "_SyntheticArrayExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("Array", ["Element": TypeID(.placeholder)]))),
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "String"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "String",
+					expr: IdentifierExprSyntax(name: "_SyntheticStringExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("String", [:]))),
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Int"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Int",
+					expr: IdentifierExprSyntax(name: "_SyntheticIntExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("Int", [:]))),
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Dictionary",
+					expr: IdentifierExprSyntax(name: "_SyntheticDictionaryExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("Dictionary", ["Key": TypeID(.placeholder), "Value": TypeID(.placeholder)]))),
+					externalModule: stdlib
+				)
+			)
+		}
+	}
+
 	public var moduleName: String {
 		symbolGenerator.moduleName
 	}

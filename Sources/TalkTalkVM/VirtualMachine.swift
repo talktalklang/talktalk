@@ -44,7 +44,7 @@ public struct VirtualMachine {
 
 			#if DEBUG
 			if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
-				log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.localNames)")
+				log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.localNames) stack offset: \(currentFrame.stackOffset)")
 			}
 			#endif
 		}
@@ -75,14 +75,14 @@ public struct VirtualMachine {
 		self.module = module
 		self.verbosity = verbosity
 
-		if verbosity == .verbose {
-			print("Loading module: \(module.name)")
-			for (i, chunk) in module.chunks.enumerated() {
-				print("\(i): ", terminator: "")
-				chunk.dump(in: module)
-			}
-			print("------------------------------------------------------")
-		}
+//		if verbosity == .verbose {
+//			print("Loading module: \(module.name)")
+//			for (i, chunk) in module.chunks.enumerated() {
+//				print("\(i): ", terminator: "")
+//				chunk.dump(in: module)
+//			}
+//			print("------------------------------------------------------")
+//		}
 
 		guard let chunk = module.main else {
 			fatalError("no entrypoint found for module `\(module.name)`")
@@ -131,7 +131,12 @@ public struct VirtualMachine {
 							let line = string.components(separatedBy: .newlines)[Int(i.line)]
 							FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
 						} else {
-							FileHandle.standardError.write(Data("       <lib>\n".utf8))
+							var line = ""
+							if let url = URL(string: "file://" + i.path),
+								 let filelines = try? String(contentsOf: url).components(separatedBy: .newlines) {
+								line = filelines[Int(i.line)] + " "
+							}
+							FileHandle.standardError.write(Data("        \(line)<\(i.path.components(separatedBy: "/").last ?? i.path):\(i.line)>\n".utf8))
 						}
 					}
 				}
@@ -373,7 +378,7 @@ public struct VirtualMachine {
 					stack.push(global)
 				} else if let initializer = module.valueInitializers[slot] {
 					// If we don't have the global already, we lazily initialize it by running its initializer
-					call(inline: initializer)
+					call(chunk: initializer)
 
 					globalValues[slot] = stack.peek()
 
@@ -462,14 +467,15 @@ public struct VirtualMachine {
 				}
 
 				// TODO: Make this user-implementable
-				let getSlot = receiver.type.methods.firstIndex(where: { $0.name.contains("$get$index") })!
+				let getSlot = receiver.type.methods.firstIndex(where: { $0.name.contains("$get$") })!
 				call(boundMethod: getSlot, on: receiver)
 			case .initArray:
 				let count = readByte()
+				let capacity = max(count, 0)
 				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
-				let blockID = heap.allocate(count: Int(count))
+				let blockID = heap.allocate(count: Int(capacity))
 				for i in 0..<count {
 					heap.store(block: blockID, offset: Int(i), value: stack.pop())
 				}
@@ -477,44 +483,15 @@ public struct VirtualMachine {
 				let instance = Instance(type: arrayType, fields: [
 					.pointer(.init(blockID), 0),
 					.int(.init(count)),
-					.int(.init(count))
+					.int(.init(capacity))
 				])
 
 				stack.push(.instance(instance))
 			case .initDict: ()
-//				let count = readByte()
-//				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
-//				let dictType = module.structs[dictTypeSlot]
-//
-//				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
-//				let arrayType = module.structs[arrayTypeSlot]
-//
-//				let keysBlockID = heap.allocate(count: Int(count))
-//				let valuesBlockID = heap.allocate(count: Int(count))
-//				for i in 0..<count {
-//					let key = stack.pop()
-//					let value = stack.pop()
-//					heap.store(block: keysBlockID, offset: Int(i), value: key)
-//					heap.store(block: valuesBlockID, offset: Int(i), value: value)
-//				}
-//
-//				let keysArray = Instance(type: arrayType, fields: [
-//					.pointer(keysBlockID, 0),
-//					.int(.init(count)),
-//					.int(.init(count))
-//				])
-//
-//				let valuesArray = Instance(type: arrayType, fields: [
-//					.pointer(valuesBlockID, 0),
-//					.int(.init(count)),
-//					.int(.init(count))
-//				])
-//
-//				stack.push(.instance(valuesArray))
-//				stack.push(.instance(keysArray))
-//				stack.push(.int(Int(count)))
-//
-//				call(structValue: dictType)
+				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
+				let dictType = module.structs[dictTypeSlot]
+
+				call(structValue: dictType)
 			}
 		}
 	}
@@ -583,18 +560,18 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(inline: StaticChunk) {
-		let frame = CallFrame(
-			closure: .init(
-				chunk: inline,
-				upvalues: []
-			),
-			returnTo: ip,
-			stackOffset: stack.size - 1
-		)
-
-		frames.push(frame)
-	}
+//	private mutating func call(inline: StaticChunk) {
+//		let frame = CallFrame(
+//			closure: .init(
+//				chunk: inline,
+//				upvalues: []
+//			),
+//			returnTo: ip,
+//			stackOffset: stack.size - 1
+//		)
+//
+//		frames.push(frame)
+//	}
 
 	private mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
@@ -651,7 +628,7 @@ public struct VirtualMachine {
 
 		switch builtin {
 		case .print:
-			let value = stack.pop()
+			let value = stack.peek()
 			print(inspect(value))
 		case ._allocate:
 			if case let .int(count) = stack.pop() { // Get the capacity
@@ -674,6 +651,10 @@ public struct VirtualMachine {
 		case ._hash:
 			let value = stack.pop()
 			stack.push(.int(.init(value.hashValue)))
+		case ._cast:
+			stack.pop()
+			stack.pop()
+			() // This is just for the analyzer
 		}
 	}
 
@@ -725,7 +706,12 @@ public struct VirtualMachine {
 	@discardableResult private mutating func dumpStack() -> String {
 		if stack.isEmpty { return "" }
 		var result = "       "
-		for slot in stack.entries() {
+
+		if currentFrame.stackOffset > 0 {
+			result += "[ \(currentFrame.stackOffset) skipped ]"
+		}
+
+		for slot in stack.entries()[currentFrame.stackOffset..<stack.size] {
 			if frames.size == 0 {
 				result += "[ \(slot.description) ]"
 			} else {

@@ -45,7 +45,7 @@ public class REPLRunner: Copyable {
 			analysisModule: analysis,
 			moduleEnvironment: [:]
 		)
-		self.chunk = Chunk(name: "main", symbol: .function("REPL", "main", [], namespace: []))
+		self.chunk = Chunk(name: "main", symbol: .function("REPL", "main", [], namespace: []), path: "<repl>")
 		module.main = StaticChunk(chunk: chunk)
 		self.compiler = ChunkCompiler(module: compilingModule)
 		self.vm = VirtualMachine(module: module)

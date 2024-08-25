@@ -63,6 +63,16 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 		current
 	}
 
+	public func asInstance(in environment: Environment, location: SourceLocation) -> TypeID {
+		if case let .struct(string) = current, let structType = environment.lookupStruct(named: string) {
+			update(.instance(InstanceValueType(ofType: .struct(string), boundGenericTypes: structType.placeholderGenericTypes())), location: location)
+		} else if case let .generic(.struct(name), string) = current, let structType = environment.lookupStruct(named: name) {
+			update(.instance(InstanceValueType(ofType: current, boundGenericTypes: structType.placeholderGenericTypes())), location: location)
+		}
+
+		return self
+	}
+
 	public func update(_ type: ValueType, from child: TypeID? = nil, location: SourceLocation) -> [AnalysisError] {
 		current = type
 
@@ -114,8 +124,12 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 			"\(valueType)<\(string)>"
 		case let .instance(instanceValueType):
 			switch instanceValueType.ofType {
-			case let .struct(name): name
-			default: instanceValueType.ofType.description
+			case let .struct(name) where instanceValueType.boundGenericTypes.isEmpty:
+				name
+			case let .struct(name):
+				"\(name)<\(instanceValueType.boundGenericTypes.reduce(into: "") { res, t in res += "\(t.key)=\(t.value.current)" })>"
+			default:
+				instanceValueType.ofType.description
 			}
 		case let .member(valueType):
 			"\(valueType) member"

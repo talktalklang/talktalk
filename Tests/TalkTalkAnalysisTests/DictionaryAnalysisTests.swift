@@ -14,11 +14,17 @@ import TalkTalkAnalysis
 		[:]
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
-		let instance = InstanceValueType(ofType: .struct("Dictionary"), boundGenericTypes: ["Key": TypeID(.placeholder), "Value": TypeID(.placeholder)])
+		let instance = InstanceValueType(
+			ofType: .struct("Dictionary"),
+			boundGenericTypes: [
+				"Key": TypeID(.placeholder),
+				"Value": TypeID(.placeholder)
+			]
+		)
 		#expect(result.typeAnalyzed == .instance(instance))
 	}
 
-	@Test("Basic") func types() async throws {
+	@Test("Types keys/values") func types() async throws {
 		let result = try await ast("""
 		["foo": 123]
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed
@@ -26,10 +32,20 @@ import TalkTalkAnalysis
 		let instance = InstanceValueType(
 			ofType: .struct("Dictionary"),
 			boundGenericTypes: [
-				"Key": TypeID(.instance(.struct("String", [:]))),
+				"Key": TypeID(.instance(.struct("String"))),
 				"Value": TypeID(.int)
 			]
 		)
 		#expect(result.typeAnalyzed == .instance(instance))
+	}
+
+	@Test("Types subscript") func subscripts() async throws {
+		let result = try await ast("""
+		["foo": 123]["foo"]
+		""")
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedSubscriptExpr.self)
+
+		#expect(result.typeAnalyzed == .int)
 	}
 }

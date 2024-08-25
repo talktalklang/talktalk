@@ -7,7 +7,7 @@
 
 public struct SymbolInfo: Equatable, Codable {
 	public enum Source: Equatable, Codable {
-		case `internal`, external(String)
+		case `internal`, external(String), stdlib
 	}
 
 	// What symbol is this

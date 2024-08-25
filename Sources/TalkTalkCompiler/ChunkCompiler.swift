@@ -273,7 +273,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 			name: expr.name?.lexeme ?? expr.autoname,
 			symbol: expr.symbol,
 			parent: chunk,
-			arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth)
+			arity: Byte(expr.analyzedParams.params.count), depth: Byte(scopeDepth),
+			path: chunk.path
 		)
 		let functionCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
@@ -419,7 +420,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 					symbol: symbol,
 					parent: chunk,
 					arity: Byte(decl.parameters.count),
-					depth: Byte(scopeDepth)
+					depth: Byte(scopeDepth),
+					path: chunk.path
 				)
 
 				// Define the actual params for this initializer
@@ -453,7 +455,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 					symbol: symbol,
 					parent: chunk,
 					arity: Byte(decl.params.count),
-					depth: Byte(scopeDepth)
+					depth: Byte(scopeDepth),
+					path: chunk.path
 				)
 
 				// Define the params for this function
@@ -552,9 +555,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// the else stuff.
 		let thenJumpLocation = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
 
-		// Pop the condition off the stack
-		chunk.emit(opcode: .pop, line: expr.condition.location.line)
-
 		// Emit the consequence block
 		try expr.consequenceAnalyzed.accept(self, chunk)
 
@@ -565,8 +565,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Fill in the initial placeholder bytes now that we know how big the consequence block was
 		try chunk.patchJump(thenJumpLocation)
-		// Pop the condition off the stack (TODO: why again?)
-//		chunk.emit(opcode: .pop, line: expr.conditionAnalyzed.location.line)
+
+		// Pop the condition off the stack
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 
 		// Emit the alternative block
 		if let alternativeAnalyzed = expr.alternativeAnalyzed {
@@ -600,14 +601,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedDictionaryLiteralExpr, _ chunk: Chunk) throws {
 		// Store the values
-		for element in expr.elementsAnalyzed {
-			try visit(element, chunk)
-		}
+//		for element in expr.elementsAnalyzed {
+//			try visit(element, chunk)
+//		}
 
-		chunk.emit(opcode: .initDict, line: expr.location.line)
+		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
+		chunk.emit(opcode: .getStruct, line: expr.location.line)
+		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
+		chunk.emit(opcode: .call, line: expr.location.line)
 
 		// Emit the count so we can init enough storage
-		chunk.emit(byte: Byte(expr.elements.count), line: expr.location.line)
+//		chunk.emit(byte: Byte(expr.elements.count), line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedDictionaryElementExpr, _ chunk: Chunk) throws {
@@ -811,7 +815,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			throw CompilerError.unknownIdentifier(expr.nameToken.lexeme)
 		}
 
-		let initializerChunk = Chunk(name: "$initialize_\(variable.name)", symbol: symbol)
+		let initializerChunk = Chunk(name: "$initialize_\(variable.name)", symbol: symbol, path: chunk.path)
 		let initializerCompiler = ChunkCompiler(module: module)
 
 		// Emit actual value initialization into the chunk
@@ -876,7 +880,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 			symbol: symbol,
 			parent: nil,
 			arity: Byte(params.count),
-			depth: Byte(scopeDepth)
+			depth: Byte(scopeDepth),
+			path: "<init>"
 		)
 
 		let compiler = ChunkCompiler(module: module)

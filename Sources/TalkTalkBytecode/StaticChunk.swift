@@ -38,6 +38,7 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 		public var localNames: [String]
 		public var upvalueNames: [String]
 		public var depth: Byte
+		public var path: String
 	}
 
 	public init(chunk: Chunk) {
@@ -52,7 +53,8 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 			lines: chunk.lines,
 			localNames: chunk.localNames,
 			upvalueNames: chunk.upvalueNames,
-			depth: chunk.depth
+			depth: chunk.depth,
+			path: chunk.path
 		)
 	}
 

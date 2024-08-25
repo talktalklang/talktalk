@@ -29,7 +29,7 @@ public struct ModuleAnalyzer {
 	) {
 		self.name = name
 		self.files = files
-		self.environment = Environment(isModuleScope: true, symbolGenerator: .init(moduleName: name, parent: nil))
+		self.environment = .topLevel(name)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = importedModules
@@ -38,12 +38,13 @@ public struct ModuleAnalyzer {
 	public func analyze() throws -> AnalysisModule {
 		var analysisModule = AnalysisModule(name: name, files: files)
 
-		for module in importedModules {
-			environment.importModule(module)
-
-			if module.name == "Standard" {
+		for module in importedModules.sorted(by: { ($0.name == "Standard" ? 0 : 1) < ($1.name == "Standard" ? 0 : 1) }) {
+			if module.name == "Standard", name != "Standard" {
 				// Always make standard types available
 				for (name, structType) in module.structs {
+					// Reserve slots for the standard library
+					environment.symbolGenerator.reserve(structType.symbol, info: module.symbols[structType.symbol]!)
+
 					analysisModule.structs[name] = ModuleStruct(
 						name: name,
 						symbol: structType.symbol,
@@ -56,6 +57,8 @@ public struct ModuleAnalyzer {
 					)
 				}
 			}
+
+			environment.importModule(module)
 		}
 
 		// Find all the top level stuff this module has to offer. We ignore errors at this
