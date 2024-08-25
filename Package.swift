@@ -49,6 +49,12 @@ let package = Package(
 			]
 		),
 		.target(
+			name: "TypeChecker",
+			dependencies: [
+				"TalkTalkSyntax"
+			]
+		),
+		.target(
 			name: "TalkTalkLSP",
 			dependencies: [
 				"TalkTalkBytecode",
@@ -160,6 +166,13 @@ let package = Package(
 			name: "TalkTalkSyntaxTests",
 			dependencies: ["TalkTalkSyntax"]
 		),
+		.testTarget(
+			name: "TypeCheckerTests",
+			dependencies: [
+				"TypeChecker",
+				"TalkTalkSyntax"
+			]
+		)
 	]
 )
 

@@ -6,7 +6,7 @@ public struct AnalyzedDictionaryElementExpr: DictionaryElementExpr, AnalyzedExpr
 	public var keyAnalyzed: any AnalyzedExpr
 	public var valueAnalyzed: any AnalyzedExpr
 
-	let wrapped: any DictionaryElementExpr
+	public let wrapped: DictionaryElementExprSyntax
 
 	public var typeID: TypeID
 	public var environment: Environment

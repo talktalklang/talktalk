@@ -5,6 +5,8 @@ public protocol DictionaryLiteralExpr: Expr {
 }
 
 public struct DictionaryLiteralExprSyntax: DictionaryLiteralExpr {
+	public var id: SyntaxID
+
 	public var elements: [any DictionaryElementExpr]
 	
 	// Where does this syntax live

@@ -12,6 +12,7 @@ public protocol InitDecl: Decl {
 }
 
 public struct InitDeclSyntax: InitDecl {
+	public var id: SyntaxID
 	public var initToken: Token
 	public var parameters: ParamsExpr
 	public var body: any DeclBlock

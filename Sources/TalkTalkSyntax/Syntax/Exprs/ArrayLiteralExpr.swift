@@ -5,6 +5,8 @@ public protocol ArrayLiteralExpr: Expr {
 }
 
 public struct ArrayLiteralExprSyntax: ArrayLiteralExpr {
+	public var id: SyntaxID
+
 	public var exprs: [any Expr]
 
 	// Where does this syntax live

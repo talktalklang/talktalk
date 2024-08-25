@@ -23,6 +23,7 @@ public extension GenericParams {
 }
 
 public struct GenericParamsSyntax: GenericParams {
+	public var id: SyntaxID
 	public var params: [GenericParam]
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }

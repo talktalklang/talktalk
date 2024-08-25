@@ -12,7 +12,7 @@ public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, Analyzed
 		case none, pop, `return`
 	}
 
-	var wrapped: any ExprStmt
+	public let wrapped: ExprStmtSyntax
 	public var exprAnalyzed: any AnalyzedExpr
 	public var typeID: TypeID { exprAnalyzed.typeID }
 	public var exitBehavior: ExitBehavior

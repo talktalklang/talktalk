@@ -27,6 +27,7 @@ public struct Parser {
 	var lexer: Lexer
 	var current: Token
 	var previous: Token!
+	var lastID = 0
 
 	// The location stack is used for tracking source locations while parsing
 	var locationStack: SourceLocationStack = .init()
@@ -50,6 +51,11 @@ public struct Parser {
 		self.current = previous
 		self.lexer = lexer
 		self.errors = lexer.errors
+	}
+
+	mutating func nextID() -> SyntaxID {
+		defer { lastID += 1 }
+		return lastID
 	}
 
 	public mutating func parse() -> [any Syntax] {
@@ -138,14 +144,14 @@ public struct Parser {
 
 		// At this level, we want an ExprStmt, not just a normal expr
 		let expr = expr()
-		return ExprStmtSyntax(expr: expr, location: expr.location)
+		return ExprStmtSyntax(id: nextID(), expr: expr, location: expr.location)
 	}
 
 	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExpr {
 		let i = startLocation(at: previous)
 
 		if didMatch(.rightParen) {
-			return ParamsExprSyntax(params: [], location: endLocation(i))
+			return ParamsExprSyntax(id: nextID(), params: [], location: endLocation(i))
 		}
 
 		var params: [ParamSyntax] = []
@@ -167,6 +173,7 @@ public struct Parser {
 				}
 
 				type = TypeExprSyntax(
+					id: nextID(),
 					identifier: typeID,
 					genericParams: genericParamsSyntax,
 					location: endLocation(i)
@@ -174,12 +181,13 @@ public struct Parser {
 			}
 			skip(.newline)
 
-			params.append(ParamSyntax(name: identifier.lexeme, type: type, location: [identifier]))
+			params.append(ParamSyntax(id: nextID(), name: identifier.lexeme, type: type, location: [identifier]))
 		} while didMatch(.comma)
 
 		consume(terminator, "Expected '\(terminator)' after parameter list")
 
 		return ParamsExprSyntax(
+			id: nextID(),
 			params: params,
 			location: endLocation(i)
 		)
@@ -198,7 +206,7 @@ public struct Parser {
 			}
 
 			let value = parse(precedence: .assignment)
-			args.append(CallArgument(location: endLocation(i), label: name, value: value))
+			args.append(CallArgument(id: nextID(), location: endLocation(i), label: name, value: value))
 		} while didMatch(.comma)
 
 		consume(terminator, "expected '\(terminator)' after arguments")

@@ -15,12 +15,10 @@ public struct AnalyzedReturnStmt: AnalyzedStmt, ReturnStmt {
 
 	public let environment: Environment
 
-	let expr: any ReturnStmt
+	public let wrapped: ReturnStmtSyntax
 
-	public var returnToken: Token { expr.returnToken }
-	public var value: (any Expr)? { expr.value }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var returnToken: Token { wrapped.returnToken }
+	public var value: (any Expr)? { wrapped.value }
 
 	public var valueAnalyzed: (any AnalyzedExpr)?
 

@@ -9,6 +9,7 @@ public protocol StructDecl: Decl {
 }
 
 public struct StructDeclSyntax: StructDecl {
+	public var id: SyntaxID
 	public var structToken: Token
 	public var name: String
 	public var nameToken: Token

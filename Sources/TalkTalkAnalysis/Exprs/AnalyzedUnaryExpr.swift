@@ -13,7 +13,7 @@ public struct AnalyzedUnaryExpr: AnalyzedExpr, UnaryExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { [exprAnalyzed] }
 	public let environment: Environment
 
-	let wrapped: UnaryExpr
+	public let wrapped: UnaryExprSyntax
 
 	public var location: SourceLocation { wrapped.location }
 	public var op: Token.Kind { wrapped.op }

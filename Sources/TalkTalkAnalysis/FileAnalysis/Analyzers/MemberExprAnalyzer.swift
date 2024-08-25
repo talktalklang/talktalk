@@ -73,7 +73,7 @@ struct MemberExprAnalyzer: Analyzer {
 		return AnalyzedMemberExpr(
 			typeID: member?.typeID ??
 				TypeID(.error("no member found: \(expr.property)")),
-			expr: expr,
+			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
 			memberAnalyzed: member ?? error(at: expr, "no member found", environment: context, expectation: .member),

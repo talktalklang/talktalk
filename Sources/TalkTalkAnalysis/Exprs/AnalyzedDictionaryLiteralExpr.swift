@@ -4,7 +4,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedDictionaryLiteralExpr: DictionaryLiteralExpr, AnalyzedExpr {
 	public var elementsAnalyzed: [AnalyzedDictionaryElementExpr]
-	let wrapped: any DictionaryLiteralExpr
+	public let wrapped: DictionaryLiteralExprSyntax
 
 	public var typeID: TypeID
 	public var environment: Environment

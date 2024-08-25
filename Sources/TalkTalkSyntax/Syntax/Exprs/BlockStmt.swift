@@ -10,11 +10,13 @@ public protocol BlockStmt: Expr {
 }
 
 public struct BlockStmtSyntax: BlockStmt {
+	public var id: SyntaxID
 	public var stmts: [any Stmt]
 	public let location: SourceLocation
 	public var children: [any Syntax] { stmts }
 
-	public init(stmts: [any Stmt], location: SourceLocation) {
+	public init(id: SyntaxID, stmts: [any Stmt], location: SourceLocation) {
+		self.id = id
 		self.stmts = stmts
 		self.location = location
 	}

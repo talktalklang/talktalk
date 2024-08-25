@@ -11,6 +11,7 @@ public protocol ImportStmt: Stmt {
 }
 
 public struct ImportStmtSyntax: ImportStmt {
+	public var id: SyntaxID
 	public var token: Token
 	public var module: any IdentifierExpr
 

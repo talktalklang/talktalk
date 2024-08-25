@@ -14,6 +14,7 @@ public protocol VarDecl: Decl, VarLetDecl {
 }
 
 public struct VarDeclSyntax: VarDecl {
+	public var id: SyntaxID
 	public var token: Token
 	public var name: String
 	public var nameToken: Token

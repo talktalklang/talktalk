@@ -7,6 +7,7 @@ public protocol SubscriptExpr: Expr {
 }
 
 public struct SubscriptExprSyntax: SubscriptExpr {
+	public var id: SyntaxID
 	public var receiver: any Expr
 	public var args: [CallArgument]
 

@@ -96,7 +96,7 @@ extension Analyzer {
 	) -> AnalyzedErrorSyntax {
 		AnalyzedErrorSyntax(
 			typeID: TypeID(.error(message)),
-			expr: ParseErrorSyntax(location: expr.location, message: message, expectation: expectation),
+			wrapped: ParseErrorSyntax(location: expr.location, message: message, expectation: expectation),
 			environment: environment
 		)
 	}

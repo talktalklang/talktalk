@@ -13,6 +13,7 @@ public protocol StructExpr: Expr {
 }
 
 public struct StructExprSyntax: StructExpr {
+	public var id: SyntaxID
 	public var structToken: Token
 	public var name: String?
 	public var genericParams: (any GenericParams)?

@@ -14,11 +14,13 @@ public protocol LiteralExpr: Expr {
 }
 
 public struct LiteralExprSyntax: LiteralExpr {
+	public var id: SyntaxID
 	public let value: LiteralValue
 	public let location: SourceLocation
 	public var children: [any Syntax] { [] }
 
-	public init(value: LiteralValue, location: SourceLocation) {
+	public init(id: SyntaxID, value: LiteralValue, location: SourceLocation) {
+		self.id = id
 		self.value = value
 		self.location = location
 	}

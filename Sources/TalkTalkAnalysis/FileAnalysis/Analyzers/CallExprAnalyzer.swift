@@ -24,6 +24,7 @@ struct CallExprAnalyzer: Analyzer {
 			try AnalyzedArgument(
 				environment: context,
 				label: $0.label,
+				wrapped: $0,
 				expr: $0.value.accept(visitor, context) as! any AnalyzedExpr
 			)
 		}
@@ -93,7 +94,7 @@ struct CallExprAnalyzer: Analyzer {
 						env.update(local: param.name, as: param.typeID.current)
 					}
 					// Try to infer return type now that we know what a param is
-					returning = try visitor.visit(funcExpr.bodyAnalyzed, env).typeID
+					returning = try visitor.visit(funcExpr.body, env).typeID
 				}
 			}
 
@@ -138,7 +139,7 @@ struct CallExprAnalyzer: Analyzer {
 
 		return AnalyzedCallExpr(
 			typeID: type,
-			expr: expr,
+			wrapped: expr.cast(CallExprSyntax.self),
 			calleeAnalyzed: callee as! any AnalyzedExpr,
 			argsAnalyzed: args,
 			analysisErrors: errors,

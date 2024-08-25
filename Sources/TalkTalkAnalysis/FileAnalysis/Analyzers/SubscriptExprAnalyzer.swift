@@ -19,7 +19,7 @@ struct SubscriptExprAnalyzer {
 		var result = AnalyzedSubscriptExpr(
 			receiverAnalyzed: receiver,
 			argsAnalyzed: args,
-			wrapped: expr,
+			wrapped: expr as! SubscriptExprSyntax,
 			typeID: TypeID(.placeholder),
 			environment: context,
 			analysisErrors: []

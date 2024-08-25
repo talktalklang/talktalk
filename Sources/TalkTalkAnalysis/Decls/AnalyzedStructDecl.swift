@@ -5,7 +5,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public let symbol: Symbol
-	let wrapped: any StructDecl
+	public let wrapped: StructDeclSyntax
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
 	public let structType: StructType

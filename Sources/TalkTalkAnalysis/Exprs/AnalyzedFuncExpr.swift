@@ -10,7 +10,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public let typeID: TypeID
-	let expr: FuncExpr
+	public let wrapped: FuncExprSyntax
 
 	public let symbol: Symbol
 	public let analyzedParams: AnalyzedParamsExpr
@@ -23,18 +23,16 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	}
 
 	public var name: Token?
-	public var funcToken: Token { expr.funcToken }
-	public var params: ParamsExpr { expr.params }
-	public var typeDecl: (any TypeExpr)? { expr.typeDecl }
-	public var body: any BlockStmt { expr.body }
-	public var i: Int { expr.i }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var funcToken: Token { wrapped.funcToken }
+	public var params: ParamsExpr { wrapped.params }
+	public var typeDecl: (any TypeExpr)? { wrapped.typeDecl }
+	public var body: any BlockStmt { wrapped.body }
+	public var i: Int { wrapped.i }
 
 	public init(
 		symbol: Symbol,
 		type: TypeID,
-		expr: FuncExpr,
+		wrapped: FuncExprSyntax,
 		analyzedParams: AnalyzedParamsExpr,
 		bodyAnalyzed: AnalyzedBlockStmt,
 		analysisErrors: [AnalysisError],
@@ -42,9 +40,9 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 		environment: Environment
 	) {
 		self.symbol = symbol
-		self.name = expr.name
+		self.name = wrapped.name
 		self.typeID = type
-		self.expr = expr
+		self.wrapped = wrapped
 		self.analyzedParams = analyzedParams
 		self.bodyAnalyzed = bodyAnalyzed
 		self.analysisErrors = analysisErrors

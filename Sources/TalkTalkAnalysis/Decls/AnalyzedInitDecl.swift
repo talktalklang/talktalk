@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
-	let wrapped: InitDecl
+	public let wrapped: InitDeclSyntax
 
 	public let symbol: Symbol
 	public let typeID: TypeID

@@ -91,7 +91,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 		indent {
 			try expr.calleeAnalyzed.accept(self, ())
 			for arg in expr.argsAnalyzed {
-				dump(arg)
+				dump(arg.expr)
 			}
 		}
 	}

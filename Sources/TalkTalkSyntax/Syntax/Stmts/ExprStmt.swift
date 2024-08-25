@@ -10,6 +10,7 @@ public protocol ExprStmt: Stmt {
 }
 
 public struct ExprStmtSyntax: ExprStmt {
+	public var id: SyntaxID
 	public var expr: any Expr
 	public let location: SourceLocation
 	public var children: [any Syntax] {

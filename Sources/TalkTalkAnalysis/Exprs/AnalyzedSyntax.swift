@@ -8,6 +8,9 @@
 import TalkTalkSyntax
 
 public protocol AnalyzedSyntax: Syntax, CustomDebugStringConvertible {
+	associatedtype Wrapped: Syntax
+
+	var wrapped: Wrapped { get }
 	var typeID: TypeID { get }
 	var analyzedChildren: [any AnalyzedSyntax] { get }
 	var analysisErrors: [AnalysisError] { get }
@@ -17,6 +20,10 @@ public protocol AnalyzedSyntax: Syntax, CustomDebugStringConvertible {
 }
 
 public extension AnalyzedSyntax {
+	var id: SyntaxID { wrapped.id }
+	var location: SourceLocation { wrapped.location }
+	var children: [any Syntax] { wrapped.children }
+
 	var typeAnalyzed: ValueType {
 		typeID.current
 	}

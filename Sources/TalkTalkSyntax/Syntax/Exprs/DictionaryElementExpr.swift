@@ -7,6 +7,7 @@ public protocol DictionaryElementExpr: Expr {
 }
 
 public struct DictionaryElementExprSyntax: DictionaryElementExpr {
+	public var id: SyntaxID
 	public var key: any Expr
 	public var value: any Expr
 	// Where does this syntax live

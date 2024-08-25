@@ -43,7 +43,8 @@ struct StructDeclAnalyzer: Analyzer {
 			local: "self",
 			as: AnalyzedVarExpr(
 				typeID: TypeID(.instance(.struct(structType.name!, structType.placeholderGenericTypes()))),
-				expr: VarExprSyntax(
+				wrapped: VarExprSyntax(
+					id: -8,
 					token: .synthetic(.self),
 					location: [.synthetic(.self)]
 				),
@@ -159,7 +160,7 @@ struct StructDeclAnalyzer: Analyzer {
 					slot: structType.methods.count,
 					params: structType.properties.reduce(into: []) { res, prop in
 						res.append(
-							AnalyzedParam(type: prop.value.typeID, expr: .synthetic(name: prop.key), environment: context)
+							AnalyzedParam(type: prop.value.typeID, wrapped: .synthetic(name: prop.key).cast(ParamSyntax.self), environment: context)
 						)
 					},
 					typeID: TypeID(
@@ -181,7 +182,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 		let analyzed = AnalyzedStructDecl(
 			symbol: symbol,
-			wrapped: decl,
+			wrapped: decl.cast(StructDeclSyntax.self),
 			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
 			structType: structType,
 			lexicalScope: lexicalScope,

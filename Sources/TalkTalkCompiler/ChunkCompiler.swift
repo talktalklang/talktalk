@@ -632,7 +632,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let syntax = receiver as? AnalyzedVarExpr {
 			varName = syntax.name
 			symbol = syntax.symbol
-		} else if let syntax = receiver as? AnalyzedVarLetDecl {
+		} else if let syntax = receiver as? any AnalyzedVarLetDecl {
 			varName = syntax.name
 			symbol = syntax.symbol
 		}

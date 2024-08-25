@@ -16,7 +16,7 @@ public extension Environment {
 					name: name,
 					expr: AnalyzedLiteralExpr(
 						typeID: TypeID(),
-						expr: LiteralExprSyntax(value: .bool(true), location: [.synthetic(.true)]),
+						wrapped: LiteralExprSyntax(id: -7, value: .bool(true), location: [.synthetic(.true)]),
 						environment: .init(symbolGenerator: .init(moduleName: "", parent: nil))
 					),
 					type: TypeID(.bool)

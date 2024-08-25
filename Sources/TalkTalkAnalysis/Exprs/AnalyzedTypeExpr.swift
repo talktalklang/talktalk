@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
-	let wrapped: any TypeExpr
+	public let wrapped: TypeExprSyntax
 
 	public let symbol: Symbol
 	public let typeID: TypeID

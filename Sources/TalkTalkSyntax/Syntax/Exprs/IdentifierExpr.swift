@@ -10,6 +10,7 @@ public protocol IdentifierExpr: Expr {
 }
 
 public struct IdentifierExprSyntax: IdentifierExpr {
+	public var id: SyntaxID
 	public var name: String
 	public var location: SourceLocation
 
@@ -17,7 +18,8 @@ public struct IdentifierExprSyntax: IdentifierExpr {
 		try visitor.visit(self, scope)
 	}
 
-	public init(name: String, location: SourceLocation) {
+	public init(id: SyntaxID, name: String, location: SourceLocation) {
+		self.id = id
 		self.name = name
 		self.location = location
 	}

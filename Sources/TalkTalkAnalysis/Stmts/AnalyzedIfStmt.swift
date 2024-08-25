@@ -3,7 +3,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
-	let wrapped: any IfStmt
+	public let wrapped: IfStmtSyntax
 
 	public var typeID: TypeID
 	public var environment: Environment

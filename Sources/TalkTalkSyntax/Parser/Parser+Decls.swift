@@ -27,6 +27,7 @@ public extension Parser {
 
 		if kind == .let {
 			return LetDeclSyntax(
+				id: nextID(),
 				token: token,
 				name: nameToken.lexeme,
 				nameToken: nameToken,
@@ -36,6 +37,7 @@ public extension Parser {
 			)
 		} else {
 			return VarDeclSyntax(
+				id: nextID(),
 				token: token,
 				name: nameToken.lexeme,
 				nameToken: nameToken,
@@ -59,6 +61,7 @@ public extension Parser {
 
 		let body = declBlock()
 		return InitDeclSyntax(
+			id: nextID(),
 			initToken: initToken,
 			parameters: params,
 			body: body,
@@ -83,7 +86,7 @@ public extension Parser {
 		consume(.rightBrace, "expected '}' after block")
 		skip(.newline)
 
-		return DeclBlockExprSyntax(decls: decls, location: endLocation(i))
+		return DeclBlockExprSyntax(id: nextID(), decls: decls, location: endLocation(i))
 	}
 
 	mutating func structDecl() -> any Syntax {
@@ -106,6 +109,7 @@ public extension Parser {
 		let body = declBlock()
 
 		return StructDeclSyntax(
+			id: nextID(), 
 			structToken: structToken,
 			name: name.lexeme,
 			nameToken: name,

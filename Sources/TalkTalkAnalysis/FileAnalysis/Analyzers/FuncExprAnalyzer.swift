@@ -42,10 +42,10 @@ struct FuncExprAnalyzer {
 			let stub = AnalyzedFuncExpr(
 				symbol: symbol,
 				type: TypeID(stubType),
-				expr: expr,
+				wrapped: expr as! FuncExprSyntax,
 				analyzedParams: params,
 				bodyAnalyzed: .init(
-					stmt: expr.body,
+					wrapped: expr.body as! BlockStmtSyntax,
 					typeID: TypeID(),
 					stmtsAnalyzed: [],
 					environment: context
@@ -96,7 +96,7 @@ struct FuncExprAnalyzer {
 		let funcExpr = AnalyzedFuncExpr(
 			symbol: symbol,
 			type: TypeID(analyzed),
-			expr: expr,
+			wrapped: expr as! FuncExprSyntax,
 			analyzedParams: params,
 			bodyAnalyzed: bodyAnalyzed,
 			analysisErrors: errors,

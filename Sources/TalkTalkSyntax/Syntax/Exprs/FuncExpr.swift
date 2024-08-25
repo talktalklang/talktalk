@@ -21,6 +21,7 @@ public extension FuncExpr {
 }
 
 public struct FuncExprSyntax: FuncExpr, Decl {
+	public var id: SyntaxID
 	public let funcToken: Token
 	public let typeDecl: (any TypeExpr)?
 	public let params: ParamsExpr
@@ -30,7 +31,8 @@ public struct FuncExprSyntax: FuncExpr, Decl {
 	public let location: SourceLocation
 	public var children: [any Syntax] { [params, body] }
 
-	public init(funcToken: Token, params: ParamsExpr, typeDecl: (any TypeExpr)?, body: any BlockStmt, i: Int, name: Token? = nil, location: SourceLocation) {
+	public init(id: SyntaxID, funcToken: Token, params: ParamsExpr, typeDecl: (any TypeExpr)?, body: any BlockStmt, i: Int, name: Token? = nil, location: SourceLocation) {
+		self.id = id
 		self.funcToken = funcToken
 		self.params = params
 		self.typeDecl = typeDecl

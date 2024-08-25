@@ -9,13 +9,11 @@ import TalkTalkSyntax
 
 public struct AnalyzedLiteralExpr: AnalyzedExpr, LiteralExpr {
 	public let typeID: TypeID
-	let expr: LiteralExpr
+	public let wrapped: LiteralExprSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 
-	public var value: LiteralValue { expr.value }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var value: LiteralValue { wrapped.value }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(self, scope)

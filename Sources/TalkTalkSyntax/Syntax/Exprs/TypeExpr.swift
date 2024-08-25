@@ -11,6 +11,7 @@ public protocol TypeExpr: Expr {
 }
 
 public struct TypeExprSyntax: TypeExpr {
+	public var id: SyntaxID
 	public var identifier: Token
 	public var genericParams: (any GenericParams)?
 	public var location: SourceLocation

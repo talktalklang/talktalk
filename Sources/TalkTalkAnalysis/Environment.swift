@@ -58,7 +58,7 @@ public class Environment {
 				from: "Standard",
 				binding: .init(
 					name: "Array",
-					expr: IdentifierExprSyntax(name: "_SyntheticArrayExpr", location: [.synthetic(.identifier)]),
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticArrayExpr", location: [.synthetic(.identifier)]),
 					type: TypeID(.instance(.struct("Array", ["Element": TypeID(.placeholder)]))),
 					externalModule: stdlib
 				)
@@ -69,7 +69,7 @@ public class Environment {
 				from: "Standard",
 				binding: .init(
 					name: "String",
-					expr: IdentifierExprSyntax(name: "_SyntheticStringExpr", location: [.synthetic(.identifier)]),
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticStringExpr", location: [.synthetic(.identifier)]),
 					type: TypeID(.instance(.struct("String", [:]))),
 					externalModule: stdlib
 				)
@@ -80,7 +80,7 @@ public class Environment {
 				from: "Standard",
 				binding: .init(
 					name: "Int",
-					expr: IdentifierExprSyntax(name: "_SyntheticIntExpr", location: [.synthetic(.identifier)]),
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticIntExpr", location: [.synthetic(.identifier)]),
 					type: TypeID(.instance(.struct("Int", [:]))),
 					externalModule: stdlib
 				)
@@ -91,7 +91,7 @@ public class Environment {
 				from: "Standard",
 				binding: .init(
 					name: "Dictionary",
-					expr: IdentifierExprSyntax(name: "_SyntheticDictionaryExpr", location: [.synthetic(.identifier)]),
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticDictionaryExpr", location: [.synthetic(.identifier)]),
 					type: TypeID(.instance(.struct("Dictionary", ["Key": TypeID(.placeholder), "Value": TypeID(.placeholder)]))),
 					externalModule: stdlib
 				)
@@ -227,7 +227,8 @@ public class Environment {
 					name: "Self",
 					expr: AnalyzedVarExpr(
 						typeID: TypeID(scope.type),
-						expr: VarExprSyntax(
+						wrapped: VarExprSyntax(
+							id: scope.expr.id,
 							token: .synthetic(.self),
 							location: [.synthetic(.self)]
 						),

@@ -32,7 +32,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let exprAnalyzed = try expr.expr.accept(self, context) as! any AnalyzedExpr
 
 		return AnalyzedExprStmt(
-			wrapped: expr,
+			wrapped: expr.cast(ExprStmtSyntax.self),
 			exprAnalyzed: exprAnalyzed,
 			exitBehavior: context.exprStmtExitBehavior,
 			environment: context
@@ -43,7 +43,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		AnalyzedImportStmt(
 			environment: context,
 			typeID: TypeID(.none),
-			stmt: expr
+			wrapped: expr.cast(ImportStmtSyntax.self)
 		)
 	}
 
@@ -52,7 +52,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	{
 		AnalyzedIdentifierExpr(
 			typeID: TypeID(),
-			expr: expr,
+			wrapped: expr.cast(IdentifierExprSyntax.self),
 			environment: context
 		)
 	}
@@ -69,14 +69,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				typeID: TypeID(.bool),
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
-				wrapped: expr
+				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		case .minus:
 			return AnalyzedUnaryExpr(
 				typeID: TypeID(.int),
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
-				wrapped: expr
+				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		default:
 			fatalError("unreachable")
@@ -87,6 +87,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		try AnalyzedArgument(
 			environment: context,
 			label: expr.label,
+			wrapped: expr.cast(CallArgument.self),
 			expr: expr.value.accept(self, context) as! any AnalyzedExpr
 		)
 	}
@@ -117,7 +118,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedDefExpr(
 			typeID: TypeID(value.typeAnalyzed),
-			expr: expr,
+			wrapped: expr.cast(DefExprSyntax.self),
 			receiverAnalyzed: receiver,
 			analysisErrors: errors,
 			valueAnalyzed: value,
@@ -130,7 +131,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	{
 		AnalyzedErrorSyntax(
 			typeID: TypeID(.error(expr.message)),
-			expr: expr,
+			wrapped: expr.cast(ParseErrorSyntax.self),
 			environment: context
 		)
 	}
@@ -159,7 +160,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedLiteralExpr(
 			typeID: typeID,
-			expr: expr,
+			wrapped: expr.cast(LiteralExprSyntax.self),
 			environment: context
 		)
 	}
@@ -192,7 +193,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			return AnalyzedVarExpr(
 				typeID: binding.type,
-				expr: expr,
+				wrapped: expr.cast(VarExprSyntax.self),
 				symbol: symbol,
 				environment: context,
 				analysisErrors: [],
@@ -206,7 +207,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedVarExpr(
 			typeID: TypeID(.any),
-			expr: expr,
+			wrapped: expr.cast(VarExprSyntax.self),
 			symbol: context.symbolGenerator.value(expr.name, source: .internal),
 			environment: context,
 			analysisErrors: errors,
@@ -230,7 +231,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedBinaryExpr(
 			typeID: lhs.typeID,
-			expr: expr,
+			wrapped: expr.cast(BinaryExprSyntax.self),
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
 			environment: env
@@ -274,7 +275,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// TODO: Error if the branches don't match or condition isn't a bool
 		return try AnalyzedIfExpr(
 			typeID: expr.consequence.accept(self, context).typeID,
-			expr: expr,
+			wrapped: expr.cast(IfExprSyntax.self),
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
 			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockStmt,
 			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockStmt,
@@ -291,7 +292,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		if let type = context.type(named: expr.identifier.lexeme) {
 			if type.primitive != nil {
 				return AnalyzedTypeExpr(
-					wrapped: expr,
+					wrapped: expr.cast(TypeExprSyntax.self),
 					symbol: .primitive(type.description),
 					typeID: TypeID(type),
 					environment: context
@@ -300,7 +301,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			if case let .generic(valueType, string) = type {
 				return AnalyzedTypeExpr(
-					wrapped: expr,
+					wrapped: expr.cast(TypeExprSyntax.self),
 					symbol: context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal),
 					typeID: TypeID(.generic(valueType, expr.identifier.lexeme)),
 					environment: context
@@ -308,7 +309,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			}
 
 			return AnalyzedTypeExpr(
-				wrapped: expr,
+				wrapped: expr.cast(TypeExprSyntax.self),
 				symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
 				typeID: TypeID(type),
 				environment: context
@@ -337,7 +338,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 
 		return AnalyzedInitDecl(
-			wrapped: expr,
+			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
 			typeID: TypeID(.struct(lexicalScope.scope.name!)),
 			environment: innerEnvironment,
@@ -351,7 +352,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedReturnStmt(
 			typeID: TypeID(valueAnalyzed?.typeAnalyzed ?? .void),
 			environment: env,
-			expr: expr,
+			wrapped: expr.cast(ReturnStmtSyntax.self),
 			valueAnalyzed: valueAnalyzed as? any AnalyzedExpr
 		)
 	}
@@ -361,7 +362,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	{
 		try AnalyzedParamsExpr(
 			typeID: TypeID(.void),
-			expr: expr,
+			wrapped: expr.cast(ParamsExprSyntax.self),
 			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				var type = TypeID()
 
@@ -372,7 +373,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 				return AnalyzedParam(
 					type: type,
-					expr: param,
+					wrapped: param.cast(ParamSyntax.self),
 					environment: context
 				)
 			},
@@ -389,7 +390,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedWhileStmt(
 			typeID: body.typeID,
-			wrapped: expr,
+			wrapped: expr.cast(WhileStmtSyntax.self),
 			conditionAnalyzed: condition,
 			bodyAnalyzed: body,
 			environment: context
@@ -406,7 +407,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 
 		return AnalyzedBlockStmt(
-			stmt: stmt,
+			wrapped: stmt.cast(BlockStmtSyntax.self),
 			typeID: TypeID(bodyAnalyzed.last?.typeAnalyzed ?? .none),
 			stmtsAnalyzed: bodyAnalyzed,
 			environment: context
@@ -416,14 +417,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: any Param, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParam(
 			type: TypeID(),
-			expr: expr,
+			wrapped: expr as! ParamSyntax,
 			environment: context
 		)
 	}
 
 	public func visit(_ expr: any GenericParams, _ environment: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedGenericParams(
-			wrapped: expr,
+			wrapped: expr as! GenericParamsSyntax,
 			environment: environment,
 			typeID: TypeID(),
 			paramsAnalyzed: expr.params.map {
@@ -474,7 +475,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedDeclBlock(
 			typeID: TypeID(.void),
-			decl: expr,
+			wrapped: expr as! DeclBlockExprSyntax,
 			declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl],
 			environment: context
 		)
@@ -526,7 +527,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
 			typeID: valueType,
-			expr: expr,
+			wrapped: expr as! VarDeclSyntax,
 			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
@@ -584,7 +585,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
 			typeID: valueType,
-			expr: expr,
+			wrapped: expr as! LetDeclSyntax,
 			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
@@ -599,17 +600,25 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: any IfStmt, _ context: Environment) throws -> any AnalyzedSyntax {
 		try AnalyzedIfStmt(
-			wrapped: expr,
+			wrapped: expr as! IfStmtSyntax,
 			typeID: TypeID(.void),
 			environment: context,
-			conditionAnalyzed: expr.condition.accept(self, context) as! AnalyzedExpr,
-			consequenceAnalyzed: expr.consequence.accept(self, context) as! AnalyzedExpr,
-			alternativeAnalyzed: expr.alternative?.accept(self, context) as? AnalyzedExpr
+			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
+			consequenceAnalyzed: expr.consequence.accept(self, context) as! any AnalyzedExpr,
+			alternativeAnalyzed: expr.alternative?.accept(self, context) as? any AnalyzedExpr
 		)
 	}
 
 	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		AnalyzedErrorSyntax(typeID: TypeID(.error("TODO")), expr: ParseErrorSyntax(location: expr.location, message: "TODO", expectation: .none), environment: context)
+		AnalyzedErrorSyntax(
+			typeID: TypeID(.error("TODO")),
+			wrapped: ParseErrorSyntax(
+				location: expr.location,
+				message: "TODO",
+				expectation: .none
+			),
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: any ArrayLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
@@ -625,7 +634,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
 			exprsAnalyzed: elements as! [any AnalyzedExpr],
-			wrapped: expr,
+			wrapped: expr as! ArrayLiteralExprSyntax,
 			typeID: TypeID(.instance(instanceType)),
 			analysisErrors: errors
 		)
@@ -657,7 +666,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedDictionaryLiteralExpr(
 			elementsAnalyzed: elementsAnalyzed,
-			wrapped: expr,
+			wrapped: expr as! DictionaryLiteralExprSyntax,
 			typeID: TypeID(.instance(instance)),
 			environment: context
 		)
@@ -669,7 +678,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedDictionaryElementExpr(
 			keyAnalyzed: key,
 			valueAnalyzed: value,
-			wrapped: expr,
+			wrapped: expr as! DictionaryElementExprSyntax,
 			typeID: TypeID(),
 			environment: context
 		)

@@ -24,7 +24,7 @@ public struct BuiltinFunction {
 	}
 
 	static func syntheticExpr() -> any Expr {
-		IdentifierExprSyntax(name: "__builtin__", location: [.synthetic(.builtin)])
+		IdentifierExprSyntax(id: -4, name: "__builtin__", location: [.synthetic(.builtin)])
 	}
 
 	func binding(in _: Environment) -> Environment.Binding {

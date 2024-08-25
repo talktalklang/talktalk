@@ -11,6 +11,7 @@ public protocol ReturnStmt: Stmt {
 }
 
 public struct ReturnStmtSyntax: ReturnStmt {
+	public var id: SyntaxID
 	public var returnToken: Token
 	public var location: SourceLocation
 	public var value: (any Expr)?
@@ -18,7 +19,8 @@ public struct ReturnStmtSyntax: ReturnStmt {
 		if let value { [value] } else { [] }
 	}
 
-	public init(returnToken: Token, location: SourceLocation, value: (any Expr)? = nil) {
+	public init(id: SyntaxID, returnToken: Token, location: SourceLocation, value: (any Expr)? = nil) {
+		self.id = id
 		self.returnToken = returnToken
 		self.location = location
 		self.value = value

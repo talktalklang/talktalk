@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedWhileStmt: WhileStmt, AnalyzedStmt {
 	public let typeID: TypeID
-	let wrapped: WhileStmt
+	public let wrapped: WhileStmtSyntax
 
 	public var conditionAnalyzed: any AnalyzedExpr
 	public var bodyAnalyzed: AnalyzedBlockStmt

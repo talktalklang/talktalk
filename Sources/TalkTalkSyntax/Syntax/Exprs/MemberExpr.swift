@@ -5,6 +5,7 @@ public protocol MemberExpr: Expr {
 }
 
 public struct MemberExprSyntax: MemberExpr {
+	public let id: SyntaxID
 	public let receiver: any Expr
 	public let property: String
 	public let propertyToken: Token

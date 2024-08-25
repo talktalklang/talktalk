@@ -69,7 +69,7 @@ extension Parser {
 		let op = previous!
 		let expr = parse(precedence: .unary)
 
-		return UnaryExprSyntax(op: op.kind, expr: expr, location: endLocation(i))
+		return UnaryExprSyntax(id: nextID(), op: op.kind, expr: expr, location: endLocation(i))
 	}
 
 	mutating func ifExpr(_: Bool) -> any Expr {
@@ -95,6 +95,7 @@ extension Parser {
 		let alternative = blockStmt(false)
 
 		return IfExprSyntax(
+			id: nextID(),
 			ifToken: ifToken,
 			elseToken: elseToken,
 			condition: condition,
@@ -130,6 +131,7 @@ extension Parser {
 		let body = blockStmt(false)
 
 		let funcExpr = FuncExprSyntax(
+			id: nextID(),
 			funcToken: funcToken,
 			params: params,
 			typeDecl: typeDecl,
@@ -176,7 +178,7 @@ extension Parser {
 				}
 
 				let value = parse(precedence: .assignment)
-				exprs.append(DictionaryElementExprSyntax(key: expr, value: value, location: [expr.location.start, value.location.end]))
+				exprs.append(DictionaryElementExprSyntax(id: nextID(), key: expr, value: value, location: [expr.location.start, value.location.end]))
 			} else {
 				exprs.append(expr)
 			}
@@ -185,9 +187,9 @@ extension Parser {
 		consume(.rightBracket, "expected ']' after \(isDictionary ? "dictionary" : "array") literal")
 
 		let literal: any Expr = if isDictionary {
-			DictionaryLiteralExprSyntax(elements: exprs as! [any DictionaryElementExpr], location: endLocation(i))
+			DictionaryLiteralExprSyntax(id: nextID(), elements: exprs as! [any DictionaryElementExpr], location: endLocation(i))
 		} else {
-			ArrayLiteralExprSyntax(exprs: exprs, location: endLocation(i))
+			ArrayLiteralExprSyntax(id: nextID(), exprs: exprs, location: endLocation(i))
 		}
 
 		if check(.leftBracket) {
@@ -199,21 +201,21 @@ extension Parser {
 
 	mutating func literal(_: Bool) -> any Expr {
 		if didMatch(.true) {
-			return LiteralExprSyntax(value: .bool(true), location: [previous])
+			return LiteralExprSyntax(id: nextID(), value: .bool(true), location: [previous])
 		}
 
 		if didMatch(.false) {
-			return LiteralExprSyntax(value: .bool(false), location: [previous])
+			return LiteralExprSyntax(id: nextID(), value: .bool(false), location: [previous])
 		}
 
 		if didMatch(.string) {
 			let string = previous.lexeme.split(separator: "")[1 ..< previous.lexeme.count - 1].joined(separator: "")
-			return LiteralExprSyntax(value: .string(string), location: [previous])
+			return LiteralExprSyntax(id: nextID(), value: .string(string), location: [previous])
 		}
 
 		if didMatch(.int), let int = Int(previous.lexeme) {
 
-			return LiteralExprSyntax(value: .int(int), location: [previous])
+			return LiteralExprSyntax(id: nextID(), value: .int(int), location: [previous])
 		}
 
 		if didMatch(.func) {
@@ -229,7 +231,7 @@ extension Parser {
 		let returnToken = previous!
 		let value = parse(precedence: .none)
 
-		return ReturnStmtSyntax(returnToken: returnToken, location: endLocation(i), value: value)
+		return ReturnStmtSyntax(id: nextID(), returnToken: returnToken, location: endLocation(i), value: value)
 	}
 
 	mutating func structExpr(_: Bool) -> StructExpr {
@@ -246,6 +248,7 @@ extension Parser {
 		let body = declBlock()
 
 		return StructExprSyntax(
+			id: nextID(),
 			structToken: structToken,
 			name: name?.lexeme,
 			genericParams: genericParamsSyntax,
@@ -265,6 +268,7 @@ extension Parser {
 		consume(.greater)
 
 		return GenericParamsSyntax(
+			id: nextID(),
 			params: types.map { GenericParamSyntax(type: $0) },
 			location: endLocation(i)
 		)
@@ -284,7 +288,7 @@ extension Parser {
 
 		consume(.rightBrace, "expected '}' after block body")
 
-		return BlockStmtSyntax(stmts: body, location: endLocation(i))
+		return BlockStmtSyntax(id: nextID(), stmts: body, location: endLocation(i))
 	}
 
 	mutating func variable(_ canAssign: Bool) -> any Expr {
@@ -294,13 +298,13 @@ extension Parser {
 			return ParseErrorSyntax(location: [current], message: "Expected identifier for variable", expectation: .variable)
 		}
 
-		let lhs = VarExprSyntax(token: token, location: endLocation(i))
+		let lhs = VarExprSyntax(id: nextID(), token: token, location: endLocation(i))
 
 		if check(.equals), canAssign {
 			let i = startLocation(at: lhs.token)
 			consume(.equals)
 			let rhs = parse(precedence: .assignment)
-			return DefExprSyntax(receiver: lhs, value: rhs, location: endLocation(i))
+			return DefExprSyntax(id: nextID(), receiver: lhs, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
 			return ParseErrorSyntax(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
@@ -314,7 +318,7 @@ extension Parser {
 			skip(.newline)
 			let genericParams = genericParams()
 			skip(.newline)
-			return TypeExprSyntax(identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
+			return TypeExprSyntax(id: nextID(), identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
 		}
 
 		return lhs
@@ -332,7 +336,7 @@ extension Parser {
 			args = argumentList()
 		}
 
-		return CallExprSyntax(callee: lhs, args: args, location: endLocation(i))
+		return CallExprSyntax(id: nextID(), callee: lhs, args: args, location: endLocation(i))
 	}
 
 	mutating func subscriptCall(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
@@ -342,13 +346,13 @@ extension Parser {
 		let args = argumentList(terminator: .rightBracket)
 
 		if didMatch(.equals), canAssign {
-			let assignee = SubscriptExprSyntax(receiver: lhs, args: args, location: endLocation(i))
+			let assignee = SubscriptExprSyntax(id: nextID(), receiver: lhs, args: args, location: endLocation(i))
 			let value = parse(precedence: .assignment)
-			return DefExprSyntax(receiver: assignee, value: value, location: [assignee.location.start, value.location.end])
+			return DefExprSyntax(id: nextID(), receiver: assignee, value: value, location: [assignee.location.start, value.location.end])
 		} else if didMatch(.equals) {
 			return error(at: current, .cannotAssign, expectation: .none)
 		} else {
-			return SubscriptExprSyntax(receiver: lhs, args: args, location: endLocation(i))
+			return SubscriptExprSyntax(id: nextID(), receiver: lhs, args: args, location: endLocation(i))
 		}
 	}
 
@@ -363,6 +367,7 @@ extension Parser {
 				expectation: .member
 			)
 			return MemberExprSyntax(
+				id: nextID(),
 				receiver: lhs,
 				property: "",
 				propertyToken: .synthetic(.identifier),
@@ -374,17 +379,19 @@ extension Parser {
 			consume(.equals)
 			let rhs = parse(precedence: .assignment)
 			let member = MemberExprSyntax(
+				id: nextID(),
 				receiver: lhs,
 				property: member.lexeme,
 				propertyToken: member,
 				location: [member]
 			)
-			return DefExprSyntax(receiver: member, value: rhs, location: endLocation(i))
+			return DefExprSyntax(id: nextID(), receiver: member, value: rhs, location: endLocation(i))
 		} else if check(.equals) {
 			return ParseErrorSyntax(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
 		return MemberExprSyntax(
+			id: nextID(),
 			receiver: lhs,
 			property: member.lexeme,
 			propertyToken: member,
@@ -404,12 +411,12 @@ extension Parser {
 
 		let add = parse(precedence: .assignment)
 		let binaryExpr = if op.kind == .plusEquals {
-			BinaryExprSyntax(lhs: lhs, rhs: add, op: .plus, location: add.location)
+			BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .plus, location: add.location)
 		} else {
-			BinaryExprSyntax(lhs: lhs, rhs: add, op: .minus, location: add.location)
+			BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .minus, location: add.location)
 		}
 
-		return DefExprSyntax(receiver: lhs, value: binaryExpr, location: endLocation(i))
+		return DefExprSyntax(id: nextID(), receiver: lhs, value: binaryExpr, location: endLocation(i))
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
@@ -437,7 +444,7 @@ extension Parser {
 		} else {
 			parse(precedence: current.kind.rule.precedence + 1)
 		}
-		return BinaryExprSyntax(lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
+		return BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
 	}
 
 	mutating func typeExpr() -> TypeExpr {
@@ -456,6 +463,7 @@ extension Parser {
 		}
 
 		return TypeExprSyntax(
+			id: nextID(), 
 			identifier: typeID ?? .synthetic(.error),
 			genericParams: genericParamsSyntax,
 			location: endLocation(i),
