@@ -76,6 +76,29 @@ struct TypeCheckerStructTests {
 		#expect(context[syntax[1]] == .type(.base(.string)))
 	}
 
+	@Test("Types self member access") func selfMember() throws {
+		let syntax = try Parser.parse(
+			"""
+			struct Person {
+				var name: String
+
+				init() {
+					self.name = "Pat"
+				}
+
+				func getName() {
+					self.name
+				}
+			}
+
+			Person().getName()
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context[syntax[1]] == .type(.base(.string)))
+	}
+
 	@Test("Types instance methods") func instanceMethod() throws {
 		let syntax = try Parser.parse(
 			"""

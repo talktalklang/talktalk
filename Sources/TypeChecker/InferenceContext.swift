@@ -21,9 +21,22 @@ enum InferenceError: Equatable, Hashable {
 
 // If we're inside a type's body, we can save methods/properties in here
 class TypeContext {
-	var methods: [String: InferenceResult] = [:]
-	var initializers: [String: InferenceResult] = [:]
-	var properties: [String: InferenceResult] = [:]
+	var selfVar: TypeVariable
+	var methods: [String: InferenceResult]
+	var initializers: [String: InferenceResult]
+	var properties: [String: InferenceResult]
+
+	init(
+		selfVar: TypeVariable,
+		methods: [String : InferenceResult] = [:],
+		initializers: [String : InferenceResult] = [:],
+		properties: [String : InferenceResult] = [:]
+	) {
+		self.selfVar = selfVar
+		self.methods = methods
+		self.initializers = initializers
+		self.properties = properties
+	}
 }
 
 class InferenceContext {
@@ -60,14 +73,22 @@ class InferenceContext {
 		)
 	}
 
-	func childTypeContext() -> InferenceContext {
+	func childTypeContext(withSelf: TypeVariable) -> InferenceContext {
 		InferenceContext(
 			parent: self,
 			environment: environment.childEnvironment(),
 			constraints: constraints,
 			substitutions: [:],
-			typeContext: TypeContext()
+			typeContext: TypeContext(selfVar: withSelf)
 		)
+	}
+
+	func lookupTypeContext() -> TypeContext? {
+		if let typeContext {
+			return typeContext
+		}
+
+		return parent?.typeContext
 	}
 
 	func addError(_ inferrenceError: InferenceError, to expr: any Syntax) {
@@ -144,14 +165,19 @@ class InferenceContext {
 		case .typeVar(let typeVariable):
 			return substitutions[typeVariable] ?? type
 		case .function(let params, let returning):
-			return .function(params.map(applySubstitutions), applySubstitutions(to: returning))
+			return .function(params.map({ applySubstitutions(to: $0) }), applySubstitutions(to: returning))
 		default:
 			return type // Base/error/void types don't get substitutions
 		}
 	}
 
-	func applySubstitutions(to type: InferenceType) -> InferenceType {
-		applySubstitutions(to: type, with: self.substitutions)
+	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
+		if withParents {
+			let result = applySubstitutions(to: type, with: self.substitutions)
+			return parent?.applySubstitutions(to: result) ?? result
+		}
+
+		return applySubstitutions(to: type, with: self.substitutions)
 	}
 
 	// See if these types are compatible. If so, bind 'em.

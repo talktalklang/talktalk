@@ -211,6 +211,9 @@ struct InferenceVisitor: Visitor {
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws {
 		if let variable = context.lookupVariable(named: expr.name) {
 			context.extend(expr, with: .type(variable))
+		} else if expr.name == "self", let typeContext = context.lookupTypeContext() {
+			let type = context.applySubstitutions(to: .typeVar(typeContext.selfVar), withParents: true)
+			context.extend(expr, with: .type(type))
 		} else {
 			context.addError(.undefinedVariable(expr.name + ", ln: \(expr.location.line)"), to: expr)
 		}
@@ -421,21 +424,23 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: StructDeclSyntax, _ context: InferenceContext) throws {
 		// Define an inference context for this struct's body to be inferred in
-		let structContext = context.childTypeContext()
+		let selfVar = context.freshTypeVariable("self")
+		let structContext = context.childTypeContext(withSelf: selfVar)
+
+		let structType = StructType(
+			name: expr.name,
+			context: structContext,
+			typeContext: structContext.typeContext!
+		)
+
+		// Unify self inside the struct context to point to an instance of the struct
+		structContext.unify(.typeVar(selfVar), .structInstance(structType))
 
 		// Visit the body with the new context. Property decls and function definitions
 		// will be added as substitutions at this time, then we can pull them out after
 		// we're done parsing the body.
 		try visit(expr.body, structContext)
 
-		let structType = StructType(
-			name: expr.name,
-			parameters: [],
-			methods: structContext.typeContext!.methods,
-			properties: structContext.typeContext!.properties,
-			initializers: structContext.typeContext!.initializers,
-			context: structContext
-		)
 		context.extend(expr, with: .type(.structType(structType)))
 	}
 
