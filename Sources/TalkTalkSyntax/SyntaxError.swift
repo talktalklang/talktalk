@@ -9,7 +9,8 @@ public enum SyntaxErrorKind: Equatable {
 	case lexerError(String),
 	     unexpectedToken(expected: Token.Kind, got: Token),
 	     infiniteLoop,
-			 cannotAssign
+			 cannotAssign,
+			 syntaxError(String)
 }
 
 public struct SyntaxError: Equatable, @unchecked Sendable {

@@ -286,5 +286,17 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
+	@StringBuilder public func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	// GENERATOR_INSERTION
 }

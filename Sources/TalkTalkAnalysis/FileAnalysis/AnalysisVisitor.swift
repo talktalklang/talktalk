@@ -41,5 +41,8 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedSubscriptExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedDictionaryLiteralExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedDictionaryElementExpr, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedProtocolDecl, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedProtocolBodyDecl, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedFuncSignatureDecl, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

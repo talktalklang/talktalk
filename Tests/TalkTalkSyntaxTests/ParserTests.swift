@@ -327,6 +327,16 @@ struct TalkTalkParserTests {
 		#expect(ast.count == 4)
 	}
 
+	@Test("Parses struct conformances") func conformances() throws {
+		let ast = parse("""
+		struct Foo: Bar {}
+		""")
+
+		let structExpr = ast[0].cast(StructDeclSyntax.self)
+		#expect(structExpr.name == "Foo")
+		#expect(structExpr.conformances.map(\.identifier.lexeme) == ["Bar"])
+	}
+
 	@Test("Parses struct") func structs() throws {
 		let ast = parse("""
 		struct Foo {

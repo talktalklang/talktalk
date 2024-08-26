@@ -29,6 +29,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public var genericParams: (any GenericParams)? { wrapped.genericParams }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var conformances: [TypeExprSyntax] { wrapped.conformances }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

@@ -105,6 +105,42 @@ extension Parser {
 		)
 	}
 
+	mutating func funcSignatureDecl() -> FuncSignatureDeclSyntax {
+		let funcToken = previous!
+		let i = startLocation(at: previous)
+
+		// Grab the name if there is one
+		let name: Token = consume(.identifier) ?? .synthetic(.identifier, lexeme: "<missing>")
+
+		skip(.newline)
+
+		consume(.leftParen, "expected '(' before params")
+
+		// Parse parameter list
+		let params = parameterList()
+
+		skip(.newline)
+
+		let typeDecl = if didMatch(.forwardArrow) {
+			// We've got a type decl
+			typeExpr()
+		} else {
+			{
+				_ = error(at: previous, .unexpectedToken(expected: .forwardArrow, got: current), expectation: .type)
+				return TypeExprSyntax(id: nextID(), identifier: .synthetic(.identifier, lexeme: "<missing>"), location: [previous])
+			}()
+		}
+
+		return FuncSignatureDeclSyntax(
+			funcToken: funcToken,
+			name: name,
+			params: params,
+			returnDecl: typeDecl,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
 	mutating func funcExpr() -> any Expr {
 		let funcToken = previous!
 		let i = startLocation(at: previous)

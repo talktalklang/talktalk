@@ -41,5 +41,8 @@ public protocol Visitor {
 	func visit(_ expr: SubscriptExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: DictionaryElementExprSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

@@ -684,5 +684,20 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		)
 	}
 
+	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
 	// GENERATOR_INSERTION
 }

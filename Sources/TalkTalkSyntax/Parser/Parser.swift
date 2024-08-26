@@ -87,6 +87,10 @@ public struct Parser {
 			return structDecl()
 		}
 
+		if didMatch(.protocol) {
+			return protocolDecl()
+		}
+
 		if didMatch(.func) {
 			return funcExpr()
 		}
@@ -147,7 +151,7 @@ public struct Parser {
 		return ExprStmtSyntax(id: nextID(), expr: expr, location: expr.location)
 	}
 
-	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExpr {
+	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExprSyntax {
 		let i = startLocation(at: previous)
 
 		if didMatch(.rightParen) {

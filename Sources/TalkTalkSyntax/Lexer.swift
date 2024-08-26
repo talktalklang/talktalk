@@ -22,7 +22,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		case `func`, `true`, `false`, `return`,
 		     `if`, `in`, call, `else`,
 		     `while`, `var`, `let`, initialize,
-		     `struct`, `self`, `Self`, `import`, `is`
+		     `struct`, `self`, `Self`, `import`, `is`, `protocol`
 
 		case newline
 		case eof
@@ -200,6 +200,7 @@ public struct Lexer {
 		case "return": make(.return)
 		case "import": make(.import)
 		case "init": make(.initialize)
+		case "protocol": make(.protocol)
 		default:
 			make(.identifier)
 		}

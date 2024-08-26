@@ -6,6 +6,7 @@ public protocol StructDecl: Decl {
 	var nameToken: Token { get }
 	var body: DeclBlockSyntax { get }
 	var genericParams: (any GenericParams)? { get }
+	var conformances: [TypeExprSyntax] { get }
 }
 
 public struct StructDeclSyntax: StructDecl {
@@ -15,6 +16,7 @@ public struct StructDeclSyntax: StructDecl {
 	public var nameToken: Token
 	public var body: DeclBlockSyntax
 	public var genericParams: (any GenericParams)?
+	public var conformances: [TypeExprSyntax]
 
 	// Where does this syntax live
 	public var location: SourceLocation

@@ -89,6 +89,7 @@ extension Token.Kind {
 		case .initialize: .none
 		case .forwardArrow: .none
 		case .semicolon: .none
+		case .protocol: .none
 		}
 	}
 }
