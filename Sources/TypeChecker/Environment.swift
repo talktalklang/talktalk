@@ -51,6 +51,10 @@ class Environment {
 				return .typeVar(variable)
 			}
 
+			if case let .type(.structType(structType)) = type, structType.name == name {
+				return .structType(structType)
+			}
+
 			if case let .scheme(scheme) = type, scheme.name == name {
 				return scheme.type
 			}

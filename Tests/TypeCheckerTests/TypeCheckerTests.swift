@@ -9,6 +9,7 @@ import Testing
 @testable import TypeChecker
 import TalkTalkSyntax
 
+@MainActor
 struct TypeCheckerTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
 		let inferencer = InferenceVisitor()
@@ -153,7 +154,15 @@ struct TypeCheckerTests {
 		let context = try infer(syntax)
 
 		// Make sure we've got the function typed properly
-		#expect(context[syntax[0]] == .scheme(Scheme(name: "fact", variables: [], type: .function([.typeVar("n", 0)], .base(.int)))))
+		#expect(
+			context[syntax[0]] == .scheme(
+				Scheme(
+					name: "fact",
+					variables: [],
+					type: .function([.typeVar("n", 0)], .base(.int))
+				)
+			)
+		)
 
 		// Make sure we know what the call return type is
 		#expect(context[syntax[1]] == .type(.base(.int)))

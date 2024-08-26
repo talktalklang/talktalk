@@ -15,14 +15,15 @@ enum InferenceError: Equatable, Hashable {
 	case constraintError(String)
 	case argumentError(String)
 	case typeError(String)
+	case memberNotFound(StructType, String)
 	case missingConstraint(InferenceType, ConstraintType)
 }
 
 class InferenceContext {
+	private var environment: Environment
 	var parent: InferenceContext?
 	var lastVariableID = 0
 	var errors: [InferenceError] = []
-	private var environment: Environment
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
 

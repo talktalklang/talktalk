@@ -45,6 +45,22 @@ struct InferenceVisitor: Visitor {
 			default:
 				fatalError("need to figure this out")
 			}
+		} else {
+			try decl.typeExpr?.accept(self, context)
+
+			if let typeExpr = decl.typeExpr {
+				switch context[typeExpr] {
+				case let .type(valueType):
+					context.unify(.typeVar(typeVariable), valueType)
+				case let .scheme(scheme):
+					let type = context.instantiate(scheme: scheme)
+					context.unify(.typeVar(typeVariable), type)
+				default:
+					fatalError("need to figure this out")
+				}
+			}
+
+			context.extend(decl, with: .type(.typeVar(typeVariable)))
 		}
 	}
 
@@ -57,7 +73,7 @@ struct InferenceVisitor: Visitor {
 		let childContext = context.childContext()
 
 		// Extract the function type or instantiate if it's a scheme
-		var functionType: InferenceType? = switch context[expr.callee] {
+		var callee: InferenceType? = switch context[expr.callee] {
 		case let .type(type):
 			type
 		case let .scheme(scheme):
@@ -66,12 +82,22 @@ struct InferenceVisitor: Visitor {
 			nil
 		}
 
-		if let foundFunctionType = functionType {
-			functionType = childContext.applySubstitutions(to: foundFunctionType)
+		if let foundCallee = callee {
+			callee = childContext.applySubstitutions(to: foundCallee)
 		}
 
-		guard case let .function(parameters, returns) = functionType else {
-			context.extend(expr, with: .type(.error(.typeError("Callee not callable: \(functionType?.description ?? "nope")"))))
+		var returns: InferenceType
+		var parameters: [InferenceType]
+
+		switch callee {
+		case let .function(funcParams, funcReturns):
+			parameters = funcParams
+			returns = funcReturns
+		case let .structType(structType):
+			parameters = structType.parameters
+			returns = .structInstance(structType)
+		default:
+			context.extend(expr, with: .type(.error(.typeError("Callee not callable: \(callee?.description ?? "nope")"))))
 			return
 		}
 
@@ -215,7 +241,11 @@ struct InferenceVisitor: Visitor {
 		}
 
 		let functionType = InferenceType.function(params, bodyType)
-		let scheme = Scheme(name: expr.name?.lexeme, variables: params.filter { childContext.isFreeVariable($0) }, type: functionType)
+		let scheme = Scheme(
+			name: expr.name?.lexeme,
+			variables: params.filter { childContext.isFreeVariable($0) },
+			type: functionType
+		)
 
 		context.bind(typeVar: context.freshTypeVariable(expr.name?.lexeme), to: functionType)
 		context.extend(expr, with: .scheme(scheme))
@@ -243,7 +273,9 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: any DeclBlock, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		for decl in expr.decls {
+			try decl.accept(self, context)
+		}
 	}
 
 	func visit(_ expr: any VarDecl, _ context: InferenceContext) throws {
@@ -259,7 +291,27 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: any MemberExpr, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		try expr.receiver.accept(self, context)
+
+		switch context[expr.receiver] {
+		case .type(.structInstance(let structType)):
+			let member = structType.methods[expr.property] ?? structType.properties[expr.property]
+
+			switch member {
+			case let .scheme(scheme):
+				let instantiated = context.instantiate(scheme: scheme)
+				let substitutedMember = context.applySubstitutions(to: instantiated)
+				context.extend(expr, with: .type(substitutedMember))
+			case let .type(type):
+				let substitutedMember = context.applySubstitutions(to: type)
+				context.extend(expr, with: .type(substitutedMember))
+			default:
+				context.extend(expr, with: .type(.error(.memberNotFound(structType, expr.property))))
+			}
+		default:
+			fatalError("TODO")
+		}
+
 	}
 
 	func visit(_ expr: any ReturnStmt, _ context: InferenceContext) throws {
@@ -282,7 +334,14 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: any TypeExpr, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		switch expr.identifier.lexeme {
+		case "int":
+			context.extend(expr, with: .type(.base(.int)))
+		case "String":
+			context.extend(expr, with: .type(.base(.string)))
+		default:
+			fatalError("TODO")
+		}
 	}
 
 	func visit(_ expr: any ExprStmt, _ context: InferenceContext) throws {
@@ -299,7 +358,35 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: any StructDecl, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		// Define an inference context for this struct's body to be inferred in
+		let structContext = context.childContext()
+
+		// Visit the body with the new context. Property decls and function definitions
+		// will be added as substitutions at this time, then we can pull them out after
+		// we're done parsing the body.
+		try visit(expr.body, structContext)
+
+		var methods: [String: InferenceResult] = [:]
+		var properties: [String: InferenceResult] = [:]
+		for (typeVar, substitution) in structContext.substitutions {
+			switch substitution {
+			case .base:
+				properties[typeVar.name!] = .type(substitution)
+			case .function:
+				methods[typeVar.name!] = .type(substitution)
+			default:
+				fatalError("TODO")
+			}
+		}
+
+		let structType = StructType(
+			name: expr.name,
+			parameters: [],
+			methods: methods,
+			properties: properties,
+			context: structContext
+		)
+		context.extend(expr, with: .type(.structType(structType)))
 	}
 
 	func visit(_ expr: any ArrayLiteralExpr, _ context: InferenceContext) throws {
