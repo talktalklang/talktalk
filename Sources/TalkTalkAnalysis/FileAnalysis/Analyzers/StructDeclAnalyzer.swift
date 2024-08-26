@@ -118,16 +118,16 @@ struct StructDeclAnalyzer: Analyzer {
 			case let decl as InitDecl:
 				try structType.add(
 					initializer: .init(
-						symbol: .method(context.moduleName, structType.name!, "init", decl.parameters.params.map(\.name)),
+						symbol: .method(context.moduleName, structType.name!, "init", decl.params.params.map(\.name)),
 						name: "init",
 						slot: structType.methods.count,
-						params: decl.parameters.params.map { try $0.accept(visitor, context) as! AnalyzedParam },
+						params: decl.params.params.map { try $0.accept(visitor, context) as! AnalyzedParam },
 						typeID: TypeID(
 							.function(
 								"init",
 								TypeID(.placeholder),
 								decl
-									.parameters
+									.params
 									.params
 									.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
 								[]
@@ -145,7 +145,7 @@ struct StructDeclAnalyzer: Analyzer {
 		}
 
 		// Do a second pass to try to fill in method returns
-		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
+		let bodyAnalyzed = try visitor.visit(decl.body.cast(BlockStmtSyntax.self), bodyContext)
 
 		let type: ValueType = .struct(
 			structType.name ?? decl.description

@@ -236,7 +236,7 @@ struct TalkTalkParserTests {
 		}
 		""")[0]
 		let decl = try #require(ast as? StructDeclSyntax)
-		let initDeclParams = decl.body.decls[0].cast(InitDeclSyntax.self).parameters.params
+		let initDeclParams = decl.body.decls[0].cast(InitDeclSyntax.self).params.params
 
 		#expect(initDeclParams[0].name == "x")
 		#expect(initDeclParams[0].type?.identifier.lexeme == "Array")

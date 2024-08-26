@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedDeclBlock: DeclBlock, AnalyzedDecl {
 	public let typeID: TypeID
 
-	public let wrapped: DeclBlockExprSyntax
+	public let wrapped: DeclBlockSyntax
 
 	public var declsAnalyzed: [any AnalyzedDecl]
 	public var analyzedChildren: [any AnalyzedSyntax] { declsAnalyzed }
@@ -21,7 +21,7 @@ public struct AnalyzedDeclBlock: DeclBlock, AnalyzedDecl {
 	public var children: [any Syntax] { wrapped.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

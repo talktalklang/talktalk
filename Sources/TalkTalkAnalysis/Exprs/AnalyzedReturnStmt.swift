@@ -23,7 +23,7 @@ public struct AnalyzedReturnStmt: AnalyzedStmt, ReturnStmt {
 	public var valueAnalyzed: (any AnalyzedExpr)?
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

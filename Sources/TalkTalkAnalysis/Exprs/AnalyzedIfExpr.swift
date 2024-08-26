@@ -27,7 +27,7 @@ public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
 	public var children: [any Syntax] { wrapped.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

@@ -22,6 +22,6 @@ public struct AnalyzedBlockStmt: AnalyzedExpr, BlockStmt {
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 }

@@ -193,7 +193,7 @@ public struct Interpreter: AnalyzedVisitor {
 		fatalError("unreachable")
 	}
 
-	public func visit(_ expr: any Param, _ context: Scope) throws -> Value {
+	public func visit(_ expr: ParamSyntax, _ context: Scope) throws -> Value {
 		context.lookup(expr.name)
 	}
 

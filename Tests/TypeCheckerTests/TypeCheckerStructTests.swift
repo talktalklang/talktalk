@@ -57,6 +57,25 @@ struct TypeCheckerStructTests {
 		#expect(structType.properties["age"] == .type(.base(.int)))
 	}
 
+	@Test("Types custom init") func customInit() throws {
+		let syntax = try Parser.parse(
+			"""
+			struct Person {
+				var name: String
+
+				init() {
+					self.name = "Pat"
+				}
+			}
+
+			Person().name
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context[syntax[1]] == .type(.base(.string)))
+	}
+
 	@Test("Types instance methods") func instanceMethod() throws {
 		let syntax = try Parser.parse(
 			"""
@@ -73,9 +92,36 @@ struct TypeCheckerStructTests {
 
 		let context = try infer(syntax)
 		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.methods["greet"] == .type(.function([], .base(.string))))
+		#expect(structType.methods["greet"] == .scheme(
+			Scheme(name: "greet", variables: [], type: .function([], .base(.string)))
+		))
 
 		#expect(context[syntax[1]] == .type(.function([], .base(.string))))
 		#expect(context[syntax[2]] == .type(.base(.string)))
+	}
+
+	@Test("Type checks chained property access") func chaining() throws {
+		let syntax = try Parser.parse(
+			"""
+			struct PersonInfo {
+				var name: String
+			}
+
+			struct Person {
+				var info: PersonInfo
+			}
+
+			Person(info: PersonInfo(name: "Pat")).info
+			Person(info: PersonInfo(name: "Pat")).info.name
+			"""
+		)
+
+		let context = try infer(syntax)
+
+		let personInfoInstance = StructType.extractInstance(from: context[syntax[2]])
+		let personInfoStructType = try #require(personInfoInstance)
+
+		#expect(personInfoStructType.name == "PersonInfo")
+		#expect(context[syntax[3]] == .type(.base(.string)))
 	}
 }

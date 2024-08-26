@@ -19,6 +19,13 @@ enum InferenceError: Equatable, Hashable {
 	case missingConstraint(InferenceType, ConstraintType)
 }
 
+// If we're inside a type's body, we can save methods/properties in here
+class TypeContext {
+	var methods: [String: InferenceResult] = [:]
+	var initializers: [String: InferenceResult] = [:]
+	var properties: [String: InferenceResult] = [:]
+}
+
 class InferenceContext {
 	private var environment: Environment
 	var parent: InferenceContext?
@@ -26,19 +33,22 @@ class InferenceContext {
 	var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
+	var typeContext: TypeContext?
 
 	init(
 		lastVariableID: Int = 0,
 		parent: InferenceContext? = nil,
 		environment: Environment,
 		constraints: Constraints,
-		substitutions: [TypeVariable: InferenceType] = [:]
+		substitutions: [TypeVariable: InferenceType] = [:],
+		typeContext: TypeContext? = nil
 	) {
 		self.parent = parent
 		self.lastVariableID = lastVariableID
 		self.environment = environment
 		self.constraints = constraints
 		self.substitutions = substitutions
+		self.typeContext = typeContext
 	}
 
 	func childContext() -> InferenceContext {
@@ -47,6 +57,16 @@ class InferenceContext {
 			environment: environment.childEnvironment(),
 			constraints: constraints,
 			substitutions: [:]
+		)
+	}
+
+	func childTypeContext() -> InferenceContext {
+		InferenceContext(
+			parent: self,
+			environment: environment.childEnvironment(),
+			constraints: constraints,
+			substitutions: [:],
+			typeContext: TypeContext()
 		)
 	}
 

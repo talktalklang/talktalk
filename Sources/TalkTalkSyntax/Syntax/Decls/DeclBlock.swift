@@ -9,7 +9,7 @@ public protocol DeclBlock: Expr {
 	var decls: [any Syntax] { get }
 }
 
-public struct DeclBlockExprSyntax: DeclBlock {
+public struct DeclBlockSyntax: DeclBlock {
 	public var id: SyntaxID
 	public var decls: [any Syntax]
 	public let location: SourceLocation

@@ -13,7 +13,7 @@ public struct AnalyzedParam: Param, AnalyzedExpr, Typed {
 	}
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 
 	public var name: String { wrapped.name }
@@ -64,7 +64,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

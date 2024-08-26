@@ -413,13 +413,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 					continue
 				}
 
-				let symbol = Symbol.method(module.name, name, "init", decl.parameters.params.map(\.name))
+				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map(\.name))
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
 					symbol: symbol,
 					parent: chunk,
-					arity: Byte(decl.parameters.count),
+					arity: Byte(decl.params.count),
 					depth: Byte(scopeDepth),
 					path: chunk.path
 				)

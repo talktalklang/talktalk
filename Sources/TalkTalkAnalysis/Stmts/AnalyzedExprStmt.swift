@@ -29,6 +29,6 @@ public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, Analyzed
 	}
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

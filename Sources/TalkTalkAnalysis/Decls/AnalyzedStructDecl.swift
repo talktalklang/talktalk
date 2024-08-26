@@ -25,7 +25,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public var structToken: Token { wrapped.structToken }
 	public var name: String { wrapped.name }
 	public var nameToken: Token { wrapped.nameToken }
-	public var body: any DeclBlock { wrapped.body }
+	public var body: DeclBlockSyntax { wrapped.body }
 	public var genericParams: (any GenericParams)? { wrapped.genericParams }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
@@ -35,6 +35,6 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

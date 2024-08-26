@@ -197,7 +197,7 @@ public struct ModuleAnalyzer {
 
 		switch syntax {
 		case let syntax as VarDecl:
-			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedVarDecl
+			let analyzed = try visitor.visit(syntax.cast(VarDeclSyntax.self), environment) as! AnalyzedVarDecl
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
@@ -208,7 +208,7 @@ public struct ModuleAnalyzer {
 				isMutable: true
 			)
 		case let syntax as LetDecl:
-			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedLetDecl
+			let analyzed = try visitor.visit(syntax.cast(LetDeclSyntax.self), environment) as! AnalyzedLetDecl
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
@@ -221,7 +221,7 @@ public struct ModuleAnalyzer {
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
-				let analyzed = try visitor.visit(syntax, environment) as! AnalyzedFuncExpr
+				let analyzed = try visitor.visit(syntax.cast(FuncExprSyntax.self), environment) as! AnalyzedFuncExpr
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					symbol: analyzed.symbol,
@@ -232,7 +232,7 @@ public struct ModuleAnalyzer {
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
-			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedDefExpr
+			let analyzed = try visitor.visit(syntax.cast(DefExprSyntax.self), environment) as! AnalyzedDefExpr
 
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
 				result[syntax.name] = ModuleValue(
@@ -251,7 +251,7 @@ public struct ModuleAnalyzer {
 
 			environment.importModule(module)
 		case let syntax as StructDecl:
-			let analyzedStructDecl = try visitor.visit(syntax, environment).cast(AnalyzedStructDecl.self)
+			let analyzedStructDecl = try visitor.visit(syntax.cast(StructDeclSyntax.self), environment).cast(AnalyzedStructDecl.self)
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
 				name: name,

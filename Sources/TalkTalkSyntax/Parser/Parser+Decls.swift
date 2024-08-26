@@ -59,17 +59,17 @@ public extension Parser {
 		let params = parameterList()
 		skip(.newline)
 
-		let body = declBlock()
+		let body = blockStmt(false)
 		return InitDeclSyntax(
 			id: nextID(),
 			initToken: initToken,
-			parameters: params,
+			params: params,
 			body: body,
 			location: endLocation(i)
 		)
 	}
 
-	mutating func declBlock() -> DeclBlockExprSyntax {
+	mutating func declBlock() -> DeclBlockSyntax {
 		consume(.leftBrace, "expected '{' before block")
 		skip(.newline)
 
@@ -86,7 +86,7 @@ public extension Parser {
 		consume(.rightBrace, "expected '}' after block")
 		skip(.newline)
 
-		return DeclBlockExprSyntax(id: nextID(), decls: decls, location: endLocation(i))
+		return DeclBlockSyntax(id: nextID(), decls: decls, location: endLocation(i))
 	}
 
 	mutating func structDecl() -> any Syntax {

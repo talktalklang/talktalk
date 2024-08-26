@@ -26,7 +26,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var funcToken: Token { wrapped.funcToken }
 	public var params: ParamsExpr { wrapped.params }
 	public var typeDecl: (any TypeExpr)? { wrapped.typeDecl }
-	public var body: any BlockStmt { wrapped.body }
+	public var body: BlockStmtSyntax { wrapped.body }
 	public var i: Int { wrapped.i }
 
 	public init(
@@ -68,7 +68,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

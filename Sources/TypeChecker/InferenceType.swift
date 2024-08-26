@@ -14,6 +14,7 @@ struct StructType: Equatable, Hashable {
 	let parameters: [InferenceType]
 	let methods: [String: InferenceResult]
 	let properties: [String: InferenceResult]
+	let initializers: [String: InferenceResult]
 	let context: InferenceContext
 
 	static func extractType(from result: InferenceResult?) -> StructType? {

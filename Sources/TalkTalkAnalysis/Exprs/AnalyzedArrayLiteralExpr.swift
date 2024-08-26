@@ -22,6 +22,6 @@ public struct AnalyzedArrayLiteralExpr: ArrayLiteralExpr, AnalyzedExpr {
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

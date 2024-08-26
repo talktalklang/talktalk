@@ -18,7 +18,7 @@ struct FuncExprAnalyzer {
 
 		// Define our parameters in the environment so they're declared in the body. They're
 		// just placeholders for now.
-		var params = try visitor.visit(expr.params, context) as! AnalyzedParamsExpr
+		var params = try visitor.visit(expr.params.cast(ParamsExprSyntax.self), context) as! AnalyzedParamsExpr
 		for param in params.paramsAnalyzed {
 			innerEnvironment.define(parameter: param.name, as: param)
 		}
@@ -61,7 +61,7 @@ struct FuncExprAnalyzer {
 		let exitBehavior: AnalyzedExprStmt.ExitBehavior = expr.body.stmts.count == 1 ? .return : .pop
 		innerEnvironment.exprStmtExitBehavior = exitBehavior
 
-		let bodyAnalyzed = try visitor.visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
+		let bodyAnalyzed = try visitor.visit(expr.body.cast(BlockStmtSyntax.self), innerEnvironment) as! AnalyzedBlockStmt
 
 		var declaredType: TypeID?
 		if let typeDecl = expr.typeDecl {
