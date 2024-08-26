@@ -25,17 +25,20 @@ class TypeContext {
 	var methods: [String: InferenceResult]
 	var initializers: [String: InferenceResult]
 	var properties: [String: InferenceResult]
+	var typeParameters: [String: InferenceResult]
 
 	init(
 		selfVar: TypeVariable,
 		methods: [String : InferenceResult] = [:],
 		initializers: [String : InferenceResult] = [:],
-		properties: [String : InferenceResult] = [:]
+		properties: [String : InferenceResult] = [:],
+		typeParameters: [String: InferenceResult] = [:]
 	) {
 		self.selfVar = selfVar
 		self.methods = methods
 		self.initializers = initializers
 		self.properties = properties
+		self.typeParameters = typeParameters
 	}
 }
 

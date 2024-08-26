@@ -426,12 +426,23 @@ struct InferenceVisitor: Visitor {
 		// Define an inference context for this struct's body to be inferred in
 		let selfVar = context.freshTypeVariable("self")
 		let structContext = context.childTypeContext(withSelf: selfVar)
+		let typeContext = structContext.typeContext!
 
+		// Instantiate the StructType that we're building up
 		let structType = StructType(
 			name: expr.name,
 			context: structContext,
-			typeContext: structContext.typeContext!
+			typeContext: typeContext
 		)
+
+		// Define the struct's generic parameter types
+		for typeParam in expr.typeParameters {
+			let typeParamVar = context.freshTypeVariable(typeParam.identifier.lexeme)
+			structContext.extend(typeParam, with: .type(.typeVar(typeParamVar)))
+
+			try typeParam.accept(self, structContext)
+			typeContext.typeParameters[typeParam.identifier.lexeme] = structContext[typeParam]
+		}
 
 		// Unify self inside the struct context to point to an instance of the struct
 		structContext.unify(.typeVar(selfVar), .structInstance(structType))

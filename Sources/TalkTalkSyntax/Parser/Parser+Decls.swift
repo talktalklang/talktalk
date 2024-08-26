@@ -101,9 +101,9 @@ public extension Parser {
 			)
 		}
 
-		var genericParamsSyntax: GenericParamsSyntax?
+		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
-			genericParamsSyntax = genericParams()
+			typeParameters = self.typeParameters()
 		}
 
 		var conformances: [TypeExprSyntax] = []
@@ -121,7 +121,7 @@ public extension Parser {
 			name: name.lexeme,
 			nameToken: name,
 			body: body,
-			genericParams: genericParamsSyntax,
+			typeParameters: typeParameters,
 			conformances: conformances,
 			location: endLocation(i)
 		)
@@ -139,9 +139,9 @@ public extension Parser {
 			)
 		}
 
-		var genericParamsSyntax: GenericParamsSyntax?
+		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
-			genericParamsSyntax = genericParams()
+			typeParameters = self.typeParameters()
 		}
 
 		let body = protocolDeclBlock()
@@ -151,7 +151,7 @@ public extension Parser {
 			keywordToken: protocolToken,
 			name: name,
 			body: body,
-			genericParams: genericParamsSyntax,
+			typeParameters: typeParameters,
 			location: endLocation(i)
 		)
 	}

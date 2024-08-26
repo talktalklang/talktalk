@@ -17,9 +17,9 @@ struct StructDeclAnalyzer: Analyzer {
 			name: decl.name,
 			properties: [:],
 			methods: [:],
-			typeParameters: decl.genericParams?.params.map({
-				TypeParameter(name: $0.type.identifier.lexeme, type: $0.type)
-			}) ?? []
+			typeParameters: decl.typeParameters.map({
+				TypeParameter(name: $0.identifier.lexeme, type: $0)
+			})
 		)
 
 		let bodyContext = context.addLexicalScope(
@@ -28,13 +28,11 @@ struct StructDeclAnalyzer: Analyzer {
 			expr: decl
 		)
 
-		if let genericParams = decl.genericParams {
-			for (i, param) in genericParams.params.enumerated() {
-				// Go through and actually analyze the type params
-				let environment = bodyContext.add(namespace: nil)
-				environment.isInTypeParameters = true
-				structType.typeParameters[i].type = try param.type.accept(visitor, environment) as! AnalyzedTypeExpr
-			}
+		for (i, param) in structType.typeParameters.enumerated() {
+			// Go through and actually analyze the type params
+			let environment = bodyContext.add(namespace: nil)
+			environment.isInTypeParameters = true
+			structType.typeParameters[i].type = try param.type.accept(visitor, environment) as! AnalyzedTypeExpr
 		}
 
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)

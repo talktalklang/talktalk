@@ -171,15 +171,15 @@ public struct Parser {
 			if didMatch(.colon), let typeID = consume(.identifier) {
 				let i = startLocation(at: previous!)
 
-				var genericParamsSyntax: GenericParamsSyntax? = nil
+				var typeParameters: [TypeExprSyntax] = []
 				if didMatch(.less) {
-					genericParamsSyntax = genericParams()
+					typeParameters = self.typeParameters()
 				}
 
 				type = TypeExprSyntax(
 					id: nextID(),
 					identifier: typeID,
-					genericParams: genericParamsSyntax,
+					genericParams: typeParameters,
 					location: endLocation(i)
 				)
 			}

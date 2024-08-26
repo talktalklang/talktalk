@@ -26,7 +26,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public var name: String { wrapped.name }
 	public var nameToken: Token { wrapped.nameToken }
 	public var body: DeclBlockSyntax { wrapped.body }
-	public var genericParams: (any GenericParams)? { wrapped.genericParams }
+	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 	public var conformances: [TypeExprSyntax] { wrapped.conformances }

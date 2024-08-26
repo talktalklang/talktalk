@@ -50,8 +50,8 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Context) throws -> String {
 		var result = expr.identifier.lexeme
-		if let genericParams = expr.genericParams {
-			result += try visit(genericParams.cast(GenericParamsSyntax.self), context)
+		for typeExpr in expr.genericParams {
+			result += try visit(typeExpr, context)
 		}
 		return result
 	}

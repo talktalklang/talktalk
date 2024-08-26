@@ -240,7 +240,7 @@ struct TalkTalkParserTests {
 
 		#expect(initDeclParams[0].name == "x")
 		#expect(initDeclParams[0].type?.identifier.lexeme == "Array")
-		#expect(initDeclParams[0].type?.genericParams?.params[0].type.identifier.lexeme == "int")
+		#expect(initDeclParams[0].type?.genericParams[0].identifier.lexeme == "int")
 	}
 
 	@Test("func expr return annotation") func funcExprReturnAnnotation() throws {
@@ -413,12 +413,12 @@ struct TalkTalkParserTests {
 		let structExpr = ast[0].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Foo")
 
-		let paramNames = structExpr.genericParams?.params.map(\.type.identifier.lexeme)
+		let paramNames = structExpr.typeParameters.map(\.identifier.lexeme)
 		#expect(paramNames == ["Bar"])
 
 		let calleeExpr = try #require(ast[1].cast(ExprStmtSyntax.self).expr.cast(CallExprSyntax.self).callee.as(TypeExprSyntax.self))
 		#expect(calleeExpr.identifier.lexeme == "Foo")
-		#expect(calleeExpr.genericParams?.params.map(\.type.identifier.lexeme) == ["int"])
+		#expect(calleeExpr.genericParams.map(\.identifier.lexeme) == ["int"])
 	}
 
 	@Test("Nested generics") func nestedGenerics() throws {
@@ -427,8 +427,8 @@ struct TalkTalkParserTests {
 			.cast(TypeExprSyntax.self)
 
 		#expect(ast.identifier.lexeme == "Foo")
-		#expect(ast.genericParams?.params[0].type.identifier.lexeme == "Fizz")
-		#expect(ast.genericParams?.params[0].type.genericParams?.params[0].type.identifier.lexeme == "Buzz")
+		#expect(ast.genericParams[0].identifier.lexeme == "Fizz")
+		#expect(ast.genericParams[0].genericParams[0].identifier.lexeme == "Buzz")
 	}
 
 	@Test("Generic properties") func genericProperties() throws {
@@ -442,7 +442,7 @@ struct TalkTalkParserTests {
 		let structExpr = ast[1].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Fizz")
 
-		let paramNames = structExpr.genericParams?.params.map(\.type.identifier.lexeme)
+		let paramNames = structExpr.typeParameters.map(\.identifier.lexeme)
 		#expect(paramNames == ["Buzz"])
 
 		let property = structExpr.body.decls[0].cast(VarDeclSyntax.self)

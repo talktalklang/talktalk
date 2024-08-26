@@ -5,7 +5,7 @@ public protocol ProtocolDecl: Decl {
 	var keywordToken: Token { get }
 	var name: Token { get }
 	var body: ProtocolBodyDeclSyntax { get }
-	var genericParams: GenericParamsSyntax? { get }
+	var typeParameters: [TypeExprSyntax] { get }
 }
 
 public struct ProtocolDeclSyntax: ProtocolDecl {
@@ -15,14 +15,14 @@ public struct ProtocolDeclSyntax: ProtocolDecl {
 	public var keywordToken: Token
 	public var name: Token
 	public var body: ProtocolBodyDeclSyntax
-	public var genericParams: GenericParamsSyntax?
+	public var typeParameters: [TypeExprSyntax]
 
 	// Where does this syntax live
 	public var location: SourceLocation
 
 	// Useful for just traversing the whole tree
 	public var children: [any Syntax] {
-		if let genericParams { [body, genericParams] } else { [body] }
+		typeParameters + [body]
 	}
 
 	// Let this node be visited by visitors

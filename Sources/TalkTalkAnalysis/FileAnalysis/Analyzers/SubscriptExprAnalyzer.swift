@@ -60,12 +60,12 @@ struct SubscriptExprAnalyzer {
 			 let memberStruct = context.lookupStruct(named: memberStructName) {
 
 			// Get the list of generic params this member has declared as part of its property
-			for (i, genericParam) in (typeExpr.genericParams?.params ?? []).enumerated() {
+			for (i, genericParam) in typeExpr.genericParams.enumerated() {
 				guard receiverType.typeParameters.count > i, memberStruct.typeParameters.count > i else {
 					continue
 				}
 
-				inferGenerics(memberTypeID: memberTypeID, typeExpr: genericParam.type, receiverType: memberStruct, receiverInstance: receiverInstance)
+				inferGenerics(memberTypeID: memberTypeID, typeExpr: genericParam, receiverType: memberStruct, receiverInstance: receiverInstance)
 
 				if let receiverType = receiverInstance.boundGenericTypes[receiverType.typeParameters[i].name] {
 					let memberTypeName = memberStruct.typeParameters[i].name

@@ -17,7 +17,7 @@ public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
 	public var environment: Environment
 
 	public var identifier: TalkTalkSyntax.Token { wrapped.identifier }
-	public var genericParams: (any TalkTalkSyntax.GenericParams)? { wrapped.genericParams }
+	public var genericParams: [TypeExprSyntax] { wrapped.genericParams }
 	public var location: TalkTalkSyntax.SourceLocation { wrapped.location }
 	public var children: [any TalkTalkSyntax.Syntax] { wrapped.children }
 

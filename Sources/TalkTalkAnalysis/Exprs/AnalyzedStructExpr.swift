@@ -19,7 +19,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 
 	public var structToken: Token { wrapped.structToken }
 	public var name: String? { wrapped.name }
-	public var genericParams: (any GenericParams)? { wrapped.genericParams }
+	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }
 	public var body: DeclBlock { wrapped.body }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {

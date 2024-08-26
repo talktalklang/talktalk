@@ -127,7 +127,12 @@ extension Parser {
 		} else {
 			{
 				_ = error(at: previous, .unexpectedToken(expected: .forwardArrow, got: current), expectation: .type)
-				return TypeExprSyntax(id: nextID(), identifier: .synthetic(.identifier, lexeme: "<missing>"), location: [previous])
+				return TypeExprSyntax(
+					id: nextID(),
+					identifier: .synthetic(.identifier, lexeme: "<missing>"),
+					genericParams: [],
+					location: [previous]
+				)
 			}()
 		}
 
@@ -276,9 +281,9 @@ extension Parser {
 
 		let name = match(.identifier)
 
-		var genericParamsSyntax: GenericParamsSyntax? = nil
+		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
-			genericParamsSyntax = genericParams()
+			typeParameters = self.typeParameters()
 		}
 
 		let body = declBlock()
@@ -287,27 +292,23 @@ extension Parser {
 			id: nextID(),
 			structToken: structToken,
 			name: name?.lexeme,
-			genericParams: genericParamsSyntax,
+			typeParameters: typeParameters,
 			body: body,
 			location: endLocation(i)
 		)
 	}
 
-	mutating func genericParams() -> GenericParamsSyntax {
+	mutating func typeParameters() -> [TypeExprSyntax] {
 		let i = startLocation(at: previous)
 
-		var types: [any TypeExpr] = []
+		var types: [TypeExprSyntax] = []
 		repeat {
 			types.append(typeExpr())
 		} while didMatch(.comma)
 
 		consume(.greater)
 
-		return GenericParamsSyntax(
-			id: nextID(),
-			params: types.map { GenericParamSyntax(type: $0) },
-			location: endLocation(i)
-		)
+		return types
 	}
 
 	mutating func blockStmt(_: Bool) -> BlockStmtSyntax {
@@ -352,7 +353,7 @@ extension Parser {
 			let i = startLocation(at: lhs.token)
 			consume(.less)
 			skip(.newline)
-			let genericParams = genericParams()
+			let genericParams = typeParameters()
 			skip(.newline)
 			return TypeExprSyntax(id: nextID(), identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
 		}
@@ -483,13 +484,13 @@ extension Parser {
 		return BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
 	}
 
-	mutating func typeExpr() -> TypeExpr {
+	mutating func typeExpr() -> TypeExprSyntax {
 		let typeID = consume(.identifier)
 		let i = startLocation(at: previous!)
 
-		var genericParamsSyntax: GenericParamsSyntax? = nil
+		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
-			genericParamsSyntax = genericParams()
+			typeParameters = self.typeParameters()
 		}
 
 		var errors: [String] = []
@@ -501,7 +502,7 @@ extension Parser {
 		return TypeExprSyntax(
 			id: nextID(), 
 			identifier: typeID ?? .synthetic(.error),
-			genericParams: genericParamsSyntax,
+			genericParams: typeParameters,
 			location: endLocation(i),
 			errors: errors
 		)

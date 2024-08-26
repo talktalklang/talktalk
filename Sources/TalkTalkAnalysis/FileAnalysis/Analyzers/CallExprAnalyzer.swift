@@ -160,15 +160,14 @@ struct CallExprAnalyzer: Analyzer {
 
 		var instanceType = InstanceValueType.struct(name, structType.placeholderGenericTypes())
 
-		if let callee = callee as? AnalyzedTypeExpr,
-		   let calleeGenericParams = callee.genericParams, !calleeGenericParams.isEmpty
+		if let callee = callee as? AnalyzedTypeExpr, !callee.genericParams.isEmpty
 		{
 			// Fill in type parameters if they're explicitly annotated. If they're not we'll have to try to infer them.
-			if calleeGenericParams.count == structType.typeParameters.count {
+			if callee.genericParams.count == structType.typeParameters.count {
 				for (i, structTypeParam) in structType.typeParameters.enumerated() {
 					// We always get back a Type from visiting a TypeExpr (duh) but we want an instance for the case where
 					// the type is a Struct. But if it's a primitive (like an int) then we can just set it directly.
-					let type = try calleeGenericParams.params[i].type.accept(visitor, context).typeID
+					let type = try callee.genericParams[i].accept(visitor, context).typeID
 
 					if case let .struct(name) = type.current {
 						if let structType = context.lookupStruct(named: name) {
@@ -189,7 +188,7 @@ struct CallExprAnalyzer: Analyzer {
 				errors.append(
 					context.report(.typeParameterError(
 						expected: structType.typeParameters.count,
-						received: calleeGenericParams.count
+						received: callee.genericParams.count
 					), at: expr.location)
 				)
 			}
@@ -237,13 +236,13 @@ struct CallExprAnalyzer: Analyzer {
 		// in this case, then we can bind the wrapper's Wrapped type for this instance.
 		for typeParameter in structType.typeParameters {
 			// For each of the generic parameters of this parameter (for example, init(inner: Inner<Wrapped>) would have [Wrapped] here)
-			for (i, genericParam) in (paramTypeExpr.genericParams?.params ?? []).enumerated() {
+			for (i, genericParam) in paramTypeExpr.genericParams.enumerated() {
 				// Recurse through to see if there are any more types we could match
-				inferGenerics(type: structType, paramTypeExpr: genericParam.type, argumentTypeID: argumentTypeID, instance: &instance, context: context)
+				inferGenerics(type: structType, paramTypeExpr: genericParam, argumentTypeID: argumentTypeID, instance: &instance, context: context)
 
 				// If Wrapped (from Wrapper<Wrapped>) is being used by the param (like Inner<Wrapped>) then we can try to pull the
 				// bound value off the argument
-				if typeParameter.name == genericParam.type.identifier.lexeme {
+				if typeParameter.name == genericParam.identifier.lexeme {
 					// Make sure the type of the arg support generics. If so, get the arg's name for the generic that's being
 					// inferred here. Otherwise bail. TODO: This might want to error?
 					guard case let .instance(instanceInfo) = argumentTypeID.current,

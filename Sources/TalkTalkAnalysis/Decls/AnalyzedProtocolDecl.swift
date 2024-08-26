@@ -18,7 +18,7 @@ public struct AnalyzedProtocolDecl: ProtocolDecl, AnalyzedDecl {
 	public var keywordToken: TalkTalkSyntax.Token { wrapped.keywordToken }
 	public var name: Token { wrapped.name }
 	public var body: ProtocolBodyDeclSyntax { wrapped.body }
-	public var genericParams: TalkTalkSyntax.GenericParamsSyntax? { wrapped.genericParams }
+	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
