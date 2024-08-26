@@ -50,6 +50,6 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	var methods: [String: InferenceResult] {
-		typeContext.properties
+		typeContext.methods
 	}
 }

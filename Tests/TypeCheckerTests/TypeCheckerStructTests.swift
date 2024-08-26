@@ -119,8 +119,13 @@ struct TypeCheckerStructTests {
 			Scheme(name: "greet", variables: [], type: .function([], .base(.string)))
 		))
 
-		#expect(context[syntax[1]] == .type(.function([], .base(.string))))
-		#expect(context[syntax[2]] == .type(.base(.string)))
+		let result1 = context[syntax[1]]
+		let expected1 = InferenceResult.type(.function([], .base(.string)))
+		#expect(result1 == expected1)
+
+		let result2 = context[syntax[2]]
+		let expected2 = InferenceResult.type(.base(.string))
+		#expect(result2 == expected2)
 	}
 
 	@Test("Type checks chained property access") func chaining() throws {
