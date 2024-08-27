@@ -72,7 +72,8 @@ class InferenceContext {
 			parent: self,
 			environment: environment.childEnvironment(),
 			constraints: constraints,
-			substitutions: [:]
+			substitutions: [:],
+			typeContext: typeContext
 		)
 	}
 
@@ -170,6 +171,12 @@ class InferenceContext {
 		return .void
 	}
 
+	func inherit(_ context: InferenceContext) {
+		for (typeVar, substitution) in context.substitutions {
+			self.substitutions[typeVar] = substitution
+		}
+	}
+
 	func applySubstitutions(to type: InferenceType, with substitutions: [TypeVariable: InferenceType]) -> InferenceType {
 		switch type {
 		case .typeVar(let typeVariable):
@@ -184,7 +191,7 @@ class InferenceContext {
 	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
 		if withParents {
 			let result = applySubstitutions(to: type, with: self.substitutions)
-			return parent?.applySubstitutions(to: result, with: self.substitutions) ?? result
+			return parent?.applySubstitutions(to: result) ?? result
 		}
 
 		return applySubstitutions(to: type, with: self.substitutions)

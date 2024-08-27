@@ -14,7 +14,7 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	case base(Primitive) // primitives
 	case function([InferenceType], InferenceType)
 	case structType(StructType)
-	case structInstance(StructType)
+	case instance(Instance)
 	case `protocol`(ProtocolType)
 	case error(InferenceError)
 	case void
@@ -37,8 +37,8 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 			"error(\(error))"
 		case .structType(let structType):
 			structType.name + ".Type"
-		case .structInstance(let structType):
-			structType.name
+		case .instance(let instance):
+			instance.type.name
 		case .void:
 			"void"
 		}

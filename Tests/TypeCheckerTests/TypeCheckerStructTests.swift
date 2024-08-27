@@ -37,8 +37,8 @@ struct TypeCheckerStructTests {
 		)
 
 		let context = try infer(syntax)
-		let structType = try #require(StructType.extractInstance(from: context[syntax[1]]))
-		#expect(structType.name == "Person")
+		let instance = try #require(StructType.extractInstance(from: context[syntax[1]]))
+		#expect(instance.type.name == "Person")
 	}
 
 	@Test("Types instance properties") func instanceProperty() throws {
@@ -145,11 +145,15 @@ struct TypeCheckerStructTests {
 		)
 
 		let context = try infer(syntax)
+		print(context[syntax[2]])
 
 		let personInfoInstance = StructType.extractInstance(from: context[syntax[2]])
-		let personInfoStructType = try #require(personInfoInstance)
+		let personInfo = try #require(personInfoInstance)
 
-		#expect(personInfoStructType.name == "PersonInfo")
-		#expect(context[syntax[3]] == .type(.base(.string)))
+		#expect(personInfo.type.name == "PersonInfo")
+
+		let result = context[syntax[3]]
+		let expected = InferenceResult.type(.base(.string))
+		#expect(result == expected)
 	}
 }

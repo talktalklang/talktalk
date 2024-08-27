@@ -142,7 +142,7 @@ struct InferenceVisitor: Visitor {
 
 		var returns: InferenceType
 		var parameters: [InferenceType]
-		var typeParameters: [String: InferenceType] = [:]
+		var typeParameters: [String: TypeVariable] = [:]
 
 		switch callee {
 		case let .function(funcParams, funcReturns):
@@ -150,10 +150,17 @@ struct InferenceVisitor: Visitor {
 			returns = funcReturns
 		case let .structType(structType):
 			// TODO: Handle synthesized init
-			guard let initializer = structType.initializers["init"] else {
-				context.addError(.memberNotFound(structType, "init"), to: expr)
-				return
-			}
+			let initializer = structType.initializers["init"] ?? {
+				return StructType.Initializer(
+					initializationType: .type(
+						.function(
+							structType.properties.map(\.value.asType!),
+							.instance(Instance(type: structType, substitutions: [:]))
+						)
+					),
+					initializationParameters: [:]
+				)
+			}()
 
 			// We need to also substitude type parameters if they are specified here
 			typeParameters = initializer.initializationParameters
@@ -172,7 +179,7 @@ struct InferenceVisitor: Visitor {
 				parameters = structType.properties.map { $0.value.asType! }
 			}
 
-			returns = .structInstance(structType)
+			returns = .instance(Instance(type: structType, substitutions: [:]))
 		default:
 			context.extend(expr, with: .type(.error(.typeError("Callee not callable: \(callee?.description ?? "nope")"))))
 			return
@@ -188,22 +195,24 @@ struct InferenceVisitor: Visitor {
 			try argExpr.accept(self, childContext) // Infer the argument type
 
 			if case let .type(argType) = childContext[argExpr] {
-				context.unify(argType, paramType) // Unify argument type with the parameter type
+				childContext.unify(argType, paramType) // Unify argument type with the parameter type
 
 				// Unify params with their declared types (like init(wrapped: T))
 				if case let .typeVar(typeVar) = paramType,
 					 let name = typeVar.name,
 					 let initParam = typeParameters[name] {
-					context.unify(argType, initParam)
+//					childContext.bind(typeVar: initParam, to: argType)
+//					childContext.unify(.typeVar(initParam), argType)
 				}
 			} else {
-				context.extend(expr, with: .type(.error(.argumentError("Could not determine argument/parameter agreement"))))
+				context.addError(.argumentError("Could not determine arg/param agreement"), to: expr)
+				return
 			}
 		}
 
 		// Set the return type in the environment
-		let finalReturns = context.applySubstitutions(to: returns, withParents: true)
-		context.extend(expr, with: .type(finalReturns))
+		let instance = childContext.applySubstitutions(to: returns)
+		context.extend(expr, with: .type(instance))
 	}
 
 	func visit(_ expr: DefExprSyntax, _ context: InferenceContext) throws {
@@ -328,7 +337,7 @@ struct InferenceVisitor: Visitor {
 				case let (decl as FuncExpr, .type(.function)):
 					typeContext.methods[decl.autoname] = context[decl]
 				case let (decl as VarLetDecl, .type(.structType(structType))):
-					typeContext.properties[decl.name] = .type(.structInstance(structType))
+					typeContext.properties[decl.name] = .type(.instance(Instance(type: structType, substitutions: [:])))
 				case let (decl as VarLetDecl, .type):
 					typeContext.properties[decl.name] = context[decl]
 				default:
@@ -354,8 +363,8 @@ struct InferenceVisitor: Visitor {
 		try expr.receiver.accept(self, context)
 
 		let structType: StructType? = switch context[expr.receiver] {
-		case .type(.structInstance(let structType)):
-			structType
+		case .type(.instance(let instance)):
+			instance.type
 		case .type(.structType(let structType)):
 			structType
 		default:
@@ -401,11 +410,12 @@ struct InferenceVisitor: Visitor {
 
 		try handleFuncLike(decl, context: context)
 
-		let params: [String: InferenceType] = decl.params.params.reduce(into: [:]) { res, param in
+		let params: [String: TypeVariable] = decl.params.params.reduce(into: [:]) { res, param in
 			if let typeExpr = param.type {
-				let typeVar = context.lookupVariable(named: typeExpr.identifier.lexeme)
-				res[param.name] = typeVar
-//				context.extend(typeExpr, with: .type(.typeVar(typeVar)))
+				if case let .typeVar(typeVar) = context.lookupVariable(named: typeExpr.identifier.lexeme) {
+					res[param.name] = typeVar
+					context.extend(typeExpr, with: .type(.typeVar(typeVar)))
+				}
 			}
 		}
 
@@ -476,7 +486,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		// Unify self inside the struct context to point to an instance of the struct
-		structContext.unify(.typeVar(selfVar), .structInstance(structType))
+		structContext.unify(.typeVar(selfVar), .instance(Instance(type: structType, substitutions: [:])))
 
 		// Visit the body with the new context. Property decls and function definitions
 		// will be added as substitutions at this time, then we can pull them out after

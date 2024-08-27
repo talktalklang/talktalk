@@ -23,7 +23,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		//
 		// In this case we'd add ["wrapped": "T"] to the initialization parameters
 		// so that the type variable for wrapped can be unified with T's.
-		var initializationParameters: [String: InferenceType]
+		var initializationParameters: [String: TypeVariable]
 	}
 
 	static func ==(lhs: StructType, rhs: StructType) -> Bool {
@@ -42,9 +42,9 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	static func extractInstance(from result: InferenceResult?) -> StructType? {
-		if case let .type(.structInstance(structType)) = result {
-			return structType
+	static func extractInstance(from result: InferenceResult?) -> Instance? {
+		if case let .type(.instance(instance)) = result {
+			return instance
 		}
 
 		return nil
