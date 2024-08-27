@@ -6,6 +6,26 @@
 //
 
 struct StructType: Equatable, Hashable, CustomStringConvertible {
+	struct Initializer: Equatable, Hashable {
+		// The type of the init func itself
+		var initializationType: InferenceResult
+
+		// A map of arguments to parameters. This lets us populate generic
+		// parameters on init. For example:
+		//
+		//	struct Wrapper<T> {
+		//		var wrapped: T
+		//
+		//		init(wrapped: T) {
+		//			self.wrapped = wrapped
+		//		}
+		//	}
+		//
+		// In this case we'd add ["wrapped": "T"] to the initialization parameters
+		// so that the type variable for wrapped can be unified with T's.
+		var initializationParameters: [String: InferenceType]
+	}
+
 	static func ==(lhs: StructType, rhs: StructType) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
@@ -41,7 +61,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		"\(name)(\(properties.reduce(into: "") { res, pair in res += "\(pair.key): \(pair.value)" }))"
 	}
 
-	var initializers: [String: InferenceResult] {
+	var initializers: [String: Initializer] {
 		typeContext.initializers
 	}
 

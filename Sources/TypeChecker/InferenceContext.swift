@@ -23,14 +23,14 @@ enum InferenceError: Equatable, Hashable {
 class TypeContext {
 	var selfVar: TypeVariable
 	var methods: [String: InferenceResult]
-	var initializers: [String: InferenceResult]
+	var initializers: [String: StructType.Initializer]
 	var properties: [String: InferenceResult]
 	var typeParameters: [String: InferenceResult]
 
 	init(
 		selfVar: TypeVariable,
 		methods: [String : InferenceResult] = [:],
-		initializers: [String : InferenceResult] = [:],
+		initializers: [String : StructType.Initializer] = [:],
 		properties: [String : InferenceResult] = [:],
 		typeParameters: [String: InferenceResult] = [:]
 	) {
@@ -163,6 +163,13 @@ class InferenceContext {
 		substitutions[typeVar] = type
 	}
 
+	func applyInstanceSubstitutions(for structType: StructType) -> InferenceType {
+		#warning("TODO")
+		// We need to call this method on struct instantiation, looking at args to try to unify
+		// with our generic types
+		return .void
+	}
+
 	func applySubstitutions(to type: InferenceType, with substitutions: [TypeVariable: InferenceType]) -> InferenceType {
 		switch type {
 		case .typeVar(let typeVariable):
@@ -177,7 +184,7 @@ class InferenceContext {
 	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
 		if withParents {
 			let result = applySubstitutions(to: type, with: self.substitutions)
-			return parent?.applySubstitutions(to: result) ?? result
+			return parent?.applySubstitutions(to: result, with: self.substitutions) ?? result
 		}
 
 		return applySubstitutions(to: type, with: self.substitutions)

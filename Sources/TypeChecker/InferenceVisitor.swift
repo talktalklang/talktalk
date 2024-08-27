@@ -74,6 +74,12 @@ struct InferenceVisitor: Visitor {
 			let typeVariable = childContext.freshTypeVariable(param.name)
 			params.append(.typeVar(typeVariable))
 			childContext.extend(param, with: .type(.typeVar(typeVariable)))
+
+			if let paramTypeExpr = param.type {
+				let typeParamVariable = childContext.freshTypeVariable(paramTypeExpr.identifier.lexeme)
+				try paramTypeExpr.accept(self, context)
+				context.extend(paramTypeExpr, with: .type(.typeVar(typeParamVariable)))
+			}
 		}
 
 		// Create a temporary type variable for the function itself to allow for recursion
@@ -136,16 +142,23 @@ struct InferenceVisitor: Visitor {
 
 		var returns: InferenceType
 		var parameters: [InferenceType]
+		var typeParameters: [String: InferenceType] = [:]
 
 		switch callee {
 		case let .function(funcParams, funcReturns):
 			parameters = funcParams
 			returns = funcReturns
 		case let .structType(structType):
-			// TODO: Use the struct's init here, or synthesize one
-			let initializer = structType.initializers["init"]
+			// TODO: Handle synthesized init
+			guard let initializer = structType.initializers["init"] else {
+				context.addError(.memberNotFound(structType, "init"), to: expr)
+				return
+			}
 
-			switch initializer {
+			// We need to also substitude type parameters if they are specified here
+			typeParameters = initializer.initializationParameters
+
+			switch initializer.initializationType {
 			case .scheme(let scheme):
 				if case let .function(params, _) = context.instantiate(scheme: scheme) {
 					parameters = params
@@ -176,13 +189,20 @@ struct InferenceVisitor: Visitor {
 
 			if case let .type(argType) = childContext[argExpr] {
 				context.unify(argType, paramType) // Unify argument type with the parameter type
+
+				// Unify params with their declared types (like init(wrapped: T))
+				if case let .typeVar(typeVar) = paramType,
+					 let name = typeVar.name,
+					 let initParam = typeParameters[name] {
+					context.unify(argType, initParam)
+				}
 			} else {
 				context.extend(expr, with: .type(.error(.argumentError("Could not determine argument/parameter agreement"))))
 			}
 		}
 
 		// Set the return type in the environment
-		let finalReturns = context.applySubstitutions(to: returns)
+		let finalReturns = context.applySubstitutions(to: returns, withParents: true)
 		context.extend(expr, with: .type(finalReturns))
 	}
 
@@ -307,8 +327,6 @@ struct InferenceVisitor: Visitor {
 					typeContext.methods[decl.autoname] = context[decl]
 				case let (decl as FuncExpr, .type(.function)):
 					typeContext.methods[decl.autoname] = context[decl]
-				case let (decl as InitDecl, .scheme):
-					typeContext.initializers["init"] = context[decl]
 				case let (decl as VarLetDecl, .type(.structType(structType))):
 					typeContext.properties[decl.name] = .type(.structInstance(structType))
 				case let (decl as VarLetDecl, .type):
@@ -354,10 +372,10 @@ struct InferenceVisitor: Visitor {
 		switch member {
 		case let .scheme(scheme):
 			let instantiated = context.instantiate(scheme: scheme)
-			let substitutedMember = context.applySubstitutions(to: instantiated)
+			let substitutedMember = structType.context.applySubstitutions(to: instantiated, withParents: true)
 			context.extend(expr, with: .type(substitutedMember))
 		case let .type(type):
-			let substitutedMember = context.applySubstitutions(to: type)
+			let substitutedMember = structType.context.applySubstitutions(to: type, withParents: true)
 			context.extend(expr, with: .type(substitutedMember))
 		default:
 			context.extend(expr, with: .type(.error(.memberNotFound(structType, expr.property))))
@@ -375,17 +393,30 @@ struct InferenceVisitor: Visitor {
 		}
 	}
 
-	func visit(_ expr: InitDeclSyntax, _ context: InferenceContext) throws {
+	func visit(_ decl: InitDeclSyntax, _ context: InferenceContext) throws {
 		guard let typeContext = context.typeContext else {
-			context.addError(.unknownError("cannot define init() outside type context"), to: expr)
+			context.addError(.unknownError("cannot define init() outside type context"), to: decl)
 			return
 		}
 
-		try handleFuncLike(expr, context: context)
+		try handleFuncLike(decl, context: context)
+
+		let params: [String: InferenceType] = decl.params.params.reduce(into: [:]) { res, param in
+			if let typeExpr = param.type {
+				let typeVar = context.lookupVariable(named: typeExpr.identifier.lexeme)
+				res[param.name] = typeVar
+//				context.extend(typeExpr, with: .type(.typeVar(typeVar)))
+			}
+		}
+
+		let initializer = StructType.Initializer(
+			initializationType: context[decl]!,
+			initializationParameters: params
+		)
 
 		// TODO: Support multiple initializers
 		// TODO: Ensure all properties are initialized
-		typeContext.initializers["init"] = context[expr]
+		typeContext.initializers["init"] = initializer
 	}
 
 	func visit(_ expr: ImportStmtSyntax, _ context: InferenceContext) throws {
