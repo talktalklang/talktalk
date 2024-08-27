@@ -16,7 +16,7 @@ enum InferenceError: Equatable, Hashable {
 	case argumentError(String)
 	case typeError(String)
 	case memberNotFound(StructType, String)
-	case missingConstraint(InferenceType, ConstraintType)
+	case missingConstraint(InferenceType)
 }
 
 // If we're inside a type's body, we can save methods/properties in here
@@ -94,6 +94,11 @@ class InferenceContext {
 		return parent?.typeContext
 	}
 
+	func solve() -> InferenceContext {
+		var solver = Solver(context: self, constraints: constraints)
+		return solver.solve()
+	}
+
 	func addError(_ inferrenceError: InferenceError, to expr: any Syntax) {
 		errors.append(inferrenceError)
 		environment.extend(expr, with: .type(.error(inferrenceError)))
@@ -163,9 +168,17 @@ class InferenceContext {
 		substitutions[typeVar] = type
 	}
 
-	func applySubstitutions(to type: InferenceType, with substitutions: [TypeVariable: InferenceType]) -> InferenceType {
+	func applySubstitutions(
+		to type: InferenceType,
+		with substitutions: [TypeVariable: InferenceType]
+	) -> InferenceType {
 		switch type {
 		case .typeVar(let typeVariable):
+			// Reach down recursively as long as we can to try to find the result
+			if case let .typeVar(child) = substitutions[typeVariable] {
+				return applySubstitutions(to: .typeVar(child), with: substitutions)
+			}
+
 			return substitutions[typeVariable] ?? type
 		case .function(let params, let returning):
 			return .function(params.map({ applySubstitutions(to: $0) }), applySubstitutions(to: returning))
@@ -175,11 +188,7 @@ class InferenceContext {
 	}
 
 	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
-		if withParents {
-			let result = applySubstitutions(to: type, with: self.substitutions)
-			return parent?.applySubstitutions(to: result) ?? result
-		}
-
+		let parentResult = parent?.applySubstitutions(to: type) ?? type
 		return applySubstitutions(to: type, with: self.substitutions)
 	}
 

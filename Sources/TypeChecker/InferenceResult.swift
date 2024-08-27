@@ -15,4 +15,13 @@ enum InferenceResult: Equatable, Hashable {
 
 		return nil
 	}
+
+	func asType(in context: InferenceContext) -> InferenceType {
+		switch self {
+		case .scheme(let scheme):
+			context.instantiate(scheme: scheme)
+		case .type(let inferenceType):
+			inferenceType
+		}
+	}
 }

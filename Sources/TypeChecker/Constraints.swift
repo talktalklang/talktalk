@@ -6,18 +6,9 @@
 //
 
 class Constraints {
-	typealias ConstraintMap = [ConstraintType: [InferenceType: Constraint]]
+	var constraints: [any Constraint] = []
 
-	var map: ConstraintMap
-
-	init(map: ConstraintMap = [:]) {
-		self.map = map
-		self.setupBuiltin()
-	}
-
-	func addConstraints(to inferenceType: InferenceType, _ constraints: [Constraint]) {
-		for constraint in constraints {
-			map[constraint.type, default: [:]][inferenceType] = constraint
-		}
+	func add(_ constraint: any Constraint) {
+		constraints.append(constraint)
 	}
 }

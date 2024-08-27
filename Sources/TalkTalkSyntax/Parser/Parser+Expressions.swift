@@ -299,8 +299,6 @@ extension Parser {
 	}
 
 	mutating func typeParameters() -> [TypeExprSyntax] {
-		let i = startLocation(at: previous)
-
 		var types: [TypeExprSyntax] = []
 		repeat {
 			types.append(typeExpr())

@@ -5,10 +5,14 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-public struct SourceLocation: Sendable, Equatable, Hashable, Codable {
+public struct SourceLocation: Sendable, Equatable, Hashable, Codable, CustomStringConvertible {
 	public let path: String
 	public let start: Token
 	public let end: Token
+
+	public var description: String {
+		"\(path), ln: \(start.line), col: \(start.column)"
+	}
 
 	public var line: UInt32 {
 		UInt32(start.line)

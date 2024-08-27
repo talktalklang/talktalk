@@ -31,14 +31,16 @@ struct TypeCheckerStructTests {
 	@Test("Types instance type") func instanceType() throws {
 		let syntax = try Parser.parse(
 			"""
-			struct Person {}
+			struct Person {
+				init() {}
+			}
 			Person()
 			"""
 		)
 
 		let context = try infer(syntax)
-		let structType = try #require(StructType.extractInstance(from: context[syntax[1]]))
-		#expect(structType.name == "Person")
+		let instance = try #require(StructType.extractInstance(from: context[syntax[1]]))
+		#expect(instance.name == "Person")
 	}
 
 	@Test("Types instance properties") func instanceProperty() throws {
@@ -95,7 +97,7 @@ struct TypeCheckerStructTests {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try infer(syntax	)
 		#expect(context[syntax[1]] == .type(.base(.string)))
 	}
 
@@ -103,6 +105,8 @@ struct TypeCheckerStructTests {
 		let syntax = try Parser.parse(
 			"""
 			struct Person {
+				init() {}
+
 				func greet() {
 					"hi"
 				}
@@ -133,10 +137,18 @@ struct TypeCheckerStructTests {
 			"""
 			struct PersonInfo {
 				var name: String
+
+				init(name) {
+					self.name = name
+				}
 			}
 
 			struct Person {
 				var info: PersonInfo
+
+				init(info) {
+					self.info = info
+				}
 			}
 
 			Person(info: PersonInfo(name: "Pat")).info
@@ -147,9 +159,9 @@ struct TypeCheckerStructTests {
 		let context = try infer(syntax)
 
 		let personInfoInstance = StructType.extractInstance(from: context[syntax[2]])
-		let personInfoStructType = try #require(personInfoInstance)
+		let personInfo = try #require(personInfoInstance)
 
-		#expect(personInfoStructType.name == "PersonInfo")
+		#expect(personInfo.name == "PersonInfo")
 		#expect(context[syntax[3]] == .type(.base(.string)))
 	}
 }

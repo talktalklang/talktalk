@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-enum Primitive: CustomStringConvertible, Hashable {
+enum Primitive: Equatable, CustomStringConvertible, Hashable {
 	case int, string, bool, nope
 
 	var description: String {

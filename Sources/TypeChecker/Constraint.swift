@@ -4,13 +4,12 @@
 //
 //  Created by Pat Nakajima on 8/25/24.
 //
+import TalkTalkSyntax
 
 enum ConstraintCheckResult {
-	case ok(InferenceType), error(InferenceError)
+	case ok, error([Diagnostic])
 }
 
 protocol Constraint {
-	var type: ConstraintType { get }
-
-	func check(_ type: InferenceType, with args: [InferenceType]) -> ConstraintCheckResult
+	func solve(in context: InferenceContext) -> ConstraintCheckResult
 }

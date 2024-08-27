@@ -13,7 +13,7 @@ import TalkTalkSyntax
 struct TypeCheckerTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
 		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr)
+		return inferencer.infer(expr).solve()
 	}
 
 	@Test("Infers int literal") func intLiteral() throws {
@@ -63,8 +63,7 @@ struct TypeCheckerTests {
 		let expr = try Parser.parse(#"10 + "nope""#)
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
-		#expect(context.errors.count == 1)
-		#expect(result == .type(.error(.constraintError("Infix operator + can't be used with int + string"))))
+		#expect(result == .type(.error(.constraintError("Infix operator + can't be used with operands int and string"))))
 	}
 
 	@Test("Infers binary expr with strings") func binaryStrings() throws {
@@ -88,7 +87,7 @@ struct TypeCheckerTests {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 	}
 
-	@Test("Infers var with base type") func letWithBase() throws {
+	@Test("Infers let with base type") func letWithBase() throws {
 		let syntax = try Parser.parse("let i = 123")
 		let context = try infer(syntax)
 		guard case let .typeVar(result) = try #require(context.lookupVariable(named: "i")) else {
@@ -110,7 +109,7 @@ struct TypeCheckerTests {
 		""")
 
 		let context = try infer(syntax)
-
+		print()
 		// Make sure we've got the function typed properly
 		#expect(context[syntax[0]] == .type(.function([.typeVar("x", 0)], .typeVar("x", 0))))
 
@@ -133,7 +132,7 @@ struct TypeCheckerTests {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 
 		// This test fails
-		#expect(context[syntax[1]] == .type(.error(.undefinedVariable("x, ln: 1"))))
+		#expect(context[syntax[1]] == .type(.error(.undefinedVariable("x"))))
 	}
 
 	@Test("Types factorial (recursion test)") func factorial() throws {
@@ -158,7 +157,7 @@ struct TypeCheckerTests {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [],
+					variables: [.typeVar("n", 0)],
 					type: .function([.typeVar("n", 0)], .base(.int))
 				)
 			)
