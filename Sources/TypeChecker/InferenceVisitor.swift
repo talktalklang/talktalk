@@ -72,7 +72,7 @@ struct InferenceVisitor: Visitor {
 		let typeExpr: InferenceResult? = if let typeExpr = expr.typeExpr { context[typeExpr] } else { nil }
 		let value: InferenceResult? = if let value = expr.value { context[value] } else { nil }
 
-		let typeVar = context.freshTypeVariable(expr.name)
+		let typeVar = context.freshTypeVariable(expr.name + " [decl]")
 
 		switch (typeExpr, value) {
 		case let (typeExpr, value) where typeExpr != nil && value != nil:
@@ -98,7 +98,7 @@ struct InferenceVisitor: Visitor {
 			try arg.accept(self, context)
 		}
 
-		let returns = context.freshTypeVariable()
+		let returns = context.freshTypeVariable(expr.description + " [returns]")
 
 		let callee = context[expr.callee]!
 		let args = expr.args.map { context[$0]! }
@@ -172,7 +172,7 @@ struct InferenceVisitor: Visitor {
 			return
 		}
 
-		let returns = context.freshTypeVariable()
+		let returns = context.freshTypeVariable(expr.description + " [returns]")
 
 		context.constraints.add(
 			InfixOperatorConstraint(

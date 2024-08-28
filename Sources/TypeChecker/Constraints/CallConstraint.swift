@@ -75,9 +75,7 @@ struct CallConstraint: Constraint {
 		return .ok
 	}
 
-	func solveStruct(structType structTypeOriginal: StructType, in context: InferenceContext) -> ConstraintCheckResult {
-		let structType = structTypeOriginal.copy()
-
+	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
 		let params: [InferenceType] = if let initializer = structType.initializers["init"] {
 			switch initializer {
 			case .scheme(let scheme):
@@ -127,7 +125,7 @@ struct CallConstraint: Constraint {
 			)
 		}
 
-		childContext.unify(returns, .structInstance(structType))
+		childContext.unify(returns, .structInstance(structType.copy()))
 		context.unify(returns, childContext.applySubstitutions(to: returns))
 
 		return .ok

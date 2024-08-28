@@ -42,21 +42,10 @@ struct EqualityConstraint: Constraint {
 			return .ok
 		}
 
-		if case .typeVar(let leftVar) = lhs {
-			context.bind(typeVar: leftVar, to: context.applySubstitutions(to: rhs))
-			return .ok
-		}
+		context.unify(lhs, rhs)
+		context.unify(rhs, lhs)
 
-		if case .typeVar(let rightVar) = rhs {
-			context.bind(typeVar: rightVar, to: context.applySubstitutions(to: lhs))
-			return .ok
-		}
-
-		return .error([Diagnostic(
-			message: "Type mismatch: expected \(rhs), but got \(lhs)",
-			severity: .error,
-			location: location
-		)])
+		return .ok
 	}
 }
 

@@ -8,7 +8,7 @@
 import Foundation
 import TalkTalkSyntax
 
-typealias VariableID = UUID
+typealias VariableID = Int
 
 enum InferenceError: Equatable, Hashable {
 	case undefinedVariable(String)
@@ -50,6 +50,7 @@ class InferenceContext {
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
 	var typeContext: TypeContext?
+	var nextID: VariableID = 0
 
 	init(
 		parent: InferenceContext? = nil,
@@ -153,8 +154,9 @@ class InferenceContext {
 		return .error(inferenceError)
 	}
 
-	func freshTypeVariable(_ name: String? = nil) -> TypeVariable {
-		return TypeVariable(name, UUID())
+	func freshTypeVariable(_ name: String) -> TypeVariable {
+		defer { nextID += 1}
+		return TypeVariable(name, nextID)
 	}
 
 	func bind(typeVar: TypeVariable, to type: InferenceType) {
@@ -209,7 +211,7 @@ class InferenceContext {
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
-			localSubstitutions[variable] = .typeVar(freshTypeVariable())
+			localSubstitutions[variable] = .typeVar(freshTypeVariable((variable.name ?? "<unnamed>") + " [instantiated]"))
 		}
 
 		return applySubstitutions(to: scheme.type, with: localSubstitutions)
