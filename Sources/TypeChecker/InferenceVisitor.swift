@@ -28,6 +28,43 @@ struct InferenceVisitor: Visitor {
 		return context
 	}
 
+	func handleFuncLike(_ expr: any FuncLike, _ context: InferenceContext) throws {
+		let childContext = context.childContext()
+
+		try expr.params.accept(self, childContext)
+
+		let returns = try childContext.trackReturns {
+			try expr.body.accept(self, childContext)
+		}
+
+		let funcType = InferenceResult.scheme(
+			Scheme(
+				name: expr.name?.lexeme,
+				variables: expr.params.params.compactMap {
+					if let type = childContext[$0]?.asType(in: context),
+					   childContext.isFreeVariable(type)
+					{
+						return type
+					}
+
+					return nil
+				},
+				type: .function(
+					expr.params.params.map { childContext[$0]!.asType! },
+					returns.first?.asType ?? childContext[expr.body]?.asType ?? .void
+				)
+			)
+		)
+
+		context.extend(expr, with: funcType)
+
+		if let name = expr.name?.lexeme {
+			let typeVar = context.freshTypeVariable(name)
+			context.constraints.add(VariableConstraint(typeVar: .typeVar(typeVar), value: funcType, location: expr.location))
+			childContext.constraints.add(VariableConstraint(typeVar: .typeVar(typeVar), value: funcType, location: expr.location))
+		}
+	}
+
 	func handleVarLet(_ expr: any VarLetDecl, _ context: InferenceContext) throws {
 		try expr.typeExpr?.accept(self, context)
 		try expr.value?.accept(self, context)
@@ -74,7 +111,10 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: DefExprSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		try expr.receiver.accept(self, context)
+		try expr.value.accept(self, context)
+
+		context.extend(expr, with: .type(.void))
 	}
 
 	func visit(_ expr: IdentifierExprSyntax, _ context: InferenceContext) throws {
@@ -96,7 +136,15 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws {
 		if let defined = context.lookupVariable(named: expr.name) {
-			context.extend(expr, with: .type(defined))
+			context.extend(
+				expr,
+				with: .type(
+					context.applySubstitutions(to: defined)
+				)
+			)
+		} else if expr.name == "self", let typeContext = context.lookupTypeContext() {
+			let type = context.applySubstitutions(to: .typeVar(typeContext.selfVar))
+			context.extend(expr, with: .type(type))
 		} else {
 			context.addError(.undefinedVariable(expr.name), to: expr)
 		}
@@ -155,39 +203,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: FuncExprSyntax, _ context: InferenceContext) throws {
-		let childContext = context.childContext()
-
-		try expr.params.accept(self, childContext)
-
-		let returns = try childContext.trackReturns {
-			try expr.body.accept(self, childContext)
-		}
-
-		let funcType = InferenceResult.scheme(
-			Scheme(
-				name: expr.name?.lexeme,
-				variables: expr.params.params.compactMap {
-					if let type = childContext[$0]?.asType(in: context),
-						 childContext.isFreeVariable(type) {
-						return type
-					}
-
-					return nil
-				},
-				type: .function(
-					expr.params.params.map { childContext[$0]!.asType! },
-					returns.first?.asType ?? childContext[expr.body]?.asType ?? .void
-				)
-			)
-		)
-
-		context.extend(expr, with: funcType)
-
-		if let name = expr.name?.lexeme {
-			let typeVar = context.freshTypeVariable(name)
-			context.constraints.add(VariableConstraint(typeVar: .typeVar(typeVar), value: funcType))
-			childContext.constraints.add(VariableConstraint(typeVar: .typeVar(typeVar), value: funcType))
-		}
+		try handleFuncLike(expr, context)
 	}
 
 	func visit(_ expr: ParamsExprSyntax, _ context: InferenceContext) throws {
@@ -215,7 +231,9 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: DeclBlockSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		for decl in expr.decls {
+			try decl.accept(self, context)
+		}
 	}
 
 	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws {
@@ -231,7 +249,22 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		try expr.receiver.accept(self, context)
+		let receiver = context.applySubstitutions(
+			to: context[expr.receiver]!.asType(in: context)
+		)
+		let returns = context.freshTypeVariable(expr.description)
+
+		context.constraints.add(
+			MemberConstraint(
+				receiver: receiver,
+				name: expr.property,
+				type: .typeVar(returns),
+				location: expr.location
+			)
+		)
+
+		context.extend(expr, with: .type(.typeVar(returns)))
 	}
 
 	func visit(_ expr: ReturnStmtSyntax, _ context: InferenceContext) throws {
@@ -246,7 +279,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: InitDeclSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		try handleFuncLike(expr, context)
 	}
 
 	func visit(_ expr: ImportStmtSyntax, _ context: InferenceContext) throws {
@@ -254,7 +287,18 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		let type: InferenceType = switch expr.identifier.lexeme {
+		case "int":
+			.base(.int)
+		case "String":
+			.base(.string)
+		case "bool":
+			.base(.bool)
+		default:
+			.typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+		}
+
+		context.extend(expr, with: .type(type))
 	}
 
 	func visit(_ expr: ExprStmtSyntax, _ context: InferenceContext) throws {
@@ -269,7 +313,64 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: StructDeclSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		let structTypeVar = context.freshTypeVariable(expr.name)
+		let structSelfVar = context.freshTypeVariable("self")
+		let structContext = context.childTypeContext(withSelf: structSelfVar)
+		let typeContext = structContext.typeContext!
+
+		let structType = StructType(
+			name: expr.name,
+			context: structContext,
+			typeContext: typeContext
+		)
+
+		let structInferenceType = InferenceType.structType(structType)
+
+		structContext.unify(.typeVar(structSelfVar), .structInstance(structType))
+
+		context.constraints.add(
+			.equality(.typeVar(structTypeVar), structInferenceType, at: expr.location)
+		)
+
+		for typeParameter in expr.typeParameters {
+			try typeParameter.accept(self, structContext)
+			context.constraints.add(
+				TypeParameterConstraint(
+					owner: .typeVar(structTypeVar),
+					parameter: context[typeParameter]!.asType(in: context),
+					location: typeParameter.location
+				)
+			)
+		}
+
+		for typeParameter in expr.conformances {
+			try typeParameter.accept(self, structContext)
+			context.constraints.add(
+				TypeConformanceConstraint(
+					type: .typeVar(structTypeVar),
+					conformsTo: context[typeParameter]!.asType(in: context),
+					location: typeParameter.location
+				)
+			)
+		}
+
+		for decl in expr.body.decls {
+			try decl.accept(self, structContext)
+
+			switch (decl, structContext[decl]!) {
+			case let (decl as FuncExpr, .scheme(scheme)):
+				// It's a method
+				typeContext.methods[decl.name!.lexeme] = .scheme(scheme)
+			case let (decl as VarLetDecl, .type(type)):
+				// It's a property
+				typeContext.properties[decl.name] = .type(type)
+			default:
+				print("!! Unhandled struct body decl:")
+				print(decl.description)
+			}
+		}
+
+		context.extend(expr, with: .type(.typeVar(structTypeVar)))
 	}
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws {

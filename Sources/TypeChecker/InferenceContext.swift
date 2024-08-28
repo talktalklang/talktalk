@@ -189,7 +189,7 @@ class InferenceContext {
 
 	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
 		let parentResult = parent?.applySubstitutions(to: type) ?? type
-		return applySubstitutions(to: type, with: self.substitutions)
+		return applySubstitutions(to: parentResult, with: self.substitutions)
 	}
 
 	// See if these types are compatible. If so, bind 'em.

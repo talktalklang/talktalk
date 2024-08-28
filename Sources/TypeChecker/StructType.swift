@@ -45,6 +45,40 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		typeContext.initializers
 	}
 
+	func memberForInstance(named name: String) -> InferenceResult? {
+		instanceProperty(named: name) ?? method(named: name)
+	}
+
+	func member(named name: String) -> InferenceResult? {
+		if let member = properties[name] ?? methods[name] {
+			return .type(context.applySubstitutions(to: member.asType(in: context)))
+		}
+
+		return nil
+	}
+
+	func instanceProperty(named name: String) -> InferenceResult? {
+		if let member = properties[name] {
+			let result = context.applySubstitutions(to: member.asType(in: context))
+
+			if case let .structType(structType) = result {
+				return .type(.structInstance(structType))
+			} else {
+				return .type(result)
+			}
+		}
+
+		return nil
+	}
+
+	func method(named name: String) -> InferenceResult? {
+		if let member = methods[name] {
+			return .type(context.applySubstitutions(to: member.asType(in: context)))
+		}
+
+		return nil
+	}
+
 	var properties: [String: InferenceResult] {
 		typeContext.properties
 	}

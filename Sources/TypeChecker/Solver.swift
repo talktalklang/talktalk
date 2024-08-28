@@ -13,7 +13,9 @@ struct Solver {
 	mutating func solve() -> InferenceContext {
 		for constraint in constraints.constraints {
 			print("-> Solving \(constraint)")
-			constraint.solve(in: context)
+			if case let .error(diagnostics) = constraint.solve(in: context) {
+				fatalError(diagnostics.map(\.message).joined(separator: ", "))
+			}
 		}
 
 		return context

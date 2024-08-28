@@ -11,5 +11,7 @@ enum ConstraintCheckResult {
 }
 
 protocol Constraint {
+	var location: SourceLocation { get }
+
 	func solve(in context: InferenceContext) -> ConstraintCheckResult
 }

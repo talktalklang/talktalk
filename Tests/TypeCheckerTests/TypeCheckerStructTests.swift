@@ -13,7 +13,7 @@ import TalkTalkSyntax
 struct TypeCheckerStructTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
 		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr)
+		return inferencer.infer(expr).solve()
 	}
 
 	@Test("Types struct type") func structType() throws {
@@ -31,19 +31,18 @@ struct TypeCheckerStructTests {
 	@Test("Types instance type") func instanceType() throws {
 		let syntax = try Parser.parse(
 			"""
-			struct Person {
-				init() {}
-			}
+			struct Person {}
 			Person()
 			"""
 		)
 
 		let context = try infer(syntax)
+		print()
 		let instance = try #require(StructType.extractInstance(from: context[syntax[1]]))
 		#expect(instance.name == "Person")
 	}
 
-	@Test("Types instance properties") func instanceProperty() throws {
+	@Test("Types instance properties with base types") func instanceProperty() throws {
 		let syntax = try Parser.parse(
 			"""
 			struct Person {
@@ -55,8 +54,8 @@ struct TypeCheckerStructTests {
 
 		let context = try infer(syntax)
 		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.properties["name"] == .type(.base(.string)))
-		#expect(structType.properties["age"] == .type(.base(.int)))
+		#expect(structType.member(named: "name") == .type(.base(.string)))
+		#expect(structType.member(named: "age") == .type(.base(.int)))
 	}
 
 	@Test("Types custom init") func customInit() throws {
@@ -93,7 +92,7 @@ struct TypeCheckerStructTests {
 				}
 			}
 
-			Person().getName()
+			Person(name: "pat").getName()
 			"""
 		)
 
@@ -119,9 +118,7 @@ struct TypeCheckerStructTests {
 
 		let context = try infer(syntax)
 		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.methods["greet"] == .scheme(
-			Scheme(name: "greet", variables: [], type: .function([], .base(.string)))
-		))
+		#expect(structType.member(named: "greet") == .type(.function([], .base(.string))))
 
 		let result1 = context[syntax[1]]
 		let expected1 = InferenceResult.type(.function([], .base(.string)))

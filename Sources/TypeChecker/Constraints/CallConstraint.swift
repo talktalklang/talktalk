@@ -21,8 +21,8 @@ struct CallConstraint: Constraint {
 		switch callee {
 		case .function(let params, let fnReturns):
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
-		case .structType:
-			return .error([]) // TODO
+		case .structType(let structType):
+			return solveStruct(structType: structType, in: context)
 		default:
 			return .error([
 				Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
@@ -32,7 +32,13 @@ struct CallConstraint: Constraint {
 
 	func solveFunction(params: [InferenceType], fnReturns: InferenceType, in context: InferenceContext) -> ConstraintCheckResult {
 		if args.count != params.count {
-			return .error([])
+			return .error([
+				Diagnostic(
+					message: "Expected \(params.count) args, got \(args.count)",
+					severity: .error,
+					location: location
+				)
+			])
 		}
 
 		// Create a child context to evaluate args and params so we don't get leaks
@@ -47,11 +53,40 @@ struct CallConstraint: Constraint {
 
 		if returns != fnReturns {
 			childContext.unify(
-				returns,
-				fnReturns
+				childContext.applySubstitutions(to: returns),
+				childContext.applySubstitutions(to: fnReturns)
 			)
 		}
 
+		context.unify(returns, childContext.applySubstitutions(to: returns))
+
+		return .ok
+	}
+
+	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
+		let params = structType.properties.values
+
+		if args.count != params.count {
+			return .error([
+				Diagnostic(
+					message: "Expected \(params.count) args, got \(args.count)",
+					severity: .error,
+					location: location
+				)
+			])
+		}
+
+		// Create a child context to evaluate args and params so we don't get leaks
+		let childContext = structType.context.childContext()
+
+		for (arg, param) in zip(args, params) {
+			childContext.unify(
+				arg.asType(in: context),
+				param.asType(in: context)
+			)
+		}
+
+		childContext.unify(returns, .structInstance(structType))
 		context.unify(returns, childContext.applySubstitutions(to: returns))
 
 		return .ok
