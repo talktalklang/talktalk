@@ -92,7 +92,7 @@ struct TypeCheckerStructTests {
 				}
 			}
 
-			Person(name: "pat").getName()
+			Person().getName()
 			"""
 		)
 

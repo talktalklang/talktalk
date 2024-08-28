@@ -64,7 +64,23 @@ struct CallConstraint: Constraint {
 	}
 
 	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
-		let params = structType.properties.values
+		let params: [InferenceType] = if let initializer = structType.initializers["init"] {
+			switch initializer {
+			case .scheme(let scheme):
+				switch structType.context.instantiate(scheme: scheme) {
+				case .function(let params, _):
+					params
+				default:
+					[]
+				}
+			case .type(.function(let params, _)):
+				params
+			default:
+				[]
+			}
+		} else {
+			structType.properties.values.map({ $0.asType(in: structType.context) })
+		}
 
 		if args.count != params.count {
 			return .error([
@@ -82,7 +98,7 @@ struct CallConstraint: Constraint {
 		for (arg, param) in zip(args, params) {
 			childContext.unify(
 				arg.asType(in: context),
-				param.asType(in: context)
+				param
 			)
 		}
 

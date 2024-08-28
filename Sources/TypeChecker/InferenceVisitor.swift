@@ -364,6 +364,8 @@ struct InferenceVisitor: Visitor {
 			case let (decl as VarLetDecl, .type(type)):
 				// It's a property
 				typeContext.properties[decl.name] = .type(type)
+			case let (decl as InitDecl, type):
+				typeContext.initializers["init"] = type
 			default:
 				print("!! Unhandled struct body decl:")
 				print(decl.description)
