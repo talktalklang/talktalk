@@ -9,6 +9,22 @@ import Testing
 @testable import TypeChecker
 import TalkTalkSyntax
 
+struct AnyTypeVar {
+	static func ==(lhs: AnyTypeVar, rhs: TypeVariable) -> Bool {
+		lhs.name == rhs.name
+	}
+
+	static func ==(lhs: TypeVariable, rhs: AnyTypeVar) -> Bool {
+		lhs.name == rhs.name
+	}
+
+	let name: String
+
+	init(named name: String) {
+		self.name = name
+	}
+}
+
 @MainActor
 struct TypeCheckerTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
@@ -41,12 +57,13 @@ struct TypeCheckerTests {
 		let expr = try Parser.parse("func(x) { x }")
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
+		
 		#expect(
 			result == .scheme(
 				Scheme(
 					name: nil,
-					variables: [.typeVar("x", 0)],
-					type: .function([.typeVar("x", 0)], .typeVar("x", 0))
+					variables: [.anyTypeVar(named: "x")],
+					type: .function([.anyTypeVar(named: "x")], .anyTypeVar(named: "x"))
 				)
 			)
 		)
@@ -111,7 +128,7 @@ struct TypeCheckerTests {
 		let context = try infer(syntax)
 		print()
 		// Make sure we've got the function typed properly
-		#expect(context[syntax[0]] == .type(.function([.typeVar("x", 0)], .typeVar("x", 0))))
+		#expect(context[syntax[0]] == .type(.function([.anyTypeVar(named: "x")], .anyTypeVar(named: "x"))))
 
 		// Ensure identity function getting passed a string returns a string
 		#expect(context[syntax[1]] == .type(.base(.string)))
@@ -157,8 +174,8 @@ struct TypeCheckerTests {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [.typeVar("n", 0)],
-					type: .function([.typeVar("n", 0)], .base(.int))
+					variables: [.anyTypeVar(named: "n")],
+					type: .function([.anyTypeVar(named: "n")], .base(.int))
 				)
 			)
 		)

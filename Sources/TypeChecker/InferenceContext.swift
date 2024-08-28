@@ -5,9 +5,10 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
+import Foundation
 import TalkTalkSyntax
 
-typealias VariableID = Int
+typealias VariableID = UUID
 
 enum InferenceError: Equatable, Hashable {
 	case undefinedVariable(String)
@@ -45,14 +46,12 @@ class TypeContext {
 class InferenceContext {
 	private var environment: Environment
 	var parent: InferenceContext?
-	var lastVariableID = 0
 	var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
 	var typeContext: TypeContext?
 
 	init(
-		lastVariableID: Int = 0,
 		parent: InferenceContext? = nil,
 		environment: Environment,
 		constraints: Constraints,
@@ -60,7 +59,6 @@ class InferenceContext {
 		typeContext: TypeContext? = nil
 	) {
 		self.parent = parent
-		self.lastVariableID = lastVariableID
 		self.environment = environment
 		self.constraints = constraints
 		self.substitutions = substitutions
@@ -81,7 +79,7 @@ class InferenceContext {
 			parent: self,
 			environment: environment.childEnvironment(),
 			constraints: constraints,
-			substitutions: [:],
+			substitutions: substitutions,
 			typeContext: TypeContext(selfVar: withSelf)
 		)
 	}
@@ -156,8 +154,7 @@ class InferenceContext {
 	}
 
 	func freshTypeVariable(_ name: String? = nil) -> TypeVariable {
-		defer { lastVariableID += 1 }
-		return TypeVariable(name, lastVariableID)
+		return TypeVariable(name, UUID())
 	}
 
 	func bind(typeVar: TypeVariable, to type: InferenceType) {
@@ -170,13 +167,14 @@ class InferenceContext {
 
 	func applySubstitutions(
 		to type: InferenceType,
-		with substitutions: [TypeVariable: InferenceType]
+		with substitutions: [TypeVariable: InferenceType],
+		count: Int = 0
 	) -> InferenceType {
 		switch type {
 		case .typeVar(let typeVariable):
 			// Reach down recursively as long as we can to try to find the result
-			if case let .typeVar(child) = substitutions[typeVariable] {
-				return applySubstitutions(to: .typeVar(child), with: substitutions)
+			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
+				return applySubstitutions(to: .typeVar(child), with: substitutions, count: count + 1)
 			}
 
 			return substitutions[typeVariable] ?? type

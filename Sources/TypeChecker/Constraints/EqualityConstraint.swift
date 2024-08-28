@@ -12,6 +12,17 @@ struct EqualityConstraint: Constraint {
 	let rhs: InferenceResult
 	let location: SourceLocation
 
+	func result(in context: InferenceContext) -> String {
+		let lhs = context.applySubstitutions(to: lhs.asType(in: context))
+		let rhs = context.applySubstitutions(to: rhs.asType(in: context))
+
+		return "EqualityConstraint(lhs: \(lhs), rhs: \(rhs))"
+	}
+
+	var description: String {
+		"EqualityConstraint(lhs: \(lhs), rhs: \(rhs))"
+	}
+
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let lhs = switch lhs {
 		case .scheme(let scheme):

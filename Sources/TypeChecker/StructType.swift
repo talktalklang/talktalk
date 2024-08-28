@@ -11,7 +11,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	let name: String
-	let context: InferenceContext
+	private(set) var context: InferenceContext
 	let typeContext: TypeContext
 
 	static func extractType(from result: InferenceResult?) -> StructType? {
@@ -39,6 +39,13 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 
 	var description: String {
 		"\(name)(\(properties.reduce(into: "") { res, pair in res += "\(pair.key): \(pair.value)" }))"
+	}
+
+	func copy() -> StructType {
+		var copy = self
+		let context = context.childTypeContext(withSelf: typeContext.selfVar)
+		copy.context = context
+		return copy
 	}
 
 	var initializers: [String: InferenceResult] {

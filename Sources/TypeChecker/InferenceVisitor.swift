@@ -114,6 +114,10 @@ struct InferenceVisitor: Visitor {
 		try expr.receiver.accept(self, context)
 		try expr.value.accept(self, context)
 
+		context.constraints.add(
+			.equality(context[expr.receiver]!, context[expr.value]!, at: expr.location)
+		)
+
 		context.extend(expr, with: .type(.void))
 	}
 
@@ -257,9 +261,9 @@ struct InferenceVisitor: Visitor {
 
 		context.constraints.add(
 			MemberConstraint(
-				receiver: receiver,
+				receiver: .type(receiver),
 				name: expr.property,
-				type: .typeVar(returns),
+				type: .type(.typeVar(returns)),
 				location: expr.location
 			)
 		)
@@ -329,15 +333,17 @@ struct InferenceVisitor: Visitor {
 		structContext.unify(.typeVar(structSelfVar), .structInstance(structType))
 
 		context.constraints.add(
-			.equality(.typeVar(structTypeVar), structInferenceType, at: expr.location)
+			.equality(.type(.typeVar(structTypeVar)), .type(structInferenceType), at: expr.location)
 		)
 
 		for typeParameter in expr.typeParameters {
-			try typeParameter.accept(self, structContext)
-			context.constraints.add(
-				TypeParameterConstraint(
-					owner: .typeVar(structTypeVar),
-					parameter: context[typeParameter]!.asType(in: context),
+			try visit(typeParameter, structContext)
+
+			structContext.constraints.add(
+				MemberConstraint(
+					receiver: .type(structInferenceType),
+					name: "\(structType.name).\(typeParameter.identifier.lexeme)",
+					type: structContext[typeParameter]!,
 					location: typeParameter.location
 				)
 			)
@@ -364,7 +370,10 @@ struct InferenceVisitor: Visitor {
 			case let (decl as VarLetDecl, .type(type)):
 				// It's a property
 				typeContext.properties[decl.name] = .type(type)
-			case let (decl as InitDecl, type):
+				structContext.constraints.add(
+					.equality(.type(type), structContext[decl.typeExpr!]!, at: decl.location)
+				)
+			case let (_ as InitDecl, type):
 				typeContext.initializers["init"] = type
 			default:
 				print("!! Unhandled struct body decl:")
@@ -392,7 +401,18 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws {
-		fatalError("TODO")
+		let protocolType = ProtocolType(name: expr.name.lexeme)
+		let protocolTypeVar = context.freshTypeVariable(expr.name.lexeme)
+
+		context.constraints.add(
+			EqualityConstraint(
+				lhs: .type(.protocol(protocolType)),
+				rhs: .type(.typeVar(protocolTypeVar)),
+				location: expr.location
+			)
+		)
+
+		context.extend(expr, with: .type(.protocol(protocolType)))
 	}
 
 	func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws {

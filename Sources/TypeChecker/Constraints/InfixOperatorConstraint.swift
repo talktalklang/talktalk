@@ -15,6 +15,18 @@ struct InfixOperatorConstraint: Constraint {
 	let context: InferenceContext
 	let location: SourceLocation
 
+	func result(in context: InferenceContext) -> String {
+		let lhs = context.applySubstitutions(to: lhs)
+		let rhs = context.applySubstitutions(to: rhs)
+		let returns = context.applySubstitutions(to: .typeVar(returns))
+
+		return "InfixOperatorConstraint(lhs: \(lhs), rhs: \(rhs), op: \(op.rawValue), returns: \(returns))"
+	}
+
+	var description: String {
+		"EqualityConstraint(lhs: \(lhs), rhs: \(rhs))"
+	}
+
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let lhs = self.context.applySubstitutions(to: lhs)
 		let rhs = self.context.applySubstitutions(to: rhs)

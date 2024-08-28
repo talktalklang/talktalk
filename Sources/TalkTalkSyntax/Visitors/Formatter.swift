@@ -266,6 +266,7 @@ public struct Formatter: Visitor {
 		var result = "var \(expr.name)"
 
 		if let typeExpr = expr.typeExpr {
+			result += ": "
 			result += try typeExpr.accept(self, context)
 		}
 

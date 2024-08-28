@@ -12,9 +12,12 @@ struct Solver {
 
 	mutating func solve() -> InferenceContext {
 		for constraint in constraints.constraints {
-			print("-> Solving \(constraint)")
-			if case let .error(diagnostics) = constraint.solve(in: context) {
-				fatalError(diagnostics.map(\.message).joined(separator: ", "))
+			print("-> \(constraint)")
+			switch constraint.solve(in: context) {
+			case .error(let diagnostics):
+				print("!!!!!!!" + diagnostics.map(\.message).joined(separator: ", "))
+			case .ok:
+				print("<- \(constraint.result(in: context))")
 			}
 		}
 

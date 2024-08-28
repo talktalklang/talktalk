@@ -13,6 +13,18 @@ struct CallConstraint: Constraint {
 	let returns: InferenceType
 	let location: SourceLocation
 
+	func result(in context: InferenceContext) -> String {
+		let callee = context.applySubstitutions(to: callee.asType(in: context))
+		let args = args.map { context.applySubstitutions(to: $0.asType(in: context)) }.map(\.description).joined(separator: ", ")
+		let returns = context.applySubstitutions(to: returns)
+
+		return "CallConstraint(callee: \(callee), args: \(args), returns: \(returns))"
+	}
+
+	var description: String {
+		"CallConstraint(callee: \(callee), args: \(args), returns: \(returns))"
+	}
+
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let callee = context.applySubstitutions(
 			to:	callee.asType(in: context)
@@ -63,13 +75,17 @@ struct CallConstraint: Constraint {
 		return .ok
 	}
 
-	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
+	func solveStruct(structType structTypeOriginal: StructType, in context: InferenceContext) -> ConstraintCheckResult {
+		let structType = structTypeOriginal.copy()
+
 		let params: [InferenceType] = if let initializer = structType.initializers["init"] {
 			switch initializer {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
 				case .function(let params, _):
-					params
+					params.map {
+						structType.context.applySubstitutions(to: $0)
+					}
 				default:
 					[]
 				}
@@ -93,11 +109,20 @@ struct CallConstraint: Constraint {
 		}
 
 		// Create a child context to evaluate args and params so we don't get leaks
-		let childContext = structType.context.childContext()
+		let childContext = structType.context//.childTypeContext(withSelf: structTypeOriginal.typeContext.selfVar)
 
 		for (arg, param) in zip(args, params) {
+//			if case let .typeVar(typeVariable) = param, let name = typeVariable.name {
+//				if let existing = childContext.lookupVariable(named: name) {
+//					childContext.unify(
+//						childContext.applySubstitutions(to: existing),
+//						arg.asType(in: childContext)
+//					)
+//				}
+//			}
+
 			childContext.unify(
-				arg.asType(in: context),
+				arg.asType(in: childContext),
 				param
 			)
 		}

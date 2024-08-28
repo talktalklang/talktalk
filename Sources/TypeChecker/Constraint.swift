@@ -10,8 +10,9 @@ enum ConstraintCheckResult {
 	case ok, error([Diagnostic])
 }
 
-protocol Constraint {
+protocol Constraint: CustomStringConvertible {
 	var location: SourceLocation { get }
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult
+	func result(in context: InferenceContext) -> String
 }
