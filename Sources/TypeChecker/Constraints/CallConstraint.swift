@@ -121,6 +121,7 @@ struct CallConstraint: Constraint {
 				paramType = instanceType
 			} else {
 				paramType = .typeVar(param)
+				instance.substitutions[param] = arg.asType(in: childContext)
 			}
 
 			context.unify(

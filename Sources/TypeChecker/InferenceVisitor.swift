@@ -338,8 +338,7 @@ struct InferenceVisitor: Visitor {
 		case "bool":
 			.base(.bool)
 		default:
-
-			context.lookupVariable(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+			context.lookupVariable(named: expr.identifier.lexeme)!
 		}
 
 		context.extend(expr, with: .type(type))
@@ -381,19 +380,19 @@ struct InferenceVisitor: Visitor {
 		)
 
 		for typeParameter in expr.typeParameters {
-			try visit(typeParameter, structContext)
-			let typeParamType = structContext[typeParameter]!.asType(in: structContext)
-
-			// Add this type to the struct's named variables for resolution
-			structContext.namedVariables[typeParameter.identifier.lexeme] = typeParamType
+			// Define the name first
+			let typeVar = structContext.freshTypeVariable("\(structType)<\(typeParameter.identifier.lexeme)>")
 
 			typeContext.typeParameters.append(
-				.type(typeParamType)
+				.type(.typeVar(typeVar))
 			)
 
-//			if case let .typeVar(typeVariable) = typeParamType {
-//				structInstance.substitutions[typeVariable] = .typeVar(structContext.freshTypeVariable("\(typeParameter.identifier.lexeme)"))
-//			}
+			// Add this type to the struct's named variables for resolution
+			structContext.namedVariables[typeParameter.identifier.lexeme] = .typeVar(typeVar)
+
+			try visit(typeParameter, structContext)
+
+			print("Added \(typeVar) to type context: \(ObjectIdentifier(typeContext))")
 
 //			structContext.constraints.add(
 //				MemberConstraint(

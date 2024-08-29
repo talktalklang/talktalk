@@ -48,7 +48,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 				if case let .typeVar(typeVariable) = $1.asType {
 					$0[typeVariable] = substitutions[typeVariable] ?? .typeVar(context.freshTypeVariable("<\(typeVariable)>"))
 				}
-			}
+			}.merging(substitutions, uniquingKeysWith: { $1 })
 		)
 	}
 
@@ -56,27 +56,9 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		typeContext.initializers
 	}
 
-	func memberForInstance(named name: String) -> InferenceResult? {
-		instanceProperty(named: name) ?? method(named: name)
-	}
-
 	func member(named name: String) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 			return .type(context.applySubstitutions(to: member.asType(in: context)))
-		}
-
-		return nil
-	}
-
-	func instanceProperty(named name: String) -> InferenceResult? {
-		if let member = properties[name] {
-			let result = context.applySubstitutions(to: member.asType(in: context))
-
-			if case let .structType(structType) = result {
-				return .type(.structInstance(Instance(type: structType, substitutions: [:])))
-			} else {
-				return .type(result)
-			}
 		}
 
 		return nil
