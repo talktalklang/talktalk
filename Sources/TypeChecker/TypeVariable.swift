@@ -15,6 +15,10 @@ struct TypeVariable: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	var description: String {
-		"id: \(id), name: \(name ?? "<none>")"
+		if let name {
+			"\(id) \(name.debugDescription)"
+		} else {
+			"\(id)"
+		}
 	}
 }

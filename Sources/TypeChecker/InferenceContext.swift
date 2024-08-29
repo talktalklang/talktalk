@@ -26,14 +26,14 @@ class TypeContext {
 	var methods: [String: InferenceResult]
 	var initializers: [String: InferenceResult]
 	var properties: [String: InferenceResult]
-	var typeParameters: [String: InferenceResult]
+	var typeParameters: [InferenceResult]
 
 	init(
 		selfVar: TypeVariable,
-		methods: [String : InferenceResult] = [:],
-		initializers: [String : InferenceResult] = [:],
-		properties: [String : InferenceResult] = [:],
-		typeParameters: [String: InferenceResult] = [:]
+		methods: [String: InferenceResult] = [:],
+		initializers: [String: InferenceResult] = [:],
+		properties: [String: InferenceResult] = [:],
+		typeParameters: [InferenceResult] = []
 	) {
 		self.selfVar = selfVar
 		self.methods = methods
@@ -41,15 +41,27 @@ class TypeContext {
 		self.properties = properties
 		self.typeParameters = typeParameters
 	}
+
+	func instantiate(_ result: InferenceResult, in context: InferenceContext) -> InferenceResult {
+		switch result {
+		case let .type(.typeVar(typeVar)):
+			// Create fresh type variables for instances
+			.type(.typeVar(context.freshTypeVariable(typeVar.name ?? "")))
+		default:
+			result
+		}
+	}
 }
 
-class InferenceContext {
-	private var environment: Environment
+class InferenceContext: CustomDebugStringConvertible {
+	internal var environment: Environment
 	var parent: InferenceContext?
+	let depth: Int
 	var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
 	var typeContext: TypeContext?
+	var namedVariables: [String: InferenceType] = [:]
 	var nextID: VariableID = 0
 
 	init(
@@ -59,11 +71,25 @@ class InferenceContext {
 		substitutions: [TypeVariable: InferenceType] = [:],
 		typeContext: TypeContext? = nil
 	) {
+		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
 		self.environment = environment
 		self.constraints = constraints
 		self.substitutions = substitutions
 		self.typeContext = typeContext
+
+		log("New context with depth \(depth)", prefix: " * ")
+	}
+
+	var debugDescription: String {
+		var result = "InferenceContext parent: \(parent == nil ? "none" : typeContext?.selfVar.name ?? "<?>")"
+		result += "Environment:\n"
+
+		for (key, val) in environment.types {
+			result += "- syntax id \(key) : \(val.description)\n"
+		}
+
+		return result
 	}
 
 	func childContext() -> InferenceContext {
@@ -71,17 +97,18 @@ class InferenceContext {
 			parent: self,
 			environment: environment.childEnvironment(),
 			constraints: constraints,
-			substitutions: [:]
+			substitutions: substitutions,
+			typeContext: typeContext
 		)
 	}
 
 	func childTypeContext(withSelf: TypeVariable) -> InferenceContext {
 		InferenceContext(
 			parent: self,
-			environment: environment.childEnvironment(),
+			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: TypeContext(selfVar: withSelf)
+			typeContext: typeContext ?? TypeContext(selfVar: withSelf)
 		)
 	}
 
@@ -126,11 +153,11 @@ class InferenceContext {
 	}
 
 	func lookupVariable(named name: String) -> InferenceType? {
-		environment.lookupVariable(named: name) ?? parent?.lookupVariable(named: name)
+		namedVariables[name] ?? parent?.lookupVariable(named: name)
 	}
 
 	func lookupSubstitution(named name: String) -> InferenceType? {
-		substitutions.first(where: { (variable, _) in variable.name == name })?.value
+		substitutions.first(where: { variable, _ in variable.name == name })?.value
 	}
 
 	// Look up inference results for a particular syntax node
@@ -154,8 +181,15 @@ class InferenceContext {
 		return .error(inferenceError)
 	}
 
-	func freshTypeVariable(_ name: String) -> TypeVariable {
-		defer { nextID += 1}
+	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil) -> TypeVariable {
+		if let parent {
+			return parent.freshTypeVariable(name, creatingContext: creatingContext ?? self)
+		}
+
+		defer { nextID += 1 }
+
+		log("New type variable: \(name), T(\(nextID))", prefix: " + ", context: creatingContext ?? self)
+
 		return TypeVariable(name, nextID)
 	}
 
@@ -173,15 +207,15 @@ class InferenceContext {
 		count: Int = 0
 	) -> InferenceType {
 		switch type {
-		case .typeVar(let typeVariable):
+		case let .typeVar(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
 				return applySubstitutions(to: .typeVar(child), with: substitutions, count: count + 1)
 			}
 
 			return substitutions[typeVariable] ?? type
-		case .function(let params, let returning):
-			return .function(params.map({ applySubstitutions(to: $0) }), applySubstitutions(to: returning))
+		case let .function(params, returning):
+			return .function(params.map { applySubstitutions(to: $0) }, applySubstitutions(to: returning))
 		default:
 			return type // Base/error/void types don't get substitutions
 		}
@@ -189,18 +223,40 @@ class InferenceContext {
 
 	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
 		let parentResult = parent?.applySubstitutions(to: type) ?? type
-		return applySubstitutions(to: parentResult, with: self.substitutions)
+		return applySubstitutions(to: parentResult, with: substitutions)
 	}
 
 	// See if these types are compatible. If so, bind 'em.
 	func unify(_ typeA: InferenceType, _ typeB: InferenceType) {
-		switch (typeA, typeB) {
-		case (.typeVar(let v), _):
-			bind(typeVar: v, to: typeB)
-		case (_, .typeVar(let v)):
-			bind(typeVar: v, to: typeA)
+		let a = applySubstitutions(to: typeA)
+		let b = applySubstitutions(to: typeB)
+
+		log("Unifying \(typeA) <-> \(typeB)", prefix: " & ")
+
+		switch (a, b) {
+		case let (.base(a), .base(b)) where a != b:
+			fatalError("Cannot unify \(a) and \(b)")
+		case (.base(_), .typeVar(let b)):
+			bind(typeVar: b, to: a)
+			print("     Got a base type: \(a)")
+		case (.typeVar(let a), .base(_)):
+			bind(typeVar: a, to: b)
+			print("     Got a base type: \(b)")
+		case let (.typeVar(v), _) where .typeVar(v) != b:
+			bind(typeVar: v, to: b)
+		case let (_, .typeVar(v)) where .typeVar(v) != a:
+			bind(typeVar: v, to: a)
+		case let (.function(paramsA, returnA), .function(paramsB, returnB)):
+			zip(paramsA, paramsB).forEach { unify($0, $1) }
+			unify(returnA, returnB)
+		case let (.structType(a), .structType(b)) where a.name == b.name:
+			// Unify struct type parameters if needed
+			break
+		case let (.structInstance(a), .structInstance(b)) where a.type.name == b.type.name:
+			// Unify struct instance type parameters if needed
+			break
 		default:
-			() // Nothing to do at this point
+			addError(.typeError("Cannot unify \(a) and \(b)"))
 		}
 	}
 
@@ -215,5 +271,10 @@ class InferenceContext {
 		}
 
 		return applySubstitutions(to: scheme.type, with: localSubstitutions)
+	}
+
+	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
+		let context = context ?? self
+		print("\(context.depth) " + prefix + msg)
 	}
 }

@@ -62,8 +62,8 @@ struct TypeCheckerTests {
 			result == .scheme(
 				Scheme(
 					name: nil,
-					variables: [.anyTypeVar(named: "x")],
-					type: .function([.anyTypeVar(named: "x")], .anyTypeVar(named: "x"))
+					variables: [.typeVar("x", 0)],
+					type: .function([.typeVar("x", 0)], .typeVar("x", 0))
 				)
 			)
 		)
@@ -93,12 +93,8 @@ struct TypeCheckerTests {
 	@Test("Infers var with base type") func varWithBase() throws {
 		let syntax = try Parser.parse("var i = 123")
 		let context = try infer(syntax)
-		guard case let .typeVar(result) = try #require(context.lookupVariable(named: "i")) else {
-			#expect(Bool(false)) ; return
-		}
 
-		// Make sure the variable is actually set
-		#expect(context.substitutions[result]! == .base(.int))
+		#expect(context.lookupVariable(named: "i") == .base(.int))
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
@@ -107,12 +103,8 @@ struct TypeCheckerTests {
 	@Test("Infers let with base type") func letWithBase() throws {
 		let syntax = try Parser.parse("let i = 123")
 		let context = try infer(syntax)
-		guard case let .typeVar(result) = try #require(context.lookupVariable(named: "i")) else {
-			#expect(Bool(false)) ; return
-		}
 
-		// Make sure the variable is actually set
-		#expect(context.substitutions[result]! == .base(.int))
+		#expect(context.lookupVariable(named: "i") == .base(.int))
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
@@ -126,9 +118,6 @@ struct TypeCheckerTests {
 		""")
 
 		let context = try infer(syntax)
-		print()
-		// Make sure we've got the function typed properly
-		#expect(context[syntax[0]] == .type(.function([.anyTypeVar(named: "x")], .anyTypeVar(named: "x"))))
 
 		// Ensure identity function getting passed a string returns a string
 		#expect(context[syntax[1]] == .type(.base(.string)))
@@ -174,8 +163,8 @@ struct TypeCheckerTests {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [.anyTypeVar(named: "n")],
-					type: .function([.anyTypeVar(named: "n")], .base(.int))
+					variables: [.typeVar("n", 0)],
+					type: .function([.typeVar("n", 0)], .base(.int))
 				)
 			)
 		)

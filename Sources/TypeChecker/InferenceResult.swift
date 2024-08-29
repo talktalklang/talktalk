@@ -13,7 +13,7 @@ enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
 		case .scheme(let scheme):
 			"scheme(\(scheme))"
 		case .type(let inferenceType):
-			"type(\(inferenceType))"
+			inferenceType.description
 		}
 	}
 

@@ -70,8 +70,6 @@ struct GenericsTests {
 		let result = context[syntax[6]]
 		let expected = InferenceResult.type(.base(.int))
 
-		// This test is failing with:
-		// Expectation failed: (result → .type(typeVariable(id: 1, name: InnerWrapped))) == (expected → .type(int))
 		#expect(result == expected)
 	}
 }

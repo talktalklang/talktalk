@@ -27,7 +27,7 @@ struct CallConstraint: Constraint {
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let callee = context.applySubstitutions(
-			to:	callee.asType(in: context)
+			to: callee.asType(in: context)
 		)
 
 		switch callee {
@@ -76,14 +76,16 @@ struct CallConstraint: Constraint {
 	}
 
 	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
-		let params: [InferenceType] = if let initializer = structType.initializers["init"] {
+		// Create a child context to evaluate args and params so we don't get leaks
+		let childContext = structType.context
+//		let childContext = structType.context.childTypeContext(withSelf: structType.context.typeContext!.selfVar)
+
+		let params: [InferenceType] = if let initializer = structType.member(named: "init") {
 			switch initializer {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
 				case .function(let params, _):
-					params.map {
-						structType.context.applySubstitutions(to: $0)
-					}
+					params
 				default:
 					[]
 				}
@@ -93,7 +95,9 @@ struct CallConstraint: Constraint {
 				[]
 			}
 		} else {
-			structType.properties.values.map({ $0.asType(in: structType.context) })
+			structType.properties.values.map {
+				$0.asType(in: structType.context)
+			}
 		}
 
 		if args.count != params.count {
@@ -106,26 +110,30 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		// Create a child context to evaluate args and params so we don't get leaks
-		let childContext = structType.context//.childTypeContext(withSelf: structTypeOriginal.typeContext.selfVar)
+		let instance = structType.instantiate(with: [:])
 
-		for (arg, param) in zip(args, params) {
-//			if case let .typeVar(typeVariable) = param, let name = typeVariable.name {
-//				if let existing = childContext.lookupVariable(named: name) {
-//					childContext.unify(
-//						childContext.applySubstitutions(to: existing),
-//						arg.asType(in: childContext)
-//					)
-//				}
-//			}
+		for case let (arg, .typeVar(param)) in zip(args, params) {
+			let paramType: InferenceType
 
-			childContext.unify(
+			// If the member type is generic, we need to swap it out for the instance's copy so we don't unify
+			// for the whole struct.
+			if let instanceType = instance.substitutions[param] {
+				paramType = instanceType
+			} else {
+				paramType = .typeVar(param)
+			}
+
+			context.unify(
 				arg.asType(in: childContext),
-				param
+				paramType
 			)
 		}
 
-		childContext.unify(returns, .structInstance(structType.copy()))
+		childContext.unify(
+			.structInstance(instance),
+			returns
+		)
+
 		context.unify(returns, childContext.applySubstitutions(to: returns))
 
 		return .ok

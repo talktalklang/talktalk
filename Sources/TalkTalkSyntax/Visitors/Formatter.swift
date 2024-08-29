@@ -50,9 +50,13 @@ public struct Formatter: Visitor {
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Context) throws -> String {
 		var result = expr.identifier.lexeme
-		for typeExpr in expr.genericParams {
-			result += try visit(typeExpr, context)
+
+		if !expr.genericParams.isEmpty {
+			result += "<"
+			result += try expr.genericParams.map { try visit($0, context) }.joined(separator: ", ")
+			result += ">"
 		}
+
 		return result
 	}
 
@@ -282,6 +286,7 @@ public struct Formatter: Visitor {
 		var result = "let \(expr.name)"
 
 		if let typeExpr = expr.typeExpr {
+			result += ": "
 			result += try typeExpr.accept(self, context)
 		}
 

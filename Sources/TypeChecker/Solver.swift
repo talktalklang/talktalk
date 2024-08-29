@@ -12,12 +12,12 @@ struct Solver {
 
 	mutating func solve() -> InferenceContext {
 		for constraint in constraints.constraints {
-			print("-> \(constraint)")
+			context.log(constraint.description, prefix: "-> ")
 			switch constraint.solve(in: context) {
 			case .error(let diagnostics):
 				print("!!!!!!!" + diagnostics.map(\.message).joined(separator: ", "))
 			case .ok:
-				print("<- \(constraint.result(in: context))")
+				context.log(constraint.result(in: context), prefix: "<- ")
 			}
 		}
 
