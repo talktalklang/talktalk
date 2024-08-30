@@ -706,16 +706,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == varName }) {
-				return Variable(
-					name: varName,
-					slot: Byte(slot),
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getBuiltin,
-					setter: .setBuiltin
-				)
-			}
+//			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == varName }) {
+//				return Variable(
+//					name: varName,
+//					slot: Byte(slot),
+//					depth: scopeDepth,
+//					isCaptured: false,
+//					getter: .getBuiltin,
+//					setter: .setBuiltin
+//				)
+//			}
+			#warning("bring this back ^")
 		}
 
 		if let syntax = receiver as? AnalyzedMemberExpr,

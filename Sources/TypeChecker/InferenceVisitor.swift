@@ -116,6 +116,8 @@ struct InferenceVisitor: Visitor {
 			type = .base(.string)
 		case "bool":
 			type = .base(.bool)
+		case "pointer":
+			type = .base(.pointer)
 		default:
 			guard let found = context.lookupVariable(named: expr.identifier.lexeme) else {
 				fatalError("unknown type: \(expr.identifier.lexeme)")
@@ -234,6 +236,8 @@ struct InferenceVisitor: Visitor {
 					context.applySubstitutions(to: defined)
 				)
 			)
+		} else if let type = context.lookupType(named: expr.name) {
+			context.extend(expr, with: .type(.kind(type)))
 		} else {
 			context.addError(.undefinedVariable(expr.name), to: expr)
 		}

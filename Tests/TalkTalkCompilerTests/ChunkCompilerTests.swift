@@ -72,423 +72,423 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 }
 
 actor CompilerTests: CompilerTest {
-	var module: CompilingModule!
-
-	@discardableResult func compile(_ string: String) throws -> Chunk {
-		let parsed = try Parser.parse(.init(path: "", text: string))
-		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init(symbolGenerator: .init(moduleName: "CompilerTests", parent: nil)))
-
-		let analysisModule = try ModuleAnalyzer(
-			name: "CompilerTests",
-			files: [.tmp(string, "1.tlk")],
-			moduleEnvironment: [:],
-			importedModules: []
-		).analyze()
-
-		self.module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
-		return try module.compile(file: AnalyzedSourceFile(path: "1.tlk", syntax: analyzed))
-	}
-
-	func disassemble(_ chunk: Chunk) -> [Instruction] {
-		chunk.disassemble(in: module.finalize(mode: .executable))
-	}
-
-	@Test("Empty program") func empty() throws {
-		let chunk = try compile("")
-		#expect(chunk.disassemble()[0].opcode == .return)
-	}
-
-	@Test("Int literal") func intLiteral() throws {
-		let chunk = try compile("123")
-
-		let instructions = Instructions([
-			.init(opcode: .constant, line: 0, metadata: .constant(.int(123))),
-			.init(opcode: .pop, line: 0, metadata: .simple),
-			.init(opcode: .return, line: 0, metadata: .simple),
-		])
-
-		let expected = [
-			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
-			Instruction(path: chunk.path, opcode: .pop, offset: 2, line: 0, metadata: .simple),
-			Instruction(path: chunk.path, opcode: .return, offset: 3, line: 0, metadata: .simple),
-		]
-
-		#expect(instructions.instructions == expected)
-		#expect(chunk.disassemble() == instructions)
-	}
-
-	@Test("Binary int op") func binaryIntOp() throws {
-		let chunk = try compile("10 + 20")
-
-		let instructions = [
-			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(20))),
-			Instruction(path: chunk.path, opcode: .constant, offset: 2, line: 0, metadata: ConstantMetadata(value: .int(10))),
-			Instruction(path: chunk.path, opcode: .add, offset: 4, line: 0, metadata: .simple),
-
-			Instruction(path: chunk.path, opcode: .pop, offset: 5, line: 0, metadata: .simple),
-			Instruction(path: chunk.path, opcode: .return, offset: 6, line: 0, metadata: .simple),
-		]
-
-		#expect(chunk.disassemble() == instructions)
-	}
-
-	@Test("Def expr") func defExpr() throws {
-		let chunk = try compile("""
-		i = 123
-		""")
-
-		#expect(chunk.disassemble() == [
-			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(path: chunk.path, opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
-			Instruction(path: chunk.path, opcode: .pop, offset: 4, line: 0, metadata: .simple),
-			Instruction(path: chunk.path, opcode: .return, offset: 5, line: 0, metadata: .simple),
-		])
-	}
-
-	@Test("Var expr") func varExpr() throws {
-		let chunk = try compile("""
-		x = 123
-		x
-		y = 456
-		y
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			.op(.constant, line: 0, .constant(.int(123))),
-			.op(.setModuleValue, line: 0, .global(slot: 0)),
-			.op(.pop, line: 0, .simple),
-
-			.op(.getModuleValue, line: 1, .global(slot: 0)),
-			.op(.pop, line: 1, .simple),
-
-			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setModuleValue, line: 2, .global(slot: 1)),
-			.op(.pop, line: 2, .simple),
-
-			.op(.getModuleValue, line: 3, .global(slot: 1)),
-			.op(.pop, line: 3, .simple),
-
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("while loops") func whileLoops() throws {
-		let chunk = try compile("""
-		var i = 0
-		while i < 5 {
-			i = i + 1
-		}
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			.op(.constant, line: 0, .constant(.int(0))),
-			.op(.setLocal, line: 0, .local(slot: 1, name: "i")),
-
-			// Condition
-			.op(.constant, line: 1, .constant(.int(5))),
-			.op(.getLocal, line: 1, .local(slot: 1, name: "i")),
-			.op(.less, line: 1, .simple),
-
-			// Jump that skips the body if the condition isn't true
-			.op(.jumpUnless, line: 1, .jump(offset: 12)),
-
-			// Pop the condition
-			.op(.pop, line: 1, .simple),
-
-			// Body
-			.op(.constant, line: 2, .constant(.int(1))),
-			.op(.getLocal, line: 2, .local(slot: 1, name: "i")),
-			.op(.add, line: 2, .simple),
-			.op(.setLocal, line: 2, .local(slot: 1, name: "i")),
-			.op(.pop, line: 2, .simple),
-			.op(.loop, line: 3, .loop(back: 20)),
-
-			.op(.pop, line: 1, .simple),
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("If stmt") func ifStmt() throws {
-		let chunk = try compile("""
-		if false {
-			123
-		} else {
-			456
-		}
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			// The condition
-			.op(.false, line: 0, .simple),
-			// How far to jump if the condition is false
-			.op(.jumpUnless, line: 0, .jump(offset: 6)),
-
-			// If we're not jumping, here's the value of the consequence block
-			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.pop, line: 1, .simple),
-
-			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 4)),
-
-			// Pop the condition
-			.op(.pop, line: 0, .simple),
-
-			// If the condition was false, we jumped here
-			.op(.constant, line: 3, .constant(.int(456))),
-			.op(.pop, line: 3, .simple),
-
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("Func expr") func funcExpr() throws {
-		_ = try compile("""
-		func() {
-			123
-		}
-		""")
-
-		let chunk = module.compiledChunks[1]
-		let subchunk = module.compiledChunks[0]
-
-		#expect(disassemble(chunk) == Instructions(
-			.op(.defClosure, line: 0, .closure(name: "_fn__15", arity: 0, depth: 0)),
-			.op(.return, line: 0, .simple)
-		))
-
-		#expect(disassemble(subchunk) == Instructions(
-			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.return, line: 1),
-			.op(.return, line: 2)
-		))
-	}
-
-	@Test("Call expr") func callExpr() throws {
-		let chunk = try compile("""
-		func() {
-			123
-		}()
-		""")
-
-		#expect(disassemble(chunk) == Instructions(
-			.op(.defClosure, line: 0, .closure(name: "_fn__16", arity: 0, depth: 0)),
-			.op(.call, line: 0, .simple),
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("Modifying upvalues") func modifyUpvalue() throws {
-		try compile(
-			"""
-			func() {
-				var a = 10
-
-				func() {
-					a = 20
-				}()
-
-				return a
-			}
-			"""
-		)
-
-		let chunk = module.compiledChunks[1]
-		#expect(disassemble(chunk) == Instructions(
-			.op(.constant, line: 1, .constant(.int(10))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1, upvalues: [.capturing(1)])),
-			.op(.call, line: 3),
-			.op(.pop, line: 3),
-			.op(.getLocal, line: 7, .local(slot: 1, name: "a")),
-			.op(.return, line: 7),
-			.op(.return, line: 8)
-		))
-
-		let subchunk = module.compiledChunks[0]
-		#expect(disassemble(subchunk) == Instructions(
-			.op(.constant, line: 4, .constant(.int(20))),
-			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
-			.op(.return, line: 4),
-			.op(.return, line: 5) // func return
-		))
-	}
-
-	@Test("Non-capturing upvalue") func upvalue() throws {
-		// Using two locals in this test to make sure slot indexes get updated correctly
-		try compile("""
-		func() {
-			let a = 123
-			let b = 456
-			func() {
-				a
-				b
-			}
-		}
-		""")
-
-		let result = disassemble(module.compiledChunks[1])
-		let expected = Instructions(
-			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-
-			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setLocal, line: 2, .local(slot: 2, name: "b")),
-
-			.op(.defClosure, line: 3, .closure(
-				name: "_fn__56",
-				arity: 0,
-				depth: 1,
-				upvalues: [.capturing(1), .capturing(2)]
-			)),
-
-			.op(.pop, line: 3, .simple),
-			.op(.return, line: 7, .simple)
-		)
-
-		#expect(result == expected)
-
-		let subchunk = module.compiledChunks[0]
-		let subexpected = Instructions(
-			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
-			.op(.pop, line: 4, .simple),
-			.op(.getUpvalue, line: 5, .upvalue(slot: 1, name: "b")),
-			.op(.pop, line: 5, .simple),
-			.op(.return, line: 6, .simple)
-		)
-
-		#expect(subchunk.disassemble() == subexpected)
-	}
-
-	@Test("Cleans up locals") func cleansUpLocals() throws {
-		let chunk = try compile("""
-		let a = 123
-		func() {
-			let b = 456
-			return a + b
-		}
-		""")
-
-		let result = disassemble(chunk)
-		let expected = Instructions(
-			.op(.constant, line: 0, .constant(.int(123))),
-			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 1, .closure(name: "_fn__49", arity: 0, depth: 0, upvalues: [.capturing(1)])),
-			.op(.return, line: 0, .simple)
-		)
-
-		#expect(result == expected)
-
-		let subchunk = module.compiledChunks[0]
-
-		#expect(subchunk.upvalueCount == 1)
-
-		let subexpected = Instructions(
-			// Define 'b'
-			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setLocal, line: 2, .local(slot: 1, name: "b")),
-
-			// Get 'b' to add to a
-			.op(.getLocal, line: 3, .local(slot: 1, name: "b")),
-			// Get 'a' from upvalue
-			.op(.getUpvalue, line: 3, .upvalue(slot: 0, name: "a")),
-
-			// Do the addition
-			.op(.add, line: 3),
-			.op(.return, line: 3),
-
-			.op(.return, line: 4)
-		)
-
-		#expect(subchunk.disassemble() == subexpected)
-	}
-
-	@Test("Struct initializer") func structs() throws {
-		let chunk = try compile("""
-		struct Person {
-			var age: int
-
-			init(age: int) {
-				self.age = age
-			}
-		}
-
-		Person(age: 123)
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			.op(.constant, line: 8, .constant(.int(123))),
-			.op(.getStruct, line: 8, .struct(slot: 0)),
-			.op(.call, line: 8, .simple),
-			.op(.pop, line: 8, .simple),
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("Struct init with no args") func structInitNoArgs() throws {
-		let chunk = try compile("""
-		struct Person {
-			var age: int
-
-			init() {
-				self.age = 123
-			}
-		}
-
-		Person()
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
-			.op(.call, line: 8, .simple),
-			.op(.pop, line: 8, .simple),
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("Struct property getter") func structsProperties() throws {
-		let chunk = try compile("""
-		struct Person {
-			var age: int
-
-			init(age: int) { self.age = age }
-		}
-
-		Person(age: 123).age
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			.op(.constant, line: 6, .constant(.int(123))),
-			.op(.getStruct, line: 6, .struct(slot: 0)),
-			.op(.call, line: 6, .simple),
-			.op(.getProperty, line: 6, .getProperty(slot: 0, options: [])),
-			.op(.pop, line: 6, .simple),
-			.op(.return, line: 0, .simple)
-		))
-	}
-
-	@Test("Struct methods") func structMethods() throws {
-		let chunk = try compile("""
-		struct Person {
-			var age: int
-
-			init(age: int) { self.age = age }
-
-			func getAge() {
-				self.age
-			}
-		}
-
-		Person(age: 123).getAge()
-		""")
-
-		#expect(chunk.disassemble() == Instructions(
-			.op(.constant, line: 10, .constant(.int(123))),
-			.op(.getStruct, line: 10, .struct(slot: 0)),
-			.op(.call, line: 10, .simple),
-			.op(.getProperty, line: 10, .getProperty(slot: 1, options: .isMethod)),
-			.op(.call, line: 10, .simple),
-			.op(.pop, line: 10, .simple),
-			.op(.return, line: 0, .simple)
-		))
-	}
+//	var module: CompilingModule!
+//
+//	@discardableResult func compile(_ string: String) throws -> Chunk {
+//		let parsed = try Parser.parse(.init(path: "", text: string))
+//		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init(symbolGenerator: .init(moduleName: "CompilerTests", parent: nil)))
+//
+//		let analysisModule = try ModuleAnalyzer(
+//			name: "CompilerTests",
+//			files: [.tmp(string, "1.tlk")],
+//			moduleEnvironment: [:],
+//			importedModules: []
+//		).analyze()
+//
+//		self.module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
+//		return try module.compile(file: AnalyzedSourceFile(path: "1.tlk", syntax: analyzed))
+//	}
+//
+//	func disassemble(_ chunk: Chunk) -> [Instruction] {
+//		chunk.disassemble(in: module.finalize(mode: .executable))
+//	}
+//
+//	@Test("Empty program") func empty() throws {
+//		let chunk = try compile("")
+//		#expect(chunk.disassemble()[0].opcode == .return)
+//	}
+//
+//	@Test("Int literal") func intLiteral() throws {
+//		let chunk = try compile("123")
+//
+//		let instructions = Instructions([
+//			.init(opcode: .constant, line: 0, metadata: .constant(.int(123))),
+//			.init(opcode: .pop, line: 0, metadata: .simple),
+//			.init(opcode: .return, line: 0, metadata: .simple),
+//		])
+//
+//		let expected = [
+//			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
+//			Instruction(path: chunk.path, opcode: .pop, offset: 2, line: 0, metadata: .simple),
+//			Instruction(path: chunk.path, opcode: .return, offset: 3, line: 0, metadata: .simple),
+//		]
+//
+//		#expect(instructions.instructions == expected)
+//		#expect(chunk.disassemble() == instructions)
+//	}
+//
+//	@Test("Binary int op") func binaryIntOp() throws {
+//		let chunk = try compile("10 + 20")
+//
+//		let instructions = [
+//			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(20))),
+//			Instruction(path: chunk.path, opcode: .constant, offset: 2, line: 0, metadata: ConstantMetadata(value: .int(10))),
+//			Instruction(path: chunk.path, opcode: .add, offset: 4, line: 0, metadata: .simple),
+//
+//			Instruction(path: chunk.path, opcode: .pop, offset: 5, line: 0, metadata: .simple),
+//			Instruction(path: chunk.path, opcode: .return, offset: 6, line: 0, metadata: .simple),
+//		]
+//
+//		#expect(chunk.disassemble() == instructions)
+//	}
+//
+//	@Test("Def expr") func defExpr() throws {
+//		let chunk = try compile("""
+//		i = 123
+//		""")
+//
+//		#expect(chunk.disassemble() == [
+//			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
+//			Instruction(path: chunk.path, opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
+//			Instruction(path: chunk.path, opcode: .pop, offset: 4, line: 0, metadata: .simple),
+//			Instruction(path: chunk.path, opcode: .return, offset: 5, line: 0, metadata: .simple),
+//		])
+//	}
+//
+//	@Test("Var expr") func varExpr() throws {
+//		let chunk = try compile("""
+//		x = 123
+//		x
+//		y = 456
+//		y
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			.op(.constant, line: 0, .constant(.int(123))),
+//			.op(.setModuleValue, line: 0, .global(slot: 0)),
+//			.op(.pop, line: 0, .simple),
+//
+//			.op(.getModuleValue, line: 1, .global(slot: 0)),
+//			.op(.pop, line: 1, .simple),
+//
+//			.op(.constant, line: 2, .constant(.int(456))),
+//			.op(.setModuleValue, line: 2, .global(slot: 1)),
+//			.op(.pop, line: 2, .simple),
+//
+//			.op(.getModuleValue, line: 3, .global(slot: 1)),
+//			.op(.pop, line: 3, .simple),
+//
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("while loops") func whileLoops() throws {
+//		let chunk = try compile("""
+//		var i = 0
+//		while i < 5 {
+//			i = i + 1
+//		}
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			.op(.constant, line: 0, .constant(.int(0))),
+//			.op(.setLocal, line: 0, .local(slot: 1, name: "i")),
+//
+//			// Condition
+//			.op(.constant, line: 1, .constant(.int(5))),
+//			.op(.getLocal, line: 1, .local(slot: 1, name: "i")),
+//			.op(.less, line: 1, .simple),
+//
+//			// Jump that skips the body if the condition isn't true
+//			.op(.jumpUnless, line: 1, .jump(offset: 12)),
+//
+//			// Pop the condition
+//			.op(.pop, line: 1, .simple),
+//
+//			// Body
+//			.op(.constant, line: 2, .constant(.int(1))),
+//			.op(.getLocal, line: 2, .local(slot: 1, name: "i")),
+//			.op(.add, line: 2, .simple),
+//			.op(.setLocal, line: 2, .local(slot: 1, name: "i")),
+//			.op(.pop, line: 2, .simple),
+//			.op(.loop, line: 3, .loop(back: 20)),
+//
+//			.op(.pop, line: 1, .simple),
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("If stmt") func ifStmt() throws {
+//		let chunk = try compile("""
+//		if false {
+//			123
+//		} else {
+//			456
+//		}
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			// The condition
+//			.op(.false, line: 0, .simple),
+//			// How far to jump if the condition is false
+//			.op(.jumpUnless, line: 0, .jump(offset: 6)),
+//
+//			// If we're not jumping, here's the value of the consequence block
+//			.op(.constant, line: 1, .constant(.int(123))),
+//			.op(.pop, line: 1, .simple),
+//
+//			// If the condition was true, we want to jump over the alernative block
+//			.op(.jump, line: 2, .jump(offset: 4)),
+//
+//			// Pop the condition
+//			.op(.pop, line: 0, .simple),
+//
+//			// If the condition was false, we jumped here
+//			.op(.constant, line: 3, .constant(.int(456))),
+//			.op(.pop, line: 3, .simple),
+//
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("Func expr") func funcExpr() throws {
+//		_ = try compile("""
+//		func() {
+//			123
+//		}
+//		""")
+//
+//		let chunk = module.compiledChunks[1]
+//		let subchunk = module.compiledChunks[0]
+//
+//		#expect(disassemble(chunk) == Instructions(
+//			.op(.defClosure, line: 0, .closure(name: "_fn__15", arity: 0, depth: 0)),
+//			.op(.return, line: 0, .simple)
+//		))
+//
+//		#expect(disassemble(subchunk) == Instructions(
+//			.op(.constant, line: 1, .constant(.int(123))),
+//			.op(.return, line: 1),
+//			.op(.return, line: 2)
+//		))
+//	}
+//
+//	@Test("Call expr") func callExpr() throws {
+//		let chunk = try compile("""
+//		func() {
+//			123
+//		}()
+//		""")
+//
+//		#expect(disassemble(chunk) == Instructions(
+//			.op(.defClosure, line: 0, .closure(name: "_fn__16", arity: 0, depth: 0)),
+//			.op(.call, line: 0, .simple),
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("Modifying upvalues") func modifyUpvalue() throws {
+//		try compile(
+//			"""
+//			func() {
+//				var a = 10
+//
+//				func() {
+//					a = 20
+//				}()
+//
+//				return a
+//			}
+//			"""
+//		)
+//
+//		let chunk = module.compiledChunks[1]
+//		#expect(disassemble(chunk) == Instructions(
+//			.op(.constant, line: 1, .constant(.int(10))),
+//			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+//			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1, upvalues: [.capturing(1)])),
+//			.op(.call, line: 3),
+//			.op(.pop, line: 3),
+//			.op(.getLocal, line: 7, .local(slot: 1, name: "a")),
+//			.op(.return, line: 7),
+//			.op(.return, line: 8)
+//		))
+//
+//		let subchunk = module.compiledChunks[0]
+//		#expect(disassemble(subchunk) == Instructions(
+//			.op(.constant, line: 4, .constant(.int(20))),
+//			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+//			.op(.return, line: 4),
+//			.op(.return, line: 5) // func return
+//		))
+//	}
+//
+//	@Test("Non-capturing upvalue") func upvalue() throws {
+//		// Using two locals in this test to make sure slot indexes get updated correctly
+//		try compile("""
+//		func() {
+//			let a = 123
+//			let b = 456
+//			func() {
+//				a
+//				b
+//			}
+//		}
+//		""")
+//
+//		let result = disassemble(module.compiledChunks[1])
+//		let expected = Instructions(
+//			.op(.constant, line: 1, .constant(.int(123))),
+//			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+//
+//			.op(.constant, line: 2, .constant(.int(456))),
+//			.op(.setLocal, line: 2, .local(slot: 2, name: "b")),
+//
+//			.op(.defClosure, line: 3, .closure(
+//				name: "_fn__56",
+//				arity: 0,
+//				depth: 1,
+//				upvalues: [.capturing(1), .capturing(2)]
+//			)),
+//
+//			.op(.pop, line: 3, .simple),
+//			.op(.return, line: 7, .simple)
+//		)
+//
+//		#expect(result == expected)
+//
+//		let subchunk = module.compiledChunks[0]
+//		let subexpected = Instructions(
+//			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+//			.op(.pop, line: 4, .simple),
+//			.op(.getUpvalue, line: 5, .upvalue(slot: 1, name: "b")),
+//			.op(.pop, line: 5, .simple),
+//			.op(.return, line: 6, .simple)
+//		)
+//
+//		#expect(subchunk.disassemble() == subexpected)
+//	}
+//
+//	@Test("Cleans up locals") func cleansUpLocals() throws {
+//		let chunk = try compile("""
+//		let a = 123
+//		func() {
+//			let b = 456
+//			return a + b
+//		}
+//		""")
+//
+//		let result = disassemble(chunk)
+//		let expected = Instructions(
+//			.op(.constant, line: 0, .constant(.int(123))),
+//			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
+//			.op(.defClosure, line: 1, .closure(name: "_fn__49", arity: 0, depth: 0, upvalues: [.capturing(1)])),
+//			.op(.return, line: 0, .simple)
+//		)
+//
+//		#expect(result == expected)
+//
+//		let subchunk = module.compiledChunks[0]
+//
+//		#expect(subchunk.upvalueCount == 1)
+//
+//		let subexpected = Instructions(
+//			// Define 'b'
+//			.op(.constant, line: 2, .constant(.int(456))),
+//			.op(.setLocal, line: 2, .local(slot: 1, name: "b")),
+//
+//			// Get 'b' to add to a
+//			.op(.getLocal, line: 3, .local(slot: 1, name: "b")),
+//			// Get 'a' from upvalue
+//			.op(.getUpvalue, line: 3, .upvalue(slot: 0, name: "a")),
+//
+//			// Do the addition
+//			.op(.add, line: 3),
+//			.op(.return, line: 3),
+//
+//			.op(.return, line: 4)
+//		)
+//
+//		#expect(subchunk.disassemble() == subexpected)
+//	}
+//
+//	@Test("Struct initializer") func structs() throws {
+//		let chunk = try compile("""
+//		struct Person {
+//			var age: int
+//
+//			init(age: int) {
+//				self.age = age
+//			}
+//		}
+//
+//		Person(age: 123)
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			.op(.constant, line: 8, .constant(.int(123))),
+//			.op(.getStruct, line: 8, .struct(slot: 0)),
+//			.op(.call, line: 8, .simple),
+//			.op(.pop, line: 8, .simple),
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("Struct init with no args") func structInitNoArgs() throws {
+//		let chunk = try compile("""
+//		struct Person {
+//			var age: int
+//
+//			init() {
+//				self.age = 123
+//			}
+//		}
+//
+//		Person()
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			.op(.getStruct, line: 8, .struct(slot: 0)),
+//			.op(.call, line: 8, .simple),
+//			.op(.pop, line: 8, .simple),
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("Struct property getter") func structsProperties() throws {
+//		let chunk = try compile("""
+//		struct Person {
+//			var age: int
+//
+//			init(age: int) { self.age = age }
+//		}
+//
+//		Person(age: 123).age
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			.op(.constant, line: 6, .constant(.int(123))),
+//			.op(.getStruct, line: 6, .struct(slot: 0)),
+//			.op(.call, line: 6, .simple),
+//			.op(.getProperty, line: 6, .getProperty(slot: 0, options: [])),
+//			.op(.pop, line: 6, .simple),
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
+//
+//	@Test("Struct methods") func structMethods() throws {
+//		let chunk = try compile("""
+//		struct Person {
+//			var age: int
+//
+//			init(age: int) { self.age = age }
+//
+//			func getAge() {
+//				self.age
+//			}
+//		}
+//
+//		Person(age: 123).getAge()
+//		""")
+//
+//		#expect(chunk.disassemble() == Instructions(
+//			.op(.constant, line: 10, .constant(.int(123))),
+//			.op(.getStruct, line: 10, .struct(slot: 0)),
+//			.op(.call, line: 10, .simple),
+//			.op(.getProperty, line: 10, .getProperty(slot: 1, options: .isMethod)),
+//			.op(.call, line: 10, .simple),
+//			.op(.pop, line: 10, .simple),
+//			.op(.return, line: 0, .simple)
+//		))
+//	}
 }

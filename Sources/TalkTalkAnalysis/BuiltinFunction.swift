@@ -2,112 +2,14 @@
 //  BuiltinFunction.swift
 //  TalkTalk
 //
-//  Created by Pat Nakajima on 7/29/24.
+//  Created by Pat Nakajima on 8/30/24.
 //
 
-import TalkTalkSyntax
 import TypeChecker
+import TalkTalkSyntax
 
 extension BuiltinFunction {
 	func binding(in env: Environment) -> Environment.Binding {
 		.init(name: name, expr: IdentifierExprSyntax(id: -10, name: name, location: [.synthetic(.identifier)]), type: type)
-	}
-}
-
-public struct BuiltinFunction {
-	public let name: String
-	public let type: InferenceType
-
-	public static var list: [BuiltinFunction] {
-		[
-			.print,
-			._allocate,
-			._free,
-			._deref,
-			._storePtr,
-			._hash,
-			._cast
-		]
-	}
-
-	static func syntheticExpr() -> any Expr {
-		IdentifierExprSyntax(id: -4, name: "__builtin__", location: [.synthetic(.builtin)])
-	}
-
-	public static var print: BuiltinFunction {
-		BuiltinFunction(
-			name: "print",
-			type: .function(
-				[
-					InferenceType.any
-				],
-				.void
-			)
-		)
-	}
-
-	public static var _allocate: BuiltinFunction {
-		BuiltinFunction(
-			name: "_allocate",
-			type: .function(
-				[.base(.int)],
-				.base(.pointer)
-			)
-		)
-	}
-
-	public static var _free: BuiltinFunction {
-		BuiltinFunction(
-			name: "_free",
-			type: .function(
-				[.base(.pointer)],
-				.void
-			)
-		)
-	}
-
-	public static var _deref: BuiltinFunction {
-		BuiltinFunction(
-			name: "_deref",
-			type: .function(
-				[.base(.pointer)],
-				.any
-			)
-		)
-	}
-
-	public static var _storePtr: BuiltinFunction {
-		BuiltinFunction(
-			name: "_storePtr",
-			type: .function(
-				[
-					.base(.pointer),
-					.any
-				],
-				.void
-			)
-		)
-	}
-
-	public static var _hash: BuiltinFunction {
-		BuiltinFunction(
-			name: "_hash",
-			type: .function(
-				[.any],
-				.base(.int)
-			)
-		)
-	}
-
-	public static var _cast: BuiltinFunction {
-		let typeVar = TypeVariable.new("_cast")
-
-		return BuiltinFunction(
-			name: "_cast",
-			type: .function(
-				[.any, .typeVar(typeVar)],
-				.typeVar(typeVar)
-			)
-		)
 	}
 }

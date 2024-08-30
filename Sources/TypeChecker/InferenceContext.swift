@@ -163,6 +163,21 @@ public class InferenceContext: CustomDebugStringConvertible {
 		)
 	}
 
+	func lookupType(named name: String) -> InferenceType? {
+		switch name {
+		case "int":
+			return .base(.int)
+		case "String":
+			return .base(.string)
+		case "bool":
+			return .base(.bool)
+		case "pointer":
+			return .base(.pointer)
+		default:
+			return nil
+		}
+	}
+
 	func lookupTypeContext() -> TypeContext? {
 		if let typeContext {
 			return typeContext
@@ -204,7 +219,64 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func lookupVariable(named name: String) -> InferenceType? {
-		namedVariables[name] ?? parent?.lookupVariable(named: name)
+		namedVariables[name] ?? parent?.lookupVariable(named: name) ?? {
+			if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
+				return builtin.type
+			} else {
+				return nil
+			}
+		}()
+	}
+
+	func typeFrom(expr: TypeExprSyntax) -> InferenceType {
+		let type: InferenceType
+		switch expr.identifier.lexeme {
+		case "int":
+			type = .base(.int)
+		case "String":
+			type = .base(.string)
+		case "bool":
+			type = .base(.bool)
+		case "pointer":
+			type = .base(.pointer)
+		default:
+			guard let found = lookupVariable(named: expr.identifier.lexeme) else {
+				fatalError("unknown type: \(expr.identifier.lexeme)")
+			}
+
+			switch found {
+			case let .structType(structType):
+				for (i, (typeParam, paramSyntax)) in zip(structType.typeContext.typeParameters, expr.genericParams).enumerated() {
+					guard let typeContext else {
+						continue
+					}
+
+					addConstraint(
+						.equality(
+							.type(.typeVar(typeContext.typeParameters[i])),
+							.type(.typeVar(typeParam)),
+							at: paramSyntax.location
+						)
+					)
+
+					addConstraint(
+						.equality(
+							.type(.typeVar(typeParam)),
+							.type(.typeVar(typeContext.typeParameters[i])),
+							at: paramSyntax.location
+						)
+					)
+				}
+
+				type = .structType(structType)
+			case let .typeVar(typeVar):
+				type = .typeVar(typeVar)
+			default:
+				fatalError("cannot use \(found) as type expression")
+			}
+		}
+
+		return type
 	}
 
 	func lookupSubstitution(named name: String) -> InferenceType? {
@@ -321,6 +393,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let (.function(paramsA, returnA), .function(paramsB, returnB)):
 			zip(paramsA, paramsB).forEach { unify($0, $1) }
 			unify(returnA, returnB)
+		case let (.kind(.typeVar(a)), .kind(b)):
+			bind(typeVar: a, to: b)
+		case let (.kind(a), .kind(.typeVar(b))):
+			bind(typeVar: b, to: a)
 		case let (.structType(a), .structType(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
