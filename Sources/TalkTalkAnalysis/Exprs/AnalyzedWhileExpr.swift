@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedWhileStmt: WhileStmt, AnalyzedStmt {
 	public let typeID: TypeID
-	let wrapped: WhileStmt
+	public let wrapped: WhileStmtSyntax
 
 	public var conditionAnalyzed: any AnalyzedExpr
 	public var bodyAnalyzed: AnalyzedBlockStmt
@@ -27,6 +27,6 @@ public struct AnalyzedWhileStmt: WhileStmt, AnalyzedStmt {
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 }

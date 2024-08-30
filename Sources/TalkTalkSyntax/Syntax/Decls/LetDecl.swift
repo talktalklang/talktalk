@@ -9,17 +9,16 @@ public protocol LetDecl: Decl, VarLetDecl {
 	var token: Token { get }
 	var name: String { get }
 	var nameToken: Token { get }
-	var typeDecl: String? { get }
-	var typeDeclToken: Token? { get }
+	var typeExpr: (any TypeExpr)? { get }
 	var value: (any Expr)? { get }
 }
 
 public struct LetDeclSyntax: LetDecl {
+	public var id: SyntaxID
 	public var token: Token
 	public var name: String
 	public var nameToken: Token
-	public var typeDecl: String?
-	public var typeDeclToken: Token?
+	public var typeExpr: (any TypeExpr)?
 	public var value: (any Expr)?
 
 	public var location: SourceLocation

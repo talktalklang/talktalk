@@ -6,6 +6,7 @@
 //
 
 public struct CallArgument: Syntax {
+	public var id: SyntaxID
 	public var location: SourceLocation
 	public var children: [any Syntax] { [value] }
 
@@ -23,6 +24,7 @@ public protocol CallExpr: Expr {
 }
 
 public struct CallExprSyntax: CallExpr {
+	public var id: SyntaxID
 	public let callee: any Expr
 	public let args: [CallArgument]
 	public let location: SourceLocation

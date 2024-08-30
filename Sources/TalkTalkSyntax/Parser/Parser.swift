@@ -27,6 +27,7 @@ public struct Parser {
 	var lexer: Lexer
 	var current: Token
 	var previous: Token!
+	var lastID = 0
 
 	// The location stack is used for tracking source locations while parsing
 	var locationStack: SourceLocationStack = .init()
@@ -52,8 +53,14 @@ public struct Parser {
 		self.errors = lexer.errors
 	}
 
+	mutating func nextID() -> SyntaxID {
+		defer { lastID += 1 }
+		return lastID
+	}
+
 	public mutating func parse() -> [any Syntax] {
 		var results: [any Syntax] = []
+		skip(.newline)
 
 		while current.kind != .eof {
 			skip(.newline)
@@ -78,6 +85,10 @@ public struct Parser {
 	mutating func decl() -> any Syntax {
 		if didMatch(.struct) {
 			return structDecl()
+		}
+
+		if didMatch(.protocol) {
+			return protocolDecl()
 		}
 
 		if didMatch(.func) {
@@ -137,14 +148,14 @@ public struct Parser {
 
 		// At this level, we want an ExprStmt, not just a normal expr
 		let expr = expr()
-		return ExprStmtSyntax(expr: expr, location: expr.location)
+		return ExprStmtSyntax(id: nextID(), expr: expr, location: expr.location)
 	}
 
-	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExpr {
+	mutating func parameterList(terminator: Token.Kind = .rightParen) -> ParamsExprSyntax {
 		let i = startLocation(at: previous)
 
 		if didMatch(.rightParen) {
-			return ParamsExprSyntax(params: [], location: endLocation(i))
+			return ParamsExprSyntax(id: nextID(), params: [], location: endLocation(i))
 		}
 
 		var params: [ParamSyntax] = []
@@ -160,25 +171,27 @@ public struct Parser {
 			if didMatch(.colon), let typeID = consume(.identifier) {
 				let i = startLocation(at: previous!)
 
-				var genericParamsSyntax: GenericParamsSyntax? = nil
+				var typeParameters: [TypeExprSyntax] = []
 				if didMatch(.less) {
-					genericParamsSyntax = genericParams()
+					typeParameters = self.typeParameters()
 				}
 
 				type = TypeExprSyntax(
+					id: nextID(),
 					identifier: typeID,
-					genericParams: genericParamsSyntax,
+					genericParams: typeParameters,
 					location: endLocation(i)
 				)
 			}
 			skip(.newline)
 
-			params.append(ParamSyntax(name: identifier.lexeme, type: type, location: [identifier]))
+			params.append(ParamSyntax(id: nextID(), name: identifier.lexeme, type: type, location: [identifier]))
 		} while didMatch(.comma)
 
 		consume(terminator, "Expected '\(terminator)' after parameter list")
 
 		return ParamsExprSyntax(
+			id: nextID(),
 			params: params,
 			location: endLocation(i)
 		)
@@ -197,7 +210,7 @@ public struct Parser {
 			}
 
 			let value = parse(precedence: .assignment)
-			args.append(CallArgument(location: endLocation(i), label: name, value: value))
+			args.append(CallArgument(id: nextID(), location: endLocation(i), label: name, value: value))
 		} while didMatch(.comma)
 
 		consume(terminator, "expected '\(terminator)' after arguments")

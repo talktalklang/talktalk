@@ -18,6 +18,7 @@ public protocol Disassemblable {
 	var upvalueNames: [String] { get }
 	var upvalueCount: Byte { get }
 	var depth: Byte { get }
+	var path: String { get }
 }
 
 public extension Disassemblable {
@@ -70,6 +71,10 @@ extension StaticChunk: Disassemblable {
 	
 	public var depth: Byte {
 		debugInfo.depth
+	}
+
+	public var path: String {
+		debugInfo.path
 	}
 }
 
@@ -134,7 +139,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 		case .initArray:
 			return initArrayInstruction(start: index)
 		default:
-			return Instruction(opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
+			return Instruction(path: self.chunk.path, opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
 	}
 
@@ -144,14 +149,14 @@ public struct Disassembler<Chunk: Disassemblable> {
 			current++
 		}
 
-		return Instruction(opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: Int(count)))
+		return Instruction(path: self.chunk.path, opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: Int(count)))
 	}
 
 	mutating func constantInstruction(start: Int) -> Instruction {
 		let constant = chunk.code[current++]
 		let value = chunk.constants[Int(constant)]
 		let metadata = ConstantMetadata(value: value)
-		return Instruction(opcode: .constant, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(path: self.chunk.path, opcode: .constant, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func jumpInstruction(opcode: Opcode, start: Int) -> Instruction {
@@ -163,7 +168,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 		jump |= Int(placehodlerB)
 
 		let metadata: any InstructionMetadata = opcode == .loop ? .loop(back: jump) : .jump(offset: jump)
-		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(path: self.chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func variableInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) -> Instruction {
@@ -181,6 +186,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 				"_free",
 				"_deref",
 				"_storePtr",
+				"_hash",
+				"_cast"
 			][Int(slot)]
 		case .struct:
 			"slot: \(slot)"
@@ -191,7 +198,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		let metadata = VariableMetadata(slot: slot, name: name, type: type)
-		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(path: self.chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func defClosureInstruction(start: Int) -> Instruction {
@@ -207,13 +214,13 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		let metadata = ClosureMetadata(name: subchunk.name, arity: subchunk.arity, depth: subchunk.depth, upvalues: upvalues)
-		return Instruction(opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(path: self.chunk.path, opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func upvalueInstruction(opcode: Opcode, start: Int) -> Instruction {
 		let slot = chunk.code[current++]
 		let metadata = UpvalueMetadata(slot: slot, name: chunk.upvalueNames[Int(slot)])
-		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(path: self.chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 
 	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type _: VariableMetadata.VariableType) -> Instruction {
@@ -221,6 +228,6 @@ public struct Disassembler<Chunk: Disassemblable> {
 		let options = chunk.code[current++]
 
 		let metadata = GetPropertyMetadata(slot: Int(slot), options: PropertyOptions(rawValue: options))
-		return Instruction(opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(path: self.chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
 	}
 }

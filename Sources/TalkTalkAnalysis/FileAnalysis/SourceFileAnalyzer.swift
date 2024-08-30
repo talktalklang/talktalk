@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 // Analyze the AST, trying to figure out types and also checking for errors
-public struct SourceFileAnalyzer: Visitor {
+public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public typealias Context = Environment
 	public typealias Value = any AnalyzedSyntax
 
@@ -28,36 +28,36 @@ public struct SourceFileAnalyzer: Visitor {
 		return analyzed
 	}
 
-	public func visit(_ expr: any ExprStmt, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: ExprStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		let exprAnalyzed = try expr.expr.accept(self, context) as! any AnalyzedExpr
 
 		return AnalyzedExprStmt(
-			wrapped: expr,
+			wrapped: expr.cast(ExprStmtSyntax.self),
 			exprAnalyzed: exprAnalyzed,
 			exitBehavior: context.exprStmtExitBehavior,
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any ImportStmt, _ context: Environment) -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: ImportStmtSyntax, _ context: Environment) -> SourceFileAnalyzer.Value {
 		AnalyzedImportStmt(
 			environment: context,
 			typeID: TypeID(.none),
-			stmt: expr
+			wrapped: expr.cast(ImportStmtSyntax.self)
 		)
 	}
 
-	public func visit(_ expr: any IdentifierExpr, _ context: Environment) throws
+	public func visit(_ expr: IdentifierExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedIdentifierExpr(
 			typeID: TypeID(),
-			expr: expr,
+			wrapped: expr.cast(IdentifierExprSyntax.self),
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any UnaryExpr, _ context: Environment) throws
+	public func visit(_ expr: UnaryExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		let exprAnalyzed = try expr.expr.accept(self, context)
@@ -69,14 +69,14 @@ public struct SourceFileAnalyzer: Visitor {
 				typeID: TypeID(.bool),
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
-				wrapped: expr
+				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		case .minus:
 			return AnalyzedUnaryExpr(
 				typeID: TypeID(.int),
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
-				wrapped: expr
+				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		default:
 			fatalError("unreachable")
@@ -87,194 +87,22 @@ public struct SourceFileAnalyzer: Visitor {
 		try AnalyzedArgument(
 			environment: context,
 			label: expr.label,
+			wrapped: expr.cast(CallArgument.self),
 			expr: expr.value.accept(self, context) as! any AnalyzedExpr
 		)
 	}
 
-	public func visit(_ expr: any CallExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		let callee = try expr.callee.accept(self, context)
-		var errors: [AnalysisError] = []
-
-		let args = try expr.args.map {
-			try AnalyzedArgument(
-				environment: context,
-				label: $0.label,
-				expr: $0.value.accept(self, context) as! any AnalyzedExpr
-			)
-		}
-
-		let type: TypeID
-		let arity: Int
-
-		switch callee.typeAnalyzed {
-		case let .function(funcName, returning, params, _):
-			if params.count == args.count {
-				// Try to infer param types, or check types if we already have one
-				for (i, param) in params.enumerated() {
-					if case .placeholder = param.typeID.type() {
-						param.typeID.update(args[i].expr.typeAnalyzed)
-					} else if context.shouldReportErrors {
-						errors.append(contentsOf: checkAssignment(to: param, value: args[i].expr, in: context))
-					}
-				}
-			}
-
-			var returning = returning
-			if returning.type() == .placeholder {
-				var funcExpr: AnalyzedFuncExpr? = nil
-
-				if let callee = callee.as(AnalyzedFuncExpr.self) {
-					funcExpr = callee
-				} else if let callee = callee.as(AnalyzedVarExpr.self),
-				          let calleeFunc = context.lookup(callee.name)?.expr.as(AnalyzedFuncExpr.self)
-				{
-					funcExpr = calleeFunc
-				}
-
-				// Don't try this on recursive functions, it doesn't end well. Well actually
-				// it just doesn't end.
-				if let funcExpr, funcExpr.name?.lexeme != funcName {
-					let env = funcExpr.environment.add(namespace: funcName)
-					for param in params {
-						env.update(local: param.name, as: param.typeID.current)
-					}
-					// Try to infer return type now that we know what a param is
-					returning = try visit(funcExpr.bodyAnalyzed, env).typeID
-				}
-			}
-
-			type = returning
-			arity = params.count
-		case let .struct(t):
-			guard let structType = context.lookupStruct(named: t) else {
-				return error(
-					at: callee, "could not find struct named: \(t)",
-					environment: context,
-					expectation: .decl
-				)
-			}
-
-			var instanceType = InstanceValueType.struct(t)
-
-			if let callee = callee as? AnalyzedTypeExpr,
-			   let params = callee.genericParams, !params.isEmpty
-			{
-				// Fill in type parameters if they're explicitly annotated. If they're not we'll have to try to infer them.
-				if params.count == structType.typeParameters.count {
-					for (i, param) in structType.typeParameters.enumerated() {
-						let typeName = params.params[i].name
-						let type = context.type(named: typeName)
-						instanceType.boundGenericTypes[param.name] = TypeID(type)
-					}
-				} else if context.shouldReportErrors {
-					errors.append(
-						context.report(.typeParameterError(
-							expected: structType.typeParameters.count,
-							received: params.count
-						), at: expr.location)
-					)
-				}
-			} else if !structType.typeParameters.isEmpty, let initFn = structType.methods["init"] {
-				// Try to infer type parameters from init
-				for arg in args {
-					// See if we have a label for the arg (could maybe rely on positions here??)
-					guard let label = arg.label else { continue }
-					// Find the param definition from the init
-					guard let param = initFn.params.first(where: { $0.name == label.lexeme }) else { continue }
-
-					if case let .instance(paramInstanceType) = param.typeID.current,
-					   case let .generic(.struct(structType.name!), typeName) = paramInstanceType.ofType
-					{
-						instanceType.boundGenericTypes[typeName] = arg.expr.typeID
-					}
-				}
-			}
-
-			// TODO: also type check args better?
-
-			type = TypeID(.instance(instanceType))
-			arity = structType.methods["init"]!.params.count
-		default:
-			type = TypeID(.any)
-			arity = -1
-
-			// Append the callee not callable error if we don't already have an error
-			// on this callee node.
-			if callee.analysisErrors.isEmpty {
-				errors.append(
-					AnalysisError(
-						kind: .unknownError("Callee not callable: \(callee.typeAnalyzed)"),
-						location: callee.location
-					)
-				)
-			}
-		}
-
-		if arity != args.count {
-			errors.append(
-				context.report(.argumentError(expected: arity, received: args.count), at: expr.location)
-			)
-		}
-
-		return AnalyzedCallExpr(
-			typeID: type,
-			expr: expr,
-			calleeAnalyzed: callee as! any AnalyzedExpr,
-			argsAnalyzed: args,
-			analysisErrors: errors,
-			environment: context
-		)
+	public func visit(_ expr: CallExprSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+		try CallExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
 
-	public func visit(_ expr: any MemberExpr, _ context: Environment) throws
+	public func visit(_ expr: MemberExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		let receiver = try expr.receiver.accept(self, context)
-		let propertyName = expr.property
-
-		var member: (any Member)? = nil
-		switch receiver.typeAnalyzed {
-		case let .instance(instanceType):
-			guard case let .struct(name) = instanceType.ofType,
-			      let structType = context.lookupStruct(named: name)
-			else {
-				return error(
-					at: expr, "Could not find type of \(instanceType)", environment: context,
-					expectation: .identifier
-				)
-			}
-
-			member = structType.properties[propertyName] ?? structType.methods[propertyName]
-		default:
-			return error(
-				at: expr, "Cannot access property `\(propertyName)` on `\(receiver)`",
-				environment: context,
-				expectation: .member
-			)
-		}
-
-		var errors: [AnalysisError] = []
-		if member == nil, context.shouldReportErrors {
-			errors.append(
-				.init(
-					kind: .noMemberFound(receiver: receiver, property: propertyName),
-					location: receiver.location
-				)
-			)
-		}
-
-		return AnalyzedMemberExpr(
-			typeID: member?.typeID ?? TypeID(.error("no member found")),
-			expr: expr,
-			environment: context,
-			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			memberAnalyzed: member ?? error(at: expr, "no member found", environment: context, expectation: .member),
-			analysisErrors: errors,
-			isMutable: member?.isMutable ?? false
-		)
+		try MemberExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
 
-	public func visit(_ expr: any DefExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: DefExprSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
 		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 
@@ -290,7 +118,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return AnalyzedDefExpr(
 			typeID: TypeID(value.typeAnalyzed),
-			expr: expr,
+			wrapped: expr.cast(DefExprSyntax.self),
 			receiverAnalyzed: receiver,
 			analysisErrors: errors,
 			valueAnalyzed: value,
@@ -298,17 +126,17 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any ParseError, _ context: Environment) throws
+	public func visit(_ expr: ParseErrorSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedErrorSyntax(
 			typeID: TypeID(.error(expr.message)),
-			expr: expr,
+			wrapped: expr.cast(ParseErrorSyntax.self),
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any LiteralExpr, _ context: Environment) throws
+	public func visit(_ expr: LiteralExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		let typeID = switch expr.value {
@@ -319,25 +147,25 @@ public struct SourceFileAnalyzer: Visitor {
 		case .none:
 			TypeID(.none)
 		case .string:
-			TypeID(.instance(.struct("String")))
+			TypeID(.instance(.struct("String", [:])))
 		}
 
-		if typeID.current == .instance(.struct("String")) {
+		if typeID.current == .instance(.struct("String", [:])) {
 			_ = context.lookupStruct(named: "String")
 		}
 
-		if typeID.current == .instance(.struct("Int")) {
+		if typeID.current == .instance(.struct("Int", [:])) {
 			_ = context.lookupStruct(named: "Int")
 		}
 
 		return AnalyzedLiteralExpr(
 			typeID: typeID,
-			expr: expr,
+			wrapped: expr.cast(LiteralExprSyntax.self),
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any VarExpr, _ context: Environment) throws -> Value {
+	public func visit(_ expr: VarExprSyntax, _ context: Environment) throws -> Value {
 		if let binding = context.lookup(expr.name) {
 			var symbol: Symbol? = nil
 
@@ -365,7 +193,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 			return AnalyzedVarExpr(
 				typeID: binding.type,
-				expr: expr,
+				wrapped: expr.cast(VarExprSyntax.self),
 				symbol: symbol,
 				environment: context,
 				analysisErrors: [],
@@ -379,7 +207,7 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return AnalyzedVarExpr(
 			typeID: TypeID(.any),
-			expr: expr,
+			wrapped: expr.cast(VarExprSyntax.self),
 			symbol: context.symbolGenerator.value(expr.name, source: .internal),
 			environment: context,
 			analysisErrors: errors,
@@ -387,7 +215,7 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any BinaryExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: BinaryExprSyntax, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
@@ -396,21 +224,21 @@ public struct SourceFileAnalyzer: Visitor {
 		{
 			// This is pointer arithmetic
 			// TODO: More generic handling of different operand types
-			rhs.typeID.current = .int
+			rhs.typeID.update(.int, location: expr.location)
 		} else {
 			infer([lhs, rhs], in: env)
 		}
 
 		return AnalyzedBinaryExpr(
 			typeID: lhs.typeID,
-			expr: expr,
+			wrapped: expr.cast(BinaryExprSyntax.self),
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
 			environment: env
 		)
 	}
 
-	public func visit(_ expr: any IfExpr, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: IfExprSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
 
 		switch expr.consequence.stmts.count {
@@ -447,140 +275,56 @@ public struct SourceFileAnalyzer: Visitor {
 		// TODO: Error if the branches don't match or condition isn't a bool
 		return try AnalyzedIfExpr(
 			typeID: expr.consequence.accept(self, context).typeID,
-			expr: expr,
+			wrapped: expr.cast(IfExprSyntax.self),
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
-			consequenceAnalyzed: visit(expr.consequence, context) as! AnalyzedBlockStmt,
-			alternativeAnalyzed: visit(expr.alternative, context) as! AnalyzedBlockStmt,
+			consequenceAnalyzed: visit(expr.consequence.cast(BlockStmtSyntax.self), context) as! AnalyzedBlockStmt,
+			alternativeAnalyzed: visit(expr.alternative.cast(BlockStmtSyntax.self), context) as! AnalyzedBlockStmt,
 			environment: context,
 			analysisErrors: errors
 		)
 	}
 
-	public func visit(_ expr: any TypeExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		let type = context.type(named: expr.identifier.lexeme)
+	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+//		guard let type = context.type(named: expr.identifier.lexeme) else {
+//			return error(at: expr, "No type found named: \(expr.identifier.lexeme)", environment: context, expectation: .type)
+//		}
 
-		if case let .error(err) = type {
-			return error(at: expr, err, environment: context, expectation: .type)
-		} else {
+		if let type = context.type(named: expr.identifier.lexeme) {
 			if type.primitive != nil {
 				return AnalyzedTypeExpr(
-					wrapped: expr,
+					wrapped: expr.cast(TypeExprSyntax.self),
 					symbol: .primitive(type.description),
 					typeID: TypeID(type),
 					environment: context
 				)
 			}
 
+			if case let .generic(valueType, string) = type {
+				return AnalyzedTypeExpr(
+					wrapped: expr.cast(TypeExprSyntax.self),
+					symbol: context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal),
+					typeID: TypeID(.generic(valueType, expr.identifier.lexeme)),
+					environment: context
+				)
+			}
+
 			return AnalyzedTypeExpr(
-				wrapped: expr,
+				wrapped: expr.cast(TypeExprSyntax.self),
 				symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
 				typeID: TypeID(type),
 				environment: context
 			)
 		}
+
+		return error(at: expr, "No type found for type expr named: \(expr.identifier.lexeme)", environment: context, expectation: .type)
 	}
 
-	public func visit(_ expr: any FuncExpr, _ env: Environment) throws -> SourceFileAnalyzer.Value {
-		var errors: [AnalysisError] = []
-		let innerEnvironment = env.add(namespace: expr.autoname)
-
-		// Define our parameters in the environment so they're declared in the body. They're
-		// just placeholders for now.
-		var params = try visit(expr.params, env) as! AnalyzedParamsExpr
-		for param in params.paramsAnalyzed {
-			innerEnvironment.define(parameter: param.name, as: param)
-		}
-
-		let symbol = if let scope = env.getLexicalScope() {
-			env.symbolGenerator.method(scope.scope.name ?? scope.expr.description, expr.autoname, parameters: params.paramsAnalyzed.map(\.name), source: .internal)
-		} else {
-			env.symbolGenerator.function(expr.autoname, parameters: params.paramsAnalyzed.map(\.name), source: .internal)
-		}
-
-		if let name = expr.name {
-			// If it's a named function, define a stub inside the function to allow for recursion
-			let stubType = ValueType.function(
-				name.lexeme,
-				TypeID(.placeholder),
-				params.paramsAnalyzed.map {
-					.init(name: $0.name, typeID: $0.typeID)
-				},
-				[]
-			)
-			let stub = AnalyzedFuncExpr(
-				symbol: symbol,
-				type: TypeID(stubType),
-				expr: expr,
-				analyzedParams: params,
-				bodyAnalyzed: .init(
-					stmt: expr.body,
-					typeID: TypeID(),
-					stmtsAnalyzed: [],
-					environment: env
-				),
-				analysisErrors: [],
-				returnType: TypeID(.placeholder),
-				environment: innerEnvironment
-			)
-			innerEnvironment.define(local: name.lexeme, as: stub, isMutable: false)
-		}
-
-		// Visit the body with the innerEnvironment, finding captures as we go.
-		let exitBehavior: AnalyzedExprStmt.ExitBehavior = expr.body.stmts.count == 1 ? .return : .pop
-		innerEnvironment.exprStmtExitBehavior = exitBehavior
-
-		let bodyAnalyzed = try visit(expr.body, innerEnvironment) as! AnalyzedBlockStmt
-
-		var declaredType: TypeID?
-		if let typeDecl = expr.typeDecl {
-			let type = env.type(named: typeDecl.identifier.lexeme)
-			declaredType = TypeID(type)
-			if !type.isAssignable(from: bodyAnalyzed.typeID.current) {
-				errors.append(
-					.init(
-						kind: .unexpectedType(
-							expected: type,
-							received: bodyAnalyzed.typeAnalyzed,
-							message: "Cannot return \(bodyAnalyzed.typeAnalyzed.description), expected \(type.description)."
-						),
-						location: bodyAnalyzed.stmtsAnalyzed.last?.location ?? expr.location
-					)
-				)
-			}
-		}
-
-		// See if we can infer any types for our params from the environment after the body
-		// has been visited.
-		params.infer(from: innerEnvironment)
-
-		let analyzed = ValueType.function(
-			expr.name?.lexeme ?? expr.autoname,
-			declaredType ?? bodyAnalyzed.typeID,
-			params.paramsAnalyzed.map { .init(name: $0.name, typeID: $0.typeID) },
-			innerEnvironment.captures.map(\.name)
-		)
-
-		let funcExpr = AnalyzedFuncExpr(
-			symbol: symbol,
-			type: TypeID(analyzed),
-			expr: expr,
-			analyzedParams: params,
-			bodyAnalyzed: bodyAnalyzed,
-			analysisErrors: errors,
-			returnType: declaredType ?? bodyAnalyzed.typeID,
-			environment: innerEnvironment
-		)
-
-		if let name = expr.name {
-			innerEnvironment.define(local: name.lexeme, as: funcExpr, isMutable: false)
-			env.define(local: name.lexeme, as: funcExpr, isMutable: false)
-		}
-
-		return funcExpr
+	public func visit(_ expr: FuncExprSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+		try FuncExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
 	}
 
-	public func visit(_ expr: any InitDecl, _ context: Environment) throws -> any AnalyzedSyntax {
-		let paramsAnalyzed = try expr.parameters.accept(self, context) as! AnalyzedParamsExpr
+	public func visit(_ expr: InitDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		let paramsAnalyzed = try expr.params.accept(self, context) as! AnalyzedParamsExpr
 
 		let innerEnvironment = context.add(namespace: "init")
 		for param in paramsAnalyzed.paramsAnalyzed {
@@ -594,7 +338,7 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		return AnalyzedInitDecl(
-			wrapped: expr,
+			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
 			typeID: TypeID(.struct(lexicalScope.scope.name!)),
 			environment: innerEnvironment,
@@ -603,33 +347,33 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any ReturnStmt, _ env: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: ReturnStmtSyntax, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnStmt(
 			typeID: TypeID(valueAnalyzed?.typeAnalyzed ?? .void),
 			environment: env,
-			expr: expr,
+			wrapped: expr.cast(ReturnStmtSyntax.self),
 			valueAnalyzed: valueAnalyzed as? any AnalyzedExpr
 		)
 	}
 
-	public func visit(_ expr: any ParamsExpr, _ context: Environment) throws
+	public func visit(_ expr: ParamsExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		try AnalyzedParamsExpr(
 			typeID: TypeID(.void),
-			expr: expr,
+			wrapped: expr.cast(ParamsExprSyntax.self),
 			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				var type = TypeID()
 
 				if let paramType = param.type {
-					let analyzedTypeExpr = try visit(paramType, context)
-					type = analyzedTypeExpr.typeID
+					let analyzedTypeExpr = try visit(paramType.cast(TypeExprSyntax.self), context)
+					type = analyzedTypeExpr.typeID.asInstance(in: context, location: param.location)
 				}
 
 				return AnalyzedParam(
 					type: type,
-					expr: param,
+					wrapped: param.cast(ParamSyntax.self),
 					environment: context
 				)
 			},
@@ -637,23 +381,23 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any WhileStmt, _ context: Environment) throws
+	public func visit(_ expr: WhileStmtSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		// TODO: Validate condition is bool
 		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
-		let body = try visit(expr.body, context.withExitBehavior(.pop)) as! AnalyzedBlockStmt
+		let body = try visit(expr.body.cast(BlockStmtSyntax.self), context.withExitBehavior(.pop)) as! AnalyzedBlockStmt
 
 		return AnalyzedWhileStmt(
 			typeID: body.typeID,
-			wrapped: expr,
+			wrapped: expr.cast(WhileStmtSyntax.self),
 			conditionAnalyzed: condition,
 			bodyAnalyzed: body,
 			environment: context
 		)
 	}
 
-	public func visit(_ stmt: any BlockStmt, _ context: Environment) throws
+	public func visit(_ stmt: BlockStmtSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		var bodyAnalyzed: [any AnalyzedSyntax] = []
@@ -663,24 +407,24 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		return AnalyzedBlockStmt(
-			stmt: stmt,
+			wrapped: stmt.cast(BlockStmtSyntax.self),
 			typeID: TypeID(bodyAnalyzed.last?.typeAnalyzed ?? .none),
 			stmtsAnalyzed: bodyAnalyzed,
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any Param, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: ParamSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParam(
 			type: TypeID(),
-			expr: expr,
+			wrapped: expr as! ParamSyntax,
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any GenericParams, _ environment: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: GenericParamsSyntax, _ environment: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedGenericParams(
-			wrapped: expr,
+			wrapped: expr as! GenericParamsSyntax,
 			environment: environment,
 			typeID: TypeID(),
 			paramsAnalyzed: expr.params.map {
@@ -689,236 +433,13 @@ public struct SourceFileAnalyzer: Visitor {
 		)
 	}
 
-	public func visit(_ expr: any StructDecl, _ context: Environment) throws
+	public func visit(_ expr: StructDeclSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		var typeParameters: [TypeParameter] = []
-		if let genericParams = expr.genericParams {
-			for param in genericParams.params {
-				typeParameters.append(.init(name: param.name, type: .placeholder))
-			}
-		}
-
-		let symbol = context.symbolGenerator.struct(expr.name, source: .internal)
-
-		let structType = StructType(
-			name: expr.name,
-			properties: [:],
-			methods: [:],
-			typeParameters: typeParameters
-		)
-
-		let bodyContext = context.addLexicalScope(
-			scope: structType,
-			type: .struct(expr.name),
-			expr: expr
-		)
-
-		bodyContext.define(
-			local: "self",
-			as: AnalyzedVarExpr(
-				typeID: TypeID(
-					.instance(.struct(expr.name))
-				),
-				expr: VarExprSyntax(
-					token: .synthetic(.self),
-					location: [.synthetic(.self)]
-				),
-				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
-				environment: bodyContext,
-				analysisErrors: [],
-				isMutable: false
-			),
-
-			isMutable: false
-		)
-
-		context.define(struct: expr.name, as: structType)
-		bodyContext.define(struct: expr.name, as: structType)
-
-		// Do a first pass over the body decls so we have a basic idea of what's available in
-		// this struct.
-		for decl in expr.body.decls {
-			switch decl {
-			case let decl as VarDecl:
-				var type = bodyContext.type(named: decl.typeDecl)
-
-				if case .struct = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				if case .generic = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				let property = Property(
-					slot: structType.properties.count,
-					name: decl.name,
-					typeID: TypeID(type),
-					expr: decl,
-					isMutable: true
-				)
-				structType.add(property: property)
-			case let decl as LetDecl:
-				var type = bodyContext.type(named: decl.typeDecl)
-
-				if case .struct = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				if case .generic = type {
-					type = .instance(
-						InstanceValueType(
-							ofType: type,
-							boundGenericTypes: [:]
-						)
-					)
-				}
-
-				structType.add(
-					property: Property(
-						slot: structType.properties.count,
-						name: decl.name,
-						typeID: TypeID(type),
-						expr: decl,
-						isMutable: false
-					))
-			case let decl as FuncExpr:
-				if let name = decl.name {
-					structType.add(
-						method: Method(
-							symbol: .method(context.moduleName, structType.name!, name.lexeme, decl.params.params.map(\.name)),
-							name: name.lexeme,
-							slot: structType.methods.count,
-							params: decl
-								.params
-								.params
-								.map(\.name)
-								.reduce(into: []) { res, p in
-									res.append(ValueType.Param(name: p, typeID: TypeID(.placeholder)))
-								},
-							typeID: TypeID(
-								.function(
-									name.lexeme,
-									TypeID(.placeholder),
-									decl
-										.params
-										.params
-										.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
-									[]
-								)
-							),
-							returnTypeID: TypeID(.placeholder),
-							expr: decl,
-							isMutable: false
-						))
-				} else {
-					()
-//					FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
-				}
-			case let decl as InitDecl:
-				structType.add(
-					initializer: .init(
-						symbol: .method(context.moduleName, structType.name!, "init", decl.parameters.params.map(\.name)),
-						name: "init",
-						slot: structType.methods.count,
-						params: decl
-							.parameters
-							.params
-							.map(\.name)
-							.reduce(into: []) { res, p in
-								res.append(ValueType.Param(name: p, typeID: TypeID(.placeholder)))
-							},
-						typeID: TypeID(
-							.function(
-								"init",
-								TypeID(.placeholder),
-								decl
-									.parameters
-									.params
-									.map { ValueType.Param(name: $0.name, typeID: TypeID(.placeholder)) },
-								[]
-							)
-						),
-						returnTypeID: TypeID(.placeholder),
-						expr: decl,
-						isMutable: false
-					))
-			case is ParseError:
-				()
-			default:
-				()
-//				FileHandle.standardError.write(Data(("unknown decl in struct: \(decl.debugDescription)" + "\n").utf8))
-			}
-		}
-
-		// Do a second pass to try to fill in method returns
-		let bodyAnalyzed = try visit(expr.body, bodyContext)
-
-		let type: ValueType = .struct(
-			structType.name ?? expr.description
-		)
-
-		// See if there's an initializer defined. If not, generate one.
-		if structType.methods["init"] == nil {
-			structType.add(
-				initializer: .init(
-					symbol: context.symbolGenerator.method(structType.name!, "init", parameters: structType.properties.reduce(into: []) { $0.append($1.key) }, source: .internal),
-					name: "init",
-					slot: structType.methods.count,
-					params: structType.properties.reduce(into: []) { res, prop in
-						res.append(ValueType.Param(name: prop.key, typeID: prop.value.typeID))
-					},
-					typeID: TypeID(
-						.function(
-							"init",
-							TypeID(.placeholder),
-							[],
-							[]
-						)
-					),
-					returnTypeID: TypeID(.placeholder),
-					expr: expr,
-					isMutable: false,
-					isSynthetic: true
-				))
-		}
-
-		let lexicalScope = bodyContext.getLexicalScope()!
-
-		let analyzed = AnalyzedStructDecl(
-			symbol: symbol,
-			wrapped: expr,
-			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
-			structType: structType,
-			lexicalScope: lexicalScope,
-			typeID: TypeID(type),
-			environment: context
-		)
-
-		context.define(local: expr.name, as: analyzed, isMutable: false)
-
-		bodyContext.lexicalScope = lexicalScope
-
-		return analyzed
+		try StructDeclAnalyzer(decl: expr, visitor: self, context: context).analyze()
 	}
 
-	public func visit(_ expr: any DeclBlock, _ context: Environment) throws
+	public func visit(_ expr: DeclBlockSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
 		var declsAnalyzed: [any AnalyzedExpr] = []
@@ -943,9 +464,7 @@ public struct SourceFileAnalyzer: Visitor {
 						symbol: funcExpr.symbol,
 						name: funcExpr.name!.lexeme,
 						slot: existing.slot,
-						params: funcExpr.params.params.map(\.name).reduce(into: []) { res, p in
-							res.append(.init(name: p, typeID: TypeID(.placeholder)))
-						},
+						params: funcExpr.analyzedParams.paramsAnalyzed,
 						typeID: funcExpr.typeID,
 						returnTypeID: funcExpr.returnType,
 						expr: funcExpr,
@@ -956,13 +475,13 @@ public struct SourceFileAnalyzer: Visitor {
 
 		return AnalyzedDeclBlock(
 			typeID: TypeID(.void),
-			decl: expr,
+			wrapped: expr as! DeclBlockSyntax,
 			declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl],
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: any VarDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: VarDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
 
 		if let existing = context.local(named: expr.name),
@@ -978,13 +497,18 @@ public struct SourceFileAnalyzer: Visitor {
 			)
 		}
 
-		let type = context.type(named: expr.typeDecl)
+		let type = context.type(named: expr.typeExpr?.identifier.lexeme, asInstance: true) ?? .error("Could not find type named: \(expr.typeExpr?.identifier.lexeme ?? "<no name>")")
+		var valueType = TypeID(type)
+		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
+		if let value, valueType.current == .placeholder {
+			valueType.infer(from: value.typeID)
+		}
 
-		if case .error = type, context.shouldReportErrors {
+		if case .error = valueType.current, context.shouldReportErrors {
 			errors.append(
 				.init(
-					kind: .typeNotFound(expr.typeDecl ?? "<no type name>"),
-					location: [expr.typeDeclToken ?? expr.location.start]
+					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),
+					location: [expr.typeExpr?.location.start ?? expr.location.start]
 				)
 			)
 		}
@@ -1000,11 +524,10 @@ public struct SourceFileAnalyzer: Visitor {
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
-		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
-			typeID: TypeID(type),
-			expr: expr,
+			typeID: valueType,
+			wrapped: expr as! VarDeclSyntax,
 			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
@@ -1017,9 +540,9 @@ public struct SourceFileAnalyzer: Visitor {
 		return decl
 	}
 
-	public func visit(_ expr: any LetDecl, _ context: Environment) throws -> SourceFileAnalyzer.Value {
+	public func visit(_ expr: LetDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		var errors: [AnalysisError] = []
-		let type = TypeID(context.type(named: expr.typeDecl))
+		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme) ?? .error("Could not find type from \(expr)"))
 
 		if let existing = context.local(named: expr.name),
 		   let definition = existing.definition,
@@ -1034,7 +557,12 @@ public struct SourceFileAnalyzer: Visitor {
 		}
 
 		if case .error = type.current {
-			errors.append(.init(kind: .typeNotFound(expr.typeDecl ?? "<no type name>"), location: [expr.typeDeclToken ?? expr.location.start]))
+			errors.append(
+				.init(
+					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),
+					location: [expr.typeExpr?.location.start ?? expr.location.start]
+				)
+			)
 		}
 
 		var valueType = type
@@ -1057,7 +585,7 @@ public struct SourceFileAnalyzer: Visitor {
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
 			typeID: valueType,
-			expr: expr,
+			wrapped: expr as! LetDeclSyntax,
 			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
@@ -1070,22 +598,30 @@ public struct SourceFileAnalyzer: Visitor {
 		return decl
 	}
 
-	public func visit(_ expr: any IfStmt, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: IfStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		try AnalyzedIfStmt(
-			wrapped: expr,
+			wrapped: expr as! IfStmtSyntax,
 			typeID: TypeID(.void),
 			environment: context,
-			conditionAnalyzed: expr.condition.accept(self, context) as! AnalyzedExpr,
-			consequenceAnalyzed: expr.consequence.accept(self, context) as! AnalyzedExpr,
-			alternativeAnalyzed: expr.alternative?.accept(self, context) as? AnalyzedExpr
+			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
+			consequenceAnalyzed: expr.consequence.accept(self, context) as! any AnalyzedExpr,
+			alternativeAnalyzed: expr.alternative?.accept(self, context) as? any AnalyzedExpr
 		)
 	}
 
-	public func visit(_ expr: any StructExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		AnalyzedErrorSyntax(typeID: TypeID(.error("TODO")), expr: ParseErrorSyntax(location: expr.location, message: "TODO", expectation: .none), environment: context)
+	public func visit(_ expr: StructExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		AnalyzedErrorSyntax(
+			typeID: TypeID(.error("TODO")),
+			wrapped: ParseErrorSyntax(
+				location: expr.location,
+				message: "TODO",
+				expectation: .none
+			),
+			environment: context
+		)
 	}
 
-	public func visit(_ expr: any ArrayLiteralExpr, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: ArrayLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		let elements = try expr.exprs.map { try $0.accept(self, context) }
 		let elementType = elements.map(\.typeID).first ?? TypeID(.placeholder)
 		let instanceType = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": elementType])
@@ -1095,145 +631,73 @@ public struct SourceFileAnalyzer: Visitor {
 			errors.append(.init(kind: .expressionCount("Array literals can only have 255 elements"), location: expr.location))
 		}
 
-		context.importBinding(
-			as: .struct("Standard", "Array"),
-			from: "Standard",
-			binding: .init(
-				name: "Array",
-				expr: expr,
-				type: TypeID(.instance(.struct("Array"))),
-				externalModule: context.importedModules.first(where: { $0.name == "Standard" })!
-			)
-		)
-
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
 			exprsAnalyzed: elements as! [any AnalyzedExpr],
-			wrapped: expr,
+			wrapped: expr as! ArrayLiteralExprSyntax,
 			typeID: TypeID(.instance(instanceType)),
 			analysisErrors: errors
 		)
 	}
 
-	public func visit(_ expr: any SubscriptExpr, _ context: Environment) throws -> any AnalyzedSyntax {
-		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
-		let args = try expr.args.map { try $0.accept(self, context) } as! [AnalyzedArgument]
+	public func visit(_ expr: SubscriptExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		try SubscriptExprAnalyzer(expr: expr, visitor: self, context: context).analyze()
+	}
 
-		var result = AnalyzedSubscriptExpr(
-			receiverAnalyzed: receiver,
-			argsAnalyzed: args,
-			wrapped: expr,
-			typeID: TypeID(.placeholder),
-			environment: context,
-			analysisErrors: []
-		)
+	public func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		let elementsAnalyzed = try expr.elements.map { try $0.accept(self, context) } as! [AnalyzedDictionaryElementExpr]
 
-		guard case let .instance(instance) = receiver.typeAnalyzed,
-		      case let .struct(structName) = instance.ofType,
-		      let structType = context.lookupStruct(named: structName),
-		      let getMethod = structType.methods["get"]
-		else {
-			result.analysisErrors = [
-				AnalysisError(kind: .noMemberFound(receiver: receiver, property: "get"), location: expr.location),
+		let keyType = TypeID()
+		let valueType = TypeID()
+
+		for element in elementsAnalyzed {
+			// TODO: Handle heterogenous types
+			keyType.update(element.keyAnalyzed.typeID.current, location: expr.location)
+			valueType.update(element.valueAnalyzed.typeID.current, location: expr.location)
+		}
+
+		let instance = InstanceValueType(
+			ofType: .struct("Dictionary"),
+			boundGenericTypes: [
+				"Key": keyType,
+				"Value": valueType
 			]
+		)
 
-			return result
-		}
-
-		result.typeID = getMethod.returnTypeID.resolve(with: instance)
-
-		return result
+		return AnalyzedDictionaryLiteralExpr(
+			elementsAnalyzed: elementsAnalyzed,
+			wrapped: expr as! DictionaryLiteralExprSyntax,
+			typeID: TypeID(.instance(instance)),
+			environment: context
+		)
 	}
+
+	public func visit(_ expr: DictionaryElementExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		let key = try expr.key.accept(self, context) as! any AnalyzedExpr
+		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
+		return AnalyzedDictionaryElementExpr(
+			keyAnalyzed: key,
+			valueAnalyzed: value,
+			wrapped: expr as! DictionaryElementExprSyntax,
+			typeID: TypeID(),
+			environment: context
+		)
+	}
+
+	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
 	// GENERATOR_INSERTION
-
-	private func infer(_ exprs: [any AnalyzedExpr], in env: Environment) {
-		let type = exprs.map(\.typeID.current).max(by: { $0.specificity < $1.specificity }) ?? .placeholder
-
-		for var expr in exprs {
-			if let exprStmt = expr as? AnalyzedExprStmt {
-				// Unwrap expr stmt
-				expr = exprStmt.exprAnalyzed
-			}
-
-			if let expr = expr as? AnalyzedVarExpr {
-				expr.typeID.update(type)
-				env.update(local: expr.name, as: type)
-				if let capture = env.captures.first(where: { $0.name == expr.name }) {
-					capture.binding.type.update(type)
-				}
-			}
-		}
-	}
-
-	public func checkAssignment(
-		to receiver: any Typed,
-		value: any AnalyzedExpr,
-		in env: Environment
-	) -> [AnalysisError] {
-		var errors: [AnalysisError] = []
-
-		if !env.shouldReportErrors {
-			return errors
-		}
-
-		errors.append(contentsOf: checkMutability(of: receiver, in: env))
-
-		if value.typeID.current == .placeholder {
-			value.typeID.current = receiver.typeID.current
-		}
-
-		if receiver.typeID.current.isAssignable(from: value.typeAnalyzed) {
-			receiver.typeID.current = value.typeID.current
-			return errors
-		}
-
-		errors.append(
-			AnalysisError(
-				kind: .typeCannotAssign(
-					expected: receiver.typeID,
-					received: value.typeID
-				),
-				location: value.location
-			)
-		)
-
-		return errors
-	}
-
-	func checkMutability(of receiver: any Typed, in env: Environment) -> [AnalysisError] {
-		switch receiver {
-		case let receiver as AnalyzedVarExpr:
-			let binding = env.lookup(receiver.name)
-
-			if !receiver.isMutable || (binding?.isMutable == false) {
-				return [
-					AnalysisError(
-						kind: .cannotReassignLet(variable: receiver),
-						location: receiver.location
-					),
-				]
-			}
-		case let receiver as AnalyzedMemberExpr:
-			if !receiver.isMutable {
-				return [AnalysisError(
-					kind: .cannotReassignLet(variable: receiver),
-					location: receiver.location
-				)]
-			}
-		default:
-			()
-		}
-
-		return []
-	}
-
-	public func error(
-		at expr: any Syntax, _ message: String, environment: Environment, expectation: ParseExpectation
-	) -> AnalyzedErrorSyntax {
-		AnalyzedErrorSyntax(
-			typeID: TypeID(.error(message)),
-			expr: ParseErrorSyntax(location: expr.location, message: message, expectation: expectation),
-			environment: environment
-		)
-	}
 }

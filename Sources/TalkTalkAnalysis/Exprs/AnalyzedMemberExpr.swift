@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public let typeID: TypeID
-	let expr: MemberExpr
+	public let wrapped: MemberExprSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] }
 	public let environment: Environment
 
@@ -17,15 +17,13 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public let memberAnalyzed: any Member
 	public let analysisErrors: [AnalysisError]
 
-	public var receiver: any Expr { expr.receiver }
-	public var property: String { expr.property }
-	public var propertyToken: Token { expr.propertyToken }
+	public var receiver: any Expr { wrapped.receiver }
+	public var property: String { wrapped.property }
+	public var propertyToken: Token { wrapped.propertyToken }
 	public var isMutable: Bool
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

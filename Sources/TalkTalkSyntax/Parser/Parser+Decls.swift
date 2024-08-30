@@ -6,7 +6,7 @@
 //
 
 public extension Parser {
-	mutating func letVarDecl(_ kind: Token.Kind) -> any Stmt {
+	mutating func letVarDecl(_ kind: Token.Kind) -> any Decl {
 		let token = previous!
 
 		let i = startLocation(at: previous)
@@ -15,9 +15,9 @@ public extension Parser {
 			return error(at: current, .unexpectedToken(expected: .identifier, got: current), expectation: .identifier)
 		}
 
-		var typeDecl: Token?
+		var typeExpr: (any TypeExpr)? = nil
 		if didMatch(.colon) {
-			typeDecl = consume(.identifier, "expected type name after ':'")
+			typeExpr = self.typeExpr()
 		}
 
 		var value: (any Expr)?
@@ -27,21 +27,21 @@ public extension Parser {
 
 		if kind == .let {
 			return LetDeclSyntax(
+				id: nextID(),
 				token: token,
 				name: nameToken.lexeme,
 				nameToken: nameToken,
-				typeDecl: typeDecl?.lexeme,
-				typeDeclToken: nameToken,
+				typeExpr: typeExpr,
 				value: value,
 				location: endLocation(i)
 			)
 		} else {
 			return VarDeclSyntax(
+				id: nextID(),
 				token: token,
 				name: nameToken.lexeme,
 				nameToken: nameToken,
-				typeDecl: typeDecl?.lexeme,
-				typeDeclToken: nameToken,
+				typeExpr: typeExpr,
 				value: value,
 				location: endLocation(i)
 			)
@@ -59,16 +59,17 @@ public extension Parser {
 		let params = parameterList()
 		skip(.newline)
 
-		let body = declBlock()
+		let body = blockStmt(false)
 		return InitDeclSyntax(
+			id: nextID(),
 			initToken: initToken,
-			parameters: params,
+			params: params,
 			body: body,
 			location: endLocation(i)
 		)
 	}
 
-	mutating func declBlock() -> DeclBlockExprSyntax {
+	mutating func declBlock() -> DeclBlockSyntax {
 		consume(.leftBrace, "expected '{' before block")
 		skip(.newline)
 
@@ -85,7 +86,7 @@ public extension Parser {
 		consume(.rightBrace, "expected '}' after block")
 		skip(.newline)
 
-		return DeclBlockExprSyntax(decls: decls, location: endLocation(i))
+		return DeclBlockSyntax(id: nextID(), decls: decls, location: endLocation(i))
 	}
 
 	mutating func structDecl() -> any Syntax {
@@ -100,20 +101,101 @@ public extension Parser {
 			)
 		}
 
-		var genericParamsSyntax: GenericParamsSyntax?
+		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
-			genericParamsSyntax = genericParams()
+			typeParameters = self.typeParameters()
+		}
+
+		var conformances: [TypeExprSyntax] = []
+		if didMatch(.colon) {
+			repeat {
+				conformances.append(typeExpr().cast(TypeExprSyntax.self))
+			} while didMatch(.comma)
 		}
 
 		let body = declBlock()
 
 		return StructDeclSyntax(
+			id: nextID(), 
 			structToken: structToken,
 			name: name.lexeme,
 			nameToken: name,
 			body: body,
-			genericParams: genericParamsSyntax,
+			typeParameters: typeParameters,
+			conformances: conformances,
 			location: endLocation(i)
 		)
+	}
+
+	mutating func protocolDecl() -> any Syntax {
+		let protocolToken = previous!
+		let i = startLocation(at: protocolToken)
+
+		guard let name = consume(.identifier) else {
+			return error(
+				at: current,
+				.unexpectedToken(expected: .identifier, got: current),
+				expectation: .none
+			)
+		}
+
+		var typeParameters: [TypeExprSyntax] = []
+		if didMatch(.less) {
+			typeParameters = self.typeParameters()
+		}
+
+		let body = protocolDeclBlock()
+
+		return ProtocolDeclSyntax(
+			id: nextID(),
+			keywordToken: protocolToken,
+			name: name,
+			body: body,
+			typeParameters: typeParameters,
+			location: endLocation(i)
+		)
+	}
+
+	mutating func protocolDeclBlock() -> ProtocolBodyDeclSyntax {
+		consume(.leftBrace, "expected '{' before block")
+		skip(.newline)
+
+		let i = startLocation(at: previous)
+
+		var decls: [any Decl] = []
+
+		while !check(.eof), !check(.rightBrace) {
+			skip(.newline)
+			if didMatch(.func) {
+				decls.append(funcSignatureDecl())
+				skip(.newline)
+				if check(.leftBrace) {
+					_ = error(at: current, .syntaxError("func decls in protocol bodies cannot have bodies"), expectation: .none)
+				}
+
+				skip(.newline)
+			}
+
+			if didMatch(.initialize) {
+				decls.append(_init())
+				skip(.newline)
+			}
+
+			if didMatch(.var) {
+				decls.append(letVarDecl(.var))
+				skip(.newline)
+			}
+
+			if didMatch(.let) {
+				decls.append(letVarDecl(.let))
+			}
+
+			skip(.newline)
+		}
+
+		consume(.rightBrace, "expected '}' after block")
+		skip(.newline)
+
+		return ProtocolBodyDeclSyntax(decls: decls, id: nextID(), location: endLocation(i))
 	}
 }

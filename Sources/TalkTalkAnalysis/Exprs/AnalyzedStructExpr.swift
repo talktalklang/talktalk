@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	public let typeID: TypeID
-	let expr: StructExpr
+	public let wrapped: StructExprSyntax
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
 	public let structType: StructType
@@ -17,15 +17,13 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { [bodyAnalyzed] }
 	public let environment: Environment
 
-	public var structToken: Token { expr.structToken }
-	public var name: String? { expr.name }
-	public var genericParams: (any GenericParams)? { expr.genericParams }
-	public var body: DeclBlock { expr.body }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var structToken: Token { wrapped.structToken }
+	public var name: String? { wrapped.name }
+	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }
+	public var body: DeclBlock { wrapped.body }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

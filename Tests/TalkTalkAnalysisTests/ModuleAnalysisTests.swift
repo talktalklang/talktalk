@@ -129,7 +129,7 @@ struct ModuleAnalysisTests {
 		// Make sure we're actually loading these
 		let foo = try #require(moduleA.moduleFunction(named: "foo"))
 		#expect(foo.name == "foo")
-		#expect(foo.typeID.type() == .function("foo", .int, [], []))
+		#expect(foo.typeID.type() == .function("foo", TypeID(.int), [], []))
 
 		let bar = try #require(moduleB.moduleFunction(named: "bar"))
 

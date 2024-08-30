@@ -156,12 +156,12 @@ public indirect enum Value: Equatable, Comparable {
 		switch self {
 		case let .int(int):
 			guard case let .int(other) = other else {
-				return .error("Cannot add \(other) to \(self)")
+				return .error("Cannot subtract \(other) from \(self)")
 			}
 
 			return .int(int - other)
 		default:
-			return .error("Cannot add \(other) to \(self)")
+			return .error("Cannot subtract \(other) from \(self)")
 		}
 	}
 
@@ -169,25 +169,29 @@ public indirect enum Value: Equatable, Comparable {
 		switch self {
 		case let .int(int):
 			guard case let .int(other) = other else {
-				return .error("Cannot add \(other) to \(self)")
+				return .error("Cannot multiply \(other) by \(self)")
 			}
 
 			return .int(int * other)
 		default:
-			return .error("Cannot add \(other) to \(self)")
+			return .error("Cannot multiply \(other) by \(self)")
 		}
 	}
 
 	public func div(_ other: Value) -> Value {
 		switch self {
 		case let .int(int):
+			if int == 0 {
+				return .error("Cannot divide \(other) by zero")
+			}
+
 			guard case let .int(other) = other else {
-				return .error("Cannot add \(other) to \(self)")
+				return .error("Cannot divide \(other) by \(self)")
 			}
 
 			return .int(int / other)
 		default:
-			return .error("Cannot add \(other) to \(self)")
+			return .error("Cannot divide \(other) by \(self)")
 		}
 	}
 }

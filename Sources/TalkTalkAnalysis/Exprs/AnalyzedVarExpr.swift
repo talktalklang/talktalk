@@ -10,19 +10,19 @@ import TalkTalkSyntax
 
 public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	public let typeID: TypeID
-	let expr: VarExpr
+	public let wrapped: VarExprSyntax
 	public let symbol: Symbol?
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 	public var analysisErrors: [AnalysisError]
 	public var isMutable: Bool
 
-	public var token: Token { expr.token }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var token: Token { wrapped.token }
+	public var location: SourceLocation { wrapped.location }
+	public var children: [any Syntax] { wrapped.children }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public var name: String {
@@ -47,7 +47,7 @@ public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 		case let expr as AnalyzedCallExpr:
 			return Definition(token: expr.location.start, type: binding.type.current)
 		default:
-			return Definition(token: expr.location.start, type: binding.type.current)
+			return Definition(token: wrapped.location.start, type: binding.type.current)
 		}
 	}
 }

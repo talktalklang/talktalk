@@ -41,7 +41,7 @@ extension StandardLibraryTest {
 		let errors = try analyzed.collectErrors()
 
 		if !errors.isEmpty {
-			throw CompilerError.analysisError(errors.map { "\($0)" }.joined(separator: ", "))
+			throw CompilerError.analysisError(errors.all.map { "\($0)" }.joined(separator: ", "))
 		}
 
 		let module = try ModuleCompiler(

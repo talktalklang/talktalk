@@ -4,16 +4,19 @@ public protocol StructDecl: Decl {
 	var structToken: Token { get }
 	var name: String { get }
 	var nameToken: Token { get }
-	var body: any DeclBlock { get }
-	var genericParams: (any GenericParams)? { get }
+	var body: DeclBlockSyntax { get }
+	var typeParameters: [TypeExprSyntax] { get }
+	var conformances: [TypeExprSyntax] { get }
 }
 
 public struct StructDeclSyntax: StructDecl {
+	public var id: SyntaxID
 	public var structToken: Token
 	public var name: String
 	public var nameToken: Token
-	public var body: any DeclBlock
-	public var genericParams: (any GenericParams)?
+	public var body: DeclBlockSyntax
+	public var typeParameters: [TypeExprSyntax]
+	public var conformances: [TypeExprSyntax]
 
 	// Where does this syntax live
 	public var location: SourceLocation

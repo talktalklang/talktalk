@@ -26,6 +26,7 @@ public protocol BinaryExpr: Expr {
 }
 
 public struct BinaryExprSyntax: BinaryExpr {
+	public var id: SyntaxID
 	public let lhs: any Expr
 	public let rhs: any Expr
 	public let op: BinaryOperator

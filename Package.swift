@@ -11,6 +11,14 @@ let package = Package(
 			name: "TalkTalkCore",
 			targets: ["TalkTalkCore"]
 		),
+		.library(
+			name: "TalkTalkSyntax",
+			targets: ["TalkTalkSyntax"]
+		),
+		.library(
+			name: "TypeChecker",
+			targets: ["TypeChecker"]
+		)
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
@@ -46,6 +54,12 @@ let package = Package(
 			dependencies: [],
 			resources: [
 				.copy("../../Library/Standard"),
+			]
+		),
+		.target(
+			name: "TypeChecker",
+			dependencies: [
+				"TalkTalkSyntax"
 			]
 		),
 		.target(
@@ -160,6 +174,13 @@ let package = Package(
 			name: "TalkTalkSyntaxTests",
 			dependencies: ["TalkTalkSyntax"]
 		),
+		.testTarget(
+			name: "TypeCheckerTests",
+			dependencies: [
+				"TypeChecker",
+				"TalkTalkSyntax"
+			]
+		)
 	]
 )
 

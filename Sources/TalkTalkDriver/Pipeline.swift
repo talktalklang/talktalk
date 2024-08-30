@@ -33,7 +33,7 @@ struct Pipeline {
 	}
 
 	func run() async throws -> CompilationResult {
-		let sourceFiles = try compilationUnit.files.map {
+		let sourceFiles = try compilationUnit.files.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }).map {
 			try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
 		}
 

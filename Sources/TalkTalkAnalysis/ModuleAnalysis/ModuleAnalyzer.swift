@@ -29,7 +29,7 @@ public struct ModuleAnalyzer {
 	) {
 		self.name = name
 		self.files = files
-		self.environment = Environment(isModuleScope: true, symbolGenerator: .init(moduleName: name, parent: nil))
+		self.environment = .topLevel(name)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = importedModules
@@ -38,12 +38,13 @@ public struct ModuleAnalyzer {
 	public func analyze() throws -> AnalysisModule {
 		var analysisModule = AnalysisModule(name: name, files: files)
 
-		for module in importedModules {
-			environment.importModule(module)
-
-			if module.name == "Standard" {
+		for module in importedModules.sorted(by: { ($0.name == "Standard" ? 0 : 1) < ($1.name == "Standard" ? 0 : 1) }) {
+			if module.name == "Standard", name != "Standard" {
 				// Always make standard types available
 				for (name, structType) in module.structs {
+					// Reserve slots for the standard library
+					environment.symbolGenerator.reserve(structType.symbol, info: module.symbols[structType.symbol]!)
+
 					analysisModule.structs[name] = ModuleStruct(
 						name: name,
 						symbol: structType.symbol,
@@ -56,6 +57,8 @@ public struct ModuleAnalyzer {
 					)
 				}
 			}
+
+			environment.importModule(module)
 		}
 
 		// Find all the top level stuff this module has to offer. We ignore errors at this
@@ -194,7 +197,7 @@ public struct ModuleAnalyzer {
 
 		switch syntax {
 		case let syntax as VarDecl:
-			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedVarDecl
+			let analyzed = try visitor.visit(syntax.cast(VarDeclSyntax.self), environment) as! AnalyzedVarDecl
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
@@ -205,7 +208,7 @@ public struct ModuleAnalyzer {
 				isMutable: true
 			)
 		case let syntax as LetDecl:
-			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedLetDecl
+			let analyzed = try visitor.visit(syntax.cast(LetDeclSyntax.self), environment) as! AnalyzedLetDecl
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
@@ -218,7 +221,7 @@ public struct ModuleAnalyzer {
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
-				let analyzed = try visitor.visit(syntax, environment) as! AnalyzedFuncExpr
+				let analyzed = try visitor.visit(syntax.cast(FuncExprSyntax.self), environment) as! AnalyzedFuncExpr
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					symbol: analyzed.symbol,
@@ -229,7 +232,7 @@ public struct ModuleAnalyzer {
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
-			let analyzed = try visitor.visit(syntax, environment) as! AnalyzedDefExpr
+			let analyzed = try visitor.visit(syntax.cast(DefExprSyntax.self), environment) as! AnalyzedDefExpr
 
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
 				result[syntax.name] = ModuleValue(
@@ -248,7 +251,7 @@ public struct ModuleAnalyzer {
 
 			environment.importModule(module)
 		case let syntax as StructDecl:
-			let analyzedStructDecl = try visitor.visit(syntax, environment).cast(AnalyzedStructDecl.self)
+			let analyzedStructDecl = try visitor.visit(syntax.cast(StructDeclSyntax.self), environment).cast(AnalyzedStructDecl.self)
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
 				name: name,

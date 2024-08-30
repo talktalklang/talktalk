@@ -12,6 +12,7 @@ public protocol WhileStmt: Stmt {
 }
 
 public struct WhileStmtSyntax: WhileStmt {
+	public var id: SyntaxID
 	public var whileToken: Token
 	public var condition: any Expr
 	public var body: any BlockStmt

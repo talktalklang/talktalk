@@ -20,6 +20,7 @@ extension Parser {
 		}
 
 		return IfStmtSyntax(
+			id: nextID(),
 			ifToken: ifToken,
 			condition: condition,
 			consequence: consequence,
@@ -39,7 +40,7 @@ extension Parser {
 		let condition = parse(precedence: .assignment)
 		let body = blockStmt(false)
 
-		return WhileStmtSyntax(whileToken: whileToken, condition: condition, body: body, location: endLocation(i))
+		return WhileStmtSyntax(id: nextID(), whileToken: whileToken, condition: condition, body: body, location: endLocation(i))
 	}
 
 	mutating func importStmt() -> any Stmt {
@@ -54,7 +55,7 @@ extension Parser {
 			)
 		}
 
-		let module = IdentifierExprSyntax(name: name.lexeme, location: [name])
-		return ImportStmtSyntax(token: importToken, module: module, location: endLocation(i))
+		let module = IdentifierExprSyntax(id: nextID(), name: name.lexeme, location: [name])
+		return ImportStmtSyntax(id: nextID(), token: importToken, module: module, location: endLocation(i))
 	}
 }

@@ -11,11 +11,12 @@ import Foundation
 public final class Chunk: Codable {
 	public enum CodingKeys: CodingKey {
 		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
-		case name, code, lines, constants, data, arity, symbol, depth, localsCount, upvalueCount, localNames, upvalueNames
+		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, upvalueCount, localNames, upvalueNames
 	}
 
 	public let name: String
 	public let symbol: Symbol
+	public let path: String
 
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
 	public var code: ContiguousArray<Byte> = []
@@ -45,17 +46,19 @@ public final class Chunk: Codable {
 	public var localNames: [String] = ["__reserved__"]
 	public var upvalueNames: [String] = []
 
-	public init(name: String, symbol: Symbol) {
+	public init(name: String, symbol: Symbol, path: String) {
 		self.name = name
 		self.symbol = symbol
+		self.path = path
 	}
 
-	public init(name: String, symbol: Symbol, parent: Chunk?, arity: Byte, depth: Byte) {
+	public init(name: String, symbol: Symbol, parent: Chunk?, arity: Byte, depth: Byte, path: String) {
 		self.name = name
 		self.parent = parent
 		self.arity = arity
 		self.depth = depth
 		self.symbol = symbol
+		self.path = path
 	}
 
 	public func finalize() -> Chunk {

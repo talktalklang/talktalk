@@ -134,32 +134,32 @@ struct TalkTalkParserTests {
 	@Test("var/let decls") func varLetDecls() {
 		let a = parse("var foo = 123")[0].cast(VarDeclSyntax.self)
 		#expect(a.name == "foo")
-		#expect(a.typeDecl == nil)
+		#expect(a.typeExpr == nil)
 		#expect(a.value?.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let b = parse("var foo: int")[0].cast(VarDeclSyntax.self)
 		#expect(b.name == "foo")
-		#expect(b.typeDecl == "int")
+		#expect(b.typeExpr?.description == "int")
 		#expect(b.value == nil)
 
 		let c = parse("var foo: int = 123")[0].cast(VarDeclSyntax.self)
 		#expect(c.name == "foo")
-		#expect(c.typeDecl == "int")
+		#expect(c.typeExpr?.description == "int")
 		#expect(c.value?.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let d = parse("let foo = 123")[0].cast(LetDeclSyntax.self)
 		#expect(d.name == "foo")
-		#expect(d.typeDecl == nil)
+		#expect(d.typeExpr == nil)
 		#expect(d.value?.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let e = parse("let foo: int")[0].cast(LetDeclSyntax.self)
 		#expect(e.name == "foo")
-		#expect(e.typeDecl == "int")
+		#expect(e.typeExpr?.description == "int")
 		#expect(e.value == nil)
 
 		let f = parse("let foo: int = 123")[0].cast(LetDeclSyntax.self)
 		#expect(f.name == "foo")
-		#expect(f.typeDecl == "int")
+		#expect(f.typeExpr?.description == "int")
 		#expect(f.value?.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 
@@ -227,6 +227,20 @@ struct TalkTalkParserTests {
 		#expect(bodyExpr.lhs.description == "x")
 		#expect(bodyExpr.rhs.description == "y")
 		#expect(bodyExpr.op == .plus)
+	}
+
+	@Test("init parameter labels") func paramLabels() throws {
+		let ast = parse("""
+		struct Person {
+			init(x: Array<int>) {}
+		}
+		""")[0]
+		let decl = try #require(ast as? StructDeclSyntax)
+		let initDeclParams = decl.body.decls[0].cast(InitDeclSyntax.self).params.params
+
+		#expect(initDeclParams[0].name == "x")
+		#expect(initDeclParams[0].type?.identifier.lexeme == "Array")
+		#expect(initDeclParams[0].type?.genericParams[0].identifier.lexeme == "int")
 	}
 
 	@Test("func expr return annotation") func funcExprReturnAnnotation() throws {
@@ -313,6 +327,16 @@ struct TalkTalkParserTests {
 		#expect(ast.count == 4)
 	}
 
+	@Test("Parses struct conformances") func conformances() throws {
+		let ast = parse("""
+		struct Foo: Bar {}
+		""")
+
+		let structExpr = ast[0].cast(StructDeclSyntax.self)
+		#expect(structExpr.name == "Foo")
+		#expect(structExpr.conformances.map(\.identifier.lexeme) == ["Bar"])
+	}
+
 	@Test("Parses struct") func structs() throws {
 		let ast = parse("""
 		struct Foo {
@@ -328,7 +352,7 @@ struct TalkTalkParserTests {
 
 		let varDecl = structExpr.body.decls[0].cast(VarDeclSyntax.self)
 		#expect(varDecl.name == "age")
-		#expect(varDecl.typeDecl == "i32")
+		#expect(varDecl.typeExpr?.description == "i32")
 
 		let fooDef = ast[1].cast(ExprStmtSyntax.self).expr.cast(DefExprSyntax.self)
 		#expect(fooDef.receiver.cast(VarExprSyntax.self).name == "foo")
@@ -362,7 +386,7 @@ struct TalkTalkParserTests {
 
 		let varDecl = structExpr.body.decls[0].cast(LetDeclSyntax.self)
 		#expect(varDecl.name == "age")
-		#expect(varDecl.typeDecl == "i32")
+		#expect(varDecl.typeExpr?.description == "i32")
 
 		let fooDef = ast[1].cast(ExprStmtSyntax.self).expr.cast(DefExprSyntax.self)
 		#expect(fooDef.receiver.cast(VarExprSyntax.self).name == "foo")
@@ -389,12 +413,40 @@ struct TalkTalkParserTests {
 		let structExpr = ast[0].cast(StructDeclSyntax.self)
 		#expect(structExpr.name == "Foo")
 
-		let paramNames = structExpr.genericParams?.params.map(\.name)
+		let paramNames = structExpr.typeParameters.map(\.identifier.lexeme)
 		#expect(paramNames == ["Bar"])
 
 		let calleeExpr = try #require(ast[1].cast(ExprStmtSyntax.self).expr.cast(CallExprSyntax.self).callee.as(TypeExprSyntax.self))
 		#expect(calleeExpr.identifier.lexeme == "Foo")
-		#expect(calleeExpr.genericParams?.params.map(\.name) == ["int"])
+		#expect(calleeExpr.genericParams.map(\.identifier.lexeme) == ["int"])
+	}
+
+	@Test("Nested generics") func nestedGenerics() throws {
+		let ast = parse("Foo<Fizz<Buzz>>")[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(TypeExprSyntax.self)
+
+		#expect(ast.identifier.lexeme == "Foo")
+		#expect(ast.genericParams[0].identifier.lexeme == "Fizz")
+		#expect(ast.genericParams[0].genericParams[0].identifier.lexeme == "Buzz")
+	}
+
+	@Test("Generic properties") func genericProperties() throws {
+		let ast = parse("""
+		struct Foo<Bar> {}
+		struct Fizz<Buzz> {
+			var foo: Foo<Buzz>
+		}
+		""")
+
+		let structExpr = ast[1].cast(StructDeclSyntax.self)
+		#expect(structExpr.name == "Fizz")
+
+		let paramNames = structExpr.typeParameters.map(\.identifier.lexeme)
+		#expect(paramNames == ["Buzz"])
+
+		let property = structExpr.body.decls[0].cast(VarDeclSyntax.self)
+		#expect(property.typeExpr?.identifier.lexeme == "Foo")
 	}
 
 	@Test("Parses bang") func bang() throws {

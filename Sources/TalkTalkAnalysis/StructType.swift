@@ -20,7 +20,7 @@ public class StructType {
 	public let name: String?
 	public private(set) var properties: [String: Property]
 	public private(set) var methods: [String: Method]
-	public private(set) var typeParameters: [TypeParameter]
+	public var typeParameters: [TypeParameter]
 
 	public init(
 		name: String? = nil,
@@ -32,6 +32,12 @@ public class StructType {
 		self.properties = properties
 		self.methods = methods
 		self.typeParameters = typeParameters
+	}
+
+	func placeholderGenericTypes() -> [String: TypeID] {
+		typeParameters.reduce(into: [:]) { res, param in
+			res[param.name] = TypeID(.placeholder)
+		}
 	}
 
 	public func add(property: Property) {

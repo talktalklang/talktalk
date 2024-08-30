@@ -20,4 +20,5 @@ public struct Property: Member {
 	public let typeID: TypeID
 	public let expr: any Syntax
 	public let isMutable: Bool
+	public var boundGenericParameters: [String: TypeID] = [:]
 }

@@ -23,6 +23,7 @@ public class Environment {
 	public var errors: [AnalysisError] = []
 	public var exprStmtExitBehavior: AnalyzedExprStmt.ExitBehavior = .pop
 	public var symbolGenerator: SymbolGenerator
+	public var isInTypeParameters: Bool = false
 
 	public private(set) var shouldReportErrors: Bool = true
 
@@ -30,8 +31,8 @@ public class Environment {
 		isModuleScope: Bool = false,
 		symbolGenerator: SymbolGenerator = .init(moduleName: "None", parent: nil),
 		importedModules: [AnalysisModule] = [],
-		parent: Environment? = nil)
-	{
+		parent: Environment? = nil
+	) {
 		self.isModuleScope = isModuleScope
 		self.symbolGenerator = symbolGenerator
 		self.parent = parent
@@ -41,13 +42,70 @@ public class Environment {
 		self.importedModules = importedModules
 	}
 
+	public static func topLevel(_ moduleName: String) -> Environment {
+		Environment(isModuleScope: true, symbolGenerator: .init(moduleName: moduleName, parent: nil))
+	}
+
+	func importStdlib() {
+		_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
+
+		if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Array"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Array",
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticArrayExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("Array", ["Element": TypeID(.placeholder)]))),
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "String"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "String",
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticStringExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("String", [:]))),
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Int"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Int",
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticIntExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("Int", [:]))),
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Dictionary",
+					expr: IdentifierExprSyntax(id: -5, name: "_SyntheticDictionaryExpr", location: [.synthetic(.identifier)]),
+					type: TypeID(.instance(.struct("Dictionary", ["Key": TypeID(.placeholder), "Value": TypeID(.placeholder)]))),
+					externalModule: stdlib
+				)
+			)
+		}
+	}
+
 	public var moduleName: String {
 		symbolGenerator.moduleName
 	}
 
 	public func ignoringErrors(perform: () throws -> Void) throws {
 		defer { self.shouldReportErrors = true }
-		self.shouldReportErrors = false
+		shouldReportErrors = false
 		try perform()
 	}
 
@@ -97,7 +155,7 @@ public class Environment {
 		return parent?.infer(name)
 	}
 
-	public func type(named name: String?) -> ValueType {
+	public func type(named name: String?, asInstance: Bool = false) -> ValueType? {
 		guard let name else {
 			return .placeholder
 		}
@@ -116,12 +174,24 @@ public class Environment {
 			   let scopeName = scope.name,
 			   let typeParameter = scope.typeParameters.first(where: { $0.name == name })
 			{
-				return .generic(.struct(scopeName), typeParameter.name)
+				if asInstance {
+					return .instance(InstanceValueType(
+						ofType: .generic(.struct(scopeName), typeParameter.name),
+						boundGenericTypes: [:]
+					))
+				} else {
+					return .generic(.struct(scopeName), typeParameter.name)
+				}
+
 			} else if let structType = lookupStruct(named: name) {
-				return .struct(structType.name ?? "<anon struct>")
+				if asInstance {
+					return .instance(.struct(structType.name ?? "<anon struct>", structType.placeholderGenericTypes()))
+				} else {
+					return .struct(structType.name ?? "<anon struct>")
+				}
 			}
 
-			return .error("unknown type: \(name)")
+			return nil
 		}
 	}
 
@@ -157,7 +227,8 @@ public class Environment {
 					name: "Self",
 					expr: AnalyzedVarExpr(
 						typeID: TypeID(scope.type),
-						expr: VarExprSyntax(
+						wrapped: VarExprSyntax(
+							id: scope.expr.id,
 							token: .synthetic(.self),
 							location: [.synthetic(.self)]
 						),
@@ -176,7 +247,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: method.expr,
-						type: TypeID(.member(scope.type))
+						type: TypeID(.member(.instance(InstanceValueType(ofType: scope.type, boundGenericTypes: [:]))))
 					)
 				}
 
@@ -184,7 +255,7 @@ public class Environment {
 					return Binding(
 						name: name,
 						expr: property.expr,
-						type: TypeID(.member(scope.type))
+						type: TypeID(.member(.instance(InstanceValueType(ofType: scope.type, boundGenericTypes: [:]))))
 					)
 				}
 			}
@@ -280,7 +351,7 @@ public class Environment {
 
 	public func update(local: String, as type: ValueType) {
 		if let current = locals[local] {
-			current.type.update(type)
+			current.type.update(type, location: current.expr.location)
 			locals[local] = current
 		}
 
@@ -350,6 +421,10 @@ public class Environment {
 	}
 
 	func importBinding(as symbol: Symbol, from moduleName: String, binding: Binding) {
+		if moduleName == self.moduleName {
+			return
+		}
+
 		if let parent {
 			parent.importBinding(as: symbol, from: moduleName, binding: binding)
 			return

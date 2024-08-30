@@ -11,7 +11,7 @@ import TalkTalkSyntax
 public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl, AnalyzedVarLetDecl {
 	public let symbol: Symbol?
 	public let typeID: TypeID
-	let expr: VarDecl
+	public let wrapped: VarDeclSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }
 	}
@@ -20,17 +20,16 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl, AnalyzedVarL
 	public var valueAnalyzed: (any AnalyzedExpr)?
 	public let environment: Environment
 
-	public var token: Token { expr.token }
-	public var name: String { expr.name }
-	public var nameToken: Token { expr.nameToken }
-	public var typeDecl: String? { expr.typeDecl }
-	public var typeDeclToken: Token? { expr.typeDeclToken }
-	public var value: (any Expr)? { expr.value }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var token: Token { wrapped.token }
+	public var name: String { wrapped.name }
+	public var nameToken: Token { wrapped.nameToken }
+	public var typeExpr: (any TypeExpr)? { wrapped.typeExpr }
+	public var value: (any Expr)? { wrapped.value }
+	public var location: SourceLocation { wrapped.location }
+	public var children: [any Syntax] { wrapped.children }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

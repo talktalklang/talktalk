@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
-	let wrapped: InitDecl
+	public let wrapped: InitDeclSyntax
 
 	public let symbol: Symbol
 	public let typeID: TypeID
@@ -21,8 +21,8 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	}
 
 	public var initToken: Token { wrapped.initToken }
-	public var parameters: any ParamsExpr { wrapped.parameters }
-	public var body: any DeclBlock { wrapped.body }
+	public var params: any ParamsExpr { wrapped.params }
+	public var body: BlockStmtSyntax { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 
@@ -31,6 +31,6 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	}
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

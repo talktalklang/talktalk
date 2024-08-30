@@ -6,12 +6,12 @@ public struct AnalyzedSubscriptExpr: SubscriptExpr, AnalyzedExpr {
 	public var receiverAnalyzed: any AnalyzedExpr
 	public var argsAnalyzed: [AnalyzedArgument]
 
-	let wrapped: any SubscriptExpr
+	public let wrapped: SubscriptExprSyntax
 
 	public var typeID: TypeID
 	public var environment: Environment
 	public var analysisErrors: [AnalysisError]
-	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] + argsAnalyzed }
+	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] + argsAnalyzed.map(\.expr) }
 
 	// Delegate these to the wrapped node
 	public var receiver: any Expr { wrapped.receiver }
@@ -24,6 +24,6 @@ public struct AnalyzedSubscriptExpr: SubscriptExpr, AnalyzedExpr {
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

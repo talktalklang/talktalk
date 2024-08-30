@@ -14,14 +14,12 @@ public struct AnalyzedIdentifierExpr: AnalyzedExpr, IdentifierExpr {
 		try visitor.visit(self, scope)
 	}
 
-	var expr: IdentifierExpr
+	public var wrapped: IdentifierExprSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
-	public var name: String { expr.name }
-	public var location: SourceLocation { expr.location }
+	public var name: String { wrapped.name }
 	public let environment: Environment
-	public var children: [any Syntax] { expr.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 }

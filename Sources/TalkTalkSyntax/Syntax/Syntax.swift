@@ -5,7 +5,12 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
+public typealias SyntaxID = Int
+
 public protocol Syntax: CustomStringConvertible {
+	// A unique identifier for every piece of syntax
+	var id: SyntaxID { get }
+
 	// Where does this syntax live
 	var location: SourceLocation { get }
 

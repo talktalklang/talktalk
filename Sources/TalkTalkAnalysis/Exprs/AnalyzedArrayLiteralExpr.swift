@@ -6,7 +6,7 @@ public struct AnalyzedArrayLiteralExpr: ArrayLiteralExpr, AnalyzedExpr {
 	public var environment: Environment
 	public let exprsAnalyzed: [any AnalyzedExpr]
 
-	let wrapped: any ArrayLiteralExpr
+	public let wrapped: ArrayLiteralExprSyntax
 
 	public var typeID: TypeID
 	public var analyzedChildren: [any AnalyzedSyntax] { exprsAnalyzed }
@@ -22,6 +22,6 @@ public struct AnalyzedArrayLiteralExpr: ArrayLiteralExpr, AnalyzedExpr {
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

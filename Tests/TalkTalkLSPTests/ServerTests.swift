@@ -46,8 +46,6 @@ private extension Data {
 			responses.append(Data(out.stdout.utf8))
 		}
 
-		await server.worker?.value
-
 		return responses.map { stripHeader(from: $0) }
 	}
 
@@ -66,14 +64,10 @@ private extension Data {
 		let data2 = data[32 ..< data.count]
 
 		let server = try await Server()
-		var handler = Handler { request in
-			server.enqueue(request)
-		}
+		var handler = Handler(server: server)
 
 		await handler.handle(data: data1)
 		await handler.handle(data: data2)
-
-		await server.worker?.value
 	}
 
 	@Test("Handles two messages") func twoMessages() async throws {

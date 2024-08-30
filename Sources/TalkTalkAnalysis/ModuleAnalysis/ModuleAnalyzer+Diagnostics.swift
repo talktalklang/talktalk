@@ -7,7 +7,20 @@
 import TalkTalkSyntax
 
 public extension AnalysisModule {
-	func collectErrors(for uri: String? = nil) throws -> Set<AnalysisError> {
+	struct ErrorResults {
+		public var file: Set<AnalysisError>
+		public var all: Set<AnalysisError>
+
+		public var isEmpty: Bool {
+			all.isEmpty
+		}
+
+		public var count: Int {
+			all.count
+		}
+	}
+
+	func collectErrors(for uri: String? = nil) throws -> ErrorResults {
 		func collect(syntaxes: [any AnalyzedSyntax]) -> Set<AnalysisError> {
 			var result: Set<AnalysisError> = []
 
@@ -31,15 +44,17 @@ public extension AnalysisModule {
 			return result
 		}
 
-		var result: Set<AnalysisError> = []
+		var result = ErrorResults(file: [], all: [])
 
 		for file in analyzedFiles {
-			if let uri, uri != file.path {
-				continue
-			}
-
 			for err in collect(syntaxes: file.syntax) {
-				result.insert(err)
+				result.all.insert(err)
+
+				if let uri, uri != file.path {
+					continue
+				}
+
+				result.file.insert(err)
 			}
 		}
 

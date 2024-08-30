@@ -24,17 +24,25 @@ public extension ParamsExpr {
 	}
 }
 
+public extension Param where Self == ParamSyntax {
+	static func synthetic(name: String) -> Param {
+		ParamSyntax(id: -1, name: name, location: [.synthetic(.identifier)])
+	}
+}
+
 public struct ParamSyntax: Param {
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, scope)
 	}
 
+	public var id: SyntaxID
 	public let name: String
 	public let type: (any TypeExpr)?
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }
 
-	public init(name: String, type: (any TypeExpr)? = nil, location: SourceLocation) {
+	public init(id: SyntaxID, name: String, type: (any TypeExpr)? = nil, location: SourceLocation) {
+		self.id = id
 		self.name = name
 		self.type = type
 		self.location = location
@@ -42,11 +50,13 @@ public struct ParamSyntax: Param {
 }
 
 public struct ParamsExprSyntax: ParamsExpr {
+	public var id: SyntaxID
 	public var params: [any Param]
 	public let location: SourceLocation
 	public var children: [any Syntax] { params }
 
-	public init(params: [any Param], location: SourceLocation) {
+	public init(id: SyntaxID, params: [any Param], location: SourceLocation) {
+		self.id = id
 		self.params = params
 		self.location = location
 	}

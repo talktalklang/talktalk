@@ -51,7 +51,12 @@ public class CompilingModule {
 			}
 		})
 
-		var chunks: [StaticChunk] = Array(repeating: StaticChunk(chunk: .init(name: "_", symbol: .function(name, "_", [], namespace: []))), count: chunkCount)
+		var chunks: [StaticChunk] = Array(
+			repeating: StaticChunk(
+				chunk: .init(name: "_", symbol: .function(name, "_", [], namespace: []), path: "_")
+			),
+			count: chunkCount
+		)
 		var moduleStructs: [Struct] = Array(repeating: Struct(name: "_", propertyCount: 0), count: analysisModule.structs.count)
 
 		for (symbol, info) in analysisModule.symbols {
@@ -73,43 +78,42 @@ public class CompilingModule {
 				}
 
 				fatalError("could not find compiled chunk for: \(symbol.description)")
-			case .method:
-				()
-//				if let chunk = compiledChunks.first(where: { $0.symbol == symbol }) {
-//					chunks[info.slot] = StaticChunk(chunk: chunk)
-//					continue
-//				}
-//
-//				if case let .external(name) = info.source,
-//					 let module = moduleEnvironment[name],
-//					 let moduleInfo = module.symbols[symbol] {
-//					chunks[info.slot] = module.chunks[moduleInfo.slot]
-//					continue
-//				}
-//
-//				fatalError("could not find compiled chunk for: \(symbol.description)")
-			case .property:
-				() // Nothing to do here
 			case .struct:
 				switch info.source {
+				case .stdlib:
+					if self.name == "Standard" {
+						// In this case, we're the Standard library compiling itself so we should have the
+						// struct here in this CompilingModule
+						guard let structType = structs[symbol] else {
+							fatalError("could not find struct for: \(symbol.description)")
+						}
+						moduleStructs[info.slot] = structType
+					} else {
+						// Otherwise, we can assume it's in the module environment
+						guard let module = moduleEnvironment["Standard"],
+									let moduleInfo = module.symbols[symbol] else {
+							fatalError("could not find struct for: \(symbol.description)")
+							continue
+						}
+
+						moduleStructs[info.slot] = module.structs[moduleInfo.slot]
+					}
+				case .external(let name):
+					guard let module = moduleEnvironment[name],
+								let moduleInfo = module.symbols[symbol] else {
+						print("could not find struct for: \(symbol.description)")
+						continue
+					}
+
+					moduleStructs[info.slot] = module.structs[moduleInfo.slot]
 				case .internal:
 					guard let structType = structs[symbol] else {
 						fatalError("could not find struct for: \(symbol.description)")
 					}
 
 					moduleStructs[info.slot] = structType
-				case .external(let name):
-					guard let module = moduleEnvironment[name],
-								let moduleInfo = module.symbols[symbol] else {
-						fatalError("could not find struct for: \(symbol.description)")
-					}
-
-					moduleStructs[info.slot] = module.structs[moduleInfo.slot]
 				}
-
-				
-
-			case .value(_), .primitive:
+			case .value(_), .primitive, .genericType(_), .property, .method:
 				()
 			}
 		}
@@ -142,7 +146,7 @@ public class CompilingModule {
 	}
 
 	public func compile(file: AnalyzedSourceFile) throws -> Chunk {
-		var compiler = SourceFileCompiler(name: file.path, module: name, analyzedSyntax: file.syntax)
+		var compiler = SourceFileCompiler(name: file.path, module: name, analyzedSyntax: file.syntax, path: file.path)
 		let chunk = try compiler.compile(in: self)
 		compiledChunks.append(chunk)
 		fileChunks.append(chunk)
@@ -180,7 +184,7 @@ public class CompilingModule {
 	// If a function named "main" isn't provided, we generate one that just runs all of the files
 	// that were compiled in the module.
 	func synthesizeMain() -> Chunk {
-		let main = Chunk(name: "main", symbol: .function(name, "main", [], namespace: []))
+		let main = Chunk(name: "main", symbol: .function(name, "main", [], namespace: []), path: "<main>")
 
 		for fileChunk in fileChunks {
 			let offset = analysisModule.symbols[fileChunk.symbol]!.slot

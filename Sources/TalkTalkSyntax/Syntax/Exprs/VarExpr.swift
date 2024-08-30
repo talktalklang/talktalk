@@ -11,6 +11,7 @@ public protocol VarExpr: Expr {
 }
 
 public struct VarExprSyntax: VarExpr {
+	public var id: SyntaxID
 	public let token: Token
 	public let location: SourceLocation
 	public var children: [any Syntax] { [] }
@@ -19,7 +20,8 @@ public struct VarExprSyntax: VarExpr {
 		try visitor.visit(self, scope)
 	}
 
-	public init(token: Token, location: SourceLocation) {
+	public init(id: SyntaxID, token: Token, location: SourceLocation) {
+		self.id = id
 		self.token = token
 		self.location = location
 	}

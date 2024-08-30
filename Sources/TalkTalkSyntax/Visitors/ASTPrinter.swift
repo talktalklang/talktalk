@@ -76,11 +76,11 @@ public struct ASTPrinter: Visitor {
 		return copy.add(content)
 	}
 
-	@StringBuilder public func visit(_ expr: any ImportStmt, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ImportStmtSyntax, _: Context) throws -> String {
 		dump(expr, "module: \(expr.module.name)")
 	}
 
-	@StringBuilder public func visit(_ expr: any ExprStmt, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ExprStmtSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.children {
@@ -89,42 +89,42 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any TypeExpr, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: TypeExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: any UnaryExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: UnaryExprSyntax, _ context: Context) throws -> String {
 		dump(expr, "op: \(expr.op)")
 		indent {
 			try expr.expr.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any InitDecl, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: InitDeclSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
-			try expr.parameters.accept(self, context)
+			try expr.params.accept(self, context)
 			try expr.body.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any GenericParams, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: GenericParamsSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for param in expr.params {
-				param.name
+				try param.type.accept(self, context)
 			}
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any MemberExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: MemberExprSyntax, _ context: Context) throws -> String {
 		dump(expr, "property: \(expr.property)")
 		indent {
 			try expr.receiver.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any CallExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: CallExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.callee.accept(self, context)
@@ -143,7 +143,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any DefExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: DefExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.receiver.accept(self, context)
@@ -151,23 +151,23 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any IdentifierExpr, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: IdentifierExprSyntax, _: Context) throws -> String {
 		dump(expr, "name: \(expr.name)")
 	}
 
-	@StringBuilder public func visit(_ expr: ParseError, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ParseErrorSyntax, _: Context) throws -> String {
 		dump(expr, expr.message)
 	}
 
-	@StringBuilder public func visit(_ expr: any LiteralExpr, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: LiteralExprSyntax, _: Context) throws -> String {
 		dump(expr, "value: \(expr.value)")
 	}
 
-	@StringBuilder public func visit(_ expr: any VarExpr, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: VarExprSyntax, _: Context) throws -> String {
 		dump(expr, "name: \(expr.name)")
 	}
 
-	@StringBuilder public func visit(_ expr: any BinaryExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: BinaryExprSyntax, _ context: Context) throws -> String {
 		dump(expr, "op: \(expr.op)")
 		indent {
 			try expr.lhs.accept(self, context)
@@ -175,7 +175,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any IfExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: IfExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.condition.accept(self, context)
@@ -186,7 +186,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any WhileStmt, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: WhileStmtSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.condition.accept(self, context)
@@ -196,37 +196,37 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any BlockStmt, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: BlockStmtSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.stmts.map { try $0.accept(self, context) }.joined(separator: "\n")
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any FuncExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: FuncExprSyntax, _ context: Context) throws -> String {
 		dump(expr, "params: \(expr.params.params.map(\.description))")
-		try visit(expr.body, context)
+		try visit(expr.body.cast(BlockStmtSyntax.self), context)
 	}
 
-	@StringBuilder public func visit(_ expr: any ParamsExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ParamsExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.params.map { try $0.accept(self, context) }.joined(separator: "\n")
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any Param, _: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ParamSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: any StructExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: StructExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			try expr.body.accept(self, context)
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any DeclBlock, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: DeclBlockSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for decl in expr.decls {
@@ -235,15 +235,15 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any VarDecl, _: Context) throws -> String {
-		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
+	@StringBuilder public func visit(_ expr: VarDeclSyntax, _ context: Context) throws -> String {
+		try dump(expr, "name: \(expr.name), type: \(expr.typeExpr?.accept(self, context) ?? "<not specified>")")
 	}
 
-	@StringBuilder public func visit(_ expr: any LetDecl, _: Context) throws -> String {
-		dump(expr, "name: \(expr.name), type: \(expr.typeDecl ?? "<no type decl>")")
+	@StringBuilder public func visit(_ expr: LetDeclSyntax, _ context: Context) throws -> String {
+		try dump(expr, "name: \(expr.name), type: \(expr.typeExpr?.accept(self, context) ?? "<not specified>")")
 	}
 
-	@StringBuilder public func visit(_ expr: any ReturnStmt, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ReturnStmtSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		if let value = expr.value {
 			indent {
@@ -252,7 +252,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any IfStmt, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: IfStmtSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.children {
@@ -261,7 +261,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any StructDecl, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: StructDeclSyntax, _ context: Context) throws -> String {
 		dump(expr)
 		indent {
 			for child in expr.children {
@@ -270,11 +270,31 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: any ArrayLiteralExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ArrayLiteralExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: any SubscriptExpr, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: SubscriptExprSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: DictionaryElementExprSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> String {
 		dump(expr)
 	}
 

@@ -12,8 +12,8 @@ public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 		lhs.ofType == rhs.ofType && lhs.boundGenericTypes == rhs.boundGenericTypes
 	}
 
-	public static func `struct`(_ name: String) -> InstanceValueType {
-		InstanceValueType(ofType: .struct(name), boundGenericTypes: [:])
+	public static func `struct`(_ name: String, _ boundGenericTypes: [String: TypeID]) -> InstanceValueType {
+		InstanceValueType(ofType: .struct(name), boundGenericTypes: boundGenericTypes)
 	}
 
 	public var ofType: ValueType
@@ -22,6 +22,21 @@ public struct InstanceValueType: Codable, Equatable, Hashable, Sendable {
 	public init(ofType: ValueType, boundGenericTypes: [String: TypeID]) {
 		self.ofType = ofType
 		self.boundGenericTypes = boundGenericTypes
+	}
+
+	public func assignableTo(_ other: Any) -> Bool {
+		if let other = other as? InstanceValueType {
+			return other.ofType.isAssignable(from: ofType) &&
+			other.boundGenericTypes.allSatisfy({ (name, typeID) in
+				if let ourType = boundGenericTypes[name]?.current {
+					return typeID.current.isAssignable(from: ourType)
+				}
+
+				return true
+			})
+		}
+
+		return false
 	}
 }
 
@@ -83,7 +98,11 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		case .placeholder:
 			return "placeholder"
 		case let .instance(valueType):
-			return "\(valueType.ofType.description) instance"
+			if valueType.boundGenericTypes.isEmpty {
+				return "\(valueType.ofType.description) instance"
+			} else {
+				return "\(valueType.ofType.description) instance (\(valueType.boundGenericTypes.sorted(by: { $0.key.description < $1.key.description })))"
+			}
 		case let .member(structType):
 			return "struct instance value \(structType)"
 		case let .generic(owner, name):
@@ -129,7 +148,7 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		}
 	}
 
-	func isAssignable(from other: ValueType) -> Bool {
+	public func isAssignable(from other: ValueType) -> Bool {
 		switch self {
 		case .none:
 			return false
@@ -150,9 +169,13 @@ public indirect enum ValueType: Codable, Equatable, Hashable, Sendable {
 		case let .struct(string):
 			return other == .struct(string)
 		case let .generic(valueType, string):
-			return other == .generic(valueType, string) || other == .placeholder
+			return true // TODO: Be more stringent here
 		case let .instance(instanceValueType):
-			return other == .instance(instanceValueType)
+			if case let .instance(otherInstanceValueType) = other {
+				return otherInstanceValueType.assignableTo(instanceValueType)
+			}
+
+			return false
 		case let .member(valueType):
 			return other == .member(valueType)
 		case .error:

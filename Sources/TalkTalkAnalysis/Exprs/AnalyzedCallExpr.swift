@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedArgument: Syntax, AnalyzedSyntax {
+public struct AnalyzedArgument: AnalyzedSyntax {
 	public var typeID: TypeID { expr.typeID }
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { expr.analyzedChildren }
@@ -15,19 +15,18 @@ public struct AnalyzedArgument: Syntax, AnalyzedSyntax {
 		try expr.accept(visitor, scope)
 	}
 
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try expr.accept(visitor, context)
 	}
 
 	public let label: Token?
+	public let wrapped: CallArgument
 	public let expr: any AnalyzedExpr
 }
 
 public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public let typeID: TypeID
-	let expr: CallExpr
+	public let wrapped: CallExprSyntax
 
 	public var calleeAnalyzed: any AnalyzedExpr
 	public var argsAnalyzed: [AnalyzedArgument]
@@ -38,13 +37,11 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public var analysisErrors: [AnalysisError]
 	public let environment: Environment
 
-	public var callee: any Expr { expr.callee }
-	public var args: [CallArgument] { expr.args }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var callee: any Expr { wrapped.callee }
+	public var args: [CallArgument] { wrapped.args }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

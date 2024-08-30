@@ -14,6 +14,7 @@ public protocol IfExpr: Expr {
 }
 
 public struct IfExprSyntax: IfExpr {
+	public var id: SyntaxID
 	public var ifToken: Token
 	public var elseToken: Token?
 	public let condition: any Expr

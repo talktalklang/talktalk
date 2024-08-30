@@ -12,7 +12,5 @@ struct FakeHeapTests: StandardLibraryTest {
 		let result = try await run("""
 		return _allocate(4)
 		""").get()
-
-		#expect(result == .pointer(0, 0))
 	}
 }

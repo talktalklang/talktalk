@@ -1,0 +1,36 @@
+// TODO: It'd be nice if this struct could be nested in Dictionary
+struct DictionaryEntry<K, V> {
+	var key: K
+	var value: V
+
+	init(key: K, value: V) {
+		self.key = key
+		self.value = value
+	}
+}
+
+struct Dictionary<Key, Value> {
+	var storage: Array<DictionaryEntry<Key, Value>>
+
+	init() {
+		self.storage = []
+	}
+
+	func get(key: Key) -> Value {
+		var entry = self.storage[0]
+		// This is a hack
+		_cast(entry, DictionaryEntry<Key, Value>)
+		return entry.value
+	}
+
+	func set(index, value) {
+		let entry = DictionaryEntry(key: index, value: value)
+		self.storage.append(entry)
+	}
+
+	func index(forKey: Key) -> int {
+		let hashValue = _hash(forKey)
+		return hashValue
+	}
+}
+

@@ -15,17 +15,15 @@ public struct AnalyzedReturnStmt: AnalyzedStmt, ReturnStmt {
 
 	public let environment: Environment
 
-	let expr: any ReturnStmt
+	public let wrapped: ReturnStmtSyntax
 
-	public var returnToken: Token { expr.returnToken }
-	public var value: (any Expr)? { expr.value }
-	public var location: SourceLocation { expr.location }
-	public var children: [any Syntax] { expr.children }
+	public var returnToken: Token { wrapped.returnToken }
+	public var value: (any Expr)? { wrapped.value }
 
 	public var valueAnalyzed: (any AnalyzedExpr)?
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

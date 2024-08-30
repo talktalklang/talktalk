@@ -5,7 +5,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public let symbol: Symbol
-	let wrapped: any StructDecl
+	public let wrapped: StructDeclSyntax
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
 	public let structType: StructType
@@ -25,16 +25,17 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public var structToken: Token { wrapped.structToken }
 	public var name: String { wrapped.name }
 	public var nameToken: Token { wrapped.nameToken }
-	public var body: any DeclBlock { wrapped.body }
-	public var genericParams: (any GenericParams)? { wrapped.genericParams }
+	public var body: DeclBlockSyntax { wrapped.body }
+	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var conformances: [TypeExprSyntax] { wrapped.conformances }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
 	}
 
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

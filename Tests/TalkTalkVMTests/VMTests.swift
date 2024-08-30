@@ -13,7 +13,7 @@ import Testing
 @MainActor
 struct VMTests {
 	func chunk(_ instructions: [Instruction]) -> Chunk {
-		var chunk = Chunk(name: "main", symbol: .function("VMTests", "main", []))
+		var chunk = Chunk(name: "main", symbol: .function("VMTests", "main", []), path: "test")
 		for instruction in instructions {
 			instruction.emit(into: &chunk)
 		}
@@ -23,7 +23,7 @@ struct VMTests {
 
 	@Test func int() throws {
 		let chunk = chunk([
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
+			Instruction(path: "", opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(123))),
 		])
 
 		let result = VirtualMachine.run(module: .main(.init(chunk: chunk)))
@@ -32,9 +32,9 @@ struct VMTests {
 
 	@Test func add() throws {
 		let chunk = chunk([
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(10))),
-			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .add, offset: 4, line: 1, metadata: .simple),
+			Instruction(path: "", opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(10))),
+			Instruction(path: "", opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(20))),
+			Instruction(path: "", opcode: .add, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = try VirtualMachine.run(module: .main(.init(chunk: chunk))).get()
@@ -43,9 +43,9 @@ struct VMTests {
 
 	@Test func subtract() throws {
 		let chunk = chunk([
-			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(5))),
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .subtract, offset: 4, line: 1, metadata: .simple),
+			Instruction(path: "", opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(5))),
+			Instruction(path: "", opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(20))),
+			Instruction(path: "", opcode: .subtract, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = VirtualMachine.run(module: .main(.init(chunk: chunk)))
@@ -54,9 +54,9 @@ struct VMTests {
 
 	@Test func divide() throws {
 		let chunk = chunk([
-			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(10))),
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .divide, offset: 4, line: 1, metadata: .simple),
+			Instruction(path: "", opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(10))),
+			Instruction(path: "", opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(20))),
+			Instruction(path: "", opcode: .divide, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = VirtualMachine.run(module: .main(.init(chunk: chunk)))
@@ -65,9 +65,9 @@ struct VMTests {
 
 	@Test func multiply() throws {
 		let chunk = chunk([
-			Instruction(opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(20))),
-			Instruction(opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(10))),
-			Instruction(opcode: .multiply, offset: 4, line: 1, metadata: .simple),
+			Instruction(path: "", opcode: .constant, offset: 2, line: 1, metadata: .constant(.int(20))),
+			Instruction(path: "", opcode: .constant, offset: 0, line: 1, metadata: .constant(.int(10))),
+			Instruction(path: "", opcode: .multiply, offset: 4, line: 1, metadata: .simple),
 		])
 
 		let result = VirtualMachine.run(module: .main(.init(chunk: chunk)))

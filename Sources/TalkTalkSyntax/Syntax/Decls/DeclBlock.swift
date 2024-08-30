@@ -9,12 +9,14 @@ public protocol DeclBlock: Expr {
 	var decls: [any Syntax] { get }
 }
 
-public struct DeclBlockExprSyntax: DeclBlock {
+public struct DeclBlockSyntax: DeclBlock {
+	public var id: SyntaxID
 	public var decls: [any Syntax]
 	public let location: SourceLocation
 	public var children: [any Syntax] { decls }
 
-	public init(decls: [any Syntax], location: SourceLocation) {
+	public init(id: SyntaxID, decls: [any Syntax], location: SourceLocation) {
+		self.id = id
 		self.decls = decls
 		self.location = location
 	}

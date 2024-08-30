@@ -44,7 +44,7 @@ public struct VirtualMachine {
 
 			#if DEBUG
 			if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
-				log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.localNames)")
+				log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.localNames) stack offset: \(currentFrame.stackOffset)")
 			}
 			#endif
 		}
@@ -75,14 +75,14 @@ public struct VirtualMachine {
 		self.module = module
 		self.verbosity = verbosity
 
-		if verbosity == .verbose {
-			print("Loading module: \(module.name)")
-			for (i, chunk) in module.chunks.enumerated() {
-				print("\(i): ", terminator: "")
-				chunk.dump(in: module)
-			}
-			print("------------------------------------------------------")
-		}
+//		if verbosity == .verbose {
+//			print("Loading module: \(module.name)")
+//			for (i, chunk) in module.chunks.enumerated() {
+//				print("\(i): ", terminator: "")
+//				chunk.dump(in: module)
+//			}
+//			print("------------------------------------------------------")
+//		}
 
 		guard let chunk = module.main else {
 			fatalError("no entrypoint found for module `\(module.name)`")
@@ -131,7 +131,12 @@ public struct VirtualMachine {
 							let line = string.components(separatedBy: .newlines)[Int(i.line)]
 							FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
 						} else {
-							FileHandle.standardError.write(Data("       <lib>\n".utf8))
+							var line = ""
+							if let url = URL(string: "file://" + i.path),
+								 let filelines = try? String(contentsOf: url).components(separatedBy: .newlines) {
+								line = filelines[Int(i.line)] + " "
+							}
+							FileHandle.standardError.write(Data("        \(line)<\(i.path.components(separatedBy: "/").last ?? i.path):\(i.line)>\n".utf8))
 						}
 					}
 				}
@@ -218,8 +223,8 @@ public struct VirtualMachine {
 					stack.push(.int(lhs + rhs))
 				case let (.string(lhs), .string(rhs)):
 					stack.push(.string(lhs + rhs))
-				case let (.pointer(base, offset), .int(rhs)):
-					stack.push(.pointer(base, offset + rhs))
+				case let (.pointer(pointer), .int(rhs)):
+					stack.push(.pointer(pointer + rhs))
 				case let (.data(lhs), .data(rhs)):
 					let lhs = chunk.data[Int(lhs)]
 					let rhs = chunk.data[Int(rhs)]
@@ -229,13 +234,13 @@ public struct VirtualMachine {
 					}
 
 					let bytes = lhs.bytes + rhs.bytes
-					let addr = heap.allocate(count: bytes.count)
+					let pointer = heap.allocate(count: bytes.count)
 
 					for i in 0 ..< bytes.count {
-						heap.store(block: addr, offset: i, value: .byte(bytes[i]))
+						heap.store(pointer: pointer + i, value: Value.byte(bytes[i]))
 					}
 
-					stack.push(.pointer(.init(addr), 0))
+					stack.push(.pointer(pointer))
 				default:
 					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
 				}
@@ -373,7 +378,7 @@ public struct VirtualMachine {
 					stack.push(global)
 				} else if let initializer = module.valueInitializers[slot] {
 					// If we don't have the global already, we lazily initialize it by running its initializer
-					call(inline: initializer)
+					call(chunk: initializer)
 
 					globalValues[slot] = stack.peek()
 
@@ -461,26 +466,35 @@ public struct VirtualMachine {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
-				// TODO: this sux
-				let getSlot = receiver.type.methods.firstIndex(where: { $0.name.contains("$get$index") })!
-				call(boundMethod: .init(getSlot), on: receiver)
+				// TODO: Make this user-implementable
+				let getSlot = receiver.type.methods.firstIndex(where: { $0.name.contains("$get$") })!
+				call(boundMethod: getSlot, on: receiver)
 			case .initArray:
 				let count = readByte()
+
+				// We need to set the capacity to at least 1 or else trying to resize it will multiply 0 by 2
+				// which means we never actually get more capacity.
+				let capacity = max(count, 1)
 				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
-				let blockID = heap.allocate(count: Int(count))
+				let pointer = heap.allocate(count: Int(capacity))
 				for i in 0..<count {
-					heap.store(block: blockID, offset: Int(i), value: stack.pop())
+					heap.store(pointer: pointer + Int(i), value: stack.pop())
 				}
 
 				let instance = Instance(type: arrayType, fields: [
-					.pointer(.init(blockID), 0),
+					.pointer(pointer),
 					.int(.init(count)),
-					.int(.init(count))
+					.int(.init(capacity))
 				])
 
 				stack.push(.instance(instance))
+			case .initDict: ()
+				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
+				let dictType = module.structs[dictTypeSlot]
+
+				call(structValue: dictType)
 			}
 		}
 	}
@@ -508,7 +522,7 @@ public struct VirtualMachine {
 
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
-	private mutating func call(boundMethod: Value.IntValue, on instance: Instance) {
+	private mutating func call(boundMethod: Int, on instance: Instance) {
 		let methodChunk = instance.type.methods[Int(boundMethod)]
 		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
 		call(chunk: methodChunk)
@@ -549,18 +563,18 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(inline: StaticChunk) {
-		let frame = CallFrame(
-			closure: .init(
-				chunk: inline,
-				upvalues: []
-			),
-			returnTo: ip,
-			stackOffset: stack.size - 1
-		)
-
-		frames.push(frame)
-	}
+//	private mutating func call(inline: StaticChunk) {
+//		let frame = CallFrame(
+//			closure: .init(
+//				chunk: inline,
+//				upvalues: []
+//			),
+//			returnTo: ip,
+//			stackOffset: stack.size - 1
+//		)
+//
+//		frames.push(frame)
+//	}
 
 	private mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id
@@ -617,16 +631,16 @@ public struct VirtualMachine {
 
 		switch builtin {
 		case .print:
-			let value = stack.pop()
+			let value = stack.peek()
 			print(inspect(value))
 		case ._allocate:
 			if case let .int(count) = stack.pop() { // Get the capacity
-				let address = heap.allocate(count: Int(count))
-				stack.push(.pointer(.init(address), .init(0)))
+				let pointer = heap.allocate(count: Int(count))
+				stack.push(.pointer(pointer))
 			}
 		case ._deref:
-			if case let .pointer(blockID, offset) = stack.pop(),
-			   let value = heap.dereference(block: Int(blockID), offset: Int(offset))
+			if case let .pointer(pointer) = stack.pop(),
+				 let value = heap.dereference(pointer: pointer)
 			{
 				stack.push(value)
 			}
@@ -634,9 +648,16 @@ public struct VirtualMachine {
 			() // TODO:
 		case ._storePtr:
 			let value = stack.pop()
-			if case let .pointer(blockID, offset) = stack.pop() {
-				heap.store(block: Int(blockID), offset: Int(offset), value: value)
+			if case let .pointer(pointer) = stack.pop() {
+				heap.store(pointer: pointer, value: value)
 			}
+		case ._hash:
+			let value = stack.pop()
+			stack.push(.int(.init(value.hashValue)))
+		case ._cast:
+			stack.pop()
+			stack.pop()
+			() // This is just for the analyzer
 		}
 	}
 
@@ -688,7 +709,12 @@ public struct VirtualMachine {
 	@discardableResult private mutating func dumpStack() -> String {
 		if stack.isEmpty { return "" }
 		var result = "       "
-		for slot in stack.entries() {
+
+		if currentFrame.stackOffset > 0 {
+			result += "[ \(currentFrame.stackOffset) skipped ]"
+		}
+
+		for slot in stack.entries()[currentFrame.stackOffset..<stack.size] {
 			if frames.size == 0 {
 				result += "[ \(slot.description) ]"
 			} else {

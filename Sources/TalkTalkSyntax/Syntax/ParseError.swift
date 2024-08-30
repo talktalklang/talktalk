@@ -26,6 +26,7 @@ public protocol ParseError: Decl, Expr, Stmt, Syntax {
 }
 
 public struct ParseErrorSyntax: ParseError, Sendable {
+	public var id: SyntaxID = -2
 	public let location: SourceLocation
 	public let message: String
 	public var children: [any Syntax] { [] }

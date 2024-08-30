@@ -56,6 +56,7 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 
 		for expectation in expectations {
 			let instruction = Instruction(
+				path: "<expectation>",
 				opcode: expectation.opcode,
 				offset: i,
 				line: expectation.line,
@@ -107,9 +108,9 @@ actor CompilerTests: CompilerTest {
 		])
 
 		let expected = [
-			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
-			Instruction(opcode: .pop, offset: 2, line: 0, metadata: .simple),
-			Instruction(opcode: .return, offset: 3, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
+			Instruction(path: chunk.path, opcode: .pop, offset: 2, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .return, offset: 3, line: 0, metadata: .simple),
 		]
 
 		#expect(instructions.instructions == expected)
@@ -120,12 +121,12 @@ actor CompilerTests: CompilerTest {
 		let chunk = try compile("10 + 20")
 
 		let instructions = [
-			Instruction(opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(20))),
-			Instruction(opcode: .constant, offset: 2, line: 0, metadata: ConstantMetadata(value: .int(10))),
-			Instruction(opcode: .add, offset: 4, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(20))),
+			Instruction(path: chunk.path, opcode: .constant, offset: 2, line: 0, metadata: ConstantMetadata(value: .int(10))),
+			Instruction(path: chunk.path, opcode: .add, offset: 4, line: 0, metadata: .simple),
 
-			Instruction(opcode: .pop, offset: 5, line: 0, metadata: .simple),
-			Instruction(opcode: .return, offset: 6, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .pop, offset: 5, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .return, offset: 6, line: 0, metadata: .simple),
 		]
 
 		#expect(chunk.disassemble() == instructions)
@@ -137,10 +138,10 @@ actor CompilerTests: CompilerTest {
 		""")
 
 		#expect(chunk.disassemble() == [
-			Instruction(opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
-			Instruction(opcode: .pop, offset: 4, line: 0, metadata: .simple),
-			Instruction(opcode: .return, offset: 5, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
+			Instruction(path: chunk.path, opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
+			Instruction(path: chunk.path, opcode: .pop, offset: 4, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .return, offset: 5, line: 0, metadata: .simple),
 		])
 	}
 
@@ -220,16 +221,17 @@ actor CompilerTests: CompilerTest {
 			// The condition
 			.op(.false, line: 0, .simple),
 			// How far to jump if the condition is false
-			.op(.jumpUnless, line: 0, .jump(offset: 7)),
-			// Pop the condition
-			.op(.pop, line: 0, .simple),
+			.op(.jumpUnless, line: 0, .jump(offset: 6)),
 
 			// If we're not jumping, here's the value of the consequence block
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 3)),
+			.op(.jump, line: 2, .jump(offset: 4)),
+
+			// Pop the condition
+			.op(.pop, line: 0, .simple),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),

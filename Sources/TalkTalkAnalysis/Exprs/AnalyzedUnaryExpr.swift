@@ -13,7 +13,7 @@ public struct AnalyzedUnaryExpr: AnalyzedExpr, UnaryExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { [exprAnalyzed] }
 	public let environment: Environment
 
-	let wrapped: UnaryExpr
+	public let wrapped: UnaryExprSyntax
 
 	public var location: SourceLocation { wrapped.location }
 	public var op: Token.Kind { wrapped.op }
@@ -21,7 +21,7 @@ public struct AnalyzedUnaryExpr: AnalyzedExpr, UnaryExpr {
 	public var children: [any Syntax] { wrapped.children }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

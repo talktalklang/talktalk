@@ -18,11 +18,13 @@ public struct BuiltinFunction {
 			._free,
 			._deref,
 			._storePtr,
+			._hash,
+			._cast
 		]
 	}
 
 	static func syntheticExpr() -> any Expr {
-		IdentifierExprSyntax(name: "__builtin__", location: [.synthetic(.builtin)])
+		IdentifierExprSyntax(id: -4, name: "__builtin__", location: [.synthetic(.builtin)])
 	}
 
 	func binding(in _: Environment) -> Environment.Binding {
@@ -58,7 +60,7 @@ public struct BuiltinFunction {
 	public static var _allocate: BuiltinFunction {
 		BuiltinFunction(
 			name: "_allocate",
-			type: .function("_allocate", TypeID(.pointer), [.int("size")], [])
+			type: .function("_allocate", TypeID(.pointer, immutable: true), [.int("size")], [])
 		)
 	}
 
@@ -100,6 +102,33 @@ public struct BuiltinFunction {
 				TypeID(.placeholder),
 				[.init(name: "addr", typeID: TypeID(.pointer)),
 				 .init(name: "value", typeID: TypeID())],
+				[]
+			)
+		)
+	}
+
+	public static var _hash: BuiltinFunction {
+		BuiltinFunction(
+			name: "_hash",
+			type: .function(
+				"_hash",
+				TypeID(.int),
+				[.init(name: "value", typeID: TypeID(.any))],
+				[]
+			)
+		)
+	}
+
+	public static var _cast: BuiltinFunction {
+		BuiltinFunction(
+			name: "_cast",
+			type: .function(
+				"_cast",
+				TypeID(.generic(.void, "T")),
+				[
+					.init(name: "variable", typeID: TypeID(.any)),
+					.init(name: "type", typeID: TypeID(.generic(.void, "T")))
+				],
 				[]
 			)
 		)

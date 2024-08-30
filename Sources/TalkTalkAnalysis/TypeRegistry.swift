@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import TalkTalkSyntax
 
 // The typeID is a reference wrapper around a ValueType. This way
 // we don't need to embed type data into the types themselves.
@@ -16,21 +17,85 @@ import Foundation
 // of them.
 public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible, @unchecked Sendable {
 	public static func == (lhs: TypeID, rhs: TypeID) -> Bool {
-		lhs.current == rhs.current
+		lhs.id == rhs.id
 	}
 
-	public var current: ValueType
+	// The current known value type of this type ID
+	private(set) public var current: ValueType
 
-	public init(_ initial: ValueType = .placeholder) {
+	// If this type is being inferred from another type ID, it is stored as inferredFrom
+	private var inferredFrom: TypeID?
+
+	// If this type is being inferred from by any other type IDs, they ared stored in here so they
+	// can be updated if this type id is updated
+	private var inferrenceChildren: Set<TypeID> = []
+
+	// Can this type ID be updated?
+	private var immutable: Bool = false
+
+	public var updatedLocation: SourceLocation?
+
+	var id: UUID
+
+	public init(inferredFrom: TypeID) {
+		self.id = UUID()
+		self.current = inferredFrom.type()
+		self.inferredFrom = inferredFrom
+	}
+
+	public init(_ initial: ValueType = .placeholder, immutable: Bool = false) {
+		self.id = UUID()
 		self.current = initial
+		self.immutable = immutable
+	}
+
+	public func infer(from other: TypeID) {
+		if immutable {
+			fatalError("cannot set inference on immutable typeID")
+		}
+//		assert(inferredFrom == nil, "inferredFrom is already set to \(inferredFrom!.description), was attempting to set to \(other.description)")
+
+		// Set our own inferred from
+		inferredFrom = other
+		other.inferrenceChildren.insert(self)
+		self.current = other.current
 	}
 
 	public func type() -> ValueType {
 		current
 	}
 
-	public func update(_ type: ValueType) {
+	public func asInstance(in environment: Environment, location: SourceLocation) -> TypeID {
+		if case let .struct(string) = current, let structType = environment.lookupStruct(named: string) {
+			update(.instance(InstanceValueType(ofType: .struct(string), boundGenericTypes: structType.placeholderGenericTypes())), location: location)
+		} else if case let .generic(.struct(name), string) = current, let structType = environment.lookupStruct(named: name) {
+			update(.instance(InstanceValueType(ofType: current, boundGenericTypes: structType.placeholderGenericTypes())), location: location)
+		}
+
+		return self
+	}
+
+	public func update(_ type: ValueType, from child: TypeID? = nil, location: SourceLocation) -> [AnalysisError] {
 		current = type
+		updatedLocation = location
+
+		var errors: [AnalysisError] = []
+
+		if let inferredFrom {
+			errors.append(contentsOf: inferredFrom.update(type, from: self, location: location))
+		}
+
+		for inferrenceChild in inferrenceChildren {
+			if let child, child == self { continue }
+
+			if !inferrenceChild.type().isAssignable(from: type) {
+				errors.append(AnalysisError(kind: .typeCannotAssign(expected: inferrenceChild, received: self), location: location))
+			}
+
+			inferrenceChild.current = type
+		}
+
+		return errors
 	}
 
 	// Try to resolve generic types to concrete types based on instance bindings
@@ -43,7 +108,7 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 	}
 
 	public var description: String {
-		switch current {
+		let typeDescription = switch current {
 		case .none:
 			"nope"
 		case .int:
@@ -62,8 +127,12 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 			"\(valueType)<\(string)>"
 		case let .instance(instanceValueType):
 			switch instanceValueType.ofType {
-			case let .struct(name): name
-			default: instanceValueType.ofType.description
+			case let .struct(name) where instanceValueType.boundGenericTypes.isEmpty:
+				name
+			case let .struct(name):
+				"\(name)<\(instanceValueType.boundGenericTypes.reduce(into: "") { res, t in res += "\(t.key)=\(t.value.current)" })>"
+			default:
+				instanceValueType.ofType.description
 			}
 		case let .member(valueType):
 			"\(valueType) member"
@@ -76,6 +145,8 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 		case .any:
 			"any"
 		}
+
+		return "TypeID -> " + typeDescription
 	}
 
 	public func hash(into hasher: inout Hasher) {
@@ -84,6 +155,7 @@ public final class TypeID: Codable, Hashable, Equatable, CustomStringConvertible
 
 	public init(from decoder: any Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.id = try container.decode(UUID.self, forKey: .id)
 		self.current = try container.decode(ValueType.self, forKey: .current)
 	}
 }

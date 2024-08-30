@@ -11,6 +11,7 @@ public protocol DefExpr: Expr {
 }
 
 public struct DefExprSyntax: DefExpr {
+	public var id: SyntaxID
 	public let receiver: any Expr
 	public let value: any Expr
 	public let location: SourceLocation

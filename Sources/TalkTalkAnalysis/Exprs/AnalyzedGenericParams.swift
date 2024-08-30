@@ -9,11 +9,11 @@ import TalkTalkSyntax
 
 public struct AnalyzedGenericParam {
 	let wrapped: any GenericParam
-	public var name: String { wrapped.name }
+	public var type: any TypeExpr { wrapped.type }
 }
 
 public struct AnalyzedGenericParams: GenericParams, AnalyzedSyntax {
-	let wrapped: any GenericParams
+	public let wrapped: GenericParamsSyntax
 	public var environment: Environment
 	public let typeID: TypeID
 	public var paramsAnalyzed: [AnalyzedGenericParam]
@@ -28,6 +28,6 @@ public struct AnalyzedGenericParams: GenericParams, AnalyzedSyntax {
 	}
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

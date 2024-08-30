@@ -12,13 +12,13 @@ public struct AnalyzedImportStmt: ImportStmt, AnalyzedStmt {
 	public var environment: Environment
 	public let typeID: TypeID
 
-	var stmt: any ImportStmt
-	public var token: Token { stmt.token }
-	public var module: IdentifierExpr { stmt.module }
-	public var location: SourceLocation { stmt.location }
-	public var children: [any Syntax] { stmt.children }
+	public let wrapped: ImportStmtSyntax
+	public var token: Token { wrapped.token }
+	public var module: IdentifierExpr { wrapped.module }
+	public var location: SourceLocation { wrapped.location }
+	public var children: [any Syntax] { wrapped.children }
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
-		try visitor.visit(self, scope)
+		try visitor.visit(wrapped, scope)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value

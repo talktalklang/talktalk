@@ -7,18 +7,19 @@
 
 public protocol InitDecl: Decl {
 	var initToken: Token { get }
-	var parameters: ParamsExpr { get }
-	var body: any DeclBlock { get }
+	var params: ParamsExpr { get }
+	var body: BlockStmtSyntax { get }
 }
 
 public struct InitDeclSyntax: InitDecl {
+	public var id: SyntaxID
 	public var initToken: Token
-	public var parameters: ParamsExpr
-	public var body: any DeclBlock
+	public var params: ParamsExpr
+	public var body: BlockStmtSyntax
 
 	public var location: SourceLocation
 	public var children: [any Syntax] {
-		[parameters, body]
+		[params, body]
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {

@@ -12,7 +12,7 @@ public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, Analyzed
 		case none, pop, `return`
 	}
 
-	var wrapped: any ExprStmt
+	public let wrapped: ExprStmtSyntax
 	public var exprAnalyzed: any AnalyzedExpr
 	public var typeID: TypeID { exprAnalyzed.typeID }
 	public var exitBehavior: ExitBehavior
@@ -29,6 +29,6 @@ public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, Analyzed
 	}
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
-		try visitor.visit(self, context)
+		try visitor.visit(wrapped, context)
 	}
 }

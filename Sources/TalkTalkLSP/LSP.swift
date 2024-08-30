@@ -19,15 +19,11 @@ public actor LSP {
 		Log.info("starting talktalk lsp")
 
 		let file = FileHandle.standardInput
-		var handler = Handler(callback: receive)
+		var handler = Handler(server: server)
 
 		while true {
 			let data = file.availableData
 			await handler.handle(data: data)
 		}
-	}
-
-	func receive(_ request: Request) {
-		server.enqueue(request)
 	}
 }

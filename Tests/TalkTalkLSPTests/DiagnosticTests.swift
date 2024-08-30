@@ -30,8 +30,7 @@ struct DiagnosticTests {
 
 		let module = try analyzer.analyze()
 		let errors = try module.collectErrors()
-		print(errors)
-		print()
+
 		#expect(errors.isEmpty)
 	}
 }

@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import TalkTalkBytecode
 import TalkTalkAnalysis
+import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkDriver
 import TalkTalkSyntax
@@ -33,17 +33,17 @@ public actor Server {
 	var analysis: AnalysisModule
 
 	init() async throws {
-		self.stdlib = try await StandardLibrary.compile(allowErrors: true)
+		stdlib = try await StandardLibrary.compile(allowErrors: true)
 		Log.info("Compiled stdlib")
 
-		self.analyzer = ModuleAnalyzer(
+		analyzer = ModuleAnalyzer(
 			name: "LSP",
 			files: [],
 			moduleEnvironment: ["Standard": stdlib.analysis],
 			importedModules: [stdlib.analysis]
 		)
 
-		self.analysis = try analyzer.analyze()
+		analysis = try analyzer.analyze()
 	}
 
 	var analyzedFilePaths: [String] {
@@ -111,15 +111,20 @@ public actor Server {
 		queue.append(request)
 	}
 
-	func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
-		analyze()
-		return try analysis.collectErrors(for: uri).map {
+	func diagnostics(for uri: String? = nil) async throws -> [Diagnostic] {
+		await analyze()
+
+		let errorResult = try analysis.collectErrors(for: uri)
+
+		Log.info("error result, \(errorResult.count) total, \(errorResult.file.count) file")
+
+		return errorResult.file.map {
 			$0.diagnostic()
 		}
 	}
 
 	func perform(_ request: Request) async {
-		Log.info("handling request: \(request.method)")
+		Log.info("-> \(request.method)")
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -153,10 +158,19 @@ public actor Server {
 		}
 	}
 
-	func analyze() {
+	func analyze() async {
 		do {
-			let newAnalysis = try analyzer.analyze()
-			self.analysis = newAnalysis
+			stdlib = try await StandardLibrary.compile(allowErrors: true)
+			Log.info("Compiled stdlib")
+
+			analyzer = ModuleAnalyzer(
+				name: "LSP",
+				files: analyzer.files,
+				moduleEnvironment: ["Standard": stdlib.analysis],
+				importedModules: [stdlib.analysis]
+			)
+
+			analysis = try analyzer.analyze()
 		} catch {
 			Log.error("Error analyzing: \(error)")
 		}

@@ -11,6 +11,7 @@ public protocol UnaryExpr: Expr {
 }
 
 public struct UnaryExprSyntax: UnaryExpr {
+	public var id: SyntaxID
 	public let op: Token.Kind
 	public let expr: any Expr
 	public var location: SourceLocation

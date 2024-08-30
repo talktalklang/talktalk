@@ -10,6 +10,7 @@ public protocol IfStmt: Stmt {
 }
 
 public struct IfStmtSyntax: IfStmt {
+	public var id: SyntaxID
 	public var ifToken: Token
 	public var condition: any Expr
 	public var consequence: any BlockStmt

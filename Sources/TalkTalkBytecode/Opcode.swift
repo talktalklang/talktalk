@@ -46,6 +46,9 @@ public enum Opcode: Byte {
 	     getBuiltin, setBuiltin,
 	     getBuiltinStruct, setBuiltinStruct,
 
+			 // Dictionaries
+			 initDict,
+
 			 // Arrays
 			 initArray, get,
 

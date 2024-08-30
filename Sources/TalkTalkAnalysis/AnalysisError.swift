@@ -65,6 +65,10 @@ public struct AnalysisError: Hashable {
 		hasher.combine(kind)
 	}
 
+	public var description: String {
+		"\(location.path): \(message) at ln \(location.line), col \(location.start.column)"
+	}
+
 	public var message: String {
 		switch kind {
 		case let .argumentError(expected: a, received: b):
