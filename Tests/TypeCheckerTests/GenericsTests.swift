@@ -9,6 +9,7 @@ import TalkTalkSyntax
 import Testing
 @testable import TypeChecker
 
+@MainActor
 struct GenericsTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
 		let inferencer = InferenceVisitor()
