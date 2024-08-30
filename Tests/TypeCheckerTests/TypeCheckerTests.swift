@@ -141,6 +141,17 @@ struct TypeCheckerTests {
 		#expect(context[syntax[1]] == .type(.error(.undefinedVariable("x"))))
 	}
 
+	@Test("Types function return annotations") func funcReturnAnnotations() throws {
+		let syntax = try Parser.parse(
+			"""
+			func(x) -> String { _deref(x) }(123)
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context[syntax[0]] == .type(.base(.string)))
+	}
+
 	@Test("Types factorial (recursion test)") func factorial() throws {
 		let syntax = try Parser.parse(
 			"""

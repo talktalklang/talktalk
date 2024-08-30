@@ -42,11 +42,12 @@ struct BuiltinFunctionTests {
 	@Test("Types _deref") func types_deref() throws {
 		let expr = try Parser.parse("""
 		let pointer = _allocate(123)
-		_deref(pointer)
+		let i: int = _deref(pointer)
+		i
 		""")
 		let context = try infer(expr)
-		let result = try #require(context[expr[1]])
-		#expect(result == .type(.any))
+		let result = try #require(context[expr[2]])
+		#expect(result == .type(.base(.int)))
 	}
 
 	@Test("Types _storePtr") func types_storePtr() throws {

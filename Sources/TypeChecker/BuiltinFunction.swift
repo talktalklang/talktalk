@@ -60,11 +60,13 @@ public struct BuiltinFunction {
 	}
 
 	public static var _deref: BuiltinFunction {
-		BuiltinFunction(
+		let returns = TypeVariable.new("_deref")
+
+		return BuiltinFunction(
 			name: "_deref",
 			type: .function(
 				[.base(.pointer)],
-				.any
+				.typeVar(returns)
 			)
 		)
 	}

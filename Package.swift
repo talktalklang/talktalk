@@ -61,6 +61,7 @@ let package = Package(
 		.target(
 			name: "TypeChecker",
 			dependencies: [
+				"TalkTalkCore",
 				"TalkTalkSyntax"
 			]
 		),

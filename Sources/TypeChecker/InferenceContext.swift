@@ -18,6 +18,7 @@ public enum InferenceError: Equatable, Hashable {
 	case typeError(String)
 	case memberNotFound(StructType, String)
 	case missingConstraint(InferenceType)
+	case subscriptNotAllowed(InferenceType)
 }
 
 // If we're inside a type's body, we can save methods/properties in here
@@ -228,7 +229,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}()
 	}
 
-	func typeFrom(expr: TypeExprSyntax) -> InferenceType {
+	func typeFrom(expr: any TypeExpr) -> InferenceType {
 		let type: InferenceType
 		switch expr.identifier.lexeme {
 		case "int":
