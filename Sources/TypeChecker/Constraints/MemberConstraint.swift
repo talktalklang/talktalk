@@ -35,6 +35,8 @@ struct MemberConstraint: Constraint {
 	}
 
 	func resolve(withReceiver receiver: InferenceType, name: String, type: InferenceType, in context: InferenceContext) -> ConstraintCheckResult {
+		let resolvedType = context.applySubstitutions(to: type)
+
 		switch context.applySubstitutions(to: receiver) {
 		case .structType(let structType):
 			// It's a type parameter, try to unify it with a property
@@ -46,7 +48,7 @@ struct MemberConstraint: Constraint {
 
 			context.unify(
 				context.applySubstitutions(to: member.asType(in: context)),
-				context.applySubstitutions(to: type)
+				context.applySubstitutions(to: resolvedType)
 			)
 		case .structInstance(let instance):
 			// It's an instance member
@@ -58,42 +60,16 @@ struct MemberConstraint: Constraint {
 
 			if case let .structType(structType) = member {
 				member = .structInstance(structType.instantiate(with: instance.substitutions, in: context))
-			} else {
-				print("wow")
 			}
 
 			context.unify(
 				context.applySubstitutions(to: member),
-				context.applySubstitutions(to: type)
+				context.applySubstitutions(to: resolvedType)
 			)
-		case .member(let receiver, let name):
-			return resolveMember(receiver: receiver, name: name, in: context)
 		default:
 			return .error([Diagnostic(message: "Receiver not a struct instance. Got: \(receiver)", severity: .error, location: location)])
 		}
 
 		return .ok
-	}
-
-	func resolveMember(receiver: InferenceType, name: String, in context: InferenceContext) -> ConstraintCheckResult {
-		let receiver = context.applySubstitutions(to: receiver)
-
-		switch receiver {
-		case let .structInstance(instance):
-			let member = instance.member(named: name)
-			let type: InferenceType
-			switch member {
-			case .structType(let memberStrucType):
-				type = .structInstance(memberStrucType.instantiate(with: instance.substitutions, in: context))
-			default:
-				type = member!
-			}
-
-			return resolve(withReceiver: receiver, name: name, type: type, in: context)
-		case let .member(receiver, name):
-			return resolveMember(receiver: receiver, name: name, in: context)
-		default:
-			return .error([Diagnostic(message: "Receiver not a struct instance. Got: \(receiver)", severity: .error, location: location)])
-		}
 	}
 }

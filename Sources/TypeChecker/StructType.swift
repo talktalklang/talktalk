@@ -57,7 +57,12 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 			id: context.nextIdentifier(named: name),
 			type: self,
 			substitutions: typeContext.typeParameters.reduce(into: [:]) {
-				$0[$1] = substitutions[$1] ?? .typeVar(context.freshTypeVariable("\($1) [copy]", file: #file, line: #line))
+				if let sub = substitutions[$1] {
+					$0[$1] = sub
+				} else {
+					print("no substitution found for \($1)")
+				}
+//					.typeVar(context.freshTypeVariable("\($1) [copy]", file: #file, line: #line))
 			}
 		)
 

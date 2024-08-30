@@ -68,7 +68,6 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	case structType(StructType)
 	case structInstance(Instance)
 	case `protocol`(ProtocolType)
-	case member(InferenceType, String)
 	case error(InferenceError)
 	case void
 
@@ -92,8 +91,6 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 			structType.name + ".Type"
 		case .structInstance(let instance):
 			instance.description
-		case .member(let type, let name):
-			"\(type).\(name)"
 		case .void:
 			"void"
 		}

@@ -137,11 +137,9 @@ struct InferenceVisitor: Visitor {
 		try expr.receiver.accept(self, context)
 		try expr.value.accept(self, context)
 
-		if context[expr.receiver] != context[expr.value] {
-			context.constraints.add(
-				.equality(context[expr.receiver]!, context[expr.value]!, at: expr.location)
-			)
-		}
+		context.constraints.add(
+			.equality(context[expr.receiver]!, context[expr.value]!, at: expr.location)
+		)
 
 		context.extend(expr, with: .type(.void))
 	}
@@ -286,18 +284,15 @@ struct InferenceVisitor: Visitor {
 		try expr.receiver.accept(self, context)
 		let returns: InferenceType
 
-		if expr.receiver.description.contains("wrapper.middle.inner") {
-			
-		}
-
 		switch context[expr.receiver] {
-		case let .type(.structInstance(receiver)):
-			returns = receiver.member(named: expr.property)!
+//		case let .type(.structInstance(receiver)):
+//			returns = receiver.member(named: expr.property)!
 		case let .type(.structType(structType)):
 			returns = structType.member(named: expr.property)!.asType(in: context)
+		case let .type(.typeVar(typeVar)):
+			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
-//			returns = .member(context[expr.receiver]!.asType(in: context), expr.property)
 		}
 
 		context.constraints.add(
@@ -370,9 +365,7 @@ struct InferenceVisitor: Visitor {
 			// Define the name first
 			let typeVar: TypeVariable = structContext.freshTypeVariable("\(structType).\(typeParameter.identifier.lexeme)", file: #file, line: #line)
 
-			typeContext.typeParameters.append(
-				typeVar
-			)
+			typeContext.typeParameters.append(typeVar)
 
 			// Add this type to the struct's named variables for resolution
 			structContext.namedVariables[typeParameter.identifier.lexeme] = .typeVar(typeVar)

@@ -86,7 +86,7 @@ struct CallConstraint: Constraint {
 			switch initializer {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
-				case let .function(fnParams, fnReturns):
+				case .function(let fnParams, let fnReturns):
 					context.unify(returns, fnReturns)
 					params = fnParams
 				default:
@@ -100,9 +100,10 @@ struct CallConstraint: Constraint {
 		} else {
 			var substitutions: [TypeVariable: InferenceType] = [:]
 
-			params = structType.properties.map { (name, type) in
-				if case let .type(.typeVar(typeVar)) = type,
-					 structType.typeContext.typeParameters.contains(typeVar) {
+			params = structType.properties.map { name, type in
+				if case .type(.typeVar(let typeVar)) = type,
+				   structType.typeContext.typeParameters.contains(typeVar)
+				{
 					substitutions[typeVar] = context.freshTypeVariable("\(name) [init]", file: #file, line: #line)
 					return substitutions[typeVar]!
 				}
@@ -124,7 +125,7 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
+		guard case .structInstance(let instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
 
@@ -147,7 +148,7 @@ struct CallConstraint: Constraint {
 				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext))
 			case .structType(let structType):
 				var substitutions: [TypeVariable: InferenceType] = [:]
-				if case let .structInstance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
+				if case .structInstance(let instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions
 				}
 
