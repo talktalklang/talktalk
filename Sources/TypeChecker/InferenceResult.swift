@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
+public enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
 	case scheme(Scheme), type(InferenceType)
 
-	var description: String {
+	public var description: String {
 		switch self {
 		case .scheme(let scheme):
 			"scheme(\(scheme))"

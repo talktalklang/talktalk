@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-enum Primitive: Equatable, CustomStringConvertible, Hashable {
-	case int, string, bool, nope
+public enum Primitive: Equatable, CustomStringConvertible, Hashable, Sendable {
+	case int, string, bool, pointer, nope
 
-	var description: String {
+	public var description: String {
 		switch self {
 		case .int:
 			"int"
@@ -16,6 +16,8 @@ enum Primitive: Equatable, CustomStringConvertible, Hashable {
 			"string"
 		case .bool:
 			"bool"
+		case .pointer:
+			"pointer"
 		case .nope:
 			"nope"
 		}

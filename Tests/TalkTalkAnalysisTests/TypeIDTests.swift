@@ -11,12 +11,12 @@ import TalkTalkAnalysis
 
 struct TypeIDTests {
 	@Test("Can be created") func basic() {
-		#expect(TypeID(.placeholder).current == .placeholder)
+		#expect(InferenceType(.placeholder).current == .placeholder)
 	}
 
 	@Test("Can be inferred from") func inferFrom() {
-		let source = TypeID(.placeholder)
-		let child = TypeID(.placeholder)
+		let source = InferenceType(.placeholder)
+		let child = InferenceType(.placeholder)
 
 		// The child is inferring its type from the source
 		child.infer(from: source)
@@ -28,10 +28,10 @@ struct TypeIDTests {
 	}
 
 	@Test("Can update its inferredFrom") func inferTo() {
-		let source = TypeID(.placeholder)
-		let child = TypeID(.placeholder)
+		let source = InferenceType(.placeholder)
+		let child = InferenceType(.placeholder)
 		child.infer(from: source)
-		let childB = TypeID(.placeholder)
+		let childB = InferenceType(.placeholder)
 		childB.infer(from: source)
 
 		// The child gets updated type information

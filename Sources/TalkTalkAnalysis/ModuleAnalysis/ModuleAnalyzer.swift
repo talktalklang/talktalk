@@ -8,6 +8,7 @@
 import TalkTalkCore
 import TalkTalkBytecode
 import TalkTalkSyntax
+import TypeChecker
 
 public struct ModuleAnalyzer {
 	enum Error: Swift.Error {
@@ -23,20 +24,26 @@ public struct ModuleAnalyzer {
 
 	public init(
 		name: String,
+		inferenceContext: InferenceContext? = nil,
 		files: Set<ParsedSourceFile>,
 		moduleEnvironment: [String: AnalysisModule],
 		importedModules: [AnalysisModule]
 	) {
+		let inferenceContext = inferenceContext ?? Inferencer().infer(files.flatMap(\.syntax))
+
 		self.name = name
 		self.files = files
-		self.environment = .topLevel(name)
+		self.environment = .topLevel(name, inferenceContext: inferenceContext)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = importedModules
 	}
 
 	public func analyze() throws -> AnalysisModule {
-		var analysisModule = AnalysisModule(name: name, files: files)
+		let syntax = files.flatMap({ $0.syntax })
+		let inferenceContext = Inferencer().infer(syntax)
+
+		var analysisModule = AnalysisModule(name: name, inferenceContext: inferenceContext, files: files)
 
 		for module in importedModules.sorted(by: { ($0.name == "Standard" ? 0 : 1) < ($1.name == "Standard" ? 0 : 1) }) {
 			if module.name == "Standard", name != "Standard" {
@@ -203,7 +210,7 @@ public struct ModuleAnalyzer {
 				name: syntax.name,
 				symbol: analyzed.symbol!,
 				syntax: syntax,
-				typeID: analyzed.typeID,
+				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: true
 			)
@@ -214,7 +221,7 @@ public struct ModuleAnalyzer {
 				name: syntax.name,
 				symbol: analyzed.symbol!,
 				syntax: syntax,
-				typeID: analyzed.typeID,
+				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: false
 			)
@@ -226,7 +233,7 @@ public struct ModuleAnalyzer {
 					name: name.lexeme,
 					symbol: analyzed.symbol,
 					syntax: syntax,
-					typeID: analyzed.typeID,
+					typeID: analyzed.inferenceType,
 					source: .module
 				)
 			}
@@ -239,7 +246,7 @@ public struct ModuleAnalyzer {
 					name: syntax.name,
 					symbol: syntax.symbol!,
 					syntax: syntax,
-					typeID: analyzed.typeID,
+					typeID: analyzed.inferenceType,
 					source: .module,
 					isMutable: false
 				)
@@ -257,7 +264,7 @@ public struct ModuleAnalyzer {
 				name: name,
 				symbol: analyzedStructDecl.symbol,
 				syntax: syntax,
-				typeID: analyzedStructDecl.typeID,
+				typeID: analyzedStructDecl.inferenceType,
 				source: .module,
 				properties: analyzedStructDecl.lexicalScope.scope.properties,
 				methods: analyzedStructDecl.lexicalScope.scope.methods,

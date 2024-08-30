@@ -5,13 +5,16 @@
 //  Created by Pat Nakajima on 7/30/24.
 //
 
+import TypeChecker
 import TalkTalkSyntax
+
+public typealias InferenceType = TypeChecker.InferenceType
 
 public protocol AnalyzedSyntax: Syntax, CustomDebugStringConvertible {
 	associatedtype Wrapped: Syntax
 
 	var wrapped: Wrapped { get }
-	var typeID: TypeID { get }
+	var inferenceType: InferenceType { get }
 	var analyzedChildren: [any AnalyzedSyntax] { get }
 	var analysisErrors: [AnalysisError] { get }
 	var environment: Environment { get }
@@ -24,8 +27,8 @@ public extension AnalyzedSyntax {
 	var location: SourceLocation { wrapped.location }
 	var children: [any Syntax] { wrapped.children }
 
-	var typeAnalyzed: ValueType {
-		typeID.current
+	var typeAnalyzed: InferenceType {
+		inferenceType
 	}
 
 	var analysisErrors: [AnalysisError] { [] }
@@ -71,9 +74,9 @@ public extension AnalyzedSyntax {
 
 	var debugDescription: String {
 		if analysisErrors.isEmpty {
-			"\(Self.self)(ln: \(location.line), type: \(typeID.current.description))"
+			"\(Self.self)(ln: \(location.line), type: \(inferenceType.description))"
 		} else {
-			"\(Self.self)(lns: \(location.line), type: \(typeID.current.description), errors: \(analysisErrors))"
+			"\(Self.self)(lns: \(location.line), type: \(inferenceType.description), errors: \(analysisErrors))"
 		}
 	}
 }

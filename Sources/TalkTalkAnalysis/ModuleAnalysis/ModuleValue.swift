@@ -12,7 +12,7 @@ public struct ModuleValue: ModuleGlobal {
 	public let name: String
 	public let symbol: Symbol
 	public let syntax: any Syntax
-	public let typeID: TypeID
+	public let typeID: InferenceType
 	public var source: ModuleSource
 	public var isMutable: Bool
 

@@ -14,7 +14,7 @@ public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, Analyzed
 
 	public let wrapped: ExprStmtSyntax
 	public var exprAnalyzed: any AnalyzedExpr
-	public var typeID: TypeID { exprAnalyzed.typeID }
+	public var inferenceType: InferenceType { exprAnalyzed.inferenceType }
 	public var exitBehavior: ExitBehavior
 
 	public var analyzedChildren: [any AnalyzedSyntax] { [exprAnalyzed] }

@@ -8,7 +8,7 @@ public struct AnalyzedDictionaryElementExpr: DictionaryElementExpr, AnalyzedExpr
 
 	public let wrapped: DictionaryElementExprSyntax
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { [keyAnalyzed, valueAnalyzed] }
 

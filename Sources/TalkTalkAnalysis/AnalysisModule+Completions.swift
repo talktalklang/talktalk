@@ -92,20 +92,18 @@ public extension AnalysisModule {
 		for match in matches {
 			guard let match = match as? AnalyzedExprStmt,
 			      let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
-			      case let .instance(instance) = memberExpr.receiverAnalyzed.typeID.current,
-			      case let .struct(name) = instance.ofType,
-			      let structType = match.environment.lookupStruct(named: name)
+						case let .structInstance(instance) = memberExpr.receiverAnalyzed.inferenceType
 			else {
 				continue
 			}
 
-			for prop in structType.properties {
+			for prop in instance.type.properties {
 				if prop.key.starts(with: memberExpr.property) {
 					result.insert(.init(value: prop.key, kind: .property))
 				}
 			}
 
-			for prop in structType.methods {
+			for prop in instance.type.methods {
 				if prop.key.starts(with: memberExpr.property), prop.key != "init" {
 					result.insert(.init(value: prop.key, kind: .method))
 				}
@@ -136,10 +134,10 @@ public extension AnalysisModule {
 
 				for binding in match.environment.allBindings() {
 					if binding.name.starts(with: name) {
-						let kind: Completion.Kind = switch binding.type.type() {
+						let kind: Completion.Kind = switch binding.type {
 						case .function:
 							.function
-						case .struct:
+						case .structType:
 							.type
 						default:
 							.variable

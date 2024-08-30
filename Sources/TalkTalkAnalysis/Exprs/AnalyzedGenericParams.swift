@@ -15,7 +15,7 @@ public struct AnalyzedGenericParam {
 public struct AnalyzedGenericParams: GenericParams, AnalyzedSyntax {
 	public let wrapped: GenericParamsSyntax
 	public var environment: Environment
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public var paramsAnalyzed: [AnalyzedGenericParam]
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 

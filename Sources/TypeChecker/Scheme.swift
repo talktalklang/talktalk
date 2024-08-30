@@ -5,12 +5,12 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-struct Scheme: Equatable, CustomStringConvertible, Hashable {
-	let name: String?
+public struct Scheme: Equatable, CustomStringConvertible, Hashable {
+	public let name: String?
 	let variables: [InferenceType]
 	let type: InferenceType
 
-	var description: String {
+	public var description: String {
 		if let name {
 			"\(name), variables(\(variables.map(\.description).joined(separator: ", "))), type: \(type))"
 		} else {

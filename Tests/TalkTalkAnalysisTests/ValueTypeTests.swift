@@ -15,14 +15,14 @@ struct ValueTypeTests {
 	}
 
 	@Test("Generics with matching bound types are assignable") func genericsWithMatchingTypes() {
-		let a = ValueType.instance(.struct("Wrapper", ["Wrapped": TypeID(.int)]))
-		let b = ValueType.instance(.struct("Wrapper", ["Wrapped": TypeID(.int)]))
+		let a = ValueType.instance(.struct("Wrapper", ["Wrapped": InferenceType(.int)]))
+		let b = ValueType.instance(.struct("Wrapper", ["Wrapped": InferenceType(.int)]))
 		#expect(a.isAssignable(from: b))
 	}
 
 	@Test("Generics with one that's a placeholder are assignable") func genericsWithPlaceholder() {
-		let a = ValueType.instance(.struct("Wrapper", ["Wrapped": TypeID(.placeholder)]))
-		let b = ValueType.instance(.struct("Wrapper", ["Wrapped": TypeID(.int)]))
+		let a = ValueType.instance(.struct("Wrapper", ["Wrapped": InferenceType(.placeholder)]))
+		let b = ValueType.instance(.struct("Wrapper", ["Wrapped": InferenceType(.int)]))
 		#expect(a.isAssignable(from: b))
 	}
 }

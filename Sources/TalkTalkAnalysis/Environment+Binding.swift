@@ -12,7 +12,7 @@ public extension Environment {
 		public let name: String
 		public var expr: any Syntax
 		public var definition: (any Syntax)?
-		public var type: TypeID
+		public var type: InferenceType
 		public var isCaptured: Bool
 		public var isBuiltin: Bool
 		public var isParameter: Bool
@@ -24,7 +24,7 @@ public extension Environment {
 			name: String,
 			expr: any Syntax,
 			definition: (any Syntax)? = nil,
-			type: TypeID,
+			type: InferenceType,
 			isCaptured: Bool = false,
 			isBuiltin: Bool = false,
 			isParameter: Bool = false,

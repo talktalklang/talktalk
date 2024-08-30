@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedLiteralExpr: AnalyzedExpr, LiteralExpr {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: LiteralExprSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment

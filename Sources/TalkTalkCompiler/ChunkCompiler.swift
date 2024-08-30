@@ -391,13 +391,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(byte: slot, line: expr.location.line)
 		} else {
-			let type = expr.environment.type(named: expr.identifier.lexeme)
-			if let primitive = type?.primitive {
-				chunk.emit(opcode: .primitive, line: expr.location.line)
-				chunk.emit(byte: primitive.rawValue, line: expr.location.line)
-			} else {
-				throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
-			}
+//			let type = expr.environment.type(named: expr.identifier.lexeme)
+			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
 		}
 	}
 
@@ -432,7 +427,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				// Emit the init body
-				for expr in decl.bodyAnalyzed.declsAnalyzed {
+				for expr in decl.bodyAnalyzed.stmtsAnalyzed {
 					try expr.accept(declCompiler, declChunk)
 				}
 
@@ -581,10 +576,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_: AnalyzedStructExpr, _: Chunk) throws {}
 
 	public func visit(_ expr: AnalyzedSubscriptExpr, _ chunk: Chunk) throws {
-		guard case let .instance(instance) = expr.receiverAnalyzed.typeAnalyzed,
-		      case let .struct(name) = instance.ofType,
-		      let structType = expr.environment.lookupStruct(named: name),
-		      let getMethod = structType.methods["get"]
+		guard case let .structInstance(instance) = expr.receiverAnalyzed.typeAnalyzed,
+					let getMethod = instance.type.methods["get"]
 		else {
 			throw CompilerError.typeError("\(expr.receiverAnalyzed.description) has no method: `get` for subscript")
 		}
@@ -710,17 +703,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 					isCaptured: false,
 					getter: .getStruct,
 					setter: .setStruct
-				)
-			}
-
-			if let builtinStruct = BuiltinStruct.lookup(name: varName) {
-				return Variable(
-					name: builtinStruct.name,
-					slot: builtinStruct.slot(),
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getBuiltinStruct,
-					setter: .setBuiltinStruct
 				)
 			}
 

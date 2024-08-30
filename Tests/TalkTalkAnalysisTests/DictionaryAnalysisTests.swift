@@ -17,8 +17,8 @@ import TalkTalkAnalysis
 		let instance = InstanceValueType(
 			ofType: .struct("Dictionary"),
 			boundGenericTypes: [
-				"Key": TypeID(.placeholder),
-				"Value": TypeID(.placeholder)
+				"Key": InferenceType(.placeholder),
+				"Value": InferenceType(.placeholder)
 			]
 		)
 		#expect(result.typeAnalyzed == .instance(instance))
@@ -32,8 +32,8 @@ import TalkTalkAnalysis
 		let instance = InstanceValueType(
 			ofType: .struct("Dictionary"),
 			boundGenericTypes: [
-				"Key": TypeID(.instance(.struct("String"))),
-				"Value": TypeID(.int)
+				"Key": InferenceType(.instance(.struct("String"))),
+				"Value": InferenceType(.int)
 			]
 		)
 		#expect(result.typeAnalyzed == .instance(instance))

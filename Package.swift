@@ -34,6 +34,7 @@ let package = Package(
 				"TalkTalkDriver",
 				"TalkTalkInterpreter",
 				"TalkTalkVM",
+				"TypeChecker",
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),
@@ -47,6 +48,7 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkBytecode",
+				"TypeChecker"
 			]
 		),
 		.target(
@@ -69,7 +71,8 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkDriver",
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
+				"TypeChecker"
 			]
 		),
 		.target(
@@ -89,6 +92,7 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkBytecode",
+				"TypeChecker"
 			]
 		),
 		.target(
@@ -107,6 +111,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
+				"TypeChecker"
 			]
 		),
 		.target(

@@ -11,7 +11,7 @@ import TalkTalkSyntax
 
 extension InstanceValueType {
 	// Define this helper here so that we don't have to be so verbose in tests. We want to be verbose in the implementation tho.
-	public static func `struct`(_ name: String, _ boundGenericTypes: [String: TypeID] = [:]) -> InstanceValueType {
+	public static func `struct`(_ name: String, _ boundGenericTypes: [String: InferenceType] = [:]) -> InstanceValueType {
 		InstanceValueType(ofType: .struct(name), boundGenericTypes: boundGenericTypes)
 	}
 }

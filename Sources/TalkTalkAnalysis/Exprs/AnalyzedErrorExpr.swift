@@ -14,17 +14,17 @@ public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 	public var name: String = ""
 	public var isMutable: Bool = false
 
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: ParseErrorSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public let environment: Environment
 
 	public var message: String { wrapped.message }
 	public var expectation: ParseExpectation { wrapped.expectation }
-	public var boundGenericParameters: [String: TypeID] = [:]
+	public var boundGenericParameters: [String: InferenceType] = [:]
 
-	public init(typeID: TypeID, wrapped: ParseErrorSyntax, environment: Environment) {
-		self.typeID = typeID
+	public init(typeID: InferenceType, wrapped: ParseErrorSyntax, environment: Environment) {
+		self.inferenceType = typeID
 		self.wrapped = wrapped
 		self.environment = environment
 	}

@@ -6,7 +6,7 @@ public struct AnalyzedProtocolBodyDecl: ProtocolBodyDecl, AnalyzedDecl {
   public let wrapped: ProtocolBodyDeclSyntax
 	public var declsAnalyzed: [any Decl]
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
 

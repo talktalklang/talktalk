@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: VarExprSyntax
 	public let symbol: Symbol?
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
@@ -34,20 +34,18 @@ public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	}
 
 	public func definition() -> Definition? {
-		guard let binding = environment.lookup(name) else {
-			return nil
-		}
-
-		switch binding.definition ?? binding.expr {
-		case let expr as any VarLetDecl:
-			let token = expr.nameToken
-			return Definition(token: token, type: binding.type.current)
-		case let expr as any StructDecl:
-			return Definition(token: expr.nameToken, type: binding.type.current)
-		case let expr as AnalyzedCallExpr:
-			return Definition(token: expr.location.start, type: binding.type.current)
-		default:
-			return Definition(token: wrapped.location.start, type: binding.type.current)
-		}
+		return nil
+//
+//		switch binding.definition ?? binding.expr {
+//		case let expr as any VarLetDecl:
+//			let token = expr.nameToken
+//			return Definition(token: token, type: binding.type)
+//		case let expr as any StructDecl:
+//			return Definition(token: expr.nameToken, type: binding.type)
+//		case let expr as AnalyzedCallExpr:
+//			return Definition(token: expr.location.start, type: binding.type)
+//		default:
+//			return Definition(token: wrapped.location.start, type: binding.type)
+//		}
 	}
 }

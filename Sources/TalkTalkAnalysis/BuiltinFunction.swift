@@ -6,10 +6,17 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
+
+extension BuiltinFunction {
+	func binding(in env: Environment) -> Environment.Binding {
+		.init(name: name, expr: IdentifierExprSyntax(id: -10, name: name, location: [.synthetic(.identifier)]), type: type)
+	}
+}
 
 public struct BuiltinFunction {
 	public let name: String
-	public let type: ValueType
+	public let type: InferenceType
 
 	public static var list: [BuiltinFunction] {
 		[
@@ -27,32 +34,14 @@ public struct BuiltinFunction {
 		IdentifierExprSyntax(id: -4, name: "__builtin__", location: [.synthetic(.builtin)])
 	}
 
-	func binding(in _: Environment) -> Environment.Binding {
-		.init(
-			name: name,
-			expr: Self.syntheticExpr(),
-			type: TypeID(type),
-			isCaptured: false,
-			isBuiltin: true,
-			isParameter: false,
-			isGlobal: false,
-			externalModule: nil
-		)
-	}
-
 	public static var print: BuiltinFunction {
 		BuiltinFunction(
 			name: "print",
 			type: .function(
-				"print",
-				TypeID(.int),
 				[
-					.init(
-						name: "value",
-						typeID: TypeID(.any)
-					),
+					InferenceType.any
 				],
-				[]
+				.void
 			)
 		)
 	}
@@ -60,7 +49,10 @@ public struct BuiltinFunction {
 	public static var _allocate: BuiltinFunction {
 		BuiltinFunction(
 			name: "_allocate",
-			type: .function("_allocate", TypeID(.pointer, immutable: true), [.int("size")], [])
+			type: .function(
+				[.base(.int)],
+				.base(.pointer)
+			)
 		)
 	}
 
@@ -68,13 +60,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_free",
 			type: .function(
-				"_free",
-				TypeID(.void),
-				[.init(
-					name: "addr",
-					typeID: TypeID(.pointer)
-				)],
-				[]
+				[.base(.pointer)],
+				.void
 			)
 		)
 	}
@@ -83,13 +70,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_deref",
 			type: .function(
-				"_deref",
-				TypeID(.placeholder),
-				[.init(
-					name: "addr",
-					typeID: TypeID(.pointer)
-				)],
-				[]
+				[.base(.pointer)],
+				.any
 			)
 		)
 	}
@@ -98,11 +80,11 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_storePtr",
 			type: .function(
-				"_storePtr",
-				TypeID(.placeholder),
-				[.init(name: "addr", typeID: TypeID(.pointer)),
-				 .init(name: "value", typeID: TypeID())],
-				[]
+				[
+					.base(.pointer),
+					.any
+				],
+				.void
 			)
 		)
 	}
@@ -111,25 +93,20 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_hash",
 			type: .function(
-				"_hash",
-				TypeID(.int),
-				[.init(name: "value", typeID: TypeID(.any))],
-				[]
+				[.any],
+				.base(.int)
 			)
 		)
 	}
 
 	public static var _cast: BuiltinFunction {
-		BuiltinFunction(
+		let typeVar = TypeVariable.new("_cast")
+
+		return BuiltinFunction(
 			name: "_cast",
 			type: .function(
-				"_cast",
-				TypeID(.generic(.void, "T")),
-				[
-					.init(name: "variable", typeID: TypeID(.any)),
-					.init(name: "type", typeID: TypeID(.generic(.void, "T")))
-				],
-				[]
+				[.any, .typeVar(typeVar)],
+				.typeVar(typeVar)
 			)
 		)
 	}

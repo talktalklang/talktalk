@@ -109,7 +109,7 @@ struct GenericsTests {
 		""")
 
 		let varExpr = ast[2].cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedVarExpr.self)
-		guard case let .instance(instance) = varExpr.typeID.current else {
+		guard case let .instance(instance) = varExpr.inferenceType.current else {
 			#expect(Bool(false), "did not get instance") ; return
 		}
 		#expect(instance.ofType == .struct("Wrapper"))

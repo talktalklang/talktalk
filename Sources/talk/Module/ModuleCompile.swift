@@ -41,6 +41,6 @@ struct ModuleCompile: TalkTalkCommand {
 			return
 		}
 
-		try await driver.writeModules()
+		print("no dump yet")
 	}
 }

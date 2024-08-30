@@ -59,7 +59,7 @@ public struct AnalysisPrinter: AnalyzedVisitor {
 	}
 
 	func dump(_ expr: any AnalyzedSyntax, _ extra: String = "") -> String {
-		"\(expr.location.start.line) | \(type(of: expr)) -> \(expr.typeID.current.description) \(expr.location.start.column)..<\(expr.location.end.column) \(extra)"
+		"\(expr.location.start.line) | \(type(of: expr)) -> \(expr.inferenceType.description) \(expr.location.start.column)..<\(expr.location.end.column) \(extra)"
 	}
 
 	func add(@StringBuilder _ content: () throws -> String) -> String {

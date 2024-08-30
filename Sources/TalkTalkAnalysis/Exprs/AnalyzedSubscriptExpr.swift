@@ -8,7 +8,7 @@ public struct AnalyzedSubscriptExpr: SubscriptExpr, AnalyzedExpr {
 
 	public let wrapped: SubscriptExprSyntax
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analysisErrors: [AnalysisError]
 	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] + argsAnalyzed.map(\.expr) }

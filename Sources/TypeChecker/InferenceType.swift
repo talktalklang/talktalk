@@ -5,17 +5,17 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 import Foundation
-struct ProtocolType: Equatable, Hashable {
-	let name: String
+public struct ProtocolType: Equatable, Hashable {
+	public let name: String
 }
 
-class Instance: Equatable, Hashable, CustomStringConvertible {
-	static func == (lhs: Instance, rhs: Instance) -> Bool {
+public class Instance: Equatable, Hashable, CustomStringConvertible {
+	public static func == (lhs: Instance, rhs: Instance) -> Bool {
 		lhs.type == rhs.type && lhs.substitutions == rhs.substitutions
 	}
 
 	let id: Int
-	let type: StructType
+	public let type: StructType
 	var substitutions: [TypeVariable: InferenceType]
 
 	static func extract(from type: InferenceType) -> Instance? {
@@ -51,7 +51,7 @@ class Instance: Equatable, Hashable, CustomStringConvertible {
 		return instanceMember
 	}
 
-	var description: String {
+	public var description: String {
 		"\(type.name)()#\(id)"
 	}
 
@@ -61,7 +61,7 @@ class Instance: Equatable, Hashable, CustomStringConvertible {
 	}
 }
 
-indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
+public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	case typeVar(TypeVariable)
 	case base(Primitive) // primitives
 	case function([InferenceType], InferenceType)
@@ -69,13 +69,14 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	case structInstance(Instance)
 	case `protocol`(ProtocolType)
 	case error(InferenceError)
+	case any
 	case void
 
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
 		InferenceType.typeVar(TypeVariable(name, id))
 	}
 
-	var description: String {
+	public var description: String {
 		switch self {
 		case .protocol(let protocolType):
 			"\(protocolType.name).Protocol"
@@ -91,6 +92,8 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 			structType.name + ".Type"
 		case .structInstance(let instance):
 			instance.description
+		case .any:
+			"any"
 		case .void:
 			"void"
 		}

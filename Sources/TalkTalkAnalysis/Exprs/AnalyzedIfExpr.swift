@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: IfExprSyntax
 
 	public var conditionAnalyzed: any AnalyzedExpr

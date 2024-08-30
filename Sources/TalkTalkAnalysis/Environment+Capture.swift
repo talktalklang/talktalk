@@ -6,22 +6,23 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
 
 public extension Environment {
 	struct Capture: CustomStringConvertible {
-		public static func any(_ name: String) -> Capture {
+		public static func any(_ name: String, context: InferenceContext) -> Capture {
 			Capture(
 				name: name,
 				binding: .init(
 					name: name,
 					expr: AnalyzedLiteralExpr(
-						typeID: TypeID(),
+						inferenceType: InferenceType.base(.bool),
 						wrapped: LiteralExprSyntax(id: -7, value: .bool(true), location: [.synthetic(.true)]),
-						environment: .init(symbolGenerator: .init(moduleName: "", parent: nil))
+						environment: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "", parent: nil))
 					),
-					type: TypeID(.bool)
+					type: InferenceType.base(.bool)
 				),
-				environment: .init(symbolGenerator: .init(moduleName: "", parent: nil))
+				environment: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "", parent: nil))
 			)
 		}
 

@@ -7,6 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkSyntax
+import TypeChecker
 
 actor Completer {
 	var source: SourceFile
@@ -26,9 +27,10 @@ actor Completer {
 		let lexer = Lexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
+		let context = Inferencer().infer(parsed)
 
 		do {
-			let environment: Environment = .init(symbolGenerator: .init(moduleName: "Completer", parent: nil)) // TODO: use module environment
+			let environment = Environment(inferenceContext: context, symbolGenerator: .init(moduleName: "Completer", parent: nil)) // TODO: use module environment
 			let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 			lastSuccessfulExprs = analyzed
 		} catch {

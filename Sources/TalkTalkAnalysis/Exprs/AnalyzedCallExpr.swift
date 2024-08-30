@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedArgument: AnalyzedSyntax {
-	public var typeID: TypeID { expr.typeID }
+	public var inferenceType: InferenceType { expr.inferenceType }
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { expr.analyzedChildren }
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
@@ -25,7 +25,7 @@ public struct AnalyzedArgument: AnalyzedSyntax {
 }
 
 public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: CallExprSyntax
 
 	public var calleeAnalyzed: any AnalyzedExpr

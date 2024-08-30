@@ -9,7 +9,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedBlockStmt: AnalyzedExpr, BlockStmt {
 	public let wrapped: BlockStmtSyntax
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 
 	public var stmtsAnalyzed: [any AnalyzedSyntax]
 	public var analyzedChildren: [any AnalyzedSyntax] { stmtsAnalyzed }

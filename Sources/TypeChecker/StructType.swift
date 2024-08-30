@@ -5,12 +5,13 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 import Foundation
-struct StructType: Equatable, Hashable, CustomStringConvertible {
-	static func ==(lhs: StructType, rhs: StructType) -> Bool {
+
+public struct StructType: Equatable, Hashable, CustomStringConvertible {
+	public static func ==(lhs: StructType, rhs: StructType) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
 
-	let name: String
+	public let name: String
 	private(set) var context: InferenceContext
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
@@ -42,14 +43,14 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		context.namedVariables["self"] = .structType(self)
 	}
 
-	func hash(into hasher: inout Hasher) {
+	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
 		hasher.combine(typeContext.initializers)
 		hasher.combine(typeContext.properties)
 		hasher.combine(typeContext.methods)
 	}
 
-	var description: String {
+	public var description: String {
 		"\(name)(\(properties.reduce(into: "") { res, pair in res += "\(pair.key): \(pair.value)" }))"
 	}
 
@@ -97,11 +98,11 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	var properties: [String: InferenceResult] {
+	public var properties: [String: InferenceResult] {
 		typeContext.properties
 	}
 
-	var methods: [String: InferenceResult] {
+	public var methods: [String: InferenceResult] {
 		typeContext.methods
 	}
 }

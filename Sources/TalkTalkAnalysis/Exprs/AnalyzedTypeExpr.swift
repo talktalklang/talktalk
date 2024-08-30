@@ -12,7 +12,7 @@ public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
 	public let wrapped: TypeExprSyntax
 
 	public let symbol: Symbol
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public var environment: Environment
 

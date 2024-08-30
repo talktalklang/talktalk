@@ -118,8 +118,8 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
-			.op(.return, line: 6, .simple)
+			.op(.getLocal, line: 5, .local(slot: 0, name: "__reserved__")),
+			.op(.return, line: 5, .simple)
 		))
 	}
 
@@ -159,8 +159,8 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
-			.op(.return, line: 6, .simple)
+			.op(.getLocal, line: 5, .local(slot: 0, name: "__reserved__")),
+			.op(.return, line: 5, .simple)
 		))
 	}
 }

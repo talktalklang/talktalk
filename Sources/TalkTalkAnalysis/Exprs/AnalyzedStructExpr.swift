@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: StructExprSyntax
 
 	public let bodyAnalyzed: AnalyzedDeclBlock

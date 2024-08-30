@@ -7,9 +7,19 @@
 
 import TalkTalkSyntax
 
+public struct Inferencer {
+	public init() {}
+
+	public func infer(_ syntax: [any Syntax]) -> InferenceContext {
+		return InferenceVisitor().infer(syntax).solve()
+	}
+}
+
 struct InferenceVisitor: Visitor {
 	typealias Context = InferenceContext
 	typealias Value = Void
+
+	public init() {}
 
 	func infer(_ syntax: [any Syntax]) -> InferenceContext {
 		let context = InferenceContext(

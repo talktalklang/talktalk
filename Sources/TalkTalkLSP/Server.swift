@@ -11,6 +11,7 @@ import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkDriver
 import TalkTalkSyntax
+import TypeChecker
 
 public actor Server {
 	// We read json, we write json
@@ -38,6 +39,7 @@ public actor Server {
 
 		analyzer = ModuleAnalyzer(
 			name: "LSP",
+			inferenceContext: Inferencer().infer([]),
 			files: [],
 			moduleEnvironment: ["Standard": stdlib.analysis],
 			importedModules: [stdlib.analysis]
@@ -165,6 +167,7 @@ public actor Server {
 
 			analyzer = ModuleAnalyzer(
 				name: "LSP",
+				inferenceContext: analysis.inferenceContext,
 				files: analyzer.files,
 				moduleEnvironment: ["Standard": stdlib.analysis],
 				importedModules: [stdlib.analysis]

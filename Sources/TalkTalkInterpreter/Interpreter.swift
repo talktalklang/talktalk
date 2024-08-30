@@ -7,6 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkSyntax
+import TypeChecker
 
 public struct InterpreterStruct {
 	var name: String
@@ -21,16 +22,12 @@ public struct Interpreter: AnalyzedVisitor {
 	let parsed: [any AnalyzedSyntax]
 
 	public init(_ code: String) {
-		let lexer = Lexer(SourceFile(path: "", text: code))
-		var parser = Parser(lexer)
-		self.parsed = try! SourceFileAnalyzer.analyze(parser.parse(), in: .init(symbolGenerator: .init(moduleName: "Interpreter", parent: nil)))
-
-		if !parser.errors.isEmpty {
-			for error in parser.errors {
-				print("\(error)")
-			}
-			return
-		}
+		var parsed = try! Parser.parse(.init(path: "interpreter", text: code))
+		let context = Inferencer().infer(parsed)
+		self.parsed = try! SourceFileAnalyzer.analyze(
+			parsed,
+			in: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "Interpreter", parent: nil))
+		)
 	}
 
 	public func evaluate() throws -> Value {

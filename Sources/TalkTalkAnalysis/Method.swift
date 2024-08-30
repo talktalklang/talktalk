@@ -8,33 +8,25 @@
 import TalkTalkBytecode
 import TalkTalkSyntax
 
-public struct SerializedMethod: Codable {
-	public let symbol: Symbol
-	public let name: String
-	public let params: [String]
-	public let type: ValueType
-	public let isMutable: Bool
-}
-
 public struct Method: Member {
 	public let symbol: Symbol
 	public let name: String
 	public let slot: Int
 	public let params: [AnalyzedParam]
-	public let typeID: TypeID
-	public let returnTypeID: TypeID
+	public let inferenceType: InferenceType
+	public let returnTypeID: InferenceType
 	public let expr: any Syntax
 	public let isMutable: Bool
 	public let isSynthetic: Bool
-	public var boundGenericParameters: [String: TypeID] = [:]
+	public var boundGenericParameters: [String: InferenceType] = [:]
 
 	public init(
 		symbol: Symbol,
 		name: String,
 		slot: Int,
 		params: [AnalyzedParam],
-		typeID: TypeID,
-		returnTypeID: TypeID,
+		inferenceType: InferenceType,
+		returnTypeID: InferenceType,
 		expr: any Syntax,
 		isMutable: Bool = false,
 		isSynthetic: Bool = false
@@ -43,7 +35,7 @@ public struct Method: Member {
 		self.name = name
 		self.slot = slot
 		self.params = params
-		self.typeID = typeID
+		self.inferenceType = inferenceType
 		self.returnTypeID = returnTypeID
 		self.expr = expr
 		self.isMutable = isMutable

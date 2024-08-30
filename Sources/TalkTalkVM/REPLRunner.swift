@@ -38,7 +38,7 @@ public class REPLRunner: Copyable {
 		let result = try! await driver.compile(mode: .module)["REPL"]!
 		self.module = result.module
 		self.analysis = result.analysis
-		self.environment = Environment(symbolGenerator: .init(moduleName: "REPL", parent: nil))
+		self.environment = Environment(inferenceContext: result.analysis.inferenceContext, symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(
 			name: "REPL",

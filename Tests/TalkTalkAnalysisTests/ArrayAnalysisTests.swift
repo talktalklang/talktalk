@@ -15,7 +15,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 		""")
 			.cast(AnalyzedVarDecl.self).valueAnalyzed!
 
-		let instance = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": TypeID(.placeholder)])
+		let instance = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": InferenceType(.placeholder)])
 		#expect(result.typeAnalyzed == .instance(instance))
 	}
 
@@ -28,7 +28,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 		""")
 			.cast(AnalyzedExprStmt.self).exprAnalyzed.cast(AnalyzedVarExpr.self)
 
-		let instance = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": TypeID(.placeholder)])
+		let instance = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": InferenceType(.placeholder)])
 		#expect(result.typeAnalyzed == .instance(instance))
 	}
 
@@ -67,7 +67,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedSubscriptExpr.self)
 
-		#expect(result1.receiverAnalyzed.typeID.current == ValueType.instance(.struct("Array", ["Element": TypeID(.int)])))
+		#expect(result1.receiverAnalyzed.typeID.current == ValueType.instance(.struct("Array", ["Element": InferenceType(.int)])))
 		#expect(result1.typeAnalyzed == .int)
 
 		let result2 = try await ast("""
@@ -97,6 +97,6 @@ struct ArrayAnalysisTests: AnalysisTest {
 		let exprStmt = funcDecl.bodyAnalyzed.stmtsAnalyzed[0].cast(AnalyzedExprStmt.self).exprAnalyzed
 		let subscriptExpr = exprStmt.cast(AnalyzedSubscriptExpr.self)
 
-		#expect(subscriptExpr.typeID.current == .instance(.struct("WrapperEntry")))
+		#expect(subscriptExpr.inferenceType.current == .instance(.struct("WrapperEntry")))
 	}
 }

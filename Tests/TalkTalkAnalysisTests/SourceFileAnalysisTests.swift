@@ -66,7 +66,7 @@ struct AnalysisTests {
 			func(x) { x + 1 }
 			""")
 
-		#expect(fn.typeAnalyzed == .function("_fn_x_17", TypeID(.int), [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function("_fn_x_17", InferenceType(.int), [.int("x")], []))
 	}
 
 	@Test("Sets implicitlyReturns for single expr statement func bodies") func implicitReturn() {
@@ -104,7 +104,7 @@ struct AnalysisTests {
 			"""
 		).cast(AnalyzedReturnStmt.self).valueAnalyzed!
 
-		#expect(fn.typeAnalyzed == .function("foo", TypeID(.int), [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function("foo", InferenceType(.int), [.int("x")], []))
 	}
 
 	@Test("Types simple calls") func funcSimpleCalls() {
@@ -166,7 +166,7 @@ struct AnalysisTests {
 			.cast(AnalyzedCallExpr.self).calleeAnalyzed
 			.cast(AnalyzedFuncExpr.self).typeAnalyzed
 
-		let expected: ValueType = .function("_fn_x_33", TypeID(.int), [.int("x")], ["i"])
+		let expected: ValueType = .function("_fn_x_33", InferenceType(.int), [.int("x")], ["i"])
 		#expect(result == expected)
 	}
 
@@ -204,9 +204,9 @@ struct AnalysisTests {
 			fn.typeAnalyzed
 				== .function(
 					"_fn_x_43",
-					TypeID(.function(
+					InferenceType(.function(
 						"_fn_y_41",
-						TypeID(.int),
+						InferenceType(.int),
 						[.int("y")],
 						["x"]
 					)),
@@ -218,7 +218,7 @@ struct AnalysisTests {
 		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedFuncExpr.self)
-		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", TypeID(.int), [.int("y")], ["x"]))
+		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", InferenceType(.int), [.int("y")], ["x"]))
 
 		let capture = nestedFn.environment.captures[0]
 		#expect(capture.name == "x")
@@ -299,7 +299,7 @@ struct AnalysisTests {
 		#expect(type.methods["init"] != nil)
 
 		#expect(type.properties["age"]!.typeID.type() == .int)
-		#expect(type.methods["sup"]!.typeID.type() == .function("sup", TypeID(.int), [], []))
+		#expect(type.methods["sup"]!.typeID.type() == .function("sup", InferenceType(.int), [], []))
 	}
 
 	@Test("Types calling struct methods on self", .disabled("we need to come back to this")) func selfMethodCalls() throws {
@@ -335,8 +335,8 @@ struct AnalysisTests {
 		#expect(name == "Person")
 		#expect(type.methods["init"] != nil)
 
-		let returnType = TypeID(ValueType.generic(.struct("Person"), "Thing"))
-		#expect(type.methods["get"]!.typeID.type() == .function("get", returnType, [.init(name: "index", typeID: TypeID(.generic(.struct("Person"), "Thing")))], ["self"]))
+		let returnType = InferenceType(ValueType.generic(.struct("Person"), "Thing"))
+		#expect(type.methods["get"]!.typeID.type() == .function("get", returnType, [.init(name: "index", typeID: InferenceType(.generic(.struct("Person"), "Thing")))], ["self"]))
 	}
 
 	@Test("Synthesizing init for structs") func synthesizingInitForStructs() throws {
@@ -383,7 +383,7 @@ struct AnalysisTests {
 
 		let type = try #require(s.environment.lookupStruct(named: name))
 		#expect(name == "Person")
-		#expect(type.methods["typeSup"]!.typeID.type() == .function("typeSup", TypeID(.struct("Person")), [], []))
+		#expect(type.methods["typeSup"]!.typeID.type() == .function("typeSup", InferenceType(.struct("Person")), [], []))
 
 		guard case let .function(name, returns, _, _) = type.methods["sup"]!.typeID.type() else {
 			#expect(Bool(false))

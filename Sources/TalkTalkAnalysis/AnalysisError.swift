@@ -18,11 +18,11 @@ public enum AnalysisErrorKind: Hashable {
 	case typeNotFound(String)
 	case unknownError(String)
 	case undefinedVariable(String)
-	case typeCannotAssign(expected: TypeID, received: TypeID)
+	case typeCannotAssign(expected: InferenceType, received: InferenceType)
 	case cannotReassignLet(variable: any AnalyzedExpr)
 	case invalidRedeclaration(variable: String, existing: Environment.Binding)
 	case expressionCount(String)
-	case unexpectedType(expected: ValueType, received: ValueType, message: String)
+	case unexpectedType(expected: InferenceType, received: InferenceType, message: String)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {

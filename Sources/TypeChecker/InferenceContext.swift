@@ -10,7 +10,7 @@ import TalkTalkSyntax
 
 typealias VariableID = Int
 
-enum InferenceError: Equatable, Hashable {
+public enum InferenceError: Equatable, Hashable {
 	case undefinedVariable(String)
 	case unknownError(String)
 	case constraintError(String)
@@ -58,7 +58,7 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
-class InferenceContext: CustomDebugStringConvertible {
+public class InferenceContext: CustomDebugStringConvertible {
 	var environment: Environment
 	var parent: InferenceContext?
 	let depth: Int
@@ -94,6 +94,10 @@ class InferenceContext: CustomDebugStringConvertible {
 		log("New context with depth \(depth)", prefix: " * ")
 	}
 
+	public func lookup(syntax: any Syntax) -> InferenceType? {
+		self[syntax]?.asType(in: self)
+	}
+
 	func addConstraint(_ constraint: any Constraint) {
 		if let parent {
 			parent.addConstraint(constraint)
@@ -112,7 +116,7 @@ class InferenceContext: CustomDebugStringConvertible {
 		return namedCounters[name, default: 0]
 	}
 
-	var debugDescription: String {
+	public var debugDescription: String {
 		var result = "InferenceContext parent: \(parent == nil ? "none" : "<\(parent?.namedVariables.description ?? "")>")"
 		result += "Environment:\n"
 

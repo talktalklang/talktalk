@@ -12,7 +12,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public let lexicalScope: LexicalScope
 
 	// AnalyzedDecl conformance
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[
 			bodyAnalyzed,

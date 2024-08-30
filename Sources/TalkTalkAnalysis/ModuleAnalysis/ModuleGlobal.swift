@@ -13,6 +13,6 @@ public enum ModuleSource {
 public protocol ModuleGlobal {
 	var name: String { get }
 	var syntax: any Syntax { get }
-	var typeID: TypeID { get }
+	var typeID: InferenceType { get }
 	var source: ModuleSource { get }
 }

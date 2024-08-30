@@ -5,7 +5,7 @@ import TalkTalkSyntax
 public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
 	public let wrapped: IfStmtSyntax
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var conditionAnalyzed: any AnalyzedExpr
 	public var consequenceAnalyzed: any AnalyzedExpr

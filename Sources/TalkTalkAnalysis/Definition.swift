@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct Definition: Sendable {
+public struct Definition: @unchecked Sendable {
 	public let token: Token
-	public let type: ValueType
+	public let type: InferenceType
 }
