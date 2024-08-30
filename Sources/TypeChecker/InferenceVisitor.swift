@@ -113,9 +113,32 @@ struct InferenceVisitor: Visitor {
 
 			switch found {
 			case let .structType(structType):
-				for (typeParam, param) in zip(structType.typeContext.typeParameters, expr.genericParams) {
-					let typeVariable = typeFrom(expr: param, in: context)
-					print(typeParam, typeVariable)
+				for (i, (typeParam, paramSyntax)) in zip(structType.typeContext.typeParameters, expr.genericParams).enumerated() {
+					guard let typeContext = context.typeContext else {
+						continue
+					}
+
+					context.addConstraint(
+						.equality(
+							.type(.typeVar(typeContext.typeParameters[i])),
+							.type(.typeVar(typeParam)),
+							at: paramSyntax.location
+						)
+					)
+
+					context.addConstraint(
+						.equality(
+							.type(.typeVar(typeParam)),
+							.type(.typeVar(typeContext.typeParameters[i])),
+							at: paramSyntax.location
+						)
+					)
+
+					print(EqualityConstraint.equality(
+						.type(.typeVar(context.typeContext!.typeParameters[i])),
+						 .type(.typeVar(typeParam)),
+						 at: paramSyntax.location
+					 ))
 				}
 
 				type = .structType(structType)

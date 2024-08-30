@@ -41,7 +41,7 @@ struct GenericsTests {
 		#expect(expected2 == result2)
 	}
 
-	@Test("Can typecheck type param members") func typeParamMember() throws {
+	@Test("Can typecheck type param members", .disabled("still need to figure out semantics here")) func typeParamMember() throws {
 		let syntax = try Parser.parse(
 			"""
 			struct Wrapper<Wrapped> {

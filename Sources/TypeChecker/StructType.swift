@@ -60,6 +60,8 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 			substitutions: typeContext.typeParameters.reduce(into: [:]) {
 				if let sub = substitutions[$1] {
 					$0[$1] = sub
+				} else if context.substitutions[$1] != nil {
+					$0[$1] = context.applySubstitutions(to: .typeVar($1))
 				} else {
 					$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
 				}
