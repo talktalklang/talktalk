@@ -97,6 +97,38 @@ struct InferenceVisitor: Visitor {
 		context.extend(expr, with: type)
 	}
 
+	func typeFrom(expr: TypeExprSyntax, in context: InferenceContext) -> InferenceType {
+		let type: InferenceType
+		switch expr.identifier.lexeme {
+		case "int":
+			type = .base(.int)
+		case "String":
+			type = .base(.string)
+		case "bool":
+			type = .base(.bool)
+		default:
+			guard let found = context.lookupVariable(named: expr.identifier.lexeme) else {
+				fatalError("unknown type: \(expr.identifier.lexeme)")
+			}
+
+			switch found {
+			case let .structType(structType):
+				for (typeParam, param) in zip(structType.typeContext.typeParameters, expr.genericParams) {
+					let typeVariable = typeFrom(expr: param, in: context)
+					print(typeParam, typeVariable)
+				}
+
+				type = .structType(structType)
+			case let .typeVar(typeVar):
+				type = .typeVar(typeVar)
+			default:
+				fatalError("cannot use \(found) as type expression")
+			}
+		}
+
+		return type
+	}
+
 	// Visits
 
 	func returnType(for result: InferenceResult, in context: InferenceContext) -> InferenceType {
@@ -327,18 +359,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws {
-		let type: InferenceType = switch expr.identifier.lexeme {
-		case "int":
-			.base(.int)
-		case "String":
-			.base(.string)
-		case "bool":
-			.base(.bool)
-		default:
-			context.lookupVariable(named: expr.identifier.lexeme)!
-		}
-
-		context.extend(expr, with: .type(type))
+		context.extend(expr, with: .type(typeFrom(expr: expr, in: context)))
 	}
 
 	func visit(_ expr: ExprStmtSyntax, _ context: InferenceContext) throws {
@@ -363,7 +384,7 @@ struct InferenceVisitor: Visitor {
 
 		for typeParameter in expr.typeParameters {
 			// Define the name first
-			let typeVar: TypeVariable = structContext.freshTypeVariable("\(structType).\(typeParameter.identifier.lexeme)", file: #file, line: #line)
+			let typeVar: TypeVariable = structContext.freshTypeVariable("\(typeParameter.identifier.lexeme)", file: #file, line: #line)
 
 			typeContext.typeParameters.append(typeVar)
 

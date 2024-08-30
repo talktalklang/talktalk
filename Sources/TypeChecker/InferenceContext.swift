@@ -94,6 +94,15 @@ class InferenceContext: CustomDebugStringConvertible {
 		log("New context with depth \(depth)", prefix: " * ")
 	}
 
+	func addConstraint(_ constraint: any Constraint) {
+		if let parent {
+			parent.addConstraint(constraint)
+			return
+		}
+
+		constraints.add(constraint)
+	}
+
 	func nextIdentifier(named name: String) -> Int {
 		if let parent {
 			return parent.nextIdentifier(named: name)

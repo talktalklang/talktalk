@@ -41,6 +41,22 @@ struct GenericsTests {
 		#expect(expected2 == result2)
 	}
 
+	@Test("Can typecheck type param members") func typeParamMember() throws {
+		let syntax = try Parser.parse(
+			"""
+			struct Wrapper<Wrapped> {
+				var wrapped: Wrapped
+			}
+
+			Wrapper<int>.Wrapped
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result1 = context[syntax[1]]
+		#expect(result1 == .type(.base(.int)))
+	}
+
 	@Test("Can typecheck nested generic types") func nestedGenerics() throws {
 		let syntax = try Parser.parse(
 			"""

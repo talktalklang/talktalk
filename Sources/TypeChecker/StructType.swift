@@ -12,6 +12,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 
 	let name: String
 	private(set) var context: InferenceContext
+	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
 
 	static func extractType(from result: InferenceResult?) -> StructType? {
@@ -60,9 +61,8 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 				if let sub = substitutions[$1] {
 					$0[$1] = sub
 				} else {
-					print("no substitution found for \($1)")
+					$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
 				}
-//					.typeVar(context.freshTypeVariable("\($1) [copy]", file: #file, line: #line))
 			}
 		)
 
@@ -78,6 +78,10 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 	func member(named name: String) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 			return .type(context.applySubstitutions(to: member.asType(in: context)))
+		}
+
+		if let typeParam = typeContext.typeParameters.first(where: { $0.name == name }) {
+			return .type(.typeVar(typeParam))
 		}
 
 		return nil
