@@ -37,7 +37,7 @@ struct CallConstraint: Constraint {
 			return solveStruct(structType: structType, in: context)
 		default:
 			return .error([
-				Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+				Diagnostic(message: "\(returns) not callable", severity: .error, location: location)
 			])
 		}
 	}
@@ -57,10 +57,12 @@ struct CallConstraint: Constraint {
 		let childContext = context.childContext()
 
 		for (arg, param) in zip(args, params) {
-			childContext.unify(
-				arg.asType(in: context),
-				param
-			)
+			if arg.asType(in: context) != param {
+				childContext.unify(
+					arg.asType(in: context),
+					param
+				)
+			}
 		}
 
 		if returns != fnReturns {
@@ -79,25 +81,37 @@ struct CallConstraint: Constraint {
 		// Create a child context to evaluate args and params so we don't get leaks
 		let childContext = structType.context
 //		let childContext = structType.context.childTypeContext(withSelf: structType.context.typeContext!.selfVar)
-
-		let params: [InferenceType] = if let initializer = structType.member(named: "init") {
+		let params: [InferenceType]
+		if let initializer = structType.member(named: "init") {
 			switch initializer {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
-				case .function(let params, _):
-					params
+				case let .function(fnParams, fnReturns):
+					context.unify(returns, fnReturns)
+					params = fnParams
 				default:
-					[]
+					params = []
 				}
-			case .type(.function(let params, _)):
-				params
+			case .type(.function(let fnParams, _)):
+				params = fnParams
 			default:
-				[]
+				params = []
 			}
 		} else {
-			structType.properties.values.map {
-				$0.asType(in: structType.context)
+			var substitutions: [TypeVariable: InferenceType] = [:]
+
+			params = structType.properties.map { (name, type) in
+				if case let .type(.typeVar(typeVar)) = type,
+					 structType.typeContext.typeParameters.contains(typeVar) {
+					substitutions[typeVar] = context.freshTypeVariable("\(name) [init]", file: #file, line: #line)
+					return substitutions[typeVar]!
+				}
+
+				return type.asType(in: structType.context)
 			}
+
+			let instance = structType.instantiate(with: substitutions, in: context)
+			context.unify(returns, .structInstance(instance))
 		}
 
 		if args.count != params.count {
@@ -110,18 +124,43 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		let instance = structType.instantiate(with: [:])
+		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
+			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
+		}
 
-		for case let (arg, .typeVar(param)) in zip(args, params) {
+		for (arg, param) in zip(args, params) {
+			// TODO: Deal with struct instances as args???
+
 			let paramType: InferenceType
 
-			// If the member type is generic, we need to swap it out for the instance's copy so we don't unify
-			// for the whole struct.
-			if let instanceType = instance.substitutions[param] {
-				paramType = instanceType
-			} else {
-				paramType = .typeVar(param)
+			switch context.applySubstitutions(to: param) {
+			case .typeVar(let param):
+				// If the member type is generic, we need to swap it out for the instance's copy so we don't unify
+				// for the whole struct.
+				if let instanceType = instance.substitutions[param] {
+					paramType = instanceType
+				} else {
+					paramType = .typeVar(param)
+				}
+
 				instance.substitutions[param] = arg.asType(in: childContext)
+				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext))
+			case .structType(let structType):
+				var substitutions: [TypeVariable: InferenceType] = [:]
+				if case let .structInstance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
+					substitutions = instance.substitutions
+				}
+
+				paramType = .structInstance(
+					structType.instantiate(
+						with: substitutions,
+						in: context
+					)
+				)
+
+				instance.substitutions.merge(substitutions) { $1 }
+			default:
+				paramType = param
 			}
 
 			context.unify(

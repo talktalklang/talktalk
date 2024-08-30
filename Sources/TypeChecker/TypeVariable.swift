@@ -16,9 +16,9 @@ struct TypeVariable: Equatable, Hashable, CustomStringConvertible {
 
 	var description: String {
 		if let name {
-			"\(id) \(name.debugDescription)"
+			"T(\(id), \(name.debugDescription))"
 		} else {
-			"\(id)"
+			"T(\(id))"
 		}
 	}
 }

@@ -30,6 +30,17 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
+	init(name: String, parentContext: InferenceContext) {
+		self.name = name
+
+		let context = parentContext.childTypeContext()
+
+		self.context = context
+		self.typeContext = context.typeContext!
+
+		context.namedVariables["self"] = .structType(self)
+	}
+
 	func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
 		hasher.combine(typeContext.initializers)
@@ -41,15 +52,18 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		"\(name)(\(properties.reduce(into: "") { res, pair in res += "\(pair.key): \(pair.value)" }))"
 	}
 
-	func instantiate(with substitutions: [TypeVariable: InferenceType]) -> Instance {
-		Instance(
+	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance {
+		let instance = Instance(
+			id: context.nextIdentifier(named: name),
 			type: self,
 			substitutions: typeContext.typeParameters.reduce(into: [:]) {
-				if case let .typeVar(typeVariable) = $1.asType {
-					$0[typeVariable] = substitutions[typeVariable] ?? .typeVar(context.freshTypeVariable("<\(typeVariable)>"))
-				}
-			}.merging(substitutions, uniquingKeysWith: { $1 })
+				$0[$1] = substitutions[$1] ?? .typeVar(context.freshTypeVariable("\($1) [copy]", file: #file, line: #line))
+			}
 		)
+
+		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
+
+		return instance
 	}
 
 	var initializers: [String: InferenceResult] {

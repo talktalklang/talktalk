@@ -32,11 +32,47 @@ struct GenericsTests {
 		)
 
 		let context = try infer(syntax)
-		#expect(context[syntax[1]] == .type(.base(.int)))
-		#expect(context[syntax[2]] == .type(.base(.string)))
+		let expected1 = InferenceResult.type(.base(.int))
+		let result1 = context[syntax[1]]
+		let expected2 = InferenceResult.type(.base(.string))
+		let result2 = context[syntax[2]]
+
+		#expect(expected1 == result1)
+		#expect(expected2 == result2)
 	}
 
 	@Test("Can typecheck nested generic types") func nestedGenerics() throws {
+		let syntax = try Parser.parse(
+			"""
+			struct Inner<InnerWrapped> {
+				let base: InnerWrapped
+				init(base: InnerWrapped) {
+					self.base = base
+				}
+			}
+
+			struct Wrapper<Wrapped> {
+				let inner: Inner<Wrapped>
+				init(inner: Inner<Wrapped>) {
+					self.inner = inner
+				}
+			}
+
+			let inner = Inner(base: 123)
+			let wrapper = Wrapper(inner: inner)
+			wrapper.inner.base
+			"""
+		)
+
+		let context = try infer(syntax)
+
+		let result = context[syntax[4]]
+		let expected = InferenceResult.type(.base(.int))
+
+		#expect(result == expected)
+	}
+
+	@Test("Can typecheck very nested generic types") func veryNestedGenerics() throws {
 		let syntax = try Parser.parse(
 			"""
 			struct Inner<InnerWrapped> {

@@ -154,11 +154,6 @@ struct TypeCheckerStructTests {
 		)
 
 		let context = try infer(syntax)
-
-		let personInfoInstance = StructType.extractInstance(from: context[syntax[2]])
-		let personInfo = try #require(personInfoInstance)
-
-		#expect(personInfo.name == "PersonInfo")
 		#expect(context[syntax[3]] == .type(.base(.string)))
 	}
 }

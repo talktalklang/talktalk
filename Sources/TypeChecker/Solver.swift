@@ -7,11 +7,11 @@
 
 struct Solver {
 	let context: InferenceContext
-	let constraints: Constraints
 	var diagnostics: [Diagnostic] = []
 
 	mutating func solve() -> InferenceContext {
-		for constraint in constraints.constraints {
+		while !context.constraints.constraints.isEmpty {
+			let constraint = context.constraints.constraints.removeFirst()
 			context.log(constraint.description, prefix: "-> ")
 			switch constraint.solve(in: context) {
 			case .error(let diagnostics):

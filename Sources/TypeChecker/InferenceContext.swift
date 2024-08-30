@@ -22,54 +22,66 @@ enum InferenceError: Equatable, Hashable {
 
 // If we're inside a type's body, we can save methods/properties in here
 class TypeContext {
-	var selfVar: TypeVariable
 	var methods: [String: InferenceResult]
 	var initializers: [String: InferenceResult]
 	var properties: [String: InferenceResult]
-	var typeParameters: [InferenceResult]
+	var typeParameters: [TypeVariable]
 
 	init(
-		selfVar: TypeVariable,
 		methods: [String: InferenceResult] = [:],
 		initializers: [String: InferenceResult] = [:],
 		properties: [String: InferenceResult] = [:],
-		typeParameters: [InferenceResult] = []
+		typeParameters: [TypeVariable] = []
 	) {
-		self.selfVar = selfVar
 		self.methods = methods
 		self.initializers = initializers
 		self.properties = properties
 		self.typeParameters = typeParameters
 	}
+}
 
-	func instantiate(_ result: InferenceResult, in context: InferenceContext) -> InferenceResult {
-		switch result {
-		case let .type(.typeVar(typeVar)):
-			// Create fresh type variables for instances
-			.type(.typeVar(context.freshTypeVariable(typeVar.name ?? "")))
-		default:
-			result
+class InstanceContext: CustomDebugStringConvertible {
+	var substitutions: [TypeVariable: InferenceType] = [:]
+
+	var debugDescription: String {
+		"InstanceContext(\(substitutions))"
+	}
+
+	func wrapped(_ typeVariable: TypeVariable) -> InferenceType {
+		if let wrapped = substitutions[typeVariable] {
+			return wrapped
 		}
+
+		let variable = TypeVariable("instance \(typeVariable)", substitutions.count)
+		substitutions[typeVariable] = .typeVar(variable)
+		return .typeVar(variable)
 	}
 }
 
 class InferenceContext: CustomDebugStringConvertible {
-	internal var environment: Environment
+	var environment: Environment
 	var parent: InferenceContext?
 	let depth: Int
 	var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
-	var typeContext: TypeContext?
 	var namedVariables: [String: InferenceType] = [:]
 	var nextID: VariableID = 0
+	private var namedCounters: [String: Int] = [:]
+
+	// Type-level context info like methods, properties, etc
+	var typeContext: TypeContext?
+
+	// Instance-level context info like generic parameter bindings
+	var instanceContext: InstanceContext?
 
 	init(
-		parent: InferenceContext? = nil,
+		parent: InferenceContext?,
 		environment: Environment,
 		constraints: Constraints,
 		substitutions: [TypeVariable: InferenceType] = [:],
-		typeContext: TypeContext? = nil
+		typeContext: TypeContext? = nil,
+		instanceContext: InstanceContext? = nil
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -77,12 +89,22 @@ class InferenceContext: CustomDebugStringConvertible {
 		self.constraints = constraints
 		self.substitutions = substitutions
 		self.typeContext = typeContext
+		self.instanceContext = instanceContext
 
 		log("New context with depth \(depth)", prefix: " * ")
 	}
 
+	func nextIdentifier(named name: String) -> Int {
+		if let parent {
+			return parent.nextIdentifier(named: name)
+		}
+
+		defer { namedCounters[name, default: 0] += 1 }
+		return namedCounters[name, default: 0]
+	}
+
 	var debugDescription: String {
-		var result = "InferenceContext parent: \(parent == nil ? "none" : typeContext?.selfVar.name ?? "<?>")"
+		var result = "InferenceContext parent: \(parent == nil ? "none" : "<\(parent?.namedVariables.description ?? "")>")"
 		result += "Environment:\n"
 
 		for (key, val) in environment.types {
@@ -102,13 +124,29 @@ class InferenceContext: CustomDebugStringConvertible {
 		)
 	}
 
-	func childTypeContext(withSelf: TypeVariable) -> InferenceContext {
+	func childInstanceContext(withSelf: TypeVariable) -> InferenceContext {
+		assert(instanceContext == nil, "trying to instantiate an instance context when we're already in one")
+		assert(typeContext != nil, "trying to instantiate an instance context without type")
+
+		let instanceContext = InstanceContext()
+
+		return InferenceContext(
+			parent: self,
+			environment: environment,
+			constraints: constraints,
+			substitutions: substitutions,
+			typeContext: typeContext!,
+			instanceContext: instanceContext
+		)
+	}
+
+	func childTypeContext() -> InferenceContext {
 		InferenceContext(
 			parent: self,
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext(selfVar: withSelf)
+			typeContext: typeContext ?? TypeContext()
 		)
 	}
 
@@ -121,7 +159,7 @@ class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func solve() -> InferenceContext {
-		var solver = Solver(context: self, constraints: constraints)
+		var solver = Solver(context: self)
 		return solver.solve()
 	}
 
@@ -181,16 +219,23 @@ class InferenceContext: CustomDebugStringConvertible {
 		return .error(inferenceError)
 	}
 
-	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil) -> TypeVariable {
+	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil, file: String, line: UInt32) -> TypeVariable {
 		if let parent {
-			return parent.freshTypeVariable(name, creatingContext: creatingContext ?? self)
+			return parent.freshTypeVariable(name, creatingContext: creatingContext ?? self, file: file, line: line)
 		}
 
 		defer { nextID += 1 }
 
-		log("New type variable: \(name), T(\(nextID))", prefix: " + ", context: creatingContext ?? self)
+		let typeVariable = TypeVariable(name, nextID)
 
-		return TypeVariable(name, nextID)
+		log("New type variable: \(typeVariable), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
+
+		return typeVariable
+	}
+
+	// A helper just because we so frequently just want an inference type when getting a new variable
+	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil, file: String, line: UInt32) -> InferenceType {
+		.typeVar(freshTypeVariable(name, creatingContext: creatingContext, file: file, line: line))
 	}
 
 	func bind(typeVar: TypeVariable, to type: InferenceType) {
@@ -206,6 +251,10 @@ class InferenceContext: CustomDebugStringConvertible {
 		with substitutions: [TypeVariable: InferenceType],
 		count: Int = 0
 	) -> InferenceType {
+		if substitutions.isEmpty {
+			return type
+		}
+
 		switch type {
 		case let .typeVar(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
@@ -215,7 +264,16 @@ class InferenceContext: CustomDebugStringConvertible {
 
 			return substitutions[typeVariable] ?? type
 		case let .function(params, returning):
-			return .function(params.map { applySubstitutions(to: $0) }, applySubstitutions(to: returning))
+			return .function(params.map { applySubstitutions(to: $0, with: substitutions) }, applySubstitutions(to: returning, with: substitutions))
+		case let .structInstance(instance):
+//			for case let (key, .typeVar(val)) in substitutions {
+//				if instance.substitutions[val] != nil {
+//					instance.substitutions[val] = .typeVar(key)
+//				}
+//			}
+
+			// Help here:
+			return .structInstance(instance)
 		default:
 			return type // Base/error/void types don't get substitutions
 		}
@@ -235,11 +293,12 @@ class InferenceContext: CustomDebugStringConvertible {
 
 		switch (a, b) {
 		case let (.base(a), .base(b)) where a != b:
-			fatalError("Cannot unify \(a) and \(b)")
-		case (.base(_), .typeVar(let b)):
+			print("   ! Cannot unify \(a) and \(b)")
+			addError(.typeError("Cannot unify \(a) and \(b)"))
+		case let (.base(_), .typeVar(b)):
 			bind(typeVar: b, to: a)
 			print("     Got a base type: \(a)")
-		case (.typeVar(let a), .base(_)):
+		case let (.typeVar(a), .base(_)):
 			bind(typeVar: a, to: b)
 			print("     Got a base type: \(b)")
 		case let (.typeVar(v), _) where .typeVar(v) != b:
@@ -254,9 +313,14 @@ class InferenceContext: CustomDebugStringConvertible {
 			break
 		case let (.structInstance(a), .structInstance(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
-			break
+			for (subA, subB) in zip(a.substitutions, b.substitutions) {
+				unify(subA.value, subB.value)
+			}
 		default:
-			addError(.typeError("Cannot unify \(a) and \(b)"))
+			if a != b {
+				print("   ? Cannot unify \(a) and \(b)")
+			}
+//			addError(.typeError("Cannot unify \(a) and \(b)"))
 		}
 	}
 
@@ -267,7 +331,7 @@ class InferenceContext: CustomDebugStringConvertible {
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
-			localSubstitutions[variable] = .typeVar(freshTypeVariable((variable.name ?? "<unnamed>") + " [instantiated]"))
+			localSubstitutions[variable] = .typeVar(freshTypeVariable((variable.name ?? "<unnamed>") + " [scheme]", file: #file, line: #line))
 		}
 
 		return applySubstitutions(to: scheme.type, with: localSubstitutions)
