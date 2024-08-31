@@ -9,8 +9,8 @@ import TalkTalkSyntax
 
 public extension ModuleAnalyzer {
 	mutating func addFile(_ file: ParsedSourceFile) throws -> AnalysisModule {
-		files.remove(file)
-		files.insert(file)
+		files.removeAll(where: { $0 == file })
+		files.append(file)
 		return try analyze()
 	}
 }

@@ -17,7 +17,7 @@ struct ModuleAnalysisTests {
 	) -> ModuleAnalyzer {
 		ModuleAnalyzer(
 			name: name,
-			files: Set(files),
+			files: files,
 			moduleEnvironment: moduleEnvironment,
 			importedModules: []
 		)

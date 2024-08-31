@@ -53,37 +53,37 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	}
 
 	public static func primitive(_ name: String) -> Symbol {
-		Symbol(module: "[builtin]", kind: .primitive(name), namespace: [])
+		Symbol(module: "[builtin]", kind: .primitive(name), id: name.hashValue)
 	}
 
-	public static func function(_ module: String, _ name: String, _ params: [String], namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .function(name, params), namespace: namespace)
+	public static func function(_ module: String, _ name: String, _ params: [String], id: Int = 0) -> Symbol {
+		Symbol(module: module, kind: .function(name, params), id: id)
 	}
 
-	public static func value(_ module: String, _ name: String, namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .value(name), namespace: namespace)
+	public static func value(_ module: String, _ name: String, id: Int = 0) -> Symbol {
+		Symbol(module: module, kind: .value(name), id: id)
 	}
 
-	public static func `struct`(_ module: String, _ name: String, namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .struct(name), namespace: namespace)
+	public static func `struct`(_ module: String, _ name: String, id: Int = 0) -> Symbol {
+		Symbol(module: module, kind: .struct(name), id: id)
 	}
 
-	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .method(type, name, params), namespace: namespace)
+	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], id: Int = 0) -> Symbol {
+		Symbol(module: module, kind: .method(type, name, params), id: id)
 	}
 
-	public static func property(_ module: String, _ type: String, _ name: String, namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .property(type, name), namespace: namespace)
+	public static func property(_ module: String, _ type: String, _ name: String, id: Int = 0) -> Symbol {
+		Symbol(module: module, kind: .property(type, name), id: id)
 	}
 
-	public let namespace: [String]
+	public let id: Int
 	public let module: String
 	public let kind: Kind
 
-	public init(module: String, kind: Kind, namespace: [String]) {
+	public init(module: String, kind: Kind, id: Int) {
 		self.module = module
 		self.kind = kind
-		self.namespace = namespace
+		self.id = id
 	}
 
 	public var description: String {

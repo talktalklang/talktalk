@@ -18,7 +18,7 @@ public class Instance: Equatable, Hashable, CustomStringConvertible {
 	public let type: StructType
 	var substitutions: [TypeVariable: InferenceType]
 
-	static func extract(from type: InferenceType) -> Instance? {
+	public static func extract(from type: InferenceType) -> Instance? {
 		if case let .structInstance(instance) = type {
 			return instance
 		}

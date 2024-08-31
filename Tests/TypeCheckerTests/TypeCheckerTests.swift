@@ -90,6 +90,18 @@ struct TypeCheckerTests {
 		#expect(result == .type(.base(.string)))
 	}
 
+	@Test("Infers function with binary expr with ints") func binaryIntFunction() throws {
+		let expr = try Parser.parse(
+			"""
+			func(x) { x + 1 }
+			"""
+		)
+
+		let context = try infer(expr)
+		let result = try #require(context[expr[0]])
+		#expect(result.asType(in: context) == .function([.base(.int)], .base(.int)))
+	}
+
 	@Test("Infers var with base type") func varWithBase() throws {
 		let syntax = try Parser.parse("var i = 123")
 		let context = try infer(syntax)
@@ -108,6 +120,19 @@ struct TypeCheckerTests {
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
+	}
+
+	@Test("Infers named function") func namedFunction() throws {
+		let syntax = try Parser.parse(
+			"""
+			func foo(x) { x + 1 }
+			foo
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result = try #require(context[syntax[1]])
+		#expect(result.asType(in: context) == .function([.base(.int)], .base(.int)))
 	}
 
 	@Test("Infers var with function (it is generic)") func varFuncGeneric() throws {
@@ -174,7 +199,7 @@ struct TypeCheckerTests {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [.typeVar("n", 0)],
+					variables: [],
 					type: .function([.typeVar("n", 0)], .base(.int))
 				)
 			)

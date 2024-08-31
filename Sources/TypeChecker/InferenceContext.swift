@@ -99,6 +99,22 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self[syntax]?.asType(in: self)
 	}
 
+	func constraintExists(forTypeVar typeVar: TypeVariable) -> Bool {
+		if let parent {
+			return parent.constraintExists(forTypeVar: typeVar)
+		}
+
+		return constraints.exists(forTypeVar: typeVar)
+	}
+
+	func constraintExists<T: Constraint>(for type: T.Type, where block: (T) -> Bool) -> Bool {
+		if let parent {
+			return parent.constraintExists(for: type, where: block)
+		}
+
+		return constraints.exists(for: type, where: block)
+	}
+
 	func addConstraint(_ constraint: any Constraint) {
 		if let parent {
 			parent.addConstraint(constraint)
@@ -199,10 +215,18 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func extend(_ syntax: any Syntax, with result: InferenceResult) {
 		environment.extend(syntax, with: result)
+
+		parent?.extend(syntax, with: result)
 	}
 
 	func isFreeVariable(_ type: InferenceType) -> Bool {
 		if case let .typeVar(variable) = type {
+			// Check if the variable already has constraints assigned to it. If so
+			// then it's not free.
+			if constraintExists(forTypeVar: variable) {
+				return false
+			}
+
 			// Check if the variable exists in the context's substitution map
 			// If it's not in the substitution map, it's a free variable
 			return substitutions[variable] == nil
@@ -421,10 +445,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
-			localSubstitutions[variable] = .typeVar(freshTypeVariable((variable.name ?? "<unnamed>") + " [scheme]", file: #file, line: #line))
+			localSubstitutions[variable] = substitutions[variable] ?? .typeVar(freshTypeVariable((variable.name ?? "<unnamed>") + " [scheme]", file: #file, line: #line))
 		}
 
-		return applySubstitutions(to: scheme.type, with: localSubstitutions)
+		return applySubstitutions(to: scheme.type, with: substitutions.merging(localSubstitutions, uniquingKeysWith: { $1 }))
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {

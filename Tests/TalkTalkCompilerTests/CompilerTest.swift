@@ -18,7 +18,7 @@ extension CompilerTest {
 	func compile(_ strings: String...) throws -> Module {
 		let stdlib = try ModuleAnalyzer(
 			name: "Standard",
-			files: Set(Library.files(for: Library.standardLibraryURL).map {
+			files: Library.files(for: Library.standardLibraryURL).map {
 				try ParsedSourceFile(
 					path: $0.path,
 					syntax: Parser.parse(
@@ -28,7 +28,7 @@ extension CompilerTest {
 						)
 					)
 				)
-			}),
+			},
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -37,7 +37,7 @@ extension CompilerTest {
 
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: Set(strings.enumerated().map { .tmp($1, "\($0).tlk") }),
+			files: strings.enumerated().map { .tmp($1, "\($0).tlk") },
 			moduleEnvironment: ["Standard": stdlib],
 			importedModules: [stdlib]
 		).analyze()
@@ -54,7 +54,7 @@ extension CompilerTest {
 		let analysis = moduleEnvironment.reduce(into: [:]) { res, tup in res[tup.key] = analysisEnvironment[tup.key] }
 		let analyzed = try ModuleAnalyzer(
 			name: name,
-			files: Set(files),
+			files: files,
 			moduleEnvironment: analysis,
 			importedModules: Array(analysisEnvironment.values)
 		).analyze()

@@ -17,7 +17,7 @@ public struct SourceFileCompiler {
 	public init(name: String, module: String, analyzedSyntax: [any AnalyzedSyntax], path: String) {
 		self.name = name
 		self.analyzedSyntax = analyzedSyntax
-		self.chunk = Chunk(name: name, symbol: .function(module, name, [], namespace: []), path: path)
+		self.chunk = Chunk(name: name, symbol: .function(module, name, [], id: path.hashValue), path: path)
 	}
 
 	public mutating func compile(in module: CompilingModule) throws -> Chunk {

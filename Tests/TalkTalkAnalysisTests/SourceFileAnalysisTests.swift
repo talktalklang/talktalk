@@ -7,106 +7,116 @@
 
 @testable import TalkTalkAnalysis
 import TalkTalkSyntax
+import TypeChecker
 import Testing
 
-struct AnalysisTests {
-//	func ast(_ string: String) -> any AnalyzedSyntax {
-//		let parsed = try! Parser.parse(.init(path: "", text: string))
-//		return try! SourceFileAnalyzer.analyze(parsed, in: .init()).last!
-//	}
-//
-//	@Test("Types literals") func literals() {
-//		#expect(ast("true").typeAnalyzed == .bool)
-//		#expect(ast("false").typeAnalyzed == .bool)
-//		#expect(ast("123").typeAnalyzed == .int)
-//	}
-//
-//	@Test("Types string literals") func strings() {
-//		#expect(ast(#""hello world""#).typeAnalyzed == .instance(.struct("String")))
-//	}
-//
-//	@Test("Types add") func add() {
-//		#expect(ast("1 + 2").typeAnalyzed == .int)
-//	}
-//
-//	@Test("Types def") func def() throws {
-//		let ast = try #require(ast("var foo = 1").as(AnalyzedVarDecl.self))
-//		let def = try #require(ast.valueAnalyzed as? AnalyzedLiteralExpr)
-//		#expect(def.typeAnalyzed == .int)
-//		#expect(ast.name == "foo")
-//	}
-//
-//	@Test("Types let") func typesLet() throws {
-//		let ast = ast("let foo = 1").cast(AnalyzedLetDecl.self)
-//		#expect(ast.name == "foo")
-//		#expect(ast.value?.cast(LiteralExprSyntax.self).value == .int(1))
-//	}
-//
-//	@Test("Types if expr") func ifExpr() {
-//		let expr = ast("return if true { 1 } else { 2 }").cast(AnalyzedReturnStmt.self).valueAnalyzed!
-//		#expect(expr is AnalyzedIfExpr)
-//		#expect(expr.typeAnalyzed == .int)
-//	}
-//
-//	@Test("Types if stmt") func ifStmt() {
-//		#expect(ast("if true { 1 } else { 2 }").typeAnalyzed == .void)
-//	}
-//
-//	@Test("Types block expr") func blockExpr() {
-//		#expect(ast("{ 1 }").typeAnalyzed == .int)
-//	}
-//
-//	@Test("Types while expr") func whileExpr() {
-//		#expect(ast("while true { 1 }").typeAnalyzed == .int)
-//	}
-//
-//	@Test("Types func expr") func funcExpr() {
-//		let fn = ast(
-//			"""
-//			func(x) { x + 1 }
-//			""")
-//
-//		#expect(fn.typeAnalyzed == .function("_fn_x_17", InferenceType(.int), [.int("x")], []))
-//	}
-//
-//	@Test("Sets implicitlyReturns for single expr statement func bodies") func implicitReturn() {
-//		let fn = ast(
-//			"""
-//			func() { 123 }
-//			""")
-//
-//		let stmt = fn
-//			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
-//			.cast(AnalyzedExprStmt.self)
-//
-//		#expect(stmt.exitBehavior == .return)
-//	}
-//
-//	@Test("Types recursive func expr") func funcExprRecur() {
-//		let fn = ast(
-//			"""
-//			func foo(x) { foo(x) }
-//			""")
-//
-//		let passed = fn
-//			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
-//			.cast(AnalyzedExprStmt.self).exprAnalyzed
-//			.cast(AnalyzedCallExpr.self).callee.description == "foo"
-//
-//		#expect(passed)
-//	}
-//
-//	@Test("Types named func expr") func namedfuncExpr() {
-//		let fn = ast(
-//			"""
-//			func foo(x) { x + 1 }
-//			return foo
-//			"""
-//		).cast(AnalyzedReturnStmt.self).valueAnalyzed!
-//
-//		#expect(fn.typeAnalyzed == .function("foo", InferenceType(.int), [.int("x")], []))
-//	}
-//
+@MainActor
+class AnalysisTests {
+	var context: InferenceContext!
+
+	func ast(_ string: String) -> any AnalyzedSyntax {
+		let parsed = try! Parser.parse(.init(path: "", text: string))
+		context = Inferencer().infer(parsed)
+		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context)).last!
+	}
+
+	@Test("Types literals") func literals() {
+		#expect(ast("true").typeAnalyzed == .base(.bool))
+		#expect(ast("false").typeAnalyzed == .base(.bool))
+		#expect(ast("123").typeAnalyzed == .base(.int))
+	}
+
+	@Test("Types string literals") func strings() {
+		#expect(ast(#""hello world""#).typeAnalyzed == .base(.string))
+	}
+
+	@Test("Types add") func add() {
+		#expect(ast("1 + 2").typeAnalyzed == .base(.int))
+	}
+
+	@Test("Types def") func def() throws {
+		let ast = try #require(ast("var foo = 1").as(AnalyzedVarDecl.self))
+		let def = try #require(ast.valueAnalyzed as? AnalyzedLiteralExpr)
+		#expect(def.typeAnalyzed == .base(.int))
+		#expect(ast.name == "foo")
+	}
+
+	@Test("Types let") func typesLet() throws {
+		let ast = ast("let foo = 1").cast(AnalyzedLetDecl.self)
+		#expect(ast.name == "foo")
+	}
+
+	@Test("Types if expr") func ifExpr() {
+		let expr = ast("return if true { 1 } else { 2 }").cast(AnalyzedReturnStmt.self).valueAnalyzed!
+		#expect(expr is AnalyzedIfExpr)
+		#expect(expr.typeAnalyzed == .base(.int))
+
+		let expr2 = ast("return if true { \"hi\" } else { \"yo\" }").cast(AnalyzedReturnStmt.self).valueAnalyzed!
+		#expect(expr2 is AnalyzedIfExpr)
+		#expect(expr2.typeAnalyzed == .base(.string))
+	}
+
+	@Test("Types if stmt") func ifStmt() {
+		#expect(ast("if true { 1 } else { 2 }").typeAnalyzed == .void)
+	}
+
+	@Test("Types block expr") func blockExpr() {
+		#expect(ast("{ 1 }").typeAnalyzed == .base(.int))
+	}
+
+	@Test("Types while expr") func whileExpr() {
+		#expect(ast("while true { 1 }").typeAnalyzed == .base(.int))
+	}
+
+	@Test("Types func expr") func funcExpr() {
+		let fn = ast(
+			"""
+			func(x) { x + 1 }
+			""")
+
+		#expect(
+			fn.typeAnalyzed == .function([.base(.int)], .base(.int))
+		)
+	}
+
+	@Test("Sets implicitlyReturns for single expr statement func bodies") func implicitReturn() {
+		let fn = ast(
+			"""
+			func() { 123 }
+			""")
+
+		let stmt = fn
+			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
+			.cast(AnalyzedExprStmt.self)
+
+		#expect(stmt.exitBehavior == .return)
+	}
+
+	@Test("Types recursive func expr") func funcExprRecur() {
+		let fn = ast(
+			"""
+			func foo(x) { foo(x) }
+			""")
+
+		let passed = fn
+			.cast(AnalyzedFuncExpr.self).bodyAnalyzed.stmtsAnalyzed[0]
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedCallExpr.self).callee.description == "foo"
+
+		#expect(passed)
+	}
+
+	@Test("Types named func expr") func namedfuncExpr() {
+		let fn = ast(
+			"""
+			func foo(x) { x + 1 }
+			foo
+			"""
+		).cast(AnalyzedExprStmt.self).exprAnalyzed
+
+		#expect(fn.typeAnalyzed == .function([.base(.int)], .base(.int)))
+	}
+
 //	@Test("Types simple calls") func funcSimpleCalls() {
 //		let res = ast(
 //			"""

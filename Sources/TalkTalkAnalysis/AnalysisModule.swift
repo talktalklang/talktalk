@@ -15,7 +15,7 @@ public struct AnalysisModule {
 
 	public let inferenceContext: InferenceContext
 
-	public var files: Set<ParsedSourceFile>
+	public var files: any Collection<ParsedSourceFile>
 
 	// Keep track of all the different symbols in this module
 	public var symbols: [Symbol: SymbolInfo] = [:]
@@ -91,8 +91,8 @@ public struct AnalysisModule {
 		return nil
 	}
 
-	public func lookup(symbol kind: Symbol.Kind, namespace: [String]) -> SymbolInfo? {
-		symbols[Symbol(module: name, kind: kind, namespace: namespace)]
+	public func lookup(symbol kind: Symbol.Kind, id: Int) -> SymbolInfo? {
+		symbols[Symbol(module: name, kind: kind, id: id)]
 	}
 }
 

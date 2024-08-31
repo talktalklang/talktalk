@@ -408,7 +408,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 					continue
 				}
 
-				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map(\.name))
+				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map(\.name), id: expr.id)
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
@@ -443,7 +443,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				methods[analysisMethod.slot] = StaticChunk(chunk: declChunk)
 				structType.initializerSlot = analysisMethod.slot
 			case let decl as AnalyzedFuncExpr:
-				let symbol = Symbol.method(module.name, name, decl.name!.lexeme, decl.params.params.map(\.name))
+				let symbol = Symbol.method(module.name, name, decl.name!.lexeme, decl.params.params.map(\.name), id: expr.id)
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
@@ -598,10 +598,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 //			try visit(element, chunk)
 //		}
 
-		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
-		chunk.emit(opcode: .getStruct, line: expr.location.line)
-		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
-		chunk.emit(opcode: .call, line: expr.location.line)
+//		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
+//		chunk.emit(opcode: .getStruct, line: expr.location.line)
+//		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
+//		chunk.emit(opcode: .call, line: expr.location.line)
 
 		// Emit the count so we can init enough storage
 //		chunk.emit(byte: Byte(expr.elements.count), line: expr.location.line)
@@ -866,7 +866,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	private func synthesizeInit(for structType: StructType) -> Chunk {
 		let params = Array(structType.properties.keys)
-		let symbol = Symbol.method(module.name, structType.name!, "init", params, namespace: [])
+		let symbol = Symbol.method(module.name, structType.name!, "init", params, id: structType.name!.hashValue)
 		let chunk = Chunk(
 			name: symbol.description,
 			symbol: symbol,

@@ -33,7 +33,7 @@ extension StandardLibraryTest {
 		let files: [ParsedSourceFile] = [.tmp(input, "1.tlk")]
 		let analyzer = ModuleAnalyzer(
 			name: "StdLibTest",
-			files: Set(files),
+			files: files,
 			moduleEnvironment: analysisEnvironment,
 			importedModules: [stdlib.analysis]
 		)

@@ -296,7 +296,15 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: IfExprSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		try expr.condition.accept(self, context)
+		try expr.consequence.accept(self, context)
+		try expr.alternative.accept(self, context)
+
+		context.addConstraint(
+			.equality(context[expr.consequence]!, context[expr.alternative]!, at: expr.location)
+		)
+
+		context.extend(expr, with: context[expr.consequence]!)
 	}
 
 	func visit(_ expr: WhileStmtSyntax, _ context: InferenceContext) throws {

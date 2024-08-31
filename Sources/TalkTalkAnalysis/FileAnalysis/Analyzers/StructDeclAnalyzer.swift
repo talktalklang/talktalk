@@ -32,7 +32,7 @@ struct StructDeclAnalyzer: Analyzer {
 			structType.typeParameters[i].type = try param.type.accept(visitor, environment) as! AnalyzedTypeExpr
 		}
 
-		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
+		let symbol = context.symbolGenerator.struct(decl.name, source: .internal, id: decl.id)
 
 		// Do a second pass to try to fill in method returns
 		let bodyAnalyzed = try visitor.visit(decl.body.cast(DeclBlockSyntax.self), bodyContext)

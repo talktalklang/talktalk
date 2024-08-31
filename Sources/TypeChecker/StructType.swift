@@ -24,7 +24,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	static func extractInstance(from result: InferenceResult?) -> StructType? {
+	public static func extractInstance(from result: InferenceResult?) -> StructType? {
 		if case let .type(.structInstance(instance)) = result {
 			return instance.type
 		}

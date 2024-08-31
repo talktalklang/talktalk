@@ -16,7 +16,7 @@ public struct ModuleAnalyzer {
 	}
 
 	public let name: String
-	public var files: Set<ParsedSourceFile>
+	public var files: [ParsedSourceFile]
 	public let environment: Environment
 	let visitor: SourceFileAnalyzer
 	public let moduleEnvironment: [String: AnalysisModule]
@@ -25,7 +25,7 @@ public struct ModuleAnalyzer {
 	public init(
 		name: String,
 		inferenceContext: InferenceContext? = nil,
-		files: Set<ParsedSourceFile>,
+		files: [ParsedSourceFile],
 		moduleEnvironment: [String: AnalysisModule],
 		importedModules: [AnalysisModule]
 	) {
@@ -96,7 +96,7 @@ public struct ModuleAnalyzer {
 		//
 		// We also need to make sure the files are in the correct order.
 		analysisModule.analyzedFiles = try files.map {
-			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal)
+			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal, id: $0.path.hashValue)
 			analysisModule.symbols[sym] = environment.symbolGenerator[sym]
 
 			return try AnalyzedSourceFile(

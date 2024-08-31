@@ -50,7 +50,7 @@ struct Pipeline {
 		let analysisModule = try ModuleAnalyzer(
 			name: compilationUnit.name,
 			inferenceContext: inferenceContext,
-			files: Set(parsedSourceFiles),
+			files: parsedSourceFiles,
 			moduleEnvironment: analyses,
 			importedModules: Array(analyses.values)
 		).analyze()

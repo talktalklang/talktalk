@@ -35,7 +35,7 @@ public class SymbolGenerator {
 	}
 
 	public func reserve(_ symbol: Symbol, info: SymbolInfo) {
-		var info = SymbolInfo(symbol: symbol, slot: info.slot, source: .stdlib, isBuiltin: false)
+		let info = SymbolInfo(symbol: symbol, slot: info.slot, source: .stdlib, isBuiltin: false)
 
 		symbols[symbol] = info
 
@@ -60,29 +60,29 @@ public class SymbolGenerator {
 		case .primitive(_):
 			return symbol
 		case .function(let name, let params):
-			return function(name, parameters: params, source: .external(moduleName))
+			return function(name, parameters: params, source: .external(moduleName), id: symbol.id)
 		case .value(let string):
-			return value(string, source: .external(moduleName))
+			return value(string, source: .external(moduleName), id: symbol.id)
 		case .struct(let name):
-			return self.struct(name, source: .external(moduleName))
+			return self.struct(name, source: .external(moduleName), id: symbol.id)
 		case .method(let type, let name, let params):
-			return method(type, name, parameters: params, source: .external(moduleName))
+			return method(type, name, parameters: params, source: .external(moduleName), id: symbol.id)
 		case .property(let type, let name):
-			return property(type, name, source: .external(moduleName))
+			return property(type, name, source: .external(moduleName), id: symbol.id)
 		case .genericType(let name):
-			return generic(name, source: .external(moduleName))
+			return generic(name, source: .external(moduleName), id: symbol.id)
 		}
 	}
 
-	public func generic(_ name: String, source: SymbolInfo.Source, namespace: [String]? = nil) -> Symbol {
+	public func generic(_ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
 		if let parent {
-			return parent.generic(name, source: source, namespace: namespace ?? self.namespace)
+			return parent.generic(name, source: source, id: id)
 		}
 
 		let symbol = if case .external(let moduleName) = source {
-			Symbol(module: moduleName, kind: .genericType(name), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .genericType(name), id: id)
 		} else {
-			Symbol(module: moduleName, kind: .genericType(name), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .genericType(name), id: id)
 		}
 
 		if let info = generics[symbol] {
@@ -105,16 +105,16 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func `struct`(_ name: String, source: SymbolInfo.Source, namespace: [String]? = nil) -> Symbol {
+	public func `struct`(_ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
 		if let parent {
-			return parent.struct(name, source: source, namespace: [])
+			return parent.struct(name, source: source, id: id)
 		}
 
 		// Structs are top level (for now...) so they should not be namespaced
 		let symbol = if case .external(let moduleName) = source {
-			Symbol(module: moduleName, kind: .struct(name), namespace: [])
+			Symbol(module: moduleName, kind: .struct(name), id: id)
 		} else {
-			Symbol(module: moduleName, kind: .struct(name), namespace: [])
+			Symbol(module: moduleName, kind: .struct(name), id: id)
 		}
 
 		if let info = structs[symbol] {
@@ -134,15 +134,15 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func value(_ name: String, source: SymbolInfo.Source, namespace: [String]? = nil) -> Symbol {
+	public func value(_ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
 		if let parent {
-			return parent.value(name, source: source, namespace: namespace ?? self.namespace)
+			return parent.value(name, source: source, id: id)
 		}
 
 		let symbol = if case .external(let moduleName) = source {
-			Symbol(module: moduleName, kind: .value(name), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .value(name), id: id)
 		} else {
-			Symbol(module: moduleName, kind: .value(name), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .value(name), id: id)
 		}
 
 		if let info = values[symbol] {
@@ -162,15 +162,15 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func function(_ name: String, parameters: [String], source: SymbolInfo.Source, namespace: [String]? = nil) -> Symbol {
+	public func function(_ name: String, parameters: [String], source: SymbolInfo.Source, id: Int) -> Symbol {
 		if let parent {
-			return parent.function(name, parameters: parameters, source: source, namespace: namespace ?? self.namespace)
+			return parent.function(name, parameters: parameters, source: source, id: id)
 		}
 
 		let symbol = if case .external(let moduleName) = source {
-			Symbol(module: moduleName, kind: .function(name, parameters), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .function(name, parameters), id: id)
 		} else {
-			Symbol(module: moduleName, kind: .function(name, parameters), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .function(name, parameters), id: id)
 		}
 
 		if let info = functions[symbol] {
@@ -196,16 +196,16 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func method(_ type: String, _ name: String, parameters: [String], source: SymbolInfo.Source, namespace: [String]? = nil) -> Symbol {
+	public func method(_ type: String, _ name: String, parameters: [String], source: SymbolInfo.Source, id: Int) -> Symbol {
 		if let parent {
-			return parent.method(type, name, parameters: parameters, source: source, namespace: [])
+			return parent.method(type, name, parameters: parameters, source: source, id: id)
 		}
 
 		// Methods don't have a namespace since they're already namespaced to their type
 		let symbol = if case .external(let moduleName) = source {
-			Symbol(module: moduleName, kind: .method(type, name, parameters), namespace: [])
+			Symbol(module: moduleName, kind: .method(type, name, parameters), id: id)
 		} else {
-			Symbol(module: moduleName, kind: .method(type, name, parameters), namespace: [])
+			Symbol(module: moduleName, kind: .method(type, name, parameters), id: id)
 		}
 
 		if let info = functions[symbol] {
@@ -225,15 +225,15 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func property(_ type: String, _ name: String, source: SymbolInfo.Source, namespace: [String]? = nil) -> Symbol {
+	public func property(_ type: String, _ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
 		if let parent {
-			return parent.property(type, name, source: source, namespace: namespace ?? self.namespace)
+			return parent.property(type, name, source: source, id: id)
 		}
 
 		let symbol = if case .external(let moduleName) = source {
-			Symbol(module: moduleName, kind: .property(type, name), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .property(type, name), id: id)
 		} else {
-			Symbol(module: moduleName, kind: .property(type, name), namespace: namespace ?? self.namespace)
+			Symbol(module: moduleName, kind: .property(type, name), id: id)
 		}
 
 		if let info = properties[symbol] {

@@ -16,7 +16,7 @@ struct FindDefinitionTests {
 	) throws -> AnalysisModule {
 		try ModuleAnalyzer(
 			name: "SyntaxTests",
-			files: Set(files),
+			files: files,
 			moduleEnvironment: moduleEnvironment,
 			importedModules: []
 		).analyze()

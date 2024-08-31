@@ -33,19 +33,27 @@ struct InfixOperatorConstraint: Constraint {
 
 		// Default rules for primitive types
 		switch (lhs, rhs, op) {
-		case (.base(.int), .base(.int), .plus),
-		     (.base(.int), .base(.int), .minus),
-		     (.base(.int), .base(.int), .star),
-		     (.base(.int), .base(.int), .slash):
-			return checkReturnType(.base(.int), returns: .base(.int), context: context)
-		case (.base(.string), .base(.string), .plus):
-			return checkReturnType(.base(.string), returns: .base(.string), context: context)
-//		case (.base(.bool), .base(.bool), .and),
-//		     (.base(.bool), .base(.bool), .or):
+		case (.base(.int), let type, .plus),
+		     (.base(.int), let type, .minus),
+		     (.base(.int), let type, .star),
+		     (.base(.int), let type, .slash),
+				 (let type, .base(.int), .plus),
+				 (let type, .base(.int), .minus),
+				 (let type, .base(.int), .star),
+				 (let type, .base(.int), .slash):
+
+			context.unify(type, .base(.int))
+
+			return checkReturnType(type, expect: .base(.int), context: context)
+		case (.base(.string), let type, .plus),
+				 (let type, .base(.string), .plus):
+			context.unify(type, .base(.string))
+
+			return checkReturnType(type, expect: .base(.string), context: context)
+//		case (.base(.bool), .base(.bool), .andAnd),
+//		     (.base(.bool), .base(.bool), .pipePipe):
 //			return checkReturnType(.base(.bool))
 		default:
-			context.unify(.typeVar(returns), .error(.constraintError("Infix operator \(op.rawValue) can't be used with operands \(lhs) and \(rhs)")))
-
 			return .error([Diagnostic(
 				message: "Invalid operator '\(op)' for types '\(lhs)' and '\(rhs)'",
 				severity: .error,
@@ -54,14 +62,16 @@ struct InfixOperatorConstraint: Constraint {
 		}
 	}
 
-	private func checkReturnType(_ expectedType: InferenceType, returns: InferenceType, context: InferenceContext) -> ConstraintCheckResult {
-		if returns == expectedType {
-			context.unify(.typeVar(self.returns), returns)
+	private func checkReturnType(_ type: InferenceType, expect: InferenceType, context: InferenceContext) -> ConstraintCheckResult {
+		if context.applySubstitutions(to: type) == expect {
+			context.unify(.typeVar(self.returns), type)
 
 			return .ok
 		} else {
+			context.unify(.typeVar(returns), .error(.constraintError("Infix operator \(op.rawValue) can't be used with operands \(lhs) and \(rhs)")))
+
 			return .error([Diagnostic(
-				message: "Expected return type '\(expectedType)' but got '\(returns)'",
+				message: "Invalid operator '\(op)' for types '\(lhs)' and '\(rhs)'",
 				severity: .error,
 				location: location
 			)])

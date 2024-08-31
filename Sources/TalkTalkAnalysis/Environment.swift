@@ -51,13 +51,6 @@ public class Environment {
 		Environment(inferenceContext: inferenceContext, isModuleScope: true, symbolGenerator: .init(moduleName: moduleName, parent: nil))
 	}
 
-	func importStdlib() {
-		_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
-	}
-
 	public var moduleName: String {
 		symbolGenerator.moduleName
 	}

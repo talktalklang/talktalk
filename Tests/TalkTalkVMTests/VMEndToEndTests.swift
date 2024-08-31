@@ -23,7 +23,7 @@ struct VMEndToEndTests {
 	func compile(_ strings: [String]) throws -> Module {
 		let stdlib = try ModuleAnalyzer(
 			name: "Standard",
-			files: Set(Library.files(for: Library.standardLibraryURL).map {
+			files: Library.files(for: Library.standardLibraryURL).map {
 				try ParsedSourceFile(
 					path: $0.path,
 					syntax: Parser.parse(
@@ -33,7 +33,7 @@ struct VMEndToEndTests {
 						)
 					)
 				)
-			}),
+			},
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -42,7 +42,7 @@ struct VMEndToEndTests {
 
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: Set(strings.enumerated().map { .tmp($1, "\($0).tlk") }),
+			files: strings.enumerated().map { .tmp($1, "\($0).tlk") },
 			moduleEnvironment: ["Standard": stdlib],
 			importedModules: [stdlib]
 		).analyze()
@@ -58,7 +58,7 @@ struct VMEndToEndTests {
 	) throws -> (Module, AnalysisModule) {
 		let stdlib = try ModuleAnalyzer(
 			name: "Standard",
-			files: Set(Library.files(for: Library.standardLibraryURL).map {
+			files: Library.files(for: Library.standardLibraryURL).map {
 				try ParsedSourceFile(
 					path: $0.path,
 					syntax: Parser.parse(
@@ -68,7 +68,7 @@ struct VMEndToEndTests {
 						)
 					)
 				)
-			}),
+			},
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -84,7 +84,7 @@ struct VMEndToEndTests {
 
 		let analyzed = try ModuleAnalyzer(
 			name: name,
-			files: Set(files),
+			files: files,
 			moduleEnvironment: analysis,
 			importedModules: []
 		).analyze()
