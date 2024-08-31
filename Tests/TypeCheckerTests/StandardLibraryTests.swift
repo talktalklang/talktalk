@@ -9,11 +9,7 @@ import Testing
 @testable import TypeChecker
 import TalkTalkSyntax
 
-struct StandardLibraryTests {
-	func infer(_ syntax: [any Syntax]) throws -> InferenceContext {
-		return Inferencer().infer(syntax)
-	}
-
+struct StandardLibraryTests: TypeCheckerTest {
 	@Test("Knows about array") func array() throws {
 		let expr = try Parser.parse("[1, 2, 3]")
 		let context = try infer(expr)

@@ -27,7 +27,7 @@ actor Completer {
 		let lexer = Lexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
-		let context = Inferencer().infer(parsed)
+		let context = Inferencer(imports: []).infer(parsed)
 
 		do {
 			let environment = Environment(inferenceContext: context, symbolGenerator: .init(moduleName: "Completer", parent: nil)) // TODO: use module environment

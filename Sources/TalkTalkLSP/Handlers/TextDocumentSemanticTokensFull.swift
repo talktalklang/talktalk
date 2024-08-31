@@ -27,7 +27,10 @@ struct TextDocumentSemanticTokensFull {
 			// TODO: use module environment
 			let parsed = try await SourceFileAnalyzer.analyze(
 				Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true),
-				in: Environment(inferenceContext: Inferencer().infer(Parser.parse(.init(path: source.uri, text: source.text))), symbolGenerator: .init(moduleName: "", parent: nil))
+				in: Environment(
+					inferenceContext: Inferencer(imports: []).infer(Parser.parse(.init(path: source.uri, text: source.text))),
+					symbolGenerator: .init(moduleName: "", parent: nil)
+				)
 			)
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }

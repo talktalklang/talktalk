@@ -11,7 +11,7 @@ import TalkTalkSyntax
 
 struct ProtocolTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		return Inferencer().infer(expr).solve()
+		return Inferencer(imports: []).infer(expr).solve()
 	}
 
 	@Test("Types protocol decl") func protocolType() throws {

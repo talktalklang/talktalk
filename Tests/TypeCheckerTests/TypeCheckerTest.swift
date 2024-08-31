@@ -10,8 +10,8 @@ import TalkTalkSyntax
 
 protocol TypeCheckerTest {}
 extension TypeCheckerTest {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		let inferencer = Inferencer()
+	func infer(_ expr: [any Syntax], imports: [InferenceContext] = []) throws -> InferenceContext {
+		let inferencer = Inferencer(imports: imports)
 		return inferencer.infer(expr).solve().solveDeferred()
 	}
 }

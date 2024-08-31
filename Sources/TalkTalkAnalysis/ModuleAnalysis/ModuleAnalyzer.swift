@@ -21,7 +21,7 @@ public struct ModuleAnalyzer {
 	let visitor: SourceFileAnalyzer
 	public let moduleEnvironment: [String: AnalysisModule]
 	public let importedModules: [AnalysisModule]
-	let inferencer = Inferencer()
+	let inferencer: Inferencer
 
 	public init(
 		name: String,
@@ -31,6 +31,7 @@ public struct ModuleAnalyzer {
 	) {
 		self.name = name
 		self.files = files
+		self.inferencer = Inferencer(imports: moduleEnvironment.values.map(\.inferenceContext))
 		self.environment = .topLevel(name, inferenceContext: inferencer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
@@ -39,7 +40,6 @@ public struct ModuleAnalyzer {
 
 	public func analyze() throws -> AnalysisModule {
 		for file in files {
-			print(file.syntax.description)
 			_ = inferencer.infer(file.syntax)
 		}
 
@@ -258,7 +258,7 @@ public struct ModuleAnalyzer {
 				throw Error.moduleNotFound("\(syntax.module.name) module not found")
 			}
 
-			environment.importModule(module)
+			environment.inferenceContext.import(module.inferenceContext)
 		case let syntax as StructDecl:
 			let analyzedStructDecl = try visitor.visit(syntax.cast(StructDeclSyntax.self), environment).cast(AnalyzedStructDecl.self)
 			let name = analyzedStructDecl.name

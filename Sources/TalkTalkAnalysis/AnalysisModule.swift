@@ -98,6 +98,6 @@ public struct AnalysisModule {
 
 public extension AnalysisModule {
 	static func empty(_ name: String) -> AnalysisModule {
-		AnalysisModule(name: name, inferenceContext: Inferencer().infer([]), files: [])
+		AnalysisModule(name: name, inferenceContext: Inferencer(imports: []).infer([]), files: [])
 	}
 }

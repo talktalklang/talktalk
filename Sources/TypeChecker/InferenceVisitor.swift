@@ -10,17 +10,20 @@ import TalkTalkSyntax
 
 public struct Inferencer {
 	let visitor = InferenceVisitor()
+	let imports: [InferenceContext]
 	public let context: InferenceContext
 
-	public init() {
+	public init(imports: [InferenceContext]) {
 		// Prepend the standard library
 		let stdlib = try! Library.standard.paths.flatMap {
 			let source = try String(contentsOf: Library.standard.location.appending(path: $0), encoding: .utf8)
 			return try Parser.parse(.init(path: $0, text: source))
 		}
 
-		context = InferenceContext(
+		self.imports = imports
+		self.context = InferenceContext(
 			parent: nil,
+			imports: imports,
 			environment: Environment(),
 			constraints: Constraints()
 		)

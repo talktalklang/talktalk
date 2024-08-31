@@ -9,11 +9,7 @@ import Testing
 import TalkTalkSyntax
 @testable import TypeChecker
 
-struct BuiltinFunctionTests {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		return Inferencer().infer(expr).solve()
-	}
-
+struct BuiltinFunctionTests: TypeCheckerTest {
 	@Test("Types print") func typesPrint() throws {
 		let expr = try Parser.parse("print(123)")
 		let context = try infer(expr)

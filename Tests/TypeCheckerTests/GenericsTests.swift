@@ -10,11 +10,7 @@ import Testing
 @testable import TypeChecker
 
 @MainActor
-struct GenericsTests {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		return Inferencer().infer(expr).solve()
-	}
-
+struct GenericsTests: TypeCheckerTest {
 	@Test("Can typecheck a generic type") func basic() throws {
 		let syntax = try Parser.parse(
 			"""

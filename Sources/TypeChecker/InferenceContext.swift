@@ -72,6 +72,7 @@ class InstanceContext: CustomDebugStringConvertible {
 public class InferenceContext: CustomDebugStringConvertible {
 	var environment: Environment
 	var parent: InferenceContext?
+	var imports: [InferenceContext]
 	let depth: Int
 	public var errors: [InferenceError] = []
 	var constraints: Constraints
@@ -90,6 +91,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	init(
 		parent: InferenceContext?,
+		imports: [InferenceContext] = [],
 		environment: Environment,
 		constraints: Constraints,
 		substitutions: [TypeVariable: InferenceType] = [:],
@@ -98,6 +100,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
+		self.imports = imports
 		self.environment = environment
 		self.constraints = constraints
 		self.substitutions = substitutions
@@ -144,13 +147,29 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func lookupVariable(named name: String) -> InferenceType? {
-		namedVariables[name] ?? parent?.lookupVariable(named: name) ?? {
-			if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
-				return builtin.type
-			} else {
-				return nil
+		if let result = namedVariables[name] {
+			return result
+		}
+
+		if let result = parent?.lookupVariable(named: name) {
+			return result
+		}
+
+		if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
+			return builtin.type
+		}
+
+		for imported in imports {
+			if let result = imported.lookupVariable(named: name) {
+				return result
 			}
-		}()
+		}
+
+		return nil
+	}
+
+	public func `import`(_ context: InferenceContext) {
+		imports.append(context)
 	}
 
 	func constraintExists(forTypeVar typeVar: TypeVariable) -> Bool {
@@ -542,8 +561,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 //		if verbose {
-			let context = context ?? self
-			print("\(context.depth) " + prefix + msg)
+		let context = context ?? self
+		print("\(context.depth) " + prefix + msg)
 //		}
 	}
 }

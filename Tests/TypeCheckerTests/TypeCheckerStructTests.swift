@@ -10,11 +10,7 @@ import TalkTalkSyntax
 @testable import TypeChecker
 
 @MainActor
-struct TypeCheckerStructTests {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		return Inferencer().infer(expr).solve()
-	}
-
+struct TypeCheckerStructTests: TypeCheckerTest {
 	@Test("Types struct type") func structType() throws {
 		let syntax = try Parser.parse(
 			"""

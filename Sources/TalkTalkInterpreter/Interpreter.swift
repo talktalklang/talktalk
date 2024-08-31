@@ -23,7 +23,7 @@ public struct Interpreter: AnalyzedVisitor {
 
 	public init(_ code: String) {
 		var parsed = try! Parser.parse(.init(path: "interpreter", text: code))
-		let context = Inferencer().infer(parsed)
+		let context = Inferencer(imports: []).infer(parsed)
 		self.parsed = try! SourceFileAnalyzer.analyze(
 			parsed,
 			in: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "Interpreter", parent: nil))
