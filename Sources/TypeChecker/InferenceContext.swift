@@ -10,15 +10,25 @@ import TalkTalkSyntax
 
 typealias VariableID = Int
 
-public enum InferenceError: Equatable, Hashable {
+public enum InferenceErrorKind: Equatable, Hashable {
 	case undefinedVariable(String)
 	case unknownError(String)
 	case constraintError(String)
-	case argumentError(String)
+	case argumentError(expected: Int, actual: Int)
 	case typeError(String)
 	case memberNotFound(StructType, String)
 	case missingConstraint(InferenceType)
 	case subscriptNotAllowed(InferenceType)
+}
+
+public struct InferenceError: Hashable, Equatable {
+	public let kind: InferenceErrorKind
+	public let location: SourceLocation
+
+	public init(kind: InferenceErrorKind, location: SourceLocation) {
+		self.kind = kind
+		self.location = location
+	}
 }
 
 // If we're inside a type's body, we can save methods/properties in here
@@ -63,11 +73,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var environment: Environment
 	var parent: InferenceContext?
 	let depth: Int
-	var errors: [InferenceError] = []
+	public var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
 	var namedVariables: [String: InferenceType] = [:]
 	var nextID: VariableID = 0
+	var verbose: Bool = false
 	private var namedCounters: [String: Int] = [:]
 
 	// Type-level context info like methods, properties, etc
@@ -208,9 +219,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return solver.solve()
 	}
 
-	func addError(_ inferrenceError: InferenceError, to expr: any Syntax) {
-		errors.append(inferrenceError)
-		environment.extend(expr, with: .type(.error(inferrenceError)))
+	@discardableResult func addError(_ inferrenceError: InferenceErrorKind, to expr: any Syntax) -> InferenceType {
+		if let parent {
+			return parent.addError(inferrenceError, to: expr)
+		}
+
+		let error = InferenceError(kind: inferrenceError, location: expr.location)
+		errors.append(error)
+		environment.extend(expr, with: .type(.error(error)))
+		return .error(error)
 	}
 
 	func extend(_ syntax: any Syntax, with result: InferenceResult) {
@@ -325,8 +342,21 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	@discardableResult func addError(_ inferenceError: InferenceError) -> InferenceType {
+		if let parent {
+			return parent.addError(inferenceError)
+		}
+
 		errors.append(inferenceError)
 		return .error(inferenceError)
+	}
+
+	func generateID() -> Int {
+		if let parent {
+			return parent.generateID()
+		}
+
+		defer { nextID += 1 }
+		return nextID
 	}
 
 	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil, file: String, line: UInt32) -> TypeVariable {
@@ -334,9 +364,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return parent.freshTypeVariable(name, creatingContext: creatingContext ?? self, file: file, line: line)
 		}
 
-		defer { nextID += 1 }
-
-		let typeVariable = TypeVariable(name, nextID)
+		let typeVariable = TypeVariable(name, generateID())
 
 		log("New type variable: \(typeVariable), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
 
@@ -395,7 +423,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	// See if these types are compatible. If so, bind 'em.
-	func unify(_ typeA: InferenceType, _ typeB: InferenceType) {
+	func unify(_ typeA: InferenceType, _ typeB: InferenceType, _ location: SourceLocation) {
 		let a = applySubstitutions(to: typeA)
 		let b = applySubstitutions(to: typeB)
 
@@ -403,21 +431,26 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		switch (a, b) {
 		case let (.base(a), .base(b)) where a != b:
-			print("   ! Cannot unify \(a) and \(b)")
-			addError(.typeError("Cannot unify \(a) and \(b)"))
+			log("Cannot unify \(a) and \(b)", prefix: " ! ")
+			addError(
+				.init(
+					kind: .typeError("Cannot unify \(a) and \(b)"),
+					location: location
+				)
+			)
 		case let (.base(_), .typeVar(b)):
 			bind(typeVar: b, to: a)
-			print("     Got a base type: \(a)")
+			log("Got a base type: \(a)", prefix: " ' ")
 		case let (.typeVar(a), .base(_)):
 			bind(typeVar: a, to: b)
-			print("     Got a base type: \(b)")
+			log("Got a base type: \(b)", prefix: " ' ")
 		case let (.typeVar(v), _) where .typeVar(v) != b:
 			bind(typeVar: v, to: b)
 		case let (_, .typeVar(v)) where .typeVar(v) != a:
 			bind(typeVar: v, to: a)
 		case let (.function(paramsA, returnA), .function(paramsB, returnB)):
-			zip(paramsA, paramsB).forEach { unify($0, $1) }
-			unify(returnA, returnB)
+			zip(paramsA, paramsB).forEach { unify($0, $1, location) }
+			unify(returnA, returnB, location)
 		case let (.kind(.typeVar(a)), .kind(b)):
 			bind(typeVar: a, to: b)
 		case let (.kind(a), .kind(.typeVar(b))):
@@ -428,11 +461,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let (.structInstance(a), .structInstance(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
-				unify(subA.value, subB.value)
+				unify(subA.value, subB.value, location)
 			}
 		default:
 			if a != b {
-				print("   ? Cannot unify \(a) and \(b)")
+				addError(
+					.init(
+						kind: .typeError("Cannot unify \(a) and \(b)"),
+						location: location
+					)
+				)
 			}
 //			addError(.typeError("Cannot unify \(a) and \(b)"))
 		}
@@ -452,7 +490,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		let context = context ?? self
-		print("\(context.depth) " + prefix + msg)
+		if verbose {
+			let context = context ?? self
+			print("\(context.depth) " + prefix + msg)
+		}
 	}
 }

@@ -33,6 +33,12 @@ struct InfixOperatorConstraint: Constraint {
 
 		// Default rules for primitive types
 		switch (lhs, rhs, op) {
+		case (.base(.pointer), .base(.int), .plus),
+					(.base(.pointer), .base(.int), .minus):
+
+			context.unify(.typeVar(returns), .base(.pointer), location)
+
+			return .ok
 		case (.base(.int), let type, .plus),
 		     (.base(.int), let type, .minus),
 		     (.base(.int), let type, .star),
@@ -42,33 +48,48 @@ struct InfixOperatorConstraint: Constraint {
 				 (let type, .base(.int), .star),
 				 (let type, .base(.int), .slash):
 
-			context.unify(type, .base(.int))
+			context.unify(type, .base(.int), location)
 
 			return checkReturnType(type, expect: .base(.int), context: context)
 		case (.base(.string), let type, .plus),
 				 (let type, .base(.string), .plus):
-			context.unify(type, .base(.string))
+			context.unify(type, .base(.string), location)
 
 			return checkReturnType(type, expect: .base(.string), context: context)
 //		case (.base(.bool), .base(.bool), .andAnd),
 //		     (.base(.bool), .base(.bool), .pipePipe):
 //			return checkReturnType(.base(.bool))
 		default:
-			return .error([Diagnostic(
-				message: "Invalid operator '\(op)' for types '\(lhs)' and '\(rhs)'",
-				severity: .error,
-				location: location
-			)])
+			context.unify(lhs, .typeVar(returns), location)
+			context.unify(rhs, .typeVar(returns), location)
+
+			context.addConstraint(
+				.equality(lhs, .typeVar(returns), at: location)
+			)
+			context.addConstraint(
+				.equality(rhs, .typeVar(returns), at: location)
+			)
+
+			return .ok
 		}
 	}
 
 	private func checkReturnType(_ type: InferenceType, expect: InferenceType, context: InferenceContext) -> ConstraintCheckResult {
 		if context.applySubstitutions(to: type) == expect {
-			context.unify(.typeVar(self.returns), type)
+			context.unify(.typeVar(self.returns), type, location)
 
 			return .ok
 		} else {
-			context.unify(.typeVar(returns), .error(.constraintError("Infix operator \(op.rawValue) can't be used with operands \(lhs) and \(rhs)")))
+			context.unify(
+				.typeVar(returns),
+				.error(
+					.init(
+						kind: .constraintError("Infix operator \(op.rawValue) can't be used with operands \(lhs) and \(rhs)"),
+						location: location
+					)
+				),
+				location
+			)
 
 			return .error([Diagnostic(
 				message: "Invalid operator '\(op)' for types '\(lhs)' and '\(rhs)'",

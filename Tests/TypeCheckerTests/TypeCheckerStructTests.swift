@@ -100,6 +100,29 @@ struct TypeCheckerStructTests {
 		#expect(context[syntax[1]] == .type(.base(.string)))
 	}
 
+	@Test("Types self return") func selfReturn() throws {
+		let syntax = try Parser.parse(
+			"""
+			struct Person {
+				func sup() {
+					self
+				}
+			}
+
+			Person().sup()
+			"""
+		)
+
+		let context = try infer(syntax)
+		let structType = StructType.extractType(from: context[syntax[0]])!
+
+		guard case let .type(.function(_, returnType)) = structType.member(named: "sup") else {
+			#expect(Bool(false)) ; return
+		}
+
+		#expect(returnType == .selfVar(structType))
+	}
+
 	@Test("Types instance methods") func instanceMethod() throws {
 		let syntax = try Parser.parse(
 			"""

@@ -42,7 +42,7 @@ struct EqualityConstraint: Constraint {
 			return .ok
 		}
 
-		context.unify(lhs, rhs)
+		context.unify(lhs, rhs, location)
 
 		return .ok
 	}

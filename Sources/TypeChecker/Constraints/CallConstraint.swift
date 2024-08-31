@@ -44,6 +44,8 @@ struct CallConstraint: Constraint {
 
 	func solveFunction(params: [InferenceType], fnReturns: InferenceType, in context: InferenceContext) -> ConstraintCheckResult {
 		if args.count != params.count {
+			context.addError(.init(kind: .argumentError(expected: params.count, actual: args.count), location: location))
+
 			return .error([
 				Diagnostic(
 					message: "Expected \(params.count) args, got \(args.count)",
@@ -60,7 +62,8 @@ struct CallConstraint: Constraint {
 			if arg.asType(in: context) != param {
 				childContext.unify(
 					arg.asType(in: context),
-					param
+					param,
+					location
 				)
 			}
 		}
@@ -68,11 +71,12 @@ struct CallConstraint: Constraint {
 		if returns != fnReturns {
 			childContext.unify(
 				childContext.applySubstitutions(to: returns),
-				childContext.applySubstitutions(to: fnReturns)
+				childContext.applySubstitutions(to: fnReturns),
+				location
 			)
 		}
 
-		context.unify(returns, childContext.applySubstitutions(to: returns))
+		context.unify(returns, childContext.applySubstitutions(to: returns), location)
 
 		return .ok
 	}
@@ -87,7 +91,7 @@ struct CallConstraint: Constraint {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
 				case .function(let fnParams, let fnReturns):
-					context.unify(returns, fnReturns)
+					context.unify(returns, fnReturns, location)
 					params = fnParams
 				default:
 					params = []
@@ -112,7 +116,7 @@ struct CallConstraint: Constraint {
 			}
 
 			let instance = structType.instantiate(with: substitutions, in: context)
-			context.unify(returns, .structInstance(instance))
+			context.unify(returns, .structInstance(instance), location)
 		}
 
 		if args.count != params.count {
@@ -145,7 +149,7 @@ struct CallConstraint: Constraint {
 				}
 
 				instance.substitutions[param] = arg.asType(in: childContext)
-				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext))
+				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext), location)
 			case .structType(let structType):
 				var substitutions: [TypeVariable: InferenceType] = [:]
 				if case .structInstance(let instance) = context.applySubstitutions(to: arg.asType(in: context)) {
@@ -166,16 +170,18 @@ struct CallConstraint: Constraint {
 
 			context.unify(
 				arg.asType(in: childContext),
-				paramType
+				paramType,
+				location
 			)
 		}
 
 		childContext.unify(
 			.structInstance(instance),
-			returns
+			returns,
+			location
 		)
 
-		context.unify(returns, childContext.applySubstitutions(to: returns))
+		context.unify(returns, childContext.applySubstitutions(to: returns), location)
 
 		return .ok
 	}

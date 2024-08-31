@@ -9,8 +9,8 @@ public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, Sendab
 	var id: VariableID
 	var name: String?
 
-	public static func new(_ named: String) -> TypeVariable {
-		TypeVariable(named, named.hashValue)
+	public static func new(_ named: String, _ id: Int? = nil) -> TypeVariable {
+		TypeVariable(named, id ?? named.hashValue)
 	}
 
 	init(_ name: String?, _ id: VariableID) {

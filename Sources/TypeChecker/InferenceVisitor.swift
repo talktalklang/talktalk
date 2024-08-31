@@ -39,7 +39,7 @@ struct InferenceVisitor: Visitor {
 			do {
 				_ = try syntax.accept(self, context)
 			} catch {
-				context.addError(.unknownError(error.localizedDescription))
+				context.addError(.init(kind: .unknownError(error.localizedDescription), location: syntax.location))
 			}
 		}
 
@@ -81,7 +81,7 @@ struct InferenceVisitor: Visitor {
 				variables: variables,
 				type: .function(
 					expr.params.params.map { childContext[$0]!.asType! },
-					returnType.asType(in: context)
+					returnType.asType(in: childContext)
 				)
 			)
 		)
@@ -137,7 +137,7 @@ struct InferenceVisitor: Visitor {
 			type = .base(.pointer)
 		default:
 			guard let found = context.lookupVariable(named: expr.identifier.lexeme) else {
-				fatalError("unknown type: \(expr.identifier.lexeme)")
+				return context.addError(.typeError("Type not found: \(expr.identifier.lexeme)"), to: expr)
 			}
 
 			switch found {
@@ -162,12 +162,6 @@ struct InferenceVisitor: Visitor {
 							at: paramSyntax.location
 						)
 					)
-
-					print(EqualityConstraint.equality(
-						.type(.typeVar(context.typeContext!.typeParameters[i])),
-						 .type(.typeVar(typeParam)),
-						 at: paramSyntax.location
-					 ))
 				}
 
 				type = .structType(structType)

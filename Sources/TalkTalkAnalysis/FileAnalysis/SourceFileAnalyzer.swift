@@ -120,7 +120,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedErrorSyntax(
-			typeID: .error(.unknownError(expr.message)),
+			typeID: .error(.init(kind: .unknownError(expr.message), location: expr.location)),
 			wrapped: expr.cast(ParseErrorSyntax.self),
 			environment: context
 		)
@@ -383,13 +383,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			{
 				lexicalScope.scope.add(
 					method: Method(
-						symbol: funcExpr.symbol,
 						name: funcExpr.name!.lexeme,
 						slot: existing.slot,
-						params: funcExpr.analyzedParams.paramsAnalyzed,
+						params: funcExpr.analyzedParams.paramsAnalyzed.map(\.typeAnalyzed),
 						inferenceType: context.inferenceContext.lookup(syntax: funcExpr)!,
 						returnTypeID: funcExpr.returnType,
-						expr: funcExpr,
 						isMutable: false
 					))
 			}
@@ -417,25 +415,23 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol: symbol,
 			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
 			wrapped: expr,
-			analysisErrors: [],
+			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
+
+		context.define(local: expr.name, as: expr, isMutable: true)
 
 		return decl
 	}
 
 	public func visit(_ expr: LetDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		var errors: [AnalysisError] = []
-
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
-		var isGlobal = false
 		var symbol: Symbol?
 		if let scope = context.lexicalScope {
 			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal, id: expr.id)
 		} else if context.isModuleScope {
-			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
 		}
 
@@ -443,10 +439,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol: symbol,
 			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
 			wrapped: expr,
-			analysisErrors: errors,
+			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
+
+		context.define(local: expr.name, as: expr, isMutable: false)
 
 		return decl
 	}

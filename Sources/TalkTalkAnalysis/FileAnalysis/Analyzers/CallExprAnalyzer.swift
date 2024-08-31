@@ -34,6 +34,26 @@ struct CallExprAnalyzer: Analyzer {
 
 		let type = context.inferenceContext.lookup(syntax: expr)
 
+		for error in context.inferenceContext.errors {
+			if expr.location.contains(error.location) {
+				let kind: AnalysisErrorKind = switch error.kind {
+				case let .argumentError(expected: expected, actual: actual):
+					.argumentError(expected: expected, received: actual)
+				case let .memberNotFound(type, name):
+					.noMemberFound(receiver: expr, property: name)
+				default:
+					.unknownError("\(error.kind)")
+				}
+
+				errors.append(
+					.init(
+						kind: kind,
+						location: error.location
+					)
+				)
+			}
+		}
+
 		return AnalyzedCallExpr(
 			inferenceType: type!,
 			wrapped: expr.cast(CallExprSyntax.self),

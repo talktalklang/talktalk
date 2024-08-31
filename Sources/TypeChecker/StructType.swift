@@ -16,7 +16,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
 
-	static func extractType(from result: InferenceResult?) -> StructType? {
+	public static func extractType(from result: InferenceResult?) -> StructType? {
 		if case let .type(.structType(structType)) = result {
 			return structType
 		}
@@ -40,7 +40,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		self.context = context
 		self.typeContext = context.typeContext!
 
-		context.namedVariables["self"] = .structType(self)
+		context.namedVariables["self"] = .selfVar(self)
 	}
 
 	public func hash(into hasher: inout Hasher) {
@@ -74,7 +74,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return instance
 	}
 
-	var initializers: [String: InferenceResult] {
+	public var initializers: [String: InferenceResult] {
 		typeContext.initializers
 	}
 

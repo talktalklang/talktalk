@@ -15,7 +15,7 @@ struct Solver {
 			context.log(constraint.description, prefix: "-> ")
 			switch constraint.solve(in: context) {
 			case .error(let diagnostics):
-				print("!!!!!!!" + diagnostics.map(\.message).joined(separator: ", "))
+				context.log(diagnostics.map(\.message).joined(separator: ", "), prefix: " ! ")
 			case .ok:
 				context.log(constraint.result(in: context), prefix: "<- ")
 			}

@@ -25,7 +25,7 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	func asType(in context: InferenceContext) -> InferenceType {
+	public func asType(in context: InferenceContext) -> InferenceType {
 		switch self {
 		case .scheme(let scheme):
 			context.instantiate(scheme: scheme)

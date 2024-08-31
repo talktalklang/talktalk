@@ -80,7 +80,14 @@ struct TypeCheckerTests {
 		let expr = try Parser.parse(#"10 + "nope""#)
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.error(.constraintError("Infix operator + can't be used with operands int and string"))))
+		#expect(result == .type(
+			.error(
+				.init(
+					kind: .constraintError("Infix operator + can't be used with operands int and string"),
+					location: expr[0].location
+				)
+			)
+		))
 	}
 
 	@Test("Infers binary expr with strings") func binaryStrings() throws {
@@ -110,6 +117,20 @@ struct TypeCheckerTests {
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
+	}
+
+	@Test("Infers func calls") func calls() throws {
+		let syntax = try Parser.parse(
+			"""
+			let foo = func(x) { x + x }
+			foo(1)
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result = try #require(context[syntax[1]])
+
+		#expect(result == .type(.base(.int)))
 	}
 
 	@Test("Infers let with base type") func letWithBase() throws {
@@ -163,7 +184,14 @@ struct TypeCheckerTests {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 
 		// This test fails
-		#expect(context[syntax[1]] == .type(.error(.undefinedVariable("x"))))
+		#expect(context[syntax[1]] == .type(
+			.error(
+				.init(
+					kind: .undefinedVariable("x"),
+					location: syntax[1].location
+				)
+			)
+		))
 	}
 
 	@Test("Types function return annotations") func funcReturnAnnotations() throws {

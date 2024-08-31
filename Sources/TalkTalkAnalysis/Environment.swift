@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TypeChecker
 import TalkTalkBytecode
 import TalkTalkSyntax
+import TypeChecker
 
 // An Environment represents the type environment for some scope
 public class Environment {
@@ -95,6 +95,36 @@ public class Environment {
 
 	public func importModule(_ analysisModule: AnalysisModule) {
 		importedModules.append(analysisModule)
+	}
+
+	public func define(struct name: String, as type: StructType) {
+		structTypes[name] = type
+	}
+
+	public func define(parameter: String, as expr: any AnalyzedExpr) {
+		locals[parameter] = Binding(
+			name: parameter,
+			expr: expr,
+			type: inferenceContext.lookup(syntax: expr)!,
+			isParameter: true
+		)
+	}
+
+	public func define(
+		local: String,
+		as expr: any Syntax,
+		definition: (any AnalyzedExpr)? = nil,
+		isMutable: Bool,
+		isGlobal: Bool = false
+	) {
+		locals[local] = Binding(
+			name: local,
+			expr: expr,
+			definition: definition,
+			type: inferenceContext.lookup(syntax: expr)!,
+			isGlobal: isGlobal,
+			isMutable: isMutable
+		)
 	}
 
 	public var bindings: [Binding] {

@@ -26,6 +26,10 @@ public class Instance: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
+	public static func synthesized(_ type: StructType) -> Instance {
+		Instance(id: -9999, type: type, substitutions: [:])
+	}
+
 	init(id: Int, type: StructType, substitutions: [TypeVariable : InferenceType]) {
 		self.id = id
 		self.type = type
@@ -70,6 +74,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	case `protocol`(ProtocolType)
 	case error(InferenceError)
 	case kind(InferenceType)
+	case selfVar(StructType)
 	case any
 	case void
 
@@ -97,6 +102,8 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 			instance.description
 		case .any:
 			"any"
+		case let .selfVar(type):
+			"\(type.description) (self)"
 		case .void:
 			"void"
 		}
