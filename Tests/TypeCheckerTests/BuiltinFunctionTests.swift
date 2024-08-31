@@ -64,8 +64,7 @@ struct BuiltinFunctionTests {
 		_hash("sup")
 		""")
 		let context = try infer(expr)
-		let result = try #require(context[expr[0]])
-		#expect(result == .type(.base(.int)))
+		#expect(context[expr[0]] == .type(.base(.int)))
 	}
 
 	@Test("Types _cast") func types_cast() throws {

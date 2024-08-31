@@ -35,50 +35,34 @@ struct ModuleAnalysisTests {
 		).analyze()
 	}
 
-//	@Test("Analyzes module functions") func basic() throws {
-//		let analysisModule = try analyze(
-//			name: "A",
-//			.tmp("""
-//			func fizz() {}
-//
-//			func foo() {
-//				bar()
-//			}
-//			""", "a"),
-//			.tmp("""
-//			func bar() {
-//				123
-//			}
-//			""", "a2")
-//		)
-//
-//		#expect(analysisModule.name == "A")
-//		#expect(analysisModule.moduleFunctions.count == 3)
-//
-//		// First make sure we can get a super basic function with no dependencies
-//		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
-//		guard case let .function(barName, barReturnType, params, captures) = bar.typeID.type() else {
-//			#expect(Bool(false), "bar type was not a function")
-//			return
-//		}
-//
-//		#expect(barName == "bar")
-//		#expect(barReturnType.type() == .int)
-//		#expect(params.isEmpty)
-//		#expect(captures.isEmpty)
-//
-//		// Next make sure we can get a function that calls another function that was defined after it
-//		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-//		guard case let .function(fooName, fooReturnType, params, captures) = foo.typeID.type() else {
-//			#expect(Bool(false), "foo type was not a function")
-//			return
-//		}
-//
-//		#expect(fooName == "foo")
-//		#expect(fooReturnType.type() == .int)
-//		#expect(params.isEmpty)
-//		#expect(captures.isEmpty)
-//	}
+	@Test("Analyzes module functions") func basic() throws {
+		let analysisModule = try analyze(
+			name: "A",
+			.tmp("""
+			func fizz() {}
+
+			func foo() {
+				bar()
+			}
+			""", "a"),
+			.tmp("""
+			func bar() {
+				123
+			}
+			""", "a2")
+		)
+
+		#expect(analysisModule.name == "A")
+		#expect(analysisModule.moduleFunctions.count == 3)
+
+		// First make sure we can get a super basic function with no dependencies
+		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
+		#expect(bar.typeID == .function([], .base(.int)))
+
+		// Next make sure we can get a function that calls another function that was defined after it
+		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
+		#expect(foo.typeID == .function([], .base(.int)))
+	}
 //
 //	@Test("Analyzes module global values") func globalValues() throws {
 //		let analysisModule = try analyze(

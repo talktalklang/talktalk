@@ -31,6 +31,10 @@ public struct Inferencer {
 	public func infer(_ syntax: [any Syntax]) -> InferenceContext {
 		return visitor.infer(syntax, with: context).solve()
 	}
+
+	public func inferDeferred() -> InferenceContext {
+		return context.solveDeferred()
+	}
 }
 
 struct InferenceVisitor: Visitor {
@@ -94,8 +98,8 @@ struct InferenceVisitor: Visitor {
 		context.extend(expr, with: funcType)
 
 		if let name = expr.name?.lexeme {
-			context.namedVariables[name] = funcType.asType(in: context)
-			childContext.namedVariables[name] = funcType.asType(in: context)
+			context.defineVariable(named: name, as: funcType.asType(in: context), at: expr.location)
+			childContext.defineVariable(named: name, as: funcType.asType(in: context), at: expr.location)
 		}
 	}
 
@@ -125,7 +129,7 @@ struct InferenceVisitor: Visitor {
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]) \(type) == \(typeVar)", prefix: " @ ")
 		}
 
-		context.namedVariables[expr.name] = type.asType(in: context)
+		context.defineVariable(named: expr.name, as: type.asType(in: context), at: expr.location)
 		context.extend(expr, with: type)
 	}
 
@@ -255,7 +259,9 @@ struct InferenceVisitor: Visitor {
 		} else if let type = context.lookupType(named: expr.name) {
 			context.extend(expr, with: .type(.kind(type)))
 		} else {
-			context.addError(.undefinedVariable(expr.name), to: expr)
+			let typeVar = context.freshTypeVariable(expr.name)
+			context.definePlaceholder(named: expr.name, as: .placeholder(typeVar), at: expr.location)
+			context.extend(expr, with: .type(.placeholder(typeVar)))
 		}
 	}
 
@@ -345,7 +351,7 @@ struct InferenceVisitor: Visitor {
 			type = .typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line))
 		}
 
-		context.namedVariables[expr.name] = type
+		context.defineVariable(named: expr.name, as: type, at: expr.location)
 		context.extend(expr, with: .type(type))
 	}
 
@@ -463,7 +469,7 @@ struct InferenceVisitor: Visitor {
 			typeContext.typeParameters.append(typeVar)
 
 			// Add this type to the struct's named variables for resolution
-			structContext.namedVariables[typeParameter.identifier.lexeme] = .typeVar(typeVar)
+			structContext.defineVariable(named: typeParameter.identifier.lexeme, as: .typeVar(typeVar), at: typeParameter.location)
 
 			try visit(typeParameter, structContext)
 		}
@@ -471,7 +477,7 @@ struct InferenceVisitor: Visitor {
 		let structInferenceType = InferenceType.structType(structType)
 
 		// Make this type available by name outside its own context
-		context.namedVariables[expr.name] = structInferenceType
+		context.defineVariable(named: expr.name, as: structInferenceType, at: expr.location)
 
 		for typeParameter in expr.conformances {
 			try typeParameter.accept(self, structContext)

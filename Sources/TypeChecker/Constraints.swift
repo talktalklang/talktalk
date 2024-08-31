@@ -7,9 +7,14 @@
 
 class Constraints {
 	var constraints: [any Constraint] = []
+	var deferredConstraints: [any Constraint] = []
 
 	func add(_ constraint: any Constraint) {
 		constraints.append(constraint)
+	}
+
+	func `defer`(_ constraint: any Constraint) {
+		deferredConstraints.append(constraint)
 	}
 
 	func exists(forTypeVar typeVar: TypeVariable) -> Bool {

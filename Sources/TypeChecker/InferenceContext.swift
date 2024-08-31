@@ -76,7 +76,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 	public var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
-	var namedVariables: [String: InferenceType] = [:]
+	private(set) var namedVariables: [String: InferenceType] = [:]
+	private(set) var namedPlaceholders: [String: InferenceType] = [:]
 	var nextID: VariableID = 0
 	var verbose: Bool = false
 	private var namedCounters: [String: Int] = [:]
@@ -107,7 +108,49 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	public func lookup(syntax: any Syntax) -> InferenceType? {
-		self[syntax]?.asType(in: self)
+		let result = self[syntax]?.asType(in: self)
+
+		if case let .placeholder(typeVariable) = result {
+			return .error(.init(kind: .undefinedVariable(typeVariable.name ?? "<none>"), location: syntax.location))
+		}
+
+		return result
+	}
+
+	func definePlaceholder(named name: String, as type: InferenceType, at location: SourceLocation) {
+		if let parent {
+			parent.definePlaceholder(named: name, as: type, at: location)
+			return
+		}
+
+		namedPlaceholders[name] = type
+	}
+
+	func lookupPlaceholder(named name: String) -> InferenceType? {
+		if let parent {
+			return parent.lookupPlaceholder(named: name)
+		}
+
+		return namedPlaceholders[name]
+	}
+
+	func defineVariable(named name: String, as type: InferenceType, at location: SourceLocation) {
+		if case let .placeholder(typeVar) = lookupPlaceholder(named: name) {
+			log("Adding equality constraint for placeholder \(name)", prefix: " = ")
+			addConstraint(.equality(type, .placeholder(typeVar), at: location))
+		}
+
+		namedVariables[name] = type
+	}
+
+	func lookupVariable(named name: String) -> InferenceType? {
+		namedVariables[name] ?? parent?.lookupVariable(named: name) ?? {
+			if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
+				return builtin.type
+			} else {
+				return nil
+			}
+		}()
 	}
 
 	func constraintExists(forTypeVar typeVar: TypeVariable) -> Bool {
@@ -133,6 +176,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		constraints.add(constraint)
+	}
+
+	func deferConstraint(_ constraint: any Constraint) {
+		if let parent {
+			parent.deferConstraint(constraint)
+			return
+		}
+
+		constraints.defer(constraint)
 	}
 
 	func nextIdentifier(named name: String) -> Int {
@@ -219,6 +271,11 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return solver.solve()
 	}
 
+	func solveDeferred() -> InferenceContext {
+		var solver = Solver(context: self)
+		return solver.solveDeferred()
+	}
+
 	@discardableResult func addError(_ inferrenceError: InferenceErrorKind, to expr: any Syntax) -> InferenceType {
 		if let parent {
 			return parent.addError(inferrenceError, to: expr)
@@ -258,16 +315,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func trackReturn(_ result: InferenceResult) {
 		environment.trackReturn(result)
-	}
-
-	func lookupVariable(named name: String) -> InferenceType? {
-		namedVariables[name] ?? parent?.lookupVariable(named: name) ?? {
-			if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
-				return builtin.type
-			} else {
-				return nil
-			}
-		}()
 	}
 
 	func typeFrom(expr: any TypeExpr) -> InferenceType {
@@ -359,7 +406,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return nextID
 	}
 
-	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil, file: String, line: UInt32) -> TypeVariable {
+	func freshTypeVariable(_ name: String, creatingContext: InferenceContext? = nil, file: String = #file, line: UInt32 = #line) -> TypeVariable {
 		if let parent {
 			return parent.freshTypeVariable(name, creatingContext: creatingContext ?? self, file: file, line: line)
 		}
@@ -394,7 +441,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
-		case let .typeVar(typeVariable):
+		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
 				return applySubstitutions(to: .typeVar(child), with: substitutions, count: count + 1)
@@ -448,6 +495,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 			bind(typeVar: v, to: b)
 		case let (_, .typeVar(v)) where .typeVar(v) != a:
 			bind(typeVar: v, to: a)
+		case let (.placeholder(v), _) where .placeholder(v) != b:
+			bind(typeVar: v, to: b)
+		case let (_, .placeholder(v)) where .placeholder(v) != a:
+			bind(typeVar: v, to: a)
 		case let (.function(paramsA, returnA), .function(paramsB, returnB)):
 			zip(paramsA, paramsB).forEach { unify($0, $1, location) }
 			unify(returnA, returnB, location)
@@ -490,9 +541,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-		}
+//		}
 	}
 }

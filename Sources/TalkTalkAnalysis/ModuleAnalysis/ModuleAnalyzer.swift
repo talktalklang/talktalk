@@ -39,8 +39,11 @@ public struct ModuleAnalyzer {
 
 	public func analyze() throws -> AnalysisModule {
 		for file in files {
+			print(file.syntax.description)
 			_ = inferencer.infer(file.syntax)
 		}
+
+		_ = inferencer.inferDeferred()
 
 		var analysisModule = AnalysisModule(name: name, inferenceContext: inferencer.context, files: files)
 

@@ -71,6 +71,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	case function([InferenceType], InferenceType)
 	case structType(StructType)
 	case structInstance(Instance)
+	case placeholder(TypeVariable)
 	case `protocol`(ProtocolType)
 	case error(InferenceError)
 	case kind(InferenceType)
@@ -104,6 +105,8 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 			"any"
 		case let .selfVar(type):
 			"\(type.description) (self)"
+		case let .placeholder(variable):
+			"\(variable) (placeholder)"
 		case .void:
 			"void"
 		}

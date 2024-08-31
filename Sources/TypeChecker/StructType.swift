@@ -40,7 +40,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		self.context = context
 		self.typeContext = context.typeContext!
 
-		context.namedVariables["self"] = .selfVar(self)
+		context.defineVariable(named: "self", as: .selfVar(self), at: [.synthetic(.struct)])
 	}
 
 	public func hash(into hasher: inout Hasher) {

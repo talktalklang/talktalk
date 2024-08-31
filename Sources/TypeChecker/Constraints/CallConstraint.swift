@@ -12,6 +12,7 @@ struct CallConstraint: Constraint {
 	let args: [InferenceResult]
 	let returns: InferenceType
 	let location: SourceLocation
+	let isRetry: Bool
 
 	func result(in context: InferenceContext) -> String {
 		let callee = context.applySubstitutions(to: callee.asType(in: context))
@@ -35,6 +36,37 @@ struct CallConstraint: Constraint {
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
 		case .structType(let structType):
 			return solveStruct(structType: structType, in: context)
+		case .placeholder(let typeVar):
+			// If it's a type var that we haven't solved yet, try deferring
+			if isRetry {
+				context.log("Deferred constraint not fulfilled", prefix: " ! ")
+				return .error([
+					Diagnostic(message: "\(typeVar) not callable", severity: .error, location: location)
+				])
+			} else {
+				// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
+				context.log("Deferring call constraint on \(typeVar)", prefix: " ? ")
+				context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
+				return .ok
+			}
+		case .error(let error):
+			if case let .undefinedVariable(name) = error.kind {
+				if isRetry {
+					context.log("Deferred constraint not fulfilled", prefix: " ! ")
+					return .error([
+						Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+					])
+				} else {
+					// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
+					context.log("Deferring call constraint on \(name)", prefix: " ? ")
+					context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
+				}
+				return .ok
+			}
+
+			return .error([
+				Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+			])
 		default:
 			return .error([
 				Diagnostic(message: "\(returns) not callable", severity: .error, location: location)
@@ -188,7 +220,7 @@ struct CallConstraint: Constraint {
 }
 
 extension Constraint where Self == CallConstraint {
-	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceType, at: SourceLocation) -> CallConstraint {
-		CallConstraint(callee: callee, args: args, returns: returns, location: at)
+	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceType, at: SourceLocation, isRetry: Bool = false) -> CallConstraint {
+		CallConstraint(callee: callee, args: args, returns: returns, location: at, isRetry: isRetry)
 	}
 }

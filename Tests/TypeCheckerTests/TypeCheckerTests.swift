@@ -26,11 +26,7 @@ struct AnyTypeVar {
 }
 
 @MainActor
-struct TypeCheckerTests {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		return Inferencer().infer(expr).solve()
-	}
-
+struct TypeCheckerTests: TypeCheckerTest {
 	@Test("Infers int literal") func intLiteral() throws {
 		let expr = try Parser.parse("123")
 		let context = try infer(expr)
@@ -132,6 +128,21 @@ struct TypeCheckerTests {
 		#expect(result == .type(.base(.int)))
 	}
 
+	@Test("Infers deferred func calls") func deferredCalls() throws {
+		let syntax = try Parser.parse(
+			"""
+			func foo() { bar() }
+			func bar() { 123 } 
+			foo()
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result = try #require(context[syntax[2]])
+
+		#expect(result == .type(.base(.int)))
+	}
+
 	@Test("Infers let with base type") func letWithBase() throws {
 		let syntax = try Parser.parse("let i = 123")
 		let context = try infer(syntax)
@@ -227,7 +238,7 @@ struct TypeCheckerTests {
 				Scheme(
 					name: "fact",
 					variables: [],
-					type: .function([.typeVar("n", 0)], .base(.int))
+					type: .function([.typeVar("n", 62)], .base(.int))
 				)
 			)
 		)
