@@ -56,7 +56,11 @@ public class Instance: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	public var description: String {
-		"\(type.name)()#\(id)"
+		if substitutions.isEmpty {
+			"\(type.name)()#\(id)"
+		} else {
+			"\(type.name)<\(substitutions.keys.map(\.description).joined(separator: ", "))>()#\(id)"
+		}
 	}
 
 	public func hash(into hasher: inout Hasher) {

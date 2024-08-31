@@ -69,10 +69,14 @@ struct MemberConstraint: Constraint {
 				location
 			)
 		case .selfVar(let structType):
-			guard let member = structType.member(named: name) else {
+			guard var member = structType.member(named: name) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
+			}
+
+			if case let .structType(structType) = member.asType(in: context) {
+				member = .type(.structInstance(structType.instantiate(with: [:], in: context)))
 			}
 
 			context.unify(

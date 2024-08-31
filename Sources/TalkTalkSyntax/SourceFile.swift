@@ -27,7 +27,7 @@ public struct SourceFile {
 
 extension SourceFile: ExpressibleByStringLiteral {
 	public init(stringLiteral value: StringLiteralType) {
-		self.path = "<literal>"
+		self.path = "<literal \(value.hashValue)>"
 		self.text = value
 	}
 }

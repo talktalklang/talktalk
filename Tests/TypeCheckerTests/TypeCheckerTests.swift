@@ -194,13 +194,13 @@ struct TypeCheckerTests: TypeCheckerTest {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 
 		// This test fails
-		#expect(context[syntax[1]] == .type(
+		#expect(context.lookup(syntax: syntax[1]) ==
 			.error(
 				.init(
 					kind: .undefinedVariable("x"),
 					location: syntax[1].location
 				)
-			)
+		
 		))
 	}
 

@@ -82,8 +82,8 @@ struct InferenceVisitor: Visitor {
 		if let typeDecl = expr.typeDecl, expr.name?.lexeme != "init" {
 			try typeDecl.accept(self, context)
 			let inferredReturnType = returnType
-			let explicitReturnType = context[typeDecl]!
-			returnType = explicitReturnType
+			let explicitReturnType = memberTypeFrom(expr: typeDecl, in: context)
+			returnType = .type(explicitReturnType)
 			context.addConstraint(.equality(inferredReturnType, returnType, at: typeDecl.location))
 		}
 
@@ -121,7 +121,7 @@ struct InferenceVisitor: Visitor {
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]) \(type) == \(value!)", prefix: " @ ")
 			context.constraints.add(.equality(typeExpr!, value!, at: expr.location))
 		case let (typeExpr, nil) where typeExpr != nil:
-			type = typeExpr!
+			type = .type(memberTypeFrom(expr: expr.typeExpr!, in: context))
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]), already has type specified: \(type)", prefix: " @ ")
 		case let (nil, value) where value != nil:
 			type = value!
@@ -136,7 +136,51 @@ struct InferenceVisitor: Visitor {
 		context.extend(expr, with: type)
 	}
 
-	func typeFrom(expr: TypeExprSyntax, in context: InferenceContext) -> InferenceType {
+	// Return a type from a type expression, suitable for an instance member. This can include things
+	// like generic parameter substitutions.
+	func memberTypeFrom(expr: any TypeExpr, in context: InferenceContext) -> InferenceType {
+		let type: InferenceType
+		switch expr.identifier.lexeme {
+		case "int":
+			type = .base(.int)
+		case "String":
+			type = .base(.string)
+		case "bool":
+			type = .base(.bool)
+		case "pointer":
+			type = .base(.pointer)
+		default:
+			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+
+			switch found {
+			case let .structType(structType):
+				var substitutions: [TypeVariable: InferenceType] = [:]
+
+				for (typeParam, paramSyntax) in zip(structType.typeContext.typeParameters, expr.genericParams) {
+					try! visit(paramSyntax, context)
+					substitutions[typeParam] = context[paramSyntax]?.asType(in: context)
+				}
+
+				type = .structInstance(
+					Instance(
+						id: context.nextIdentifier(named: structType.name),
+						type: structType,
+						substitutions: substitutions
+					)
+				)
+			case let .typeVar(typeVar):
+				type = .typeVar(typeVar)
+			default:
+				fatalError("cannot use \(found) as type expression")
+			}
+		}
+
+		return type
+	}
+
+	// Get a type from a type expression. Note that this might ignore things like generic parameters
+	// in order to return a canonical form.
+	func typeFrom(expr: any TypeExpr, in context: InferenceContext) -> InferenceType {
 		let type: InferenceType
 		switch expr.identifier.lexeme {
 		case "int":
@@ -154,26 +198,8 @@ struct InferenceVisitor: Visitor {
 
 			switch found {
 			case let .structType(structType):
-				for (i, (typeParam, paramSyntax)) in zip(structType.typeContext.typeParameters, expr.genericParams).enumerated() {
-					guard let typeContext = context.typeContext else {
-						continue
-					}
-
-					context.addConstraint(
-						.equality(
-							.type(.typeVar(typeContext.typeParameters[i])),
-							.type(.typeVar(typeParam)),
-							at: paramSyntax.location
-						)
-					)
-
-					context.addConstraint(
-						.equality(
-							.type(.typeVar(typeParam)),
-							.type(.typeVar(typeContext.typeParameters[i])),
-							at: paramSyntax.location
-						)
-					)
+				for paramSyntax in expr.genericParams {
+					try! visit(paramSyntax, context)
 				}
 
 				type = .structType(structType)
@@ -349,7 +375,7 @@ struct InferenceVisitor: Visitor {
 		var type: InferenceType
 
 		if let typeExpr = expr.type {
-			type = context.typeFrom(expr: typeExpr)
+			type = typeFrom(expr: typeExpr, in: context)
 		} else {
 			type = .typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line))
 		}
@@ -503,7 +529,7 @@ struct InferenceVisitor: Visitor {
 				typeContext.methods[decl.name!.lexeme] = .scheme(scheme)
 			case let (decl as VarLetDecl, .type(type)):
 				// It's a property
-				typeContext.properties[decl.name] = .type(type)
+				typeContext.properties[decl.name] = .type(memberTypeFrom(expr: decl.typeExpr!, in: context))
 			case let (_ as InitDecl, type):
 				typeContext.initializers["init"] = type
 			default:
@@ -571,8 +597,18 @@ struct InferenceVisitor: Visitor {
 				.call(.type(method), args, returns: returns, at: expr.location)
 			)
 		default:
-			context.addError(.subscriptNotAllowed(context[expr.receiver]!.asType(in: context)), to: expr)
-			return
+			let typeVar = context.freshTypeVariable("\(expr.description)")
+			returns = .typeVar(typeVar)
+
+			context.addConstraint(
+				SubscriptConstraint(
+					receiver: context[expr.receiver]!,
+					args: expr.args.map { context[$0]! },
+					returns: .typeVar(typeVar),
+					location: expr.location,
+					isRetry: false
+				)
+			)
 		}
 
 		context.extend(expr, with: .type(returns))

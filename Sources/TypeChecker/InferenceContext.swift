@@ -336,57 +336,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 		environment.trackReturn(result)
 	}
 
-	func typeFrom(expr: any TypeExpr) -> InferenceType {
-		let type: InferenceType
-		switch expr.identifier.lexeme {
-		case "int":
-			type = .base(.int)
-		case "String":
-			type = .base(.string)
-		case "bool":
-			type = .base(.bool)
-		case "pointer":
-			type = .base(.pointer)
-		default:
-			guard let found = lookupVariable(named: expr.identifier.lexeme) else {
-				fatalError("unknown type: \(expr.identifier.lexeme)")
-			}
-
-			switch found {
-			case let .structType(structType):
-				for (i, (typeParam, paramSyntax)) in zip(structType.typeContext.typeParameters, expr.genericParams).enumerated() {
-					guard let typeContext else {
-						continue
-					}
-
-					addConstraint(
-						.equality(
-							.type(.typeVar(typeContext.typeParameters[i])),
-							.type(.typeVar(typeParam)),
-							at: paramSyntax.location
-						)
-					)
-
-					addConstraint(
-						.equality(
-							.type(.typeVar(typeParam)),
-							.type(.typeVar(typeContext.typeParameters[i])),
-							at: paramSyntax.location
-						)
-					)
-				}
-
-				type = .structType(structType)
-			case let .typeVar(typeVar):
-				type = .typeVar(typeVar)
-			default:
-				fatalError("cannot use \(found) as type expression")
-			}
-		}
-
-		return type
-	}
-
 	func lookupSubstitution(named name: String) -> InferenceType? {
 		substitutions.first(where: { variable, _ in variable.name == name })?.value
 	}
@@ -486,6 +435,14 @@ public class InferenceContext: CustomDebugStringConvertible {
 	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
 		let parentResult = parent?.applySubstitutions(to: type) ?? type
 		return applySubstitutions(to: parentResult, with: substitutions)
+	}
+
+	func applySubstitutions(to result: InferenceResult, withParents: Bool = false) -> InferenceType {
+		return applySubstitutions(to: result.asType(in: self))
+	}
+
+	func applySubstitutions(to result: InferenceResult, with: [TypeVariable: InferenceType]) -> InferenceType {
+		return applySubstitutions(to: result.asType(in: self), with: with)
 	}
 
 	// See if these types are compatible. If so, bind 'em.

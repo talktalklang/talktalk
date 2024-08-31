@@ -34,7 +34,7 @@ public struct ParsedSourceFile: Hashable, Equatable {
 
 extension ParsedSourceFile: ExpressibleByStringLiteral {
 	public init(stringLiteral value: StringLiteralType) {
-		self.path = "<literal \(value)>"
-		self.syntax = try! Parser.parse(.init(path: "<literal \(value)>", text: value))
+		self.path = "<literal \(value.hashValue) \(value)>"
+		self.syntax = try! Parser.parse(.init(path: path, text: value))
 	}
 }
