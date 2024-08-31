@@ -124,7 +124,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		guard let variable else {
 			throw CompilerError.unknownIdentifier(
-				expr.description + " at line: \(expr.location.start.line)"
+				expr.description + " in def expr at line: \(expr.location.start.line)"
 			)
 		}
 
@@ -182,7 +182,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				chunk: chunk
 			)
 		else {
-			throw CompilerError.unknownIdentifier(expr.name + " at line: \(expr.location.start.line)")
+			throw CompilerError.unknownIdentifier(expr.name + " in var expr at line: \(expr.location.start.line)")
 		}
 
 		chunk.emit(opcode: variable.getter, line: expr.location.line)
@@ -866,7 +866,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	private func synthesizeInit(for structType: StructType) -> Chunk {
 		let params = Array(structType.properties.keys)
-		let symbol = Symbol.method(module.name, structType.name!, "init", params, id: structType.name!.hashValue)
+		let symbol = Symbol.method(module.name, structType.name!, "init", params, id: .synthetic(structType.name!))
 		let chunk = Chunk(
 			name: symbol.description,
 			symbol: symbol,

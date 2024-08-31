@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/21/24.
 //
 import Foundation
+import TalkTalkCore
 
 public class SymbolGenerator {
 	public let moduleName: String
@@ -74,7 +75,7 @@ public class SymbolGenerator {
 		}
 	}
 
-	public func generic(_ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
+	public func generic(_ name: String, source: SymbolInfo.Source, id: SyntaxID) -> Symbol {
 		if let parent {
 			return parent.generic(name, source: source, id: id)
 		}
@@ -105,7 +106,7 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func `struct`(_ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
+	public func `struct`(_ name: String, source: SymbolInfo.Source, id: SyntaxID) -> Symbol {
 		if let parent {
 			return parent.struct(name, source: source, id: id)
 		}
@@ -134,7 +135,7 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func value(_ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
+	public func value(_ name: String, source: SymbolInfo.Source, id: SyntaxID) -> Symbol {
 		if let parent {
 			return parent.value(name, source: source, id: id)
 		}
@@ -162,7 +163,7 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func function(_ name: String, parameters: [String], source: SymbolInfo.Source, id: Int) -> Symbol {
+	public func function(_ name: String, parameters: [String], source: SymbolInfo.Source, id: SyntaxID) -> Symbol {
 		if let parent {
 			return parent.function(name, parameters: parameters, source: source, id: id)
 		}
@@ -196,7 +197,7 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func method(_ type: String, _ name: String, parameters: [String], source: SymbolInfo.Source, id: Int) -> Symbol {
+	public func method(_ type: String, _ name: String, parameters: [String], source: SymbolInfo.Source, id: SyntaxID) -> Symbol {
 		if let parent {
 			return parent.method(type, name, parameters: parameters, source: source, id: id)
 		}
@@ -225,7 +226,7 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func property(_ type: String, _ name: String, source: SymbolInfo.Source, id: Int) -> Symbol {
+	public func property(_ type: String, _ name: String, source: SymbolInfo.Source, id: SyntaxID) -> Symbol {
 		if let parent {
 			return parent.property(type, name, source: source, id: id)
 		}

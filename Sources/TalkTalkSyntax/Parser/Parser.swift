@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkCore
+
 struct SourceLocationStack {
 	var locations: [Token] = []
 
@@ -55,7 +57,7 @@ public struct Parser {
 
 	mutating func nextID() -> SyntaxID {
 		defer { lastID += 1 }
-		return lastID
+		return SyntaxID(id: lastID, path: lexer.path)
 	}
 
 	public mutating func parse() -> [any Syntax] {

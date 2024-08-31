@@ -45,11 +45,8 @@ struct Pipeline {
 			return try ParsedSourceFile(path: $0.path, syntax: Parser.parse($0))
 		}
 
-		let inferenceContext = Inferencer().infer(syntax)
-
 		let analysisModule = try ModuleAnalyzer(
 			name: compilationUnit.name,
-			inferenceContext: inferenceContext,
 			files: parsedSourceFiles,
 			moduleEnvironment: analyses,
 			importedModules: Array(analyses.values)

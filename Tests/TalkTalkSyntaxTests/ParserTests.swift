@@ -11,7 +11,7 @@ import Testing
 @MainActor
 struct TalkTalkParserTests {
 	func parse(_ source: String, errors: [SyntaxError] = []) -> [Syntax] {
-		let lexer = Lexer(.init(path: "", text: source))
+		let lexer = Lexer(.init(path: "parsertest.tlk", text: source))
 		var parser = Parser(lexer)
 		let result = parser.parse()
 
@@ -29,7 +29,7 @@ struct TalkTalkParserTests {
 	}
 
 	@Test("Doesn't return an error on a blank file") func blank() {
-		let lexer = Lexer(.init(path: "", text: """
+		let lexer = Lexer(.init(path: "blank.tlk", text: """
 
 		\("   " /* whitespace */ )
 		"""))

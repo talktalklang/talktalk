@@ -9,16 +9,27 @@ import TalkTalkCore
 import TalkTalkSyntax
 
 public struct Inferencer {
-	public init() {}
+	let visitor = InferenceVisitor()
+	public let context: InferenceContext
 
-	public func infer(_ syntax: [any Syntax]) -> InferenceContext {
+	public init() {
 		// Prepend the standard library
 		let stdlib = try! Library.standard.paths.flatMap {
 			let source = try String(contentsOf: Library.standard.location.appending(path: $0), encoding: .utf8)
 			return try Parser.parse(.init(path: $0, text: source))
 		}
 
-		return InferenceVisitor().infer(stdlib + syntax).solve()
+		context = InferenceContext(
+			parent: nil,
+			environment: Environment(),
+			constraints: Constraints()
+		)
+
+		_ = visitor.infer(stdlib, with: context)
+	}
+
+	public func infer(_ syntax: [any Syntax]) -> InferenceContext {
+		return visitor.infer(syntax, with: context).solve()
 	}
 }
 
@@ -28,13 +39,7 @@ struct InferenceVisitor: Visitor {
 
 	public init() {}
 
-	func infer(_ syntax: [any Syntax]) -> InferenceContext {
-		let context = InferenceContext(
-			parent: nil,
-			environment: Environment(),
-			constraints: Constraints()
-		)
-
+	func infer(_ syntax: [any Syntax], with context: InferenceContext) -> InferenceContext {
 		for syntax in syntax {
 			do {
 				_ = try syntax.accept(self, context)
@@ -499,6 +504,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		context.extend(expr, with: .type(structInferenceType))
+		print("extended \(structType.name)")
 	}
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws {

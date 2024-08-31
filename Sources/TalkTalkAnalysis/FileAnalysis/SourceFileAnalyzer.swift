@@ -290,7 +290,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedParamsExpr(
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: .void,
 			wrapped: expr.cast(ParamsExprSyntax.self),
 			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				return AnalyzedParam(
@@ -405,11 +405,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
 		var symbol: Symbol?
+		var isGlobal = false
 		if let scope = context.lexicalScope {
 			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal, id: expr.id)
 		} else if context.isModuleScope {
+			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
 		}
+
+		context.define(local: expr.name, as: expr, isMutable: true, isGlobal: isGlobal)
 
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
@@ -420,8 +424,6 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			environment: context
 		)
 
-		context.define(local: expr.name, as: expr, isMutable: true)
-
 		return decl
 	}
 
@@ -429,11 +431,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
 		var symbol: Symbol?
+		var isGlobal = false
 		if let scope = context.lexicalScope {
 			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal, id: expr.id)
 		} else if context.isModuleScope {
+			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
 		}
+
+		context.define(local: expr.name, as: expr, isMutable: false, isGlobal: isGlobal)
 
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
@@ -443,8 +449,6 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
-
-		context.define(local: expr.name, as: expr, isMutable: false)
 
 		return decl
 	}

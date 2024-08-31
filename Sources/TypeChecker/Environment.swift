@@ -44,6 +44,10 @@ class Environment {
 	}
 
 	func extend(_ syntax: any Syntax, with: InferenceResult) {
+		if types[syntax.id] != nil, types[syntax.id] != with {
+			fatalError("trying to override syntax")
+		}
+
 		types[syntax.id] = with
 	}
 

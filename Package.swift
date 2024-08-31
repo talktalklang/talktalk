@@ -40,7 +40,9 @@ let package = Package(
 		),
 		.target(
 			name: "TalkTalkSyntax",
-			dependencies: []
+			dependencies: [
+				"TalkTalkCore"
+			]
 		),
 		.target(
 			name: "TalkTalkAnalysis",
@@ -104,6 +106,7 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				"TalkTalkDriver",
+				"TalkTalkCore"
 			]
 		),
 		.target(
@@ -116,7 +119,10 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "TalkTalkBytecode"
+			name: "TalkTalkBytecode",
+			dependencies: [
+				"TalkTalkCore"
+			]
 		),
 		.testTarget(
 			name: "TalkTalkCoreTests",

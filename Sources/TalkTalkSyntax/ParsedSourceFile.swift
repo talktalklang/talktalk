@@ -18,7 +18,7 @@ public struct ParsedSourceFile: Hashable, Equatable {
 	public static func tmp(_ text: String, _ path: String) -> ParsedSourceFile {
 		ParsedSourceFile(
 			path: path,
-			syntax: try! Parser.parse(SourceFile(path: "", text: text))
+			syntax: try! Parser.parse(SourceFile(path: path, text: text))
 		)
 	}
 

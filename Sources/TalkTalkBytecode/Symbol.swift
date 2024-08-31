@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkCore
+
 public struct SymbolInfo: Equatable, Codable {
 	public enum Source: Equatable, Codable {
 		case `internal`, external(String), stdlib
@@ -53,34 +55,34 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	}
 
 	public static func primitive(_ name: String) -> Symbol {
-		Symbol(module: "[builtin]", kind: .primitive(name), id: name.hashValue)
+		Symbol(module: "[builtin]", kind: .primitive(name), id: .synthetic("[builtin] \(name)"))
 	}
 
-	public static func function(_ module: String, _ name: String, _ params: [String], id: Int = 0) -> Symbol {
+	public static func function(_ module: String, _ name: String, _ params: [String], id: SyntaxID) -> Symbol {
 		Symbol(module: module, kind: .function(name, params), id: id)
 	}
 
-	public static func value(_ module: String, _ name: String, id: Int = 0) -> Symbol {
+	public static func value(_ module: String, _ name: String, id: SyntaxID) -> Symbol {
 		Symbol(module: module, kind: .value(name), id: id)
 	}
 
-	public static func `struct`(_ module: String, _ name: String, id: Int = 0) -> Symbol {
+	public static func `struct`(_ module: String, _ name: String, id: SyntaxID) -> Symbol {
 		Symbol(module: module, kind: .struct(name), id: id)
 	}
 
-	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], id: Int = 0) -> Symbol {
+	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], id: SyntaxID) -> Symbol {
 		Symbol(module: module, kind: .method(type, name, params), id: id)
 	}
 
-	public static func property(_ module: String, _ type: String, _ name: String, id: Int = 0) -> Symbol {
+	public static func property(_ module: String, _ type: String, _ name: String, id: SyntaxID) -> Symbol {
 		Symbol(module: module, kind: .property(type, name), id: id)
 	}
 
-	public let id: Int
+	public let id: SyntaxID
 	public let module: String
 	public let kind: Kind
 
-	public init(module: String, kind: Kind, id: Int) {
+	public init(module: String, kind: Kind, id: SyntaxID) {
 		self.module = module
 		self.kind = kind
 		self.id = id

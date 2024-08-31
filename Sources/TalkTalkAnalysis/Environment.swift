@@ -121,7 +121,7 @@ public class Environment {
 			name: local,
 			expr: expr,
 			definition: definition,
-			type: inferenceContext.lookup(syntax: expr)!,
+			type: inferenceContext.lookup(syntax: expr) ?? .void,
 			isGlobal: isGlobal,
 			isMutable: isMutable
 		)

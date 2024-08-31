@@ -76,6 +76,10 @@ public struct Lexer {
 		self.path = source.path
 		self.source = ContiguousArray<Character>(source.text)
 		self.errors = []
+
+		if source.path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
+			fatalError("empty source path not allowed")
+		}
 	}
 
 	public mutating func rewind(count _: Int) {}

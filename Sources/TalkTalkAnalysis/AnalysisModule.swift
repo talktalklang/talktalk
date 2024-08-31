@@ -91,7 +91,7 @@ public struct AnalysisModule {
 		return nil
 	}
 
-	public func lookup(symbol kind: Symbol.Kind, id: Int) -> SymbolInfo? {
+	public func lookup(symbol kind: Symbol.Kind, id: SyntaxID) -> SymbolInfo? {
 		symbols[Symbol(module: name, kind: kind, id: id)]
 	}
 }

@@ -12,8 +12,7 @@ import TalkTalkSyntax
 @MainActor
 struct TypeCheckerStructTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr).solve()
+		return Inferencer().infer(expr).solve()
 	}
 
 	@Test("Types struct type") func structType() throws {

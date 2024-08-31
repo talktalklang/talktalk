@@ -21,29 +21,28 @@ public struct ModuleAnalyzer {
 	let visitor: SourceFileAnalyzer
 	public let moduleEnvironment: [String: AnalysisModule]
 	public let importedModules: [AnalysisModule]
+	let inferencer = Inferencer()
 
 	public init(
 		name: String,
-		inferenceContext: InferenceContext? = nil,
 		files: [ParsedSourceFile],
 		moduleEnvironment: [String: AnalysisModule],
 		importedModules: [AnalysisModule]
 	) {
-		let inferenceContext = inferenceContext ?? Inferencer().infer(files.flatMap(\.syntax))
-
 		self.name = name
 		self.files = files
-		self.environment = .topLevel(name, inferenceContext: inferenceContext)
+		self.environment = .topLevel(name, inferenceContext: inferencer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = importedModules
 	}
 
 	public func analyze() throws -> AnalysisModule {
-		let syntax = files.flatMap({ $0.syntax })
-		let inferenceContext = Inferencer().infer(syntax)
+		for file in files {
+			_ = inferencer.infer(file.syntax)
+		}
 
-		var analysisModule = AnalysisModule(name: name, inferenceContext: inferenceContext, files: files)
+		var analysisModule = AnalysisModule(name: name, inferenceContext: inferencer.context, files: files)
 
 		for module in importedModules.sorted(by: { ($0.name == "Standard" ? 0 : 1) < ($1.name == "Standard" ? 0 : 1) }) {
 			if module.name == "Standard", name != "Standard" {
@@ -96,7 +95,7 @@ public struct ModuleAnalyzer {
 		//
 		// We also need to make sure the files are in the correct order.
 		analysisModule.analyzedFiles = try files.map {
-			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal, id: $0.path.hashValue)
+			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal, id: .synthetic($0.path))
 			analysisModule.symbols[sym] = environment.symbolGenerator[sym]
 
 			return try AnalyzedSourceFile(

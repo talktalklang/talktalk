@@ -39,7 +39,6 @@ public actor Server {
 
 		analyzer = ModuleAnalyzer(
 			name: "LSP",
-			inferenceContext: Inferencer().infer([]),
 			files: [],
 			moduleEnvironment: ["Standard": stdlib.analysis],
 			importedModules: [stdlib.analysis]
@@ -167,7 +166,6 @@ public actor Server {
 
 			analyzer = ModuleAnalyzer(
 				name: "LSP",
-				inferenceContext: analysis.inferenceContext,
 				files: analyzer.files,
 				moduleEnvironment: ["Standard": stdlib.analysis],
 				importedModules: [stdlib.analysis]

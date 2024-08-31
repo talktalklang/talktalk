@@ -16,7 +16,7 @@ struct StructDeclAnalyzer: Analyzer {
 	func analyze() throws -> any AnalyzedSyntax {
 		guard let inferenceType = context.inferenceContext.lookup(syntax: decl),
 					let type = TypeChecker.StructType.extractType(from: .type(inferenceType)) else {
-			return error(at: decl, "did not find struct type", environment: context, expectation: .none)
+			return error(at: decl, "did not find struct type from \(decl.name)", environment: context, expectation: .none)
 		}
 
 		let structType = StructType(

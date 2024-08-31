@@ -11,8 +11,7 @@ import TalkTalkSyntax
 
 struct BuiltinFunctionTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr).solve()
+		return Inferencer().infer(expr).solve()
 	}
 
 	@Test("Types print") func typesPrint() throws {

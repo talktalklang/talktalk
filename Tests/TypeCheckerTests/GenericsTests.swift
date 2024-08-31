@@ -12,8 +12,7 @@ import Testing
 @MainActor
 struct GenericsTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr).solve()
+		return Inferencer().infer(expr).solve()
 	}
 
 	@Test("Can typecheck a generic type") func basic() throws {

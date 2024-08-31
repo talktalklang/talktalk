@@ -28,8 +28,7 @@ struct AnyTypeVar {
 @MainActor
 struct TypeCheckerTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr).solve()
+		return Inferencer().infer(expr).solve()
 	}
 
 	@Test("Infers int literal") func intLiteral() throws {
@@ -62,8 +61,8 @@ struct TypeCheckerTests {
 			result == .scheme(
 				Scheme(
 					name: nil,
-					variables: [.typeVar("x", 0)],
-					type: .function([.typeVar("x", 0)], .typeVar("x", 0))
+					variables: [.typeVar("x", 62)],
+					type: .function([.typeVar("x", 62)], .typeVar("x", 62))
 				)
 			)
 		)

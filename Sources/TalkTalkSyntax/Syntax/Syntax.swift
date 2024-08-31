@@ -5,7 +5,9 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-public typealias SyntaxID = Int
+import TalkTalkCore
+
+public typealias SyntaxID = TalkTalkCore.SyntaxID
 
 public protocol Syntax: CustomStringConvertible {
 	// A unique identifier for every piece of syntax
