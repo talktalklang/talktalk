@@ -51,7 +51,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	public var description: String {
-		"\(name)(\(properties.reduce(into: "") { res, pair in res += "\(pair.key): \(pair.value)" }))"
+		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
 	}
 
 	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance {

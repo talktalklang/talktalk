@@ -479,7 +479,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: ArrayLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
-			exprsAnalyzed: try expr.exprs.map { try $0.accept(self, context) } as! [AnalyzedArrayLiteralExpr],
+			exprsAnalyzed: try expr.exprs.map { try $0.accept(self, context) } as! [any AnalyzedExpr],
 			wrapped: expr,
 			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
 			analysisErrors: []

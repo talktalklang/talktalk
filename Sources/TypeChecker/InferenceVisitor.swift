@@ -526,7 +526,7 @@ struct InferenceVisitor: Visitor {
 		let elementTypeParameter = arrayStructType.typeContext.typeParameters[0]
 		assert(elementTypeParameter.name == "Element", "didn't get correct type parameter")
 
-		if let elementType = elements[0]?.asType(in: context) {
+		if !elements.isEmpty, let elementType = elements[0]?.asType(in: context) {
 			arrayInstance.substitutions[elementTypeParameter] = elementType
 		}
 
@@ -551,7 +551,7 @@ struct InferenceVisitor: Visitor {
 
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
-		case let .structType(structType):
+		case let .structType(structType), let .selfVar(structType):
 			let method = structType.member(named: "get")!
 
 			// We can assume it's a method so we can destructure to get our return type
