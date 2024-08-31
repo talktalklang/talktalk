@@ -423,7 +423,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ImportStmtSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		context.log("TODO", prefix: " ? ")
 	}
 
 	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws {
