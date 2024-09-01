@@ -148,7 +148,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				}
 			} else if case .function(_, _) = binding.type {
 				if let module = binding.externalModule {
-					symbol = module.moduleFunction(named: binding.expr.cast(FuncExprSyntax.self).autoname)!.symbol
+					symbol = module.moduleFunction(named: binding.name)!.symbol
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}

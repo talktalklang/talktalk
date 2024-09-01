@@ -13,7 +13,7 @@ import TalkTalkSyntax
 public struct ModuleStruct: ModuleGlobal {
 	public var name: String
 	public var symbol: Symbol
-	public var syntax: any Syntax
+	public var location: SourceLocation
 	public var typeID: InferenceType
 	public var source: ModuleSource
 

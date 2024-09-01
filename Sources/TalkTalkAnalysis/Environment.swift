@@ -104,7 +104,7 @@ public class Environment {
 	public func define(parameter: String, as expr: any AnalyzedExpr) {
 		locals[parameter] = Binding(
 			name: parameter,
-			expr: expr,
+			location: expr.location,
 			type: inferenceContext.lookup(syntax: expr)!,
 			isParameter: true
 		)
@@ -119,7 +119,7 @@ public class Environment {
 	) {
 		locals[local] = Binding(
 			name: local,
-			expr: expr,
+			location: expr.location,
 			definition: definition,
 			type: inferenceContext.lookup(syntax: expr) ?? .void,
 			isGlobal: isGlobal,
@@ -134,10 +134,15 @@ public class Environment {
 	public func allBindings() -> [Binding] {
 		var result = Array(locals.values)
 		var parent = parent
+
 		while let nextParent = parent {
 			result.append(contentsOf: nextParent.allBindings())
 			parent = nextParent
 		}
+
+		result.append(contentsOf: inferenceContext.namedVariables.compactMap {
+			Binding(name: $0.key, location: [.synthetic(.identifier)], type: $0.value)
+		})
 
 		result.append(contentsOf: BuiltinFunction.list.map { $0.binding(in: self) })
 		return result
@@ -173,8 +178,63 @@ public class Environment {
 			return builtinFunction.binding(in: self)
 		}
 
+		for module in lookupImportedModules() {
+			var symbol: Symbol?
+			var global: (any ModuleGlobal)?
+
+			if let value = module.moduleValue(named: name) {
+				symbol = value.symbol
+				global = value
+			} else if let function = module.moduleFunction(named: name) {
+				symbol = function.symbol
+				global = function
+			} else if let type = module.moduleStruct(named: name) {
+				symbol = type.symbol
+				global = type
+			}
+
+			guard let symbol, let global else {
+				continue
+			}
+
+			let binding = Binding(
+				name: name,
+				location: global.location,
+				type: global.typeID,
+				externalModule: module
+			)
+
+			importBinding(as: symbol, from: module.name, binding: binding)
+
+			return binding
+		}
+
 		return nil
 	}
+
+	func lookupImportedModules() -> [AnalysisModule] {
+		if let parent {
+			return parent.lookupImportedModules()
+		}
+
+		return importedModules
+	}
+
+	func importBinding(as symbol: Symbol, from moduleName: String, binding: Binding) {
+			if moduleName == self.moduleName {
+				return
+			}
+
+			if let parent {
+				parent.importBinding(as: symbol, from: moduleName, binding: binding)
+				return
+			}
+
+			assert(isModuleScope, "trying to import binding into non-module scope environment")
+
+			importedSymbols[symbol] = binding
+			_ = symbolGenerator.import(symbol, from: moduleName)
+		}
 
 	public func lookupStruct(named name: String) -> StructType? {
 		if let type = structTypes[name] {

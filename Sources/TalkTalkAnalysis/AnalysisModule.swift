@@ -63,7 +63,7 @@ public struct AnalysisModule {
 						ModuleFunction(
 							name: name,
 							symbol: syntax.symbol,
-							syntax: syntax,
+							location: syntax.location,
 							typeID: syntax.inferenceType,
 							source: .module
 						)

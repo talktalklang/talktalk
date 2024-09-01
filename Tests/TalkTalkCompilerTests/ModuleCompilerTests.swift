@@ -140,11 +140,11 @@ struct ModuleCompilerTests: CompilerTest {
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = try #require(module.chunks[1])
+		let mainChunk = module.chunks[0]
 		#expect(mainChunk.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 0)),
 			.op(.call, line: 8),
-			.op(.setModuleValue, line: 8, .global(slot: 1)),
+			.op(.setModuleValue, line: 8, .global(slot: 0)),
 			.op(.return, line: 0)
 		))
 

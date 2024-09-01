@@ -9,7 +9,7 @@ struct Array<Element> {
 		self._storage = _allocate(4)
 	}
 
-	func get(index) -> Element {
+	func get(index: int) -> Element {
 		return _deref(self._storage + index)
 	}
 

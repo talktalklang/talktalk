@@ -1,8 +1,4 @@
 // Strings are builtin
 struct String {
 	var _storage: pointer
-
-	init(pointer: pointer) {
-		self._storage = pointer
-	}
 }

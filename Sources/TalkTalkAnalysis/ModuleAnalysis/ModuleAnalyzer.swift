@@ -35,7 +35,7 @@ public struct ModuleAnalyzer {
 		self.environment = .topLevel(name, inferenceContext: inferencer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
-		self.importedModules = importedModules
+		self.importedModules = moduleEnvironment.values.map { $0 }
 	}
 
 	public func analyze() throws -> AnalysisModule {
@@ -57,7 +57,7 @@ public struct ModuleAnalyzer {
 					analysisModule.structs[name] = ModuleStruct(
 						name: name,
 						symbol: structType.symbol,
-						syntax: structType.syntax,
+						location: structType.location,
 						typeID: structType.typeID,
 						source: .external(module),
 						properties: structType.properties,
@@ -131,7 +131,7 @@ public struct ModuleAnalyzer {
 				analysisModule.moduleFunctions[name] = ModuleFunction(
 					name: name,
 					symbol: symbol,
-					syntax: binding.expr,
+					location: binding.location,
 					typeID: binding.type,
 					source: .external(module)
 				)
@@ -139,7 +139,7 @@ public struct ModuleAnalyzer {
 				analysisModule.values[name] = ModuleValue(
 					name: name,
 					symbol: symbol,
-					syntax: binding.expr,
+					location: binding.location,
 					typeID: binding.type,
 					source: .external(module),
 					isMutable: false
@@ -150,7 +150,7 @@ public struct ModuleAnalyzer {
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
 					symbol: symbol,
-					syntax: binding.expr,
+					location: binding.location,
 					typeID: binding.type,
 					source: .external(module),
 					properties: structType.properties,
@@ -211,7 +211,7 @@ public struct ModuleAnalyzer {
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
 				symbol: analyzed.symbol!,
-				syntax: syntax,
+				location: syntax.location,
 				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: true
@@ -222,7 +222,7 @@ public struct ModuleAnalyzer {
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
 				symbol: analyzed.symbol!,
-				syntax: syntax,
+				location: syntax.location,
 				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: false
@@ -234,7 +234,7 @@ public struct ModuleAnalyzer {
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					symbol: analyzed.symbol,
-					syntax: syntax,
+					location: syntax.location,
 					typeID: analyzed.inferenceType,
 					source: .module
 				)
@@ -247,7 +247,7 @@ public struct ModuleAnalyzer {
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
 					symbol: syntax.symbol!,
-					syntax: syntax,
+					location: syntax.location,
 					typeID: analyzed.inferenceType,
 					source: .module,
 					isMutable: false
@@ -265,7 +265,7 @@ public struct ModuleAnalyzer {
 			result[name] = ModuleStruct(
 				name: name,
 				symbol: analyzedStructDecl.symbol,
-				syntax: syntax,
+				location: syntax.location,
 				typeID: analyzedStructDecl.inferenceType,
 				source: .module,
 				properties: analyzedStructDecl.lexicalScope.scope.properties,

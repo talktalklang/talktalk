@@ -1,9 +1,5 @@
 // Builtin int type
 struct Int {
 	var raw: int
-
-	init(raw2) {
-		self.raw = raw2
-	}
 }
 

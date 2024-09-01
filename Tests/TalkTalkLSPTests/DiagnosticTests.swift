@@ -19,13 +19,11 @@ struct DiagnosticTests {
 	}
 
 	@Test("Knows about stdlib") func stdlib() async throws {
-		let stdlib = try await StandardLibrary.compile()
-
 		let analyzer = ModuleAnalyzer(
 			name: "Testing",
 			files: ["var array = Array<int>()"],
 			moduleEnvironment: [:],
-			importedModules: [stdlib.analysis]
+			importedModules: []
 		)
 
 		let module = try analyzer.analyze()

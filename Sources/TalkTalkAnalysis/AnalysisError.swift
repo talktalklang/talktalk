@@ -92,7 +92,7 @@ public struct AnalysisError: Hashable {
 		case let .cannotReassignLet(variable: syntax):
 			"Cannot re-assign let variable: \(syntax.description)"
 		case let .invalidRedeclaration(variable: name, existing: decl):
-			"Cannot re-declare \(name). (defined as \(decl.expr.description))."
+			"Cannot re-declare \(name). (defined as \(decl.location))."
 		case let .unexpectedType(expected: _, received: _, message: message):
 			message
 		case let .expressionCount(message):

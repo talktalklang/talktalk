@@ -15,11 +15,7 @@ public extension Environment {
 				name: name,
 				binding: .init(
 					name: name,
-					expr: AnalyzedLiteralExpr(
-						inferenceType: InferenceType.base(.bool),
-						wrapped: LiteralExprSyntax(id: -7, value: .bool(true), location: [.synthetic(.true)]),
-						environment: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "", parent: nil))
-					),
+					location: [.synthetic(.true)],
 					type: InferenceType.base(.bool)
 				),
 				environment: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "", parent: nil))

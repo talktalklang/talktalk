@@ -77,7 +77,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	public var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
-	private(set) var namedVariables: [String: InferenceType] = [:]
+	private(set) public var namedVariables: [String: InferenceType] = [:]
 	private(set) var namedPlaceholders: [String: InferenceType] = [:]
 	var nextID: VariableID = 0
 	var verbose: Bool = false
