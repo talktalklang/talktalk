@@ -25,7 +25,7 @@ struct ArrayTests: StandardLibraryTest {
 		return a.count
 		"""
 
-		let result = try await run(source, verbosity: .verbose).get()
+		let result = try await run(source, verbosity: .lineByLine(source)).get()
 
 		#expect(result == .int(1))
 	}
@@ -36,7 +36,8 @@ struct ArrayTests: StandardLibraryTest {
 		a.append(123)
 		a.append(456)
 		return a.get(1)
-		""").get()
+		"""
+															 , verbosity: .verbose).get()
 
 		#expect(result == .int(456))
 	}
@@ -44,17 +45,17 @@ struct ArrayTests: StandardLibraryTest {
 	@Test("can add more than 4 items") func resizingTest() async throws {
 		let source = """
 		 var a = []
-		 a.append(1)
-		 a.append(2)
-		 a.append(3)
-		 a.append(4)
-		 a.append(5)
-		 a.append(6)
+		 a.append(123)
+		 a.append(234)
+		 a.append(345)
+		 a.append(456)
+		 a.append(567)
+		 a.append(678)
 		 return a[5]
 		"""
-		let result = try await run(source).get()
+		let result = try await run(source, verbosity: .verbose).get()
 
-		#expect(result == .int(6))
+		#expect(result == .int(678))
 	}
 
 	@Test("can create array literal") func arrayLiteral() async throws {

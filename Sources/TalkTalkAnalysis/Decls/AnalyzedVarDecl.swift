@@ -10,7 +10,7 @@ import TalkTalkSyntax
 
 public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl, AnalyzedVarLetDecl {
 	public let symbol: Symbol?
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: VarDeclSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		if let valueAnalyzed { [valueAnalyzed] } else { [] }

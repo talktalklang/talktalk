@@ -29,18 +29,6 @@ public struct Driver {
 		self.modules = modules
 	}
 
-	public func writeModules(to destination: URL? = nil) async throws {
-		let destination = destination ?? URL.currentDirectory()
-
-		for (name, compilationResult) in try await compile() {
-			let serialized = try compilationResult.module.serialize(with: compilationResult.analysis, with: JSONEncoder())
-			let filename = "\(name).tlkmodule"
-			let moduleDestination = destination.appending(path: filename)
-			try Data(serialized).write(to: moduleDestination)
-			print("Wrote \(filename)")
-		}
-	}
-
 	public func compile(
 		mode: CompilationMode = .module,
 		allowErrors: Bool = false

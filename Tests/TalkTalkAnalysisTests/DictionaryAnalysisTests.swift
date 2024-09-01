@@ -6,37 +6,28 @@
 //
 
 import Testing
+import TypeChecker
 import TalkTalkAnalysis
 
 @Suite() struct DictionaryAnalysisTests: AnalysisTest {
 	@Test("Basic") func basic() async throws {
 		let result = try await ast("""
 		[:]
-		""").cast(AnalyzedExprStmt.self).exprAnalyzed
+		""").cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed
 
-		let instance = InstanceValueType(
-			ofType: .struct("Dictionary"),
-			boundGenericTypes: [
-				"Key": TypeID(.placeholder),
-				"Value": TypeID(.placeholder)
-			]
-		)
-		#expect(result.typeAnalyzed == .instance(instance))
+		let instance = Instance.extract(from: result)
+		#expect(instance?.type.name == "Dictionary")
 	}
 
 	@Test("Types keys/values") func types() async throws {
 		let result = try await ast("""
 		["foo": 123]
-		""").cast(AnalyzedExprStmt.self).exprAnalyzed
+		""").cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed
 
-		let instance = InstanceValueType(
-			ofType: .struct("Dictionary"),
-			boundGenericTypes: [
-				"Key": TypeID(.instance(.struct("String"))),
-				"Value": TypeID(.int)
-			]
-		)
-		#expect(result.typeAnalyzed == .instance(instance))
+		let instance = Instance.extract(from: result)
+		#expect(instance?.type.name == "Dictionary")
+		#expect(instance?.relatedType(named: "Key") == .base(.string))
+		#expect(instance?.relatedType(named: "Value") == .base(.int))
 	}
 
 	@Test("Types subscript") func subscripts() async throws {
@@ -46,6 +37,6 @@ import TalkTalkAnalysis
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedSubscriptExpr.self)
 
-		#expect(result.typeAnalyzed == .int)
+		#expect(result.typeAnalyzed == .base(.int))
 	}
 }

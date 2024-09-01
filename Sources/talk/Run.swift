@@ -23,7 +23,6 @@ struct Run: TalkTalkCommand {
 
 	func run() async throws {
 		let source = try get(input: input)
-		let stdlib = try await StandardLibrary.compile()
 
 		let analyzed = try ModuleAnalyzer(
 			name: source.filename,
@@ -31,7 +30,7 @@ struct Run: TalkTalkCommand {
 				ParsedSourceFile(path: source.path, syntax: Parser.parse(source))
 			],
 			moduleEnvironment: [:],
-			importedModules: [stdlib.analysis]
+			importedModules: []
 		).analyze()
 
 		if try !analyzed.collectErrors().isEmpty {
@@ -41,7 +40,7 @@ struct Run: TalkTalkCommand {
 		let module = try ModuleCompiler(
 			name: source.filename,
 			analysisModule: analyzed,
-			moduleEnvironment: ["Standard": stdlib.module]
+			moduleEnvironment: [:]
 		).compile(mode: .executable)
 
 		if case .error(_) = VirtualMachine.run(module: module)  {

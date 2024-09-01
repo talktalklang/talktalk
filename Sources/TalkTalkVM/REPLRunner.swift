@@ -11,6 +11,7 @@ import TalkTalkCompiler
 import TalkTalkCore
 import TalkTalkDriver
 import TalkTalkSyntax
+import TypeChecker
 
 public class REPLRunner: Copyable {
 	let driver: Driver
@@ -21,31 +22,64 @@ public class REPLRunner: Copyable {
 	var chunk: Chunk
 	var compiler: ChunkCompiler
 	var compilingModule: CompilingModule
+	var inferencer: Inferencer
 
 	public static func run() async throws {
-		let runner = await REPLRunner()
+		let runner = try await REPLRunner()
 		try await runner.run()
 	}
 
-	public init() async {
-		let stdlib = try! await StandardLibrary.compile()
+	static func compileStandardLibrary() throws -> (Module, AnalysisModule) {
+		let analysis = try ModuleAnalyzer(
+			name: "Standard",
+			files: Library.standard.paths.map {
+				let parsed = try Parser.parse(
+					SourceFile(
+						path: $0,
+						text: String(
+							contentsOf: Library.standard.location.appending(path: $0),
+							encoding: .utf8
+						)
+					)
+				)
+
+				return ParsedSourceFile(path: $0, syntax: parsed)
+			},
+			moduleEnvironment: [:],
+			importedModules: []
+		).analyze()
+
+		let compiler = ModuleCompiler(
+			name: "Standard",
+			analysisModule: analysis
+		)
+
+		let stdlib = try compiler.compile(mode: .module)
+
+		return (stdlib, analysis)
+	}
+
+	public init() async throws {
+		let (stdlibModule, stdlibAnalysis) = try Self.compileStandardLibrary()
+
 		self.driver = Driver(
 			directories: [Library.replURL],
-			analyses: ["Standard": stdlib.analysis],
-			modules: ["Standard": stdlib.module]
+			analyses: ["Standard": stdlibAnalysis],
+			modules: ["Standard": stdlibModule]
 		)
 
 		let result = try! await driver.compile(mode: .module)["REPL"]!
 		self.module = result.module
 		self.analysis = result.analysis
-		self.environment = Environment(symbolGenerator: .init(moduleName: "REPL", parent: nil))
+		self.inferencer = Inferencer(imports: [])
+		self.environment = Environment(inferenceContext: inferencer.context, symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(
 			name: "REPL",
 			analysisModule: analysis,
 			moduleEnvironment: [:]
 		)
-		self.chunk = Chunk(name: "main", symbol: .function("REPL", "main", [], namespace: []), path: "<repl>")
+		self.chunk = Chunk(name: "main", symbol: .function("REPL", "main", []), path: "<repl>")
 		module.main = StaticChunk(chunk: chunk)
 		self.compiler = ChunkCompiler(module: compilingModule)
 		self.vm = VirtualMachine(module: module)
@@ -53,8 +87,10 @@ public class REPLRunner: Copyable {
 
 	public func evaluate(_ line: String, index _: Int) throws -> VirtualMachine.ExecutionResult {
 		if line.isEmpty { return .error("No input") }
-
 		let parsed = try Parser.parse(SourceFile(path: "<repl>", text: line))
+
+		_ = inferencer.infer(parsed)
+
 		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 		for syntax in analyzed {
 			if let syntax = syntax as? AnalyzedExprStmt {

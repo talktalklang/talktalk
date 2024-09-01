@@ -8,6 +8,7 @@
 import Foundation
 import TalkTalkAnalysis
 import TalkTalkSyntax
+import TypeChecker
 
 struct TextDocumentSemanticTokensFull {
 	var request: Request
@@ -26,7 +27,10 @@ struct TextDocumentSemanticTokensFull {
 			// TODO: use module environment
 			let parsed = try await SourceFileAnalyzer.analyze(
 				Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true),
-				in: Environment(symbolGenerator: .init(moduleName: "", parent: nil))
+				in: Environment(
+					inferenceContext: Inferencer(imports: []).infer(Parser.parse(.init(path: source.uri, text: source.text))),
+					symbolGenerator: .init(moduleName: "", parent: nil)
+				)
 			)
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }
@@ -240,6 +244,7 @@ struct SemanticTokensVisitor: Visitor {
 
 	func visit(_ expr: StructDeclSyntax, _: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.structToken)]
+		result.append(make(.type, from: expr.nameToken))
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
 	}

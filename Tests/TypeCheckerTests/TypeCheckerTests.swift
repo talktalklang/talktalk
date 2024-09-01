@@ -26,12 +26,7 @@ struct AnyTypeVar {
 }
 
 @MainActor
-struct TypeCheckerTests {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		let inferencer = InferenceVisitor()
-		return inferencer.infer(expr).solve()
-	}
-
+struct TypeCheckerTests: TypeCheckerTest {
 	@Test("Infers int literal") func intLiteral() throws {
 		let expr = try Parser.parse("123")
 		let context = try infer(expr)
@@ -62,8 +57,8 @@ struct TypeCheckerTests {
 			result == .scheme(
 				Scheme(
 					name: nil,
-					variables: [.typeVar("x", 0)],
-					type: .function([.typeVar("x", 0)], .typeVar("x", 0))
+					variables: [.typeVar("x", 63)],
+					type: .function([.typeVar("x", 63)], .typeVar("x", 63))
 				)
 			)
 		)
@@ -80,7 +75,14 @@ struct TypeCheckerTests {
 		let expr = try Parser.parse(#"10 + "nope""#)
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.error(.constraintError("Infix operator + can't be used with operands int and string"))))
+		#expect(result == .type(
+			.error(
+				.init(
+					kind: .constraintError("Infix operator + can't be used with operands int and string"),
+					location: expr[0].location
+				)
+			)
+		))
 	}
 
 	@Test("Infers binary expr with strings") func binaryStrings() throws {
@@ -88,6 +90,18 @@ struct TypeCheckerTests {
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
 		#expect(result == .type(.base(.string)))
+	}
+
+	@Test("Infers function with binary expr with ints") func binaryIntFunction() throws {
+		let expr = try Parser.parse(
+			"""
+			func(x) { x + 1 }
+			"""
+		)
+
+		let context = try infer(expr)
+		let result = try #require(context[expr[0]])
+		#expect(result.asType(in: context) == .function([.base(.int)], .base(.int)))
 	}
 
 	@Test("Infers var with base type") func varWithBase() throws {
@@ -100,6 +114,42 @@ struct TypeCheckerTests {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 	}
 
+	@Test("Errors on var reassignment") func varReassignment() throws {
+		let syntax = try Parser.parse("var i = 123 ; var i = 456")
+		let context = try infer(syntax)
+
+		#expect(context.errors.count == 1)
+	}
+
+	@Test("Infers func calls") func calls() throws {
+		let syntax = try Parser.parse(
+			"""
+			let foo = func(x) { x + x }
+			foo(1)
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result = try #require(context[syntax[1]])
+
+		#expect(result == .type(.base(.int)))
+	}
+
+	@Test("Infers deferred func calls") func deferredCalls() throws {
+		let syntax = try Parser.parse(
+			"""
+			func foo() { bar() }
+			func bar() { 123 } 
+			foo()
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result = try #require(context[syntax[2]])
+
+		#expect(result == .type(.base(.int)))
+	}
+
 	@Test("Infers let with base type") func letWithBase() throws {
 		let syntax = try Parser.parse("let i = 123")
 		let context = try infer(syntax)
@@ -108,6 +158,19 @@ struct TypeCheckerTests {
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
+	}
+
+	@Test("Infers named function") func namedFunction() throws {
+		let syntax = try Parser.parse(
+			"""
+			func foo(x) { x + 1 }
+			foo
+			"""
+		)
+
+		let context = try infer(syntax)
+		let result = try #require(context[syntax[1]])
+		#expect(result.asType(in: context) == .function([.base(.int)], .base(.int)))
 	}
 
 	@Test("Infers var with function (it is generic)") func varFuncGeneric() throws {
@@ -138,7 +201,25 @@ struct TypeCheckerTests {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 
 		// This test fails
-		#expect(context[syntax[1]] == .type(.error(.undefinedVariable("x"))))
+		#expect(context.lookup(syntax: syntax[1]) ==
+			.error(
+				.init(
+					kind: .undefinedVariable("x"),
+					location: syntax[1].location
+				)
+		
+		))
+	}
+
+	@Test("Types function return annotations") func funcReturnAnnotations() throws {
+		let syntax = try Parser.parse(
+			"""
+			func(x) -> String { _deref(x) }(123)
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context[syntax[0]] == .type(.base(.string)))
 	}
 
 	@Test("Types factorial (recursion test)") func factorial() throws {
@@ -163,8 +244,8 @@ struct TypeCheckerTests {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [.typeVar("n", 0)],
-					type: .function([.typeVar("n", 0)], .base(.int))
+					variables: [],
+					type: .function([.typeVar("n", 63)], .base(.int))
 				)
 			)
 		)

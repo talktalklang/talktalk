@@ -54,7 +54,7 @@ public struct VirtualMachine {
 	var currentFrame: CallFrame
 
 	// The stack
-	var stack: Stack<Value>
+	var stack: DebugStack<Value>
 
 	// A fake heap
 	var heap = Heap()
@@ -88,7 +88,7 @@ public struct VirtualMachine {
 			fatalError("no entrypoint found for module `\(module.name)`")
 		}
 
-		self.stack = Stack<Value>(capacity: 256)
+		self.stack = DebugStack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
@@ -266,31 +266,43 @@ public struct VirtualMachine {
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+				      let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs >= rhs))
 			case .data:
@@ -475,7 +487,7 @@ public struct VirtualMachine {
 				// We need to set the capacity to at least 1 or else trying to resize it will multiply 0 by 2
 				// which means we never actually get more capacity.
 				let capacity = max(count, 1)
-				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", namespace: [])]!.slot
+				let arrayTypeSlot = module.symbols[.struct("Standard", "Array")]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
 				let pointer = heap.allocate(count: Int(capacity))
@@ -491,7 +503,7 @@ public struct VirtualMachine {
 
 				stack.push(.instance(instance))
 			case .initDict: ()
-				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", namespace: [])]!.slot
+				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary")]!.slot
 				let dictType = module.structs[dictTypeSlot]
 
 				call(structValue: dictType)
@@ -562,19 +574,6 @@ public struct VirtualMachine {
 
 		frames.push(frame)
 	}
-
-//	private mutating func call(inline: StaticChunk) {
-//		let frame = CallFrame(
-//			closure: .init(
-//				chunk: inline,
-//				upvalues: []
-//			),
-//			returnTo: ip,
-//			stackOffset: stack.size - 1
-//		)
-//
-//		frames.push(frame)
-//	}
 
 	private mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id

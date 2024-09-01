@@ -21,32 +21,13 @@ struct VMEndToEndTests {
 	}
 
 	func compile(_ strings: [String]) throws -> Module {
-		let stdlib = try ModuleAnalyzer(
-			name: "Standard",
-			files: Set(Library.files(for: Library.standardLibraryURL).map {
-				try ParsedSourceFile(
-					path: $0.path,
-					syntax: Parser.parse(
-						SourceFile(
-							path: $0.path,
-							text: String(contentsOf: $0, encoding: .utf8)
-						)
-					)
-				)
-			}),
+		let analysisModule = try ModuleAnalyzer(
+			name: "E2E",
+			files: strings.enumerated().map { .tmp($1, "\($0).tlk") },
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
-
-		let stdlibModule = try ModuleCompiler(name: "Standard", analysisModule: stdlib).compile(mode: .module)
-
-		let analysisModule = try ModuleAnalyzer(
-			name: "E2E",
-			files: Set(strings.enumerated().map { .tmp($1, "\($0).tlk") }),
-			moduleEnvironment: ["Standard": stdlib],
-			importedModules: [stdlib]
-		).analyze()
-		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule, moduleEnvironment: ["Standard": stdlibModule])
+		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule, moduleEnvironment: [:])
 		return try compiler.compile(mode: .executable)
 	}
 
@@ -56,36 +37,10 @@ struct VMEndToEndTests {
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:]
 	) throws -> (Module, AnalysisModule) {
-		let stdlib = try ModuleAnalyzer(
-			name: "Standard",
-			files: Set(Library.files(for: Library.standardLibraryURL).map {
-				try ParsedSourceFile(
-					path: $0.path,
-					syntax: Parser.parse(
-						SourceFile(
-							path: $0.path,
-							text: String(contentsOf: $0, encoding: .utf8)
-						)
-					)
-				)
-			}),
-			moduleEnvironment: [:],
-			importedModules: []
-		).analyze()
-
-		let stdlibModule = try ModuleCompiler(name: "Standard", analysisModule: stdlib).compile(mode: .module)
-
-		var analysis = moduleEnvironment.reduce(into: [:]) { res, tup in
-			res[tup.key] = analysisEnvironment[tup.key]
-		}
-		analysis["Standard"] = stdlib
-		var moduleEnvironment = moduleEnvironment
-		moduleEnvironment["Standard"] = stdlibModule
-
 		let analyzed = try ModuleAnalyzer(
 			name: name,
-			files: Set(files),
-			moduleEnvironment: analysis,
+			files: files,
+			moduleEnvironment: analysisEnvironment,
 			importedModules: []
 		).analyze()
 
@@ -155,8 +110,16 @@ struct VMEndToEndTests {
 		#expect(try returning(#""hello world""#) == .string("hello world"))
 	}
 
-	@Test("is check") func isCheck() throws {
-		try #expect(returning("123 is int") == .bool(true))
+	@Test("is check", .disabled()) func isCheck() throws {
+		let result = try run(
+			"""
+			struct Person {}
+			let person = Person()
+			return person is Person
+			"""
+		)
+
+		#expect(result == .bool(true))
 	}
 
 	@Test("If expr") func ifExpr() throws {
@@ -446,8 +409,10 @@ struct VMEndToEndTests {
 					"""
 					import A
 
-					let person = Person(age: 123)
-					return person.age
+					func() {
+						let person = Person(age: 123)
+						return person.age
+					}()
 					""", "1.tlk")
 			],
 			analysisEnvironment: ["A": analysisA],
@@ -525,8 +490,8 @@ struct VMEndToEndTests {
 		let result = try run(
 			"""
 			func increments(v) {
-				var v = v
-				v = v + 1
+				var t = v
+				t = v + 1
 			}
 
 

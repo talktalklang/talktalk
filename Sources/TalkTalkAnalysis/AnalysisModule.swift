@@ -8,47 +8,14 @@
 import Foundation
 import TalkTalkSyntax
 import TalkTalkBytecode
-
-public struct SerializedAnalysisModule: Codable {
-	public let name: String
-	public let files: [String]
-	public let values: [String: SerializedModuleGlobal]
-	public let functions: [String: SerializedModuleGlobal]
-
-	static func serialize(_ global: ModuleGlobal) -> SerializedModuleGlobal {
-		let source: SerializedModuleGlobal.SerializedModuleSource = if case let .external(module) = global.source {
-			.external(module.name)
-		} else {
-			.module
-		}
-
-		return SerializedModuleGlobal(
-			name: global.name,
-			type: global.typeID.current,
-			globalType: global is ModuleValue ? .value : .function,
-			source: source
-		)
-	}
-
-	public init(analysisModule: AnalysisModule) {
-		self.name = analysisModule.name
-		self.files = analysisModule.files.map(\.path)
-		self.values = analysisModule.values.reduce(into: [:]) { res, value in
-			let (name, global) = value
-			res[name] = SerializedAnalysisModule.serialize(global)
-		}
-
-		self.functions = analysisModule.moduleFunctions.reduce(into: [:]) { res, value in
-			let (name, global) = value
-			res[name] = SerializedAnalysisModule.serialize(global)
-		}
-	}
-}
+import TypeChecker
 
 public struct AnalysisModule {
 	public let name: String
 
-	public var files: Set<ParsedSourceFile>
+	public let inferenceContext: InferenceContext
+
+	public var files: any Collection<ParsedSourceFile>
 
 	// Keep track of all the different symbols in this module
 	public var symbols: [Symbol: SymbolInfo] = [:]
@@ -96,8 +63,8 @@ public struct AnalysisModule {
 						ModuleFunction(
 							name: name,
 							symbol: syntax.symbol,
-							syntax: syntax,
-							typeID: syntax.typeID,
+							location: syntax.location,
+							typeID: syntax.inferenceType,
 							source: .module
 						)
 					)
@@ -124,13 +91,13 @@ public struct AnalysisModule {
 		return nil
 	}
 
-	public func lookup(symbol kind: Symbol.Kind, namespace: [String]) -> SymbolInfo? {
-		symbols[Symbol(module: name, kind: kind, namespace: namespace)]
+	public func lookup(symbol kind: Symbol.Kind) -> SymbolInfo? {
+		symbols[Symbol(module: name, kind: kind)]
 	}
 }
 
 public extension AnalysisModule {
 	static func empty(_ name: String) -> AnalysisModule {
-		AnalysisModule(name: name, files: [])
+		AnalysisModule(name: name, inferenceContext: Inferencer(imports: []).infer([]), files: [])
 	}
 }

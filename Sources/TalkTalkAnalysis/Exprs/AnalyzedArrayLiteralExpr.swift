@@ -8,7 +8,7 @@ public struct AnalyzedArrayLiteralExpr: ArrayLiteralExpr, AnalyzedExpr {
 
 	public let wrapped: ArrayLiteralExprSyntax
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var analyzedChildren: [any AnalyzedSyntax] { exprsAnalyzed }
 	public var analysisErrors: [AnalysisError]
 

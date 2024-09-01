@@ -9,7 +9,7 @@ public struct AnalyzedFuncSignatureDecl: FuncSignatureDecl, AnalyzedDecl {
 	public var paramsAnalyzed: ParamsExprSyntax
 	public var returnDeclAnalyzed: TypeExpr
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
 

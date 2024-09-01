@@ -12,10 +12,10 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	public let wrapped: InitDeclSyntax
 
 	public let symbol: Symbol
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public var environment: Environment
 	public var parametersAnalyzed: AnalyzedParamsExpr
-	public var bodyAnalyzed: AnalyzedDeclBlock
+	public var bodyAnalyzed: AnalyzedBlockStmt
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[parametersAnalyzed, bodyAnalyzed]
 	}

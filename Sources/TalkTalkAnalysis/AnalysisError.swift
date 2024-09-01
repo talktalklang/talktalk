@@ -6,6 +6,7 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
 
 public enum AnalysisErrorKind: Hashable {
 	public static func == (lhs: AnalysisErrorKind, rhs: AnalysisErrorKind) -> Bool {
@@ -18,14 +19,17 @@ public enum AnalysisErrorKind: Hashable {
 	case typeNotFound(String)
 	case unknownError(String)
 	case undefinedVariable(String)
-	case typeCannotAssign(expected: TypeID, received: TypeID)
-	case cannotReassignLet(variable: any AnalyzedExpr)
+	case typeCannotAssign(expected: InferenceType, received: InferenceType)
+	case cannotReassignLet(variable: any Syntax)
 	case invalidRedeclaration(variable: String, existing: Environment.Binding)
 	case expressionCount(String)
-	case unexpectedType(expected: ValueType, received: ValueType, message: String)
+	case unexpectedType(expected: InferenceType, received: InferenceType, message: String)
+	case inferenceError(InferenceErrorKind)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
+		case let .inferenceError(inferenceError):
+			hasher.combine(inferenceError)
 		case let .expressionCount(message):
 			hasher.combine(message)
 		case let .argumentError(expected, received):
@@ -71,6 +75,8 @@ public struct AnalysisError: Hashable {
 
 	public var message: String {
 		switch kind {
+		case let .inferenceError(inferenceError):
+			inferenceError.description
 		case let .argumentError(expected: a, received: b):
 			if a == -1 {
 				"Unable to determine expected arguments, probably because callee isn't callable."
@@ -92,7 +98,7 @@ public struct AnalysisError: Hashable {
 		case let .cannotReassignLet(variable: syntax):
 			"Cannot re-assign let variable: \(syntax.description)"
 		case let .invalidRedeclaration(variable: name, existing: decl):
-			"Cannot re-declare \(name). (defined as \(decl.expr.description))."
+			"Cannot re-declare \(name). (defined as \(decl.location))."
 		case let .unexpectedType(expected: _, received: _, message: message):
 			message
 		case let .expressionCount(message):

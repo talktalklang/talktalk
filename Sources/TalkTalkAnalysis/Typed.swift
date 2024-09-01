@@ -6,5 +6,5 @@
 //
 
 public protocol Typed {
-	var typeID: TypeID { get }
+	var inferenceType: InferenceType { get }
 }

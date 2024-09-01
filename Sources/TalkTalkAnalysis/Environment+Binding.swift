@@ -10,9 +10,9 @@ import TalkTalkSyntax
 public extension Environment {
 	class Binding {
 		public let name: String
-		public var expr: any Syntax
-		public var definition: (any Syntax)?
-		public var type: TypeID
+		public var location: SourceLocation
+		public var definition: Definition?
+		public var type: InferenceType
 		public var isCaptured: Bool
 		public var isBuiltin: Bool
 		public var isParameter: Bool
@@ -22,9 +22,9 @@ public extension Environment {
 
 		public init(
 			name: String,
-			expr: any Syntax,
-			definition: (any Syntax)? = nil,
-			type: TypeID,
+			location: SourceLocation,
+			definition: Definition? = nil,
+			type: InferenceType,
 			isCaptured: Bool = false,
 			isBuiltin: Bool = false,
 			isParameter: Bool = false,
@@ -33,7 +33,7 @@ public extension Environment {
 			externalModule: AnalysisModule? = nil
 		) {
 			self.name = name
-			self.expr = expr
+			self.location = location
 			self.definition = definition
 			self.type = type
 			self.isCaptured = isCaptured

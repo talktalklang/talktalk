@@ -42,7 +42,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: ImportStmtSyntax, _ context: Environment) -> SourceFileAnalyzer.Value {
 		AnalyzedImportStmt(
 			environment: context,
-			typeID: TypeID(.none),
+			inferenceType: .void,
 			wrapped: expr.cast(ImportStmtSyntax.self)
 		)
 	}
@@ -51,7 +51,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedIdentifierExpr(
-			typeID: TypeID(),
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			wrapped: expr.cast(IdentifierExprSyntax.self),
 			environment: context
 		)
@@ -66,14 +66,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		case .bang:
 
 			return AnalyzedUnaryExpr(
-				typeID: TypeID(.bool),
+				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		case .minus:
 			return AnalyzedUnaryExpr(
-				typeID: TypeID(.int),
+				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
@@ -106,18 +106,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
 		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 
-		let errors = checkAssignment(to: receiver, value: value, in: context)
+		var errors = errors(for: expr, in: context.inferenceContext)
 
-		// if errors.isEmpty {
-		// switch receiver {
-		// 	case let receiver as AnalyzedVarExpr:
-		// 		context.define(local: receiver.name, as: value, isMutable: receiver.isMutable)
-		// 	default: ()
-		// 	}
-		// }
+		errors.append(contentsOf: checkMutability(of: expr.receiver, in: context))
 
 		return AnalyzedDefExpr(
-			typeID: TypeID(value.typeAnalyzed),
+			inferenceType: .void,
 			wrapped: expr.cast(DefExprSyntax.self),
 			receiverAnalyzed: receiver,
 			analysisErrors: errors,
@@ -130,7 +124,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedErrorSyntax(
-			typeID: TypeID(.error(expr.message)),
+			typeID: .error(.init(kind: .unknownError(expr.message), location: expr.location)),
 			wrapped: expr.cast(ParseErrorSyntax.self),
 			environment: context
 		)
@@ -139,27 +133,18 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: LiteralExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		let typeID = switch expr.value {
-		case .int:
-			TypeID(.int)
-		case .bool:
-			TypeID(.bool)
-		case .none:
-			TypeID(.none)
-		case .string:
-			TypeID(.instance(.struct("String", [:])))
-		}
 
-		if typeID.current == .instance(.struct("String", [:])) {
-			_ = context.lookupStruct(named: "String")
-		}
-
-		if typeID.current == .instance(.struct("Int", [:])) {
-			_ = context.lookupStruct(named: "Int")
+		guard let type =  context.inferenceContext.lookup(syntax: expr) else {
+			print("Did not get type for \(expr.description)")
+			return AnalyzedLiteralExpr(
+				inferenceType: .any,
+			 wrapped: expr.cast(LiteralExprSyntax.self),
+			 environment: context
+		 )
 		}
 
 		return AnalyzedLiteralExpr(
-			typeID: typeID,
+			inferenceType: type,
 			wrapped: expr.cast(LiteralExprSyntax.self),
 			environment: context
 		)
@@ -169,15 +154,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		if let binding = context.lookup(expr.name) {
 			var symbol: Symbol? = nil
 
-			if case let .struct(name) = binding.type.current {
+			if case let .structType(type) = binding.type {
 				if let module = binding.externalModule {
-					symbol = module.structs[name]!.symbol
+					symbol = module.structs[type.name]!.symbol
 				} else {
 					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
 				}
-			} else if case let .function(name, _, _, _) = binding.type.current {
+			} else if case .function(_, _) = binding.type {
 				if let module = binding.externalModule {
-					symbol = module.moduleFunction(named: name)!.symbol
+					symbol = module.moduleFunction(named: binding.name)!.symbol
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
@@ -186,13 +171,13 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 					symbol = module.values[expr.name]!.symbol
 				} else {
 					if binding.isGlobal {
-						symbol = context.symbolGenerator.value(expr.name, source: .internal, namespace: [])
+						symbol = context.symbolGenerator.value(expr.name, source: .internal)
 					}
 				}
 			}
 
 			return AnalyzedVarExpr(
-				typeID: binding.type,
+				inferenceType: binding.type,
 				wrapped: expr.cast(VarExprSyntax.self),
 				symbol: symbol,
 				environment: context,
@@ -206,7 +191,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			[]
 
 		return AnalyzedVarExpr(
-			typeID: TypeID(.any),
+			inferenceType: .any,
 			wrapped: expr.cast(VarExprSyntax.self),
 			symbol: context.symbolGenerator.value(expr.name, source: .internal),
 			environment: context,
@@ -219,18 +204,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
-		if lhs.typeID.current == .pointer,
-		   [.int, .placeholder].contains(rhs.typeID.current)
-		{
-			// This is pointer arithmetic
-			// TODO: More generic handling of different operand types
-			rhs.typeID.update(.int, location: expr.location)
-		} else {
-			infer([lhs, rhs], in: env)
-		}
-
 		return AnalyzedBinaryExpr(
-			typeID: lhs.typeID,
+			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
 			wrapped: expr.cast(BinaryExprSyntax.self),
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
@@ -274,7 +249,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		// TODO: Error if the branches don't match or condition isn't a bool
 		return try AnalyzedIfExpr(
-			typeID: expr.consequence.accept(self, context).typeID,
+			inferenceType: expr.consequence.accept(self, context).inferenceType,
 			wrapped: expr.cast(IfExprSyntax.self),
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
 			consequenceAnalyzed: visit(expr.consequence.cast(BlockStmtSyntax.self), context) as! AnalyzedBlockStmt,
@@ -285,38 +260,25 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-//		guard let type = context.type(named: expr.identifier.lexeme) else {
-//			return error(at: expr, "No type found named: \(expr.identifier.lexeme)", environment: context, expectation: .type)
-//		}
+		let symbol: Symbol
 
-		if let type = context.type(named: expr.identifier.lexeme) {
-			if type.primitive != nil {
-				return AnalyzedTypeExpr(
-					wrapped: expr.cast(TypeExprSyntax.self),
-					symbol: .primitive(type.description),
-					typeID: TypeID(type),
-					environment: context
-				)
-			}
-
-			if case let .generic(valueType, string) = type {
-				return AnalyzedTypeExpr(
-					wrapped: expr.cast(TypeExprSyntax.self),
-					symbol: context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal),
-					typeID: TypeID(.generic(valueType, expr.identifier.lexeme)),
-					environment: context
-				)
-			}
-
-			return AnalyzedTypeExpr(
-				wrapped: expr.cast(TypeExprSyntax.self),
-				symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
-				typeID: TypeID(type),
-				environment: context
-			)
+		switch context.inferenceContext.lookup(syntax: expr) {
+		case .typeVar(_):
+			symbol = context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
+		case .base(let type):
+			symbol = .primitive("\(type)")
+		case .structType(let structType):
+			symbol = context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
+		default:
+			symbol = context.symbolGenerator.generic("error", source: .internal)
 		}
 
-		return error(at: expr, "No type found for type expr named: \(expr.identifier.lexeme)", environment: context, expectation: .type)
+		return AnalyzedTypeExpr(
+			wrapped: expr.cast(TypeExprSyntax.self),
+			symbol: symbol,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: FuncExprSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
@@ -324,33 +286,27 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: InitDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let paramsAnalyzed = try expr.params.accept(self, context) as! AnalyzedParamsExpr
-
-		let innerEnvironment = context.add(namespace: "init")
-		for param in paramsAnalyzed.paramsAnalyzed {
-			innerEnvironment.define(parameter: param.name, as: param)
-		}
-
-		let bodyAnalyzed = try expr.body.accept(self, innerEnvironment)
-
-		guard let lexicalScope = innerEnvironment.getLexicalScope() else {
+		guard let lexicalScope = context.getLexicalScope() else {
 			return error(at: expr, "Could not determine lexical scope for init", environment: context, expectation: .none)
 		}
+
+		let paramsAnalyzed = try expr.params.accept(self, context) as! AnalyzedParamsExpr
+		let bodyAnalyzed = try expr.body.accept(self, context) as! AnalyzedBlockStmt
 
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
-			typeID: TypeID(.struct(lexicalScope.scope.name!)),
-			environment: innerEnvironment,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
-			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock
+			bodyAnalyzed: bodyAnalyzed
 		)
 	}
 
 	public func visit(_ expr: ReturnStmtSyntax, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnStmt(
-			typeID: TypeID(valueAnalyzed?.typeAnalyzed ?? .void),
+			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: env,
 			wrapped: expr.cast(ReturnStmtSyntax.self),
 			valueAnalyzed: valueAnalyzed as? any AnalyzedExpr
@@ -360,19 +316,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: ParamsExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		try AnalyzedParamsExpr(
-			typeID: TypeID(.void),
+		AnalyzedParamsExpr(
+			inferenceType: .void,
 			wrapped: expr.cast(ParamsExprSyntax.self),
 			paramsAnalyzed: expr.params.enumerated().map { _, param in
-				var type = TypeID()
-
-				if let paramType = param.type {
-					let analyzedTypeExpr = try visit(paramType.cast(TypeExprSyntax.self), context)
-					type = analyzedTypeExpr.typeID.asInstance(in: context, location: param.location)
-				}
-
 				return AnalyzedParam(
-					type: type,
+					type: context.inferenceContext.lookup(syntax: param) ?? .any,
 					wrapped: param.cast(ParamSyntax.self),
 					environment: context
 				)
@@ -389,7 +338,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let body = try visit(expr.body.cast(BlockStmtSyntax.self), context.withExitBehavior(.pop)) as! AnalyzedBlockStmt
 
 		return AnalyzedWhileStmt(
-			typeID: body.typeID,
+			inferenceType: body.inferenceType,
 			wrapped: expr.cast(WhileStmtSyntax.self),
 			conditionAnalyzed: condition,
 			bodyAnalyzed: body,
@@ -408,7 +357,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedBlockStmt(
 			wrapped: stmt.cast(BlockStmtSyntax.self),
-			typeID: TypeID(bodyAnalyzed.last?.typeAnalyzed ?? .none),
+			inferenceType: context.inferenceContext.lookup(syntax: stmt) ?? .any,
 			stmtsAnalyzed: bodyAnalyzed,
 			environment: context
 		)
@@ -416,17 +365,17 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: ParamSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParam(
-			type: TypeID(),
-			wrapped: expr as! ParamSyntax,
+			type: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			wrapped: expr,
 			environment: context
 		)
 	}
 
-	public func visit(_ expr: GenericParamsSyntax, _ environment: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: GenericParamsSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedGenericParams(
-			wrapped: expr as! GenericParamsSyntax,
-			environment: environment,
-			typeID: TypeID(),
+			wrapped: expr,
+			environment: context,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			paramsAnalyzed: expr.params.map {
 				AnalyzedGenericParam(wrapped: $0)
 			}
@@ -439,6 +388,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		try StructDeclAnalyzer(decl: expr, visitor: self, context: context).analyze()
 	}
 
+	// FIXME: I think a lot of this is unnecessary now that we have TypeChecker
 	public func visit(_ expr: DeclBlockSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
@@ -453,70 +403,38 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			declsAnalyzed.append(declAnalyzed)
 
-			// If we have an updated type for a method, update the struct to know about it.
-			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
-			   let lexicalScope = context.lexicalScope,
-			   let name = funcExpr.name?.lexeme,
-			   let existing = lexicalScope.scope.methods[name]
-			{
-				lexicalScope.scope.add(
-					method: Method(
-						symbol: funcExpr.symbol,
-						name: funcExpr.name!.lexeme,
-						slot: existing.slot,
-						params: funcExpr.analyzedParams.paramsAnalyzed,
-						typeID: funcExpr.typeID,
-						returnTypeID: funcExpr.returnType,
-						expr: funcExpr,
-						isMutable: false
-					))
-			}
+//			// If we have an updated type for a method, update the struct to know about it.
+//			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
+//				 let lexicalScope = context.lexicalScope,
+//				 let name = funcExpr.name?.lexeme,
+//				 let existing = lexicalScope.scope.methods[name]
+//			{
+//				lexicalScope.scope.add(
+//					method: Method(
+//						name: funcExpr.name!.lexeme,
+//						slot: existing.slot,
+//						params: funcExpr.analyzedParams.paramsAnalyzed.map(\.typeAnalyzed),
+//						inferenceType: context.inferenceContext.lookup(syntax: funcExpr) ?? .any,
+//						location: funcExpr.semanticLocation ?? funcExpr.location,
+//						returnTypeID: funcExpr.returnType,
+//						isMutable: false
+//					))
+//			}
 		}
 
 		return AnalyzedDeclBlock(
-			typeID: TypeID(.void),
-			wrapped: expr as! DeclBlockSyntax,
+			inferenceType: .void,
+			wrapped: expr,
 			declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl],
 			environment: context
 		)
 	}
 
 	public func visit(_ expr: VarDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		var errors: [AnalysisError] = []
-
-		if let existing = context.local(named: expr.name),
-		   let definition = existing.definition,
-		   definition.location.start != expr.location.start,
-		   context.shouldReportErrors
-		{
-			errors.append(
-				.init(
-					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
-					location: expr.location
-				)
-			)
-		}
-
-		let type = context.type(named: expr.typeExpr?.identifier.lexeme, asInstance: true) ?? .error("Could not find type named: \(expr.typeExpr?.identifier.lexeme ?? "<no name>")")
-		var valueType = TypeID(type)
-		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
-		if let value, valueType.current == .placeholder {
-			valueType.infer(from: value.typeID)
-		}
-
-		if case .error = valueType.current, context.shouldReportErrors {
-			errors.append(
-				.init(
-					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),
-					location: [expr.typeExpr?.location.start ?? expr.location.start]
-				)
-			)
-		}
-
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
-		var isGlobal = false
 		var symbol: Symbol?
+		var isGlobal = false
 		if let scope = context.lexicalScope {
 			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
 		} else if context.isModuleScope {
@@ -524,57 +442,25 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
+		context.define(local: expr.name, as: expr, isMutable: true, isGlobal: isGlobal)
+
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
-			typeID: valueType,
-			wrapped: expr as! VarDeclSyntax,
-			analysisErrors: errors,
-			valueAnalyzed: value,
+			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			wrapped: expr,
+			analysisErrors: errors(for: expr, in: context.inferenceContext),
+			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
-
-		if let value {
-			context.define(local: expr.name, as: value, definition: decl, isMutable: true, isGlobal: isGlobal)
-		}
 
 		return decl
 	}
 
 	public func visit(_ expr: LetDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		var errors: [AnalysisError] = []
-		let type = TypeID(context.type(named: expr.typeExpr?.identifier.lexeme) ?? .error("Could not find type from \(expr)"))
-
-		if let existing = context.local(named: expr.name),
-		   let definition = existing.definition,
-		   definition.location.start != expr.location.start
-		{
-			errors.append(
-				.init(
-					kind: .invalidRedeclaration(variable: expr.name, existing: existing),
-					location: expr.location
-				)
-			)
-		}
-
-		if case .error = type.current {
-			errors.append(
-				.init(
-					kind: .typeNotFound(expr.typeExpr?.description ?? "<no type name>"),
-					location: [expr.typeExpr?.location.start ?? expr.location.start]
-				)
-			)
-		}
-
-		var valueType = type
-		let value = try expr.value?.accept(self, context) as? any AnalyzedExpr
-		if let value, valueType.current == .placeholder {
-			valueType = value.typeID
-		}
-
 		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
 		// not locals inside methods.
-		var isGlobal = false
 		var symbol: Symbol?
+		var isGlobal = false
 		if let scope = context.lexicalScope {
 			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
 		} else if context.isModuleScope {
@@ -582,26 +468,24 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
+		context.define(local: expr.name, as: expr, isMutable: false, isGlobal: isGlobal)
+
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
-			typeID: valueType,
-			wrapped: expr as! LetDeclSyntax,
-			analysisErrors: errors,
-			valueAnalyzed: value,
+			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			wrapped: expr,
+			analysisErrors: errors(for: expr, in: context.inferenceContext),
+			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
-
-		if let value {
-			context.define(local: expr.name, as: value, definition: decl, isMutable: false, isGlobal: isGlobal)
-		}
 
 		return decl
 	}
 
 	public func visit(_ expr: IfStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		try AnalyzedIfStmt(
-			wrapped: expr as! IfStmtSyntax,
-			typeID: TypeID(.void),
+			wrapped: expr,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
 			consequenceAnalyzed: expr.consequence.accept(self, context) as! any AnalyzedExpr,
@@ -611,7 +495,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: StructExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedErrorSyntax(
-			typeID: TypeID(.error("TODO")),
+			typeID: .void,
 			wrapped: ParseErrorSyntax(
 				location: expr.location,
 				message: "TODO",
@@ -622,21 +506,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ArrayLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let elements = try expr.exprs.map { try $0.accept(self, context) }
-		let elementType = elements.map(\.typeID).first ?? TypeID(.placeholder)
-		let instanceType = InstanceValueType(ofType: .struct("Array"), boundGenericTypes: ["Element": elementType])
-
-		var errors: [AnalysisError] = []
-		if elements.count > 255 {
-			errors.append(.init(kind: .expressionCount("Array literals can only have 255 elements"), location: expr.location))
-		}
-
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
-			exprsAnalyzed: elements as! [any AnalyzedExpr],
-			wrapped: expr as! ArrayLiteralExprSyntax,
-			typeID: TypeID(.instance(instanceType)),
-			analysisErrors: errors
+			exprsAnalyzed: try expr.exprs.map { try $0.accept(self, context) } as! [any AnalyzedExpr],
+			wrapped: expr,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			analysisErrors: []
 		)
 	}
 
@@ -647,27 +522,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		let elementsAnalyzed = try expr.elements.map { try $0.accept(self, context) } as! [AnalyzedDictionaryElementExpr]
 
-		let keyType = TypeID()
-		let valueType = TypeID()
-
-		for element in elementsAnalyzed {
-			// TODO: Handle heterogenous types
-			keyType.update(element.keyAnalyzed.typeID.current, location: expr.location)
-			valueType.update(element.valueAnalyzed.typeID.current, location: expr.location)
-		}
-
-		let instance = InstanceValueType(
-			ofType: .struct("Dictionary"),
-			boundGenericTypes: [
-				"Key": keyType,
-				"Value": valueType
-			]
-		)
-
 		return AnalyzedDictionaryLiteralExpr(
 			elementsAnalyzed: elementsAnalyzed,
-			wrapped: expr as! DictionaryLiteralExprSyntax,
-			typeID: TypeID(.instance(instance)),
+			wrapped: expr,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context
 		)
 	}
@@ -678,8 +536,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedDictionaryElementExpr(
 			keyAnalyzed: key,
 			valueAnalyzed: value,
-			wrapped: expr as! DictionaryElementExprSyntax,
-			typeID: TypeID(),
+			wrapped: expr,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context
 		)
 	}
@@ -691,12 +549,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	// GENERATOR_INSERTION

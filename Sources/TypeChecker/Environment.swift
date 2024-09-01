@@ -38,10 +38,16 @@ class Environment {
 	}
 
 	func trackReturn(_ result: InferenceResult) {
-		functionStack[functionStack.count-1].insert(result)
+		if functionStack.indices.contains(functionStack.count-1) {
+			functionStack[functionStack.count-1].insert(result)
+		}
 	}
 
 	func extend(_ syntax: any Syntax, with: InferenceResult) {
+		if types[syntax.id] != nil {
+			return
+		}
+
 		types[syntax.id] = with
 	}
 

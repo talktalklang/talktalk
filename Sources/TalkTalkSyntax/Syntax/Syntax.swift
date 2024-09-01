@@ -5,7 +5,9 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-public typealias SyntaxID = Int
+import TalkTalkCore
+
+public typealias SyntaxID = TalkTalkCore.SyntaxID
 
 public protocol Syntax: CustomStringConvertible {
 	// A unique identifier for every piece of syntax
@@ -19,11 +21,23 @@ public protocol Syntax: CustomStringConvertible {
 
 	// Let this node be visited by visitors
 	func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value
+
+	// If this node starts with a keyword, we can skip that when we're talking about
+	// the interesting part of where this syntax starts
+	var semanticLocation: SourceLocation? { get }
 }
 
 public extension Syntax {
-	func cast<T: Syntax>(_: T.Type) -> T {
-		self as! T
+	var semanticLocation: SourceLocation? {
+		nil
+	}
+
+	func cast<T: Syntax>(_: T.Type, _ file: String = #file, _ line: UInt32 = #line) -> T {
+		if self is T {
+			self as! T
+		} else {
+			fatalError("Could not cast \(self) to \(T.self) (\(file):\(line))")
+		}
 	}
 
 	func `as`<T: Syntax>(_: T.Type) -> T? {

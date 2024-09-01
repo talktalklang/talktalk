@@ -5,20 +5,20 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 import Foundation
-struct ProtocolType: Equatable, Hashable {
-	let name: String
+public struct ProtocolType: Equatable, Hashable {
+	public let name: String
 }
 
-class Instance: Equatable, Hashable, CustomStringConvertible {
-	static func == (lhs: Instance, rhs: Instance) -> Bool {
+public class Instance: Equatable, Hashable, CustomStringConvertible {
+	public static func == (lhs: Instance, rhs: Instance) -> Bool {
 		lhs.type == rhs.type && lhs.substitutions == rhs.substitutions
 	}
 
 	let id: Int
-	let type: StructType
+	public let type: StructType
 	var substitutions: [TypeVariable: InferenceType]
 
-	static func extract(from type: InferenceType) -> Instance? {
+	public static func extract(from type: InferenceType) -> Instance? {
 		if case let .structInstance(instance) = type {
 			return instance
 		}
@@ -26,10 +26,24 @@ class Instance: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
+	public static func synthesized(_ type: StructType) -> Instance {
+		Instance(id: -9999, type: type, substitutions: [:])
+	}
+
 	init(id: Int, type: StructType, substitutions: [TypeVariable : InferenceType]) {
 		self.id = id
 		self.type = type
 		self.substitutions = substitutions
+	}
+
+	public func relatedType(named name: String) -> InferenceType? {
+		for substitution in substitutions.keys {
+			if substitution.name == name {
+				return substitutions[substitution]
+			}
+		}
+
+		return nil
 	}
 
 	func member(named name: String) -> InferenceType? {
@@ -51,8 +65,12 @@ class Instance: Equatable, Hashable, CustomStringConvertible {
 		return instanceMember
 	}
 
-	var description: String {
-		"\(type.name)()#\(id)"
+	public var description: String {
+		if substitutions.isEmpty {
+			"\(type.name)()#\(id)"
+		} else {
+			"\(type.name)<\(substitutions.keys.map(\.description).joined(separator: ", "))>()#\(id)"
+		}
 	}
 
 	public func hash(into hasher: inout Hasher) {
@@ -61,21 +79,25 @@ class Instance: Equatable, Hashable, CustomStringConvertible {
 	}
 }
 
-indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
+public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	case typeVar(TypeVariable)
 	case base(Primitive) // primitives
 	case function([InferenceType], InferenceType)
 	case structType(StructType)
 	case structInstance(Instance)
+	case placeholder(TypeVariable)
 	case `protocol`(ProtocolType)
 	case error(InferenceError)
+	case kind(InferenceType)
+	case selfVar(StructType)
+	case any
 	case void
 
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
 		InferenceType.typeVar(TypeVariable(name, id))
 	}
 
-	var description: String {
+	public var description: String {
 		switch self {
 		case .protocol(let protocolType):
 			"\(protocolType.name).Protocol"
@@ -89,8 +111,16 @@ indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 			"error(\(error))"
 		case .structType(let structType):
 			structType.name + ".Type"
+		case .kind(let type):
+			"\(type).Kind"
 		case .structInstance(let instance):
 			instance.description
+		case .any:
+			"any"
+		case let .selfVar(type):
+			"\(type.description) (self)"
+		case let .placeholder(variable):
+			"\(variable) (placeholder)"
 		case .void:
 			"void"
 		}

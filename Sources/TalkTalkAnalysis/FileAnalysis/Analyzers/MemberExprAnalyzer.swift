@@ -15,102 +15,38 @@ struct MemberExprAnalyzer: Analyzer {
 	func analyze() throws -> any AnalyzedSyntax {
 		let receiver = try expr.receiver.accept(visitor, context)
 		let propertyName = expr.property
+		let type = context.inferenceContext.lookup(syntax: expr)
 
 		var member: (any Member)? = nil
-		switch receiver.typeAnalyzed {
-		case let .instance(receiverInstance):
-			guard case let .struct(name) = receiverInstance.ofType,
-			      let receiverStructType = context.lookupStruct(named: name)
-			else {
-				return error(
-					at: expr, "Could not find type of \(receiverInstance)", environment: context,
-					expectation: .identifier
-				)
-			}
-
-			if let foundMember: any Member = receiverStructType.properties[propertyName] ?? receiverStructType.methods[propertyName] {
-				// Start out by just filling in the bound generic types with placeholders
-				if case var .instance(instance) = foundMember.typeID.current,
-					 case let .struct(memberTypeName) = instance.ofType,
-					 let memberType = context.lookupStruct(named: memberTypeName) {
-					for typeParameter in memberType.typeParameters {
-						instance.boundGenericTypes[typeParameter.name] = TypeID(.placeholder)
-					}
-
-					foundMember.typeID.update(.instance(instance), location: expr.location)
-				}
-
-				if let varLetDecl = foundMember.expr as? VarLetDecl,
-					 let typeExpr = varLetDecl.typeExpr {
-					inferGenerics(
-						memberTypeID: foundMember.typeID,
-						typeExpr: typeExpr,
-						receiverType: receiverStructType,
-						receiverInstance: receiverInstance
-					)
-				}
-
-				member = foundMember
-			}
-		default:
-			return error(
-				at: expr, "Cannot access property `\(propertyName)` on `\(receiver)` (\(receiver.typeAnalyzed.description))",
-				environment: context,
-				expectation: .member
-			)
+		if let scope = context.getLexicalScope()?.scope {
+			member = (scope.methods[propertyName] ?? scope.properties[propertyName])
 		}
 
-		var errors: [AnalysisError] = []
-		if member == nil, context.shouldReportErrors {
-			errors.append(
-				.init(
-					kind: .noMemberFound(receiver: receiver, property: propertyName),
-					location: receiver.location
-				)
+		if case let .structInstance(instance) = receiver.typeAnalyzed,
+			 let structType = context.lookupStruct(named: instance.type.name) {
+			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
+		}
+
+		guard let member else {
+			return AnalyzedMemberExpr(
+				inferenceType: type ?? .any,
+				wrapped: expr.cast(MemberExprSyntax.self),
+				environment: context,
+				receiverAnalyzed: receiver as! any AnalyzedExpr,
+				memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
+				analysisErrors: [],
+				isMutable: true
 			)
 		}
 
 		return AnalyzedMemberExpr(
-			typeID: member?.typeID ??
-				TypeID(.error("no member found: \(expr.property)")),
+			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			memberAnalyzed: member ?? error(at: expr, "no member found", environment: context, expectation: .member),
-			analysisErrors: errors,
-			isMutable: member?.isMutable ?? false
+			memberAnalyzed: member,
+			analysisErrors: [],
+			isMutable: member.isMutable
 		)
-	}
-
-	func inferGenerics(memberTypeID: TypeID, typeExpr: TypeExpr, receiverType: StructType, receiverInstance: InstanceValueType) {
-		if self.expr.description == "self.store" {
-			
-		}
-		guard case var .instance(memberInstance) = memberTypeID.current else {
-			return
-		}
-
-		if case let .struct(memberStructName) = memberInstance.ofType,
-			 let memberStruct = context.lookupStruct(named: memberStructName) {
-
-			// Get the list of generic params this member has declared as part of its property
-			for (i, genericParam) in typeExpr.genericParams.enumerated() {
-				guard memberStruct.typeParameters.count > i else {
-					continue
-				}
-
-				inferGenerics(memberTypeID: memberTypeID, typeExpr: genericParam, receiverType: memberStruct, receiverInstance: receiverInstance)
-
-				if receiverType.typeParameters.count > i, let receiverType = receiverInstance.boundGenericTypes[receiverType.typeParameters[i].name] {
-					let memberTypeName = memberStruct.typeParameters[i].name
-					memberInstance.boundGenericTypes[memberTypeName] = receiverType
-				} else if let receiverType = context.type(named: genericParam.identifier.lexeme, asInstance: true) {
-					let memberTypeName = memberStruct.typeParameters[i].name
-					memberInstance.boundGenericTypes[memberTypeName]?.update(receiverType, location: genericParam.location)
-				}
-			}
-
-			_ = memberTypeID.update(.instance(memberInstance), location: [typeExpr.identifier])
-		}
 	}
 }

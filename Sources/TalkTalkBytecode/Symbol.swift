@@ -5,9 +5,11 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkCore
+
 public struct SymbolInfo: Equatable, Codable {
 	public enum Source: Equatable, Codable {
-		case `internal`, external(String), stdlib
+		case `internal`, external(String)
 	}
 
 	// What symbol is this
@@ -53,37 +55,35 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	}
 
 	public static func primitive(_ name: String) -> Symbol {
-		Symbol(module: "[builtin]", kind: .primitive(name), namespace: [])
+		Symbol(module: "[builtin]", kind: .primitive(name))
 	}
 
-	public static func function(_ module: String, _ name: String, _ params: [String], namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .function(name, params), namespace: namespace)
+	public static func function(_ module: String, _ name: String, _ params: [String]) -> Symbol {
+		Symbol(module: module, kind: .function(name, params))
 	}
 
-	public static func value(_ module: String, _ name: String, namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .value(name), namespace: namespace)
+	public static func value(_ module: String, _ name: String) -> Symbol {
+		Symbol(module: module, kind: .value(name))
 	}
 
-	public static func `struct`(_ module: String, _ name: String, namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .struct(name), namespace: namespace)
+	public static func `struct`(_ module: String, _ name: String) -> Symbol {
+		Symbol(module: module, kind: .struct(name))
 	}
 
-	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .method(type, name, params), namespace: namespace)
+	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String]) -> Symbol {
+		Symbol(module: module, kind: .method(type, name, params))
 	}
 
-	public static func property(_ module: String, _ type: String, _ name: String, namespace: [String] = []) -> Symbol {
-		Symbol(module: module, kind: .property(type, name), namespace: namespace)
+	public static func property(_ module: String, _ type: String, _ name: String) -> Symbol {
+		Symbol(module: module, kind: .property(type, name))
 	}
 
-	public let namespace: [String]
 	public let module: String
 	public let kind: Kind
 
-	public init(module: String, kind: Kind, namespace: [String]) {
+	public init(module: String, kind: Kind) {
 		self.module = module
 		self.kind = kind
-		self.namespace = namespace
 	}
 
 	public var description: String {

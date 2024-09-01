@@ -11,6 +11,7 @@ import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkDriver
 import TalkTalkSyntax
+import TypeChecker
 
 public actor Server {
 	// We read json, we write json

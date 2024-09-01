@@ -22,6 +22,14 @@ public struct SourceLocation: Sendable, Equatable, Hashable, Codable, CustomStri
 		start.start ..< (end.start + end.length)
 	}
 
+	public func contains(_ location: SourceLocation) -> Bool {
+		if self == location {
+			return true
+		}
+
+		return (start.start < location.start.start) && (location.start.start < end.end)
+	}
+
 	public func contains(line: Int, column: Int) -> Bool {
 		if start.line != end.line {
 			// If this location spans multiple lines then just see if the

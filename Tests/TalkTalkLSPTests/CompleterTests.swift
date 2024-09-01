@@ -14,14 +14,11 @@ import Testing
 @MainActor
 struct CompleterTests {
 	func complete(_ request: Completion.Request, in string: String) async throws -> Set<Completion.Item> {
-
-		let stdlib = try await StandardLibrary.compile()
-
 		var analyzer = ModuleAnalyzer(
 			name: "Testing",
 			files: [],
 			moduleEnvironment: [:],
-			importedModules: [stdlib.analysis]
+			importedModules: []
 		)
 
 		let module = try analyzer.addFile(

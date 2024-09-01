@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedImportStmt: ImportStmt, AnalyzedStmt {
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public var environment: Environment
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 
 	public let wrapped: ImportStmtSyntax
 	public var token: Token { wrapped.token }

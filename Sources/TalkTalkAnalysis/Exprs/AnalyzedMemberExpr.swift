@@ -6,9 +6,10 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
 
 public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: MemberExprSyntax
 	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed] }
 	public let environment: Environment
@@ -31,35 +32,6 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	}
 
 	public func definition() -> Definition? {
-		switch receiverAnalyzed.typeAnalyzed {
-		case let .instance(instanceType):
-			switch instanceType.ofType {
-			case let .struct(name):
-				guard let structDef = environment.lookupStruct(named: name) else {
-					return nil
-				}
-
-				// Look to see if the property is a method
-				if let method = structDef.methods[property],
-				   let funcDef = method.expr as? any FuncExpr
-				{
-					let token = funcDef.name ?? funcDef.funcToken
-					return Definition(token: token, type: method.typeID.current)
-				}
-
-				// See if it's a property
-				if let property = structDef.properties[property],
-				   let propDef = property.expr as? any VarLetDecl
-				{
-					return Definition(token: propDef.nameToken, type: property.typeID.current)
-				}
-			default:
-				()
-			}
-		default:
-			()
-		}
-
-		return nil
+		return Definition(location: memberAnalyzed.location, type: memberAnalyzed.inferenceType)
 	}
 }

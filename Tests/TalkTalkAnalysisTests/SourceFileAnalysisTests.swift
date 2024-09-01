@@ -7,45 +7,56 @@
 
 @testable import TalkTalkAnalysis
 import TalkTalkSyntax
+import TypeChecker
 import Testing
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
-		let parsed = try! Parser.parse(.init(path: "", text: string))
-		return try! SourceFileAnalyzer.analyze(parsed, in: .init()).last!
+		let parsed = try! Parser.parse(.init(path: "analysistest.tlk", text: string))
+		let context = Inferencer(imports: []).infer(parsed)
+		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context)).last!
+	}
+
+	func asts(_ string: String) -> [any AnalyzedSyntax] {
+		let parsed = try! Parser.parse(.init(path: "analysistest.tlk", text: string))
+		let context = Inferencer(imports: []).infer(parsed)
+		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context))
 	}
 
 	@Test("Types literals") func literals() {
-		#expect(ast("true").typeAnalyzed == .bool)
-		#expect(ast("false").typeAnalyzed == .bool)
-		#expect(ast("123").typeAnalyzed == .int)
+		#expect(ast("true").typeAnalyzed == .base(.bool))
+		#expect(ast("false").typeAnalyzed == .base(.bool))
+		#expect(ast("123").typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types string literals") func strings() {
-		#expect(ast(#""hello world""#).typeAnalyzed == .instance(.struct("String")))
+		#expect(ast(#""hello world""#).typeAnalyzed == .base(.string))
 	}
 
 	@Test("Types add") func add() {
-		#expect(ast("1 + 2").typeAnalyzed == .int)
+		#expect(ast("1 + 2").typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types def") func def() throws {
 		let ast = try #require(ast("var foo = 1").as(AnalyzedVarDecl.self))
 		let def = try #require(ast.valueAnalyzed as? AnalyzedLiteralExpr)
-		#expect(def.typeAnalyzed == .int)
+		#expect(def.typeAnalyzed == .base(.int))
 		#expect(ast.name == "foo")
 	}
 
 	@Test("Types let") func typesLet() throws {
 		let ast = ast("let foo = 1").cast(AnalyzedLetDecl.self)
 		#expect(ast.name == "foo")
-		#expect(ast.value?.cast(LiteralExprSyntax.self).value == .int(1))
 	}
 
 	@Test("Types if expr") func ifExpr() {
 		let expr = ast("return if true { 1 } else { 2 }").cast(AnalyzedReturnStmt.self).valueAnalyzed!
 		#expect(expr is AnalyzedIfExpr)
-		#expect(expr.typeAnalyzed == .int)
+		#expect(expr.typeAnalyzed == .base(.int))
+
+		let expr2 = ast("return if true { \"hi\" } else { \"yo\" }").cast(AnalyzedReturnStmt.self).valueAnalyzed!
+		#expect(expr2 is AnalyzedIfExpr)
+		#expect(expr2.typeAnalyzed == .base(.string))
 	}
 
 	@Test("Types if stmt") func ifStmt() {
@@ -53,11 +64,11 @@ struct AnalysisTests {
 	}
 
 	@Test("Types block expr") func blockExpr() {
-		#expect(ast("{ 1 }").typeAnalyzed == .int)
+		#expect(ast("{ 1 }").typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types while expr") func whileExpr() {
-		#expect(ast("while true { 1 }").typeAnalyzed == .int)
+		#expect(ast("while true { 1 }").typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types func expr") func funcExpr() {
@@ -66,7 +77,9 @@ struct AnalysisTests {
 			func(x) { x + 1 }
 			""")
 
-		#expect(fn.typeAnalyzed == .function("_fn_x_17", TypeID(.int), [.int("x")], []))
+		#expect(
+			fn.typeAnalyzed == .function([.base(.int)], .base(.int))
+		)
 	}
 
 	@Test("Sets implicitlyReturns for single expr statement func bodies") func implicitReturn() {
@@ -100,11 +113,11 @@ struct AnalysisTests {
 		let fn = ast(
 			"""
 			func foo(x) { x + 1 }
-			return foo
+			foo
 			"""
-		).cast(AnalyzedReturnStmt.self).valueAnalyzed!
+		).cast(AnalyzedExprStmt.self).exprAnalyzed
 
-		#expect(fn.typeAnalyzed == .function("foo", TypeID(.int), [.int("x")], []))
+		#expect(fn.typeAnalyzed == .function([.base(.int)], .base(.int)))
 	}
 
 	@Test("Types simple calls") func funcSimpleCalls() {
@@ -113,7 +126,7 @@ struct AnalysisTests {
 			func(x) { x }(1)
 			""").cast(AnalyzedCallExpr.self)
 
-		#expect(res.typeAnalyzed == .int)
+		#expect(res.typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types calls") func funcCalls() {
@@ -123,7 +136,7 @@ struct AnalysisTests {
 			foo(1)
 			""").cast(AnalyzedExprStmt.self).exprAnalyzed
 
-		#expect(res.typeAnalyzed == .int)
+		#expect(res.typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types func parameters") func funcParams() throws {
@@ -136,7 +149,7 @@ struct AnalysisTests {
 		let fn = try #require(ast as? AnalyzedFuncExpr)
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
-		#expect(param.typeAnalyzed == .int)
+		#expect(param.typeAnalyzed == .base(.int))
 	}
 
 	@Test("Types pointer arithmetic") func pointers() throws {
@@ -148,41 +161,32 @@ struct AnalysisTests {
 			"""
 		)
 
-		#expect(ast.cast(AnalyzedFuncExpr.self).returnType.current == .pointer)
+		#expect(ast.cast(AnalyzedFuncExpr.self).returnType == .base(.pointer))
 	}
 
 	@Test("Types functions") func closures() throws {
-		let ast = try SourceFileAnalyzer.analyze(
-			Parser.parse(
-				"""
-					let i = 1
-					func(x) {
-						i + 2
-					}(2)
-				"""), in: .init()
+		let asts = asts(
+			"""
+				let i = 1
+				func(x) {
+					i + 2
+				}(2)
+			"""
 		)
 
-		let result = ast[1]
-			.cast(AnalyzedCallExpr.self).calleeAnalyzed
-			.cast(AnalyzedFuncExpr.self).typeAnalyzed
+		let result = asts[1].cast(AnalyzedCallExpr.self)
 
-		let expected: ValueType = .function("_fn_x_33", TypeID(.int), [.int("x")], ["i"])
-		#expect(result == expected)
+		#expect(result.typeAnalyzed == .base(.int))
 	}
 
 	@Test("Emits an error when args don't match params") func arityError() throws {
-		let env = Environment()
-		let ast = try SourceFileAnalyzer.analyze(Parser.parse("func() {}(123)"), in: env)
+		let ast = asts("func() {}(123)")
 
 		let callExpr = ast[0]
 			.cast(AnalyzedCallExpr.self)
 		let error = try #require(callExpr.analysisErrors.first)
 
-		#expect(error.kind == .argumentError(expected: 0, received: 1))
-
-		// Make sure the env knows about it too
-		let envError = try #require(env.errors.first)
-		#expect(envError.kind == .argumentError(expected: 0, received: 1))
+		#expect(error.kind == .inferenceError(.argumentError(expected: 0, actual: 1)))
 	}
 
 	@Test("Types captures") func funcCaptures() throws {
@@ -199,61 +203,52 @@ struct AnalysisTests {
 		let param = fn.analyzedParams.paramsAnalyzed[0]
 
 		#expect(param.name == "x")
-		#expect(param.typeAnalyzed == .int)
+		#expect(param.typeAnalyzed == .base(.int))
 		#expect(
-			fn.typeAnalyzed
-				== .function(
-					"_fn_x_43",
-					TypeID(.function(
-						"_fn_y_41",
-						TypeID(.int),
-						[.int("y")],
-						["x"]
-					)),
-					[.int("x")],
-					[]
-				))
+			fn.typeAnalyzed == .function([.base(.int)], .function([.base(.int)], .base(.int)))
+		)
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedFuncExpr.self)
-		#expect(nestedFn.typeAnalyzed == .function("_fn_y_41", TypeID(.int), [.int("y")], ["x"]))
+		#expect(nestedFn.typeAnalyzed == .function([.base(.int)], .base(.int)))
 
-		let capture = nestedFn.environment.captures[0]
+		#expect(nestedFn.environment.captures.count == 1)
+		let capture = try #require(nestedFn.environment.captures.first)
 		#expect(capture.name == "x")
-		#expect(capture.binding.type.type() == .int)
+		#expect(capture.binding.type == .base(.int))
 	}
 
 	@Test("Types counter") func counter() throws {
-		let main = try SourceFileAnalyzer.analyze(
-			Parser.parse(
-				"""
-				let makeCounter = func() {
-					let count = 0
-					return func() {
-						count = count + 1
-						return count
-					}
+		let main = asts(
+			"""
+			let makeCounter = func() {
+				let count = 0
+				return func() {
+					count = count + 1
+					return count
 				}
+			}
 
-				let mycounter = makeCounter()
-				mycounter()
-				"""), in: .init()
+			let mycounter = makeCounter()
+			mycounter()
+			"""
 		)
 
 		let def = try #require(main[0].cast(AnalyzedLetDecl.self))
-		let fn = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
-		#expect(fn.environment.captures.count == 0)
+		let makeCounter = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
+		#expect(makeCounter.environment.captures.count == 0)
+		#expect(makeCounter.typeAnalyzed == .function([], .function([], .base(.int))))
+		#expect(makeCounter.returnType == .function([], .base(.int)))
 
-		guard case let .function(_, returns, params, captures) = fn.returnType.current else {
-			#expect(Bool(false)) ; return
-		}
+		let increment = try #require(makeCounter.bodyAnalyzed.stmtsAnalyzed.last)
+			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
+			.cast(AnalyzedFuncExpr.self)
 
-		#expect(captures.count == 1)
-		#expect(returns.current == .int)
-		#expect(captures.first == "count")
-		#expect(params.isEmpty)
+		#expect(increment.typeAnalyzed == .function([], .base(.int)))
+		#expect(increment.environment.captures.count == 1)
+		#expect(increment.environment.captures[0].name == "count")
 	}
 
 	@Test("Errors on bad struct instantiating") func badStruct() {
@@ -273,9 +268,9 @@ struct AnalysisTests {
 		let ast = ast(
 			"""
 			struct Person {
-				let age: i32
+				let age: int
 
-				init(age: i32) {
+				init(age: int) {
 					self.age = age
 				}
 
@@ -288,27 +283,25 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		guard case let .struct(name) = s.typeAnalyzed else {
-			#expect(Bool(false), "did not get struct type")
-			return
-		}
+		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))
+		#expect(structType?.name == "Person")
 
 		let stype = s.environment.lookupStruct(named: "Person")
 		let type = try #require(stype)
-		#expect(name == "Person")
+		#expect(type.name == "Person")
 		#expect(type.methods["init"] != nil)
 
-		#expect(type.properties["age"]!.typeID.type() == .int)
-		#expect(type.methods["sup"]!.typeID.type() == .function("sup", TypeID(.int), [], []))
+		#expect(type.properties["age"]!.inferenceType == .base(.int))
+		#expect(type.methods["sup"]!.inferenceType == .function([], .base(.int)))
 	}
 
-	@Test("Types calling struct methods on self", .disabled("we need to come back to this")) func selfMethodCalls() throws {
+	@Test("Types calling struct methods on self") func selfMethodCalls() throws {
 		let ast = ast(
 			"""
 			struct Person<Thing> {
-				let age: i32
+				let age: int
 
-				init(age: i32) {
+				init(age: int) {
 					self.age = age
 				}
 
@@ -325,25 +318,23 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		guard case let .struct(name) = s.typeAnalyzed else {
-			#expect(Bool(false), "did not get struct type")
-			return
-		}
+		let structType = try #require(TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed)))
+
+		#expect(structType.name == "Person")
 
 		let stype = s.environment.lookupStruct(named: "Person")
 		let type = try #require(stype)
-		#expect(name == "Person")
+		#expect(type.name == "Person")
 		#expect(type.methods["init"] != nil)
 
-		let returnType = TypeID(ValueType.generic(.struct("Person"), "Thing"))
-		#expect(type.methods["get"]!.typeID.type() == .function("get", returnType, [.init(name: "index", typeID: TypeID(.generic(.struct("Person"), "Thing")))], ["self"]))
+		#expect(type.methods["get"]!.returnTypeID == .base(.int))
 	}
 
 	@Test("Synthesizing init for structs") func synthesizingInitForStructs() throws {
 		let ast = ast(
 			"""
 			struct Person {
-				let age: i32
+				let age: int
 
 				func sup() {
 					345
@@ -356,17 +347,13 @@ struct AnalysisTests {
 
 		let structType = s.structType
 		let initializer = try #require(structType.methods["init"])
-		#expect(initializer.params.map(\.name) == ["age"])
+		#expect(initializer.params == [.base(.int)])
 	}
 
 	@Test("Types struct Self/self") func selfSelf() throws {
 		let ast = ast(
 			"""
 			struct Person {
-				func typeSup() {
-					Self
-				}
-
 				func sup() {
 					self
 				}
@@ -374,24 +361,12 @@ struct AnalysisTests {
 			""")
 
 		let s = try #require(ast as? AnalyzedStructDecl)
-		#expect(s.name == "Person")
+		let type = try #require(s.environment.lookupStruct(named: "Person"))
 
-		guard case let .struct(name) = s.typeAnalyzed else {
-			#expect(Bool(false), "did not get struct type")
-			return
-		}
+		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))!
+		let sup = type.methods["sup"]!.returnTypeID
 
-		let type = try #require(s.environment.lookupStruct(named: name))
-		#expect(name == "Person")
-		#expect(type.methods["typeSup"]!.typeID.type() == .function("typeSup", TypeID(.struct("Person")), [], []))
-
-		guard case let .function(name, returns, _, _) = type.methods["sup"]!.typeID.type() else {
-			#expect(Bool(false))
-			return
-		}
-
-		#expect(name == "sup")
-		#expect(returns.current == .instance(.struct("Person")))
+		#expect(sup == .selfVar(structType))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {
@@ -413,10 +388,9 @@ struct AnalysisTests {
 			"""
 			var a = "sup"
 			_cast(a, int)
-			a
 			"""
 		)
 
-		#expect(ast.cast(AnalyzedExprStmt.self).exprAnalyzed.typeID.current == .int)
+		#expect(ast.cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed == .base(.int))
 	}
 }

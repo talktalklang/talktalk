@@ -53,7 +53,7 @@ public class CompilingModule {
 
 		var chunks: [StaticChunk] = Array(
 			repeating: StaticChunk(
-				chunk: .init(name: "_", symbol: .function(name, "_", [], namespace: []), path: "_")
+				chunk: .init(name: "_", symbol: .function(name, "_", []), path: "_")
 			),
 			count: chunkCount
 		)
@@ -80,28 +80,9 @@ public class CompilingModule {
 				fatalError("could not find compiled chunk for: \(symbol.description)")
 			case .struct:
 				switch info.source {
-				case .stdlib:
-					if self.name == "Standard" {
-						// In this case, we're the Standard library compiling itself so we should have the
-						// struct here in this CompilingModule
-						guard let structType = structs[symbol] else {
-							fatalError("could not find struct for: \(symbol.description)")
-						}
-						moduleStructs[info.slot] = structType
-					} else {
-						// Otherwise, we can assume it's in the module environment
-						guard let module = moduleEnvironment["Standard"],
-									let moduleInfo = module.symbols[symbol] else {
-							fatalError("could not find struct for: \(symbol.description)")
-							continue
-						}
-
-						moduleStructs[info.slot] = module.structs[moduleInfo.slot]
-					}
 				case .external(let name):
 					guard let module = moduleEnvironment[name],
 								let moduleInfo = module.symbols[symbol] else {
-						print("could not find struct for: \(symbol.description)")
 						continue
 					}
 
@@ -167,9 +148,11 @@ public class CompilingModule {
 		return nil
 	}
 
-	public func moduleValueOffset(for symbol: Symbol) -> Int? {
-		if case .value = symbol.kind {
-			return analysisModule.symbols[symbol]?.slot
+	public func moduleValueOffset(for string: String) -> Int? {
+		for (symbol, info) in analysisModule.symbols {
+			if case .value(string) = symbol.kind {
+				return info.slot
+			}
 		}
 
 		return nil
@@ -184,7 +167,7 @@ public class CompilingModule {
 	// If a function named "main" isn't provided, we generate one that just runs all of the files
 	// that were compiled in the module.
 	func synthesizeMain() -> Chunk {
-		let main = Chunk(name: "main", symbol: .function(name, "main", [], namespace: []), path: "<main>")
+		let main = Chunk(name: "main", symbol: .function(name, "main", []), path: "<main>")
 
 		for fileChunk in fileChunks {
 			let offset = analysisModule.symbols[fileChunk.symbol]!.slot

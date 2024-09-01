@@ -81,6 +81,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		case .pop:
 			// Pop the expr off the stack because this is a statement so we don't care about the
 			// return value
+			// TODO: Do we need to pop if the expr stmt returns void?
 			chunk.emit(opcode: .pop, line: expr.location.line)
 		case .return:
 			// If this is the only statement in a block, we can sometimes implicitly return
@@ -124,7 +125,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		guard let variable else {
 			throw CompilerError.unknownIdentifier(
-				expr.description + " at line: \(expr.location.start.line)"
+				expr.description + " in def expr at line: \(expr.location.start.line)"
 			)
 		}
 
@@ -182,7 +183,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				chunk: chunk
 			)
 		else {
-			throw CompilerError.unknownIdentifier(expr.name + " at line: \(expr.location.start.line)")
+			throw CompilerError.unknownIdentifier(expr.name + " in var expr at line: \(expr.location.start.line)")
 		}
 
 		chunk.emit(opcode: variable.getter, line: expr.location.line)
@@ -391,13 +392,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(byte: slot, line: expr.location.line)
 		} else {
-			let type = expr.environment.type(named: expr.identifier.lexeme)
-			if let primitive = type?.primitive {
-				chunk.emit(opcode: .primitive, line: expr.location.line)
-				chunk.emit(byte: primitive.rawValue, line: expr.location.line)
-			} else {
-				throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
-			}
+//			let type = expr.environment.type(named: expr.identifier.lexeme)
+			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
 		}
 	}
 
@@ -432,7 +428,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				// Emit the init body
-				for expr in decl.bodyAnalyzed.declsAnalyzed {
+				for expr in decl.bodyAnalyzed.stmtsAnalyzed {
 					try expr.accept(declCompiler, declChunk)
 				}
 
@@ -567,7 +563,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(thenJumpLocation)
 
 		// Pop the condition off the stack
-		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+//		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 
 		// Emit the alternative block
 		if let alternativeAnalyzed = expr.alternativeAnalyzed {
@@ -581,14 +577,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_: AnalyzedStructExpr, _: Chunk) throws {}
 
 	public func visit(_ expr: AnalyzedSubscriptExpr, _ chunk: Chunk) throws {
-		guard case let .instance(instance) = expr.receiverAnalyzed.typeAnalyzed,
-		      case let .struct(name) = instance.ofType,
-		      let structType = expr.environment.lookupStruct(named: name),
-		      let getMethod = structType.methods["get"]
-		else {
-			throw CompilerError.typeError("\(expr.receiverAnalyzed.description) has no method: `get` for subscript")
-		}
-
 		// Emit the args
 		for arg in expr.argsAnalyzed {
 			try arg.expr.accept(self, chunk)
@@ -605,10 +593,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 //			try visit(element, chunk)
 //		}
 
-		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
-		chunk.emit(opcode: .getStruct, line: expr.location.line)
-		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
-		chunk.emit(opcode: .call, line: expr.location.line)
+//		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
+//		chunk.emit(opcode: .getStruct, line: expr.location.line)
+//		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
+//		chunk.emit(opcode: .call, line: expr.location.line)
 
 		// Emit the count so we can init enough storage
 //		chunk.emit(byte: Byte(expr.elements.count), line: expr.location.line)
@@ -691,7 +679,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let symbol, let slot = resolveModuleValue(named: symbol) {
+			if let slot = resolveModuleValue(named: varName) {
 				return Variable(
 					name: varName,
 					slot: slot,
@@ -713,18 +701,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let builtinStruct = BuiltinStruct.lookup(name: varName) {
-				return Variable(
-					name: builtinStruct.name,
-					slot: builtinStruct.slot(),
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getBuiltinStruct,
-					setter: .setBuiltinStruct
-				)
-			}
-
-			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == varName }) {
+			if let slot = BuiltinFunction.list.firstIndex(
+				where: { $0.name == varName }
+			) {
 				return Variable(
 					name: varName,
 					slot: Byte(slot),
@@ -734,6 +713,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 					setter: .setBuiltin
 				)
 			}
+			#warning("bring this back ^")
 		}
 
 		if let syntax = receiver as? AnalyzedMemberExpr,
@@ -792,8 +772,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	// Check CompilingModule for a global value
-	private func resolveModuleValue(named symbol: Symbol) -> Byte? {
-		if let offset = module.moduleValueOffset(for: symbol) {
+	private func resolveModuleValue(named name: String) -> Byte? {
+		if let offset = module.moduleValueOffset(for: name) {
 			return Byte(offset)
 		}
 
@@ -883,7 +863,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	private func synthesizeInit(for structType: StructType) -> Chunk {
 		let params = Array(structType.properties.keys)
-		let symbol = Symbol.method(module.name, structType.name!, "init", params, namespace: [])
+		let symbol = Symbol.method(module.name, structType.name!, "init", params)
 		let chunk = Chunk(
 			name: symbol.description,
 			symbol: symbol,

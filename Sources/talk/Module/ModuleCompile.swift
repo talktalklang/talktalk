@@ -24,11 +24,10 @@ struct ModuleCompile: TalkTalkCommand {
 
 	func run() async throws {
 		let targetDirectories = directories.map { URL.currentDirectory().appending(path: $0) }
-		let stdlib = try await StandardLibrary.compile()
 		let driver = Driver(
 			directories: targetDirectories,
-			analyses: ["Standard": stdlib.analysis],
-			modules: ["Standard": stdlib.module]
+			analyses: [:],
+			modules: [:]
 		)
 
 		if dump {
@@ -41,6 +40,6 @@ struct ModuleCompile: TalkTalkCommand {
 			return
 		}
 
-		try await driver.writeModules()
+		print("no dump yet")
 	}
 }

@@ -8,7 +8,7 @@ public struct AnalyzedProtocolDecl: ProtocolDecl, AnalyzedDecl {
 	public var bodyAnalyzed: DeclBlockSyntax
 	public let wrapped: ProtocolDeclSyntax
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
 

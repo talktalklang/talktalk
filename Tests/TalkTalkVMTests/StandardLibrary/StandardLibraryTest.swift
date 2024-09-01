@@ -24,18 +24,12 @@ extension StandardLibraryTest {
 		moduleEnvironment: [String: Module] = [:],
 		verbosity: Verbosity = .quiet
 	) async throws -> VirtualMachine.ExecutionResult {
-		let stdlib = try await StandardLibrary.compile()
-		var moduleEnvironment = moduleEnvironment
-		var analysisEnvironment = analysisEnvironment
-		moduleEnvironment["Standard"] = stdlib.module
-		analysisEnvironment["Standard"] = stdlib.analysis
-
 		let files: [ParsedSourceFile] = [.tmp(input, "1.tlk")]
 		let analyzer = ModuleAnalyzer(
 			name: "StdLibTest",
-			files: Set(files),
+			files: files,
 			moduleEnvironment: analysisEnvironment,
-			importedModules: [stdlib.analysis]
+			importedModules: []
 		)
 		let analyzed = try analyzer.analyze()
 		let errors = try analyzed.collectErrors()

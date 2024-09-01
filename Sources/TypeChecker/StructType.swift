@@ -5,17 +5,19 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 import Foundation
-struct StructType: Equatable, Hashable, CustomStringConvertible {
-	static func ==(lhs: StructType, rhs: StructType) -> Bool {
+import OrderedCollections
+
+public struct StructType: Equatable, Hashable, CustomStringConvertible {
+	public static func ==(lhs: StructType, rhs: StructType) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
 
-	let name: String
+	public let name: String
 	private(set) var context: InferenceContext
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
 
-	static func extractType(from result: InferenceResult?) -> StructType? {
+	public static func extractType(from result: InferenceResult?) -> StructType? {
 		if case let .type(.structType(structType)) = result {
 			return structType
 		}
@@ -23,7 +25,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	static func extractInstance(from result: InferenceResult?) -> StructType? {
+	public static func extractInstance(from result: InferenceResult?) -> StructType? {
 		if case let .type(.structInstance(instance)) = result {
 			return instance.type
 		}
@@ -39,18 +41,18 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		self.context = context
 		self.typeContext = context.typeContext!
 
-		context.namedVariables["self"] = .structType(self)
+		context.defineVariable(named: "self", as: .selfVar(self), at: [.synthetic(.struct)])
 	}
 
-	func hash(into hasher: inout Hasher) {
+	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
 		hasher.combine(typeContext.initializers)
 		hasher.combine(typeContext.properties)
 		hasher.combine(typeContext.methods)
 	}
 
-	var description: String {
-		"\(name)(\(properties.reduce(into: "") { res, pair in res += "\(pair.key): \(pair.value)" }))"
+	public var description: String {
+		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
 	}
 
 	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance {
@@ -73,7 +75,7 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return instance
 	}
 
-	var initializers: [String: InferenceResult] {
+	public var initializers: OrderedDictionary<String, InferenceResult> {
 		typeContext.initializers
 	}
 
@@ -97,11 +99,11 @@ struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	var properties: [String: InferenceResult] {
+	public var properties: OrderedDictionary<String, InferenceResult> {
 		typeContext.properties
 	}
 
-	var methods: [String: InferenceResult] {
+	public var methods: OrderedDictionary<String, InferenceResult> {
 		typeContext.methods
 	}
 }

@@ -10,6 +10,7 @@ import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkCore
 import TalkTalkSyntax
+import TypeChecker
 
 struct Pipeline {
 	let compilationUnit: CompilationUnit
@@ -37,13 +38,16 @@ struct Pipeline {
 			try SourceFile(path: $0.path, text: String(contentsOf: $0, encoding: .utf8))
 		}
 
+		var syntax: [any Syntax] = []
+
 		let parsedSourceFiles = try sourceFiles.map {
-			try ParsedSourceFile(path: $0.path, syntax: Parser.parse($0))
+			try syntax.append(contentsOf: Parser.parse($0))
+			return try ParsedSourceFile(path: $0.path, syntax: Parser.parse($0))
 		}
 
 		let analysisModule = try ModuleAnalyzer(
 			name: compilationUnit.name,
-			files: Set(parsedSourceFiles),
+			files: parsedSourceFiles,
 			moduleEnvironment: analyses,
 			importedModules: Array(analyses.values)
 		).analyze()

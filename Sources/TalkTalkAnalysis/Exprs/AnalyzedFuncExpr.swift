@@ -9,13 +9,13 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: FuncExprSyntax
 
 	public let symbol: Symbol
 	public let analyzedParams: AnalyzedParamsExpr
 	public let bodyAnalyzed: AnalyzedBlockStmt
-	public let returnType: TypeID
+	public let returnType: InferenceType
 	public let environment: Environment
 	public let analysisErrors: [AnalysisError]
 	public var analyzedChildren: [any AnalyzedSyntax] {
@@ -31,40 +31,23 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 
 	public init(
 		symbol: Symbol,
-		type: TypeID,
+		type: InferenceType,
 		wrapped: FuncExprSyntax,
 		analyzedParams: AnalyzedParamsExpr,
 		bodyAnalyzed: AnalyzedBlockStmt,
 		analysisErrors: [AnalysisError],
-		returnType: TypeID,
+		returnType: InferenceType,
 		environment: Environment
 	) {
 		self.symbol = symbol
 		self.name = wrapped.name
-		self.typeID = type
+		self.inferenceType = type
 		self.wrapped = wrapped
 		self.analyzedParams = analyzedParams
 		self.bodyAnalyzed = bodyAnalyzed
 		self.analysisErrors = analysisErrors
 		self.returnType = returnType
 		self.environment = environment
-	}
-
-	public var typeAnalyzed: ValueType {
-		guard case let .function(
-			name,
-			returning,
-			_,
-			captures
-		) = typeID.type() else {
-			fatalError("unreachable")
-		}
-
-		let updatedParams = analyzedParams.paramsAnalyzed.map {
-			ValueType.Param(name: $0.name, typeID: $0.typeID)
-		}
-
-		return .function(name, returning, updatedParams, captures)
 	}
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {

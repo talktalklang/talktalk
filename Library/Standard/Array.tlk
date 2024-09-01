@@ -9,17 +9,8 @@ struct Array<Element> {
 		self._storage = _allocate(4)
 	}
 
-	func get(index) -> Element {
+	func get(index: int) -> Element {
 		return _deref(self._storage + index)
-	}
-
-	func append(item) {
-		if (self.count + 1) > self.capacity {
-			self.resize()
-		}
-
-		_storePtr(self._storage + self.count, item)
-		self.count = self.count + 1
 	}
 
 	func resize() {
@@ -37,5 +28,16 @@ struct Array<Element> {
 		self._storage = newStorage
 		self.capacity = newCapacity
 	}
+
+	func append(item) {
+		if (self.count + 1) > self.capacity {
+			self.resize()
+		}
+
+		_storePtr(self._storage + self.count, item)
+		self.count = self.count + 1
+	}
+
+
 }
 

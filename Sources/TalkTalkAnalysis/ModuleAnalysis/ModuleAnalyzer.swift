@@ -8,6 +8,7 @@
 import TalkTalkCore
 import TalkTalkBytecode
 import TalkTalkSyntax
+import TypeChecker
 
 public struct ModuleAnalyzer {
 	enum Error: Swift.Error {
@@ -15,40 +16,72 @@ public struct ModuleAnalyzer {
 	}
 
 	public let name: String
-	public var files: Set<ParsedSourceFile>
+	public var files: [ParsedSourceFile]
 	public let environment: Environment
 	let visitor: SourceFileAnalyzer
-	public let moduleEnvironment: [String: AnalysisModule]
-	public let importedModules: [AnalysisModule]
+	public var moduleEnvironment: [String: AnalysisModule]
+	public var importedModules: [AnalysisModule]
+	let inferencer: Inferencer
 
 	public init(
 		name: String,
-		files: Set<ParsedSourceFile>,
+		files: [ParsedSourceFile],
 		moduleEnvironment: [String: AnalysisModule],
 		importedModules: [AnalysisModule]
 	) {
 		self.name = name
 		self.files = files
-		self.environment = .topLevel(name)
+		self.inferencer = Inferencer(imports: moduleEnvironment.values.map(\.inferenceContext))
+		self.environment = .topLevel(name, inferenceContext: inferencer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
-		self.importedModules = importedModules
+		self.importedModules = moduleEnvironment.values.map { $0 }
+
+		if moduleEnvironment["Standard"] == nil, name != "Standard" {
+			let stdlib = try! importStandardLibrary()
+			self.moduleEnvironment["Standard"] = stdlib
+			self.importedModules.append(stdlib)
+		}
+	}
+
+	public func importStandardLibrary() throws -> AnalysisModule {
+		try ModuleAnalyzer(
+			name: "Standard",
+			files: Library.standard.paths.map {
+				let parsed = try Parser.parse(
+					SourceFile(
+						path: $0,
+						text: String(
+							contentsOf: Library.standard.location.appending(path: $0),
+							encoding: .utf8
+						)
+					)
+				)
+
+				return ParsedSourceFile(path: $0, syntax: parsed)
+			},
+			moduleEnvironment: [:],
+			importedModules: []
+		).analyze()
 	}
 
 	public func analyze() throws -> AnalysisModule {
-		var analysisModule = AnalysisModule(name: name, files: files)
+		for file in files {
+			_ = inferencer.infer(file.syntax)
+		}
+
+		_ = inferencer.inferDeferred()
+
+		var analysisModule = AnalysisModule(name: name, inferenceContext: inferencer.context, files: files)
 
 		for module in importedModules.sorted(by: { ($0.name == "Standard" ? 0 : 1) < ($1.name == "Standard" ? 0 : 1) }) {
 			if module.name == "Standard", name != "Standard" {
 				// Always make standard types available
 				for (name, structType) in module.structs {
-					// Reserve slots for the standard library
-					environment.symbolGenerator.reserve(structType.symbol, info: module.symbols[structType.symbol]!)
-
 					analysisModule.structs[name] = ModuleStruct(
 						name: name,
 						symbol: structType.symbol,
-						syntax: structType.syntax,
+						location: structType.location,
 						typeID: structType.typeID,
 						source: .external(module),
 						properties: structType.properties,
@@ -122,7 +155,7 @@ public struct ModuleAnalyzer {
 				analysisModule.moduleFunctions[name] = ModuleFunction(
 					name: name,
 					symbol: symbol,
-					syntax: binding.expr,
+					location: binding.location,
 					typeID: binding.type,
 					source: .external(module)
 				)
@@ -130,7 +163,7 @@ public struct ModuleAnalyzer {
 				analysisModule.values[name] = ModuleValue(
 					name: name,
 					symbol: symbol,
-					syntax: binding.expr,
+					location: binding.location,
 					typeID: binding.type,
 					source: .external(module),
 					isMutable: false
@@ -141,7 +174,7 @@ public struct ModuleAnalyzer {
 				analysisModule.structs[name] = ModuleStruct(
 					name: name,
 					symbol: symbol,
-					syntax: binding.expr,
+					location: binding.location,
 					typeID: binding.type,
 					source: .external(module),
 					properties: structType.properties,
@@ -202,8 +235,8 @@ public struct ModuleAnalyzer {
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
 				symbol: analyzed.symbol!,
-				syntax: syntax,
-				typeID: analyzed.typeID,
+				location: syntax.location,
+				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: true
 			)
@@ -213,8 +246,8 @@ public struct ModuleAnalyzer {
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
 				symbol: analyzed.symbol!,
-				syntax: syntax,
-				typeID: analyzed.typeID,
+				location: syntax.location,
+				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: false
 			)
@@ -225,8 +258,8 @@ public struct ModuleAnalyzer {
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					symbol: analyzed.symbol,
-					syntax: syntax,
-					typeID: analyzed.typeID,
+					location: syntax.location,
+					typeID: analyzed.inferenceType,
 					source: .module
 				)
 			}
@@ -238,8 +271,8 @@ public struct ModuleAnalyzer {
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
 					symbol: syntax.symbol!,
-					syntax: syntax,
-					typeID: analyzed.typeID,
+					location: syntax.location,
+					typeID: analyzed.inferenceType,
 					source: .module,
 					isMutable: false
 				)
@@ -249,15 +282,15 @@ public struct ModuleAnalyzer {
 				throw Error.moduleNotFound("\(syntax.module.name) module not found")
 			}
 
-			environment.importModule(module)
+			environment.inferenceContext.import(module.inferenceContext)
 		case let syntax as StructDecl:
 			let analyzedStructDecl = try visitor.visit(syntax.cast(StructDeclSyntax.self), environment).cast(AnalyzedStructDecl.self)
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
 				name: name,
 				symbol: analyzedStructDecl.symbol,
-				syntax: syntax,
-				typeID: analyzedStructDecl.typeID,
+				location: syntax.location,
+				typeID: analyzedStructDecl.inferenceType,
 				source: .module,
 				properties: analyzedStructDecl.lexicalScope.scope.properties,
 				methods: analyzedStructDecl.lexicalScope.scope.methods,

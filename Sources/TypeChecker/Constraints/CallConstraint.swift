@@ -12,6 +12,7 @@ struct CallConstraint: Constraint {
 	let args: [InferenceResult]
 	let returns: InferenceType
 	let location: SourceLocation
+	let isRetry: Bool
 
 	func result(in context: InferenceContext) -> String {
 		let callee = context.applySubstitutions(to: callee.asType(in: context))
@@ -35,6 +36,37 @@ struct CallConstraint: Constraint {
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
 		case .structType(let structType):
 			return solveStruct(structType: structType, in: context)
+		case .placeholder(let typeVar):
+			// If it's a type var that we haven't solved yet, try deferring
+			if isRetry {
+				context.log("Deferred constraint not fulfilled", prefix: " ! ")
+				return .error([
+					Diagnostic(message: "\(typeVar) not callable", severity: .error, location: location)
+				])
+			} else {
+				// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
+				context.log("Deferring call constraint on \(typeVar)", prefix: " ? ")
+				context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
+				return .ok
+			}
+		case .error(let error):
+			if case let .undefinedVariable(name) = error.kind {
+				if isRetry {
+					context.log("Deferred constraint not fulfilled", prefix: " ! ")
+					return .error([
+						Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+					])
+				} else {
+					// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
+					context.log("Deferring call constraint on \(name)", prefix: " ? ")
+					context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
+				}
+				return .ok
+			}
+
+			return .error([
+				Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+			])
 		default:
 			return .error([
 				Diagnostic(message: "\(returns) not callable", severity: .error, location: location)
@@ -44,6 +76,8 @@ struct CallConstraint: Constraint {
 
 	func solveFunction(params: [InferenceType], fnReturns: InferenceType, in context: InferenceContext) -> ConstraintCheckResult {
 		if args.count != params.count {
+			context.addError(.init(kind: .argumentError(expected: params.count, actual: args.count), location: location))
+
 			return .error([
 				Diagnostic(
 					message: "Expected \(params.count) args, got \(args.count)",
@@ -60,7 +94,8 @@ struct CallConstraint: Constraint {
 			if arg.asType(in: context) != param {
 				childContext.unify(
 					arg.asType(in: context),
-					param
+					param,
+					location
 				)
 			}
 		}
@@ -68,11 +103,12 @@ struct CallConstraint: Constraint {
 		if returns != fnReturns {
 			childContext.unify(
 				childContext.applySubstitutions(to: returns),
-				childContext.applySubstitutions(to: fnReturns)
+				childContext.applySubstitutions(to: fnReturns),
+				location
 			)
 		}
 
-		context.unify(returns, childContext.applySubstitutions(to: returns))
+		context.unify(returns, childContext.applySubstitutions(to: returns), location)
 
 		return .ok
 	}
@@ -87,7 +123,7 @@ struct CallConstraint: Constraint {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
 				case .function(let fnParams, let fnReturns):
-					context.unify(returns, fnReturns)
+					context.unify(returns, fnReturns, location)
 					params = fnParams
 				default:
 					params = []
@@ -98,8 +134,9 @@ struct CallConstraint: Constraint {
 				params = []
 			}
 		} else {
+			// We don't have an init so we need to synthesize one
 			var substitutions: [TypeVariable: InferenceType] = [:]
-
+			
 			params = structType.properties.map { name, type in
 				if case .type(.typeVar(let typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
@@ -112,7 +149,7 @@ struct CallConstraint: Constraint {
 			}
 
 			let instance = structType.instantiate(with: substitutions, in: context)
-			context.unify(returns, .structInstance(instance))
+			context.unify(returns, .structInstance(instance), location)
 		}
 
 		if args.count != params.count {
@@ -130,8 +167,6 @@ struct CallConstraint: Constraint {
 		}
 
 		for (arg, param) in zip(args, params) {
-			// TODO: Deal with struct instances as args???
-
 			let paramType: InferenceType
 
 			switch context.applySubstitutions(to: param) {
@@ -145,7 +180,7 @@ struct CallConstraint: Constraint {
 				}
 
 				instance.substitutions[param] = arg.asType(in: childContext)
-				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext))
+				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext), location)
 			case .structType(let structType):
 				var substitutions: [TypeVariable: InferenceType] = [:]
 				if case .structInstance(let instance) = context.applySubstitutions(to: arg.asType(in: context)) {
@@ -166,23 +201,25 @@ struct CallConstraint: Constraint {
 
 			context.unify(
 				arg.asType(in: childContext),
-				paramType
+				paramType,
+				location
 			)
 		}
 
 		childContext.unify(
 			.structInstance(instance),
-			returns
+			returns,
+			location
 		)
 
-		context.unify(returns, childContext.applySubstitutions(to: returns))
+		context.unify(returns, childContext.applySubstitutions(to: returns), location)
 
 		return .ok
 	}
 }
 
 extension Constraint where Self == CallConstraint {
-	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceType, at: SourceLocation) -> CallConstraint {
-		CallConstraint(callee: callee, args: args, returns: returns, location: at)
+	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceType, at: SourceLocation, isRetry: Bool = false) -> CallConstraint {
+		CallConstraint(callee: callee, args: args, returns: returns, location: at, isRetry: isRetry)
 	}
 }

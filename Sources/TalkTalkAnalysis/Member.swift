@@ -10,8 +10,7 @@ import TalkTalkSyntax
 public protocol Member {
 	var name: String { get }
 	var slot: Int { get }
-	var typeID: TypeID { get }
-	var expr: any Syntax { get }
+	var inferenceType: InferenceType { get }
+	var location: SourceLocation { get }
 	var isMutable: Bool { get }
-//	var boundGenericParameters: [String: TypeID] { get set }
 }

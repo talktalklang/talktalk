@@ -9,7 +9,7 @@ import TalkTalkAnalysis
 
 public struct StructType {
 	var name: String?
-	var properties: [String: ValueType]
+	var properties: [String: InferenceType]
 	var methods: [String: AnalyzedFuncExpr]
 }
 

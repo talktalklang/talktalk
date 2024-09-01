@@ -13,13 +13,11 @@ struct Dictionary<Key, Value> {
 	var storage: Array<DictionaryEntry<Key, Value>>
 
 	init() {
-		self.storage = []
+		self.storage = Array<DictionaryEntry<Key, Value>>()
 	}
 
 	func get(key: Key) -> Value {
 		var entry = self.storage[0]
-		// This is a hack
-		_cast(entry, DictionaryEntry<Key, Value>)
 		return entry.value
 	}
 

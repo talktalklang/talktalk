@@ -10,7 +10,7 @@ import TalkTalkSyntax
 public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 	public var value: any Expr { wrapped.value }
 
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 	public let wrapped: DefExprSyntax
 
 	public var receiver: any Expr { wrapped.receiver }

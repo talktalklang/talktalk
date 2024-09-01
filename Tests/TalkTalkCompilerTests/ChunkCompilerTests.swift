@@ -10,6 +10,7 @@ import TalkTalkBytecode
 @testable import TalkTalkCompiler
 import TalkTalkSyntax
 import Testing
+import TypeChecker
 
 // Helper for building instruction expectations.
 // Moving stuff around always required updating a bunch of offsets
@@ -71,12 +72,21 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 	}
 }
 
-actor CompilerTests: CompilerTest {
+@MainActor
+class CompilerTests: CompilerTest {
 	var module: CompilingModule!
 
 	@discardableResult func compile(_ string: String) throws -> Chunk {
-		let parsed = try Parser.parse(.init(path: "", text: string))
-		let analyzed = try! SourceFileAnalyzer.analyze(parsed, in: .init(symbolGenerator: .init(moduleName: "CompilerTests", parent: nil)))
+		let parsed = try Parser.parse(.init(path: "chunkcompilertests.tlk", text: string))
+		let inferencer = Inferencer(imports: []).infer(parsed)
+		let analyzed = try! SourceFileAnalyzer.analyze(
+			parsed,
+			in: Environment(
+				inferenceContext: inferencer,
+				isModuleScope: true,
+				symbolGenerator: .init(moduleName: "CompilerTests", parent: nil)
+			)
+		)
 
 		let analysisModule = try ModuleAnalyzer(
 			name: "CompilerTests",
@@ -134,37 +144,36 @@ actor CompilerTests: CompilerTest {
 
 	@Test("Def expr") func defExpr() throws {
 		let chunk = try compile("""
+		let i = 0
 		i = 123
 		""")
 
-		#expect(chunk.disassemble() == [
-			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: .constant(.int(123))),
-			Instruction(path: chunk.path, opcode: .setModuleValue, offset: 2, line: 0, metadata: .global(slot: 0)),
-			Instruction(path: chunk.path, opcode: .pop, offset: 4, line: 0, metadata: .simple),
-			Instruction(path: chunk.path, opcode: .return, offset: 5, line: 0, metadata: .simple),
-		])
+		#expect(chunk.disassemble() == Instructions(
+			.op(.constant, line: 0, .constant(.int(0))),
+			.op(.setModuleValue, line: 0, .global(slot: 0)),
+			.op(.constant, line: 1, .constant(.int(123))),
+			.op(.setModuleValue, line: 1, .global(slot: 0)),
+			.op(.pop, line: 1),
+			.op(.return, line: 0)
+		))
 	}
 
 	@Test("Var expr") func varExpr() throws {
 		let chunk = try compile("""
-		x = 123
+		let x = 123
 		x
-		y = 456
+		let y = 456
 		y
 		""")
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.setModuleValue, line: 0, .global(slot: 0)),
-			.op(.pop, line: 0, .simple),
-
 			.op(.getModuleValue, line: 1, .global(slot: 0)),
 			.op(.pop, line: 1, .simple),
 
 			.op(.constant, line: 2, .constant(.int(456))),
 			.op(.setModuleValue, line: 2, .global(slot: 1)),
-			.op(.pop, line: 2, .simple),
-
 			.op(.getModuleValue, line: 3, .global(slot: 1)),
 			.op(.pop, line: 3, .simple),
 
@@ -182,11 +191,11 @@ actor CompilerTests: CompilerTest {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
-			.op(.setLocal, line: 0, .local(slot: 1, name: "i")),
+			.op(.setModuleValue, line: 0, .global(slot: 0)),
 
 			// Condition
 			.op(.constant, line: 1, .constant(.int(5))),
-			.op(.getLocal, line: 1, .local(slot: 1, name: "i")),
+			.op(.getModuleValue, line: 1, .global(slot: 0)),
 			.op(.less, line: 1, .simple),
 
 			// Jump that skips the body if the condition isn't true
@@ -197,9 +206,9 @@ actor CompilerTests: CompilerTest {
 
 			// Body
 			.op(.constant, line: 2, .constant(.int(1))),
-			.op(.getLocal, line: 2, .local(slot: 1, name: "i")),
+			.op(.getModuleValue, line: 2, .global(slot: 0)),
 			.op(.add, line: 2, .simple),
-			.op(.setLocal, line: 2, .local(slot: 1, name: "i")),
+			.op(.setModuleValue, line: 2, .global(slot: 0)),
 			.op(.pop, line: 2, .simple),
 			.op(.loop, line: 3, .loop(back: 20)),
 
@@ -228,10 +237,7 @@ actor CompilerTests: CompilerTest {
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 4)),
-
-			// Pop the condition
-			.op(.pop, line: 0, .simple),
+			.op(.jump, line: 2, .jump(offset: 3)),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),
@@ -360,20 +366,25 @@ actor CompilerTests: CompilerTest {
 	}
 
 	@Test("Cleans up locals") func cleansUpLocals() throws {
-		let chunk = try compile("""
-		let a = 123
+		_ = try compile("""
 		func() {
-			let b = 456
-			return a + b
+			let a = 123
+			func() {
+				let b = 456
+				return a + b
+			}
 		}
 		""")
 
+		let chunk = module.compiledChunks[1]
+
 		let result = disassemble(chunk)
 		let expected = Instructions(
-			.op(.constant, line: 0, .constant(.int(123))),
-			.op(.setLocal, line: 0, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 1, .closure(name: "_fn__49", arity: 0, depth: 0, upvalues: [.capturing(1)])),
-			.op(.return, line: 0, .simple)
+			.op(.constant, line: 1, .constant(.int(123))),
+			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+			.op(.defClosure, line: 2, .closure(name: "_fn__64", arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.pop, line: 2),
+			.op(.return, line: 6, .simple)
 		)
 
 		#expect(result == expected)
@@ -384,22 +395,22 @@ actor CompilerTests: CompilerTest {
 
 		let subexpected = Instructions(
 			// Define 'b'
-			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setLocal, line: 2, .local(slot: 1, name: "b")),
+			.op(.constant, line: 3, .constant(.int(456))),
+			.op(.setLocal, line: 3, .local(slot: 1, name: "b")),
 
 			// Get 'b' to add to a
-			.op(.getLocal, line: 3, .local(slot: 1, name: "b")),
+			.op(.getLocal, line: 4, .local(slot: 1, name: "b")),
 			// Get 'a' from upvalue
-			.op(.getUpvalue, line: 3, .upvalue(slot: 0, name: "a")),
+			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
 
 			// Do the addition
-			.op(.add, line: 3),
-			.op(.return, line: 3),
+			.op(.add, line: 4),
+			.op(.return, line: 4),
 
-			.op(.return, line: 4)
+			.op(.return, line: 5)
 		)
 
-		#expect(subchunk.disassemble() == subexpected)
+		#expect(disassemble(subchunk) == subexpected)
 	}
 
 	@Test("Struct initializer") func structs() throws {
@@ -415,9 +426,9 @@ actor CompilerTests: CompilerTest {
 		Person(age: 123)
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 8, .constant(.int(123))),
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
 			.op(.return, line: 0, .simple)
@@ -437,8 +448,8 @@ actor CompilerTests: CompilerTest {
 		Person()
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+		#expect(disassemble(chunk) == Instructions(
+			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
 			.op(.return, line: 0, .simple)
@@ -458,7 +469,7 @@ actor CompilerTests: CompilerTest {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 6, .constant(.int(123))),
-			.op(.getStruct, line: 6, .struct(slot: 0)),
+			.op(.getStruct, line: 6, .struct(slot: 4)),
 			.op(.call, line: 6, .simple),
 			.op(.getProperty, line: 6, .getProperty(slot: 0, options: [])),
 			.op(.pop, line: 6, .simple),
@@ -483,9 +494,9 @@ actor CompilerTests: CompilerTest {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 10, .constant(.int(123))),
-			.op(.getStruct, line: 10, .struct(slot: 0)),
+			.op(.getStruct, line: 10, .struct(slot: 4)),
 			.op(.call, line: 10, .simple),
-			.op(.getProperty, line: 10, .getProperty(slot: 1, options: .isMethod)),
+			.op(.getProperty, line: 10, .getProperty(slot: 0, options: .isMethod)),
 			.op(.call, line: 10, .simple),
 			.op(.pop, line: 10, .simple),
 			.op(.return, line: 0, .simple)

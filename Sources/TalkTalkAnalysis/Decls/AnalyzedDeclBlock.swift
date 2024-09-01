@@ -8,7 +8,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedDeclBlock: DeclBlock, AnalyzedDecl {
-	public let typeID: TypeID
+	public let inferenceType: InferenceType
 
 	public let wrapped: DeclBlockSyntax
 

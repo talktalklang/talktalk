@@ -7,6 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkSyntax
+import TypeChecker
 import Testing
 
 struct ModuleAnalysisTests {
@@ -17,7 +18,7 @@ struct ModuleAnalysisTests {
 	) -> ModuleAnalyzer {
 		ModuleAnalyzer(
 			name: name,
-			files: Set(files),
+			files: files,
 			moduleEnvironment: moduleEnvironment,
 			importedModules: []
 		)
@@ -57,27 +58,11 @@ struct ModuleAnalysisTests {
 
 		// First make sure we can get a super basic function with no dependencies
 		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
-		guard case let .function(barName, barReturnType, params, captures) = bar.typeID.type() else {
-			#expect(Bool(false), "bar type was not a function")
-			return
-		}
-
-		#expect(barName == "bar")
-		#expect(barReturnType.type() == .int)
-		#expect(params.isEmpty)
-		#expect(captures.isEmpty)
+		#expect(bar.typeID == .function([], .base(.int)))
 
 		// Next make sure we can get a function that calls another function that was defined after it
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		guard case let .function(fooName, fooReturnType, params, captures) = foo.typeID.type() else {
-			#expect(Bool(false), "foo type was not a function")
-			return
-		}
-
-		#expect(fooName == "foo")
-		#expect(fooReturnType.type() == .int)
-		#expect(params.isEmpty)
-		#expect(captures.isEmpty)
+		#expect(foo.typeID == .function([], .base(.int)))
 	}
 
 	@Test("Analyzes module global values") func globalValues() throws {
@@ -99,21 +84,15 @@ struct ModuleAnalysisTests {
 		#expect(analysisModule.values.count == 1)
 		#expect(analysisModule.moduleFunctions.count == 2)
 
+		#expect(analysisModule.values["bar"]?.name == "bar")
+
 		// First make sure we can get a value
 		let bar = try #require(analysisModule.moduleValue(named: "bar"))
-		#expect(bar.typeID.type() == .int)
+		#expect(bar.typeID == .base(.int))
 
 		// Next make sure we can type a function that uses a module global
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		guard case let .function(fooName, fooReturnType, params, captures) = foo.typeID.type() else {
-			#expect(Bool(false), "foo type was not a function")
-			return
-		}
-
-		#expect(fooName == "foo")
-		#expect(fooReturnType.type() == .int)
-		#expect(params.isEmpty)
-		#expect(captures.isEmpty)
+		#expect(foo.typeID == .function([], .base(.int)))
 	}
 
 	@Test("Analyzes module function imports") func importing() throws {
@@ -129,19 +108,10 @@ struct ModuleAnalysisTests {
 		// Make sure we're actually loading these
 		let foo = try #require(moduleA.moduleFunction(named: "foo"))
 		#expect(foo.name == "foo")
-		#expect(foo.typeID.type() == .function("foo", TypeID(.int), [], []))
+		#expect(foo.typeID == .function([], .base(.int)))
 
 		let bar = try #require(moduleB.moduleFunction(named: "bar"))
-
-		guard case let .function(name, returnType, params, captures) = bar.typeID.type() else {
-			#expect(Bool(false), "bar type was not a function")
-			return
-		}
-
-		#expect(name == "bar")
-		#expect(returnType.type() == .int)
-		#expect(params.isEmpty)
-		#expect(captures.isEmpty)
+		#expect(bar.typeID == .function([], .base(.int)))
 	}
 
 	@Test("Analyzes module structs") func structProperties() throws {
@@ -178,19 +148,13 @@ struct ModuleAnalysisTests {
 		let moduleB = try analyze(name: "B", moduleEnvironment: ["A": moduleA], .tmp("""
 		import A
 
-		person = Person(age: 123)
+		let person = Person(age: 123)
 		person.age
 		""", "person.tlk"))
 
 		let person = try #require(moduleB.values["person"])
-		#expect(person.typeID.type() == .instance(.struct("Person")))
-
-		guard case let .external(module) = moduleB.moduleStruct(named: "Person")?.source else {
-			#expect(Bool(false), "imported type does not have external source")
-			return
-		}
-
-		#expect(module.name == "A")
+		let personInstance = try #require(Instance.extract(from: person.typeID))
+		#expect(personInstance.type.name == "Person")
 	}
 
 	@Test("Add file to analyzer") func addFile() throws {

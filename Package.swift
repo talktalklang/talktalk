@@ -22,6 +22,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
+		.package(url: "https://github.com/apple/swift-collections.git", branch: "main")
 	],
 	targets: [
 		.executableTarget(
@@ -34,12 +35,15 @@ let package = Package(
 				"TalkTalkDriver",
 				"TalkTalkInterpreter",
 				"TalkTalkVM",
+				"TypeChecker",
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			]
 		),
 		.target(
 			name: "TalkTalkSyntax",
-			dependencies: []
+			dependencies: [
+				"TalkTalkCore"
+			]
 		),
 		.target(
 			name: "TalkTalkAnalysis",
@@ -47,6 +51,8 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkBytecode",
+				"TypeChecker",
+				.product(name: "OrderedCollections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -59,7 +65,9 @@ let package = Package(
 		.target(
 			name: "TypeChecker",
 			dependencies: [
-				"TalkTalkSyntax"
+				"TalkTalkCore",
+				"TalkTalkSyntax",
+				.product(name: "OrderedCollections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -69,7 +77,8 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkDriver",
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
+				"TypeChecker"
 			]
 		),
 		.target(
@@ -78,7 +87,8 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				"TalkTalkBytecode"
+				"TalkTalkBytecode",
+				.product(name: "OrderedCollections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -89,6 +99,7 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkBytecode",
+				"TypeChecker"
 			]
 		),
 		.target(
@@ -99,6 +110,8 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				"TalkTalkDriver",
+				"TalkTalkCore",
+				.product(name: "OrderedCollections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -107,10 +120,15 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
+				"TypeChecker"
 			]
 		),
 		.target(
-			name: "TalkTalkBytecode"
+			name: "TalkTalkBytecode",
+			dependencies: [
+				"TalkTalkCore",
+				.product(name: "OrderedCollections", package: "swift-collections")
+			]
 		),
 		.testTarget(
 			name: "TalkTalkCoreTests",

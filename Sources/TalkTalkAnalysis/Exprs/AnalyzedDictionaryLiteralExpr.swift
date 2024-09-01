@@ -6,7 +6,7 @@ public struct AnalyzedDictionaryLiteralExpr: DictionaryLiteralExpr, AnalyzedExpr
 	public var elementsAnalyzed: [AnalyzedDictionaryElementExpr]
 	public let wrapped: DictionaryLiteralExprSyntax
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { elementsAnalyzed }
 

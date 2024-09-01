@@ -106,7 +106,7 @@ struct ModuleCompilerTests: CompilerTest {
 			""", "struct.tlk"),
 		])
 
-		let structDef = module.structs[0]
+		let structDef = module.structs.first(where: { $0.name == "Person" })!
 		#expect(structDef.name == "Person")
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
@@ -118,12 +118,12 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
-			.op(.return, line: 6, .simple)
+			.op(.getLocal, line: 5, .local(slot: 0, name: "__reserved__")),
+			.op(.return, line: 5, .simple)
 		))
 	}
 
-	@Test("Can compile struct init with no args") @MainActor func structInitNoArgs() throws {
+	@Test("Can compile struct init with no args") @MainActor func compileStructInitNoArgs() throws {
 		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
 		let (module, _) = try compile(name: "A", [
 			.tmp("""
@@ -140,15 +140,15 @@ struct ModuleCompilerTests: CompilerTest {
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = try #require(module.chunks[1])
+		let mainChunk = module.chunks[1]
 		#expect(mainChunk.disassemble(in: module) == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8),
 			.op(.setModuleValue, line: 8, .global(slot: 1)),
 			.op(.return, line: 0)
 		))
 
-		let structDef = module.structs[0]
+		let structDef = module.structs.first(where: { $0.name == "Person" })!
 		#expect(structDef.name == "Person")
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
@@ -159,8 +159,8 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
 			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 6, .local(slot: 0, name: "__reserved__")),
-			.op(.return, line: 6, .simple)
+			.op(.getLocal, line: 5, .local(slot: 0, name: "__reserved__")),
+			.op(.return, line: 5, .simple)
 		))
 	}
 }
