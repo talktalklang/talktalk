@@ -58,7 +58,7 @@ struct FuncExprAnalyzer {
 			wrapped: expr as! FuncExprSyntax,
 			analyzedParams: expr.params.accept(visitor, environment) as! AnalyzedParamsExpr,
 			bodyAnalyzed: expr.body.accept(visitor, environment) as! AnalyzedBlockStmt,
-			analysisErrors: [],
+			analysisErrors: visitor.errors(for: expr, in: context.inferenceContext),
 			returnType: returns,
 			environment: environment
 		)

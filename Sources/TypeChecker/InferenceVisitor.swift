@@ -115,6 +115,10 @@ struct InferenceVisitor: Visitor {
 
 		var type: InferenceResult
 
+		if context.namedVariables[expr.name] != nil {
+			context.addError(InferenceError(kind: .invalidRedeclaration(expr.name), location: expr.location))
+		}
+
 		switch (typeExpr, value) {
 		case let (typeExpr, value) where typeExpr != nil && value != nil:
 			type = typeExpr!

@@ -6,6 +6,7 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
 
 public enum AnalysisErrorKind: Hashable {
 	public static func == (lhs: AnalysisErrorKind, rhs: AnalysisErrorKind) -> Bool {
@@ -19,13 +20,16 @@ public enum AnalysisErrorKind: Hashable {
 	case unknownError(String)
 	case undefinedVariable(String)
 	case typeCannotAssign(expected: InferenceType, received: InferenceType)
-	case cannotReassignLet(variable: any AnalyzedExpr)
+	case cannotReassignLet(variable: any Syntax)
 	case invalidRedeclaration(variable: String, existing: Environment.Binding)
 	case expressionCount(String)
 	case unexpectedType(expected: InferenceType, received: InferenceType, message: String)
+	case inferenceError(InferenceErrorKind)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
+		case let .inferenceError(inferenceError):
+			hasher.combine(inferenceError)
 		case let .expressionCount(message):
 			hasher.combine(message)
 		case let .argumentError(expected, received):
@@ -71,6 +75,8 @@ public struct AnalysisError: Hashable {
 
 	public var message: String {
 		switch kind {
+		case let .inferenceError(inferenceError):
+			inferenceError.description
 		case let .argumentError(expected: a, received: b):
 			if a == -1 {
 				"Unable to determine expected arguments, probably because callee isn't callable."

@@ -11,27 +11,6 @@ import OrderedCollections
 
 typealias VariableID = Int
 
-public enum InferenceErrorKind: Equatable, Hashable {
-	case undefinedVariable(String)
-	case unknownError(String)
-	case constraintError(String)
-	case argumentError(expected: Int, actual: Int)
-	case typeError(String)
-	case memberNotFound(StructType, String)
-	case missingConstraint(InferenceType)
-	case subscriptNotAllowed(InferenceType)
-}
-
-public struct InferenceError: Hashable, Equatable {
-	public let kind: InferenceErrorKind
-	public let location: SourceLocation
-
-	public init(kind: InferenceErrorKind, location: SourceLocation) {
-		self.kind = kind
-		self.location = location
-	}
-}
-
 // If we're inside a type's body, we can save methods/properties in here
 class TypeContext {
 	var methods: OrderedDictionary<String, InferenceResult>
@@ -458,7 +437,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			log("Cannot unify \(a) and \(b)", prefix: " ! ")
 			addError(
 				.init(
-					kind: .typeError("Cannot unify \(a) and \(b)"),
+					kind: .unificationError(typeA, typeB),
 					location: location
 				)
 			)
@@ -495,12 +474,11 @@ public class InferenceContext: CustomDebugStringConvertible {
 			if a != b, a != .any, b != .any {
 				addError(
 					.init(
-						kind: .typeError("Cannot unify \(a) and \(b)"),
+						kind: .unificationError(typeA, typeB),
 						location: location
 					)
 				)
 			}
-//			addError(.typeError("Cannot unify \(a) and \(b)"))
 		}
 	}
 
@@ -518,9 +496,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-		}
+//		}
 	}
 }

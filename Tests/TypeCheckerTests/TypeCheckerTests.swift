@@ -114,6 +114,13 @@ struct TypeCheckerTests: TypeCheckerTest {
 		#expect(context[syntax[0]] == .type(.base(.int)))
 	}
 
+	@Test("Errors on var reassignment") func varReassignment() throws {
+		let syntax = try Parser.parse("var i = 123 ; var i = 456")
+		let context = try infer(syntax)
+
+		#expect(context.errors.count == 1)
+	}
+
 	@Test("Infers func calls") func calls() throws {
 		let syntax = try Parser.parse(
 			"""

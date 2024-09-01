@@ -106,11 +106,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
 		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
 
+		var errors = errors(for: expr, in: context.inferenceContext)
+
+		errors.append(contentsOf: checkMutability(of: expr.receiver, in: context))
+
 		return AnalyzedDefExpr(
 			inferenceType: .void,
 			wrapped: expr.cast(DefExprSyntax.self),
 			receiverAnalyzed: receiver,
-			analysisErrors: [],
+			analysisErrors: errors,
 			valueAnalyzed: value,
 			environment: context
 		)

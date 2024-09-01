@@ -59,6 +59,10 @@ public class Environment {
 		)
 	}
 
+	public func type(for syntax: any Syntax) -> InferenceType {
+		inferenceContext.lookup(syntax: syntax) ?? .any
+	}
+
 	public var moduleName: String {
 		symbolGenerator.moduleName
 	}

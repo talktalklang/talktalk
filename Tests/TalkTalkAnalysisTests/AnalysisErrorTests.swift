@@ -36,7 +36,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			var a = "foo"
 			a = 123
 			""",
-			.typeCannotAssign(expected: InferenceType(.instance(.struct("String"))), received: InferenceType(.int))
+			.typeCannotAssign(expected: .base(.string), received: .base(.int))
 		)
 	}
 
@@ -50,7 +50,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			var person = Person(name: "Pat")
 			person.name = 123
 			""",
-			.typeCannotAssign(expected: InferenceType(.instance(.struct("String"))), received: InferenceType(.int))
+			.inferenceError(.unificationError(.base(.string), .base(.int)))
 		)
 	}
 
@@ -60,7 +60,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			func foo(name: int) {}
 			foo("sup")
 			""",
-			.typeCannotAssign(expected: InferenceType(.int), received: InferenceType(.instance(.struct("String"))))
+			.inferenceError(.unificationError(.base(.string), .base(.int)))
 		)
 	}
 
@@ -76,7 +76,7 @@ struct AnalysisErrorTests: AnalysisTest {
 				return
 			}
 
-			#expect(variable.cast(AnalyzedVarExpr.self).name == "foo")
+			#expect(variable.description == "foo")
 		}
 	}
 
@@ -87,7 +87,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			let foo = "fizz"
 			"""
 		) { kinds in
-			guard kinds.count > 0, case let .invalidRedeclaration(variable: name, _) = kinds[0] else {
+			guard kinds.count > 0, case let .inferenceError(.invalidRedeclaration(name)) = kinds[0] else {
 				#expect(Bool(false), "did not get correct kind: \(kinds)")
 				return
 			}
@@ -103,7 +103,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			var foo = "fizz"
 			"""
 		) { kinds in
-			guard kinds.count > 0, case let .invalidRedeclaration(variable: name, _) = kinds[0] else {
+			guard kinds.count > 0, case let .inferenceError(.invalidRedeclaration(name)) = kinds[0] else {
 				#expect(Bool(false), "did not get correct kind: \(kinds)")
 				return
 			}
@@ -125,7 +125,7 @@ struct AnalysisErrorTests: AnalysisTest {
 				return
 			}
 
-			#expect(variable.cast(AnalyzedVarExpr.self).name == "bar")
+			#expect(variable.description == "bar")
 		}
 	}
 
@@ -136,7 +136,7 @@ struct AnalysisErrorTests: AnalysisTest {
 				"nope"
 			}
 			""",
-			.unexpectedType(expected: .int, received: .instance(.struct("String")), message: "Cannot return String instance, expected int.")
+			.inferenceError(.unificationError(.base(.string), .base(.int)))
 		)
 	}
 
@@ -147,7 +147,6 @@ struct AnalysisErrorTests: AnalysisTest {
 				nope()
 			}
 			""",
-			.argumentError(expected: -1, received: 0),
 			.undefinedVariable("nope")
 		)
 	}
