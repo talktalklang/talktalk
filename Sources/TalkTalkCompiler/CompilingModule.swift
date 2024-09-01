@@ -167,9 +167,11 @@ public class CompilingModule {
 		return nil
 	}
 
-	public func moduleValueOffset(for symbol: Symbol) -> Int? {
-		if case .value = symbol.kind {
-			return analysisModule.symbols[symbol]?.slot
+	public func moduleValueOffset(for string: String) -> Int? {
+		for (symbol, info) in analysisModule.symbols {
+			if case .value(string) = symbol.kind {
+				return info.slot
+			}
 		}
 
 		return nil

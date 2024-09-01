@@ -36,6 +36,16 @@ public class Instance: Equatable, Hashable, CustomStringConvertible {
 		self.substitutions = substitutions
 	}
 
+	public func relatedType(named name: String) -> InferenceType? {
+		for substitution in substitutions.keys {
+			if substitution.name == name {
+				return substitutions[substitution]
+			}
+		}
+
+		return nil
+	}
+
 	func member(named name: String) -> InferenceType? {
 		guard let structMember = type.member(named: name) else {
 			return nil

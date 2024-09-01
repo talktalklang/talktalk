@@ -16,9 +16,9 @@ struct FuncExprAnalyzer {
 	func analyze() throws -> any AnalyzedSyntax {
 		let symbol: Symbol
 		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.method(scope.scope.name!, expr.autoname, parameters: [], source: .internal, id: expr.id)
+			symbol = context.symbolGenerator.method(scope.scope.name!, expr.autoname, parameters: [], source: .internal)
 		} else {
-			symbol = context.symbolGenerator.function(expr.autoname, parameters: [], source: .internal, id: expr.id)
+			symbol = context.symbolGenerator.function(expr.autoname, parameters: [], source: .internal)
 		}
 
 		// If a block has one statement, we can treat it as a return value

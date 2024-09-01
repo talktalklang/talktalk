@@ -529,7 +529,7 @@ struct InferenceVisitor: Visitor {
 				typeContext.methods[decl.name!.lexeme] = .scheme(scheme)
 			case let (decl as VarLetDecl, .type(type)):
 				// It's a property
-				typeContext.properties[decl.name] = .type(memberTypeFrom(expr: decl.typeExpr!, in: context))
+				typeContext.properties[decl.name] = .type(type)
 			case let (_ as InitDecl, type):
 				typeContext.initializers["init"] = type
 			default:
@@ -539,7 +539,6 @@ struct InferenceVisitor: Visitor {
 		}
 
 		context.extend(expr, with: .type(structInferenceType))
-		print("extended \(structType.name)")
 	}
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws {

@@ -144,20 +144,20 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				if let module = binding.externalModule {
 					symbol = module.structs[type.name]!.symbol
 				} else {
-					symbol = context.symbolGenerator.struct(expr.name, source: .internal, id: expr.id)
+					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
 				}
-			} else if case let .function(params, ReturnStmtSyntax) = binding.type {
+			} else if case .function(_, _) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.moduleFunction(named: binding.expr.cast(FuncExprSyntax.self).autoname)!.symbol
 				} else if binding.isGlobal {
-					symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
+					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
 			} else {
 				if let module = binding.externalModule {
 					symbol = module.values[expr.name]!.symbol
 				} else {
 					if binding.isGlobal {
-						symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
+						symbol = context.symbolGenerator.value(expr.name, source: .internal)
 					}
 				}
 			}
@@ -179,7 +179,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedVarExpr(
 			inferenceType: .any,
 			wrapped: expr.cast(VarExprSyntax.self),
-			symbol: context.symbolGenerator.value(expr.name, source: .internal, id: expr.id),
+			symbol: context.symbolGenerator.value(expr.name, source: .internal),
 			environment: context,
 			analysisErrors: errors,
 			isMutable: false
@@ -248,7 +248,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedTypeExpr(
 			wrapped: expr.cast(TypeExprSyntax.self),
-			symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal, id: expr.id),
+			symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
 			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
 			environment: context
 		)
@@ -268,7 +268,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
-			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal, id: expr.id),
+			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
 			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
@@ -377,9 +377,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			// If we have an updated type for a method, update the struct to know about it.
 			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
-			   let lexicalScope = context.lexicalScope,
-			   let name = funcExpr.name?.lexeme,
-			   let existing = lexicalScope.scope.methods[name]
+				 let lexicalScope = context.lexicalScope,
+				 let name = funcExpr.name?.lexeme,
+				 let existing = lexicalScope.scope.methods[name]
 			{
 				lexicalScope.scope.add(
 					method: Method(
@@ -407,10 +407,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		var symbol: Symbol?
 		var isGlobal = false
 		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal, id: expr.id)
+			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
-			symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
+			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
 		context.define(local: expr.name, as: expr, isMutable: true, isGlobal: isGlobal)
@@ -433,10 +433,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		var symbol: Symbol?
 		var isGlobal = false
 		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal, id: expr.id)
+			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
-			symbol = context.symbolGenerator.value(expr.name, source: .internal, id: expr.id)
+			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
 		context.define(local: expr.name, as: expr, isMutable: false, isGlobal: isGlobal)

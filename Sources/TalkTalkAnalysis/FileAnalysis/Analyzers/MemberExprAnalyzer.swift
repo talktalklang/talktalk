@@ -17,14 +17,36 @@ struct MemberExprAnalyzer: Analyzer {
 		let propertyName = expr.property
 		let type = context.inferenceContext.lookup(syntax: expr)!
 
+		var member: (any Member)? = nil
+		if let scope = context.getLexicalScope()?.scope {
+			member = (scope.methods[propertyName] ?? scope.properties[propertyName])
+		}
+
+		if case let .structInstance(instance) = receiver.typeAnalyzed,
+			 let structType = context.lookupStruct(named: instance.type.name){
+			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
+		}
+
+		guard let member else {
+			return AnalyzedMemberExpr(
+				inferenceType: type,
+				wrapped: expr.cast(MemberExprSyntax.self),
+				environment: context,
+				receiverAnalyzed: receiver as! any AnalyzedExpr,
+				memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
+				analysisErrors: [],
+				isMutable: true
+			)
+		}
+
 		return AnalyzedMemberExpr(
 			inferenceType: type,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,
-			memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
+			memberAnalyzed: member,
 			analysisErrors: [],
-			isMutable: true
+			isMutable: member.isMutable
 		)
 	}
 }

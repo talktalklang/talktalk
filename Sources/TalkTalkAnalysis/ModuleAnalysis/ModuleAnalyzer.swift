@@ -98,7 +98,7 @@ public struct ModuleAnalyzer {
 		//
 		// We also need to make sure the files are in the correct order.
 		analysisModule.analyzedFiles = try files.map {
-			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal, id: .synthetic($0.path))
+			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal)
 			analysisModule.symbols[sym] = environment.symbolGenerator[sym]
 
 			return try AnalyzedSourceFile(

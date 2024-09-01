@@ -55,37 +55,35 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	}
 
 	public static func primitive(_ name: String) -> Symbol {
-		Symbol(module: "[builtin]", kind: .primitive(name), id: .synthetic("[builtin] \(name)"))
+		Symbol(module: "[builtin]", kind: .primitive(name))
 	}
 
 	public static func function(_ module: String, _ name: String, _ params: [String], id: SyntaxID) -> Symbol {
-		Symbol(module: module, kind: .function(name, params), id: id)
+		Symbol(module: module, kind: .function(name, params))
 	}
 
 	public static func value(_ module: String, _ name: String, id: SyntaxID) -> Symbol {
-		Symbol(module: module, kind: .value(name), id: id)
+		Symbol(module: module, kind: .value(name))
 	}
 
 	public static func `struct`(_ module: String, _ name: String, id: SyntaxID) -> Symbol {
-		Symbol(module: module, kind: .struct(name), id: id)
+		Symbol(module: module, kind: .struct(name))
 	}
 
 	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], id: SyntaxID) -> Symbol {
-		Symbol(module: module, kind: .method(type, name, params), id: id)
+		Symbol(module: module, kind: .method(type, name, params))
 	}
 
 	public static func property(_ module: String, _ type: String, _ name: String, id: SyntaxID) -> Symbol {
-		Symbol(module: module, kind: .property(type, name), id: id)
+		Symbol(module: module, kind: .property(type, name))
 	}
 
-	public let id: SyntaxID
 	public let module: String
 	public let kind: Kind
 
-	public init(module: String, kind: Kind, id: SyntaxID) {
+	public init(module: String, kind: Kind) {
 		self.module = module
 		self.kind = kind
-		self.id = id
 	}
 
 	public var description: String {

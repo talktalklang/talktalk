@@ -15,7 +15,8 @@ struct StructDeclAnalyzer: Analyzer {
 
 	func analyze() throws -> any AnalyzedSyntax {
 		guard let inferenceType = context.inferenceContext.lookup(syntax: decl),
-					let type = TypeChecker.StructType.extractType(from: .type(inferenceType)) else {
+		      let type = TypeChecker.StructType.extractType(from: .type(inferenceType))
+		else {
 			return error(at: decl, "did not find struct type from \(decl.name)", environment: context, expectation: .none)
 		}
 
@@ -23,9 +24,9 @@ struct StructDeclAnalyzer: Analyzer {
 			name: decl.name,
 			properties: [:],
 			methods: [:],
-			typeParameters: decl.typeParameters.map({
+			typeParameters: decl.typeParameters.map {
 				TypeParameter(name: $0.identifier.lexeme, type: $0)
-			})
+			}
 		)
 
 		for (name, type) in type.properties {
@@ -85,6 +86,24 @@ struct StructDeclAnalyzer: Analyzer {
 		let lexicalScope = LexicalScope(scope: structType, expr: decl)
 		let bodyContext = context.addLexicalScope(lexicalScope)
 
+		bodyContext.define(
+			local: "self",
+			as: AnalyzedVarExpr(
+				inferenceType: .structInstance(.synthesized(type)),
+				wrapped: VarExprSyntax(
+					id: -8,
+					token: .synthetic(.self),
+					location: [.synthetic(.self)]
+				),
+				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
+				environment: bodyContext,
+				analysisErrors: [],
+				isMutable: false
+			),
+
+			isMutable: false
+		)
+
 		for (i, param) in structType.typeParameters.enumerated() {
 			// Go through and actually analyze the type params
 			let environment = bodyContext.add(namespace: nil)
@@ -92,7 +111,7 @@ struct StructDeclAnalyzer: Analyzer {
 			structType.typeParameters[i].type = try param.type.accept(visitor, environment) as! AnalyzedTypeExpr
 		}
 
-		let symbol = context.symbolGenerator.struct(decl.name, source: .internal, id: decl.id)
+		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
 
 		// Do a second pass to try to fill in method returns
 		let bodyAnalyzed = try visitor.visit(decl.body.cast(DeclBlockSyntax.self), bodyContext)
@@ -107,7 +126,10 @@ struct StructDeclAnalyzer: Analyzer {
 			environment: context
 		)
 
-		context.define(struct: structType.name!, as: structType)
+		context.define(struct: decl.name, as: structType)
+		bodyContext.define(struct: decl.name, as: structType)
+
+		context.define(local: decl.name, as: analyzed, isMutable: false)
 
 		bodyContext.lexicalScope = lexicalScope
 

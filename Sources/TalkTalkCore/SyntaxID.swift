@@ -10,6 +10,7 @@ import Foundation
 public struct SyntaxID: Hashable, Sendable, Codable, CustomStringConvertible {
 	public let id: Int
 	public let path: String
+	var uuid = UUID()
 
 	public init(id: Int, path: String) {
 		self.id = id

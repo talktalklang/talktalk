@@ -684,7 +684,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-			if let symbol, let slot = resolveModuleValue(named: symbol) {
+			if let slot = resolveModuleValue(named: varName) {
 				return Variable(
 					name: varName,
 					slot: slot,
@@ -775,8 +775,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	// Check CompilingModule for a global value
-	private func resolveModuleValue(named symbol: Symbol) -> Byte? {
-		if let offset = module.moduleValueOffset(for: symbol) {
+	private func resolveModuleValue(named name: String) -> Byte? {
+		if let offset = module.moduleValueOffset(for: name) {
 			return Byte(offset)
 		}
 

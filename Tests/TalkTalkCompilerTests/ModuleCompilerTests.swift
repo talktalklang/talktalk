@@ -123,7 +123,7 @@ struct ModuleCompilerTests: CompilerTest {
 		))
 	}
 
-	@Test("Can compile struct init with no args") @MainActor func structInitNoArgs() throws {
+	@Test("Can compile struct init with no args") @MainActor func compileStructInitNoArgs() throws {
 		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
 		let (module, _) = try compile(name: "A", [
 			.tmp("""

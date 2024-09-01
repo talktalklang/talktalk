@@ -134,8 +134,9 @@ struct CallConstraint: Constraint {
 				params = []
 			}
 		} else {
+			// We don't have an init so we need to synthesize one
 			var substitutions: [TypeVariable: InferenceType] = [:]
-
+			
 			params = structType.properties.map { name, type in
 				if case .type(.typeVar(let typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
@@ -166,8 +167,6 @@ struct CallConstraint: Constraint {
 		}
 
 		for (arg, param) in zip(args, params) {
-			// TODO: Deal with struct instances as args???
-
 			let paramType: InferenceType
 
 			switch context.applySubstitutions(to: param) {

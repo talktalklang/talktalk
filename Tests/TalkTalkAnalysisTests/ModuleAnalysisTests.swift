@@ -84,6 +84,8 @@ struct ModuleAnalysisTests {
 		#expect(analysisModule.values.count == 1)
 		#expect(analysisModule.moduleFunctions.count == 2)
 
+		#expect(analysisModule.values["bar"]?.name == "bar")
+
 		// First make sure we can get a value
 		let bar = try #require(analysisModule.moduleValue(named: "bar"))
 		#expect(bar.typeID == .base(.int))
