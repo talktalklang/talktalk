@@ -35,27 +35,6 @@ public class SymbolGenerator {
 		SymbolGenerator(moduleName: moduleName, namespace: self.namespace + [namespace], parent: self)
 	}
 
-	public func reserve(_ symbol: Symbol, info: SymbolInfo) {
-		let info = SymbolInfo(symbol: symbol, slot: info.slot, source: .stdlib, isBuiltin: false)
-
-		symbols[symbol] = info
-
-		switch symbol.kind {
-		case .function(_, _):
-			functions[symbol] = info
-		case .value(_):
-			values[symbol] = info
-		case .struct(_):
-			structs[symbol] = info
-		case .method(_, _, _):
-			functions[symbol] = info
-		case .genericType(_):
-			generics[symbol] = info
-		case .property(_, _), .primitive(_):
-			()
-		}
-	}
-
 	public func `import`(_ symbol: Symbol, from moduleName: String) -> Symbol {
 		switch symbol.kind {
 		case .primitive(_):

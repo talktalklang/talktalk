@@ -74,13 +74,16 @@ struct StructDeclAnalyzer: Analyzer {
 
 		// If there's no init, synthesize one
 		if structType.methods["init"] == nil {
-			structType.add(initializer: Method(
-				name: "init",
-				slot: structType.methods.count,
-				params: structType.properties.values.map(\.inferenceType),
-				inferenceType: .function(structType.properties.values.map(\.inferenceType), .structType(type)),
-				returnTypeID: .structInstance(.synthesized(type))
-			))
+			structType.add(
+				initializer: Method(
+					name: "init",
+					slot: structType.methods.count,
+					params: structType.properties.values.map(\.inferenceType),
+					inferenceType: .function(structType.properties.values.map(\.inferenceType), .structType(type)),
+					returnTypeID: .structInstance(.synthesized(type)),
+					isSynthetic: true
+				)
+			)
 		}
 
 		let lexicalScope = LexicalScope(scope: structType, expr: decl)

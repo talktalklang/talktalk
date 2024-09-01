@@ -80,24 +80,6 @@ public class CompilingModule {
 				fatalError("could not find compiled chunk for: \(symbol.description)")
 			case .struct:
 				switch info.source {
-				case .stdlib:
-					if self.name == "Standard" {
-						// In this case, we're the Standard library compiling itself so we should have the
-						// struct here in this CompilingModule
-						guard let structType = structs[symbol] else {
-							fatalError("could not find struct for: \(symbol.description)")
-						}
-						moduleStructs[info.slot] = structType
-					} else {
-						// Otherwise, we can assume it's in the module environment
-						guard let module = moduleEnvironment["Standard"],
-									let moduleInfo = module.symbols[symbol] else {
-							fatalError("could not find struct for: \(symbol.description)")
-							continue
-						}
-
-						moduleStructs[info.slot] = module.structs[moduleInfo.slot]
-					}
 				case .external(let name):
 					guard let module = moduleEnvironment[name],
 								let moduleInfo = module.symbols[symbol] else {

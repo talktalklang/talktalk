@@ -9,7 +9,7 @@ import TalkTalkCore
 
 public struct SymbolInfo: Equatable, Codable {
 	public enum Source: Equatable, Codable {
-		case `internal`, external(String), stdlib
+		case `internal`, external(String)
 	}
 
 	// What symbol is this

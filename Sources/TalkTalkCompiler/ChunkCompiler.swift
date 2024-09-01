@@ -576,12 +576,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_: AnalyzedStructExpr, _: Chunk) throws {}
 
 	public func visit(_ expr: AnalyzedSubscriptExpr, _ chunk: Chunk) throws {
-		guard case let .structInstance(instance) = expr.receiverAnalyzed.typeAnalyzed,
-					let getMethod = instance.type.methods["get"]
-		else {
-			throw CompilerError.typeError("\(expr.receiverAnalyzed.description) has no method: `get` for subscript")
-		}
-
 		// Emit the args
 		for arg in expr.argsAnalyzed {
 			try arg.expr.accept(self, chunk)
@@ -706,16 +700,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 
-//			if let slot = BuiltinFunction.list.firstIndex(where: { $0.name == varName }) {
-//				return Variable(
-//					name: varName,
-//					slot: Byte(slot),
-//					depth: scopeDepth,
-//					isCaptured: false,
-//					getter: .getBuiltin,
-//					setter: .setBuiltin
-//				)
-//			}
+			if let slot = BuiltinFunction.list.firstIndex(
+				where: { $0.name == varName }
+			) {
+				return Variable(
+					name: varName,
+					slot: Byte(slot),
+					depth: scopeDepth,
+					isCaptured: false,
+					getter: .getBuiltin,
+					setter: .setBuiltin
+				)
+			}
 			#warning("bring this back ^")
 		}
 

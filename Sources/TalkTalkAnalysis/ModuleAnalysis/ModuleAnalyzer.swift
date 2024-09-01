@@ -51,9 +51,6 @@ public struct ModuleAnalyzer {
 			if module.name == "Standard", name != "Standard" {
 				// Always make standard types available
 				for (name, structType) in module.structs {
-					// Reserve slots for the standard library
-					environment.symbolGenerator.reserve(structType.symbol, info: module.symbols[structType.symbol]!)
-
 					analysisModule.structs[name] = ModuleStruct(
 						name: name,
 						symbol: structType.symbol,
