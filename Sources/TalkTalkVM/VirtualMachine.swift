@@ -54,7 +54,7 @@ public struct VirtualMachine {
 	var currentFrame: CallFrame
 
 	// The stack
-	var stack: Stack<Value>
+	var stack: DebugStack<Value>
 
 	// A fake heap
 	var heap = Heap()
@@ -88,7 +88,7 @@ public struct VirtualMachine {
 			fatalError("no entrypoint found for module `\(module.name)`")
 		}
 
-		self.stack = Stack<Value>(capacity: 256)
+		self.stack = DebugStack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
@@ -574,19 +574,6 @@ public struct VirtualMachine {
 
 		frames.push(frame)
 	}
-
-//	private mutating func call(inline: StaticChunk) {
-//		let frame = CallFrame(
-//			closure: .init(
-//				chunk: inline,
-//				upvalues: []
-//			),
-//			returnTo: ip,
-//			stackOffset: stack.size - 1
-//		)
-//
-//		frames.push(frame)
-//	}
 
 	private mutating func call(closureID: Int) {
 		// Find the called chunk from the closure id

@@ -140,15 +140,15 @@ struct ModuleCompilerTests: CompilerTest {
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = module.chunks[0]
+		let mainChunk = module.chunks[1]
 		#expect(mainChunk.disassemble(in: module) == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8),
-			.op(.setModuleValue, line: 8, .global(slot: 0)),
+			.op(.setModuleValue, line: 8, .global(slot: 1)),
 			.op(.return, line: 0)
 		))
 
-		let structDef = module.structs[0]
+		let structDef = module.structs.first(where: { $0.name == "Person" })!
 		#expect(structDef.name == "Person")
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)
