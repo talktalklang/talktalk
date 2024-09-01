@@ -9,7 +9,7 @@ import Testing
 
 struct FakeHeapTests: StandardLibraryTest {
 	@Test("Can allocate") func create() async throws {
-		let result = try await run("""
+		_ = try await run("""
 		return _allocate(4)
 		""").get()
 	}

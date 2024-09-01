@@ -318,18 +318,15 @@ struct SemanticTokensVisitor: Visitor {
 	}
 
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		return [make(.keyword, from: expr.keywordToken)]
 	}
 
 	func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		return try expr.decls.flatMap { try $0.accept(self, context) }
 	}
 
 	func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		return [make(.keyword, from: expr.funcToken)]
 	}
 
 	// GENERATOR_INSERTION

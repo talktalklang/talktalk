@@ -267,7 +267,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol = context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case .base(let type):
 			symbol = .primitive("\(type)")
-		case .structType(let structType):
+		case .structType(_):
 			symbol = context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
 		default:
 			symbol = context.symbolGenerator.generic("error", source: .internal)
@@ -543,17 +543,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
 		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
 		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
 		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 

@@ -125,7 +125,7 @@ actor LSPRequestParser {
 			state = .contentLength
 
 			Log.info("Finished parsing request: \(request.method)")
-			await server.enqueue(request)
+			server.enqueue(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")

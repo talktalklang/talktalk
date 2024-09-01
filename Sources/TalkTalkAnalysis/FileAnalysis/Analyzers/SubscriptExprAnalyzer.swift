@@ -16,7 +16,7 @@ struct SubscriptExprAnalyzer {
 		let receiver = try expr.receiver.accept(visitor, context) as! any AnalyzedExpr
 		let args = try expr.args.map { try $0.accept(visitor, context) } as! [AnalyzedArgument]
 
-		var result = AnalyzedSubscriptExpr(
+		return AnalyzedSubscriptExpr(
 			receiverAnalyzed: receiver,
 			argsAnalyzed: args,
 			wrapped: expr as! SubscriptExprSyntax,
@@ -24,7 +24,5 @@ struct SubscriptExprAnalyzer {
 			environment: context,
 			analysisErrors: []
 		)
-
-		return result
 	}
 }
