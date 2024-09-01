@@ -7,6 +7,7 @@
 
 import TalkTalkBytecode
 import TalkTalkSyntax
+import OrderedCollections
 
 // Module structs are type level structs that can be shared across
 // module boundaries.
@@ -17,8 +18,8 @@ public struct ModuleStruct: ModuleGlobal {
 	public var typeID: InferenceType
 	public var source: ModuleSource
 
-	public var properties: [String: Property]
-	public var methods: [String: Method]
+	public var properties: OrderedDictionary<String, Property>
+	public var methods: OrderedDictionary<String, Method>
 	public var typeParameters: [TypeParameter]
 
 	public var isImport: Bool {

@@ -266,31 +266,43 @@ public struct VirtualMachine {
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+				      let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs < rhs))
 			case .greater:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs > rhs))
 			case .lessEqual:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
-				guard let lhs = stack.pop().intValue,
-				      let rhs = stack.pop().intValue
+				let lhs = stack.pop()
+				let rhs = stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot compare none int operands")
+					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
 				stack.push(.bool(lhs >= rhs))
 			case .data:
@@ -475,7 +487,7 @@ public struct VirtualMachine {
 				// We need to set the capacity to at least 1 or else trying to resize it will multiply 0 by 2
 				// which means we never actually get more capacity.
 				let capacity = max(count, 1)
-				let arrayTypeSlot = module.symbols[.struct("Standard", "Array", id: .synthetic("Array"))]!.slot
+				let arrayTypeSlot = module.symbols[.struct("Standard", "Array")]!.slot
 				let arrayType = module.structs[arrayTypeSlot]
 
 				let pointer = heap.allocate(count: Int(capacity))
@@ -491,7 +503,7 @@ public struct VirtualMachine {
 
 				stack.push(.instance(instance))
 			case .initDict: ()
-				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary", id: .synthetic("Array"))]!.slot
+				let dictTypeSlot = module.symbols[.struct("Standard", "Dictionary")]!.slot
 				let dictType = module.structs[dictTypeSlot]
 
 				call(structValue: dictType)

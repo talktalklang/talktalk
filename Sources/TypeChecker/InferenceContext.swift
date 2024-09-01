@@ -7,6 +7,7 @@
 
 import Foundation
 import TalkTalkSyntax
+import OrderedCollections
 
 typealias VariableID = Int
 
@@ -33,15 +34,15 @@ public struct InferenceError: Hashable, Equatable {
 
 // If we're inside a type's body, we can save methods/properties in here
 class TypeContext {
-	var methods: [String: InferenceResult]
-	var initializers: [String: InferenceResult]
-	var properties: [String: InferenceResult]
+	var methods: OrderedDictionary<String, InferenceResult>
+	var initializers: OrderedDictionary<String, InferenceResult>
+	var properties: OrderedDictionary<String, InferenceResult>
 	var typeParameters: [TypeVariable]
 
 	init(
-		methods: [String: InferenceResult] = [:],
-		initializers: [String: InferenceResult] = [:],
-		properties: [String: InferenceResult] = [:],
+		methods: OrderedDictionary<String, InferenceResult> = [:],
+		initializers: OrderedDictionary<String, InferenceResult> = [:],
+		properties: OrderedDictionary<String, InferenceResult> = [:],
 		typeParameters: [TypeVariable] = []
 	) {
 		self.methods = methods
@@ -491,7 +492,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				unify(subA.value, subB.value, location)
 			}
 		default:
-			if a != b {
+			if a != b, a != .any, b != .any {
 				addError(
 					.init(
 						kind: .typeError("Cannot unify \(a) and \(b)"),

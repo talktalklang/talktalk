@@ -13,28 +13,11 @@ public protocol AnalysisTest {}
 
 public extension AnalysisTest {
 	func analyze(_ string: String) async throws -> AnalysisModule {
-		let stdlib = try ModuleAnalyzer(
-			name: "Standard",
-			files: Library.files(for: Library.standardLibraryURL).map {
-				try ParsedSourceFile(
-					path: $0.path,
-					syntax: Parser.parse(
-						SourceFile(
-							path: $0.path,
-							text: String(contentsOf: $0, encoding: .utf8)
-						)
-					)
-				)
-			},
-			moduleEnvironment: [:],
-			importedModules: []
-		).analyze()
-
 		let analyzer = ModuleAnalyzer(
 			name: "AnalysisTest",
 			files: [.tmp(string, "Analysis.tlk")],
-			moduleEnvironment: ["Standard": stdlib],
-			importedModules: [stdlib]
+			moduleEnvironment: [:],
+			importedModules: []
 		)
 
 		return try analyzer.analyze()

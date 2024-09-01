@@ -30,8 +30,6 @@ struct CallExprAnalyzer: Analyzer {
 		}
 
 		// How many arguments are expected to be passed to this call
-		let arity: Int
-
 		let type = context.inferenceContext.lookup(syntax: expr)
 
 		for error in context.inferenceContext.errors {
@@ -39,7 +37,7 @@ struct CallExprAnalyzer: Analyzer {
 				let kind: AnalysisErrorKind = switch error.kind {
 				case let .argumentError(expected: expected, actual: actual):
 					.argumentError(expected: expected, received: actual)
-				case let .memberNotFound(type, name):
+				case let .memberNotFound(_, name):
 					.noMemberFound(receiver: expr, property: name)
 				default:
 					.unknownError("\(error.kind)")

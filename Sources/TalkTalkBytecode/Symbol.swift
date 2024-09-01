@@ -58,23 +58,23 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		Symbol(module: "[builtin]", kind: .primitive(name))
 	}
 
-	public static func function(_ module: String, _ name: String, _ params: [String], id: SyntaxID) -> Symbol {
+	public static func function(_ module: String, _ name: String, _ params: [String]) -> Symbol {
 		Symbol(module: module, kind: .function(name, params))
 	}
 
-	public static func value(_ module: String, _ name: String, id: SyntaxID) -> Symbol {
+	public static func value(_ module: String, _ name: String) -> Symbol {
 		Symbol(module: module, kind: .value(name))
 	}
 
-	public static func `struct`(_ module: String, _ name: String, id: SyntaxID) -> Symbol {
+	public static func `struct`(_ module: String, _ name: String) -> Symbol {
 		Symbol(module: module, kind: .struct(name))
 	}
 
-	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String], id: SyntaxID) -> Symbol {
+	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String]) -> Symbol {
 		Symbol(module: module, kind: .method(type, name, params))
 	}
 
-	public static func property(_ module: String, _ type: String, _ name: String, id: SyntaxID) -> Symbol {
+	public static func property(_ module: String, _ type: String, _ name: String) -> Symbol {
 		Symbol(module: module, kind: .property(type, name))
 	}
 

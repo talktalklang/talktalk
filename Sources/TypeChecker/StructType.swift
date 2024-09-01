@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 import Foundation
+import OrderedCollections
 
 public struct StructType: Equatable, Hashable, CustomStringConvertible {
 	public static func ==(lhs: StructType, rhs: StructType) -> Bool {
@@ -74,7 +75,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return instance
 	}
 
-	public var initializers: [String: InferenceResult] {
+	public var initializers: OrderedDictionary<String, InferenceResult> {
 		typeContext.initializers
 	}
 
@@ -98,11 +99,11 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	public var properties: [String: InferenceResult] {
+	public var properties: OrderedDictionary<String, InferenceResult> {
 		typeContext.properties
 	}
 
-	public var methods: [String: InferenceResult] {
+	public var methods: OrderedDictionary<String, InferenceResult> {
 		typeContext.methods
 	}
 }

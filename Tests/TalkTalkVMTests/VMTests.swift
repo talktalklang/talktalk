@@ -13,7 +13,7 @@ import Testing
 @MainActor
 struct VMTests {
 	func chunk(_ instructions: [Instruction]) -> Chunk {
-		var chunk = Chunk(name: "main", symbol: .function("VMTests", "main", [], id: .synthetic("main")), path: "test")
+		var chunk = Chunk(name: "main", symbol: .function("VMTests", "main", []), path: "test")
 		for instruction in instructions {
 			instruction.emit(into: &chunk)
 		}

@@ -125,6 +125,12 @@ public struct InitArrayMetadata: InstructionMetadata {
 	}
 }
 
+public extension InstructionMetadata where Self == InitArrayMetadata {
+	static func array(count: Int) -> InitArrayMetadata {
+		InitArrayMetadata(elementCount: count)
+	}
+}
+
 public struct ObjectMetadata: InstructionMetadata {
 	public var value: StaticData
 

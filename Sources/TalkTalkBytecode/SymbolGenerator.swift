@@ -6,6 +6,7 @@
 //
 import Foundation
 import TalkTalkCore
+import OrderedCollections
 
 public class SymbolGenerator {
 	public let moduleName: String
@@ -13,13 +14,13 @@ public class SymbolGenerator {
 
 	private var parent: SymbolGenerator?
 
-	private(set) var functions: [Symbol: SymbolInfo] = [:]
-	private(set) var values: [Symbol: SymbolInfo] = [:]
-	private(set) var structs: [Symbol: SymbolInfo] = [:]
-	private(set) var properties: [Symbol: SymbolInfo] = [:]
-	private(set) var generics: [Symbol: SymbolInfo] = [:]
+	private(set) var functions: OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var values: OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var structs: OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var properties: OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var generics:OrderedDictionary<Symbol, SymbolInfo> = [:]
 
-	public var symbols: [Symbol: SymbolInfo] = [:]
+	public var symbols: OrderedDictionary<Symbol, SymbolInfo> = [:]
 
 	public init(moduleName: String, namespace: [String] = [], parent: SymbolGenerator?) {
 		self.moduleName = moduleName
@@ -99,6 +100,10 @@ public class SymbolGenerator {
 
 		if let info = structs[symbol] {
 			return info.symbol
+		}
+
+		if name == "int" {
+
 		}
 
 		let symbolInfo = SymbolInfo(

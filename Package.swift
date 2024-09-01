@@ -22,6 +22,7 @@ let package = Package(
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
+		.package(url: "https://github.com/apple/swift-collections.git", branch: "main")
 	],
 	targets: [
 		.executableTarget(
@@ -50,7 +51,8 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkBytecode",
-				"TypeChecker"
+				"TypeChecker",
+				.product(name: "Collections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -64,7 +66,8 @@ let package = Package(
 			name: "TypeChecker",
 			dependencies: [
 				"TalkTalkCore",
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
+				.product(name: "Collections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -84,7 +87,8 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
-				"TalkTalkBytecode"
+				"TalkTalkBytecode",
+				.product(name: "Collections", package: "swift-collections")
 			]
 		),
 		.target(
@@ -106,7 +110,8 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				"TalkTalkDriver",
-				"TalkTalkCore"
+				"TalkTalkCore",
+				.product(name: "Collections", package: "swift-collections")
 			]
 		),
 		.target(

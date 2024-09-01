@@ -6,17 +6,18 @@
 //
 
 import TalkTalkBytecode
+import OrderedCollections
 
 public class StructType {
 	public let name: String?
-	public private(set) var properties: [String: Property]
-	public private(set) var methods: [String: Method]
+	public private(set) var properties: OrderedDictionary<String, Property>
+	public private(set) var methods: OrderedDictionary<String, Method>
 	public var typeParameters: [TypeParameter]
 
 	public init(
 		name: String? = nil,
-		properties: [String: Property],
-		methods: [String: Method],
+		properties: OrderedDictionary<String, Property>,
+		methods: OrderedDictionary<String, Method>,
 		typeParameters: [TypeParameter]
 	) {
 		self.name = name

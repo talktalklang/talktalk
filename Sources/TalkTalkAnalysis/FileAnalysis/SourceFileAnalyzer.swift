@@ -246,9 +246,22 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		AnalyzedTypeExpr(
+		let symbol: Symbol
+
+		switch context.inferenceContext.lookup(syntax: expr) {
+		case .typeVar(_):
+			symbol = context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
+		case .base(let type):
+			symbol = .primitive("\(type)")
+		case .structType(let structType):
+			symbol = context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
+		default:
+			symbol = context.symbolGenerator.generic("error", source: .internal)
+		}
+
+		return AnalyzedTypeExpr(
 			wrapped: expr.cast(TypeExprSyntax.self),
-			symbol: context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal),
+			symbol: symbol,
 			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
 			environment: context
 		)
@@ -417,7 +430,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: expr.value != nil ? context.inferenceContext.lookup(syntax: expr.value!)! : .void,
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
@@ -443,7 +456,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: expr.value != nil ? context.inferenceContext.lookup(syntax: expr.value!)! : .void,
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,

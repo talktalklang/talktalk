@@ -19,8 +19,8 @@ public struct ModuleAnalyzer {
 	public var files: [ParsedSourceFile]
 	public let environment: Environment
 	let visitor: SourceFileAnalyzer
-	public let moduleEnvironment: [String: AnalysisModule]
-	public let importedModules: [AnalysisModule]
+	public var moduleEnvironment: [String: AnalysisModule]
+	public var importedModules: [AnalysisModule]
 	let inferencer: Inferencer
 
 	public init(
@@ -36,6 +36,33 @@ public struct ModuleAnalyzer {
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = moduleEnvironment.values.map { $0 }
+
+		if moduleEnvironment["Standard"] == nil, name != "Standard" {
+			let stdlib = try! importStandardLibrary()
+			self.moduleEnvironment["Standard"] = stdlib
+			self.importedModules.append(stdlib)
+		}
+	}
+
+	public func importStandardLibrary() throws -> AnalysisModule {
+		try ModuleAnalyzer(
+			name: "Standard",
+			files: Library.standard.paths.map {
+				let parsed = try Parser.parse(
+					SourceFile(
+						path: $0,
+						text: String(
+							contentsOf: Library.standard.location.appending(path: $0),
+							encoding: .utf8
+						)
+					)
+				)
+
+				return ParsedSourceFile(path: $0, syntax: parsed)
+			},
+			moduleEnvironment: [:],
+			importedModules: []
+		).analyze()
 	}
 
 	public func analyze() throws -> AnalysisModule {

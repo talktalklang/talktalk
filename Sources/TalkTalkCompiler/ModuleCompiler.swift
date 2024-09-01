@@ -28,10 +28,10 @@ public struct ModuleCompiler {
 		self.moduleEnvironment = moduleEnvironment
 	}
 
-	func compileStandardLibrary() throws -> [String: Module] {
+	func compileStandardLibrary() throws -> (Module, AnalysisModule)? {
 		guard moduleEnvironment["Standard"] == nil else {
 			// We've already got it, we're good
-			return [:]
+			return nil
 		}
 
 		let analysis = try ModuleAnalyzer(
@@ -60,7 +60,7 @@ public struct ModuleCompiler {
 
 		let stdlib = try compiler.compile(mode: .module)
 
-		return ["Standard": stdlib]
+		return (stdlib, analysis)
 	}
 
 	public func compile(mode: CompilationMode, allowErrors: Bool = false) throws -> Module {
@@ -71,8 +71,8 @@ public struct ModuleCompiler {
 
 		var moduleEnvironment = self.moduleEnvironment
 
-		if name != "Standard" {
-			try moduleEnvironment.merge(compileStandardLibrary()) { $1 }
+		if name != "Standard", let (stdlibModule, _) = try compileStandardLibrary() {
+			moduleEnvironment["Standard"] = stdlibModule
 		}
 
 		let module = CompilingModule(

@@ -53,7 +53,7 @@ public class CompilingModule {
 
 		var chunks: [StaticChunk] = Array(
 			repeating: StaticChunk(
-				chunk: .init(name: "_", symbol: .function(name, "_", [], id: 0), path: "_")
+				chunk: .init(name: "_", symbol: .function(name, "_", []), path: "_")
 			),
 			count: chunkCount
 		)
@@ -168,7 +168,7 @@ public class CompilingModule {
 	// If a function named "main" isn't provided, we generate one that just runs all of the files
 	// that were compiled in the module.
 	func synthesizeMain() -> Chunk {
-		let main = Chunk(name: "main", symbol: .function(name, "main", [], id: -100), path: "<main>")
+		let main = Chunk(name: "main", symbol: .function(name, "main", []), path: "<main>")
 
 		for fileChunk in fileChunks {
 			let offset = analysisModule.symbols[fileChunk.symbol]!.slot
