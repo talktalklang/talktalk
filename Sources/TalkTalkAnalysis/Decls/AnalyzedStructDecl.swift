@@ -38,4 +38,8 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
 		try visitor.visit(wrapped, context)
 	}
+
+	public var semanticLocation: SourceLocation? {
+		[nameToken]
+	}
 }

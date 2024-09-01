@@ -36,7 +36,7 @@ struct AnalysisErrorTests: AnalysisTest {
 			var a = "foo"
 			a = 123
 			""",
-			.typeCannotAssign(expected: .base(.string), received: .base(.int))
+			.inferenceError(.unificationError(.base(.string), .base(.int)))
 		)
 	}
 

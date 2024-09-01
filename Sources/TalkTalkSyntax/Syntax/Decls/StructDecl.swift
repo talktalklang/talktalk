@@ -30,4 +30,8 @@ public struct StructDeclSyntax: StructDecl {
 	public func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value {
 		try visitor.visit(self, context)
 	}
+
+	public var semanticLocation: SourceLocation? {
+		[nameToken]
+	}
 }

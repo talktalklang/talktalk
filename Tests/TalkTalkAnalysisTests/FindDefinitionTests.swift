@@ -45,8 +45,8 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 7)
 
 		let definition = node.definition()!
-		#expect(definition.token.line == 1)
-		#expect(definition.token.column == 6)
+		#expect(definition.location.line == 1)
+		#expect(definition.location.start.column == 6)
 	}
 
 	@Test("Find property definition") func propertyDef() throws {
@@ -71,8 +71,8 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 5)
 
 		let definition = node.definition()!
-		#expect(definition.token.line == 1)
-		#expect(definition.token.column == 5)
+		#expect(definition.location.line == 1)
+		#expect(definition.location.start.column == 5)
 	}
 
 	@Test("Find type definition") func typeDef() throws {
@@ -95,8 +95,8 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 4)
 
 		let definition = node.definition()!
-		#expect(definition.token.line == 0)
-		#expect(definition.token.column == 7)
+		#expect(definition.location.line == 0)
+		#expect(definition.location.start.column == 7)
 	}
 
 	@Test("Find var definition") func varDef() throws {
@@ -117,8 +117,8 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 1)
 
 		let definition = node.definition()!
-		#expect(definition.token.line == 0)
-		#expect(definition.token.column == 4)
+		#expect(definition.location.line == 0)
+		#expect(definition.location.start.column == 4)
 	}
 
 	@Test("Find var definition in call") func callVarDef() throws {
@@ -141,8 +141,8 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 5)
 
 		let definition = node.definition()!
-		#expect(definition.token.line == 4)
-		#expect(definition.token.column == 4)
+		#expect(definition.location.line == 4)
+		#expect(definition.location.start.column == 4)
 	}
 
 	@Test("Find property inside method") func propInMethod() throws {
@@ -167,7 +167,7 @@ struct FindDefinitionTests {
 		#expect(node.location.line == 4)
 
 		let definition = node.definition()!
-		#expect(definition.token.line == 1)
-		#expect(definition.token.column == 5)
+		#expect(definition.location.line == 1)
+		#expect(definition.location.start.column == 5)
 	}
 }

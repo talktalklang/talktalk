@@ -11,3 +11,11 @@ public protocol VarLetDecl: Decl, Stmt {
 	var typeExpr: (any TypeExpr)? { get }
 	var value: (any Expr)? { get }
 }
+
+extension VarLetDecl {
+	public var semanticLocation: SourceLocation? {
+		[
+			nameToken
+		]
+	}
+}

@@ -8,6 +8,6 @@
 import TalkTalkSyntax
 
 public struct Definition: @unchecked Sendable {
-	public let token: Token
+	public let location: SourceLocation
 	public let type: InferenceType
 }

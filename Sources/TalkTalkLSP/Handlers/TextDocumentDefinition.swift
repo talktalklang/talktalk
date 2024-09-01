@@ -22,10 +22,10 @@ struct TextDocumentDefinition {
 			await server.respond(
 				to: request.id,
 				with: Location(
-					uri: match.token.path,
+					uri: match.location.path,
 					range: Range(
-						start: Position(line: match.token.line, character: match.token.column),
-						end: Position(line: match.token.line, character: match.token.column + match.token.length)
+						start: Position(line: match.location.start.line, character: match.location.start.column),
+						end: Position(line: match.location.start.line, character: match.location.start.column + match.location.start.length)
 					)
 				)
 			)

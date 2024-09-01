@@ -32,6 +32,6 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	}
 
 	public func definition() -> Definition? {
-		return nil // TODO: Update
+		return Definition(location: memberAnalyzed.location, type: memberAnalyzed.inferenceType)
 	}
 }

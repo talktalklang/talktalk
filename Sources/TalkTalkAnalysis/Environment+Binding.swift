@@ -11,7 +11,7 @@ public extension Environment {
 	class Binding {
 		public let name: String
 		public var location: SourceLocation
-		public var definition: (any Syntax)?
+		public var definition: Definition?
 		public var type: InferenceType
 		public var isCaptured: Bool
 		public var isBuiltin: Bool
@@ -23,7 +23,7 @@ public extension Environment {
 		public init(
 			name: String,
 			location: SourceLocation,
-			definition: (any Syntax)? = nil,
+			definition: Definition? = nil,
 			type: InferenceType,
 			isCaptured: Bool = false,
 			isBuiltin: Bool = false,

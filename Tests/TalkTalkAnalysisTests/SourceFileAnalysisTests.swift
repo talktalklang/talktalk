@@ -186,7 +186,7 @@ struct AnalysisTests {
 			.cast(AnalyzedCallExpr.self)
 		let error = try #require(callExpr.analysisErrors.first)
 
-		#expect(error.kind == .argumentError(expected: 0, received: 1))
+		#expect(error.kind == .inferenceError(.argumentError(expected: 0, actual: 1)))
 	}
 
 	@Test("Types captures") func funcCaptures() throws {

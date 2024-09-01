@@ -30,11 +30,14 @@ struct StructDeclAnalyzer: Analyzer {
 		)
 
 		for (name, type) in type.properties {
+			let location = decl.body.decls.first(where: { ($0 as? VarLetDecl)?.name == name })?.semanticLocation
+
 			structType.add(
 				property: Property(
 					slot: structType.properties.count,
 					name: name,
 					inferenceType: type.asType(in: context.inferenceContext),
+					location: location ?? decl.location,
 					isMutable: false
 				)
 			)
@@ -45,12 +48,15 @@ struct StructDeclAnalyzer: Analyzer {
 				return error(at: decl, "invalid method", environment: context, expectation: .none)
 			}
 
+			let location = decl.body.decls.first(where: { ($0 as? FuncExpr)?.name?.lexeme == name })?.semanticLocation
+
 			structType.add(
 				method: Method(
 					name: name,
 					slot: structType.methods.count,
 					params: params,
 					inferenceType: type.asType(in: context.inferenceContext),
+					location: location ?? decl.location,
 					returnTypeID: returns
 				)
 			)
@@ -61,12 +67,15 @@ struct StructDeclAnalyzer: Analyzer {
 				return error(at: decl, "invalid method", environment: context, expectation: .none)
 			}
 
+			let location = decl.body.decls.first(where: { ($0 is InitDecl) })?.semanticLocation
+
 			structType.add(
 				initializer: Method(
 					name: name,
 					slot: structType.methods.count,
 					params: params,
 					inferenceType: type.asType(in: context.inferenceContext),
+					location: location ?? decl.location,
 					returnTypeID: returns
 				)
 			)
@@ -80,6 +89,7 @@ struct StructDeclAnalyzer: Analyzer {
 					slot: structType.methods.count,
 					params: structType.properties.values.map(\.inferenceType),
 					inferenceType: .function(structType.properties.values.map(\.inferenceType), .structType(type)),
+					location: decl.location,
 					returnTypeID: .structInstance(.synthesized(type)),
 					isSynthetic: true
 				)

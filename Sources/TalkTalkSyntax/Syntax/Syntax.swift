@@ -21,11 +21,19 @@ public protocol Syntax: CustomStringConvertible {
 
 	// Let this node be visited by visitors
 	func accept<V: Visitor>(_ visitor: V, _ context: V.Context) throws -> V.Value
+
+	// If this node starts with a keyword, we can skip that when we're talking about
+	// the interesting part of where this syntax starts
+	var semanticLocation: SourceLocation? { get }
 }
 
 public extension Syntax {
+	var semanticLocation: SourceLocation? {
+		nil
+	}
+
 	func cast<T: Syntax>(_: T.Type, _ file: String = #file, _ line: UInt32 = #line) -> T {
-		if let casted = self as? T {
+		if self is T {
 			self as! T
 		} else {
 			fatalError("Could not cast \(self) to \(T.self) (\(file):\(line))")

@@ -388,6 +388,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		try StructDeclAnalyzer(decl: expr, visitor: self, context: context).analyze()
 	}
 
+	// FIXME: I think a lot of this is unnecessary now that we have TypeChecker
 	public func visit(_ expr: DeclBlockSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
@@ -402,22 +403,23 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			declsAnalyzed.append(declAnalyzed)
 
-			// If we have an updated type for a method, update the struct to know about it.
-			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
-				 let lexicalScope = context.lexicalScope,
-				 let name = funcExpr.name?.lexeme,
-				 let existing = lexicalScope.scope.methods[name]
-			{
-				lexicalScope.scope.add(
-					method: Method(
-						name: funcExpr.name!.lexeme,
-						slot: existing.slot,
-						params: funcExpr.analyzedParams.paramsAnalyzed.map(\.typeAnalyzed),
-						inferenceType: context.inferenceContext.lookup(syntax: funcExpr) ?? .any,
-						returnTypeID: funcExpr.returnType,
-						isMutable: false
-					))
-			}
+//			// If we have an updated type for a method, update the struct to know about it.
+//			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
+//				 let lexicalScope = context.lexicalScope,
+//				 let name = funcExpr.name?.lexeme,
+//				 let existing = lexicalScope.scope.methods[name]
+//			{
+//				lexicalScope.scope.add(
+//					method: Method(
+//						name: funcExpr.name!.lexeme,
+//						slot: existing.slot,
+//						params: funcExpr.analyzedParams.paramsAnalyzed.map(\.typeAnalyzed),
+//						inferenceType: context.inferenceContext.lookup(syntax: funcExpr) ?? .any,
+//						location: funcExpr.semanticLocation ?? funcExpr.location,
+//						returnTypeID: funcExpr.returnType,
+//						isMutable: false
+//					))
+//			}
 		}
 
 		return AnalyzedDeclBlock(

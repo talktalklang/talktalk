@@ -12,6 +12,7 @@ public struct Property: Member {
 	public let slot: Int
 	public let name: String
 	public let inferenceType: InferenceType
+	public let location: SourceLocation
 	public let isMutable: Bool
 	public var boundGenericParameters: [String: InferenceType] = [:]
 }

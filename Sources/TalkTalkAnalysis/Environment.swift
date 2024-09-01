@@ -125,14 +125,13 @@ public class Environment {
 	public func define(
 		local: String,
 		as expr: any Syntax,
-		definition: (any AnalyzedExpr)? = nil,
 		isMutable: Bool,
 		isGlobal: Bool = false
 	) {
 		locals[local] = Binding(
 			name: local,
 			location: expr.location,
-			definition: definition,
+			definition: Definition(location: expr.semanticLocation ?? expr.location, type: inferenceContext.lookup(syntax: expr) ?? .void),
 			type: inferenceContext.lookup(syntax: expr) ?? .void,
 			isGlobal: isGlobal,
 			isMutable: isMutable
