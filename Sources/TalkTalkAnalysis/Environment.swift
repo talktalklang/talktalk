@@ -113,7 +113,7 @@ public class Environment {
 		locals[parameter] = Binding(
 			name: parameter,
 			location: expr.location,
-			type: inferenceContext.lookup(syntax: expr)!,
+			type: inferenceContext.lookup(syntax: expr) ?? .any,
 			isParameter: true
 		)
 	}

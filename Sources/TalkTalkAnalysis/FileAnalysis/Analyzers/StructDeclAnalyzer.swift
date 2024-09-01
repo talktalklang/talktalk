@@ -117,7 +117,7 @@ struct StructDeclAnalyzer: Analyzer {
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
 
 		// Do a second pass to try to fill in method returns
-		let bodyAnalyzed = try visitor.visit(decl.body.cast(DeclBlockSyntax.self), bodyContext)
+		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
 
 		let analyzed = AnalyzedStructDecl(
 			symbol: symbol,

@@ -24,8 +24,12 @@ public protocol Syntax: CustomStringConvertible {
 }
 
 public extension Syntax {
-	func cast<T: Syntax>(_: T.Type) -> T {
-		self as! T
+	func cast<T: Syntax>(_: T.Type, _ file: String = #file, _ line: UInt32 = #line) -> T {
+		if let casted = self as? T {
+			self as! T
+		} else {
+			fatalError("Could not cast \(self) to \(T.self) (\(file):\(line))")
+		}
 	}
 
 	func `as`<T: Syntax>(_: T.Type) -> T? {

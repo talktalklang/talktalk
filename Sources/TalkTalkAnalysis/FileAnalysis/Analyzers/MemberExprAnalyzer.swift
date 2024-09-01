@@ -15,7 +15,7 @@ struct MemberExprAnalyzer: Analyzer {
 	func analyze() throws -> any AnalyzedSyntax {
 		let receiver = try expr.receiver.accept(visitor, context)
 		let propertyName = expr.property
-		let type = context.inferenceContext.lookup(syntax: expr)!
+		let type = context.inferenceContext.lookup(syntax: expr)
 
 		var member: (any Member)? = nil
 		if let scope = context.getLexicalScope()?.scope {
@@ -29,7 +29,7 @@ struct MemberExprAnalyzer: Analyzer {
 
 		guard let member else {
 			return AnalyzedMemberExpr(
-				inferenceType: type,
+				inferenceType: type ?? .any,
 				wrapped: expr.cast(MemberExprSyntax.self),
 				environment: context,
 				receiverAnalyzed: receiver as! any AnalyzedExpr,
@@ -40,7 +40,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		return AnalyzedMemberExpr(
-			inferenceType: type,
+			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: receiver as! any AnalyzedExpr,

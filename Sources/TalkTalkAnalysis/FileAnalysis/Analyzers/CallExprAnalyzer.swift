@@ -53,7 +53,7 @@ struct CallExprAnalyzer: Analyzer {
 		}
 
 		return AnalyzedCallExpr(
-			inferenceType: type!,
+			inferenceType: type ?? .any,
 			wrapped: expr.cast(CallExprSyntax.self),
 			calleeAnalyzed: callee as! any AnalyzedExpr,
 			argsAnalyzed: args,

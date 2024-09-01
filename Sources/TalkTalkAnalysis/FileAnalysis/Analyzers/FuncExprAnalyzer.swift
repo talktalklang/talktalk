@@ -35,7 +35,7 @@ struct FuncExprAnalyzer {
 		}
 
 		// Find the actual type of the fn
-		let type = context.inferenceContext.lookup(syntax: expr)!
+		let type = context.inferenceContext.lookup(syntax: expr)
 
 		let returns = if case let .function(_, fnReturns) = type {
 			fnReturns
@@ -54,7 +54,7 @@ struct FuncExprAnalyzer {
 
 		return try AnalyzedFuncExpr(
 			symbol: symbol,
-			type: type,
+			type: type ?? .any,
 			wrapped: expr as! FuncExprSyntax,
 			analyzedParams: expr.params.accept(visitor, environment) as! AnalyzedParamsExpr,
 			bodyAnalyzed: expr.body.accept(visitor, environment) as! AnalyzedBlockStmt,

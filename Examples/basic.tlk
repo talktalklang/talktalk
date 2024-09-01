@@ -1,8 +1,6 @@
-extension Describable {
-  
-}
+struct Person {
+	init() {}
 
-struct Person: Describable {
 	func greet() {
 		print("sup")
 	}

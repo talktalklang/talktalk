@@ -51,7 +51,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedIdentifierExpr(
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			wrapped: expr.cast(IdentifierExprSyntax.self),
 			environment: context
 		)
@@ -66,14 +66,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		case .bang:
 
 			return AnalyzedUnaryExpr(
-				inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		case .minus:
 			return AnalyzedUnaryExpr(
-				inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
@@ -129,8 +129,18 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: LiteralExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
+
+		guard let type =  context.inferenceContext.lookup(syntax: expr) else {
+			print("Did not get type for \(expr.description)")
+			return AnalyzedLiteralExpr(
+				inferenceType: .any,
+			 wrapped: expr.cast(LiteralExprSyntax.self),
+			 environment: context
+		 )
+		}
+
 		return AnalyzedLiteralExpr(
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: type,
 			wrapped: expr.cast(LiteralExprSyntax.self),
 			environment: context
 		)
@@ -191,7 +201,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
 
 		return AnalyzedBinaryExpr(
-			inferenceType: env.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
 			wrapped: expr.cast(BinaryExprSyntax.self),
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
@@ -262,7 +272,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedTypeExpr(
 			wrapped: expr.cast(TypeExprSyntax.self),
 			symbol: symbol,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context
 		)
 	}
@@ -282,7 +292,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
 			bodyAnalyzed: bodyAnalyzed
@@ -292,7 +302,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: ReturnStmtSyntax, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnStmt(
-			inferenceType: env.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: env,
 			wrapped: expr.cast(ReturnStmtSyntax.self),
 			valueAnalyzed: valueAnalyzed as? any AnalyzedExpr
@@ -307,7 +317,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			wrapped: expr.cast(ParamsExprSyntax.self),
 			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				return AnalyzedParam(
-					type: context.inferenceContext.lookup(syntax: param)!,
+					type: context.inferenceContext.lookup(syntax: param) ?? .any,
 					wrapped: param.cast(ParamSyntax.self),
 					environment: context
 				)
@@ -343,7 +353,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedBlockStmt(
 			wrapped: stmt.cast(BlockStmtSyntax.self),
-			inferenceType: context.inferenceContext.lookup(syntax: stmt)!,
+			inferenceType: context.inferenceContext.lookup(syntax: stmt) ?? .any,
 			stmtsAnalyzed: bodyAnalyzed,
 			environment: context
 		)
@@ -351,7 +361,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: ParamSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParam(
-			type: context.inferenceContext.lookup(syntax: expr)!,
+			type: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			wrapped: expr,
 			environment: context
 		)
@@ -361,7 +371,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		AnalyzedGenericParams(
 			wrapped: expr,
 			environment: context,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			paramsAnalyzed: expr.params.map {
 				AnalyzedGenericParam(wrapped: $0)
 			}
@@ -399,7 +409,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 						name: funcExpr.name!.lexeme,
 						slot: existing.slot,
 						params: funcExpr.analyzedParams.paramsAnalyzed.map(\.typeAnalyzed),
-						inferenceType: context.inferenceContext.lookup(syntax: funcExpr)!,
+						inferenceType: context.inferenceContext.lookup(syntax: funcExpr) ?? .any,
 						returnTypeID: funcExpr.returnType,
 						isMutable: false
 					))
@@ -430,7 +440,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
-			inferenceType: expr.value != nil ? context.inferenceContext.lookup(syntax: expr.value!)! : .void,
+			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
@@ -456,7 +466,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
-			inferenceType: expr.value != nil ? context.inferenceContext.lookup(syntax: expr.value!)! : .void,
+			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
@@ -469,7 +479,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: IfStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		try AnalyzedIfStmt(
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
 			consequenceAnalyzed: expr.consequence.accept(self, context) as! any AnalyzedExpr,
@@ -494,7 +504,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			environment: context,
 			exprsAnalyzed: try expr.exprs.map { try $0.accept(self, context) } as! [any AnalyzedExpr],
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			analysisErrors: []
 		)
 	}
@@ -509,7 +519,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedDictionaryLiteralExpr(
 			elementsAnalyzed: elementsAnalyzed,
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context
 		)
 	}
@@ -521,7 +531,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			keyAnalyzed: key,
 			valueAnalyzed: value,
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context
 		)
 	}
