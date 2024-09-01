@@ -106,7 +106,7 @@ struct ModuleCompilerTests: CompilerTest {
 			""", "struct.tlk"),
 		])
 
-		let structDef = module.structs[0]
+		let structDef = module.structs.first(where: { $0.name == "Person" })!
 		#expect(structDef.name == "Person")
 		#expect(structDef.propertyCount == 1)
 		#expect(structDef.methods.count == 1)

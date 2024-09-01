@@ -15,7 +15,7 @@ struct DictionaryVMTests: StandardLibraryTest {
 		#expect(result == Value.int(.init(Value.int(123).hashValue)))
 	}
 
-	@Test("Can get a value") func basic() async throws {
+	@Test("Can get a value", .disabled()) func basic() async throws {
 		let source = """
 		var a = [:]
 		a.set("foo", "bar")

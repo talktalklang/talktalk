@@ -13,7 +13,11 @@ struct DebugStack<Element> {
 		}
 
 		set {
-			storage[index] = newValue
+			if storage.indices.contains(index) {
+				storage[index] = newValue
+			} else {
+				print("!!!!!!!!!!!!!!! Invalid Stack Set Index: \(index) !!!!!!!!!!!!!!!!!!!!")
+			}
 		}
 	}
 

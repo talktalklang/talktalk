@@ -83,7 +83,6 @@ public class CompilingModule {
 				case .external(let name):
 					guard let module = moduleEnvironment[name],
 								let moduleInfo = module.symbols[symbol] else {
-						print("could not find struct for: \(symbol.description)")
 						continue
 					}
 

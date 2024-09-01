@@ -81,6 +81,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		case .pop:
 			// Pop the expr off the stack because this is a statement so we don't care about the
 			// return value
+			// TODO: Do we need to pop if the expr stmt returns void?
 			chunk.emit(opcode: .pop, line: expr.location.line)
 		case .return:
 			// If this is the only statement in a block, we can sometimes implicitly return
@@ -562,7 +563,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(thenJumpLocation)
 
 		// Pop the condition off the stack
-		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+//		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 
 		// Emit the alternative block
 		if let alternativeAnalyzed = expr.alternativeAnalyzed {

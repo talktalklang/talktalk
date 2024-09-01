@@ -51,11 +51,11 @@ struct ArrayTests: StandardLibraryTest {
 		 a.append(456)
 		 a.append(567)
 		 a.append(678)
-		 return a[589]
+		 return a[5]
 		"""
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source, verbosity: .verbose).get()
 
-		#expect(result == .int(6))
+		#expect(result == .int(678))
 	}
 
 	@Test("can create array literal") func arrayLiteral() async throws {

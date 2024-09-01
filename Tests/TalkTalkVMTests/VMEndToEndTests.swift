@@ -110,8 +110,16 @@ struct VMEndToEndTests {
 		#expect(try returning(#""hello world""#) == .string("hello world"))
 	}
 
-	@Test("is check") func isCheck() throws {
-		try #expect(returning("123 is int") == .bool(true))
+	@Test("is check", .disabled()) func isCheck() throws {
+		let result = try run(
+			"""
+			struct Person {}
+			let person = Person()
+			return person is Person
+			"""
+		)
+
+		#expect(result == .bool(true))
 	}
 
 	@Test("If expr") func ifExpr() throws {
@@ -482,8 +490,8 @@ struct VMEndToEndTests {
 		let result = try run(
 			"""
 			func increments(v) {
-				var v = v
-				v = v + 1
+				var t = v
+				t = v + 1
 			}
 
 

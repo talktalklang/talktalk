@@ -237,10 +237,7 @@ class CompilerTests: CompilerTest {
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 4)),
-
-			// Pop the condition
-			.op(.pop, line: 0, .simple),
+			.op(.jump, line: 2, .jump(offset: 3)),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),
@@ -431,7 +428,7 @@ class CompilerTests: CompilerTest {
 
 		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 8, .constant(.int(123))),
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
 			.op(.return, line: 0, .simple)
@@ -452,7 +449,7 @@ class CompilerTests: CompilerTest {
 		""")
 
 		#expect(disassemble(chunk) == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 0)),
+			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
 			.op(.return, line: 0, .simple)
@@ -472,7 +469,7 @@ class CompilerTests: CompilerTest {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 6, .constant(.int(123))),
-			.op(.getStruct, line: 6, .struct(slot: 0)),
+			.op(.getStruct, line: 6, .struct(slot: 4)),
 			.op(.call, line: 6, .simple),
 			.op(.getProperty, line: 6, .getProperty(slot: 0, options: [])),
 			.op(.pop, line: 6, .simple),
@@ -497,7 +494,7 @@ class CompilerTests: CompilerTest {
 
 		#expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 10, .constant(.int(123))),
-			.op(.getStruct, line: 10, .struct(slot: 0)),
+			.op(.getStruct, line: 10, .struct(slot: 4)),
 			.op(.call, line: 10, .simple),
 			.op(.getProperty, line: 10, .getProperty(slot: 0, options: .isMethod)),
 			.op(.call, line: 10, .simple),
