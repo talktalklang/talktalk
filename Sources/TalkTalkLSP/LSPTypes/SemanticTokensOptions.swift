@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-enum SemanticTokenTypes: String, Codable {
+public enum SemanticTokenTypes: String, Codable {
 	case type
 	case `class`
 	case `enum`
@@ -29,7 +29,7 @@ enum SemanticTokenTypes: String, Codable {
 	case `operator`
 }
 
-enum SemanticTokenModifiers: String, Codable {
+public enum SemanticTokenModifiers: String, Codable {
 	case declaration, definition, deprecated
 }
 

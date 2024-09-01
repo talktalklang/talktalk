@@ -5,13 +5,14 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-struct RawSemanticToken: Encodable, Equatable {
-	let lexeme: String
-	let line: Int
-	let startChar: Int
-	let length: Int
-	let tokenType: SemanticTokenTypes
-	let modifiers: [SemanticTokenModifiers]
+public struct RawSemanticToken: Encodable, Equatable {
+	public let lexeme: String
+	public let line: Int
+	public let position: Int
+	public let startChar: Int
+	public let length: Int
+	public let tokenType: SemanticTokenTypes
+	public let modifiers: [SemanticTokenModifiers]
 }
 
 struct RelativeSemanticToken: Equatable {

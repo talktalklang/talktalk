@@ -12,12 +12,32 @@ let package = Package(
 			targets: ["TalkTalkCore"]
 		),
 		.library(
+			name: "TalkTalkBytecode",
+			targets: ["TalkTalkBytecode"]
+		),
+		.library(
 			name: "TalkTalkSyntax",
 			targets: ["TalkTalkSyntax"]
 		),
 		.library(
 			name: "TypeChecker",
 			targets: ["TypeChecker"]
+		),
+		.library(
+			name: "TalkTalkAnalysis",
+			targets: ["TalkTalkAnalysis"]
+		),
+		.library(
+			name: "TalkTalkCompiler",
+			targets: ["TalkTalkCompiler"]
+		),
+		.library(
+			name: "TalkTalkVM",
+			targets: ["TalkTalkVM"]
+		),
+		.library(
+			name: "TalkTalkLSP",
+			targets: ["TalkTalkLSP"]
 		)
 	],
 	dependencies: [

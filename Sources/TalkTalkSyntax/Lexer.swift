@@ -277,7 +277,11 @@ public struct Lexer {
 			current += 1
 		}
 
-		return source[current]
+		if source.indices.contains(current) {
+			return source[current]
+		} else {
+			return Character("")
+		}
 	}
 
 	mutating func make(_ kind: Token.Kind) -> Token {
