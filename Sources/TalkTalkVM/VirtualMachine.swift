@@ -29,7 +29,7 @@ public struct VirtualMachine {
 	var chunk: StaticChunk
 
 	// The frames stack
-	var frames: Stack<CallFrame>
+	var frames: DebugStack<CallFrame>
 	{
 		willSet {
 			#if DEBUG
@@ -88,7 +88,7 @@ public struct VirtualMachine {
 		}
 
 		self.stack = DebugStack<Value>(capacity: 256)
-		self.frames = Stack<CallFrame>(capacity: 256)
+		self.frames = DebugStack<CallFrame>(capacity: 256)
 
 		// Reserving this space
 		stack.push(.reserved)
