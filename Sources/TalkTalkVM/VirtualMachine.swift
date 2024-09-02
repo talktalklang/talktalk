@@ -617,6 +617,8 @@ public struct VirtualMachine {
 		switch value {
 		case let .string(string):
 			string
+		case let .int(int):
+			"\(int)"
 		default:
 			value.description
 		}
