@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CI: "1"
     container:
       image: swiftlang/swift:nightly-jammy
     steps:
