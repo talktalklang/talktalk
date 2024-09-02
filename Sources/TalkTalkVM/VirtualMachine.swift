@@ -20,6 +20,9 @@ public struct VirtualMachine {
 	// Should we print disassembled instructions/stack dumps on each tick
 	var verbosity: Verbosity
 
+	// Where should output go? (Defaults to stdout/stderr)
+	var output: any OutputBuffer
+
 	var ip: UInt64
 
 	// The chunk that's being run
@@ -66,23 +69,19 @@ public struct VirtualMachine {
 
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
-	public static func run(module: Module, verbosity: Verbosity = .quiet) -> ExecutionResult {
-		var vm = VirtualMachine(module: module, verbosity: verbosity)
+	public static func run(module: Module, verbosity: Verbosity = .quiet, output: any OutputBuffer = DefaultOutputBuffer()) -> ExecutionResult {
+		var vm = VirtualMachine(module: module, verbosity: verbosity, output: output)
 		return vm.run()
 	}
 
-	public init(module: Module, verbosity: Verbosity = .quiet) {
+	public init(
+		module: Module,
+		verbosity: Verbosity = .quiet,
+		output: any OutputBuffer = DefaultOutputBuffer()
+	) {
 		self.module = module
 		self.verbosity = verbosity
-
-//		if verbosity == .verbose {
-//			print("Loading module: \(module.name)")
-//			for (i, chunk) in module.chunks.enumerated() {
-//				print("\(i): ", terminator: "")
-//				chunk.dump(in: module)
-//			}
-//			print("------------------------------------------------------")
-//		}
+		self.output = output
 
 		guard let chunk = module.main else {
 			fatalError("no entrypoint found for module `\(module.name)`")
@@ -631,7 +630,12 @@ public struct VirtualMachine {
 		switch builtin {
 		case .print:
 			let value = stack.peek()
-			print(inspect(value))
+			do {
+				let string = inspect(value) + "\n"
+				try output.write([Byte](Data(string.utf8)), to: .stdout)
+			} catch {
+				fatalError("Error writing output: \(error)")
+			}
 		case ._allocate:
 			if case let .int(count) = stack.pop() { // Get the capacity
 				let pointer = heap.allocate(count: Int(count))

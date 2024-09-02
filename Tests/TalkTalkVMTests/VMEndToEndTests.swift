@@ -14,53 +14,7 @@ import TalkTalkVM
 import TalkTalkCore
 import Testing
 
-@MainActor
-struct VMEndToEndTests {
-	func compile(_ strings: String...) throws -> Module {
-		try compile(strings)
-	}
-
-	func compile(_ strings: [String]) throws -> Module {
-		let analysisModule = try ModuleAnalyzer(
-			name: "E2E",
-			files: strings.enumerated().map { .tmp($1, "\($0).tlk") },
-			moduleEnvironment: [:],
-			importedModules: []
-		).analyze()
-		let compiler = ModuleCompiler(name: "E2E", analysisModule: analysisModule, moduleEnvironment: [:])
-		return try compiler.compile(mode: .executable)
-	}
-
-	func compile(
-		name: String,
-		_ files: [ParsedSourceFile],
-		analysisEnvironment: [String: AnalysisModule] = [:],
-		moduleEnvironment: [String: Module] = [:]
-	) throws -> (Module, AnalysisModule) {
-		let analyzed = try ModuleAnalyzer(
-			name: name,
-			files: files,
-			moduleEnvironment: analysisEnvironment,
-			importedModules: []
-		).analyze()
-
-		let module = try ModuleCompiler(
-			name: name,
-			analysisModule: analyzed,
-			moduleEnvironment: moduleEnvironment
-		).compile(mode: .executable)
-		return (module, analyzed)
-	}
-
-	func run(_ strings: String..., verbosity: Verbosity = .quiet) throws -> TalkTalkBytecode.Value {
-		let module = try compile(strings)
-		return try VirtualMachine.run(module: module, verbosity: verbosity).get()
-	}
-
-	func returning(_ string: String, verbosity: Verbosity = .quiet) throws -> TalkTalkBytecode.Value {
-		try run("return \(string)", verbosity: verbosity)
-	}
-
+struct VMEndToEndTests: VMTest {
 	func runAsync(_ strings: String...) throws {
 		let module = try compile(strings)
 		_ = VirtualMachine.run(module: module)
