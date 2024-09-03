@@ -287,9 +287,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 			functionChunk.emit(byte: variable.slot, line: parameter.location.line)
 		}
 
-		if let name = expr.name {
-			// Define the function in its enclosing scope
-			_ = defineLocal(name: name.lexeme, compiler: self, chunk: chunk)
+		if let name = expr.name?.lexeme {
+			if module.moduleFunctionOffset(for: name) != nil {
+				_ = resolveVariable(named: name, symbol: expr.symbol, chunk: chunk)
+			} else {
+				// Define the function in its enclosing scope
+				_ = defineLocal(name: name, compiler: self, chunk: chunk)
+			}
 		}
 
 		// Emit the function body
@@ -587,7 +591,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(opcode: .get, line: expr.location.line)
 	}
 
-	public func visit(_ expr: AnalyzedDictionaryLiteralExpr, _ chunk: Chunk) throws {
+	public func visit(_: AnalyzedDictionaryLiteralExpr, _: Chunk) throws {
 		// Store the values
 //		for element in expr.elementsAnalyzed {
 //			try visit(element, chunk)
@@ -606,15 +610,19 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try expr.keyAnalyzed.accept(self, chunk)
 		try expr.valueAnalyzed.accept(self, chunk)
 	}
-	public func visit(_ expr: AnalyzedProtocolDecl, _ context: Chunk) throws {
+
+	public func visit(_: AnalyzedProtocolDecl, _: Chunk) throws {
 		// TODO: this
 	}
-	public func visit(_ expr: AnalyzedProtocolBodyDecl, _ context: Chunk) throws {
+
+	public func visit(_: AnalyzedProtocolBodyDecl, _: Chunk) throws {
 		// TODO: this
 	}
-	public func visit(_ expr: AnalyzedFuncSignatureDecl, _ context: Chunk) throws {
+
+	public func visit(_: AnalyzedFuncSignatureDecl, _: Chunk) throws {
 		// TODO: this
 	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers
@@ -634,85 +642,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 			symbol = syntax.symbol
 		}
 
-		if let varName {
-			if varName == "self" {
-				return Variable(
-					name: varName,
-					slot: 0,
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getLocal,
-					setter: .setLocal
-				)
-			}
-
-			if let slot = resolveLocal(named: varName) {
-				return Variable(
-					name: varName,
-					slot: slot,
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getLocal,
-					setter: .setLocal
-				)
-			}
-
-			if let slot = resolveUpvalue(named: varName, chunk: chunk) {
-				return Variable(
-					name: varName,
-					slot: slot,
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getUpvalue,
-					setter: .setUpvalue
-				)
-			}
-
-			if let slot = resolveModuleFunction(named: varName) {
-				return Variable(
-					name: varName,
-					slot: slot,
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getModuleFunction,
-					setter: .setModuleFunction
-				)
-			}
-
-			if let slot = resolveModuleValue(named: varName) {
-				return Variable(
-					name: varName,
-					slot: slot,
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getModuleValue,
-					setter: .setModuleValue
-				)
-			}
-
-			if let symbol, let slot = resolveStruct(named: symbol) {
-				return Variable(
-					name: varName,
-					slot: slot,
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getStruct,
-					setter: .setStruct
-				)
-			}
-
-			if let slot = BuiltinFunction.list.firstIndex(
-				where: { $0.name == varName }
-			) {
-				return Variable(
-					name: varName,
-					slot: Byte(slot),
-					depth: scopeDepth,
-					isCaptured: false,
-					getter: .getBuiltin,
-					setter: .setBuiltin
-				)
-			}
+		if let varName, let variable = resolveVariable(named: varName, symbol: symbol, chunk: chunk) {
+			return variable
 		}
 
 		if let syntax = receiver as? AnalyzedMemberExpr,
@@ -725,6 +656,89 @@ public class ChunkCompiler: AnalyzedVisitor {
 				isCaptured: false,
 				getter: .getProperty,
 				setter: .setProperty
+			)
+		}
+
+		return nil
+	}
+
+	func resolveVariable(named varName: String, symbol: Symbol?, chunk: Chunk) -> Variable? {
+		if varName == "self" {
+			return Variable(
+				name: varName,
+				slot: 0,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getLocal,
+				setter: .setLocal
+			)
+		}
+
+		if let slot = resolveLocal(named: varName) {
+			return Variable(
+				name: varName,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getLocal,
+				setter: .setLocal
+			)
+		}
+
+		if let slot = resolveUpvalue(named: varName, chunk: chunk) {
+			return Variable(
+				name: varName,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getUpvalue,
+				setter: .setUpvalue
+			)
+		}
+
+		if let slot = resolveModuleFunction(named: varName) {
+			return Variable(
+				name: varName,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getModuleFunction,
+				setter: .setModuleFunction
+			)
+		}
+
+		if let slot = resolveModuleValue(named: varName) {
+			return Variable(
+				name: varName,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getModuleValue,
+				setter: .setModuleValue
+			)
+		}
+
+		if let symbol, let slot = resolveStruct(named: symbol) {
+			return Variable(
+				name: varName,
+				slot: slot,
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getStruct,
+				setter: .setStruct
+			)
+		}
+
+		if let slot = BuiltinFunction.list.firstIndex(
+			where: { $0.name == varName }
+		) {
+			return Variable(
+				name: varName,
+				slot: Byte(slot),
+				depth: scopeDepth,
+				isCaptured: false,
+				getter: .getBuiltin,
+				setter: .setBuiltin
 			)
 		}
 

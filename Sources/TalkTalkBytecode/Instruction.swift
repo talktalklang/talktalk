@@ -253,6 +253,10 @@ public extension InstructionMetadata where Self == VariableMetadata {
 	static func property(slot: Byte) -> VariableMetadata {
 		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .property)
 	}
+
+	static func moduleFunction(slot: Byte) -> VariableMetadata {
+		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .moduleFunction)
+	}
 }
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {

@@ -495,4 +495,61 @@ struct VMEndToEndTests: VMTest {
 
 		#expect(result == .int(10))
 	}
+
+	@Test("Random stuff (this was erroring)") func randomStuff() throws {
+		let source = """
+		func fib(n) {
+			if (n <= 1) {
+				return n
+			}
+
+			return fib(n - 2) + fib(n - 1)
+		}
+
+		var iterations = 3
+		var i = 0
+
+		while i <= iterations {
+			print(fib(i))
+			i = i + 1
+		}
+
+		func makeCounter() {
+			var count = 0
+
+			return func() {
+				count = count + 1
+				return count
+			}
+		}
+
+		let counter = makeCounter()
+		counter()
+		print(counter())
+
+		struct Person {
+			init() {}
+
+			func greet() {
+				print("sup")
+			}
+		}
+
+		var person = Person()
+		person.greet()
+		"""
+
+		let output = TestOutput()
+		_ = try run(source, output: output)
+
+		#expect(output.stdout == """
+		0
+		1
+		1
+		2
+		2
+		sup
+
+		""")
+	}
 }

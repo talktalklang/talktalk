@@ -139,12 +139,11 @@ public class CompilingModule {
 	//
 	// If the analysis says that we don't have a global by this name, return nil.
 	public func moduleFunctionOffset(for string: String) -> Int? {
-		for (symbol, info) in analysisModule.symbols {
-			if case .function(string, _) = symbol.kind {
-				return info.slot
-			}
+		if let symbol = analysisModule.moduleFunctions[string]?.symbol,
+			 let info = analysisModule.symbols[symbol] {
+			return info.slot
 		}
-		
+
 		return nil
 	}
 

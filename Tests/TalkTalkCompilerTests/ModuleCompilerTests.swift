@@ -44,6 +44,28 @@ struct ModuleCompilerTests: CompilerTest {
 		#expect(module.chunks.count == 6)
 	}
 
+	@Test("Handles global functions") func globalFunc() throws {
+		let (module, _) = try compile(name: "GlobalFuncs", [
+			.tmp("""
+			func foo() {
+				123
+			}
+
+			let a = foo()
+			""", "global.tlk")
+		])
+
+		let chunk = module.chunks.first(where: { $0.name == "global.tlk" })!
+
+		#expect(chunk.disassemble(in: module) == Instructions(
+			.op(.defClosure, line: 0, .closure(name: "foo", arity: 0, depth: 0)),
+			.op(.getModuleFunction, line: 4, .moduleFunction(slot: 0)),
+			.op(.call, line: 4),
+			.op(.setModuleValue, line: 4, .global(slot: 0)),
+			.op(.return, line: 0)
+		))
+	}
+
 	@Test("Can compile module global values") @MainActor func globalValues() throws {
 		let files: [ParsedSourceFile] = [
 			.tmp("""

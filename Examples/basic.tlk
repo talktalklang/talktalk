@@ -9,7 +9,7 @@ struct Person {
 var person = Person()
 person.greet()
 person
-
+ 
 let a = Array()
 
 

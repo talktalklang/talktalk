@@ -48,7 +48,8 @@ struct FuncExprAnalyzer {
 			context.define(
 				local: name.lexeme,
 				as: expr,
-				isMutable: false
+				isMutable: false,
+				isGlobal: environment.isModuleScope
 			)
 		}
 
