@@ -21,11 +21,7 @@ public struct Library {
 // Helpers
 public extension Library {
 	static var libraryURL: URL {
-		#if DEBUG
-			Bundle.module.resourceURL!
-		#else
-			URL.currentDirectory().appending(path: "Library")
-		#endif
+		Bundle.module.resourceURL!
 	}
 
 	// This is the standard library. It's kind of a big deal.
