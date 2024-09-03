@@ -13,6 +13,16 @@ public struct RawSemanticToken: Encodable, Equatable {
 	public let length: Int
 	public let tokenType: SemanticTokenTypes
 	public let modifiers: [SemanticTokenModifiers]
+
+	public init(lexeme: String, line: Int, position: Int, startChar: Int, length: Int, tokenType: SemanticTokenTypes, modifiers: [SemanticTokenModifiers]) {
+		self.lexeme = lexeme
+		self.line = line
+		self.position = position
+		self.startChar = startChar
+		self.length = length
+		self.tokenType = tokenType
+		self.modifiers = modifiers
+	}
 }
 
 struct RelativeSemanticToken: Equatable {
