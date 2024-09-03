@@ -28,10 +28,10 @@ public struct ModuleAnalyzer {
 		files: [ParsedSourceFile],
 		moduleEnvironment: [String: AnalysisModule],
 		importedModules: [AnalysisModule]
-	) {
+	) throws {
 		self.name = name
 		self.files = files
-		self.inferencer = Inferencer(imports: moduleEnvironment.values.map(\.inferenceContext))
+		self.inferencer = try Inferencer(imports: moduleEnvironment.values.map(\.inferenceContext))
 		self.environment = .topLevel(name, inferenceContext: inferencer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment

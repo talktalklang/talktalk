@@ -88,6 +88,9 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				.product(name: "OrderedCollections", package: "swift-collections")
+			],
+			resources: [
+				.copy("../../Library/Standard"),
 			]
 		),
 		.target(

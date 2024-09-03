@@ -16,7 +16,7 @@ struct ModuleAnalysisTests {
 		moduleEnvironment: [String: AnalysisModule] = [:],
 		_ files: [ParsedSourceFile]
 	) -> ModuleAnalyzer {
-		ModuleAnalyzer(
+		try! ModuleAnalyzer(
 			name: name,
 			files: files,
 			moduleEnvironment: moduleEnvironment,

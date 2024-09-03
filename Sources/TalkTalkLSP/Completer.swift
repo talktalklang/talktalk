@@ -27,9 +27,9 @@ actor Completer {
 		let lexer = Lexer(source)
 		var parser = Parser(lexer)
 		let parsed = parser.parse()
-		let context = Inferencer(imports: []).infer(parsed)
 
 		do {
+			let context = try Inferencer(imports: []).infer(parsed)
 			let environment = Environment(inferenceContext: context, symbolGenerator: .init(moduleName: "Completer", parent: nil)) // TODO: use module environment
 			let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 			lastSuccessfulExprs = analyzed

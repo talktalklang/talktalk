@@ -14,7 +14,7 @@ import Testing
 @MainActor
 struct CompleterTests {
 	func complete(_ request: Completion.Request, in string: String) async throws -> Set<Completion.Item> {
-		var analyzer = ModuleAnalyzer(
+		var analyzer = try ModuleAnalyzer(
 			name: "Testing",
 			files: [],
 			moduleEnvironment: [:],

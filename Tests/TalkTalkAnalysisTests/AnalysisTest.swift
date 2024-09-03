@@ -13,7 +13,7 @@ public protocol AnalysisTest {}
 
 public extension AnalysisTest {
 	func analyze(_ string: String) async throws -> AnalysisModule {
-		let analyzer = ModuleAnalyzer(
+		let analyzer = try ModuleAnalyzer(
 			name: "AnalysisTest",
 			files: [.tmp(string, "Analysis.tlk")],
 			moduleEnvironment: [:],

@@ -13,13 +13,13 @@ import Testing
 struct GenericsTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
 		let parsed = try! Parser.parse(.init(path: "genericstest.tlk", text: string))
-		let context = Inferencer(imports: []).infer(parsed)
+		let context = try! Inferencer(imports: []).infer(parsed)
 		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context)).last!
 	}
 
 	func asts(_ string: String) -> [any AnalyzedSyntax] {
 		let parsed = try! Parser.parse(.init(path: "genericstest.tlk", text: string))
-		let context = Inferencer(imports: []).infer(parsed)
+		let context = try! Inferencer(imports: []).infer(parsed)
 		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context))
 	}
 

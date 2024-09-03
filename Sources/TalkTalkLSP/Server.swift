@@ -29,19 +29,17 @@ public actor Server {
 	// Keep track of our files
 	var sources: [String: SourceDocument] = [:]
 
-	var stdlib: CompilationResult
 	var analyzer: ModuleAnalyzer
 	var analysis: AnalysisModule
 
 	init() async throws {
-		stdlib = try await StandardLibrary.compile(allowErrors: true)
 		Log.info("Compiled stdlib")
 
-		analyzer = ModuleAnalyzer(
+		analyzer = try ModuleAnalyzer(
 			name: "LSP",
 			files: [],
-			moduleEnvironment: ["Standard": stdlib.analysis],
-			importedModules: [stdlib.analysis]
+			moduleEnvironment: [:],
+			importedModules: []
 		)
 
 		analysis = try analyzer.analyze()
@@ -161,14 +159,13 @@ public actor Server {
 
 	func analyze() async {
 		do {
-			stdlib = try await StandardLibrary.compile(allowErrors: true)
 			Log.info("Compiled stdlib")
 
-			analyzer = ModuleAnalyzer(
+			analyzer = try ModuleAnalyzer(
 				name: "LSP",
 				files: analyzer.files,
-				moduleEnvironment: ["Standard": stdlib.analysis],
-				importedModules: [stdlib.analysis]
+				moduleEnvironment: [:],
+				importedModules: []
 			)
 
 			analysis = try analyzer.analyze()

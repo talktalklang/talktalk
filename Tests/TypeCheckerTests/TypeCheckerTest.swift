@@ -11,7 +11,7 @@ import TalkTalkSyntax
 protocol TypeCheckerTest {}
 extension TypeCheckerTest {
 	func infer(_ expr: [any Syntax], imports: [InferenceContext] = []) throws -> InferenceContext {
-		let inferencer = Inferencer(imports: imports)
+		let inferencer = try Inferencer(imports: imports)
 		return inferencer.infer(expr).solve().solveDeferred()
 	}
 }

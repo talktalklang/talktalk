@@ -13,9 +13,9 @@ public struct Inferencer {
 	let imports: [InferenceContext]
 	public let context: InferenceContext
 
-	public init(imports: [InferenceContext]) {
+	public init(imports: [InferenceContext]) throws {
 		// Prepend the standard library
-		let stdlib = try! Library.standard.paths.flatMap {
+		let stdlib = try Library.standard.paths.flatMap {
 			let source = try String(contentsOf: Library.standard.location.appending(path: $0), encoding: .utf8)
 			return try Parser.parse(.init(path: $0, text: source))
 		}
