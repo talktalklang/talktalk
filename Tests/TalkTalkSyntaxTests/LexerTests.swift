@@ -268,4 +268,9 @@ struct TalkTalkLexerTests {
 		var lexer = Lexer("-=")
 		#expect(lexer.collect().map(\.kind) == [.minusEquals, .eof])
 	}
+
+	@Test("n-1 is not a variable (found bug)") func nMinusOne() throws {
+		var lexer = Lexer("n-1")
+		#expect(lexer.collect().map(\.kind) == [.identifier, .minus, .int, .eof])
+	}
 }

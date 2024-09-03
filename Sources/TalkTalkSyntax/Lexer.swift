@@ -184,7 +184,7 @@ public struct Lexer {
 	}
 
 	mutating func identifier() -> Token {
-		while !isAtEnd, check(\.isLetter) || check(\.isNumber) || peek() == "-" || peek() == "_" {
+		while !isAtEnd, check(\.isLetter) || check(\.isNumber) || peek() == "_" {
 			advance()
 		}
 
