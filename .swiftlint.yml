@@ -1,0 +1,13 @@
+only_rules:
+  - force_cast
+  - force_try
+  - force_unwrapping
+  - custom_rules
+custom_rules:
+  fatal_error: # rule identifier
+    name: "No fatal error" # rule name. optional.
+    regex: "fatalError" # matching pattern
+excluded:
+  - Tests
+
+

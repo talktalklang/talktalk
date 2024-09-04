@@ -22,33 +22,30 @@ public protocol Disassemblable {
 }
 
 public extension Disassemblable {
-	func disassemble(in module: Module? = nil) -> [Instruction] {
+	func disassemble(in module: Module? = nil) throws -> [Instruction] {
 		let module = module ?? {
 			var stubModule = Module(name: "Stub", symbols: [:])
 			stubModule.chunks = if let chunk = self as? Chunk {
 				[
 					StaticChunk(chunk: chunk)
 				]
-			} else {
+			} else if let chunk = self as? StaticChunk {
 				[
-					self as! StaticChunk
+					chunk
 				]
+			} else {
+				[]
 			}
 			return stubModule
 		}()
 
 		var disassembler = Disassembler(chunk: self, module: module)
-		return disassembler.disassemble()
+		return try disassembler.disassemble()
 	}
 
-	@discardableResult func dump(in module: Module) -> String {
+	@discardableResult func dump(in module: Module) throws -> String {
 		var result = "[\(name) locals: \(localsCount), upvalues: \(upvalueCount)]\n"
-		result += disassemble(in: module).map(\.description).joined(separator: "\n") + "\n"
-
-//		for subchunk in subchunks {
-//			result += subchunk.dump()
-//		}
-
+		result += try disassemble(in: module).map(\.description).joined(separator: "\n") + "\n"
 		result += "\n"
 
 		FileHandle.standardError.write(Data(result.utf8))
@@ -80,6 +77,10 @@ extension StaticChunk: Disassemblable {
 
 extension Chunk: Disassemblable {}
 
+public enum DisassemblerError: Error {
+	case unknownOpcode(Byte)
+}
+
 public struct Disassembler<Chunk: Disassemblable> {
 	public var current = 0
 	let module: Module
@@ -90,17 +91,17 @@ public struct Disassembler<Chunk: Disassemblable> {
 		self.module = module
 	}
 
-	public mutating func disassemble() -> [Instruction] {
+	public mutating func disassemble() throws -> [Instruction] {
 		var result: [Instruction] = []
 
-		while let next = next() {
+		while let next = try next() {
 			result.append(next)
 		}
 
 		return result
 	}
 
-	public mutating func next() -> Instruction? {
+	public mutating func next() throws -> Instruction? {
 		if current == chunk.code.count {
 			return nil
 		}
@@ -108,7 +109,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 		let index = current++
 		let byte = chunk.code[index]
 		guard let opcode = Opcode(rawValue: byte) else {
-			fatalError("Unknown opcode: \(byte)")
+			throw DisassemblerError.unknownOpcode(byte)
 		}
 
 		switch opcode {

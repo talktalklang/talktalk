@@ -21,7 +21,9 @@ public struct Library {
 // Helpers
 public extension Library {
 	static var libraryURL: URL {
+		// swiftlint:disable force_unwrapping
 		Bundle.module.resourceURL!
+		// swiftlint:enable force_unwrapping
 	}
 
 	// This is the standard library. It's kind of a big deal.

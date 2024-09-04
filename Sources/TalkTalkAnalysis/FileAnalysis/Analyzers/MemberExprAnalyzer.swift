@@ -32,7 +32,7 @@ struct MemberExprAnalyzer: Analyzer {
 				inferenceType: type ?? .any,
 				wrapped: expr.cast(MemberExprSyntax.self),
 				environment: context,
-				receiverAnalyzed: receiver as! any AnalyzedExpr,
+				receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
 				memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
 				analysisErrors: [],
 				isMutable: true
@@ -43,7 +43,7 @@ struct MemberExprAnalyzer: Analyzer {
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
-			receiverAnalyzed: receiver as! any AnalyzedExpr,
+			receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
 			memberAnalyzed: member,
 			analysisErrors: [],
 			isMutable: member.isMutable

@@ -8,7 +8,7 @@
 import TalkTalkBytecode
 import TalkTalkSyntax
 
-struct FuncExprAnalyzer {
+struct FuncExprAnalyzer: Analyzer {
 	var expr: any FuncExpr
 	var visitor: SourceFileAnalyzer
 	var context: Environment
@@ -28,8 +28,9 @@ struct FuncExprAnalyzer {
 			context.withExitBehavior(.pop)
 		}
 
-		// Define parameters 
-		let params = try visitor.visit(expr.params.cast(ParamsExprSyntax.self), context) as! AnalyzedParamsExpr
+		// Define parameters
+		let syntax = try visitor.visit(expr.params.cast(ParamsExprSyntax.self), context)
+		let params = try cast(syntax, to: AnalyzedParamsExpr.self)
 		for param in params.paramsAnalyzed {
 			environment.define(parameter: param.name, as: param)
 		}
@@ -53,12 +54,14 @@ struct FuncExprAnalyzer {
 			)
 		}
 
-		return try AnalyzedFuncExpr(
+		let body = try expr.body.accept(visitor, environment)
+
+		return AnalyzedFuncExpr(
 			symbol: symbol,
 			type: type ?? .any,
-			wrapped: expr as! FuncExprSyntax,
-			analyzedParams: expr.params.accept(visitor, environment) as! AnalyzedParamsExpr,
-			bodyAnalyzed: expr.body.accept(visitor, environment) as! AnalyzedBlockStmt,
+			wrapped: try cast(expr, to: FuncExprSyntax.self),
+			analyzedParams: params,
+			bodyAnalyzed: try cast(params, to: AnalyzedBlockStmt.self),
 			analysisErrors: visitor.errors(for: expr, in: context.inferenceContext),
 			returnType: returns,
 			environment: environment

@@ -41,8 +41,9 @@ let package = Package(
 		)
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
-		.package(url: "https://github.com/apple/swift-collections.git", branch: "main")
+		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
+		.package(url: "https://github.com/apple/swift-collections", branch: "main"),
+		.package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.56.2")
 	],
 	targets: [
 		.executableTarget(
@@ -73,6 +74,9 @@ let package = Package(
 				"TalkTalkBytecode",
 				"TypeChecker",
 				.product(name: "OrderedCollections", package: "swift-collections")
+			],
+			plugins: [
+				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.target(
@@ -225,7 +229,7 @@ let package = Package(
 	]
 )
 
-#if !canImport(Testing)
+#if os(Linux)
 	package.dependencies.append(
 		.package(url: "https://github.com/apple/swift-testing", branch: "main")
 	)

@@ -106,7 +106,7 @@ public class REPLRunner: Copyable {
 //		vm.module.main =
 		vm.chunk = StaticChunk(chunk: chunk)
 
-		return vm.run()
+		return try vm.run()
 	}
 
 	public func run() async throws {

@@ -29,11 +29,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ExprStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let exprAnalyzed = try expr.expr.accept(self, context) as! any AnalyzedExpr
+		let exprAnalyzed = try expr.expr.accept(self, context)
 
 		return AnalyzedExprStmt(
-			wrapped: expr.cast(ExprStmtSyntax.self),
-			exprAnalyzed: exprAnalyzed,
+			wrapped: try cast(expr, to: ExprStmtSyntax.self),
+			exprAnalyzed: try castToAnyAnalyzedExpr(exprAnalyzed),
 			exitBehavior: context.exprStmtExitBehavior,
 			environment: context
 		)
@@ -67,14 +67,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			return AnalyzedUnaryExpr(
 				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
-				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
+				exprAnalyzed: try castToAnyAnalyzedExpr(exprAnalyzed),
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		case .minus:
 			return AnalyzedUnaryExpr(
 				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
-				exprAnalyzed: exprAnalyzed as! any AnalyzedExpr,
+				exprAnalyzed: try castToAnyAnalyzedExpr(exprAnalyzed),
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
@@ -84,11 +84,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: CallArgument, _ context: Environment) throws -> any AnalyzedSyntax {
-		try AnalyzedArgument(
+		AnalyzedArgument(
 			environment: context,
 			label: expr.label,
 			wrapped: expr.cast(CallArgument.self),
-			expr: expr.value.accept(self, context) as! any AnalyzedExpr
+			expr: try castToAnyAnalyzedExpr(expr.value.accept(self, context))
 		)
 	}
 
@@ -103,8 +103,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: DefExprSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
-		let receiver = try expr.receiver.accept(self, context) as! any AnalyzedExpr
+		let value = try castToAnyAnalyzedExpr(expr.value.accept(self, context))
+		let receiver = try castToAnyAnalyzedExpr(expr.receiver.accept(self, context))
 
 		var errors = errors(for: expr, in: context.inferenceContext)
 
@@ -112,7 +112,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedDefExpr(
 			inferenceType: .void,
-			wrapped: expr.cast(DefExprSyntax.self),
+			wrapped: try cast(expr, to: DefExprSyntax.self),
 			receiverAnalyzed: receiver,
 			analysisErrors: errors,
 			valueAnalyzed: value,
@@ -156,19 +156,28 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			if case let .structType(type) = binding.type {
 				if let module = binding.externalModule {
-					symbol = module.structs[type.name]!.symbol
+					symbol = module.structs[type.name]?.symbol
+					guard symbol != nil else {
+						throw AnalyzerError.symbolNotFound("expected symbol for struct: \(type.name)")
+					}
 				} else {
 					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
 				}
 			} else if case .function(_, _) = binding.type {
 				if let module = binding.externalModule {
-					symbol = module.moduleFunction(named: binding.name)!.symbol
+					symbol = module.moduleFunction(named: binding.name)?.symbol
+					guard symbol != nil else {
+						throw AnalyzerError.symbolNotFound("expected symbol for external function: \(binding.name)")
+					}
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
 			} else {
 				if let module = binding.externalModule {
-					symbol = module.values[expr.name]!.symbol
+					symbol = module.values[expr.name]?.symbol
+					guard symbol != nil else {
+						throw AnalyzerError.symbolNotFound("expected symbol for external value: \(binding)")
+					}
 				} else {
 					if binding.isGlobal {
 						symbol = context.symbolGenerator.value(expr.name, source: .internal)
@@ -178,7 +187,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			return AnalyzedVarExpr(
 				inferenceType: binding.type,
-				wrapped: expr.cast(VarExprSyntax.self),
+				wrapped: try cast(expr, to: VarExprSyntax.self),
 				symbol: symbol,
 				environment: context,
 				analysisErrors: [],
@@ -201,12 +210,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: BinaryExprSyntax, _ env: Environment) throws -> SourceFileAnalyzer.Value {
-		let lhs = try expr.lhs.accept(self, env) as! any AnalyzedExpr
-		let rhs = try expr.rhs.accept(self, env) as! any AnalyzedExpr
+		let lhs = try castToAnyAnalyzedExpr(expr.lhs.accept(self, env))
+		let rhs = try castToAnyAnalyzedExpr(expr.rhs.accept(self, env))
 
 		return AnalyzedBinaryExpr(
 			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
-			wrapped: expr.cast(BinaryExprSyntax.self),
+			wrapped: try cast(expr, to: BinaryExprSyntax.self),
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
 			environment: env
@@ -251,9 +260,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return try AnalyzedIfExpr(
 			inferenceType: expr.consequence.accept(self, context).inferenceType,
 			wrapped: expr.cast(IfExprSyntax.self),
-			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
-			consequenceAnalyzed: visit(expr.consequence.cast(BlockStmtSyntax.self), context) as! AnalyzedBlockStmt,
-			alternativeAnalyzed: visit(expr.alternative.cast(BlockStmtSyntax.self), context) as! AnalyzedBlockStmt,
+			conditionAnalyzed: try castToAnyAnalyzedExpr(expr.condition.accept(self, context)),
+			consequenceAnalyzed: try cast(visit(expr.consequence.cast(BlockStmtSyntax.self), context), to: AnalyzedBlockStmt.self),
+			alternativeAnalyzed: try cast(visit(expr.alternative.cast(BlockStmtSyntax.self), context), to: AnalyzedBlockStmt.self),
 			environment: context,
 			analysisErrors: errors
 		)
@@ -290,12 +299,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			return error(at: expr, "Could not determine lexical scope for init", environment: context, expectation: .none)
 		}
 
-		let paramsAnalyzed = try expr.params.accept(self, context) as! AnalyzedParamsExpr
-		let bodyAnalyzed = try expr.body.accept(self, context) as! AnalyzedBlockStmt
+		let paramsAnalyzed = try cast(expr.params.accept(self, context), to: AnalyzedParamsExpr.self)
+		let bodyAnalyzed = try cast(expr.body.accept(self, context), to: AnalyzedBlockStmt.self)
 
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
-			symbol: context.symbolGenerator.method(lexicalScope.scope.name!, "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
+			symbol: context.symbolGenerator.method(lexicalScope.scope.name ?? "<no name>", "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
@@ -334,8 +343,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		// TODO: Validate condition is bool
-		let condition = try expr.condition.accept(self, context) as! any AnalyzedExpr
-		let body = try visit(expr.body.cast(BlockStmtSyntax.self), context.withExitBehavior(.pop)) as! AnalyzedBlockStmt
+		let condition = try castToAnyAnalyzedExpr(expr.condition.accept(self, context))
+		let body = try cast(visit(expr.body.cast(BlockStmtSyntax.self), context.withExitBehavior(.pop)), to: AnalyzedBlockStmt.self)
 
 		return AnalyzedWhileStmt(
 			inferenceType: body.inferenceType,
@@ -422,10 +431,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 //			}
 		}
 
+		guard let declsAnalyzed = declsAnalyzed as? [any AnalyzedDecl] else {
+			throw AnalyzerError.unexpectedCast(expected: "[any AnalyzedDecl]", received: "\(declsAnalyzed)")
+		}
+
 		return AnalyzedDeclBlock(
 			inferenceType: .void,
 			wrapped: expr,
-			declsAnalyzed: declsAnalyzed as! [any AnalyzedDecl],
+			declsAnalyzed: declsAnalyzed,
 			environment: context
 		)
 	}
@@ -483,13 +496,20 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: IfStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		try AnalyzedIfStmt(
+		let alternativeAnalyzed: (any AnalyzedExpr)?
+		if let alternative = expr.alternative {
+			alternativeAnalyzed = try castToAnyAnalyzedExpr(alternative.accept(self, context))
+		} else {
+			alternativeAnalyzed = nil
+		}
+
+		return AnalyzedIfStmt(
 			wrapped: expr,
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
-			conditionAnalyzed: expr.condition.accept(self, context) as! any AnalyzedExpr,
-			consequenceAnalyzed: expr.consequence.accept(self, context) as! any AnalyzedExpr,
-			alternativeAnalyzed: expr.alternative?.accept(self, context) as? any AnalyzedExpr
+			conditionAnalyzed: try castToAnyAnalyzedExpr(expr.condition.accept(self, context)),
+			consequenceAnalyzed: try castToAnyAnalyzedExpr(expr.consequence.accept(self, context)),
+			alternativeAnalyzed: alternativeAnalyzed
 		)
 	}
 
@@ -506,9 +526,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ArrayLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		let exprsAnalyzed = try expr.exprs.map { try $0.accept(self, context) }
+
 		return AnalyzedArrayLiteralExpr(
 			environment: context,
-			exprsAnalyzed: try expr.exprs.map { try $0.accept(self, context) } as! [any AnalyzedExpr],
+			exprsAnalyzed: try cast(exprsAnalyzed, to: [any AnalyzedExpr].self),
 			wrapped: expr,
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			analysisErrors: []
@@ -520,7 +542,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let elementsAnalyzed = try expr.elements.map { try $0.accept(self, context) } as! [AnalyzedDictionaryElementExpr]
+		let elementsAnalyzed = try expr.elements.map {
+			try cast($0.accept(self, context), to: AnalyzedDictionaryElementExpr.self)
+		}
 
 		return AnalyzedDictionaryLiteralExpr(
 			elementsAnalyzed: elementsAnalyzed,
@@ -531,8 +555,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: DictionaryElementExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let key = try expr.key.accept(self, context) as! any AnalyzedExpr
-		let value = try expr.value.accept(self, context) as! any AnalyzedExpr
+		let key = try castToAnyAnalyzedExpr(expr.key.accept(self, context))
+		let value = try castToAnyAnalyzedExpr(expr.value.accept(self, context))
 		return AnalyzedDictionaryElementExpr(
 			keyAnalyzed: key,
 			valueAnalyzed: value,

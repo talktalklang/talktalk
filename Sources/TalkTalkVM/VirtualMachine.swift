@@ -69,9 +69,9 @@ public struct VirtualMachine {
 
 	// Upvalue linked list
 	var openUpvalues: Upvalue?
-	public static func run(module: Module, verbosity: Verbosity = .quiet, output: any OutputBuffer = DefaultOutputBuffer()) -> ExecutionResult {
+	public static func run(module: Module, verbosity: Verbosity = .quiet, output: any OutputBuffer = DefaultOutputBuffer()) throws -> ExecutionResult {
 		var vm = VirtualMachine(module: module, verbosity: verbosity, output: output)
-		return vm.run()
+		return try vm.run()
 	}
 
 	public init(
@@ -105,13 +105,13 @@ public struct VirtualMachine {
 		self.ip = 0
 	}
 
-	public mutating func run() -> ExecutionResult {
+	public mutating func run() throws -> ExecutionResult {
 		while true {
 			#if DEBUG
-				func dumpInstruction() -> Instruction? {
+				func dumpInstruction() throws -> Instruction? {
 					var disassembler = Disassembler(chunk: chunk, module: module)
 					disassembler.current = Int(ip)
-					if let instruction = disassembler.next() {
+					if let instruction = try disassembler.next() {
 						dumpStack()
 						instruction.dump()
 						return instruction
@@ -123,9 +123,9 @@ public struct VirtualMachine {
 				case .quiet:
 					()
 				case .verbose:
-					_ = dumpInstruction()
+					_ = try dumpInstruction()
 				case let .lineByLine(string):
-					if let i = dumpInstruction() {
+					if let i = try dumpInstruction() {
 						if i.line < string.components(separatedBy: .newlines).count {
 							let line = string.components(separatedBy: .newlines)[Int(i.line)]
 							FileHandle.standardError.write(Data(("       " + line + "\n").utf8))
@@ -732,9 +732,9 @@ public struct VirtualMachine {
 		return result
 	}
 
-	private mutating func dump() {
+	private mutating func dump() throws {
 		var disassembler = Disassembler(chunk: chunk, module: module)
-		for instruction in disassembler.disassemble() {
+		for instruction in try disassembler.disassemble() {
 			let prefix = instruction.offset == ip ? "> " : "  "
 			print(prefix + instruction.description)
 

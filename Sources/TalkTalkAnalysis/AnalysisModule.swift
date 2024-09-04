@@ -98,6 +98,8 @@ public struct AnalysisModule {
 
 public extension AnalysisModule {
 	static func empty(_ name: String) -> AnalysisModule {
+		// swiftlint:disable force_try
 		AnalysisModule(name: name, inferenceContext: try! Inferencer(imports: []).infer([]), files: [])
+		// swiftlint:enable force_try
 	}
 }
