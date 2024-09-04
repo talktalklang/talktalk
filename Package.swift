@@ -226,10 +226,6 @@ let package = Package(
 	]
 )
 
-for target in package.targets {
-	target.plugins = [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
-}
-
 #if os(Linux)
 	package.dependencies.append(
 		.package(url: "https://github.com/apple/swift-testing", branch: "main")

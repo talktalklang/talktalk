@@ -70,7 +70,7 @@ struct RelativeSemanticToken: Equatable {
 			lineDelta,
 			startDelta,
 			length,
-			SemanticTokensLegend.lookup(tokenType),
+			SemanticTokensLegend.lookup(tokenType) ?? -1,
 			0,
 		]
 	}
