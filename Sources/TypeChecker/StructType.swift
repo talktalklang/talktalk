@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 import Foundation
+import TalkTalkSyntax
 import OrderedCollections
 
 public struct StructType: Equatable, Hashable, CustomStringConvertible {

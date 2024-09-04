@@ -79,7 +79,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		default:
-			fatalError("unreachable")
+			throw AnalyzerError.typeNotInferred("")
 		}
 	}
 
@@ -459,7 +459,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let decl = AnalyzedVarDecl(
 			symbol: symbol,
+			// swiftlint:disable force_unwrapping
 			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			// swiftlint:enable force_unwrapping
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,
@@ -485,7 +487,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let decl = AnalyzedLetDecl(
 			symbol: symbol,
+			// swiftlint:disable force_unwrapping
 			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			// swiftlint:enable force_unwrapping
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
 			valueAnalyzed: try expr.value?.accept(self, context) as? any AnalyzedExpr,

@@ -79,6 +79,7 @@ public struct ModuleAnalyzer: Analyzer {
 				// Always make standard types available
 				for (name, structType) in module.structs {
 					analysisModule.structs[name] = ModuleStruct(
+						id: structType.id,
 						name: name,
 						symbol: structType.symbol,
 						location: structType.location,
@@ -115,7 +116,7 @@ public struct ModuleAnalyzer: Analyzer {
 			}
 		}
 
-		importSymbols(into: &analysisModule)
+		try importSymbols(into: &analysisModule)
 
 		// Once we've got globals established, we can go through and actually analyze
 		// all the files for the module. TODO: Also establish imports.
@@ -136,7 +137,7 @@ public struct ModuleAnalyzer: Analyzer {
 
 		// Now that we've walked the tree, we should make sure we're not missing any
 		// other symbols.
-		importSymbols(into: &analysisModule)
+		try importSymbols(into: &analysisModule)
 
 		for (symbol, info) in environment.symbolGenerator.symbols {
 			analysisModule.symbols[symbol] = info
@@ -145,10 +146,10 @@ public struct ModuleAnalyzer: Analyzer {
 		return analysisModule
 	}
 
-	private func importSymbols(into analysisModule: inout AnalysisModule) {
+	private func importSymbols(into analysisModule: inout AnalysisModule) throws {
 		for (symbol, binding) in environment.importedSymbols {
 			guard let module = binding.externalModule else {
-				fatalError("could not get module for symbol `\(name)`")
+				throw AnalyzerError.symbolNotFound("could not get module for symbol `\(name)`")
 			}
 
 			if case let .function(name, _) = symbol.kind {
@@ -172,6 +173,7 @@ public struct ModuleAnalyzer: Analyzer {
 								let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
+					id: structType.id,
 					name: name,
 					symbol: symbol,
 					location: binding.location,
@@ -182,7 +184,7 @@ public struct ModuleAnalyzer: Analyzer {
 					typeParameters: structType.typeParameters
 				)
 			} else {
-				fatalError("unhandled exported symbol: \(name)")
+				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
 			}
 		}
 	}
@@ -196,7 +198,7 @@ public struct ModuleAnalyzer: Analyzer {
 			} else if let structT = global as? ModuleStruct {
 				analysisModule.structs[structT.name] = structT
 			} else {
-				fatalError()
+				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
 			}
 		}
 	}
@@ -299,6 +301,7 @@ public struct ModuleAnalyzer: Analyzer {
 			let analyzedStructDecl = try cast(visitor.visit(syntax.cast(StructDeclSyntax.self), environment), to: AnalyzedStructDecl.self)
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
+				id: analyzedStructDecl.id,
 				name: name,
 				symbol: analyzedStructDecl.symbol,
 				location: syntax.location,

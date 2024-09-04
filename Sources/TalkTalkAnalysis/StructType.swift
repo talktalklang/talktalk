@@ -5,21 +5,25 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkSyntax
 import TalkTalkBytecode
 import OrderedCollections
 
 public class StructType {
+	public let id: SyntaxID
 	public let name: String?
 	public private(set) var properties: OrderedDictionary<String, Property>
 	public private(set) var methods: OrderedDictionary<String, Method>
 	public var typeParameters: [TypeParameter]
 
 	public init(
+		id: SyntaxID,
 		name: String? = nil,
 		properties: OrderedDictionary<String, Property>,
 		methods: OrderedDictionary<String, Method>,
 		typeParameters: [TypeParameter]
 	) {
+		self.id = id
 		self.name = name
 		self.properties = properties
 		self.methods = methods

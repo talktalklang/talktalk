@@ -21,6 +21,7 @@ struct StructDeclAnalyzer: Analyzer {
 		}
 
 		let structType = StructType(
+			id: decl.id,
 			name: decl.name,
 			properties: [:],
 			methods: [:],

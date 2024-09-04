@@ -23,7 +23,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if case let .structInstance(instance) = receiver.typeAnalyzed,
-			 let structType = context.lookupStruct(named: instance.type.name) {
+			 let structType = try context.lookupStruct(named: instance.type.name) {
 			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
 		}
 

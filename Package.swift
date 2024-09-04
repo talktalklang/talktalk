@@ -84,6 +84,9 @@ let package = Package(
 			dependencies: [],
 			resources: [
 				.copy("../../Library/Standard"),
+			],
+			plugins: [
+				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.target(
@@ -116,6 +119,9 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				.product(name: "OrderedCollections", package: "swift-collections")
+			],
+			plugins: [
+				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.target(
@@ -155,6 +161,9 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCore",
 				.product(name: "OrderedCollections", package: "swift-collections")
+			],
+			plugins: [
+				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.testTarget(

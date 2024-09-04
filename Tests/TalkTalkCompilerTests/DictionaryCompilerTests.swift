@@ -15,7 +15,7 @@ import TalkTalkCompiler
 		[123: 456, 321: 654]
 		""")
 
-		#expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
 			// Emit elements onto the stack
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.constant, line: 0, .constant(.int(456))),
@@ -33,7 +33,7 @@ import TalkTalkCompiler
 			"""
 		)
 
-		#expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
 			.op(.constant, line: 0, .constant(.int(789))),
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.constant, line: 0, .constant(.int(456))),
@@ -53,7 +53,7 @@ import TalkTalkCompiler
 			"""
 		)
 
-		#expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
 			.op(.constant, line: 0, .constant(.int(789))),
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.constant, line: 0, .constant(.int(456))),

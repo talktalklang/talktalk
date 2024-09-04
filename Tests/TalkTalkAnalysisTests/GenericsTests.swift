@@ -35,7 +35,7 @@ struct GenericsTests {
 		let structType = TypeChecker.StructType.extractType(from: .type(decl.typeAnalyzed))
 		#expect(structType?.name == "Wrapper")
 
-		let type = try #require(decl.environment.lookupStruct(named: "Wrapper"))
+		let type = try decl.environment.lookupStruct(named: "Wrapper")!
 		#expect(type.typeParameters.count == 1)
 	}
 

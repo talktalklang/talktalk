@@ -47,7 +47,11 @@ public class Environment {
 		self.importedModules = importedModules
 
 		if symbolGenerator.moduleName != "Standard" {
-			importStdlib()
+			do {
+				try importStdlib()
+			} catch {
+				print("Could not load standard library: \(error)")
+			}
 		}
 	}
 
@@ -223,11 +227,18 @@ public class Environment {
 		return nil
 	}
 
-	func importStdlib() {
+	func importStdlib() throws {
 			_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
 			_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
 			_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
 			_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
+
+		guard let arrayType = inferenceContext.namedVariables["Array"],
+					let stringType = inferenceContext.namedVariables["String"],
+					let intType = inferenceContext.namedVariables["Int"],
+					let dictType = inferenceContext.namedVariables["Dictionary"] else {
+			throw AnalyzerError.stdlibNotFound
+		}
 
 			if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
 				importBinding(
@@ -236,7 +247,7 @@ public class Environment {
 					binding: .init(
 						name: "Array",
 						location: [.synthetic(.identifier)],
-						type: inferenceContext.namedVariables["Array"]!,
+						type: arrayType,
 						externalModule: stdlib
 					)
 				)
@@ -247,7 +258,7 @@ public class Environment {
 					binding: .init(
 						name: "String",
 						location: [.synthetic(.identifier)],
-						type: inferenceContext.namedVariables["String"]!,
+						type: stringType,
 						externalModule: stdlib
 					)
 				)
@@ -258,7 +269,7 @@ public class Environment {
 					binding: .init(
 						name: "Int",
 						location: [.synthetic(.identifier)],
-						type: inferenceContext.namedVariables["Int"]!,
+						type: intType,
 						externalModule: stdlib
 					)
 				)
@@ -269,7 +280,7 @@ public class Environment {
 					binding: .init(
 						name: "Dictionary",
 						location: [.synthetic(.identifier)],
-						type: inferenceContext.namedVariables["Dictionary"]!,
+						type: dictType,
 						externalModule: stdlib
 					)
 				)
@@ -300,13 +311,17 @@ public class Environment {
 			_ = symbolGenerator.import(symbol, from: moduleName)
 		}
 
-	public func lookupStruct(named name: String) -> StructType? {
+	public func lookupStruct(named name: String) throws -> StructType? {
 		if let type = structTypes[name] {
 			return type
 		}
 
-		if let type = parent?.lookupStruct(named: name) {
+		if let type = try parent?.lookupStruct(named: name) {
 			return type
+		}
+
+		guard let binding = lookup(name) else {
+			throw AnalyzerError.typeNotInferred("No binding found for name: \(name)")
 		}
 
 		for module in lookupImportedModules() {
@@ -314,9 +329,10 @@ public class Environment {
 				importBinding(
 					as: structType.symbol,
 					from: module.name,
-					binding: lookup(name)!
+					binding: binding
 				)
 				return StructType(
+					id: structType.id,
 					name: name,
 					properties: structType.properties,
 					methods: structType.methods,

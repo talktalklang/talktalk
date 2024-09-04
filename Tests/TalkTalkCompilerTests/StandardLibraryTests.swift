@@ -18,7 +18,7 @@ struct StandardLibraryTests: CompilerTest {
 		let main = module.chunks[0]
 
 		// TODO: Something's weird here, this should all be in the value initializer
-		#expect(main.disassemble(in: module) == Instructions(
+		try #expect(main.disassemble(in: module) == Instructions(
 			.op(.constant, line: 0, .constant(.int(3))),
 			.op(.constant, line: 0, .constant(.int(2))),
 			.op(.constant, line: 0, .constant(.int(1))),
@@ -38,7 +38,7 @@ struct StandardLibraryTests: CompilerTest {
 		let main = module.chunks[0]
 
 		// TODO: Something's weird here, this should all be in the value initializer
-		#expect(main.disassemble(in: module) == Instructions(
+		try #expect(main.disassemble(in: module) == Instructions(
 			.op(.initArray, line: 0, .array(count: 0)),
 			.op(.setModuleValue, line: 0, .global(slot: 0)),
 			.op(.constant, line: 1, .constant(.int(123))),

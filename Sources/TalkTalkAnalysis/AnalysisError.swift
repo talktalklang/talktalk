@@ -12,6 +12,7 @@ public enum AnalyzerError: Error {
 	case unexpectedCast(expected: String, received: String)
 	case typeNotInferred(String)
 	case symbolNotFound(String)
+	case stdlibNotFound
 }
 
 public enum AnalysisErrorKind: Hashable {

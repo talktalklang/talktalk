@@ -502,7 +502,11 @@ struct InferenceVisitor: Visitor {
 			typeContext.typeParameters.append(typeVar)
 
 			// Add this type to the struct's named variables for resolution
-			structContext.defineVariable(named: typeParameter.identifier.lexeme, as: .typeVar(typeVar), at: typeParameter.location)
+			structContext.defineVariable(
+				named: typeParameter.identifier.lexeme,
+				as: .typeVar(typeVar),
+				at: typeParameter.location
+			)
 
 			try visit(typeParameter, structContext)
 		}

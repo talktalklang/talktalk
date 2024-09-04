@@ -57,7 +57,7 @@ struct ModuleCompilerTests: CompilerTest {
 
 		let chunk = module.chunks.first(where: { $0.name == "global.tlk" })!
 
-		#expect(chunk.disassemble(in: module) == Instructions(
+		try #expect(chunk.disassemble(in: module) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "foo", arity: 0, depth: 0)),
 			.op(.getModuleFunction, line: 4, .moduleFunction(slot: 0)),
 			.op(.call, line: 4),
@@ -135,7 +135,7 @@ struct ModuleCompilerTests: CompilerTest {
 
 		let initChunk = structDef.methods[0]
 
-		#expect(initChunk.disassemble(in: module) == Instructions(
+		#expect(try initChunk.disassemble(in: module) == Instructions(
 			.op(.getLocal, line: 4, .local(slot: 1, name: "age")),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),
@@ -163,7 +163,7 @@ struct ModuleCompilerTests: CompilerTest {
 
 		// Get the actual code, not the synthesized main
 		let mainChunk = module.chunks[1]
-		#expect(mainChunk.disassemble(in: module) == Instructions(
+		try #expect(mainChunk.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 8, .struct(slot: 4)),
 			.op(.call, line: 8),
 			.op(.setModuleValue, line: 8, .global(slot: 1)),
@@ -176,7 +176,7 @@ struct ModuleCompilerTests: CompilerTest {
 		#expect(structDef.methods.count == 1)
 
 		let initChunk = structDef.methods[0]
-		#expect(initChunk.disassemble() == Instructions(
+		try #expect(initChunk.disassemble() == Instructions(
 			.op(.constant, line: 4, .constant(.int(123))),
 			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
 			.op(.setProperty, line: 4, .property(slot: 0)),

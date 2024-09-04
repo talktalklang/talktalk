@@ -12,6 +12,7 @@ import OrderedCollections
 // Module structs are type level structs that can be shared across
 // module boundaries.
 public struct ModuleStruct: ModuleGlobal {
+	public let id: SyntaxID
 	public var name: String
 	public var symbol: Symbol
 	public var location: SourceLocation

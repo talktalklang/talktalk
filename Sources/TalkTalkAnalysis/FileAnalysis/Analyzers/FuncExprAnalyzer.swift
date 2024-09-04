@@ -15,8 +15,8 @@ struct FuncExprAnalyzer: Analyzer {
 
 	func analyze() throws -> any AnalyzedSyntax {
 		let symbol: Symbol
-		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.method(scope.scope.name!, expr.autoname, parameters: [], source: .internal)
+		if let scope = context.lexicalScope, let name = scope.scope.name {
+			symbol = context.symbolGenerator.method(name, expr.autoname, parameters: [], source: .internal)
 		} else {
 			symbol = context.symbolGenerator.function(expr.autoname, parameters: [], source: .internal)
 		}
@@ -61,7 +61,7 @@ struct FuncExprAnalyzer: Analyzer {
 			type: type ?? .any,
 			wrapped: try cast(expr, to: FuncExprSyntax.self),
 			analyzedParams: params,
-			bodyAnalyzed: try cast(params, to: AnalyzedBlockStmt.self),
+			bodyAnalyzed: try cast(body, to: AnalyzedBlockStmt.self),
 			analysisErrors: visitor.errors(for: expr, in: context.inferenceContext),
 			returnType: returns,
 			environment: environment
