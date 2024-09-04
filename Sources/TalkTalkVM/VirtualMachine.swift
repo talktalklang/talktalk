@@ -29,7 +29,7 @@ public struct VirtualMachine {
 	var chunk: StaticChunk
 
 	// The frames stack
-	var frames: DebugStack<CallFrame>
+	var frames: Stack<CallFrame>
 	{
 		willSet {
 			#if DEBUG
@@ -62,7 +62,7 @@ public struct VirtualMachine {
 	var currentFrame: CallFrame
 
 	// The stack
-	var stack: DebugStack<Value>
+	var stack: Stack<Value>
 
 	// A fake heap
 	var heap = Heap()
@@ -92,8 +92,8 @@ public struct VirtualMachine {
 			throw VirtualMachineError.mainNotFound("no entrypoint found for module `\(module.name)`")
 		}
 
-		self.stack = DebugStack<Value>(capacity: 256)
-		self.frames = DebugStack<CallFrame>(capacity: 256)
+		self.stack = Stack<Value>(capacity: 256)
+		self.frames = Stack<CallFrame>(capacity: 256)
 
 		// Reserving this space
 		stack.push(.reserved)
@@ -111,6 +111,8 @@ public struct VirtualMachine {
 	}
 
 	public mutating func run() throws -> ExecutionResult {
+		let start = Date()
+
 		while true {
 			#if DEBUG
 				func dumpInstruction() throws -> Instruction? {
@@ -177,7 +179,7 @@ public struct VirtualMachine {
 						}
 					}
 
-					return .ok(result)
+					return .ok(result, Date().timeIntervalSince(start))
 				}
 
 				// Push the result back onto the stack
@@ -186,7 +188,7 @@ public struct VirtualMachine {
 				// Return to where we called from
 				ip = calledFrame.returnTo
 			case .suspend:
-				return try .ok(stack.peek())
+				return try .ok(stack.peek(), Date().timeIntervalSince(start))
 			case .constant:
 				let value = readConstant()
 				stack.push(value)
@@ -252,27 +254,41 @@ public struct VirtualMachine {
 
 					stack.push(.pointer(pointer))
 				default:
-					return runtimeError("Cannot add \(lhsValue) to \(rhsValue) operands")
+					return runtimeError("Cannot add \(lhsValue) & \(rhsValue) operands")
 				}
 			case .subtract:
-				guard let lhs = try stack.pop().intValue,
-				      let rhs = try stack.pop().intValue
+				let lhs = try stack.pop()
+				let rhs = try stack.pop()
+
+				guard let lhs = lhs.intValue,
+				      let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot subtract none int operands")
+					return runtimeError("Cannot subtract \(lhs) & \(rhs) operands")
 				}
 				stack.push(.int(lhs - rhs))
 			case .divide:
-				guard let lhs = try stack.pop().intValue,
-				      let rhs = try stack.pop().intValue
+				let lhs = try stack.pop()
+				let rhs = try stack.pop()
+
+				guard let lhs = lhs.intValue,
+				      let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot divide none int operands")
+					return runtimeError("Cannot divide \(lhs) & \(rhs) operands")
 				}
+
+				if rhs == 0 {
+					return runtimeError("Cannot divide by zero.")
+				}
+
 				stack.push(.int(lhs / rhs))
 			case .multiply:
-				guard let lhs = try stack.pop().intValue,
-				      let rhs = try stack.pop().intValue
+				let lhs = try stack.pop()
+				let rhs = try stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
 				else {
-					return runtimeError("Cannot multiply none int operands")
+					return runtimeError("Cannot multiply \(lhs) & \(rhs) operands")
 				}
 				stack.push(.int(lhs * rhs))
 			case .less:

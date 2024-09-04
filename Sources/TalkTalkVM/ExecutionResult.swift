@@ -6,6 +6,7 @@
 //
 
 import TalkTalkBytecode
+import Foundation
 
 public extension VirtualMachine {
 	enum ExecutionResult: Sendable {
@@ -17,7 +18,7 @@ public extension VirtualMachine {
 			case error(String)
 		}
 
-		case ok(Value), error(String)
+		case ok(Value, TimeInterval), error(String)
 
 		public func error() -> String? {
 			switch self {
@@ -30,7 +31,7 @@ public extension VirtualMachine {
 
 		public func get() throws -> Value {
 			switch self {
-			case let .ok(value):
+			case let .ok(value, _):
 				return value
 			case let .error(string):
 				throw Error.error(string)

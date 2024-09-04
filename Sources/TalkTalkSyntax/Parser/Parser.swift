@@ -20,7 +20,7 @@ struct SourceLocationStack {
 }
 
 public struct Parser {
-	enum ParserError: Error {
+	public enum ParserError: Error {
 		case couldNotParse([SyntaxError])
 	}
 

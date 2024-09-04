@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct SourceFile {
+public struct SourceFile: Sendable {
 	public let path: String
 	public let text: String
 

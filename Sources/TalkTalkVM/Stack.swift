@@ -148,27 +148,35 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
-	@discardableResult mutating func pop() -> Element {
-		storage.withUnsafeMutablePointers {
+	@discardableResult mutating func pop() throws -> Element {
+		if size == 0 {
+			throw VirtualMachineError.stackImbalance("Cannot pop empty stack")
+		}
+
+		return storage.withUnsafeMutablePointers {
 			size -= 1
 			return ($1 + size).pointee
 		}
 	}
 
 //	@inline(__always)
-	func peek(offset: Int = 0) -> Element {
-		storage.withUnsafeMutablePointers {
+	func peek(offset: Int = 0) throws -> Element {
+		if size - 1 - offset < 0 {
+			throw VirtualMachineError.stackImbalance("Cannot peek offset: \(offset)")
+		}
+
+		return storage.withUnsafeMutablePointers {
 			($1 + size - 1 - offset).pointee
 		}
 	}
 
 	@inline(__always)
-	mutating func pop(count: Int) -> [Element] {
-		(size - count ..< size).map { _ in pop() }
+	mutating func pop(count: Int) throws -> [Element] {
+		try (size - count ..< size).map { _ in try pop() }
 	}
 
 	@inline(__always)
-	func last(count: Int) -> [Element] {
-		(0 ..< size).map { i in peek(offset: count - i) }
+	func last(count: Int) throws -> [Element] {
+		try (0 ..< size).map { i in try peek(offset: count - i) }
 	}
 }
