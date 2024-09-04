@@ -7,7 +7,7 @@
 
 public extension Parser {
 	mutating func letVarDecl(_ kind: Token.Kind) -> any Decl {
-		let token = previous!
+		let token = previous.unsafelyUnwrapped
 
 		let i = startLocation(at: previous)
 
@@ -49,8 +49,8 @@ public extension Parser {
 	}
 
 	mutating func _init() -> Decl {
-		let i = startLocation(at: previous!)
-		let initToken = previous!
+		let i = startLocation(at: previous.unsafelyUnwrapped)
+		let initToken = previous.unsafelyUnwrapped
 		skip(.newline)
 		consume(.leftParen, "expected '(' before params")
 
@@ -90,7 +90,7 @@ public extension Parser {
 	}
 
 	mutating func structDecl() -> any Syntax {
-		let structToken = previous!
+		let structToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
 		guard let name = consume(.identifier) else {
@@ -128,7 +128,7 @@ public extension Parser {
 	}
 
 	mutating func protocolDecl() -> any Syntax {
-		let protocolToken = previous!
+		let protocolToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: protocolToken)
 
 		guard let name = consume(.identifier) else {

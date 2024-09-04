@@ -218,7 +218,11 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func childInstanceContext(withSelf: TypeVariable) -> InferenceContext {
 		assert(instanceContext == nil, "trying to instantiate an instance context when we're already in one")
-		assert(typeContext != nil, "trying to instantiate an instance context without type")
+		guard let typeContext else {
+			// swiftlint:disable fatal_error
+			fatalError("trying to instantiate an instance context without type")
+			// swiftlint:enable fatal_error
+		}
 
 		let instanceContext = InstanceContext()
 
@@ -227,7 +231,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext!,
+			typeContext: typeContext,
 			instanceContext: instanceContext
 		)
 	}
@@ -320,6 +324,14 @@ public class InferenceContext: CustomDebugStringConvertible {
 		substitutions.first(where: { variable, _ in variable.name == name })?.value
 	}
 
+	func get(_ syntax: any Syntax) throws -> InferenceResult {
+		guard let result = self[syntax] else {
+			throw InferencerError.typeNotInferred("Expected inferred type for \(syntax)")
+		}
+
+		return result
+	}
+
 	// Look up inference results for a particular syntax node
 	subscript(syntax: any Syntax) -> InferenceResult? {
 		get {
@@ -373,7 +385,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func bind(typeVar: TypeVariable, to type: InferenceType) {
 		guard .typeVar(typeVar) != type else {
-			fatalError("cannot bind type var to itself")
+			print("cannot bind type var to itself")
+			return
 		}
 
 		substitutions[typeVar] = type

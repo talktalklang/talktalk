@@ -30,8 +30,8 @@ extension Parser {
 				break
 			}
 
-			if let infix = current.kind.rule.infix, lhs != nil {
-				lhs = infix(&self, precedence.canAssign, lhs!)
+			if let infix = current.kind.rule.infix, let prevLHS = lhs {
+				lhs = infix(&self, precedence.canAssign, prevLHS)
 
 				if check(.newline) {
 					break
@@ -48,7 +48,7 @@ extension Parser {
 
 	mutating func grouping(_: Bool) -> any Expr {
 		guard consume(.leftParen) != nil else {
-			fatalError()
+			return error(at: current, .unexpectedToken(expected: .leftParen, got: current), expectation: .none)
 		}
 
 		let expr = parse(precedence: .assignment)
@@ -66,7 +66,7 @@ extension Parser {
 		let i = startLocation()
 		advance()
 
-		let op = previous!
+		let op = previous.unsafelyUnwrapped
 		let expr = parse(precedence: .unary)
 
 		return UnaryExprSyntax(id: nextID(), op: op.kind, expr: expr, location: endLocation(i))
@@ -106,7 +106,7 @@ extension Parser {
 	}
 
 	mutating func funcSignatureDecl() -> FuncSignatureDeclSyntax {
-		let funcToken = previous!
+		let funcToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
 		// Grab the name if there is one
@@ -147,7 +147,7 @@ extension Parser {
 	}
 
 	mutating func funcExpr() -> any Expr {
-		let funcToken = previous!
+		let funcToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
 		// Grab the name if there is one
@@ -228,7 +228,13 @@ extension Parser {
 		consume(.rightBracket, "expected ']' after \(isDictionary ? "dictionary" : "array") literal")
 
 		let literal: any Expr = if isDictionary {
-			DictionaryLiteralExprSyntax(id: nextID(), elements: exprs as! [any DictionaryElementExpr], location: endLocation(i))
+			DictionaryLiteralExprSyntax(
+				id: nextID(),
+				// swiftlint:disable force_cast
+				elements: exprs as! [any DictionaryElementExpr],
+				// swiftlint:enable force_cast
+				location: endLocation(i)
+			)
 		} else {
 			ArrayLiteralExprSyntax(id: nextID(), exprs: exprs, location: endLocation(i))
 		}
@@ -268,15 +274,15 @@ extension Parser {
 
 	mutating func returning(_: Bool) -> any Stmt {
 		let i = startLocation(at: previous)
+		let returnToken = previous.unsafelyUnwrapped
 
-		let returnToken = previous!
 		let value = parse(precedence: .none)
 
 		return ReturnStmtSyntax(id: nextID(), returnToken: returnToken, location: endLocation(i), value: value)
 	}
 
 	mutating func structExpr(_: Bool) -> StructExpr {
-		let structToken = consume(.struct)!
+		let structToken = consume(.struct).unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
 		let name = match(.identifier)
@@ -470,7 +476,9 @@ extension Parser {
 		case .greaterEqual: .greaterEqual
 		case .is: .is
 		default:
+			// swiftlint:disable fatal_error
 			fatalError("unreachable")
+			// swiftlint:disable fatal_error
 		}
 
 		advance()
@@ -484,7 +492,7 @@ extension Parser {
 
 	mutating func typeExpr() -> TypeExprSyntax {
 		let typeID = consume(.identifier)
-		let i = startLocation(at: previous!)
+		let i = startLocation(at: previous.unsafelyUnwrapped)
 
 		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {

@@ -9,7 +9,11 @@ struct TextDocumentDidChange {
 	var request: Request
 
 	func handle(_ server: Server) async {
-		let params = request.params as! TextDocumentDidChangeRequest
+		guard let params = request.params as? TextDocumentDidChangeRequest else {
+			Log.error("Could not parse TextDocumentDidChangeRequest params")
+			return
+		}
+
 		let source = if let source = await server.sources[params.textDocument.uri] {
 			source
 		} else {

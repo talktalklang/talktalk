@@ -13,7 +13,7 @@ actor LSPRequestParser {
 	var currentLength: [UInt8] = []
 	var currentBody: [UInt8] = []
 
-	let contentLengthArray = Array("Content-Length: ").map { $0.asciiValue! }
+	let contentLengthArray = Array("Content-Length: ").map { $0.asciiValue ?? 0 }
 	let cr: UInt8 = 13
 	let newline: UInt8 = 10
 
@@ -67,7 +67,9 @@ actor LSPRequestParser {
 	// We need to listen for \n\r\n because the first \r was handled in length
 	func split(byte: UInt8) async {
 		if current == 3 {
+			// swiftlint:disable force_unwrapping
 			let contentLength = Int(String(data: Data(currentLength), encoding: .ascii)!)!
+			// swiftlint:enable force_unwrapping
 			state = .body(contentLength)
 			current = -1
 			await body(byte: byte, contentLength: contentLength)

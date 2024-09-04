@@ -175,7 +175,9 @@ public struct Parser {
 			var type: TypeExprSyntax? = nil
 
 			if didMatch(.colon), let typeID = consume(.identifier) {
+				// swiftlint:disable force_unwrapping
 				let i = startLocation(at: previous!)
+				// swiftlint:enable force_unwrapping
 
 				var typeParameters: [TypeExprSyntax] = []
 				if didMatch(.less) {
@@ -210,7 +212,7 @@ public struct Parser {
 			var name: Token?
 
 			if check(.identifier), checkNext(.colon) {
-				let identifier = consume(.identifier)!
+				let identifier = consume(.identifier).unsafelyUnwrapped
 				consume(.colon)
 				name = identifier
 			}
@@ -345,7 +347,8 @@ public struct Parser {
 
 	mutating func endLocation(_ stackSize: Int) -> SourceLocation {
 		guard let start = locationStack.pop() else {
-			fatalError("Did not start location!")
+			print("Did not start location!")
+			return [.synthetic(.bang)]
 		}
 
 		if locationStack.locations.count != stackSize {

@@ -24,7 +24,10 @@ struct TextDocumentFormatting {
 	}
 
 	func handle(_ server: Server) async {
-		let params = request.params as! TextDocumentFormattingRequest
+		guard let params = request.params as? TextDocumentFormattingRequest else {
+			Log.error("Could not parse TextDocumentFormattingRequest params")
+			return
+		}
 
 		var source = await server.sources[params.textDocument.uri]
 		if source == nil {

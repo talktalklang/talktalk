@@ -7,7 +7,7 @@
 
 extension Parser {
 	mutating func ifStmt() -> any Stmt {
-		let ifToken = previous!
+		let ifToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: ifToken)
 		let condition = expr()
 		let consequence = blockStmt(false)
@@ -32,7 +32,7 @@ extension Parser {
 	}
 
 	mutating func whileStmt() -> any Stmt {
-		let whileToken = previous!
+		let whileToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: whileToken)
 
 		skip(.newline)
@@ -44,7 +44,7 @@ extension Parser {
 	}
 
 	mutating func importStmt() -> any Stmt {
-		let importToken = previous!
+		let importToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: importToken)
 
 		guard let name = consume(.identifier) else {

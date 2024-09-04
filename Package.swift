@@ -74,9 +74,6 @@ let package = Package(
 				"TalkTalkBytecode",
 				"TypeChecker",
 				.product(name: "OrderedCollections", package: "swift-collections")
-			],
-			plugins: [
-				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.target(
@@ -84,9 +81,6 @@ let package = Package(
 			dependencies: [],
 			resources: [
 				.copy("../../Library/Standard"),
-			],
-			plugins: [
-				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.target(
@@ -119,9 +113,6 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				.product(name: "OrderedCollections", package: "swift-collections")
-			],
-			plugins: [
-				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.target(
@@ -161,9 +152,6 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCore",
 				.product(name: "OrderedCollections", package: "swift-collections")
-			],
-			plugins: [
-				.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
 			]
 		),
 		.testTarget(
@@ -237,6 +225,10 @@ let package = Package(
 		)
 	]
 )
+
+for target in package.targets {
+	target.plugins = [.plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")]
+}
 
 #if os(Linux)
 	package.dependencies.append(

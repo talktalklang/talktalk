@@ -40,7 +40,13 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		let context = parentContext.childTypeContext()
 
 		self.context = context
-		self.typeContext = context.typeContext!
+
+		guard let typeContext = context.typeContext else {
+			// swiftlint:disable fatal_error
+			fatalError("Could not get type context for context: \(context)")
+			// swiftlint:enable fatal_error
+		}
+		self.typeContext = typeContext
 
 		context.defineVariable(named: "self", as: .selfVar(self), at: [.synthetic(.struct)])
 	}

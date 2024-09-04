@@ -82,17 +82,17 @@ struct InferenceVisitor: Visitor {
 		if let typeDecl = expr.typeDecl, expr.name?.lexeme != "init" {
 			try typeDecl.accept(self, context)
 			let inferredReturnType = returnType
-			let explicitReturnType = memberTypeFrom(expr: typeDecl, in: context)
+			let explicitReturnType = try memberTypeFrom(expr: typeDecl, in: context)
 			returnType = .type(explicitReturnType)
 			context.addConstraint(.equality(inferredReturnType, returnType, at: typeDecl.location))
 		}
 
-		let funcType = InferenceResult.scheme(
+		let funcType = try InferenceResult.scheme(
 			Scheme(
 				name: expr.name?.lexeme,
 				variables: variables,
 				type: .function(
-					expr.params.params.map { childContext[$0]!.asType! },
+					expr.params.params.map { try childContext.get($0).asType(in: childContext) },
 					returnType.asType(in: childContext)
 				)
 			)
@@ -121,11 +121,12 @@ struct InferenceVisitor: Visitor {
 
 		switch (typeExpr, value) {
 		case let (typeExpr, value) where typeExpr != nil && value != nil:
+			// swiftlint:disable force_unwrapping
 			type = typeExpr!
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]) \(type) == \(value!)", prefix: " @ ")
 			context.constraints.add(.equality(typeExpr!, value!, at: expr.location))
 		case let (typeExpr, nil) where typeExpr != nil:
-			type = .type(memberTypeFrom(expr: expr.typeExpr!, in: context))
+			type = try .type(memberTypeFrom(expr: expr.typeExpr!, in: context))
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]), already has type specified: \(type)", prefix: " @ ")
 		case let (nil, value) where value != nil:
 			type = value!
@@ -134,6 +135,7 @@ struct InferenceVisitor: Visitor {
 			let typeVar: InferenceType = context.freshTypeVariable(expr.name + " [decl]", file: #file, line: #line)
 			type = .type(typeVar)
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]) \(type) == \(typeVar)", prefix: " @ ")
+			// swiftlint:enable force_unwrapping
 		}
 
 		context.defineVariable(named: expr.name, as: type.asType(in: context), at: expr.location)
@@ -142,7 +144,7 @@ struct InferenceVisitor: Visitor {
 
 	// Return a type from a type expression, suitable for an instance member. This can include things
 	// like generic parameter substitutions.
-	func memberTypeFrom(expr: any TypeExpr, in context: InferenceContext) -> InferenceType {
+	func memberTypeFrom(expr: any TypeExpr, in context: InferenceContext) throws -> InferenceType {
 		let type: InferenceType
 		switch expr.identifier.lexeme {
 		case "int":
@@ -161,7 +163,7 @@ struct InferenceVisitor: Visitor {
 				var substitutions: [TypeVariable: InferenceType] = [:]
 
 				for (typeParam, paramSyntax) in zip(structType.typeContext.typeParameters, expr.genericParams) {
-					try! visit(paramSyntax, context)
+					try visit(paramSyntax, context)
 					substitutions[typeParam] = context[paramSyntax]?.asType(in: context)
 				}
 
@@ -175,7 +177,7 @@ struct InferenceVisitor: Visitor {
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
 			default:
-				fatalError("cannot use \(found) as type expression")
+				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
 		}
 
@@ -184,7 +186,7 @@ struct InferenceVisitor: Visitor {
 
 	// Get a type from a type expression. Note that this might ignore things like generic parameters
 	// in order to return a canonical form.
-	func typeFrom(expr: any TypeExpr, in context: InferenceContext) -> InferenceType {
+	func typeFrom(expr: any TypeExpr, in context: InferenceContext) throws -> InferenceType {
 		let type: InferenceType
 		switch expr.identifier.lexeme {
 		case "int":
@@ -203,14 +205,14 @@ struct InferenceVisitor: Visitor {
 			switch found {
 			case let .structType(structType):
 				for paramSyntax in expr.genericParams {
-					try! visit(paramSyntax, context)
+					try visit(paramSyntax, context)
 				}
 
 				type = .structType(structType)
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
 			default:
-				fatalError("cannot use \(found) as type expression")
+				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
 		}
 
@@ -242,8 +244,8 @@ struct InferenceVisitor: Visitor {
 			try arg.accept(self, context)
 		}
 
-		let callee = context[expr.callee]!
-		let args = expr.args.map { context[$0]! }
+		let callee = try context.get(expr.callee)
+		let args = try expr.args.map { try context.get($0) }
 		let returns = InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 
 		context.constraints.add(
@@ -257,15 +259,15 @@ struct InferenceVisitor: Visitor {
 		try expr.receiver.accept(self, context)
 		try expr.value.accept(self, context)
 
-		context.constraints.add(
-			.equality(context[expr.receiver]!, context[expr.value]!, at: expr.location)
+		try context.constraints.add(
+			.equality(context.get(expr.receiver), context.get(expr.value), at: expr.location)
 		)
 
 		context.extend(expr, with: .type(.void))
 	}
 
 	func visit(_ expr: IdentifierExprSyntax, _ context: InferenceContext) throws {
-		fatalError("TODO")
+		// Nothing to do here since it's handled in var expr.
 	}
 
 	func visit(_ expr: LiteralExprSyntax, _ context: InferenceContext) throws {
@@ -300,7 +302,7 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: UnaryExprSyntax, _ context: InferenceContext) throws {
 		try expr.expr.accept(self, context)
-		context.extend(expr, with: context[expr.expr]!)
+		try context.extend(expr, with: context.get(expr.expr))
 	}
 
 	func visit(_ expr: BinaryExprSyntax, _ context: InferenceContext) throws {
@@ -338,11 +340,11 @@ struct InferenceVisitor: Visitor {
 		try expr.consequence.accept(self, context)
 		try expr.alternative.accept(self, context)
 
-		context.addConstraint(
-			.equality(context[expr.consequence]!, context[expr.alternative]!, at: expr.location)
+		try context.addConstraint(
+			.equality(context.get(expr.consequence), context.get(expr.alternative), at: expr.location)
 		)
 
-		context.extend(expr, with: context[expr.consequence]!)
+		try context.extend(expr, with: context.get(expr.consequence))
 	}
 
 	func visit(_ expr: WhileStmtSyntax, _ context: InferenceContext) throws {
@@ -379,7 +381,7 @@ struct InferenceVisitor: Visitor {
 		var type: InferenceType
 
 		if let typeExpr = expr.type {
-			type = typeFrom(expr: typeExpr, in: context)
+			type = try typeFrom(expr: typeExpr, in: context)
 		} else {
 			type = .typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line))
 		}
@@ -394,7 +396,7 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: CallArgument, _ context: InferenceContext) throws {
 		try expr.value.accept(self, context)
-		context.extend(expr, with: context[expr.value]!)
+		try context.extend(expr, with: context.get(expr.value))
 	}
 
 	func visit(_ expr: StructExprSyntax, _ context: InferenceContext) throws {
@@ -423,40 +425,40 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws {
 		try expr.receiver.accept(self, context)
-		let returns: InferenceType?
+		let returns: InferenceType
 
 		switch context[expr.receiver] {
 //		case let .type(.structInstance(receiver)):
 //			returns = receiver.member(named: expr.property)!
 		case let .type(.structType(structType)):
-			returns = structType.member(named: expr.property)?.asType(in: context)
-
-			guard returns != nil else {
+			guard let member = structType.member(named: expr.property)?.asType(in: context) else {
 				context.addError(.memberNotFound(structType, expr.property), to: expr)
 				return
 			}
+
+			returns = member
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
 
-		context.constraints.add(
+		try context.constraints.add(
 			MemberConstraint(
-				receiver: context[expr.receiver]!,
+				receiver: context.get(expr.receiver),
 				name: expr.property,
-				type: .type(returns!),
+				type: .type(returns),
 				location: expr.location
 			)
 		)
 
-		context.extend(expr, with: .type(returns!))
+		context.extend(expr, with: .type(returns))
 	}
 
 	func visit(_ expr: ReturnStmtSyntax, _ context: InferenceContext) throws {
 		try expr.value?.accept(self, context)
 
 		if let value = expr.value {
-			context.trackReturn(context[value]!)
-			context.extend(expr, with: context[value]!)
+			try context.trackReturn(context.get(value))
+			try context.extend(expr, with: context.get(value))
 		} else {
 			context.extend(expr, with: .type(.void))
 		}
@@ -471,12 +473,14 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws {
-		context.extend(expr, with: .type(typeFrom(expr: expr, in: context)))
+		try context.extend(expr, with: .type(typeFrom(expr: expr, in: context)))
 	}
 
 	func visit(_ expr: ExprStmtSyntax, _ context: InferenceContext) throws {
 		try expr.expr.accept(self, context)
-		context.extend(expr, with: context[expr.expr]!)
+		let result = try context.get(expr.expr)
+
+		context.extend(expr, with: result)
 	}
 
 	func visit(_ expr: IfStmtSyntax, _ context: InferenceContext) throws {
@@ -522,7 +526,7 @@ struct InferenceVisitor: Visitor {
 			context.constraints.add(
 				TypeConformanceConstraint(
 					type: structInferenceType,
-					conformsTo: context[typeParameter]!.asType(in: context),
+					conformsTo: try context.get(typeParameter).asType(in: context),
 					location: typeParameter.location
 				)
 			)
@@ -531,10 +535,14 @@ struct InferenceVisitor: Visitor {
 		for decl in expr.body.decls {
 			try decl.accept(self, structContext)
 
-			switch (decl, structContext[decl]!) {
+			switch (decl, try structContext.get(decl)) {
 			case let (decl as FuncExpr, .scheme(scheme)):
+				guard let name = decl.name?.lexeme else {
+					throw InferencerError.cannotInfer("No name found for member \(decl.description)")
+				}
+
 				// It's a method
-				typeContext.methods[decl.name!.lexeme] = .scheme(scheme)
+				typeContext.methods[name] = .scheme(scheme)
 			case let (decl as VarLetDecl, .type(type)):
 				// It's a property
 				typeContext.properties[decl.name] = .type(type)
@@ -551,8 +559,14 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws {
 		let elements = try expr.exprs.map { try $0.accept(self, context) ; return context[$0] }
-		let arrayType = context.lookupVariable(named: "Array")!
-		let arrayStructType = StructType.extractType(from: .type(arrayType))!
+
+		guard let arrayType = context.lookupVariable(named: "Array") else {
+			throw InferencerError.cannotInfer("No Array type found from stdlib")
+		}
+
+		guard let arrayStructType = StructType.extractType(from: .type(arrayType)) else {
+			throw InferencerError.cannotInfer("Could not get Array struct type")
+		}
 
 		// TODO: Handle homogenous arrays or error
 		let arrayInstance = arrayStructType.instantiate(with: [:], in: context)
@@ -579,13 +593,15 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: SubscriptExprSyntax, _ context: InferenceContext) throws {
 		try expr.receiver.accept(self, context)
-		let args = try expr.args.map { try $0.accept(self, context) ; return context[$0]! }
-		var returns = returnType(for: context[expr.receiver]!, in: context)
+		let args = try expr.args.map { try $0.accept(self, context) ; return try context.get($0) }
+		var returns = try returnType(for: context.get(expr.receiver), in: context)
 
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
 		case let .structType(structType), let .selfVar(structType):
-			let method = structType.member(named: "get")!
+			guard let method = structType.member(named: "get") else {
+				throw InferencerError.cannotInfer("No `get` meethod for \(structType)")
+			}
 
 			// We can assume it's a method so we can destructure to get our return type
 			guard case let .function(_, getReturns) = method.asType(in: context) else {
@@ -598,7 +614,9 @@ struct InferenceVisitor: Visitor {
 				.call(method, args, returns: getReturns, at: expr.location)
 			)
 		case let .structInstance(structInstance):
-			let method = structInstance.member(named: "get")!
+			guard let method = structInstance.member(named: "get") else {
+				throw InferencerError.cannotInfer("No `get` meethod for \(structInstance)")
+			}
 
 			context.addConstraint(
 				.call(.type(method), args, returns: returns, at: expr.location)
@@ -607,10 +625,10 @@ struct InferenceVisitor: Visitor {
 			let typeVar = context.freshTypeVariable("\(expr.description)")
 			returns = .typeVar(typeVar)
 
-			context.addConstraint(
+			try context.addConstraint(
 				SubscriptConstraint(
-					receiver: context[expr.receiver]!,
-					args: expr.args.map { context[$0]! },
+					receiver: context.get(expr.receiver),
+					args: try expr.args.map { try context.get($0) },
 					returns: .typeVar(typeVar),
 					location: expr.location,
 					isRetry: false
@@ -623,8 +641,10 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: InferenceContext) throws {
 		for elem in expr.elements { try elem.accept(self, context) }
-		let dictType = context.lookupVariable(named: "Dictionary")!
-		let dictStructType = StructType.extractType(from: .type(dictType))!
+		guard let dictType = context.lookupVariable(named: "Dictionary"),
+					let dictStructType = StructType.extractType(from: .type(dictType)) else {
+			throw InferencerError.cannotInfer("No Dictionary found from stdlib")
+		}
 
 		let dictInstance = dictStructType.instantiate(with: [:], in: context)
 		let keyType = dictStructType.typeContext.typeParameters[0]
@@ -633,8 +653,8 @@ struct InferenceVisitor: Visitor {
 		assert(valueType.name == "Value", "didn't get correct Value type parameter, got \(valueType.name ?? "<none>")")
 
 		if let element = expr.elements.first {
-			dictInstance.substitutions[keyType] = context[element.key]!.asType(in: context)
-			dictInstance.substitutions[valueType] = context[element.value]!.asType(in: context)
+			dictInstance.substitutions[keyType] = try context.get(element.key).asType(in: context)
+			dictInstance.substitutions[valueType] = try context.get(element.value).asType(in: context)
 		}
 
 		let returns = InferenceType.structInstance(dictInstance)

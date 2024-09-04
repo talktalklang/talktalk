@@ -16,7 +16,7 @@ public struct Formatter: Visitor {
 
 		var result: [String] = []
 		for expr in parsed {
-			try! result.append(expr.accept(formatter, context))
+			try result.append(expr.accept(formatter, context))
 		}
 
 		return result.joined(separator: "\n")
@@ -145,7 +145,7 @@ public struct Formatter: Visitor {
 	public func visit(_ expr: CallExprSyntax, _ context: Context) throws -> Value {
 		var result = try expr.callee.accept(self, context)
 		result +=
-			"(" + expr.args.map { try! $0.value.accept(self, context) }.joined(separator: ", ") + ")"
+			try "(" + expr.args.map { try $0.value.accept(self, context) }.joined(separator: ", ") + ")"
 
 		context.lastType = expr
 

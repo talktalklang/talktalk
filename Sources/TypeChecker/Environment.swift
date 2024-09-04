@@ -34,7 +34,7 @@ class Environment {
 	func trackingReturns(block: () throws -> Void) throws -> Set<InferenceResult> {
 		functionStack.append([])
 		try block()
-		return functionStack.popLast()!
+		return functionStack.popLast() ?? []
 	}
 
 	func trackReturn(_ result: InferenceResult) {

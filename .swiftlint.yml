@@ -7,6 +7,7 @@ custom_rules:
   fatal_error: # rule identifier
     name: "No fatal error" # rule name. optional.
     regex: "fatalError" # matching pattern
+    severity: error
 excluded:
   - Tests
 

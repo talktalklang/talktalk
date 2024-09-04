@@ -13,6 +13,10 @@ import TalkTalkDriver
 import TalkTalkSyntax
 import TypeChecker
 
+public enum REPLError: Error {
+	case initError(String)
+}
+
 public class REPLRunner: Copyable {
 	let driver: Driver
 	var module: Module
@@ -68,10 +72,13 @@ public class REPLRunner: Copyable {
 			modules: ["Standard": stdlibModule]
 		)
 
-		let result = try! await driver.compile(mode: .module)["REPL"]!
+		guard let result = try await driver.compile(mode: .module)["REPL"] else {
+			throw REPLError.initError("Could not load REPL library")
+		}
+
 		self.module = result.module
 		self.analysis = result.analysis
-		self.inferencer = try! Inferencer(imports: [])
+		self.inferencer = try Inferencer(imports: [])
 		self.environment = Environment(inferenceContext: inferencer.context, symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(
@@ -82,7 +89,7 @@ public class REPLRunner: Copyable {
 		self.chunk = Chunk(name: "main", symbol: .function("REPL", "main", []), path: "<repl>")
 		module.main = StaticChunk(chunk: chunk)
 		self.compiler = ChunkCompiler(module: compilingModule)
-		self.vm = VirtualMachine(module: module)
+		self.vm = try VirtualMachine(module: module)
 	}
 
 	public func evaluate(_ line: String, index _: Int) throws -> VirtualMachine.ExecutionResult {

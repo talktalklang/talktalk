@@ -18,7 +18,9 @@ public struct ParsedSourceFile: Hashable, Equatable {
 	public static func tmp(_ text: String, _ path: String) -> ParsedSourceFile {
 		ParsedSourceFile(
 			path: path,
+			// swiftlint:disable force_try
 			syntax: try! Parser.parse(SourceFile(path: path, text: text))
+			// swiftlint:enable force_try
 		)
 	}
 
@@ -35,6 +37,8 @@ public struct ParsedSourceFile: Hashable, Equatable {
 extension ParsedSourceFile: ExpressibleByStringLiteral {
 	public init(stringLiteral value: StringLiteralType) {
 		self.path = "<literal \(value.hashValue) \(value)>"
+		// swiftlint:disable force_try
 		self.syntax = try! Parser.parse(.init(path: path, text: value))
+		// swiftlint:enable force_try
 	}
 }

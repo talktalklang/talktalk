@@ -49,9 +49,9 @@ public struct Driver {
 
 private extension Driver {
 	static func findCompilationUnits(directories: [URL]) -> [CompilationUnit] {
-		directories.map {
+		directories.compactMap {
 			guard let enumerator = FileManager.default.enumerator(at: $0, includingPropertiesForKeys: [.nameKey]) else {
-				fatalError("could not enumerate files for \($0)")
+				return nil
 			}
 
 			var fileURLs: [URL] = []

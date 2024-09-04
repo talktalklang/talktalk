@@ -14,7 +14,10 @@ struct TextDocumentSemanticTokensFull {
 	var request: Request
 
 	func handle(_ server: Server) async {
-		let params = request.params as! TextDocumentSemanticTokensFullRequest
+		guard let params = request.params as? TextDocumentSemanticTokensFullRequest else {
+			Log.error("Could not parse TextDocumentSemanticTokensFullRequest params")
+			return
+		}
 
 		guard let source = await server.sources[params.textDocument.uri] else {
 			Log.error("no source for \(params.textDocument.uri)")

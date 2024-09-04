@@ -31,7 +31,10 @@ struct TextDocumentDiagnostic: Decodable {
 	var request: Request
 
 	func handle(_ server: Server) async {
-		let params = request.params as! TextDocumentDiagnosticRequest
+		guard let params = request.params as? TextDocumentDiagnosticRequest else {
+			Log.error("Could not parse TextDocumentDiagnosticRequest params")
+			return
+		}
 
 		Log.info("requesting diagnostics for \(params.textDocument.uri)")
 

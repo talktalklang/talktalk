@@ -21,7 +21,7 @@ public struct SourceFile {
 	}
 
 	public var filename: String {
-		path.components(separatedBy: "/").last!
+		path.components(separatedBy: "/").last ?? "<none>"
 	}
 }
 

@@ -132,7 +132,11 @@ public actor Server {
 		case .textDocumentDidClose:
 			()
 		case .cancelRequest:
-			cancelled.insert((request.params as! CancelParams).id)
+			guard let params = request.params as? CancelParams else {
+				Log.error("Could not parse CancelParams")
+				return
+			}
+			cancelled.insert(params.id)
 		case .textDocumentDefinition:
 			await TextDocumentDefinition(request: request).handle(self)
 		case .textDocumentDidOpen:
@@ -175,7 +179,12 @@ public actor Server {
 	}
 
 	func findDefinition(from position: Position, path: String) -> Definition? {
-		analysis = try! analyzer.analyze()
+		do {
+			analysis = try analyzer.analyze()
+		} catch {
+			Log.error("Error finding definition: \(error)")
+			return nil
+		}
 
 		Log.info("findDefinition: path: \(path) position: \(position)")
 

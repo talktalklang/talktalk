@@ -11,7 +11,11 @@ struct TextDocumentCompletion {
 	var request: Request
 
 	func handle(_ server: Server) async {
-		let params = request.params as! TextDocumentCompletionRequest
+		guard let params = request.params as? TextDocumentCompletionRequest else {
+			Log.error("Could not parse text document completion request params")
+			return
+		}
+
 		Log.info("handling completion request at \(params.position), trigger: \(params.context)")
 
 		let trigger: Completion.Trigger? = if let char = params.context.triggerCharacter {
