@@ -34,6 +34,14 @@ public struct Diagnostic: Codable, Sendable, Hashable {
 	 * a scope collide all definitions can be marked via this property.
 	 */
 	public let relatedInformation: RelatedInformation?
+
+	public init(range: Range, severity: Severity, message: String, tags: [Tag]?, relatedInformation: RelatedInformation?) {
+		self.range = range
+		self.severity = severity
+		self.message = message
+		self.tags = tags
+		self.relatedInformation = relatedInformation
+	}
 }
 
 public extension Diagnostic {

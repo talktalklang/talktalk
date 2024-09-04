@@ -10,11 +10,25 @@ import TalkTalkSyntax
 public struct Range: Codable, Sendable, Hashable {
 	public let start: Position
 	public let end: Position
+
+	public init(start: Position, end: Position) {
+		self.start = start
+		self.end = end
+	}
+
+	public func contains(line: Int) -> Bool {
+		start.line <= line && end.line >= line
+	}
 }
 
 public struct Position: Codable, Sendable, Hashable {
 	public let line: Int
 	public let character: Int
+
+	public init(line: Int, character: Int) {
+		self.line = line
+		self.character = character
+	}
 }
 
 public extension TalkTalkSyntax.SourceLocation {

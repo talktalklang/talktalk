@@ -8,7 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkSyntax
 
-extension AnalysisError {
+public extension AnalysisError {
 	func diagnostic() -> Diagnostic {
 		let start = location.start
 		let end = location.end
@@ -24,7 +24,6 @@ extension AnalysisError {
 			relatedInformation: nil
 		)
 	}
-
 }
 
 struct TextDocumentDiagnostic: Decodable {
