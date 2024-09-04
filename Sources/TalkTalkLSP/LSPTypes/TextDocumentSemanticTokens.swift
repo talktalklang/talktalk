@@ -14,7 +14,15 @@ public struct RawSemanticToken: Encodable, Equatable {
 	public let tokenType: SemanticTokenTypes
 	public let modifiers: [SemanticTokenModifiers]
 
-	public init(lexeme: String, line: Int, position: Int, startChar: Int, length: Int, tokenType: SemanticTokenTypes, modifiers: [SemanticTokenModifiers]) {
+	public init(
+		lexeme: String,
+		line: Int,
+		position: Int,
+		startChar: Int,
+		length: Int,
+		tokenType: SemanticTokenTypes,
+		modifiers: [SemanticTokenModifiers]
+	) {
 		self.lexeme = lexeme
 		self.line = line
 		self.position = position
