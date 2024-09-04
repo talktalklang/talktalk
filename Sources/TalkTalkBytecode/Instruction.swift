@@ -9,7 +9,6 @@ import Foundation
 
 public protocol InstructionMetadata: CustomStringConvertible, Hashable {
 	var length: Int { get }
-	func emit(into chunk: inout Chunk, from instruction: Instruction)
 }
 
 public struct Instruction {
@@ -25,10 +24,6 @@ public struct Instruction {
 		self.opcode = opcode
 		self.offset = offset
 		self.metadata = metadata
-	}
-
-	public func emit(into chunk: inout Chunk) {
-		metadata.emit(into: &chunk, from: self)
 	}
 
 	public func dump() {
@@ -71,10 +66,6 @@ public struct FunctionMetadata: InstructionMetadata {
 	public var description: String {
 		"name: \(name)"
 	}
-
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		chunk.emit(opcode: instruction.opcode, line: instruction.line)
-	}
 }
 
 public struct SimpleMetadata: InstructionMetadata {
@@ -85,10 +76,6 @@ public struct SimpleMetadata: InstructionMetadata {
 	public var description: String {
 		""
 	}
-
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		chunk.emit(opcode: instruction.opcode, line: instruction.line)
-	}
 }
 
 public struct ConstantMetadata: InstructionMetadata {
@@ -98,10 +85,6 @@ public struct ConstantMetadata: InstructionMetadata {
 
 	public init(value: Value) {
 		self.value = value
-	}
-
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		chunk.emit(constant: value, line: instruction.line)
 	}
 
 	public var description: String {
@@ -116,10 +99,6 @@ public struct InitArrayMetadata: InstructionMetadata {
 		elementCount + 2
 	}
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		fatalError("TODO")
-	}
-	
 	public var description: String {
 		"Array (\(elementCount))"
 	}
@@ -140,10 +119,6 @@ public struct ObjectMetadata: InstructionMetadata {
 		self.value = value
 	}
 
-	public func emit(into chunk: inout Chunk, from instruction: Instruction) {
-		chunk.emit(data: value, line: instruction.line)
-	}
-
 	public var description: String {
 		"\(value)"
 	}
@@ -158,10 +133,6 @@ public extension InstructionMetadata where Self == ConstantMetadata {
 public struct JumpMetadata: InstructionMetadata {
 	let offset: Int
 	public var length: Int = 3
-
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
 
 	public var description: String {
 		"offset: \(offset)"
@@ -178,10 +149,6 @@ public struct LoopMetadata: InstructionMetadata {
 	let back: Int
 	public var length: Int = 3
 
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
-
 	public var description: String {
 		"to: \(back)"
 	}
@@ -197,10 +164,6 @@ public struct GetPropertyMetadata: InstructionMetadata {
 	let slot: Int
 	let options: PropertyOptions
 	public var length: Int = 3
-
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
 
 	public var description: String {
 		"slot: \(slot), options: \(options)"
@@ -223,10 +186,6 @@ public struct VariableMetadata: InstructionMetadata {
 	public let slot: Byte
 	public let name: String
 	public let type: VariableType
-
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
 
 	public var description: String {
 		"slot: \(slot), name: \(name)"
@@ -289,10 +248,6 @@ public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 		2 + (upvalues.count * 2)
 	}
 
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
-
 	public var description: String {
 		var result = if let name { "name: \(name) " } else { "" }
 		result += "arity: \(arity) depth: \(depth) upvalues: [\(upvalues.map(\.description).joined(separator: ", "))]"
@@ -310,10 +265,6 @@ public struct CallMetadata: InstructionMetadata {
 	public let name: String
 	public var length: Int = 1
 
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
-
 	public var description: String {
 		"name: \(name)"
 	}
@@ -329,10 +280,6 @@ public struct UpvalueMetadata: InstructionMetadata {
 	public let slot: Byte
 	public let name: String
 	public var length: Int = 2
-
-	public func emit(into _: inout Chunk, from _: Instruction) {
-		fatalError("TODO")
-	}
 
 	public var description: String {
 		"local: \(slot), name: \(name)"

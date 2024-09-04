@@ -22,8 +22,8 @@ public enum Log {
 		}
 
 		let logfile = URL.homeDirectory.appending(path: "apps/talktalk/lsp.log")
-		try! append(data: Data(message.utf8), to: logfile)
-		try! append(data: Data("\n".utf8), to: logfile)
+		try? append(data: Data(message.utf8), to: logfile)
+		try? append(data: Data("\n".utf8), to: logfile)
 	}
 
 	static func append(data: Data, to fileURL: URL) throws {

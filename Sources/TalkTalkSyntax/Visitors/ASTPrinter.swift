@@ -58,12 +58,16 @@ public struct ASTPrinter: Visitor {
 	}
 
 	func add(@StringBuilder _ content: () throws -> String) -> String {
-		try! content()
-			.components(separatedBy: .newlines)
-			.filter { $0.trimmingCharacters(in: .whitespacesAndNewlines) != "" }
-			.map {
-				String(repeating: "\t", count: indentLevel) + $0
-			}.joined(separator: "\n")
+		do {
+			return try content()
+				.components(separatedBy: .newlines)
+				.filter { $0.trimmingCharacters(in: .whitespacesAndNewlines) != "" }
+				.map {
+					String(repeating: "\t", count: indentLevel) + $0
+				}.joined(separator: "\n")
+		} catch {
+			return "Error: \(error)"
+		}
 	}
 
 	func dump(_ expr: any Syntax, _ extra: String = "") -> String {

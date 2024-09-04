@@ -100,12 +100,12 @@ class CompilerTests: CompilerTest {
 	}
 
 	func disassemble(_ chunk: Chunk) -> [Instruction] {
-		chunk.disassemble(in: module.finalize(mode: .executable))
+		try! chunk.disassemble(in: module.finalize(mode: .executable))
 	}
 
 	@Test("Empty program") func empty() throws {
 		let chunk = try compile("")
-		#expect(chunk.disassemble()[0].opcode == .return)
+		try #expect(chunk.disassemble()[0].opcode == .return)
 	}
 
 	@Test("Int literal") func intLiteral() throws {
@@ -124,7 +124,7 @@ class CompilerTests: CompilerTest {
 		]
 
 		#expect(instructions.instructions == expected)
-		#expect(chunk.disassemble() == instructions)
+		try #expect(chunk.disassemble() == instructions)
 	}
 
 	@Test("Binary int op") func binaryIntOp() throws {
@@ -139,7 +139,7 @@ class CompilerTests: CompilerTest {
 			Instruction(path: chunk.path, opcode: .return, offset: 6, line: 0, metadata: .simple),
 		]
 
-		#expect(chunk.disassemble() == instructions)
+		try #expect(chunk.disassemble() == instructions)
 	}
 
 	@Test("Def expr") func defExpr() throws {
@@ -148,7 +148,7 @@ class CompilerTests: CompilerTest {
 		i = 123
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
 			.op(.setModuleValue, line: 0, .global(slot: 0)),
 			.op(.constant, line: 1, .constant(.int(123))),
@@ -166,7 +166,7 @@ class CompilerTests: CompilerTest {
 		y
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.setModuleValue, line: 0, .global(slot: 0)),
 			.op(.getModuleValue, line: 1, .global(slot: 0)),
@@ -189,7 +189,7 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
 			.op(.setModuleValue, line: 0, .global(slot: 0)),
 
@@ -226,7 +226,7 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		try #expect(chunk.disassemble() == Instructions(
 			// The condition
 			.op(.false, line: 0, .simple),
 			// How far to jump if the condition is false
@@ -362,7 +362,7 @@ class CompilerTests: CompilerTest {
 			.op(.return, line: 6, .simple)
 		)
 
-		#expect(subchunk.disassemble() == subexpected)
+		try #expect(subchunk.disassemble() == subexpected)
 	}
 
 	@Test("Cleans up locals") func cleansUpLocals() throws {
@@ -467,7 +467,7 @@ class CompilerTests: CompilerTest {
 		Person(age: 123).age
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 6, .constant(.int(123))),
 			.op(.getStruct, line: 6, .struct(slot: 4)),
 			.op(.call, line: 6, .simple),
@@ -492,7 +492,7 @@ class CompilerTests: CompilerTest {
 		Person(age: 123).getAge()
 		""")
 
-		#expect(chunk.disassemble() == Instructions(
+		#expect(try chunk.disassemble() == Instructions(
 			.op(.constant, line: 10, .constant(.int(123))),
 			.op(.getStruct, line: 10, .struct(slot: 4)),
 			.op(.call, line: 10, .simple),

@@ -10,23 +10,23 @@ import Testing
 
 @MainActor
 struct DisassemblerTests {
-	@Test("Disassembles simple opcodes") func simple() {
+	@Test("Disassembles simple opcodes") func simple() throws {
 		let chunk = Chunk(name: "main", symbol: .function("DisassemblerTests", "main", []), path: "test")
 		chunk.emit(opcode: .true, line: 1)
 
 		#expect(chunk.code == [Opcode.true.rawValue])
 
-		#expect(chunk.disassemble() == [
+		try #expect(chunk.disassemble() == [
 			Instruction(path: chunk.path, opcode: .true, offset: 1, line: 1, metadata: .simple),
 		])
 	}
 
-	@Test("Disassembles constant opcodes") func constant() {
+	@Test("Disassembles constant opcodes") func constant() throws {
 		let chunk = Chunk(name: "main", symbol: .function("DisassemblerTests", "main", []), path: "test")
 		chunk.emit(constant: .int(123), line: 1)
 		chunk.emit(opcode: .return, line: 2)
 
-		#expect(chunk.disassemble() == [
+		try #expect(chunk.disassemble() == [
 			Instruction(path: chunk.path, opcode: .constant, offset: 1, line: 1, metadata: ConstantMetadata(value: .int(123))),
 			Instruction(path: chunk.path, opcode: .return, offset: 3, line: 2, metadata: .simple),
 		])

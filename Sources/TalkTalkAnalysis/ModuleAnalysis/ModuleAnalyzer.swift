@@ -10,7 +10,7 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 import TypeChecker
 
-public struct ModuleAnalyzer {
+public struct ModuleAnalyzer: Analyzer {
 	enum Error: Swift.Error {
 		case moduleNotFound(String)
 	}
@@ -38,7 +38,7 @@ public struct ModuleAnalyzer {
 		self.importedModules = moduleEnvironment.values.map { $0 }
 
 		if moduleEnvironment["Standard"] == nil, name != "Standard" {
-			let stdlib = try! importStandardLibrary()
+			let stdlib = try importStandardLibrary()
 			self.moduleEnvironment["Standard"] = stdlib
 			self.importedModules.append(stdlib)
 		}
@@ -79,6 +79,7 @@ public struct ModuleAnalyzer {
 				// Always make standard types available
 				for (name, structType) in module.structs {
 					analysisModule.structs[name] = ModuleStruct(
+						id: structType.id,
 						name: name,
 						symbol: structType.symbol,
 						location: structType.location,
@@ -115,7 +116,7 @@ public struct ModuleAnalyzer {
 			}
 		}
 
-		importSymbols(into: &analysisModule)
+		try importSymbols(into: &analysisModule)
 
 		// Once we've got globals established, we can go through and actually analyze
 		// all the files for the module. TODO: Also establish imports.
@@ -136,7 +137,7 @@ public struct ModuleAnalyzer {
 
 		// Now that we've walked the tree, we should make sure we're not missing any
 		// other symbols.
-		importSymbols(into: &analysisModule)
+		try importSymbols(into: &analysisModule)
 
 		for (symbol, info) in environment.symbolGenerator.symbols {
 			analysisModule.symbols[symbol] = info
@@ -145,10 +146,10 @@ public struct ModuleAnalyzer {
 		return analysisModule
 	}
 
-	private func importSymbols(into analysisModule: inout AnalysisModule) {
+	private func importSymbols(into analysisModule: inout AnalysisModule) throws {
 		for (symbol, binding) in environment.importedSymbols {
 			guard let module = binding.externalModule else {
-				fatalError("could not get module for symbol `\(name)`")
+				throw AnalyzerError.symbolNotFound("could not get module for symbol `\(name)`")
 			}
 
 			if case let .function(name, _) = symbol.kind {
@@ -172,6 +173,7 @@ public struct ModuleAnalyzer {
 								let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
+					id: structType.id,
 					name: name,
 					symbol: symbol,
 					location: binding.location,
@@ -182,7 +184,7 @@ public struct ModuleAnalyzer {
 					typeParameters: structType.typeParameters
 				)
 			} else {
-				fatalError("unhandled exported symbol: \(name)")
+				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
 			}
 		}
 	}
@@ -196,7 +198,7 @@ public struct ModuleAnalyzer {
 			} else if let structT = global as? ModuleStruct {
 				analysisModule.structs[structT.name] = structT
 			} else {
-				fatalError()
+				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
 			}
 		}
 	}
@@ -230,22 +232,30 @@ public struct ModuleAnalyzer {
 
 		switch syntax {
 		case let syntax as VarDecl:
-			let analyzed = try visitor.visit(syntax.cast(VarDeclSyntax.self), environment) as! AnalyzedVarDecl
+			let analyzed = try cast(visitor.visit(syntax.cast(VarDeclSyntax.self), environment), to: AnalyzedVarDecl.self)
+
+			guard let symbol = analyzed.symbol else {
+				throw AnalyzerError.symbolNotFound("expected symbol for: \(syntax)")
+			}
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
-				symbol: analyzed.symbol!,
+				symbol: symbol,
 				location: syntax.location,
 				typeID: analyzed.inferenceType,
 				source: .module,
 				isMutable: true
 			)
 		case let syntax as LetDecl:
-			let analyzed = try visitor.visit(syntax.cast(LetDeclSyntax.self), environment) as! AnalyzedLetDecl
+			let analyzed = try cast(visitor.visit(syntax.cast(LetDeclSyntax.self), environment), to: AnalyzedLetDecl.self)
+
+			guard let symbol = analyzed.symbol else {
+				throw AnalyzerError.symbolNotFound("expected symbol for: \(syntax)")
+			}
 
 			result[syntax.name] = ModuleValue(
 				name: syntax.name,
-				symbol: analyzed.symbol!,
+				symbol: symbol,
 				location: syntax.location,
 				typeID: analyzed.inferenceType,
 				source: .module,
@@ -254,7 +264,7 @@ public struct ModuleAnalyzer {
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
-				let analyzed = try visitor.visit(syntax.cast(FuncExprSyntax.self), environment) as! AnalyzedFuncExpr
+				let analyzed = try cast(visitor.visit(syntax.cast(FuncExprSyntax.self), environment), to: AnalyzedFuncExpr.self)
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					symbol: analyzed.symbol,
@@ -265,12 +275,16 @@ public struct ModuleAnalyzer {
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
-			let analyzed = try visitor.visit(syntax.cast(DefExprSyntax.self), environment) as! AnalyzedDefExpr
+			let analyzed = try cast(try visitor.visit(syntax.cast(DefExprSyntax.self), environment), to: AnalyzedDefExpr.self)
 
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
+				guard let symbol = syntax.symbol else {
+					throw AnalyzerError.symbolNotFound("expected symbol for \(syntax)")
+				}
+
 				result[syntax.name] = ModuleValue(
 					name: syntax.name,
-					symbol: syntax.symbol!,
+					symbol: symbol,
 					location: syntax.location,
 					typeID: analyzed.inferenceType,
 					source: .module,
@@ -284,9 +298,10 @@ public struct ModuleAnalyzer {
 
 			environment.inferenceContext.import(module.inferenceContext)
 		case let syntax as StructDecl:
-			let analyzedStructDecl = try visitor.visit(syntax.cast(StructDeclSyntax.self), environment).cast(AnalyzedStructDecl.self)
+			let analyzedStructDecl = try cast(visitor.visit(syntax.cast(StructDeclSyntax.self), environment), to: AnalyzedStructDecl.self)
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
+				id: analyzedStructDecl.id,
 				name: name,
 				symbol: analyzedStructDecl.symbol,
 				location: syntax.location,

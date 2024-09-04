@@ -38,7 +38,7 @@ struct SemanticTokensLegend: Codable {
 		case tokenTypes, tokenModifiers
 	}
 
-	static func lookup(_ type: SemanticTokenTypes) -> Int {
+	static func lookup(_ type: SemanticTokenTypes) -> Int? {
 		[.type: 0,
 		 .struct: 1,
 		 .parameter: 2,
@@ -50,7 +50,7 @@ struct SemanticTokensLegend: Codable {
 		 .string: 8,
 		 .number: 9,
 		 .operator: 10,
-		 .comment: 11][type]!
+		 .comment: 11][type]
 	}
 
 	let tokenTypes: [SemanticTokenTypes] = [

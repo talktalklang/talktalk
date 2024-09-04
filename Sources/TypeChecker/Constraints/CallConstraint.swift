@@ -141,8 +141,9 @@ struct CallConstraint: Constraint {
 				if case .type(.typeVar(let typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
 				{
-					substitutions[typeVar] = context.freshTypeVariable("\(name) [init]", file: #file, line: #line)
-					return substitutions[typeVar]!
+					let fresh: InferenceType = context.freshTypeVariable("\(name) [init]", file: #file, line: #line)
+					substitutions[typeVar] = fresh
+					return fresh
 				}
 
 				return type.asType(in: structType.context)
@@ -179,8 +180,9 @@ struct CallConstraint: Constraint {
 					paramType = .typeVar(param)
 				}
 
-				instance.substitutions[param] = arg.asType(in: childContext)
-				childContext.unify(instance.substitutions[param]!, arg.asType(in: childContext), location)
+				let type = arg.asType(in: childContext)
+				instance.substitutions[param] = type
+				childContext.unify(type, arg.asType(in: childContext), location)
 			case .structType(let structType):
 				var substitutions: [TypeVariable: InferenceType] = [:]
 				if case .structInstance(let instance) = context.applySubstitutions(to: arg.asType(in: context)) {

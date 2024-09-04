@@ -48,12 +48,12 @@ public indirect enum Value: Equatable, Comparable {
 		switch lhs {
 		case let .int(int):
 			guard case let .int(rhs) = rhs else {
-				fatalError()
+				return false
 			}
 
 			return int < rhs
 		default:
-			fatalError()
+			return false
 		}
 	}
 
@@ -93,7 +93,7 @@ public indirect enum Value: Equatable, Comparable {
 		case .struct(_):
 			.type("Struct")
 		case let .instance(structInstance):
-			.type(structInstance.type.name!)
+			.type(structInstance.type.name ?? "<no name>")
 		case .return(_):
 			.type("Return")
 		case let .builtin(string):
@@ -135,7 +135,7 @@ public indirect enum Value: Equatable, Comparable {
 		case .fn:
 			false
 		case .return:
-			fatalError()
+			false
 		}
 	}
 

@@ -23,7 +23,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if case let .structInstance(instance) = receiver.typeAnalyzed,
-			 let structType = context.lookupStruct(named: instance.type.name) {
+			 let structType = try context.lookupStruct(named: instance.type.name) {
 			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
 		}
 
@@ -32,7 +32,7 @@ struct MemberExprAnalyzer: Analyzer {
 				inferenceType: type ?? .any,
 				wrapped: expr.cast(MemberExprSyntax.self),
 				environment: context,
-				receiverAnalyzed: receiver as! any AnalyzedExpr,
+				receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
 				memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
 				analysisErrors: [],
 				isMutable: true
@@ -43,7 +43,7 @@ struct MemberExprAnalyzer: Analyzer {
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
-			receiverAnalyzed: receiver as! any AnalyzedExpr,
+			receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
 			memberAnalyzed: member,
 			analysisErrors: [],
 			isMutable: member.isMutable

@@ -16,9 +16,13 @@ public struct SyntaxID: Hashable, Sendable, Codable, CustomStringConvertible {
 		self.id = id
 		self.path = path
 
+		#if DEBUG
+		// swiftlint:disable fatal_error
 		if path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
 			fatalError("empty path not allowed")
 		}
+		// swiftlint:enable fatal_error
+		#endif
 	}
 
 	public static func synthetic(_ name: String) -> SyntaxID {

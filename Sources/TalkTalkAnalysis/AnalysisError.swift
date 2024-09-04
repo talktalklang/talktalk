@@ -8,6 +8,13 @@
 import TalkTalkSyntax
 import TypeChecker
 
+public enum AnalyzerError: Error {
+	case unexpectedCast(expected: String, received: String)
+	case typeNotInferred(String)
+	case symbolNotFound(String)
+	case stdlibNotFound
+}
+
 public enum AnalysisErrorKind: Hashable {
 	public static func == (lhs: AnalysisErrorKind, rhs: AnalysisErrorKind) -> Bool {
 		lhs.hashValue == rhs.hashValue

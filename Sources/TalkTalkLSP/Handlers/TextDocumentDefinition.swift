@@ -11,7 +11,10 @@ struct TextDocumentDefinition {
 	var request: Request
 
 	func handle(_ server: Server) async {
-		let params = request.params as! TextDocumentDefinitionRequest
+		guard let params = request.params as? TextDocumentDefinitionRequest else {
+			Log.error("Could not parse TextDocumentDefinitionRequest params")
+			return
+		}
 
 		await Log.info("files: \(server.analyzedFilePaths)")
 

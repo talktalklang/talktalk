@@ -9,6 +9,8 @@ import TalkTalkAnalysis
 import TalkTalkSyntax
 import TypeChecker
 
+// swiftlint:disable fatal_error force_unwrapping force_try force_cast
+
 public struct InterpreterStruct {
 	var name: String
 	var properties: [String: Value]
@@ -21,10 +23,10 @@ public struct Interpreter: AnalyzedVisitor {
 
 	let parsed: [any AnalyzedSyntax]
 
-	public init(_ code: String) {
-		let parsed = try! Parser.parse(.init(path: "interpreter", text: code))
-		let context = try! Inferencer(imports: []).infer(parsed)
-		self.parsed = try! SourceFileAnalyzer.analyze(
+	public init(_ code: String) throws {
+		let parsed = try Parser.parse(.init(path: "interpreter", text: code))
+		let context = try Inferencer(imports: []).infer(parsed)
+		self.parsed = try SourceFileAnalyzer.analyze(
 			parsed,
 			in: .init(inferenceContext: context, symbolGenerator: .init(moduleName: "Interpreter", parent: nil))
 		)

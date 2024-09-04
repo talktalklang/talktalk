@@ -40,7 +40,7 @@ public class CompilingModule {
 		self.moduleEnvironment = moduleEnvironment
 	}
 
-	public func finalize(mode: CompilationMode) -> Module {
+	public func finalize(mode: CompilationMode) throws -> Module {
 		let chunkCount = analysisModule.symbols.keys.count(where: { symbol in
 			if case .function(_, _) = symbol.kind {
 				return true
@@ -77,7 +77,7 @@ public class CompilingModule {
 					continue
 				}
 
-				fatalError("could not find compiled chunk for: \(symbol.description)")
+				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
 			case .struct:
 				switch info.source {
 				case .external(let name):
@@ -89,7 +89,7 @@ public class CompilingModule {
 					moduleStructs[info.slot] = module.structs[moduleInfo.slot]
 				case .internal:
 					guard let structType = structs[symbol] else {
-						fatalError("could not find struct for: \(symbol.description)")
+						throw CompilerError.unknownIdentifier("could not find struct for: \(symbol.description)")
 					}
 
 					moduleStructs[info.slot] = structType
@@ -111,7 +111,7 @@ public class CompilingModule {
 			if let existingMain = chunks.first(where: { $0.name == "main" }) {
 				module.main = existingMain
 			} else {
-				let synthesized = synthesizeMain()
+				let synthesized = try synthesizeMain()
 				module.chunks.append(.init(chunk: synthesized))
 				module.main = StaticChunk(chunk: synthesized)
 			}
@@ -119,7 +119,10 @@ public class CompilingModule {
 
 		// Copy lazy value initializers
 		for (name, chunk) in valueInitializers {
-			let symbol = analysisModule.symbols[name]!
+			guard let symbol = analysisModule.symbols[name] else {
+				throw CompilerError.unknownIdentifier("No symbol found for \(name)")
+			}
+
 			module.valueInitializers[Byte(symbol.slot)] = StaticChunk(chunk: chunk)
 		}
 
@@ -157,19 +160,24 @@ public class CompilingModule {
 		return nil
 	}
 
-	public func addChunk(_ chunk: Chunk) -> Int {
-		let offset = analysisModule.symbols[chunk.symbol]!.slot
+	public func addChunk(_ chunk: Chunk) throws -> Int {
+		guard let offset = analysisModule.symbols[chunk.symbol]?.slot else {
+			throw CompilerError.analysisError("No analysis symbol found for \(chunk.symbol)")
+		}
+
 		compiledChunks.append(chunk)
 		return offset
 	}
 
 	// If a function named "main" isn't provided, we generate one that just runs all of the files
 	// that were compiled in the module.
-	func synthesizeMain() -> Chunk {
+	func synthesizeMain() throws -> Chunk {
 		let main = Chunk(name: "main", symbol: .function(name, "main", []), path: "<main>")
 
 		for fileChunk in fileChunks {
-			let offset = analysisModule.symbols[fileChunk.symbol]!.slot
+			guard let offset = analysisModule.symbols[fileChunk.symbol]?.slot else {
+				throw CompilerError.analysisError("could not find symbol for: \(fileChunk.symbol.description)")
+			}
 
 			main.emit(opcode: .callChunkID, line: UInt32(offset))
 			main.emit(byte: Byte(offset), line: UInt32(offset))

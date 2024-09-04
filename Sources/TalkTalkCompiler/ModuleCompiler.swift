@@ -85,6 +85,6 @@ public struct ModuleCompiler {
 			_ = try module.compile(file: file)
 		}
 
-		return module.finalize(mode: mode)
+		return try module.finalize(mode: mode)
 	}
 }

@@ -1,0 +1,26 @@
+name: Lint
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    env:
+      CI: "1"
+    container:
+      image: swiftlang/swift:nightly-jammy
+    runs-on: macos-latest
+    steps:
+    - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        swift-version: "main-snapshot"
+    - uses: actions/checkout@v4
+    - name: Install deps
+      run: swift package update
+    - name: Run swiftlint
+      run: swift package plugin swiftlint --quiet

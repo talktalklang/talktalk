@@ -17,7 +17,7 @@ import Testing
 struct VMEndToEndTests: VMTest {
 	func runAsync(_ strings: String...) throws {
 		let module = try compile(strings)
-		_ = VirtualMachine.run(module: module)
+		_ = try VirtualMachine.run(module: module)
 	}
 
 	@Test("Adds") func adds() throws {

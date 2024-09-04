@@ -7,20 +7,24 @@
 
 import TalkTalkSyntax
 
-struct SubscriptExprAnalyzer {
+struct SubscriptExprAnalyzer: Analyzer {
 	let expr: any SubscriptExpr
 	let visitor: SourceFileAnalyzer
 	let context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
-		let receiver = try expr.receiver.accept(visitor, context) as! any AnalyzedExpr
-		let args = try expr.args.map { try $0.accept(visitor, context) } as! [AnalyzedArgument]
+		let receiver = try expr.receiver.accept(visitor, context)
+		let args = try cast(expr.args.map { try $0.accept(visitor, context) }, to: [AnalyzedArgument].self)
+
+		guard let inferenceType = context.inferenceContext.lookup(syntax: expr) else {
+			throw AnalyzerError.typeNotInferred("\(expr.description)")
+		}
 
 		return AnalyzedSubscriptExpr(
-			receiverAnalyzed: receiver,
+			receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
 			argsAnalyzed: args,
-			wrapped: expr as! SubscriptExprSyntax,
-			inferenceType: context.inferenceContext.lookup(syntax: expr)!,
+			wrapped: try cast(expr, to: SubscriptExprSyntax.self),
+			inferenceType: inferenceType,
 			environment: context,
 			analysisErrors: []
 		)

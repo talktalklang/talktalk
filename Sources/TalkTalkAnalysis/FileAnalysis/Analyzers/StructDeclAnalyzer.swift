@@ -21,6 +21,7 @@ struct StructDeclAnalyzer: Analyzer {
 		}
 
 		let structType = StructType(
+			id: decl.id,
 			name: decl.name,
 			properties: [:],
 			methods: [:],
@@ -121,7 +122,7 @@ struct StructDeclAnalyzer: Analyzer {
 			// Go through and actually analyze the type params
 			let environment = bodyContext.add(namespace: nil)
 			environment.isInTypeParameters = true
-			structType.typeParameters[i].type = try param.type.accept(visitor, environment) as! AnalyzedTypeExpr
+			structType.typeParameters[i].type = try cast(param.type.accept(visitor, environment), to: AnalyzedTypeExpr.self)
 		}
 
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
@@ -131,8 +132,8 @@ struct StructDeclAnalyzer: Analyzer {
 
 		let analyzed = AnalyzedStructDecl(
 			symbol: symbol,
-			wrapped: decl.cast(StructDeclSyntax.self),
-			bodyAnalyzed: bodyAnalyzed as! AnalyzedDeclBlock,
+			wrapped: try cast(decl, to: StructDeclSyntax.self),
+			bodyAnalyzed: try cast(bodyAnalyzed, to:  AnalyzedDeclBlock.self),
 			structType: structType,
 			lexicalScope: lexicalScope,
 			inferenceType: inferenceType,

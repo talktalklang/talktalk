@@ -11,6 +11,30 @@ import TypeChecker
 public protocol Analyzer {}
 
 extension Analyzer {
+	func castToAnyAnalyzedExpr(_ syntax: any Syntax) throws -> any AnalyzedExpr {
+		if let syntax = syntax as? any AnalyzedExpr {
+			return syntax
+		} else {
+			throw AnalyzerError.unexpectedCast(expected: "any AnalyzedExpr", received: "\(syntax)")
+		}
+	}
+
+	func cast<T>(_ syntax: any Syntax, to type: T.Type) throws -> T {
+		if let syntax = syntax as? T {
+			return syntax
+		} else {
+			throw AnalyzerError.unexpectedCast(expected: "\(T.self)", received: "\(syntax)")
+		}
+	}
+
+	func cast<T>(_ syntax: [any Syntax], to type: T.Type) throws -> T {
+		if let syntax = syntax as? T {
+			return syntax
+		} else {
+			throw AnalyzerError.unexpectedCast(expected: "\(T.self)", received: "\(syntax)")
+		}
+	}
+
 	func checkMutability(of receiver: any Syntax, in env: Environment) -> [AnalysisError] {
 		switch receiver {
 		case let receiver as any VarExpr:

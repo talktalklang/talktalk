@@ -33,10 +33,12 @@ public extension Syntax {
 	}
 
 	func cast<T: Syntax>(_: T.Type, _ file: String = #file, _ line: UInt32 = #line) -> T {
-		if self is T {
-			self as! T
+		if let casted = self as? T {
+			return casted
 		} else {
+			// swiftlint:disable fatal_error
 			fatalError("Could not cast \(self) to \(T.self) (\(file):\(line))")
+			// swiftlint:enable fatal_error
 		}
 	}
 
@@ -45,15 +47,19 @@ public extension Syntax {
 	}
 
 	var description: String {
-		switch self {
-		case let syntax as any Expr:
-			try! syntax.accept(Formatter(), Formatter.Context())
-		case let syntax as any Decl:
-			try! syntax.accept(Formatter(), Formatter.Context())
-		case let syntax as any Stmt:
-			try! syntax.accept(Formatter(), Formatter.Context())
-		default:
-			"No description found for \(debugDescription)"
+		do {
+			switch self {
+			case let syntax as any Expr:
+				return try syntax.accept(Formatter(), Formatter.Context())
+			case let syntax as any Decl:
+				return try syntax.accept(Formatter(), Formatter.Context())
+			case let syntax as any Stmt:
+				return try syntax.accept(Formatter(), Formatter.Context())
+			default:
+				return "No description found for \(debugDescription)"
+			}
+		} catch {
+			return "Error getting description: \(error)"
 		}
 	}
 

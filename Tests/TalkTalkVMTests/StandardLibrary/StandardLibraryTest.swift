@@ -44,6 +44,6 @@ extension StandardLibraryTest {
 			moduleEnvironment: moduleEnvironment
 		).compile(mode: .executable)
 
-		return VirtualMachine.run(module: module, verbosity: verbosity)
+		return try VirtualMachine.run(module: module, verbosity: verbosity)
 	}
 }

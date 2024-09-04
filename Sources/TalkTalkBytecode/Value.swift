@@ -174,12 +174,12 @@ extension Value: CustomStringConvertible {
 			"reserved"
 		case .byte:
 			"byte"
-		case .int:
-			".int(\(intValue!))"
-		case .bool:
-			".bool(\(boolValue!))"
-		case .data:
-			".data(\(dataValue!))"
+		case .int(let int):
+			".int(\(int))"
+		case .bool(let bool):
+			".bool(\(bool))"
+		case .data(let data):
+			".data(\(data))"
 		case .closure:
 			"closure"
 		case .builtin:
@@ -188,10 +188,10 @@ extension Value: CustomStringConvertible {
 			"module function \(id)"
 		case let .struct(type):
 			"\(type.name).Type"
-		case .instance:
-			"instance \(instanceValue!.type.name)"
-		case .boundMethod:
-			"bound method \(boundMethodValue!)"
+		case .instance(let instance):
+			"instance \(instance.type.name)"
+		case .boundMethod(let instance, let slot):
+			"bound method \(instance), slot: \(slot)"
 		case .builtinStruct:
 			"builtin struct"
 		case .pointer:

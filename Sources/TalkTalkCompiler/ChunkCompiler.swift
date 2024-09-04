@@ -155,7 +155,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		case .minus:
 			chunk.emit(opcode: .negate, line: expr.location.line)
 		default:
-			fatalError("unreachable")
+			throw CompilerError.unreachable
 		}
 	}
 
@@ -266,7 +266,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// We always want to emit a return at the end of a function
 		chunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
 
-		_ = module.addChunk(chunk)
+		_ = try module.addChunk(chunk)
 	}
 
 	public func visit(_ expr: AnalyzedFuncExpr, _ chunk: Chunk) throws {
@@ -309,8 +309,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
 
 		let line = UInt32(expr.location.line)
-		let subchunkID = module.analysisModule.symbols[expr.symbol]!.slot
-		_ = module.addChunk(functionChunk)
+
+		guard let subchunkID = module.analysisModule.symbols[expr.symbol]?.slot else {
+			throw CompilerError.unknownIdentifier(expr.symbol.description)
+		}
+
+		_ = try module.addChunk(functionChunk)
 		chunk.emitClosure(subchunkID: Byte(subchunkID), line: line)
 
 		for upvalue in functionCompiler.upvalues {
@@ -372,7 +376,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		} else if let method = expr.memberAnalyzed as? Method {
 			method.slot
 		} else {
-			fatalError("unknown member: \(expr.memberAnalyzed)")
+			throw CompilerError.unknownIdentifier("Member not found for \(expr.receiverAnalyzed.description): \(expr.memberAnalyzed)")
 		}
 
 		chunk.emit(byte: Byte(slot), line: expr.location.line)
@@ -444,11 +448,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 				declChunk.emit(byte: 0, line: UInt32(decl.location.end.line))
 				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
 
-				let analysisMethod = expr.structType.methods["init"]!
+				guard let analysisMethod = expr.structType.methods["init"] else {
+					throw CompilerError.typeError("No `init` found for \(expr.name)")
+				}
+
 				methods[analysisMethod.slot] = StaticChunk(chunk: declChunk)
 				structType.initializerSlot = analysisMethod.slot
 			case let decl as AnalyzedFuncExpr:
-				let symbol = Symbol.method(module.name, name, decl.name!.lexeme, decl.params.params.map(\.name))
+				guard let declName = decl.name?.lexeme else {
+					throw CompilerError.unknownIdentifier(decl.description)
+				}
+				let symbol = Symbol.method(module.name, name, declName, decl.params.params.map(\.name))
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
@@ -477,16 +487,21 @@ public class ChunkCompiler: AnalyzedVisitor {
 				declCompiler.endScope(chunk: declChunk)
 				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
 
-				let analysisMethod = expr.structType.methods[decl.name!.lexeme]!
+				guard let analysisMethod = expr.structType.methods[declName] else {
+					throw CompilerError.analysisError("Missing analyzer method for \(name).\(declName)")
+				}
 				methods[analysisMethod.slot] = StaticChunk(chunk: declChunk)
 			case is AnalyzedVarDecl: ()
 			case is AnalyzedLetDecl: ()
 			default:
-				fatalError("unknown decl: \(decl)")
+				throw CompilerError.typeError("Unknown decl: \(decl)")
 			}
 		}
 
-		let initializer = expr.structType.methods["init"]!
+		guard let initializer = expr.structType.methods["init"] else {
+			throw CompilerError.unknownIdentifier("Missing init for \(name)")
+		}
+
 		if initializer.isSynthetic {
 			structType.initializerSlot = initializer.slot
 			let chunk = synthesizeInit(for: expr.structType)
@@ -876,7 +891,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	private func synthesizeInit(for structType: StructType) -> Chunk {
 		let params = Array(structType.properties.keys)
-		let symbol = Symbol.method(module.name, structType.name!, "init", params)
+		let symbol = Symbol.method(
+			module.name, structType.name ?? "<struct \(structType.id)>",
+			"init",
+			params
+		)
 		let chunk = Chunk(
 			name: symbol.description,
 			symbol: symbol,

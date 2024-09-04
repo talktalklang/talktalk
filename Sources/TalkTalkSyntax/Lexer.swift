@@ -4,6 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/22/24.
 //
+import Foundation
 
 public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable, Codable {
 	public enum Kind: Sendable, Equatable, Hashable, Codable {
@@ -78,7 +79,10 @@ public struct Lexer {
 		self.errors = []
 
 		if source.path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
-			fatalError("empty source path not allowed")
+			#if DEBUG
+			print("empty source path is discouraged")
+			raise(SIGINT)
+			#endif
 		}
 	}
 

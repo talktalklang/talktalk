@@ -45,8 +45,8 @@ public struct SourceLocation: Sendable, Equatable, Hashable, Codable, CustomStri
 extension SourceLocation: ExpressibleByArrayLiteral {
 	public init(arrayLiteral elements: Token...) {
 		precondition(!elements.isEmpty, "cannot have a source location with no elements")
-		self.path = elements.first!.path
-		self.start = elements.first!
-		self.end = elements.last!
+		self.path = elements.first.unsafelyUnwrapped.path
+		self.start = elements.first.unsafelyUnwrapped
+		self.end = elements.last.unsafelyUnwrapped
 	}
 }

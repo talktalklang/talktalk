@@ -20,7 +20,7 @@ enum RequestID: Equatable, Codable, Sendable, Hashable {
 		} else if let id = try? container.decode(String.self) {
 			self = .string(id)
 		} else {
-			fatalError("could not decode id")
+			throw DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Could not decode id"))
 		}
 	}
 
