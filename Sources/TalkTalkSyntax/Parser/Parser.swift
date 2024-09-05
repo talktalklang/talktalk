@@ -106,7 +106,7 @@ public struct Parser {
 		}
 
 		if context == .enum {
-			if didMatch(.match) {
+			if didMatch(.case) {
 				return enumCaseDecl()
 			}
 		}
