@@ -71,7 +71,7 @@ public struct Parser {
 		while current.kind != .eof {
 			skip(.newline)
 
-			results.append(decl())
+			results.append(decl(context: .topLevel))
 
 			skip(.newline)
 		}
@@ -88,7 +88,11 @@ public struct Parser {
 		return results
 	}
 
-	mutating func decl() -> any Syntax {
+	mutating func decl(context: DeclContext) -> any Syntax {
+		if didMatch(.enum) {
+			return enumDecl()
+		}
+
 		if didMatch(.struct) {
 			return structDecl()
 		}
@@ -101,8 +105,16 @@ public struct Parser {
 			return funcExpr()
 		}
 
-		if didMatch(.initialize) {
-			return _init()
+		if context == .enum {
+			if didMatch(.case) {
+				return enumCaseDecl()
+			}
+		}
+
+		if context == .struct {
+			if didMatch(.initialize) {
+				return _init()
+			}
 		}
 
 		if didMatch(.var) {
@@ -111,10 +123,6 @@ public struct Parser {
 
 		if didMatch(.let) {
 			return letVarDecl(.let)
-		}
-
-		if didMatch(.initialize) {
-			return _init()
 		}
 
 		return stmt()

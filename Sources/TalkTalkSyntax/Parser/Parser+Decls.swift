@@ -5,7 +5,61 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
+public enum DeclContext {
+	case `struct`, `enum`, topLevel
+}
+
 public extension Parser {
+	mutating func enumDecl() -> any Decl {
+		let token = previous.unsafelyUnwrapped
+		let i = startLocation(at: token)
+		guard let nameToken = consume(.identifier, "expected enum name") else {
+			return error(
+				at: current, .unexpectedToken(expected: .identifier, got: current),
+				expectation: .none
+			)
+		}
+
+		let body = declBlock(context: .enum)
+
+		return EnumDeclSyntax(
+			enumToken: token,
+			nameToken: nameToken,
+			body: body,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
+	mutating func enumCaseDecl() -> any Decl {
+		let token = previous.unsafelyUnwrapped
+		let i = startLocation(at: token)
+
+		guard let nameToken = consume(.identifier, "expected enum case name") else {
+			return error(
+				at: current, .unexpectedToken(expected: .identifier, got: current),
+				expectation: .none
+			)
+		}
+
+		var typeExprs: [TypeExprSyntax] = []
+		if didMatch(.leftParen) {
+			repeat {
+				typeExprs.append(typeExpr())
+			} while didMatch(.comma)
+
+			consume(.rightParen)
+		}
+
+		return EnumCaseDeclSyntax(
+			caseToken: token,
+			nameToken: nameToken,
+			attachedTypes: typeExprs,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
 	mutating func letVarDecl(_ kind: Token.Kind) -> any Decl {
 		let token = previous.unsafelyUnwrapped
 
@@ -69,7 +123,7 @@ public extension Parser {
 		)
 	}
 
-	mutating func declBlock() -> DeclBlockSyntax {
+	mutating func declBlock(context: DeclContext) -> DeclBlockSyntax {
 		consume(.leftBrace, "expected '{' before block")
 		skip(.newline)
 
@@ -79,7 +133,7 @@ public extension Parser {
 
 		while !check(.eof), !check(.rightBrace) {
 			skip(.newline)
-			decls.append(decl())
+			decls.append(decl(context: context))
 			skip(.newline)
 		}
 
@@ -113,7 +167,7 @@ public extension Parser {
 			} while didMatch(.comma)
 		}
 
-		let body = declBlock()
+		let body = declBlock(context: .struct)
 
 		return StructDeclSyntax(
 			id: nextID(), 

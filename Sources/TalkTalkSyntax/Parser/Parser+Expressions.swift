@@ -292,7 +292,7 @@ extension Parser {
 			typeParameters = self.typeParameters()
 		}
 
-		let body = declBlock()
+		let body = declBlock(context: .struct)
 
 		return StructExprSyntax(
 			id: nextID(),

@@ -90,6 +90,8 @@ extension Token.Kind {
 		case .forwardArrow: .none
 		case .semicolon: .none
 		case .protocol: .none
+		case .enum: .none
+		case .case: .none
 		}
 	}
 }

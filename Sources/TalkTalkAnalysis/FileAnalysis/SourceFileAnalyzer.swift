@@ -582,5 +582,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
+	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
 	// GENERATOR_INSERTION
 }

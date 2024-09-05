@@ -44,5 +44,7 @@ public protocol Visitor {
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

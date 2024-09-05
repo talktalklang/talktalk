@@ -23,7 +23,8 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		case `func`, `true`, `false`, `return`,
 		     `if`, `in`, call, `else`,
 		     `while`, `var`, `let`, initialize,
-		     `struct`, `self`, `Self`, `import`, `is`, `protocol`
+		     `struct`, `self`, `Self`, `import`, `is`, `protocol`,
+				 `enum`, `case`
 
 		case newline
 		case eof
@@ -84,6 +85,11 @@ public struct Lexer {
 			raise(SIGINT)
 			#endif
 		}
+	}
+
+	public static func collect(_ file: SourceFile) -> [Token] {
+		var lexer = Lexer(file)
+		return lexer.collect()
 	}
 
 	public mutating func rewind(count _: Int) {}
@@ -209,6 +215,8 @@ public struct Lexer {
 		case "import": make(.import)
 		case "init": make(.initialize)
 		case "protocol": make(.protocol)
+		case "enum": make(.enum)
+		case "case": make(.case)
 		default:
 			make(.identifier)
 		}

@@ -302,5 +302,13 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
+	@StringBuilder public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	// GENERATOR_INSERTION
 }

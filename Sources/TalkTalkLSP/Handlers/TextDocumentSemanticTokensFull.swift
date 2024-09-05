@@ -344,5 +344,15 @@ public struct SemanticTokensVisitor: Visitor {
 		return [make(.keyword, from: expr.funcToken)]
 	}
 
+	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
+	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
 	// GENERATOR_INSERTION
 }
