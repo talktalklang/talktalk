@@ -19,15 +19,9 @@ struct EnumTests {
 		)
 
 		#expect(tokens.map(\.kind) == [
-			.enum,
-			.identifier,
-			.leftBrace,
-			.newline,
-			.match,
-			.identifier,
-			.newline,
-			.rightBrace,
-			.eof
+			.enum, .identifier, .leftBrace, .newline,
+			.case, .identifier, .newline,
+			.rightBrace, .eof
 		])
 	}
 
