@@ -310,5 +310,17 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
+	@StringBuilder public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	// GENERATOR_INSERTION
 }

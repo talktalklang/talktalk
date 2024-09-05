@@ -397,7 +397,27 @@ extension Parser {
 		}
 	}
 
-	mutating func dot(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
+	mutating func dot(_ canAssign: Bool) -> any Expr {
+		let i = startLocation()
+		consume(.dot)
+		guard let property = consume(.identifier) else {
+			return error(at: current, expected(.identifier), expectation: .identifier)
+		}
+
+		var params: [ParamSyntax] = []
+		if didMatch(.leftParen) {
+			params = parameterList().params.map { $0 as! ParamSyntax }
+		}
+
+		return EnumMemberExprSyntax(
+			property: property,
+			params: params,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
+	mutating func member(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: previous)
 		consume(.dot)
 
@@ -512,5 +532,9 @@ extension Parser {
 			location: endLocation(i),
 			errors: errors
 		)
+	}
+
+	func expected(_ kind: Token.Kind) -> SyntaxErrorKind {
+		.unexpectedToken(expected: kind, got: current)
 	}
 }

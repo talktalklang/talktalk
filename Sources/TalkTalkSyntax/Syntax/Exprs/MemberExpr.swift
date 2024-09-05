@@ -9,6 +9,7 @@ public struct MemberExprSyntax: MemberExpr {
 	public let receiver: any Expr
 	public let property: String
 	public let propertyToken: Token
+	public let params: [ParamSyntax] = []
 	public var location: SourceLocation
 	public var children: [any Syntax] { [receiver] }
 

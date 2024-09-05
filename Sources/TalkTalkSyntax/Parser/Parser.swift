@@ -106,7 +106,7 @@ public struct Parser {
 		}
 
 		if context == .enum {
-			if didMatch(.case) {
+			if didMatch(.match) {
 				return enumCaseDecl()
 			}
 		}
@@ -135,6 +135,10 @@ public struct Parser {
 
 	mutating func stmt() -> any Stmt {
 		skip(.semicolon)
+
+		if didMatch(.match) {
+			return matchStmt()
+		}
 
 		if didMatch(.import) {
 			return importStmt()

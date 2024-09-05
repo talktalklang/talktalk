@@ -354,5 +354,20 @@ public struct SemanticTokensVisitor: Visitor {
 		return []
 	}
 
+	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
+	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
+	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
 	// GENERATOR_INSERTION
 }

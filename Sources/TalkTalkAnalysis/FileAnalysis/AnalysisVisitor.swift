@@ -46,5 +46,8 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedFuncSignatureDecl, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedEnumDecl, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedEnumCaseDecl, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedMatchStatement, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedCaseStmt, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedEnumMemberExpr, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

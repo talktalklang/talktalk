@@ -51,7 +51,7 @@ extension Token.Kind {
 		     .greaterEqual: .init(nil, { $0.binary($1, $2) }, .comparison)
 		case .less,
 		     .greater: .init(nil, { $0.binary($1, $2) }, .comparison)
-		case .dot: .init(nil, { $0.dot($1, $2) }, .call)
+		case .dot: .init({ $0.dot($1) }, { $0.member($1, $2) }, .call)
 		case .is: .init(nil, { $0.binary($1, $2) }, .call)
 		case .plusEquals, .minusEquals: .init(nil, { $0.incDecOp($1, $2) }, .call)
 
@@ -91,7 +91,8 @@ extension Token.Kind {
 		case .semicolon: .none
 		case .protocol: .none
 		case .enum: .none
-		case .case: .none
+		case .match: .none
+		case .`case`: .none
 		}
 	}
 }

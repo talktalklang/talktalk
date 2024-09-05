@@ -23,7 +23,7 @@ struct EnumTests {
 			.identifier,
 			.leftBrace,
 			.newline,
-			.case,
+			.match,
 			.identifier,
 			.newline,
 			.rightBrace,

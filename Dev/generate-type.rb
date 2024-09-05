@@ -95,9 +95,9 @@ public struct #{analyzedName}: #{typeName}, Analyzed#{kind.capitalize} {
   public let wrapped: #{typeName}Syntax
 #{analyzedProps()}
 
-	public var typeID: TypeID
+	public var inferenceType: InferenceType
 	public var environment: Environment
-	public var analyzedChildren: [any AnalyzedSyntax] { fatalError("TODO") }
+	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
@@ -143,7 +143,7 @@ SWIFT
 puts "added conformance to SourceFileAnalyzer"
 
 insert "Sources/TalkTalkLSP/Handlers/TextDocumentSemanticTokensFull.swift", <<SWIFT
-	func visit(_ expr: #{typeName}Syntax, _ context: Context) throws -> [RawSemanticToken] {
+	public func visit(_ expr: #{typeName}Syntax, _ context: Context) throws -> [RawSemanticToken] {
 		#warning("TODO")
 		return []
 	}
