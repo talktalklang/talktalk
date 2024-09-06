@@ -411,24 +411,6 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			}
 
 			declsAnalyzed.append(declAnalyzed)
-
-//			// If we have an updated type for a method, update the struct to know about it.
-//			if let funcExpr = declAnalyzed as? AnalyzedFuncExpr,
-//				 let lexicalScope = context.lexicalScope,
-//				 let name = funcExpr.name?.lexeme,
-//				 let existing = lexicalScope.scope.methods[name]
-//			{
-//				lexicalScope.scope.add(
-//					method: Method(
-//						name: funcExpr.name!.lexeme,
-//						slot: existing.slot,
-//						params: funcExpr.analyzedParams.paramsAnalyzed.map(\.typeAnalyzed),
-//						inferenceType: context.inferenceContext.lookup(syntax: funcExpr) ?? .any,
-//						location: funcExpr.semanticLocation ?? funcExpr.location,
-//						returnTypeID: funcExpr.returnType,
-//						isMutable: false
-//					))
-//			}
 		}
 
 		guard let declsAnalyzed = declsAnalyzed as? [any AnalyzedDecl] else {
@@ -583,23 +565,75 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		let analyzedBody = try cast(expr.body.accept(self, context), to: AnalyzedDeclBlock.self)
+
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		var cases: [AnalyzedEnumCaseDecl] = []
+		for decl in analyzedBody.declsAnalyzed {
+			if let decl = decl as? AnalyzedEnumCaseDecl {
+				cases.append(decl)
+			} else {
+
+			}
+		}
+
+		return AnalyzedEnumDecl(
+			wrapped: expr,
+			casesAnalyzed: cases,
+			inferenceType: type,
+			environment: context,
+			bodyAnalyzed: analyzedBody
+		)
 	}
 
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		return try AnalyzedEnumCaseDecl(
+			wrapped: expr,
+			attachedTypesAnalyzed: expr.attachedTypes.map({ try cast($0.accept(self, context), to: AnalyzedTypeExpr.self) }),
+			inferenceType: type,
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: MatchStatementSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
+		}
+
+		let targetAnalyzed = try castToAnyAnalyzedExpr(expr.target.accept(self, context))
+		let casesAnalyzed = try expr.cases.map { try cast($0.accept(self, context), to: AnalyzedCaseStmt.self) }
+
+		return AnalyzedMatchStatement(
+			wrapped: expr,
+			targetAnalyzed: targetAnalyzed,
+			casesAnalyzed: casesAnalyzed,
+			inferenceType: type,
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
+		}
+
+		let optionsAnalyzed = try expr.options.map { try castToAnyAnalyzedExpr($0.accept(self, context)) }
+		let bodyAnalyzed = try expr.body.compactMap { try $0.accept(self, context) as? any AnalyzedStmt }
+
+		return AnalyzedCaseStmt(
+			wrapped: expr,
+			optionsAnalyzed: optionsAnalyzed,
+			bodyAnalyzed: bodyAnalyzed,
+			inferenceType: type,
+			environment: context
+		)
 	}
 
 	public func visit(_ expr: EnumMemberExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {

@@ -3,19 +3,18 @@
 import TalkTalkSyntax
 
 public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
-	public var body: [any TalkTalkSyntax.Stmt]
-	
   public let wrapped: CaseStmtSyntax
-	public var casesAnalyzed: [any AnalyzedExpr]
-	public var bodyAnalyzed: AnalyzedBlockStmt
+	public var optionsAnalyzed: [any AnalyzedExpr]
+	public var bodyAnalyzed: [any AnalyzedStmt]
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] {
-		[bodyAnalyzed] + casesAnalyzed
+		bodyAnalyzed + optionsAnalyzed
 	}
 
 	// Delegate these to the wrapped node
+	public var body: [any Stmt] { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
 	public var options: [any Expr] { wrapped.options }

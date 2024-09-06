@@ -112,8 +112,8 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	case enumType(EnumType)
 	case enumCase(EnumCase)
 
-	// Pattern matching
-	case pattern(Pattern)
+	// Pattern matching (type, associated values)
+	case pattern(InferenceType, [InferenceType])
 
 	// When we can't figure it out or don't care
 	case any

@@ -30,11 +30,9 @@ struct PatternVisitor: Visitor {
 		try expr.callee.accept(inferenceVisitor, context)
 		let type = try context.get(expr.callee).asType(in: context)
 
-		let params: [InferenceType] = if let expectation = context.expectation {
-			try inferenceVisitor.parameters(of: expectation)
-		} else {
-			[]
-		}
+		print("TYPE `\(expr.description)` IS \(type)")
+
+		let params: [InferenceType] = try inferenceVisitor.parameters(of: type)
 
 		var values: [InferenceType] = []
 		for (i, arg) in expr.args.enumerated() {
@@ -65,11 +63,12 @@ struct PatternVisitor: Visitor {
 				}
 
 				try arg.accept(inferenceVisitor, context)
+				
 				let pattern = try visit(arg, context)
-				values.append(.pattern(pattern))
+				values.append(.pattern(pattern.type, pattern.values))
 			case let arg as MemberExprSyntax:
 				let pattern = try visit(arg, context)
-				values.append(.pattern(pattern))
+				values.append(.pattern(pattern.type, pattern.values))
 			case let arg as any Expr:
 				try arg.accept(inferenceVisitor, context)
 				let type = try context.get(arg).asType(in: context)
@@ -82,6 +81,8 @@ struct PatternVisitor: Visitor {
 				throw PatternError.invalid("Invalid pattern: \(arg)")
 			}
 		}
+
+		print("CALL EXPR \(expr.description), \(type.description), \(values.map(\.description))")
 
 		return Pattern(
 			type: type,

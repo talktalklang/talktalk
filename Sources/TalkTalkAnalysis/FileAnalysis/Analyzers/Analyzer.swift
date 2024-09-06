@@ -64,7 +64,7 @@ extension Analyzer {
 	}
 
 	func error(
-		at expr: any Syntax, _ message: String, environment: Environment, expectation: ParseExpectation
+		at expr: any Syntax, _ message: String, environment: Environment, expectation: ParseExpectation = .none
 	) -> AnalyzedErrorSyntax {
 		AnalyzedErrorSyntax(
 			typeID: .error(

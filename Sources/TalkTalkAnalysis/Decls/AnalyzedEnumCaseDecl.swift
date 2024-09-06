@@ -4,7 +4,6 @@ import TalkTalkSyntax
 
 public struct AnalyzedEnumCaseDecl: EnumCaseDecl, AnalyzedDecl {
   public let wrapped: EnumCaseDeclSyntax
-	public var nameTokenAnalyzed: Token
 	public var attachedTypesAnalyzed: [AnalyzedTypeExpr]
 
 	public var inferenceType: InferenceType

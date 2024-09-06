@@ -235,7 +235,9 @@ struct InferenceVisitor: Visitor {
 	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws {
 		let patternVisitor = PatternVisitor(inferenceVisitor: self)
 		let pattern = try syntax.accept(patternVisitor, context)
-		context.extend(syntax, with: .type(.pattern(pattern)))
+
+		print("inferPattern from \(syntax): \(pattern.description)")
+		context.extend(syntax, with: .type(.pattern(pattern.type, pattern.values)))
 	}
 
 	// Visits
@@ -274,8 +276,10 @@ struct InferenceVisitor: Visitor {
 
 		let args = try expr.args.map { try context.get($0) }
 
-		let returns = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee) {
-			InferenceType.enumCase(enumCase)
+		let returns = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee),
+										 case let .enumType(type) = context.lookupVariable(named: enumCase.typeName) {
+			// If we determine the callee to be an enum case, then its type is actually the enum type.
+			InferenceType.enumType(type)
 		} else {
 			InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -759,13 +763,14 @@ struct InferenceVisitor: Visitor {
 					try type.accept(self, context)
 				}
 
-				try cases.append(
-					EnumCase(
-						typeName: expr.nameToken.lexeme,
-						name: kase.nameToken.lexeme,
-						attachedTypes: kase.attachedTypes.map { try context.get($0).asType(in: context) }
-					)
-				)
+				let enumCase = try EnumCase(
+					typeName: expr.nameToken.lexeme,
+					 name: kase.nameToken.lexeme,
+					 attachedTypes: kase.attachedTypes.map { try context.get($0).asType(in: context) }
+				 )
+
+				cases.append(enumCase)
+				context.extend(kase, with: .type(.enumCase(enumCase)))
 			}
 		}
 
@@ -793,18 +798,22 @@ struct InferenceVisitor: Visitor {
 		for kase in expr.cases {
 			try kase.accept(self, context.expecting(expectation))
 		}
+
+		context.extend(expr, with: .type(.void))
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws {
 		let context = context.childContext()
 
-		for kase in expr.options {
-			try inferPattern(from: kase, in: context)
+		for option in expr.options {
+			try inferPattern(from: option, in: context)
 		}
 
 		for stmt in expr.body {
 			try stmt.accept(self, context)
 		}
+
+		context.extend(expr, with: .type(.void))
 	}
 
 	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws {
