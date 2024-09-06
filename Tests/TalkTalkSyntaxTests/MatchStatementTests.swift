@@ -61,4 +61,19 @@ struct MatchStatementTests {
 		let case3 = parsed.cases[1].options[1].cast(MemberExprSyntax.self)
 		#expect(case3.property == "sup")
 	}
+
+	@Test("else clause") func elseClause() throws {
+		let parsed = try Parser.parse(
+			"""
+			match thing {
+			case 123:
+				true
+			else:
+				false
+			}
+			"""
+		)[0].cast(MatchStatementSyntax.self)
+
+		#expect(parsed.cases[1].isDefault)
+	}
 }

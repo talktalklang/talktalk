@@ -88,7 +88,7 @@ extension Parser {
 	}
 
 	mutating func caseStmt() -> any Stmt {
-		guard let token = consume(.case) else {
+		guard let token = consume(.case, .else) else {
 			return error(at: current, .unexpectedToken(expected: .case, got: current), expectation: .none)
 		}
 
@@ -113,6 +113,7 @@ extension Parser {
 		return CaseStmtSyntax(
 			options: cases,
 			body: stmts,
+			isDefault: token.kind == .else,
 			id: nextID(),
 			location: endLocation(i)
 		)

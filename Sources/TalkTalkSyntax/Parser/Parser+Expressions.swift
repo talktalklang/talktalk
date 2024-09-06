@@ -114,7 +114,7 @@ extension Parser {
 
 		skip(.newline)
 
-		consume(.leftParen, "expected '(' before params")
+		consume(.leftParen)
 
 		// Parse parameter list
 		let params = parameterList()
@@ -155,7 +155,7 @@ extension Parser {
 
 		skip(.newline)
 
-		consume(.leftParen, "expected '(' before params")
+		consume(.leftParen)
 
 		// Parse parameter list
 		let params = parameterList()
@@ -225,7 +225,7 @@ extension Parser {
 			}
 		} while didMatch(.comma)
 
-		consume(.rightBracket, "expected ']' after \(isDictionary ? "dictionary" : "array") literal")
+		consume(.rightBracket)
 
 		let literal: any Expr = if isDictionary {
 			DictionaryLiteralExprSyntax(
@@ -318,7 +318,7 @@ extension Parser {
 	mutating func blockStmt(_: Bool) -> BlockStmtSyntax {
 		let i = startLocation()
 		skip(.newline)
-		consume(.leftBrace, "expected '{' before block body")
+		consume(.leftBrace)
 		skip(.newline)
 
 		var body: [any Stmt] = []
@@ -327,7 +327,7 @@ extension Parser {
 			skip(.newline)
 		}
 
-		consume(.rightBrace, "expected '}' after block body")
+		consume(.rightBrace)
 
 		return BlockStmtSyntax(id: nextID(), stmts: body, location: endLocation(i))
 	}
@@ -417,7 +417,7 @@ extension Parser {
 		let i = startLocation(at: previous)
 		consume(.dot)
 
-		guard let member = consume(.identifier, "expected identifier for property access") else {
+		guard let member = consume(.identifier) else {
 			_ = error(
 				at: current,
 				.unexpectedToken(expected: .identifier, got: current),
@@ -522,7 +522,7 @@ extension Parser {
 		}
 
 		return TypeExprSyntax(
-			id: nextID(), 
+			id: nextID(),
 			identifier: typeID ?? .synthetic(.error),
 			genericParams: typeParameters,
 			location: endLocation(i),

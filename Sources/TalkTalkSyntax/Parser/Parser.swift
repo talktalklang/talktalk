@@ -210,7 +210,7 @@ public struct Parser {
 			params.append(ParamSyntax(id: nextID(), name: identifier.lexeme, type: type, location: [identifier]))
 		} while didMatch(.comma)
 
-		consume(terminator, "Expected '\(terminator)' after parameter list")
+		consume(terminator)
 
 		return ParamsExprSyntax(
 			id: nextID(),
@@ -235,7 +235,7 @@ public struct Parser {
 			args.append(Argument(id: nextID(), location: endLocation(i), label: name, value: value))
 		} while didMatch(.comma)
 
-		consume(terminator, "expected '\(terminator)' after arguments")
+		consume(terminator)
 		return args
 	}
 
@@ -256,10 +256,10 @@ public struct Parser {
 		current = lexer.next()
 	}
 
-	@discardableResult mutating func consume(_ kind: Token.Kind, _: String? = nil) -> Token? {
+	@discardableResult mutating func consume(_ kinds: Token.Kind...) -> Token? {
 		checkForInfiniteLoop()
 
-		if peek().kind == kind {
+		if kinds.contains(peek().kind) {
 			defer {
 				advance()
 			}
@@ -269,8 +269,8 @@ public struct Parser {
 
 		_ = error(
 			at: peek(),
-			.unexpectedToken(expected: kind, got: peek()),
-			expectation: .guess(from: kind)
+			.unexpectedToken(expected: kinds[0], got: peek()),
+			expectation: .guess(from: kinds[0])
 		)
 		return nil
 	}

@@ -3,12 +3,14 @@
 public protocol CaseStmt: Stmt {
 	var options: [any Expr] { get }
 	var body: [any Stmt] { get }
+	var isDefault: Bool { get }
 	// Insert CaseStmt specific fields here
 }
 
 public struct CaseStmtSyntax: CaseStmt {
 	public var options: [any Expr]
 	public var body: [any Stmt]
+	public var isDefault: Bool
 
   // A unique identifier
   public var id: SyntaxID

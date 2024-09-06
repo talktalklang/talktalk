@@ -26,7 +26,7 @@ public extension Parser {
 	mutating func enumDecl() -> any Decl {
 		let token = previous.unsafelyUnwrapped
 		let i = startLocation(at: token)
-		guard let nameToken = consume(.identifier, "expected enum name") else {
+		guard let nameToken = consume(.identifier) else {
 			return error(
 				at: current, .unexpectedToken(expected: .identifier, got: current),
 				expectation: .none
@@ -144,7 +144,7 @@ public extension Parser {
 	}
 
 	mutating func declBlock(context: DeclContext) -> DeclBlockSyntax {
-		consume(.leftBrace, "expected '{' before block")
+		consume(.leftBrace)
 		skip(.newline)
 
 		let i = startLocation(at: previous)
@@ -157,7 +157,7 @@ public extension Parser {
 			skip(.newline)
 		}
 
-		consume(.rightBrace, "expected '}' after block")
+		consume(.rightBrace)
 		skip(.newline)
 
 		return DeclBlockSyntax(id: nextID(), decls: decls, location: endLocation(i))
@@ -190,7 +190,7 @@ public extension Parser {
 		let body = declBlock(context: .struct)
 
 		return StructDeclSyntax(
-			id: nextID(), 
+			id: nextID(),
 			structToken: structToken,
 			name: name.lexeme,
 			nameToken: name,
@@ -231,7 +231,7 @@ public extension Parser {
 	}
 
 	mutating func protocolDeclBlock() -> ProtocolBodyDeclSyntax {
-		consume(.leftBrace, "expected '{' before block")
+		consume(.leftBrace)
 		skip(.newline)
 
 		let i = startLocation(at: previous)
@@ -267,7 +267,7 @@ public extension Parser {
 			skip(.newline)
 		}
 
-		consume(.rightBrace, "expected '}' after block")
+		consume(.rightBrace)
 		skip(.newline)
 
 		return ProtocolBodyDeclSyntax(decls: decls, id: nextID(), location: endLocation(i))
