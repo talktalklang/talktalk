@@ -80,17 +80,45 @@ public class Instance: Equatable, Hashable, CustomStringConvertible {
 }
 
 public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
+	// Something we'll fill in later.
 	case typeVar(TypeVariable)
-	case base(Primitive) // primitives
+
+	// Primitives, like int or string
+	case base(Primitive)
+
+	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceType], InferenceType)
+
+	// Struct stuff
 	case structType(StructType)
 	case structInstance(Instance)
+
+	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)
+
+	// A protocol Type
 	case `protocol`(ProtocolType)
+
+	// Errors
 	case error(InferenceError)
+
+	// Used for Type expressions that refer to actual types
 	case kind(InferenceType)
+
+	// Used for `self` in types that support it
 	case selfVar(StructType)
+
+	// Enum types
+	case enumType(EnumType)
+	case enumCase(EnumType, EnumCase)
+
+	// Pattern matching
+	case pattern(Pattern)
+
+	// When we can't figure it out or don't care
 	case any
+
+	// The absence of a type
 	case void
 
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
@@ -121,6 +149,12 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 			"\(type.description) (self)"
 		case let .placeholder(variable):
 			"\(variable) (placeholder)"
+		case let .enumType(type):
+			type.description
+		case let .enumCase(_, kase):
+			kase.description
+		case let .pattern(pattern):
+			"pattern: \(pattern)"
 		case .void:
 			"void"
 		}

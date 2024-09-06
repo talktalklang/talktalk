@@ -363,7 +363,7 @@ struct TalkTalkParserTests {
 		#expect(fooInit.args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let fooMember = ast[2].cast(ExprStmtSyntax.self).expr.cast(MemberExprSyntax.self)
-		#expect(fooMember.receiver.cast(VarExprSyntax.self).name == "foo")
+		#expect(fooMember.receiver?.cast(VarExprSyntax.self).name == "foo")
 		#expect(fooMember.property == "age")
 	}
 
@@ -397,7 +397,7 @@ struct TalkTalkParserTests {
 		#expect(fooInit.args[0].value.cast(LiteralExprSyntax.self).value == .int(123))
 
 		let fooMember = ast[2].cast(ExprStmtSyntax.self).expr.cast(MemberExprSyntax.self)
-		#expect(fooMember.receiver.cast(VarExprSyntax.self).name == "foo")
+		#expect(fooMember.receiver?.cast(VarExprSyntax.self).name == "foo")
 		#expect(fooMember.property == "age")
 	}
 
@@ -474,7 +474,7 @@ struct TalkTalkParserTests {
 		let op = value.op
 		#expect(op == .star)
 		#expect(lhs.property == "capacity")
-		#expect(lhs.receiver.as(VarExprSyntax.self)?.name == "self")
+		#expect(lhs.receiver?.as(VarExprSyntax.self)?.name == "self")
 		#expect(rhs.value == .int(2))
 	}
 }

@@ -2,6 +2,8 @@
 
 public protocol EnumCaseDecl: Decl {
 	// Insert EnumCaseDecl specific fields here
+	var nameToken: Token { get }
+	var attachedTypes: [TypeExpr] { get }
 }
 
 public struct EnumCaseDeclSyntax: EnumCaseDecl {

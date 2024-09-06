@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-public struct CallArgument: Syntax {
+public struct Argument: Syntax {
 	public var id: SyntaxID
 	public var location: SourceLocation
 	public var children: [any Syntax] { [value] }
@@ -15,18 +15,18 @@ public struct CallArgument: Syntax {
 	}
 	
 	public let label: Token?
-	public let value: any Expr
+	public let value: any Syntax
 }
 
 public protocol CallExpr: Expr {
 	var callee: any Expr { get }
-	var args: [CallArgument] { get }
+	var args: [Argument] { get }
 }
 
 public struct CallExprSyntax: CallExpr {
 	public var id: SyntaxID
 	public let callee: any Expr
-	public let args: [CallArgument]
+	public let args: [Argument]
 	public let location: SourceLocation
 	public var children: [any Syntax] { [callee] + args.map(\.value) }
 

@@ -83,11 +83,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 	}
 
-	public func visit(_ expr: CallArgument, _ context: Environment) throws -> any AnalyzedSyntax {
+	public func visit(_ expr: Argument, _ context: Environment) throws -> any AnalyzedSyntax {
 		AnalyzedArgument(
 			environment: context,
 			label: expr.label,
-			wrapped: expr.cast(CallArgument.self),
+			wrapped: expr.cast(Argument.self),
 			expr: try castToAnyAnalyzedExpr(expr.value.accept(self, context))
 		)
 	}

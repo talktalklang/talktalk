@@ -57,6 +57,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	public var errors: [InferenceError] = []
 	var constraints: Constraints
 	var substitutions: [TypeVariable: InferenceType] = [:]
+	var expectation: InferenceType?
 	private(set) public var namedVariables: [String: InferenceType] = [:]
 	private(set) var namedPlaceholders: [String: InferenceType] = [:]
 	var nextID: VariableID = 0
@@ -76,7 +77,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 		constraints: Constraints,
 		substitutions: [TypeVariable: InferenceType] = [:],
 		typeContext: TypeContext? = nil,
-		instanceContext: InstanceContext? = nil
+		instanceContext: InstanceContext? = nil,
+		expectation: InferenceType? = nil
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -86,6 +88,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.substitutions = substitutions
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
+		self.expectation = expectation
 
 		log("New context with depth \(depth)", prefix: " * ")
 	}
@@ -212,7 +215,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment.childEnvironment(),
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext
+			typeContext: typeContext,
+			expectation: expectation
 		)
 	}
 
@@ -232,7 +236,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext,
-			instanceContext: instanceContext
+			instanceContext: instanceContext,
+			expectation: expectation
 		)
 	}
 
@@ -242,11 +247,23 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext()
+			typeContext: typeContext ?? TypeContext(),
+			expectation: expectation
 		)
 	}
 
-	func lookupType(named name: String) -> InferenceType? {
+	func expecting(_ type: InferenceType) -> InferenceContext {
+		InferenceContext(
+			parent: self,
+			environment: environment,
+			constraints: constraints,
+			substitutions: substitutions,
+			typeContext: typeContext ?? TypeContext(),
+			expectation: type
+		)
+	}
+
+	func lookupPrimitive(named name: String) -> InferenceType? {
 		switch name {
 		case "int":
 			return .base(.int)
@@ -291,8 +308,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func extend(_ syntax: any Syntax, with result: InferenceResult) {
+		_ = environment[syntax]?.asType(in: self)
 		environment.extend(syntax, with: result)
-
 		parent?.extend(syntax, with: result)
 	}
 

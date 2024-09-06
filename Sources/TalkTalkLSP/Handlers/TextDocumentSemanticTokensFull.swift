@@ -112,7 +112,7 @@ public struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: CallArgument, _ context: Context) throws -> [RawSemanticToken] {
+	public func visit(_ expr: Argument, _ context: Context) throws -> [RawSemanticToken] {
 		var result: [RawSemanticToken] = []
 		if let label = expr.label {
 			result.append(make(.parameter, from: label))
@@ -242,7 +242,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: MemberExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		var result = try expr.receiver.accept(self, context)
+		var result = try expr.receiver?.accept(self, context) ?? []
 		result.append(make(.property, from: expr.propertyToken))
 		return result
 	}

@@ -6,7 +6,20 @@
 //
 
 public enum DeclContext {
-	case `struct`, `enum`, topLevel
+	case `struct`, `enum`, topLevel, argument
+
+	var allowed: Set<Token.Kind> {
+		switch self {
+		case .struct:
+			[.enum, .struct, .protocol, .func, .initialize, .var, .let]
+		case .enum:
+			[.enum, .struct, .protocol, .func, .case]
+		case .topLevel:
+			[.enum, .struct, .protocol, .func, .var, .let]
+		case .argument:
+			[.var, .let]
+		}
+	}
 }
 
 public extension Parser {

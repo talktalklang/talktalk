@@ -8,7 +8,7 @@
 import Testing
 import TalkTalkSyntax
 
-struct CaseStatementTests {
+struct MatchStatementTests {
 	@Test("Can lex") func lexin() throws {
 		let tokens = Lexer.collect(.tmp("""
 		match thing {
@@ -33,7 +33,7 @@ struct CaseStatementTests {
 		let parsed = try Parser.parse(
 			"""
 			match thing {
-			case .foo(fizz):
+			case .foo(let fizz):
 				true
 			case .bar(buzz), .sup:
 				false
@@ -44,10 +44,21 @@ struct CaseStatementTests {
 		#expect(parsed.target.cast(VarExprSyntax.self).name == "thing")
 		#expect(parsed.cases.count == 2)
 
-		let case1 = parsed.cases[0].cases[0].cast(EnumMemberExprSyntax.self)
+		let call1 = parsed.cases[0].cases[0].cast(CallExprSyntax.self)
+		let case1 = call1.callee.cast(MemberExprSyntax.self)
 		#expect(case1.receiver == nil)
-		#expect(case1.property.lexeme == "foo")
-		#expect(case1.params.count == 1)
-		#expect(case1.params[0].name == "fizz")
+		#expect(case1.property == "foo")
+		#expect(call1.args.count == 1)
+		#expect(call1.args[0].value.cast(LetDeclSyntax.self).name == "fizz")
+
+		let call2 = parsed.cases[1].cases[0].cast(CallExprSyntax.self)
+		let case2 = call2.callee.cast(MemberExprSyntax.self)
+		#expect(case2.receiver == nil)
+		#expect(case2.property == "bar")
+		#expect(call2.args.count == 1)
+		#expect(call2.args[0].value.cast(VarExprSyntax.self).name == "buzz")
+
+		let case3 = parsed.cases[1].cases[1].cast(MemberExprSyntax.self)
+		#expect(case3.property == "sup")
 	}
 }

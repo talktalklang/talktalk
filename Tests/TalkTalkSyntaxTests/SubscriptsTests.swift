@@ -73,7 +73,7 @@ struct SubscriptsTests {
 		#expect(expr.receiver.cast(VarExprSyntax.self).name == "foo")
 		#expect(expr.args.count == 1)
 		#expect(expr.args[0]
-			.cast(CallArgument.self).value
+			.cast(Argument.self).value
 			.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 
@@ -93,6 +93,6 @@ struct SubscriptsTests {
 			.cast(SubscriptExprSyntax.self)
 
 		#expect(stmt.receiver.cast(ArrayLiteralExprSyntax.self).exprs[0].cast(LiteralExprSyntax.self).value == .int(1))
-		#expect(stmt.args[0].cast(CallArgument.self).value.cast(LiteralExprSyntax.self).value == .int(123))
+		#expect(stmt.args[0].cast(Argument.self).value.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 }

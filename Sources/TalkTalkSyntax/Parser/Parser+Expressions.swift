@@ -372,7 +372,7 @@ extension Parser {
 
 		consume(.leftParen) // This is how we got here.
 
-		var args: [CallArgument] = []
+		var args: [Argument] = []
 		if !didMatch(.rightParen) {
 			args = argumentList()
 		}
@@ -404,15 +404,11 @@ extension Parser {
 			return error(at: current, expected(.identifier), expectation: .identifier)
 		}
 
-		var params: [ParamSyntax] = []
-		if didMatch(.leftParen) {
-			params = parameterList().params.map { $0 as! ParamSyntax }
-		}
-
-		return EnumMemberExprSyntax(
-			property: property,
-			params: params,
+		return MemberExprSyntax(
 			id: nextID(),
+			receiver: nil,
+			property: property.lexeme,
+			propertyToken: property,
 			location: endLocation(i)
 		)
 	}

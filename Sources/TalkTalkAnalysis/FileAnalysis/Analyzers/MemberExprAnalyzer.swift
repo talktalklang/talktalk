@@ -13,7 +13,7 @@ struct MemberExprAnalyzer: Analyzer {
 	let context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
-		let receiver = try expr.receiver.accept(visitor, context)
+		let receiver = try expr.receiver!.accept(visitor, context)
 		let propertyName = expr.property
 		let type = context.inferenceContext.lookup(syntax: expr)
 

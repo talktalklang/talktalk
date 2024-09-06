@@ -16,7 +16,7 @@ struct ModuleCompile: TalkTalkCommand {
 		abstract: "Compiles the given directory to TalkTalk modules"
 	)
 
-	@Argument(help: "The directories to compile.", completion: .directory)
+	@ArgumentParser.Argument(help: "The directories to compile.", completion: .directory)
 	var directories: [String]
 
 	@Flag(help: "Dump the instructions")

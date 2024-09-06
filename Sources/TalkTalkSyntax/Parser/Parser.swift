@@ -89,43 +89,45 @@ public struct Parser {
 	}
 
 	mutating func decl(context: DeclContext) -> any Syntax {
-		if didMatch(.enum) {
+		if didMatch(.enum), context.allowed.contains(.enum) {
 			return enumDecl()
 		}
 
-		if didMatch(.struct) {
+		if didMatch(.struct), context.allowed.contains(.struct) {
 			return structDecl()
 		}
 
-		if didMatch(.protocol) {
+		if didMatch(.protocol), context.allowed.contains(.protocol) {
 			return protocolDecl()
 		}
 
-		if didMatch(.func) {
+		if didMatch(.func), context.allowed.contains(.func) {
 			return funcExpr()
 		}
 
-		if context == .enum {
-			if didMatch(.case) {
-				return enumCaseDecl()
-			}
+		if didMatch(.case), context.allowed.contains(.case) {
+			return enumCaseDecl()
 		}
 
-		if context == .struct {
-			if didMatch(.initialize) {
-				return _init()
-			}
+		if didMatch(.initialize), context.allowed.contains(.initialize) {
+			return _init()
 		}
 
-		if didMatch(.var) {
+		if didMatch(.var), context.allowed.contains(.var) {
 			return letVarDecl(.var)
 		}
 
-		if didMatch(.let) {
+		if didMatch(.let), context.allowed.contains(.let) {
 			return letVarDecl(.let)
 		}
 
-		return stmt()
+		if context == .argument {
+			// If we're parsing an argument, we just want to return an expression here.
+			return expr()
+		} else {
+			// Otherwise allow statements.
+			return stmt()
+		}
 	}
 
 	mutating func expr() -> Expr {
@@ -217,8 +219,8 @@ public struct Parser {
 		)
 	}
 
-	mutating func argumentList(terminator: Token.Kind = .rightParen) -> [CallArgument] {
-		var args: [CallArgument] = []
+	mutating func argumentList(terminator: Token.Kind = .rightParen) -> [Argument] {
+		var args: [Argument] = []
 		repeat {
 			let i = startLocation()
 			var name: Token?
@@ -229,8 +231,8 @@ public struct Parser {
 				name = identifier
 			}
 
-			let value = parse(precedence: .assignment)
-			args.append(CallArgument(id: nextID(), location: endLocation(i), label: name, value: value))
+			let value = decl(context: .argument)
+			args.append(Argument(id: nextID(), location: endLocation(i), label: name, value: value))
 		} while didMatch(.comma)
 
 		consume(terminator, "expected '\(terminator)' after arguments")

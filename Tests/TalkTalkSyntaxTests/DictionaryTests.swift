@@ -59,7 +59,7 @@ struct DictionaryTests {
 		#expect(second.value.cast(LiteralExprSyntax.self).value == .string("buzz"))
 
 		#expect(parsed.args[0]
-			.cast(CallArgument.self).value
+			.cast(Argument.self).value
 			.cast(LiteralExprSyntax.self).value == .string("foo")
 		)
 	}

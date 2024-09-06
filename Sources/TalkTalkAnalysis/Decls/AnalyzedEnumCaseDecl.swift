@@ -16,6 +16,8 @@ public struct AnalyzedEnumCaseDecl: EnumCaseDecl, AnalyzedDecl {
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var nameToken: Token { wrapped.nameToken }
+	public var attachedTypes: [any TypeExpr] { wrapped.attachedTypes }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
