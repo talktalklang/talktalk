@@ -595,9 +595,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-//		if verbose {
+		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-//		}
+		}
 	}
 }

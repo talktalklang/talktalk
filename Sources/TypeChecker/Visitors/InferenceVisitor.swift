@@ -467,6 +467,8 @@ struct InferenceVisitor: Visitor {
 			receiver = context[rec]
 		} else if let expectation = context.expectation {
 			receiver = .type(expectation)
+		} else if let matchContext = context.matchContext {
+			receiver = .type(matchContext.target)
 		} else {
 			receiver = nil
 		}
