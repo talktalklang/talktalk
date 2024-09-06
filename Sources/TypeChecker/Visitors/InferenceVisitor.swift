@@ -64,12 +64,8 @@ struct InferenceVisitor: Visitor {
 			return params
 		case .enumCase(_, let enumCase):
 			return enumCase.attachedTypes
-		case .typeVar(_):
-			return []
-		case .structType(_):
-			return []
 		default:
-			throw InferencerError.parametersNotAvailable(type.description)
+			return []
 		}
 	}
 

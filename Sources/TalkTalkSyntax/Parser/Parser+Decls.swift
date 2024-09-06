@@ -17,7 +17,7 @@ public enum DeclContext {
 		case .topLevel:
 			[.enum, .struct, .protocol, .func, .var, .let]
 		case .argument:
-			[.var, .let]
+			[.var, .func, .let]
 		}
 	}
 }

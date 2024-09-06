@@ -13,14 +13,22 @@ struct MemberConstraint: Constraint {
 	let type: InferenceResult
 
 	func result(in context: InferenceContext) -> String {
-		let receiver = context.applySubstitutions(to: resolveReceiver(receiver).asType(in: context))
+		let receiver = if let receiver {
+			receiver.asType(in: context)
+		} else {
+			context.applySubstitutions(to: resolveReceiver(receiver).asType(in: context))
+		}
 		let type = context.applySubstitutions(to: type.asType(in: context))
 
 		return "MemberConstraint(receiver: \(receiver), name: \(name), type: \(type))"
 	}
 
 	func resolveReceiver(_ receiver: InferenceResult?) -> InferenceResult {
-		.type(.any)
+		if let receiver {
+			return receiver
+		}
+
+		return .type(.any)
 	}
 
 	var description: String {
