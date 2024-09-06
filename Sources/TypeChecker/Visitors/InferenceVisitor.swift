@@ -236,7 +236,6 @@ struct InferenceVisitor: Visitor {
 		let patternVisitor = PatternVisitor(inferenceVisitor: self)
 		let pattern = try syntax.accept(patternVisitor, context)
 
-		print("inferPattern from \(syntax): \(pattern.description)")
 		context.extend(syntax, with: .type(.pattern(pattern.type, pattern.values)))
 	}
 
@@ -495,7 +494,7 @@ struct InferenceVisitor: Visitor {
 
 		context.constraints.add(
 			MemberConstraint(
-				receiver: receiver,
+				receiver: receiver ?? .type(.typeVar(context.freshTypeVariable("RECEIVER" + expr.description))),
 				name: expr.property,
 				type: .type(returns),
 				location: expr.location
@@ -755,12 +754,31 @@ struct InferenceVisitor: Visitor {
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws {
+		let enumContext = context.childTypeContext()
+		let typeContext = enumContext.typeContext!
+
 		var cases: [EnumCase] = []
+
+		for typeParameter in expr.typeParams {
+			// Define the name first
+			let typeVar: TypeVariable = enumContext.freshTypeVariable("\(typeParameter.identifier.lexeme)", file: #file, line: #line)
+
+			typeContext.typeParameters.append(typeVar)
+
+			// Add this type to the struct's named variables for resolution
+			enumContext.defineVariable(
+				named: typeParameter.identifier.lexeme,
+				as: .typeVar(typeVar),
+				at: typeParameter.location
+			)
+
+			try visit(typeParameter, enumContext)
+		}
 
 		for kase in expr.body.decls {
 			if let kase = kase as? EnumCaseDecl {
 				for type in kase.attachedTypes {
-					try type.accept(self, context)
+					try type.accept(self, enumContext)
 				}
 
 				let enumCase = try EnumCase(
@@ -774,11 +792,10 @@ struct InferenceVisitor: Visitor {
 			}
 		}
 
-		let enumType = EnumType(name: expr.nameToken.lexeme, cases: cases)
+		let enumType = EnumType(name: expr.nameToken.lexeme, cases: cases, typeContext: typeContext)
 
 		// Let this enum be referred to by name
 		context.defineVariable(named: enumType.name, as: .enumType(enumType), at: expr.location)
-
 		context.extend(expr, with: .type(.enumType(enumType)))
 	}
 
@@ -788,23 +805,19 @@ struct InferenceVisitor: Visitor {
 
 	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws {
 		try expr.target.accept(self, context)
+		try inferPattern(from: expr.target, in: context)
 
-		let expectation: InferenceType = if let target = context[expr.target] {
-			target.asType(in: context)
-		} else {
-			.any
-		}
+		let matchContext = MatchContext(target: context[expr.target]?.asType(in: context) ??
+			.typeVar(context.freshTypeVariable("\(expr.description)")))
 
 		for kase in expr.cases {
-			try kase.accept(self, context.expecting(expectation))
+			try kase.accept(self, context.withMatchContext(matchContext))
 		}
 
 		context.extend(expr, with: .type(.void))
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws {
-		let context = context.childContext()
-
 		for option in expr.options {
 			try inferPattern(from: option, in: context)
 		}

@@ -8,16 +8,14 @@
 import TalkTalkSyntax
 
 struct MemberConstraint: Constraint {
-	let receiver: InferenceResult?
+	let receiver: InferenceResult
 	let name: String
 	let type: InferenceResult
 
 	func result(in context: InferenceContext) -> String {
-		let receiver = if let receiver {
+		let receiver =
 			receiver.asType(in: context)
-		} else {
-			context.applySubstitutions(to: resolveReceiver(receiver).asType(in: context))
-		}
+
 		let type = context.applySubstitutions(to: type.asType(in: context))
 
 		return "MemberConstraint(receiver: \(receiver), name: \(name), type: \(type))"
@@ -32,7 +30,7 @@ struct MemberConstraint: Constraint {
 	}
 
 	var description: String {
-		"MemberConstraint(receiver: \(receiver?.description ?? "<unresolved>"), name: \(name), type: \(type))"
+		"MemberConstraint(receiver: \(receiver.description), name: \(name), type: \(type))"
 	}
 
 	var location: SourceLocation
@@ -122,7 +120,13 @@ struct MemberConstraint: Constraint {
 				location
 			)
 		default:
-			return .error([Diagnostic(message: "Receiver not a struct instance. Got: \(receiver)", severity: .error, location: location)])
+			return .error([
+				Diagnostic(
+					message: "Receiver not a struct instance. Got: \(receiver)",
+					severity: .error,
+					location: location
+				)
+			])
 		}
 
 		return .ok

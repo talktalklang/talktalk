@@ -9,6 +9,7 @@ public struct EnumDeclSyntax: EnumDecl {
 	public var enumToken: Token
 	public var nameToken: Token
 	public var body: DeclBlockSyntax
+	public var typeParams: [TypeExprSyntax]
 
   // A unique identifier
   public var id: SyntaxID

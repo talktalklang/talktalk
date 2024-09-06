@@ -29,9 +29,6 @@ struct PatternVisitor: Visitor {
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		try expr.callee.accept(inferenceVisitor, context)
 		let type = try context.get(expr.callee).asType(in: context)
-
-		print("TYPE `\(expr.description)` IS \(type)")
-
 		let params: [InferenceType] = try inferenceVisitor.parameters(of: type)
 
 		var values: [InferenceType] = []
@@ -81,8 +78,6 @@ struct PatternVisitor: Visitor {
 				throw PatternError.invalid("Invalid pattern: \(arg)")
 			}
 		}
-
-		print("CALL EXPR \(expr.description), \(type.description), \(values.map(\.description))")
 
 		return Pattern(
 			type: type,

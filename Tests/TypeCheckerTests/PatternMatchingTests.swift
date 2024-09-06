@@ -123,7 +123,19 @@ struct PatternMatchingTests: TypeCheckerTest {
 					typeName: "Bottom",
 					name: "bottom",
 					attachedTypes: [
-						.enumType(.init(name: "Top", cases: [.init(typeName: "Top", name: "top", attachedTypes: [.base(.string)])]))
+						.enumType(
+							.init(
+								name: "Top",
+								cases: [
+									.init(
+										typeName: "Top",
+										name: "top",
+										attachedTypes: [.base(.string)]
+									)
+								],
+								typeContext: .init()
+							)
+						)
 					]
 				)
 			),

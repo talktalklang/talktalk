@@ -33,12 +33,19 @@ public extension Parser {
 			)
 		}
 
+		var typeParams: [TypeExprSyntax] = []
+		if didMatch(.less) {
+			// We've got a generic param list
+			typeParams = typeParameters()
+		}
+
 		let body = declBlock(context: .enum)
 
 		return EnumDeclSyntax(
 			enumToken: token,
 			nameToken: nameToken,
 			body: body,
+			typeParams: typeParams,
 			id: nextID(),
 			location: endLocation(i)
 		)

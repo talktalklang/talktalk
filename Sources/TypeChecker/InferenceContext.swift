@@ -49,23 +49,55 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
+struct MatchContext {
+	let target: InferenceType
+}
+
 public class InferenceContext: CustomDebugStringConvertible {
+	// Stores the mappings of syntax nodes to inference types
 	var environment: Environment
-	var parent: InferenceContext?
-	var imports: [InferenceContext]
-	let depth: Int
-	public var errors: [InferenceError] = []
-	var constraints: Constraints
-	var substitutions: [TypeVariable: InferenceType] = [:]
-	var expectation: InferenceType?
+
+	// Names that we know at inference time
 	private(set) public var namedVariables: [String: InferenceType] = [:]
+
+	// Names that we're going to have to solve for later
 	private(set) var namedPlaceholders: [String: InferenceType] = [:]
+
+	// Does this context have a parent?
+	var parent: InferenceContext?
+
+	// Makes info from other contexts available
+	var imports: [InferenceContext]
+
+	// How many parents does this context have
+	let depth: Int
+
+	// Errors that occur
+	public var errors: [InferenceError] = []
+
+	// The list of constraints to solve
+	var constraints: Constraints
+
+	// Known substitutions due to unification
+	var substitutions: [TypeVariable: InferenceType] = [:]
+
+	// Gives subexpressions a hint about what type they're expected to be.
+	var expectation: InferenceType?
+
+	// For fresh variable generation
 	var nextID: VariableID = 0
-	var verbose: Bool = false
+
+	// Used for generating specific IDs, like for struct instances
 	private var namedCounters: [String: Int] = [:]
+
+	// Should we be logging?
+	var verbose: Bool = false
 
 	// Type-level context info like methods, properties, etc
 	var typeContext: TypeContext?
+
+	// Match target context, used for match statements
+	var matchContext: MatchContext?
 
 	// Instance-level context info like generic parameter bindings
 	var instanceContext: InstanceContext?
@@ -78,7 +110,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 		substitutions: [TypeVariable: InferenceType] = [:],
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
-		expectation: InferenceType? = nil
+		expectation: InferenceType? = nil,
+		matchContext: MatchContext? = nil
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -89,6 +122,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
 		self.expectation = expectation
+		self.matchContext = matchContext
 
 		log("New context with depth \(depth)", prefix: " * ")
 	}
@@ -216,7 +250,19 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext,
-			expectation: expectation
+			expectation: expectation,
+			matchContext: matchContext
+		)
+	}
+
+	func withMatchContext(_ matchContext: MatchContext) -> InferenceContext {
+		InferenceContext(
+			parent: self,
+			environment: environment.childEnvironment(),
+			constraints: constraints,
+			substitutions: substitutions,
+			typeContext: typeContext,
+			matchContext: matchContext
 		)
 	}
 
@@ -237,7 +283,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			substitutions: substitutions,
 			typeContext: typeContext,
 			instanceContext: instanceContext,
-			expectation: expectation
+			expectation: expectation,
+			matchContext: matchContext
 		)
 	}
 
@@ -248,7 +295,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext ?? TypeContext(),
-			expectation: expectation
+			expectation: expectation,
+			matchContext: matchContext
 		)
 	}
 
@@ -259,7 +307,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext ?? TypeContext(),
-			expectation: type
+			expectation: type,
+			matchContext: matchContext
 		)
 	}
 
@@ -438,8 +487,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 //					instance.substitutions[val] = .typeVar(key)
 //				}
 //			}
-
-			// Help here:
 			return .structInstance(instance)
 		default:
 			return type // Base/error/void types don't get substitutions
@@ -548,9 +595,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-		}
+//		}
 	}
 }

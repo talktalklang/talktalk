@@ -9,31 +9,15 @@ import Foundation
 import TalkTalkSyntax
 import OrderedCollections
 
-public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
-	public var typeName: String
-	public var name: String
-	public var attachedTypes: [InferenceType]
-
-	public static func extract(from type: InferenceResult) -> EnumCase? {
-		if case let .type(.enumCase(enumCase)) = type {
-			return enumCase
-		}
-
-		return nil
-	}
-
-	public var description: String {
-		if attachedTypes.isEmpty {
-			"\(name)"
-		} else {
-			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))"
-		}
-	}
-}
-
 public struct EnumType: Equatable, Hashable, CustomStringConvertible {
+	public static func ==(lhs: EnumType, rhs: EnumType) -> Bool {
+		lhs.name == rhs.name && lhs.cases == rhs.cases
+	}
+
 	public var name: String
 	public var cases: [EnumCase]
+	var typeBindings: [TypeVariable: InferenceType] = [:]
+	let typeContext: TypeContext
 
 	public static func extract(from type: InferenceResult) -> EnumType? {
 		if case let .type(.enumType(enumType)) = type {
@@ -45,5 +29,10 @@ public struct EnumType: Equatable, Hashable, CustomStringConvertible {
 
 	public var description: String {
 		"\(name)"
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(name)
+		hasher.combine(cases)
 	}
 }
