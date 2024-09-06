@@ -80,4 +80,57 @@ struct PatternMatchingTests: TypeCheckerTest {
 		#expect(body.name == "a")
 		#expect(context[body] == .type(.base(.string)))
 	}
+
+	@Test("Can infer nested enum patterns") func nestedEnumCases() throws {
+		let syntax = try Parser.parse(
+		"""
+		enum A {
+			case foo(String)
+		}
+
+		enum B {
+			case bar(A)
+		}
+
+		match B.bar(.foo("fizz")) {
+		case .bar(.foo(let a)):
+			a
+		}
+		"""
+		)
+
+		let context = try infer(syntax)
+		let call1 = syntax[2].cast(MatchStatementSyntax.self)
+			.cases[0] // .foo(let a)...:
+			.cases[0]	// .foo(let a)
+			.cast(CallExprSyntax.self)
+
+		// Let's just make sure we're testing the right thing
+		#expect(call1.description == ".bar(.foo(let a))")
+
+		let bar = context.lookup(syntax: call1)
+		#expect(bar == .pattern(
+			Pattern(
+				type: .enumCase(
+					EnumType(name: "B", cases: [
+						EnumCase(typeName: "B", name: "bar", attachedTypes: [.base(.string)]),
+					]),
+					EnumCase(typeName: "B", name: "bar", attachedTypes: [.base(.string)])
+				),
+				values: [
+					.pattern(Pattern(
+						type: .enumCase(
+							EnumType(name: "A", cases: [
+							 EnumCase(typeName: "A", name: "foo", attachedTypes: [.base(.string)]),
+						 ]),
+						 EnumCase(typeName: "A", name: "foo", attachedTypes: [.base(.string)])
+					 ),
+						values: [
+							.base(.string)
+						]
+					))
+				])
+			)
+		)
+	}
 }

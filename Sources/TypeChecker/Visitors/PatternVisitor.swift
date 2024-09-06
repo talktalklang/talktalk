@@ -48,15 +48,28 @@ struct PatternVisitor: Visitor {
 				context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
 				values.append(.typeVar(typeVar))
+			case let arg as CallExprSyntax:
+				try arg.callee.accept(inferenceVisitor, context)
+				let pattern = try visit(arg, context.expecting(context.get(arg.callee).asType(in: context)))
+				context.addConstraint(.equality(.pattern(pattern), param, at: arg.location))
+				values.append(.pattern(pattern))
+			case let arg as MemberExprSyntax:
+				let pattern = try visit(arg, context)
+				values.append(.pattern(pattern))
 			case let arg as any Expr:
 				try arg.accept(inferenceVisitor, context)
-				try values.append(context.get(arg).asType(in: context))
+				let type = try context.get(arg).asType(in: context)
+				values.append(type)
+				context.addConstraint(.equality(type, param, at: arg.location))
 			default:
 				throw PatternError.invalid("Invalid pattern: \(arg)")
 			}
 		}
 
-		return try Pattern(type: context.expectation ?? context.get(expr.callee).asType(in: context), values: values)
+		return try Pattern(
+			type: context.expectation ?? context.get(expr.callee).asType(in: context),
+			values: values
+		)
 	}
 
 	func visit(_ expr: Argument, _ context: InferenceContext) throws -> Pattern {

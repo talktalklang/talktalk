@@ -11,7 +11,7 @@ import Testing
 
 @MainActor
 struct EnumTests: TypeCheckerTest {
-	@Test("Can typecheck an enum type") func basic() throws {
+	@Test("Can infer an enum type") func basic() throws {
 		let syntax = try Parser.parse(
 		"""
 		enum Thing {
@@ -35,7 +35,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases[1].attachedTypes[0] == .base(.int))
 	}
 
-	@Test("Can typecheck a case") func cases() throws {
+	@Test("Can infer a case") func cases() throws {
 		let syntax = try Parser.parse(
 		"""
 		enum Thing {
@@ -55,7 +55,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.attachedTypes[0] == .base(.string))
 	}
 
-	@Test("Can typecheck an unqualified case") func unqualifiedCase() throws {
+	@Test("Can infer an unqualified case") func unqualifiedCase() throws {
 		let syntax = try Parser.parse(
 		"""
 		enum Thing {
