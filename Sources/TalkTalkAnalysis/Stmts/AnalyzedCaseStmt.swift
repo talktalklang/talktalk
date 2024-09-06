@@ -14,6 +14,7 @@ public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
 	}
 
 	// Delegate these to the wrapped node
+	public var isDefault: Bool { wrapped.isDefault }
 	public var body: [any Stmt] { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }

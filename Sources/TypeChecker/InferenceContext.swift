@@ -377,7 +377,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return false
 	}
 
-	func trackReturns(_ block: () throws -> Void) throws -> Set<InferenceResult> {
+	func trackReturns(_ block: () throws -> Void) throws -> [InferenceResult] {
 		try environment.trackingReturns(block: block)
 	}
 
@@ -480,7 +480,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 			return substitutions[typeVariable] ?? type
 		case let .function(params, returning):
-			return .function(params.map { applySubstitutions(to: $0, with: substitutions) }, applySubstitutions(to: returning, with: substitutions))
+			return .function(
+				params.map { applySubstitutions(to: $0, with: substitutions) },
+				applySubstitutions(to: returning, with: substitutions)
+			)
 		case let .structInstance(instance):
 //			for case let (key, .typeVar(val)) in substitutions {
 //				if instance.substitutions[val] != nil {

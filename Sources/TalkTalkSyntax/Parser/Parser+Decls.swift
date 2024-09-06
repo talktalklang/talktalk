@@ -55,7 +55,7 @@ public extension Parser {
 		let token = previous.unsafelyUnwrapped
 		let i = startLocation(at: token)
 
-		guard let nameToken = consume(.identifier, "expected enum case name") else {
+		guard let nameToken = consume(.identifier) else {
 			return error(
 				at: current, .unexpectedToken(expected: .identifier, got: current),
 				expectation: .none
@@ -85,7 +85,7 @@ public extension Parser {
 
 		let i = startLocation(at: previous)
 
-		guard let nameToken = consume(.identifier, "expected identifier after var") else {
+		guard let nameToken = consume(.identifier) else {
 			return error(at: current, .unexpectedToken(expected: .identifier, got: current), expectation: .identifier)
 		}
 
@@ -126,7 +126,7 @@ public extension Parser {
 		let i = startLocation(at: previous.unsafelyUnwrapped)
 		let initToken = previous.unsafelyUnwrapped
 		skip(.newline)
-		consume(.leftParen, "expected '(' before params")
+		consume(.leftParen)
 
 		// Parse parameter list
 		skip(.newline)

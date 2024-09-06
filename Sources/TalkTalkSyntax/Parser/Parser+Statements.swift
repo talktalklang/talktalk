@@ -104,7 +104,7 @@ extension Parser {
 		consume(.colon)
 
 		var stmts: [any Stmt] = []
-		while !check(.case), !check(.rightBrace), !check(.eof) {
+		while !check(.case, .else), !check(.rightBrace), !check(.eof) {
 			skip(.newline)
 			stmts.append(stmt())
 			skip(.newline)

@@ -294,8 +294,8 @@ public struct Parser {
 		return false
 	}
 
-	func check(_ kind: Token.Kind) -> Bool {
-		peek().kind == kind
+	func check(_ kinds: Token.Kind...) -> Bool {
+		kinds.contains(peek().kind)
 	}
 
 	func checkNext(_ kind: Token.Kind) -> Bool {
