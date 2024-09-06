@@ -62,7 +62,7 @@ struct InferenceVisitor: Visitor {
 		switch type {
 		case .function(let params, _):
 			return params
-		case .enumCase(_, let enumCase):
+		case .enumCase(let enumCase):
 			return enumCase.attachedTypes
 		default:
 			return []
@@ -274,8 +274,8 @@ struct InferenceVisitor: Visitor {
 
 		let args = try expr.args.map { try context.get($0) }
 
-		let returns = if case let .enumCase(type, enumCase) = context.lookup(syntax: expr.callee) {
-			InferenceType.enumCase(type, enumCase)
+		let returns = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee) {
+			InferenceType.enumCase(enumCase)
 		} else {
 			InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -476,13 +476,15 @@ struct InferenceVisitor: Visitor {
 			}
 
 			returns = member
+		case let .type(.enumCase(enumCase)):
+			returns = .enumCase(enumCase)
 		case let .type(.enumType(enumType)):
 			guard let member = enumType.cases.first(where: { $0.name == expr.property }) else {
 				context.addError(.memberNotFound(.enumType(enumType), expr.property), to: expr)
 				return
 			}
 
-			returns = .enumCase(enumType, member)
+			returns = .enumCase(member)
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -796,7 +798,7 @@ struct InferenceVisitor: Visitor {
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws {
 		let context = context.childContext()
 
-		for kase in expr.cases {
+		for kase in expr.options {
 			try inferPattern(from: kase, in: context)
 		}
 

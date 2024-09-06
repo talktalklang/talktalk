@@ -110,7 +110,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	// Enum types
 	case enumType(EnumType)
-	case enumCase(EnumType, EnumCase)
+	case enumCase(EnumCase)
 
 	// Pattern matching
 	case pattern(Pattern)
@@ -151,7 +151,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 			"\(variable) (placeholder)"
 		case let .enumType(type):
 			type.description
-		case let .enumCase(_, kase):
+		case let .enumCase(kase):
 			kase.description
 		case let .pattern(pattern):
 			"pattern: \(pattern)"

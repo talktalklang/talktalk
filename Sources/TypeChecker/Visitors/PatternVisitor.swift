@@ -28,6 +28,7 @@ struct PatternVisitor: Visitor {
 
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		try expr.callee.accept(inferenceVisitor, context)
+		let type = try context.get(expr.callee).asType(in: context)
 
 		let params: [InferenceType] = if let expectation = context.expectation {
 			try inferenceVisitor.parameters(of: expectation)
@@ -36,22 +37,35 @@ struct PatternVisitor: Visitor {
 		}
 
 		var values: [InferenceType] = []
-		for (arg, param) in zip(expr.args, params) {
+		for (i, arg) in expr.args.enumerated() {
+			let param = params.indices.contains(i) ? params[i] : nil
+
 			switch arg.value {
 			case let arg as VarDecl:
 				let typeVar = context.freshTypeVariable(arg.name)
-				context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
+
+				if let param {
+					context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
+				}
+
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
 				values.append(.typeVar(typeVar))
 			case let arg as LetDecl:
 				let typeVar = context.freshTypeVariable(arg.name)
-				context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
+				if let param {
+					context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
+				}
+
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
 				values.append(.typeVar(typeVar))
 			case let arg as CallExprSyntax:
-				try arg.callee.accept(inferenceVisitor, context)
-				let pattern = try visit(arg, context.expecting(context.get(arg.callee).asType(in: context)))
-				context.addConstraint(.equality(.pattern(pattern), param, at: arg.location))
+				var context = context
+				if let param {
+					context = context.expecting(param)
+				}
+
+				try arg.accept(inferenceVisitor, context)
+				let pattern = try visit(arg, context)
 				values.append(.pattern(pattern))
 			case let arg as MemberExprSyntax:
 				let pattern = try visit(arg, context)
@@ -60,14 +74,17 @@ struct PatternVisitor: Visitor {
 				try arg.accept(inferenceVisitor, context)
 				let type = try context.get(arg).asType(in: context)
 				values.append(type)
-				context.addConstraint(.equality(type, param, at: arg.location))
+
+				if let param {
+					context.addConstraint(.equality(type, param, at: arg.location))
+				}
 			default:
 				throw PatternError.invalid("Invalid pattern: \(arg)")
 			}
 		}
 
-		return try Pattern(
-			type: context.expectation ?? context.get(expr.callee).asType(in: context),
+		return Pattern(
+			type: type,
 			values: values
 		)
 	}

@@ -18,7 +18,7 @@ public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
-	public var cases: [any Expr] { wrapped.cases }
+	public var options: [any Expr] { wrapped.options }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

@@ -80,7 +80,6 @@ struct EnumTests: TypeCheckerTest {
 		let arg = syntax[2].cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0].value
 		#expect(context[arg]?.asType(in: context) == .enumCase(
-			enumType!,
 			EnumCase(typeName: "Thing", name: "foo", attachedTypes: [.base(.string)]))
 		)
 	}

@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 9/5/24.
 //
 
+import TalkTalkSyntax
 import Testing
 @testable import TypeChecker
-import TalkTalkSyntax
 
 struct PatternMatchingTests: TypeCheckerTest {
 	@Test("Can typecheck literal pattern") func pattern() throws {
@@ -23,8 +23,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].cases[0]
-		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].cases[0]
+		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].options[0]
+		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].options[0]
 
 		#expect(
 			context[case1] == .type(.base(.int))
@@ -42,7 +42,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				case foo(String)
 				case bar(int)
 			}
-			 
+
 			match Thing.foo("sup") {
 			case .foo(let a):
 				a
@@ -55,22 +55,18 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let call1 = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0] // .foo(let a)...:
-			.cases[0]	// .foo(let a)
+			.options[0] // .foo(let a)
 			.cast(CallExprSyntax.self)
 
 		let foo = context.lookup(syntax: call1)
 		#expect(foo == .pattern(
 			Pattern(
 				type: .enumCase(
-					EnumType(name: "Thing", cases: [
-						EnumCase(typeName: "Thing", name: "foo", attachedTypes: [.base(.string)]),
-						EnumCase(typeName: "Thing", name: "bar", attachedTypes: [.base(.int)])
-					]),
 					EnumCase(typeName: "Thing", name: "foo", attachedTypes: [.base(.string)])
 				),
-				values: [.typeVar(TypeVariable("a", 69))])
+				values: [.base(.string)]
 			)
-		)
+		))
 
 		let body = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
@@ -83,54 +79,51 @@ struct PatternMatchingTests: TypeCheckerTest {
 
 	@Test("Can infer nested enum patterns") func nestedEnumCases() throws {
 		let syntax = try Parser.parse(
-		"""
-		enum A {
-			case foo(String)
-		}
+			"""
+			enum Top {
+				case top(String)
+			}
 
-		enum B {
-			case bar(A)
-		}
+			enum Bottom {
+				case bottom(Top)
+			}
 
-		match B.bar(.foo("fizz")) {
-		case .bar(.foo(let a)):
-			a
-		}
-		"""
+			match Bottom.bottom(.top("fizz")) {
+			case .bottom(.top(let a)):
+				a
+			}
+			"""
 		)
 
 		let context = try infer(syntax)
 		let call1 = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0] // .foo(let a)...:
-			.cases[0]	// .foo(let a)
-			.cast(CallExprSyntax.self)
+			.options[0] // .foo(let a)
 
 		// Let's just make sure we're testing the right thing
-		#expect(call1.description == ".bar(.foo(let a))")
+		#expect(call1.description == ".bottom(.top(let a))")
 
-		let bar = context.lookup(syntax: call1)
-		#expect(bar == .pattern(
+		#expect(context.errors.isEmpty)
+
+		let actual = context.lookup(syntax: call1)!
+		let expected = InferenceType.pattern(
 			Pattern(
 				type: .enumCase(
-					EnumType(name: "B", cases: [
-						EnumCase(typeName: "B", name: "bar", attachedTypes: [.base(.string)]),
-					]),
-					EnumCase(typeName: "B", name: "bar", attachedTypes: [.base(.string)])
+					EnumCase(typeName: "Bottom", name: "bottom", attachedTypes: [.enumType(.init(name: "Top", cases: [.init(typeName: "Top", name: "top", attachedTypes: [.base(.string)])]))])
 				),
 				values: [
 					.pattern(Pattern(
 						type: .enumCase(
-							EnumType(name: "A", cases: [
-							 EnumCase(typeName: "A", name: "foo", attachedTypes: [.base(.string)]),
-						 ]),
-						 EnumCase(typeName: "A", name: "foo", attachedTypes: [.base(.string)])
-					 ),
+							EnumCase(typeName: "Top", name: "top", attachedTypes: [.base(.string)])
+						),
 						values: [
-							.base(.string)
+							.typeVar("a", 64)
 						]
 					))
-				])
+				]
 			)
 		)
+
+		#expect(actual == expected)
 	}
 }

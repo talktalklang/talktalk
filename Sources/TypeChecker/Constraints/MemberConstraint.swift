@@ -64,6 +64,12 @@ struct MemberConstraint: Constraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
+		case .enumCase(let enumCase):
+			context.unify(
+				context.applySubstitutions(to: .enumCase(enumCase)),
+				resolvedType,
+				location
+			)
 		case .enumType(let enumType):
 			guard let member = enumType.cases.first(where: { $0.name == name }) else {
 				return .error(
@@ -72,7 +78,7 @@ struct MemberConstraint: Constraint {
 			}
 
 			context.unify(
-				context.applySubstitutions(to: .enumCase(enumType, member)),
+				context.applySubstitutions(to: .enumCase(member)),
 				resolvedType,
 				location
 			)

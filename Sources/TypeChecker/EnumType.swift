@@ -15,7 +15,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	public var attachedTypes: [InferenceType]
 
 	public static func extract(from type: InferenceResult) -> EnumCase? {
-		if case let .type(.enumCase(_, enumCase)) = type {
+		if case let .type(.enumCase(enumCase)) = type {
 			return enumCase
 		}
 

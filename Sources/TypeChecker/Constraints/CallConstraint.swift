@@ -36,8 +36,8 @@ struct CallConstraint: Constraint {
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
 		case .structType(let structType):
 			return solveStruct(structType: structType, in: context)
-		case .enumCase(let type, let enumCase):
-			return solveEnumCase(enumType: type, enumCase: enumCase, in: context)
+		case .enumCase(let enumCase):
+			return solveEnumCase(enumCase: enumCase, in: context)
 		case .placeholder(let typeVar):
 			// If it's a type var that we haven't solved yet, try deferring
 			if isRetry {
@@ -221,8 +221,8 @@ struct CallConstraint: Constraint {
 		return .ok
 	}
 
-	func solveEnumCase(enumType: EnumType, enumCase: EnumCase, in context: InferenceContext) -> ConstraintCheckResult {
-		context.unify(returns, .enumCase(enumType, enumCase), location)
+	func solveEnumCase(enumCase: EnumCase, in context: InferenceContext) -> ConstraintCheckResult {
+		context.unify(returns, .enumCase(enumCase), location)
 		return .ok
 	}
 }

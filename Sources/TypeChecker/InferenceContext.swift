@@ -308,7 +308,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func extend(_ syntax: any Syntax, with result: InferenceResult) {
-		_ = environment[syntax]?.asType(in: self)
 		environment.extend(syntax, with: result)
 		parent?.extend(syntax, with: result)
 	}
@@ -419,6 +418,11 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
+		case let .pattern(pattern):
+			return .pattern(Pattern(
+				type: applySubstitutions(to: pattern.type),
+				values: pattern.values.map { applySubstitutions(to: $0) }
+			))
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
@@ -499,6 +503,24 @@ public class InferenceContext: CustomDebugStringConvertible {
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
+			}
+		case let (.enumType(type), .enumCase(kase)):
+			if type.name != kase.typeName {
+				addError(
+					.init(
+						kind: .unificationError(typeA, typeB),
+						location: location
+					)
+				)
+			}
+		case let (.enumCase(kase), .enumType(type)):
+			if type.name != kase.typeName {
+				addError(
+					.init(
+						kind: .unificationError(typeA, typeB),
+						location: location
+					)
+				)
 			}
 		default:
 			if a != b, a != .any, b != .any {

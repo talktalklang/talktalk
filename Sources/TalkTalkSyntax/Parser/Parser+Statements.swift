@@ -111,7 +111,7 @@ extension Parser {
 		}
 
 		return CaseStmtSyntax(
-			cases: cases,
+			options: cases,
 			body: stmts,
 			id: nextID(),
 			location: endLocation(i)
