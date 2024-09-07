@@ -8,6 +8,7 @@
 public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	public var typeName: String
 	public var name: String
+	public let index: Int
 	public var attachedTypes: [InferenceType]
 
 	public static func extract(from type: InferenceResult) -> EnumCase? {

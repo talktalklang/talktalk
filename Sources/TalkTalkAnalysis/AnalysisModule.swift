@@ -35,6 +35,9 @@ public struct AnalysisModule {
 	// The list of top level structs in this module
 	public var structs: [String: ModuleStruct] = [:]
 
+	// This list of top level enums in this module
+	public var enums: [String: ModuleEnum] = [:]
+
 	// A list of modules this module imports
 	public var imports: [String: ModuleGlobal] = [:]
 
@@ -48,6 +51,10 @@ public struct AnalysisModule {
 
 	public func moduleGlobal(named name: String) -> (any ModuleGlobal)? {
 		moduleFunction(named: name) ?? moduleValue(named: name)
+	}
+
+	public func moduleEnum(named name: String) -> ModuleEnum? {
+		enums[name]
 	}
 
 	public func moduleStruct(named name: String) -> ModuleStruct? {

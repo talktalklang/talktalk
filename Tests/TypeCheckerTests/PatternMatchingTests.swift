@@ -66,7 +66,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let foo = context.lookup(syntax: call1)
 		#expect(foo == .pattern(
 			.enumCase(
-				EnumCase(typeName: "Thing", name: "foo", attachedTypes: [.base(.string)])
+				EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)])
 			),
 			[.base(.string)]
 		))
@@ -74,7 +74,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let bar = context.lookup(syntax: call2)
 		#expect(bar == .pattern(
 			.enumCase(
-				EnumCase(typeName: "Thing", name: "bar", attachedTypes: [.base(.int)])
+				EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)])
 			),
 			[.base(.int)]
 		))
@@ -122,6 +122,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(
 					typeName: "Bottom",
 					name: "bottom",
+					index: 0,
 					attachedTypes: [
 						.enumType(
 							.init(
@@ -130,6 +131,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 									.init(
 										typeName: "Top",
 										name: "top",
+										index: 0,
 										attachedTypes: [.base(.string)]
 									)
 								],
@@ -142,7 +144,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			[
 				.pattern(
 					.enumCase(
-						EnumCase(typeName: "Top", name: "top", attachedTypes: [.base(.string)])
+						EnumCase(typeName: "Top", name: "top", index: 0, attachedTypes: [.base(.string)])
 					),
 					[
 						.base(.string)

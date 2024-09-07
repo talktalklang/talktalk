@@ -54,6 +54,24 @@ public extension InstructionMetadata where Self == SimpleMetadata {
 	static var simple: SimpleMetadata { .init() }
 }
 
+public struct MatchCaseMetadata: InstructionMetadata {
+	let offset: Int
+	public var length: Int {
+		// 1 byte for the opcode itself, 2 bytes for the offset
+		3
+	}
+
+	public var description: String {
+		"offset: \(offset)"
+	}
+}
+
+public extension InstructionMetadata where Self == MatchCaseMetadata {
+	static func matchCase(offset: Int) -> MatchCaseMetadata {
+		MatchCaseMetadata(offset: offset)
+	}
+}
+
 public struct FunctionMetadata: InstructionMetadata {
 	let name: String
 
@@ -127,6 +145,21 @@ public struct ObjectMetadata: InstructionMetadata {
 public extension InstructionMetadata where Self == ConstantMetadata {
 	static func constant(_ value: Value) -> ConstantMetadata {
 		ConstantMetadata(value: value)
+	}
+}
+
+public struct EnumMetadata: InstructionMetadata {
+	let enumSlot: Int
+	let caseSlot: Int
+	public var length: Int = 3
+	public var description: String {
+		"enum: \(enumSlot), case: \(caseSlot)"
+	}
+}
+
+public extension InstructionMetadata where Self == EnumMetadata {
+	static func `enum`(enum enumSlot: Int, case caseSlot: Int) -> EnumMetadata {
+		EnumMetadata(enumSlot: enumSlot, caseSlot: caseSlot)
 	}
 }
 

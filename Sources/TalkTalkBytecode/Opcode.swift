@@ -73,6 +73,14 @@ public enum Opcode: Byte {
 	     jumpPlaceholder,
 	     loop,
 
+			 // Pattern matching
+			 matchBegin,
+			 matchCase,
+			 matchEnd,
+
+			 // Enum stuff
+			 getEnumCase,
+
 	     // Comparisons
 	     less,
 	     greater,

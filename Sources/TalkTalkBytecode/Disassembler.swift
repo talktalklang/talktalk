@@ -117,7 +117,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return constantInstruction(start: index)
 		case .defClosure:
 			return defClosureInstruction(start: index)
-		case .jump, .jumpUnless, .loop:
+		case .jump, .jumpUnless, .loop, .matchCase:
 			return jumpInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
 			return variableInstruction(opcode: opcode, start: index, type: .local)
@@ -137,11 +137,20 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getUpvalue, .setUpvalue:
 			return upvalueInstruction(opcode: opcode, start: index)
+		case .getEnumCase:
+			return enumCaseInstruction(opcode: opcode, start: index)
 		case .initArray:
 			return initArrayInstruction(start: index)
 		default:
 			return Instruction(path: self.chunk.path, opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
+	}
+
+	mutating func enumCaseInstruction(opcode: Opcode, start: Int) -> Instruction {
+		let enumByte = chunk.code[current++]
+		let caseByte = chunk.code[current++]
+
+		return Instruction(path: chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: .enum(enum: Int(enumByte), case: Int(caseByte)))
 	}
 
 	mutating func initArrayInstruction(start: Int) -> Instruction {

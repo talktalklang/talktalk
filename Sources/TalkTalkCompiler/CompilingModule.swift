@@ -31,6 +31,9 @@ public class CompilingModule {
 	var structs: [Symbol: Struct] = [:]
 	var structMethods: [Symbol: [Symbol: Chunk]] = [:]
 
+	// Top level enums for this module
+	var enums: [Int: Enum] = [:]
+
 	// The available modules for import
 	let moduleEnvironment: [String: Module]
 
@@ -94,6 +97,22 @@ public class CompilingModule {
 
 					moduleStructs[info.slot] = structType
 				}
+			case .enum:
+				switch info.source {
+				case .external(let name):
+					guard let module = moduleEnvironment[name],
+								let moduleInfo = module.symbols[symbol] else {
+						continue
+					}
+
+					enums[info.slot] = module.enums[moduleInfo.slot]
+				case .internal:
+					guard let enumType = enums[info.slot] else {
+						throw CompilerError.unknownIdentifier("could not find enum for: \(symbol.description)")
+					}
+
+					enums[info.slot] = enumType
+				}
 			case .value(_), .primitive, .genericType(_), .property, .method:
 				()
 			}
@@ -104,6 +123,9 @@ public class CompilingModule {
 		// Set the module level function chunks
 		module.chunks = chunks
 		module.structs = moduleStructs
+
+		// Set the module level enums
+		module.enums = enums.sorted(by: { $0.key < $1.key }).map(\.value)
 
 		if mode == .executable {
 			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then
@@ -145,6 +167,16 @@ public class CompilingModule {
 		if let symbol = analysisModule.moduleFunctions[string]?.symbol,
 			 let info = analysisModule.symbols[symbol] {
 			return info.slot
+		}
+
+		return nil
+	}
+
+	public func moduleEnumOffset(for string: String) -> Int? {
+		for (symbol, info) in analysisModule.symbols {
+			if case .enum(string) = symbol.kind {
+				return info.slot
+			}
 		}
 
 		return nil

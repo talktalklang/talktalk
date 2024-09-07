@@ -542,6 +542,14 @@ public struct VirtualMachine {
 				let dictType = module.structs[slot]
 
 				try call(structValue: dictType)
+			case .matchBegin:
+				()
+			case .matchCase:
+				()
+			case .matchEnd:
+				()
+			case .getEnumCase:
+				()
 			}
 		}
 	}

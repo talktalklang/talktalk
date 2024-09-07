@@ -3,10 +3,10 @@
 import TalkTalkSyntax
 
 public struct AnalyzedEnumMemberExpr: EnumMemberExpr, AnalyzedExpr {
-  public let wrapped: EnumMemberExprSyntax
+	public let wrapped: MemberExprSyntax
 	public var receiverAnalyzed: AnalyzedIdentifierExpr?
 	public var propertyAnalyzed: String
-	public var paramsAnalyzed: [ParamSyntax]
+	public var paramsAnalyzed: [InferenceType]
 
 	public var inferenceType: InferenceType
 	public var environment: Environment

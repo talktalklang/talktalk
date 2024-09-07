@@ -200,6 +200,9 @@ public class Environment {
 			if let value = module.moduleValue(named: name) {
 				symbol = value.symbol
 				global = value
+			} else if let enumType = module.moduleEnum(named: name) {
+				symbol = enumType.symbol
+				global = enumType
 			} else if let function = module.moduleFunction(named: name) {
 				symbol = function.symbol
 				global = function

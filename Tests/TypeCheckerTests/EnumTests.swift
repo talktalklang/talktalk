@@ -110,8 +110,8 @@ struct EnumTests: TypeCheckerTest {
 			.cast(CallExprSyntax.self).args[0].value
 
 		#expect(enumType.cases == [
-				EnumCase(typeName: "Thing", name: "foo", attachedTypes: [.base(.string)]),
-				EnumCase(typeName: "Thing", name: "bar", attachedTypes: [.base(.int)]),
+				EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)]),
+				EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)]),
 			]
 		)
 	}

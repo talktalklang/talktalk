@@ -51,6 +51,7 @@ struct PatternMatchingTests: AnalysisTest {
 		#expect(foo.inferenceType == .pattern(.enumCase(EnumCase(
 			typeName: "Thing",
 			name: "foo",
+			index: 0,
 			attachedTypes: [.base(.string)]
 		)), [.base(.string)]))
 
@@ -58,6 +59,7 @@ struct PatternMatchingTests: AnalysisTest {
 		#expect(bar.inferenceType == .pattern(.enumCase(EnumCase(
 			typeName: "Thing",
 			name: "bar",
+			index: 1,
 			attachedTypes: [.base(.int)]
 		)), [.base(.int)]))
 	}

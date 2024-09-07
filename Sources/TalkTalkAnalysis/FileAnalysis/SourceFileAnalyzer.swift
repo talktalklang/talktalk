@@ -172,6 +172,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
+			} else if case let .enumType(type) = binding.type {
+				if let module = binding.externalModule {
+					symbol = module.enums[type.name]?.symbol
+					guard symbol != nil else {
+						throw AnalyzerError.symbolNotFound("expected symbol for struct: \(type.name)")
+					}
+				} else {
+					symbol = context.symbolGenerator.enum(expr.name, source: .internal)
+				}
 			} else {
 				if let module = binding.externalModule {
 					symbol = module.values[expr.name]?.symbol
@@ -582,6 +591,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedEnumDecl(
 			wrapped: expr,
+			symbol: context.symbolGenerator.enum(expr.nameToken.lexeme, source: .internal),
 			casesAnalyzed: cases,
 			inferenceType: type,
 			environment: context,
@@ -590,12 +600,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+		guard let type = context.inferenceContext.lookup(syntax: expr),
+					case let .enumCase(enumCase) = type else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
 		return try AnalyzedEnumCaseDecl(
 			wrapped: expr,
+			enumName: enumCase.typeName,
 			attachedTypesAnalyzed: expr.attachedTypes.map({ try cast($0.accept(self, context), to: AnalyzedTypeExpr.self) }),
 			inferenceType: type,
 			environment: context

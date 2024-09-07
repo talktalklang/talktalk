@@ -183,6 +183,16 @@ public struct ModuleAnalyzer: Analyzer {
 					methods: structType.methods,
 					typeParameters: structType.typeParameters
 				)
+			} else if case let .enum(name) = symbol.kind,
+								let enumType = binding.externalModule?.enums[name] {
+				analysisModule.enums[name] = ModuleEnum(
+					name: name,
+					symbol: symbol,
+					location: binding.location,
+					typeID: binding.type,
+					source: .external(module),
+					methods: enumType.methods
+				)
 			} else {
 				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
 			}
@@ -197,6 +207,8 @@ public struct ModuleAnalyzer: Analyzer {
 				analysisModule.moduleFunctions[name] = global
 			} else if let structT = global as? ModuleStruct {
 				analysisModule.structs[structT.name] = structT
+			} else if let enumT = global as? ModuleEnum {
+				analysisModule.enums[enumT.name] = enumT
 			} else {
 				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
 			}
@@ -220,6 +232,7 @@ public struct ModuleAnalyzer: Analyzer {
 		return result
 	}
 
+	// Go through top level values before actually doing analysis so we can try to get global names.
 	private func analyze(syntax: any Syntax, in _: AnalysisModule) throws -> [String: ModuleGlobal] {
 		var result: [String: ModuleGlobal] = [:]
 
@@ -231,6 +244,24 @@ public struct ModuleAnalyzer: Analyzer {
 		}
 
 		switch syntax {
+		case let syntax as EnumDecl:
+			let analyzed = try cast(syntax.accept(visitor, environment), to: AnalyzedEnumDecl.self)
+
+			let symbol = analyzed.symbol
+			result[analyzed.nameToken.lexeme] = ModuleEnum(
+				name: analyzed.nameToken.lexeme,
+				symbol: symbol,
+				location: syntax.location,
+				typeID: analyzed.inferenceType,
+				source: .module,
+				methods: []
+			)
+
+			environment.define(
+				local: analyzed.nameToken.lexeme,
+				as: analyzed,
+				isMutable: false
+			)
 		case let syntax as VarDecl:
 			let analyzed = try cast(visitor.visit(syntax.cast(VarDeclSyntax.self), environment), to: AnalyzedVarDecl.self)
 
