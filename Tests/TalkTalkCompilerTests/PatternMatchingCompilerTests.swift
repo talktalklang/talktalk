@@ -68,11 +68,11 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			// Ok we're starting a pattern match
 			.op(.matchBegin, line: 0),
 
-			// Emit the first pattern
+			// Emit the pattern
 			.op(.getEnumCase, line: 2, .enum(enum: 0, case: 0)),
 			.op(.matchCase, line: 1, .jump(offset: 4)),
 
-			// Emit the first body we'd jump to if the first case is true
+			// Emit the body we'd jump to if the first case is true
 
 			// Bind the `let a` for the block
 			.op(.constant, line: 2, .constant(.int(123))),
