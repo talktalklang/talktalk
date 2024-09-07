@@ -48,7 +48,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		))
 	}
 
-	@Test("var binding", .disabled("Gonna figure it out")) func varBinding() throws {
+	@Test("var binding") func varBinding() throws {
 		let module = try compile("""
 			enum Thing { case foo(int) }
 

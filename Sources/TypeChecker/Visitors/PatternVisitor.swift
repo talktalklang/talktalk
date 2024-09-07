@@ -8,8 +8,22 @@
 import TalkTalkSyntax
 
 public struct Pattern: Equatable, Hashable, CustomStringConvertible {
+	// What is the overall type of this pattern
 	public let type: InferenceType
+
+	// What associated values are in this pattern? So like .foo("bar") would
+	// have .base(.string) ("bar") as an associated value.
 	public let values: [InferenceType]
+
+	// What variables are in this pattern? So like .foo(let a) would have "a"
+	// as a bound variable
+	public let boundVariables: [String: InferenceType]
+
+	init(type: InferenceType, values: [InferenceType], boundVariables: [String : InferenceType] = [:]) {
+		self.type = type
+		self.values = values
+		self.boundVariables = boundVariables
+	}
 
 	public var description: String {
 		"\(type), \(values)"
@@ -26,12 +40,15 @@ struct PatternVisitor: Visitor {
 	typealias Context = InferenceContext
 	typealias Value = Pattern
 
+	// Call expr is used for a lot of this stuff because it gives us basically the
+	// syntax we want (parens) and means our parser can stay relatively dumb.
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		try expr.callee.accept(inferenceVisitor, context)
 		let type = try context.get(expr.callee).asType(in: context)
 		let params: [InferenceType] = try inferenceVisitor.parameters(of: type)
 
 		var values: [InferenceType] = []
+		var variables: [String: InferenceType] = [:]
 		for (i, arg) in expr.args.enumerated() {
 			let param = params.indices.contains(i) ? params[i] : nil
 
@@ -45,6 +62,7 @@ struct PatternVisitor: Visitor {
 
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
 				values.append(.typeVar(typeVar))
+				variables[arg.name] = .typeVar(typeVar)
 			case let arg as LetDecl:
 				let typeVar = context.freshTypeVariable(arg.name)
 				if let param {
@@ -53,6 +71,7 @@ struct PatternVisitor: Visitor {
 
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
 				values.append(.typeVar(typeVar))
+				variables[arg.name] = .typeVar(typeVar)
 			case let arg as CallExprSyntax:
 				var context = context
 				if let param {
@@ -62,10 +81,10 @@ struct PatternVisitor: Visitor {
 				try arg.accept(inferenceVisitor, context)
 				
 				let pattern = try visit(arg, context)
-				values.append(.pattern(pattern.type, pattern.values))
+				values.append(.pattern(pattern))
 			case let arg as MemberExprSyntax:
 				let pattern = try visit(arg, context)
-				values.append(.pattern(pattern.type, pattern.values))
+				values.append(.pattern(pattern))
 			case let arg as any Expr:
 				try arg.accept(inferenceVisitor, context)
 				let type = try context.get(arg).asType(in: context)
@@ -81,7 +100,8 @@ struct PatternVisitor: Visitor {
 
 		return Pattern(
 			type: type,
-			values: values
+			values: values,
+			boundVariables: variables
 		)
 	}
 

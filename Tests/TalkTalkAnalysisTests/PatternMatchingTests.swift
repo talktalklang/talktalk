@@ -48,19 +48,19 @@ struct PatternMatchingTests: AnalysisTest {
 
 		let stmt = ast.cast(AnalyzedMatchStatement.self)
 		let foo = stmt.casesAnalyzed[0].optionsAnalyzed[0]
-		#expect(foo.inferenceType == .pattern(.enumCase(EnumCase(
+		#expect(foo.inferenceType == .pattern(Pattern(type: .enumCase(EnumCase(
 			typeName: "Thing",
 			name: "foo",
 			index: 0,
 			attachedTypes: [.base(.string)]
-		)), [.base(.string)]))
+		)), values: [.base(.string)])))
 
 		let bar = stmt.casesAnalyzed[1].optionsAnalyzed[0]
-		#expect(bar.inferenceType == .pattern(.enumCase(EnumCase(
+		#expect(bar.inferenceType == .pattern(Pattern(type: .enumCase(EnumCase(
 			typeName: "Thing",
 			name: "bar",
 			index: 1,
 			attachedTypes: [.base(.int)]
-		)), [.base(.int)]))
+		)), values: [.base(.int)])))
 	}
 }

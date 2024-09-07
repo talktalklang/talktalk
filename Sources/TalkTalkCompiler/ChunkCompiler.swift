@@ -680,6 +680,15 @@ public class ChunkCompiler: AnalyzedVisitor {
 		for (i, kase) in expr.casesAnalyzed.enumerated() {
 			try chunk.patchJump(caseJumps[i])
 
+			for (name, _) in kase.boundVariables {
+				// These are basically block args. Could be nice to have a more general
+				// solution for that.
+				let variable = defineLocal(name: name, compiler: self, chunk: chunk)
+
+				// We need to resolve the values in the target to the variable here...
+				
+			}
+
 			for stmt in kase.bodyAnalyzed {
 				try stmt.accept(self, chunk)
 			}

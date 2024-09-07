@@ -467,10 +467,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
-		case let .pattern(type, values):
+		case let .pattern(pattern):
 			return .pattern(
-				applySubstitutions(to: type),
-				values.map { applySubstitutions(to: $0) }
+				Pattern(
+					type: applySubstitutions(to: pattern.type, with: substitutions),
+					values: pattern.values.map { applySubstitutions(to: $0, with: substitutions) },
+					boundVariables: pattern.boundVariables.reduce(into: [:]) { res, variable in
+						res[variable.key] = applySubstitutions(to: variable.value, with: substitutions)
+					}
+				)
 			)
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result

@@ -236,7 +236,7 @@ struct InferenceVisitor: Visitor {
 		let patternVisitor = PatternVisitor(inferenceVisitor: self)
 		let pattern = try syntax.accept(patternVisitor, context)
 
-		context.extend(syntax, with: .type(.pattern(pattern.type, pattern.values)))
+		context.extend(syntax, with: .type(.pattern(pattern)))
 	}
 
 	// Visits

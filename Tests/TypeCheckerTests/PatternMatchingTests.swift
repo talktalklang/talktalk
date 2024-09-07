@@ -64,20 +64,20 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.cast(CallExprSyntax.self)
 
 		let foo = context.lookup(syntax: call1)
-		#expect(foo == .pattern(
-			.enumCase(
+		#expect(foo == .pattern(Pattern(
+			type: .enumCase(
 				EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)])
 			),
-			[.base(.string)]
-		))
+			values: [.base(.string)]
+		)))
 
 		let bar = context.lookup(syntax: call2)
-		#expect(bar == .pattern(
-			.enumCase(
+		#expect(bar == .pattern(Pattern(
+			type: .enumCase(
 				EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)])
 			),
-			[.base(.int)]
-		))
+			values: [.base(.int)]
+		)))
 
 		let body = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
@@ -113,12 +113,11 @@ struct PatternMatchingTests: TypeCheckerTest {
 
 		// Let's just make sure we're testing the right thing
 		#expect(call1.description == ".bottom(.top(let a))")
-
 		#expect(context.errors.isEmpty)
 
 		let actual = context.lookup(syntax: call1)!
-		let expected = InferenceType.pattern(
-			.enumCase(
+		let expected = InferenceType.pattern(Pattern(
+			type: .enumCase(
 				EnumCase(
 					typeName: "Bottom",
 					name: "bottom",
@@ -141,17 +140,17 @@ struct PatternMatchingTests: TypeCheckerTest {
 					]
 				)
 			),
-			[
-				.pattern(
-					.enumCase(
+			values: [
+				.pattern(Pattern(
+					type: .enumCase(
 						EnumCase(typeName: "Top", name: "top", index: 0, attachedTypes: [.base(.string)])
 					),
-					[
+					values: [
 						.base(.string)
 					]
-				)
+				))
 			]
-		)
+		))
 
 		#expect(actual == expected)
 	}

@@ -110,7 +110,7 @@ struct VMEndToEndTests: VMTest {
 		return i + 1
 		"""
 		#expect(
-			try run(source) == .int(124))
+			try run(source, verbosity: .verbose) == .int(124))
 	}
 
 	@Test("Func arguments") func funcArgs() throws {
