@@ -9,9 +9,9 @@ import TalkTalkSyntax
 
 class Environment {
 	var types: [SyntaxID: InferenceResult] = [:]
-	var functionStack: [Set<InferenceResult>] = []
+	var functionStack: [[InferenceResult]] = []
 
-	init(types: [SyntaxID : InferenceResult] = [:], functionStack: [Set<InferenceResult>] = []) {
+	init(types: [SyntaxID : InferenceResult] = [:], functionStack: [[InferenceResult]] = []) {
 		self.types = types
 		self.functionStack = functionStack
 	}
@@ -31,7 +31,7 @@ class Environment {
 		return Environment(types: types)
 	}
 
-	func trackingReturns(block: () throws -> Void) throws -> Set<InferenceResult> {
+	func trackingReturns(block: () throws -> Void) throws -> [InferenceResult] {
 		functionStack.append([])
 		try block()
 		return functionStack.popLast() ?? []
@@ -39,7 +39,7 @@ class Environment {
 
 	func trackReturn(_ result: InferenceResult) {
 		if functionStack.indices.contains(functionStack.count-1) {
-			functionStack[functionStack.count-1].insert(result)
+			functionStack[functionStack.count-1].append(result)
 		}
 	}
 

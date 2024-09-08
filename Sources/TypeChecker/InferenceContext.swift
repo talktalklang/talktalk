@@ -312,7 +312,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return false
 	}
 
-	func trackReturns(_ block: () throws -> Void) throws -> Set<InferenceResult> {
+	func trackReturns(_ block: () throws -> Void) throws -> [InferenceResult] {
 		try environment.trackingReturns(block: block)
 	}
 
