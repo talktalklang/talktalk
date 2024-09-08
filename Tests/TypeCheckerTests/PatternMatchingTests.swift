@@ -23,8 +23,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].options[0]
-		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].options[0]
+		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].pattern
+		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].pattern
 
 		#expect(
 			context[case1] == .type(.base(.int))
@@ -55,12 +55,12 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let call1 = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0] // .foo(let a)...:
-			.options[0] // .foo(let a)
+			.pattern // .foo(let a)
 			.cast(CallExprSyntax.self)
 
 		let call2 = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[1] // .bar(let b)...:
-			.options[0] // .bar(let b)
+			.pattern // .bar(let b)
 			.cast(CallExprSyntax.self)
 
 		let foo = context.lookup(syntax: call1)
@@ -68,7 +68,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 			type: .enumCase(
 				EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)])
 			),
-			values: [.base(.string)]
+			values: [.base(.string)],
+			boundVariables: ["a": .base(.string)]
 		)))
 
 		let bar = context.lookup(syntax: call2)
@@ -76,7 +77,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 			type: .enumCase(
 				EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)])
 			),
-			values: [.base(.int)]
+			values: [.base(.int)],
+			boundVariables: ["b": .base(.int)]
 		)))
 
 		let body = syntax[1].cast(MatchStatementSyntax.self)
@@ -107,9 +109,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let call1 = syntax[2].cast(MatchStatementSyntax.self)
-			.cases[0] // .foo(let a)...:
-			.options[0] // .foo(let a)
+		let call1 = syntax[2].cast(MatchStatementSyntax.self).cases[0].pattern
 
 		// Let's just make sure we're testing the right thing
 		#expect(call1.description == ".bottom(.top(let a))")
@@ -147,9 +147,11 @@ struct PatternMatchingTests: TypeCheckerTest {
 					),
 					values: [
 						.base(.string)
-					]
+					],
+					boundVariables: ["a": .base(.string)]
 				))
-			]
+			],
+			boundVariables: [:]
 		))
 
 		#expect(actual == expected)

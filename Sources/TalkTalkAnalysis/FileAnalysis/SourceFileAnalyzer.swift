@@ -636,19 +636,17 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
 		}
 
-		let optionsAnalyzed = try expr.options.map { try castToAnyAnalyzedExpr($0.accept(self, context)) }
+		let patternAnalyzed = try castToAnyAnalyzedExpr(expr.pattern.accept(self, context))
 		let bodyAnalyzed = try expr.body.compactMap { try $0.accept(self, context) as? any AnalyzedStmt }
 
 		var variables: [String: InferenceType] = [:]
-		for option in expr.options {
-			if case let .pattern(pattern) = context.inferenceContext.lookup(syntax: option) {
-				variables.merge(pattern.boundVariables) { $1 }
-			}
+		if case let .pattern(pattern) = context.inferenceContext.lookup(syntax: patternAnalyzed) {
+			variables.merge(pattern.boundVariables) { $1 }
 		}
 
 		return AnalyzedCaseStmt(
 			wrapped: expr,
-			optionsAnalyzed: optionsAnalyzed,
+			patternAnalyzed: patternAnalyzed,
 			bodyAnalyzed: bodyAnalyzed,
 			boundVariables: variables,
 			inferenceType: type,

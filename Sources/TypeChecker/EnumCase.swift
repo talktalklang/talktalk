@@ -21,9 +21,9 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 
 	public var description: String {
 		if attachedTypes.isEmpty {
-			"\(name)"
+			"\(name)[\(index)]"
 		} else {
-			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))"
+			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))[\(index)]"
 		}
 	}
 }

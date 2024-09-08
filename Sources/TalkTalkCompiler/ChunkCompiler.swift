@@ -704,9 +704,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCaseStmt, _ chunk: Chunk) throws {
-		for option in expr.optionsAnalyzed {
-			try option.accept(self, chunk)
-		}
+		try expr.patternAnalyzed.accept(self, chunk)
 	}
 
 	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {

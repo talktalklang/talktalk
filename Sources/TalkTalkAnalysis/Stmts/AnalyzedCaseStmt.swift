@@ -5,14 +5,14 @@ import TypeChecker
 
 public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
   public let wrapped: CaseStmtSyntax
-	public var optionsAnalyzed: [any AnalyzedExpr]
+	public var patternAnalyzed: any AnalyzedExpr
 	public var bodyAnalyzed: [any AnalyzedStmt]
 	public let boundVariables: [String: InferenceType]
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] {
-		bodyAnalyzed + optionsAnalyzed
+		bodyAnalyzed + [patternAnalyzed]
 	}
 
 	// Delegate these to the wrapped node
@@ -20,10 +20,7 @@ public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
 	public var body: [any Stmt] { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
-
-	// Note: Maybe we don't want to allow multiple options for cases? It makes
-	// bound variables more tricky
-	public var options: [any Expr] { wrapped.options }
+	public var pattern: any Expr { wrapped.pattern }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

@@ -26,7 +26,7 @@ public struct Pattern: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	public var description: String {
-		"\(type), \(values)"
+		"\(type), \(values), \(boundVariables)"
 	}
 }
 

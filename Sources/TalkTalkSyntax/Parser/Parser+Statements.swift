@@ -94,12 +94,7 @@ extension Parser {
 
 		let i = startLocation(at: token)
 
-		var cases: [any Expr] = []
-		while !check(.eof), !check(.colon) {
-			repeat {
-				cases.append(expr())
-			} while didMatch(.comma) && !check(.eof)
-		}
+		let pattern = expr()
 
 		consume(.colon)
 
@@ -111,7 +106,7 @@ extension Parser {
 		}
 
 		return CaseStmtSyntax(
-			options: cases,
+			pattern: pattern,
 			body: stmts,
 			isDefault: token.kind == .else,
 			id: nextID(),

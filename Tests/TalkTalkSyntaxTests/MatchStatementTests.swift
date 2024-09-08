@@ -35,7 +35,7 @@ struct MatchStatementTests {
 			match thing {
 			case .foo(let fizz):
 				true
-			case .bar(buzz), .sup:
+			case .bar(buzz):
 				false
 			}
 			"""
@@ -44,22 +44,19 @@ struct MatchStatementTests {
 		#expect(parsed.target.cast(VarExprSyntax.self).name == "thing")
 		#expect(parsed.cases.count == 2)
 
-		let call1 = parsed.cases[0].options[0].cast(CallExprSyntax.self)
+		let call1 = parsed.cases[0].pattern.cast(CallExprSyntax.self)
 		let case1 = call1.callee.cast(MemberExprSyntax.self)
 		#expect(case1.receiver == nil)
 		#expect(case1.property == "foo")
 		#expect(call1.args.count == 1)
 		#expect(call1.args[0].value.cast(LetDeclSyntax.self).name == "fizz")
 
-		let call2 = parsed.cases[1].options[0].cast(CallExprSyntax.self)
+		let call2 = parsed.cases[1].pattern.cast(CallExprSyntax.self)
 		let case2 = call2.callee.cast(MemberExprSyntax.self)
 		#expect(case2.receiver == nil)
 		#expect(case2.property == "bar")
 		#expect(call2.args.count == 1)
 		#expect(call2.args[0].value.cast(VarExprSyntax.self).name == "buzz")
-
-		let case3 = parsed.cases[1].options[1].cast(MemberExprSyntax.self)
-		#expect(case3.property == "sup")
 	}
 
 	@Test("else clause") func elseClause() throws {
