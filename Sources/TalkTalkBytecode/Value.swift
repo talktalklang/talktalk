@@ -45,7 +45,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case pointer(Heap.Pointer)
 
 	// The index of the closure
-	case closure(Int)
+	case closure(Symbol)
 
 	// The index of the builtin function
 	case builtin(Int)
@@ -54,7 +54,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case builtinStruct(Int)
 
 	// The index of the module function in its lookup table
-	case moduleFunction(Int)
+	case moduleFunction(Symbol)
 
 	// The index of the struct in the module
 	case `struct`(Struct)
@@ -105,7 +105,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return data
 	}
 
-	public var closureValue: Int? {
+	public var closureValue: Symbol? {
 		guard case let .closure(result) = self else {
 			return nil
 		}
@@ -121,7 +121,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var moduleFunctionValue: Int? {
+	public var moduleFunctionValue: Symbol? {
 		guard case let .moduleFunction(result) = self else {
 			return nil
 		}
@@ -155,10 +155,10 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 
 	public func disassemble(in module: Module) -> String {
 		switch self {
-		case .closure(let id):
-			"closure(\(module.chunks[Int(id)].name))"
-		case .moduleFunction(let id):
-			"moduleFunction(\(module.chunks[Int(id)].name))"
+		case .closure(let symbol):
+			"closure(\(module.chunks[symbol]?.name ?? "<symbol not found: \(symbol)>"))"
+		case .moduleFunction(let symbol):
+			"moduleFunction(\(module.chunks[symbol]?.name ?? "<symbol not found: \(symbol)>"))"
 		default:
 			description
 		}

@@ -20,7 +20,7 @@ public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, Sendab
 
 	public var description: String {
 		if let name {
-			"T(\(id), \(name))"
+			name
 		} else {
 			"T(\(id))"
 		}

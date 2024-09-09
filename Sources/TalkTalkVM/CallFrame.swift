@@ -9,11 +9,9 @@ import TalkTalkBytecode
 
 struct Closure {
 	var chunk: StaticChunk
-	let upvalues: [Upvalue]
 
-	public init(chunk: StaticChunk, upvalues: [Upvalue]) {
+	public init(chunk: StaticChunk) {
 		self.chunk = chunk
-		self.upvalues = upvalues
 	}
 }
 

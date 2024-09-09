@@ -14,7 +14,7 @@ struct DisassemblerTests {
 		let chunk = Chunk(name: "main", symbol: .function("DisassemblerTests", "main", []), path: "test")
 		chunk.emit(opcode: .true, line: 1)
 
-		#expect(chunk.code == [Opcode.true.rawValue])
+		#expect(chunk.code == [.opcode(.true)])
 
 		try #expect(chunk.disassemble() == [
 			Instruction(path: chunk.path, opcode: .true, offset: 1, line: 1, metadata: .simple),

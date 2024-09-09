@@ -12,10 +12,10 @@ public struct Module: Equatable, @unchecked Sendable {
 	public var main: StaticChunk?
 
 	// The list of chunks in this module
-	public var chunks: [StaticChunk] = []
+	public var chunks: [Symbol: StaticChunk] = [:]
 
 	// The list of top level structs in this module
-	public var structs: [Struct] = []
+	public var structs: [Symbol: Struct] = [:]
 
 	// A list of symbols this module exports
 	public var symbols: [Symbol: SymbolInfo]
@@ -34,6 +34,6 @@ public struct Module: Equatable, @unchecked Sendable {
 	}
 
 	public mutating func add(chunk: StaticChunk) {
-		chunks.append(chunk)
+		chunks[chunk.symbol] = chunk
 	}
 }

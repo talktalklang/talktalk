@@ -10,7 +10,7 @@ import TalkTalkSyntax
 
 public struct Method: Member {
 	public let name: String
-	public let slot: Int
+	public let symbol: Symbol
 	public let params: [InferenceType]
 	public let inferenceType: InferenceType
 	public let location: SourceLocation
@@ -21,7 +21,7 @@ public struct Method: Member {
 
 	public init(
 		name: String,
-		slot: Int,
+		symbol: Symbol,
 		params: [InferenceType],
 		inferenceType: InferenceType,
 		location: SourceLocation,
@@ -30,7 +30,7 @@ public struct Method: Member {
 		isSynthetic: Bool = false
 	) {
 		self.name = name
-		self.slot = slot
+		self.symbol = symbol
 		self.params = params
 		self.inferenceType = inferenceType
 		self.location = location

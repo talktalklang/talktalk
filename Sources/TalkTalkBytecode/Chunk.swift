@@ -19,7 +19,7 @@ public final class Chunk: Codable {
 	public let path: String
 
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
-	public var code: ContiguousArray<Byte> = []
+	public var code: ContiguousArray<Code> = []
 
 	// Tracks the code array so we can output line numbers when disassambling
 	public var lines: [UInt32] = []
@@ -90,8 +90,8 @@ public final class Chunk: Codable {
 		// Go back and replace the two placeholder bytes from emit(jump:)
 		// the actual offset to jump over.
 		let (a, b) = uint16ToBytes(jump)
-		code[offset] = a
-		code[offset + 1] = b
+		code[offset] = .byte(a)
+		code[offset + 1] = .byte(b)
 	}
 
 	public func emit(loop backToInstruction: Int, line: UInt32) {
@@ -108,14 +108,18 @@ public final class Chunk: Codable {
 		write(byte: opcode.byte, line: line)
 	}
 
-	public func emit(byte: Byte, line: UInt32) {
-		write(byte: byte, line: line)
+//	public func emit(byte: Byte, line: UInt32) {
+//		write(byte: byte, line: line)
+//	}
+
+	public func emit(_ code: Code, line: UInt32) {
+		write(code, line: line)
 	}
 
-	public func emitClosure(subchunkID: Byte, line: UInt32) {
+	public func emitClosure(subchunk: Symbol, line: UInt32) {
 		// Emit the opcode to define a closure
 		write(.defClosure, line: line)
-		write(byte: subchunkID, line: line)
+		write(.symbol(subchunk), line: line)
 	}
 
 	public func emit(constant value: Value, line: UInt32) {
@@ -128,7 +132,7 @@ public final class Chunk: Codable {
 		let start = data.count
 		data.append(value)
 		emit(opcode: .data, line: line)
-		emit(byte: Byte(start), line: line)
+		emit(.byte(Byte(start)), line: line)
 	}
 
 	private func write(constant value: Value) -> Byte {
@@ -141,8 +145,13 @@ public final class Chunk: Codable {
 		write(byte: opcode.byte, line: line)
 	}
 
+	private func write(_ code: Code, line: UInt32) {
+		self.code.append(code)
+		self.lines.append(line)
+	}
+
 	private func write(byte: Byte, line: UInt32) {
-		code.append(byte)
+		code.append(.byte(byte))
 		lines.append(line)
 	}
 

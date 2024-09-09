@@ -68,7 +68,7 @@ public struct VirtualMachine {
 	var heap = Heap()
 
 	// Closure storage
-	var closures: [UInt64: Closure] = [:]
+	var closures: [Symbol: Closure] = [:]
 
 	var globalValues: [Byte: Value] = [:]
 
@@ -99,7 +99,7 @@ public struct VirtualMachine {
 		stack.push(.reserved)
 
 		let frame = CallFrame(
-			closure: Closure(chunk: chunk, upvalues: []),
+			closure: Closure(chunk: chunk),
 			returnTo: 0,
 			stackOffset: 0
 		)
@@ -148,7 +148,7 @@ public struct VirtualMachine {
 				}
 			#endif
 
-			let byte = readByte()
+			let byte = try readByte()
 
 			guard let opcode = Opcode(rawValue: byte) else {
 				throw VirtualMachineError.unknownOpcode(byte)
@@ -190,7 +190,7 @@ public struct VirtualMachine {
 			case .suspend:
 				return try .ok(stack.peek(), Date().timeIntervalSince(start))
 			case .constant:
-				let value = readConstant()
+				let value = try readConstant()
 				stack.push(value)
 			case .true:
 				stack.push(.bool(true))
@@ -199,7 +199,7 @@ public struct VirtualMachine {
 			case .none:
 				stack.push(.none)
 			case .primitive:
-				let byte = readByte()
+				let byte = try readByte()
 
 				guard let primitive = Primitive(rawValue: byte) else {
 					throw VirtualMachineError.valueMissing("No primitive found for byte: \(byte)")
@@ -332,7 +332,7 @@ public struct VirtualMachine {
 				}
 				stack.push(.bool(lhs >= rhs))
 			case .data:
-				let slot = readByte()
+				let slot = try readByte()
 				let data = chunk.data[Int(slot)]
 				switch data.kind {
 				case .string:
@@ -341,59 +341,38 @@ public struct VirtualMachine {
 			case .pop:
 				try stack.pop()
 			case .loop:
-				ip -= readUInt16()
+				ip -= try readUInt16()
 			case .jump:
-				ip += readUInt16()
+				ip += try readUInt16()
 			case .jumpUnless:
-				let jump = readUInt16()
+				let jump = try readUInt16()
 				if try stack.peek() == .bool(false) {
 					ip += jump
 				}
 			case .getLocal:
-				let slot = readByte()
+				let slot = try readByte()
 				stack.push(stack[Int(slot) + currentFrame.stackOffset])
 			case .setLocal:
-				let slot = readByte()
+				let slot = try readByte()
 				stack[Int(slot) + currentFrame.stackOffset] = try stack.peek()
 			case .getUpvalue:
-				let slot = readByte()
-				let value = currentFrame.closure.upvalues[Int(slot)].value
-				stack.push(value)
+				()
 			case .setUpvalue:
-				let slot = readByte()
-				let upvalue = currentFrame.closure.upvalues[Int(slot)]
-				upvalue.value = try stack.peek()
+				()
 			case .defClosure:
 				// Read which subchunk this closure points to
-				let slot = readByte()
+				let symbol = try readSymbol()
 
 				// Load the subchunk TODO: We could probably just store the index in the closure?
-				let subchunk = module.chunks[Int(slot)]
-
-				// Push the closure Value onto the stack
-				stack.push(.closure(.init(slot)))
-
-				// Capture upvalues
-				var upvalues: [Upvalue] = []
-				for _ in 0 ..< subchunk.upvalueCount {
-					let isLocal = readByte() == 1
-					let index = readByte()
-
-					if isLocal {
-						// If the upvalue is local, that means it is defined in the current call frame. That
-						// means we want to capture the value.
-						let value = stack[currentFrame.stackOffset + Int(index)]
-						let upvalue = captureUpvalue(value: value)
-						upvalues.append(upvalue)
-					} else {
-						// If it's not local, that means it's already been captured and the current call frame's
-						// knowledge of the value is an upvalue as well.
-						upvalues.append(currentFrame.closure.upvalues[Int(index)])
-					}
+				guard let subchunk = module.chunks[symbol] else {
+					throw VirtualMachineError.valueMissing("no chunk found for symbol: \(symbol)")
 				}
 
+				// Push the closure Value onto the stack
+				stack.push(.closure(symbol))
+
 				// Store the closure TODO: gc these when they're not needed anymore
-				closures[UInt64(slot)] = Closure(chunk: subchunk, upvalues: upvalues)
+				closures[symbol] = Closure(chunk: subchunk)
 			case .call:
 				let callee = try stack.pop()
 				if callee.isCallable {
@@ -402,16 +381,16 @@ public struct VirtualMachine {
 					return runtimeError("\(callee) is not callable")
 				}
 			case .callChunkID:
-				let slot = readByte()
-				call(chunkID: Int(slot))
+				let symbol = try readSymbol()
+				try call(chunkID: symbol)
 			case .getModuleFunction:
-				let slot = readByte()
-				let moduleFunction = Value.moduleFunction(.init(slot))
+				let symbol = try readSymbol()
+				let moduleFunction = Value.moduleFunction(symbol)
 				stack.push(moduleFunction)
 			case .setModuleFunction:
 				return runtimeError("cannot set module functions")
 			case .getModuleValue:
-				let slot = readByte()
+				let slot = try readByte()
 				if let global = globalValues[slot] {
 					stack.push(global)
 				} else if let initializer = module.valueInitializers[slot] {
@@ -426,35 +405,45 @@ public struct VirtualMachine {
 					return runtimeError("No global found at slot: \(slot)")
 				}
 			case .setModuleValue:
-				let slot = readByte()
+				let slot = try readByte()
 				globalValues[slot] = try stack.peek()
 
 				// Remove the lazy initializer for this value since we've already initialized it
 				module.valueInitializers.removeValue(forKey: slot)
 			case .getBuiltin:
-				let slot = readByte()
+				let slot = try readByte()
 				stack.push(.builtin(.init(slot)))
 			case .setBuiltin:
 				return runtimeError("Cannot set built in")
 			case .getBuiltinStruct:
-				let slot = readByte()
+				let slot = try readByte()
 				stack.push(.builtinStruct(.init(slot)))
 			case .setBuiltinStruct:
 				return runtimeError("Cannot set built in")
 			case .cast:
-				let slot = readByte()
-				try call(structValue: module.structs[Int(slot)])
+				let symbol = try readSymbol()
+
+				guard let structValue = module.structs[symbol] else {
+					throw VirtualMachineError.valueMissing("no struct for value: \(symbol)")
+				}
+
+				try call(structValue: structValue)
 			case .getStruct:
-				let slot = readByte()
-				stack.push(.struct(module.structs[Int(slot)]))
+				let symbol = try readSymbol()
+
+				guard let structType = module.structs[symbol] else {
+					throw VirtualMachineError.valueMissing("no struct for value: \(symbol)")
+				}
+
+				stack.push(.struct(structType))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
 				// Get the slot of the member
-				let slot = readByte()
+				let slot = try readByte()
 
 				// PropertyOptions let us see if this member is a method
-				let propertyOptions = PropertyOptions(rawValue: readByte())
+				let propertyOptions = try PropertyOptions(rawValue: readByte())
 
 				// Pop the receiver off the stack
 				let receiver = try stack.pop()
@@ -483,7 +472,7 @@ public struct VirtualMachine {
 
 				checkType(instance: lhs, type: rhs)
 			case .setProperty:
-				let slot = readByte()
+				let slot = try readByte()
 				let instance = try stack.pop()
 				let propertyValue = try stack.peek()
 
@@ -511,16 +500,15 @@ public struct VirtualMachine {
 
 				call(boundMethod: getSlot, on: receiver)
 			case .initArray:
-				let count = readByte()
+				let count = try readByte()
 
 				// We need to set the capacity to at least 1 or else trying to resize it will multiply 0 by 2
 				// which means we never actually get more capacity.
 				let capacity = max(count, 1)
-				guard let arrayTypeSlot = module.symbols[.struct("Standard", "Array")]?.slot else {
-					throw VirtualMachineError.valueMissing("No slot found for Array")
-				}
 
-				let arrayType = module.structs[arrayTypeSlot]
+				guard let arrayType = module.structs[.struct("Standard", "Array")] else {
+					throw VirtualMachineError.valueMissing("No Array type found")
+				}
 
 				let pointer = heap.allocate(count: Int(capacity))
 				for i in 0..<count {
@@ -535,11 +523,9 @@ public struct VirtualMachine {
 
 				stack.push(.instance(instance))
 			case .initDict:
-				guard let slot = module.symbols[.struct("Standard", "Dictionary")]?.slot else {
-					throw VirtualMachineError.valueMissing("No slot found for Dictionary")
+				guard let dictType = module.structs[.struct("Standard", "Dictionary")] else {
+					throw VirtualMachineError.valueMissing("No Dictionary type found")
 				}
-
-				let dictType = module.structs[slot]
 
 				try call(structValue: dictType)
 			}
@@ -553,11 +539,11 @@ public struct VirtualMachine {
 	private mutating func call(_ callee: Value) throws {
 		switch callee {
 		case let .closure(chunkID):
-			try call(closureID: Int(chunkID))
+			try call(closureID: chunkID)
 		case let .builtin(builtin):
 			try call(builtin: Int(builtin))
 		case let .moduleFunction(moduleFunction):
-			call(moduleFunction: Int(moduleFunction))
+			try call(moduleFunction: moduleFunction)
 		case let .struct(structValue):
 			try call(structValue: structValue)
 		case let .boundMethod(instance, slot):
@@ -585,11 +571,9 @@ public struct VirtualMachine {
 		)
 
 		// Get the initializer
-		guard let slot = structType.initializerSlot else {
+		guard let symbol = structType.initializer, let initializer = module.chunks[symbol] else {
 			throw VirtualMachineError.valueMissing("no initializer found for \(structType.name)")
 		}
-
-		let initializer = structType.methods[slot]
 
 		// Add the instance to the stack
 		stack[stack.size - Int(initializer.arity) - 1] = instance
@@ -600,8 +584,7 @@ public struct VirtualMachine {
 	private mutating func call(chunk: StaticChunk) {
 		let frame = CallFrame(
 			closure: .init(
-				chunk: chunk,
-				upvalues: []
+				chunk: chunk
 			),
 			returnTo: ip,
 			stackOffset: stack.size - Int(chunk.arity) - 1
@@ -610,11 +593,13 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(closureID: Int) throws {
+	private mutating func call(closureID: Symbol) throws {
 		// Find the called chunk from the closure id
-		let chunk = module.chunks[closureID]
+		guard let chunk = module.chunks[closureID] else {
+			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(closureID)")
+		}
 
-		guard let closure = closures[UInt64(closureID)] else {
+		guard let closure = closures[closureID] else {
 			throw VirtualMachineError.valueMissing("No closure with id \(closureID)")
 		}
 
@@ -627,9 +612,12 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(chunkID: Int) {
-		let chunk = module.chunks[chunkID]
-		let closure = Closure(chunk: chunk, upvalues: [])
+	private mutating func call(chunkID: Symbol) throws {
+		guard let chunk = module.chunks[chunkID] else {
+			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(chunkID)")
+		}
+
+		let closure = Closure(chunk: chunk)
 
 		let frame = CallFrame(
 			closure: closure,
@@ -640,9 +628,11 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(moduleFunction: Int) {
-		let chunk = module.chunks[moduleFunction]
-		let closure = Closure(chunk: chunk, upvalues: [])
+	private mutating func call(moduleFunction: Symbol) throws {
+		guard let chunk = module.chunks[moduleFunction] else {
+			throw VirtualMachineError.valueMissing("no chunk found for symbol: \(moduleFunction)")
+		}
+		let closure = Closure(chunk: chunk)
 
 		let frame = CallFrame(
 			closure: closure,
@@ -702,19 +692,24 @@ public struct VirtualMachine {
 		}
 	}
 
-	private mutating func readConstant() -> Value {
-		let value = chunk.constants[Int(readByte())]
+	private mutating func readConstant() throws -> Value {
+		let value = try chunk.constants[Int(readByte())]
 		return value
 	}
 
-	private mutating func readByte() -> Byte {
+	private mutating func readByte() throws -> Byte {
 		defer { ip += 1 }
-		return chunk.code[Int(ip)]
+		return try chunk.code[Int(ip)].asByte()
 	}
 
-	private mutating func readUInt16() -> UInt64 {
-		var jump = UInt64(readByte() << 8)
-		jump |= UInt64(readByte())
+	private mutating func readSymbol() throws -> Symbol {
+		defer { ip += 1 }
+		return try chunk.code[Int(ip)].asSymbol()
+	}
+
+	private mutating func readUInt16() throws -> UInt64 {
+		var jump = try UInt64(readByte() << 8)
+		jump |= try UInt64(readByte())
 		return jump
 	}
 

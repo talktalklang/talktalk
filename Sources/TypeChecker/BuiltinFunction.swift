@@ -105,4 +105,12 @@ public struct BuiltinFunction {
 			)
 		)
 	}
+
+	public var parameters: [String] {
+		guard case let .function(array, inferenceType) = type else {
+			return []
+		}
+
+		return array.map(\.description)
+	}
 }

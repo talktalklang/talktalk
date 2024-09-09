@@ -15,7 +15,7 @@ struct ChunkTests {
 		chunk.emit(opcode: .true, line: 1)
 
 		#expect(chunk.code == [
-			Opcode.true.rawValue,
+			.opcode(.true),
 		])
 	}
 
@@ -24,8 +24,8 @@ struct ChunkTests {
 		chunk.emit(constant: .int(123), line: 1)
 
 		#expect(chunk.code == [
-			Opcode.constant.rawValue,
-			0,
+			.opcode(.constant),
+			.byte(0),
 		])
 
 		#expect(chunk.constants == [

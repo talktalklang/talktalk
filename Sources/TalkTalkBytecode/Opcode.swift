@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-public enum Opcode: Byte {
+public enum Opcode: Byte, Codable, Sendable {
 	public var byte: Byte { rawValue }
 
 	case `return`,

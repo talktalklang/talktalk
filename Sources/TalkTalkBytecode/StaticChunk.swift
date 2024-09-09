@@ -10,8 +10,10 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 		lhs.code == rhs.code
 	}
 
+	public let symbol: Symbol
+
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
-	public let code: ContiguousArray<Byte>
+	public let code: ContiguousArray<Code>
 
 	// Constant values emitted from literals found in the source
 	public let constants: [Value]
@@ -43,6 +45,7 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 
 	public init(chunk: Chunk) {
 		self.code = chunk.code
+		self.symbol = chunk.symbol
 		self.constants = chunk.constants
 		self.data = chunk.data
 		self.arity = chunk.arity
