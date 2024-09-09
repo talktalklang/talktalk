@@ -10,8 +10,6 @@ jobs:
   build:
     env:
       CI: "1"
-    container:
-      image: swiftlang/swift:nightly-jammy
     runs-on: macos-latest
     steps:
     - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
