@@ -11,7 +11,7 @@ import Foundation
 public final class Chunk: Codable {
 	public enum CodingKeys: CodingKey {
 		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
-		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, upvalueCount, localNames, upvalueNames
+		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, upvalueCount, locals, upvalueNames
 	}
 
 	public let name: String
@@ -43,7 +43,7 @@ public final class Chunk: Codable {
 	public var upvalueCount: Byte = 0
 
 	// For debugging names used in this chunk
-	public var localNames: [String] = ["__reserved__"]
+	public var locals: [Symbol] = []
 	public var upvalueNames: [String] = []
 
 	public init(name: String, symbol: Symbol, path: String) {

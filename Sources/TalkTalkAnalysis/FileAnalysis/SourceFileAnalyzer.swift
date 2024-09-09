@@ -304,7 +304,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
-			symbol: context.symbolGenerator.method(lexicalScope.scope.name ?? "<no name>", "init", parameters: paramsAnalyzed.paramsAnalyzed.map(\.name), source: .internal),
+			symbol: context.symbolGenerator.method(
+				lexicalScope.scope.name ?? "<no name>",
+				"init",
+				parameters: paramsAnalyzed.paramsAnalyzed.map(\.inferenceType.description),
+				source: .internal
+			),
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,

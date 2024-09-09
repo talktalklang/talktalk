@@ -141,7 +141,7 @@ struct CallConstraint: Constraint {
 				if case .type(.typeVar(let typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
 				{
-					let fresh: InferenceType = context.freshTypeVariable("\(name) [init]", file: #file, line: #line)
+					let fresh: InferenceType = context.freshTypeVariable(name, file: #file, line: #line)
 					substitutions[typeVar] = fresh
 					return fresh
 				}

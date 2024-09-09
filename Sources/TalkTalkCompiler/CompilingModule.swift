@@ -62,9 +62,8 @@ public class CompilingModule {
 					continue
 				}
 
-				continue
-//				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
-			case .struct:
+				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
+			case let .struct(structName):
 				switch info.source {
 				case .external(let name):
 					guard let module = moduleEnvironment[name], module.symbols[symbol] != nil else {
@@ -72,12 +71,23 @@ public class CompilingModule {
 					}
 
 					moduleStructs[info.symbol] = module.structs[symbol]
+
+					// Import the struct's methods as well.
+					for (sym, chunk) in module.chunks {
+						if case let .method(name, _, _) = sym.kind, name == structName {
+							chunks[sym] = chunk
+						}
+					}
 				case .internal:
 					guard let structType = structs[symbol] else {
 						throw CompilerError.unknownIdentifier("could not find struct for: \(symbol.description)")
 					}
 
 					moduleStructs[info.symbol] = structType
+
+					for method in structType.methods {
+						chunks[method.symbol] = method
+					}
 				}
 			case .value(_), .primitive, .genericType(_), .property:
 				()
@@ -108,7 +118,7 @@ public class CompilingModule {
 				throw CompilerError.unknownIdentifier("No symbol found for \(name)")
 			}
 
-			module.valueInitializers[Byte(symbol.slot)] = StaticChunk(chunk: chunk)
+			module.valueInitializers[symbol.symbol] = StaticChunk(chunk: chunk)
 		}
 
 		return module

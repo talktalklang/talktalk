@@ -25,7 +25,7 @@ public struct Module: Equatable, @unchecked Sendable {
 
 	// If a global value hasn't been used yet, its initializer goes into
 	// here so it can be initialized lazily
-	public var valueInitializers: [Byte: StaticChunk] = [:]
+	public var valueInitializers: [Symbol: StaticChunk] = [:]
 
 	public init(name: String, main: StaticChunk? = nil, symbols: [Symbol: SymbolInfo]) {
 		self.name = name

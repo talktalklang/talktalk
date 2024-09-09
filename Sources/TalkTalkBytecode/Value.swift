@@ -11,9 +11,9 @@ public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
 	}
 
 	public let type: Struct
-	public var fields: [Value?]
+	public var fields: [Symbol: Value]
 
-	public init(type: Struct, fields: [Value?]) {
+	public init(type: Struct, fields: [Symbol: Value]) {
 		self.type = type
 		self.fields = fields
 	}
@@ -48,7 +48,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case closure(Symbol)
 
 	// The index of the builtin function
-	case builtin(Int)
+	case builtin(Symbol)
 
 	// The index of the builtin struct
 	case builtinStruct(Int)
@@ -63,7 +63,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case instance(Instance)
 
 	// The method slot, the type of instance
-	case boundMethod(Instance, Int)
+	case boundMethod(Instance, Symbol)
 
 	case primitive(Primitive)
 
@@ -113,7 +113,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var builtinValue: Int? {
+	public var builtinValue: Symbol? {
 		guard case let .builtin(result) = self else {
 			return nil
 		}
@@ -145,12 +145,12 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return instance
 	}
 
-	public var boundMethodValue: (instance: Instance, slot: Int)? {
-		guard case let .boundMethod(instance, slot) = self else {
+	public var boundMethodValue: (instance: Instance, symbol: Symbol)? {
+		guard case let .boundMethod(instance, symbol) = self else {
 			return nil
 		}
 
-		return (instance, slot)
+		return (instance, symbol)
 	}
 
 	public func disassemble(in module: Module) -> String {

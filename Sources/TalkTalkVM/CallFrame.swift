@@ -6,6 +6,7 @@
 //
 
 import TalkTalkBytecode
+import OrderedCollections
 
 struct Closure {
 	var chunk: StaticChunk
@@ -20,5 +21,6 @@ public struct CallFrame {
 	var closure: Closure
 	var returnTo: UInt64
 	var stackOffset: Int
-	var locals: [String: Value] = [:]
+	var locals: OrderedDictionary<Symbol, Value> = [:]
+	var selfValue: Value?
 }

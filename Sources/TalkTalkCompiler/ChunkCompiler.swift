@@ -412,7 +412,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 					continue
 				}
 
-				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map(\.name))
+				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map {
+					module.analysisModule.inferenceContext.lookup(syntax: $0)?.description ?? "_"
+				})
+
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
@@ -453,7 +456,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 				guard let declName = decl.name?.lexeme else {
 					throw CompilerError.unknownIdentifier(decl.description)
 				}
-				let symbol = Symbol.method(module.name, name, declName, decl.params.params.map(\.name))
+
+				let symbol = Symbol.method(module.name, name, declName, decl.params.params.map {
+					module.analysisModule.inferenceContext.lookup(syntax: $0)?.description ?? "_"
+				})
+
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
 				let declChunk = Chunk(
 					name: symbol.description,
@@ -727,10 +734,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 			)
 		}
 
-		if case let .struct(name) = symbol?.kind {
+		if let symbol, case .struct = symbol.kind {
 			return Variable(
 				name: varName,
-				code: .symbol(.struct(module.name, name)),
+				code: .symbol(symbol),
 				depth: scopeDepth,
 				isCaptured: false,
 				getter: .getStruct,
@@ -877,7 +884,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		)
 
 		chunk.localsCount += 1
-		chunk.localNames.append(name)
+		chunk.locals.append(.value(module.name, name))
 		compiler.locals.append(variable)
 		return variable
 	}

@@ -14,7 +14,7 @@ public protocol Disassemblable {
 	var constants: [Value] { get }
 	var arity: Byte { get }
 	var localsCount: Byte { get }
-	var localNames: [String] { get }
+	var locals: [Symbol] { get }
 	var upvalueNames: [String] { get }
 	var upvalueCount: Byte { get }
 	var depth: Byte { get }
@@ -58,8 +58,8 @@ extension StaticChunk: Disassemblable {
 		debugInfo.lines
 	}
 	
-	public var localNames: [String] {
-		debugInfo.localNames
+	public var locals: [Symbol] {
+		debugInfo.locals
 	}
 	
 	public var upvalueNames: [String] {

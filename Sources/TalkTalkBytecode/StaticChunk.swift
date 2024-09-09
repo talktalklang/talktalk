@@ -37,7 +37,7 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 	struct DebugInfo: Equatable, Codable {
 		public var name: String
 		public var lines: [UInt32]
-		public var localNames: [String]
+		public var locals: [Symbol]
 		public var upvalueNames: [String]
 		public var depth: Byte
 		public var path: String
@@ -54,7 +54,7 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 		self.debugInfo = DebugInfo(
 			name: chunk.name,
 			lines: chunk.lines,
-			localNames: chunk.localNames,
+			locals: chunk.locals,
 			upvalueNames: chunk.upvalueNames,
 			depth: chunk.depth,
 			path: chunk.path
