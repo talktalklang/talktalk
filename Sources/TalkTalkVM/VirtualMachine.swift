@@ -49,7 +49,7 @@ public struct VirtualMachine {
 
 				#if DEBUG
 				if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
-					log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals) stack offset: \(currentFrame.stackOffset)")
+					log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
 				}
 				#endif
 			} catch {
@@ -73,7 +73,6 @@ public struct VirtualMachine {
 	var globalValues: [Symbol: Value] = [:]
 
 	// Upvalue linked list
-	var openUpvalues: Upvalue?
 	public static func run(module: Module, verbosity: Verbosity = .quiet, output: any OutputBuffer = DefaultOutputBuffer()) throws -> ExecutionResult {
 		var vm = try VirtualMachine(module: module, verbosity: verbosity, output: output)
 		return try vm.run()
@@ -95,13 +94,10 @@ public struct VirtualMachine {
 		self.stack = Stack<Value>(capacity: 256)
 		self.frames = Stack<CallFrame>(capacity: 256)
 
-		// Reserving this space
-		stack.push(.reserved)
-
 		let frame = CallFrame(
-			closure: Closure(chunk: chunk),
+			closure: Closure(chunk: chunk, capturing: [:]),
 			returnTo: 0,
-			stackOffset: 0
+			selfValue: nil
 		)
 
 		frames.push(frame)
@@ -120,6 +116,7 @@ public struct VirtualMachine {
 					disassembler.current = Int(ip)
 					if let instruction = try disassembler.next() {
 						dumpStack()
+						dumpLocals()
 						instruction.dump()
 						return instruction
 					}
@@ -157,15 +154,24 @@ public struct VirtualMachine {
 			switch opcode {
 			case .return:
 				// Remove the result from the stack temporarily while we clean it up
-				let result = try stack.pop()
-
-				// TODO: Close upvalues
-
+				let	result = try stack.pop()
 				let calledFrame = try frames.pop()
 
-				// Pop off values created on the stack by the called frame
-				while stack.size > calledFrame.stackOffset + 1 {
-					try stack.pop()
+				let capturedLocals = calledFrame.closure.chunk.capturedLocals
+				// Take locals from the popped frame, put them on the heap, then update captures to
+				// point to the new location. This is sort of doing a lot of work that could probably
+				// happen elsewhere but like, closures are really none of my business tbh.
+				for local in capturedLocals {
+					guard let value = calledFrame.lookup(local) else {
+						throw VirtualMachineError.valueMissing("missing local for capture: \(local)")
+					}
+
+					let pointer = heap.allocate(count: 1)
+					heap.store(pointer: pointer, value: value)
+
+					for i in 0..<frames.size {
+						frames[i].updateCapture(local, to: .heap(pointer))
+					}
 				}
 
 				// If there are no frames left, we're done.
@@ -362,27 +368,42 @@ public struct VirtualMachine {
 					continue
 				}
 
-				guard let local = currentFrame.locals[symbol] else {
+				guard let local = currentFrame.lookup(symbol) else {
 					throw VirtualMachineError.valueMissing("did not find local for \(symbol)")
 				}
 
 				stack.push(local)
 			case .setLocal:
 				let symbol = try readSymbol()
-				try print("setting \(symbol) to \(stack.peek())")
-				currentFrame.locals[symbol] = try stack.peek()
+				currentFrame.define(symbol, as: try stack.peek())
 			case .getCapture:
 				let capture = try readCapture()
-				let frame = try frames.peek(offset: capture.depth)
 
-				guard let value = frame.locals[capture.symbol] else {
-					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found")
+				switch capture.location {
+				case let .stack(depth):
+					let frame = try frames.peek(offset: depth)
+
+					guard let value = frame.lookup(capture.symbol) else {
+						throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in call frame stack")
+					}
+
+					stack.push(value)
+				case let .heap(pointer):
+					guard let value = heap.dereference(pointer: pointer) else {
+						throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found on heap")
+					}
+
+					stack.push(value)
 				}
-
-				stack.push(value)
 			case .setCapture:
 				let capture = try readCapture()
-				frames[frames.size - capture.depth - 1].locals[capture.symbol] = try stack.peek()
+
+				switch capture.location {
+				case let .stack(depth):
+					frames[frames.size - depth - 1].define(capture.symbol, as: try stack.peek())
+				case let .heap(pointer):
+					heap.store(pointer: pointer, value: try stack.peek())
+				}
 			case .defClosure:
 				// Read which subchunk this closure points to
 				let symbol = try readSymbol()
@@ -395,8 +416,14 @@ public struct VirtualMachine {
 				// Push the closure Value onto the stack
 				stack.push(.closure(symbol))
 
+				currentFrame.define(symbol, as: .closure(symbol))
+
+				let capturing: [Symbol: Capture.Location] = subchunk.capturing.reduce(into: [:]) { res, capture in
+					res[capture.symbol] = capture.location
+				}
+
 				// Store the closure TODO: gc these when they're not needed anymore
-				closures[symbol] = Closure(chunk: subchunk)
+				closures[symbol] = Closure(chunk: subchunk, capturing: capturing)
 			case .call:
 				let callee = try stack.pop()
 				if callee.isCallable {
@@ -420,11 +447,6 @@ public struct VirtualMachine {
 				} else if let initializer = module.valueInitializers[symbol] {
 					// If we don't have the global already, we lazily initialize it by running its initializer
 					try call(chunk: initializer)
-
-					globalValues[symbol] = try stack.peek()
-
-					// Remove the initializer since it should only be called once
-					module.valueInitializers.removeValue(forKey: symbol)
 				} else {
 					return runtimeError("No global found at slot: \(symbol)")
 				}
@@ -471,12 +493,14 @@ public struct VirtualMachine {
 
 				// Pop the receiver off the stack
 				let receiver = try stack.pop()
+
+				print("    -> GET PROPERTY \(receiver).\(symbol)")
+
 				switch receiver {
 				case let .instance(instance):
 					if propertyOptions.contains(.isMethod) {
-						// If it's a method, we create a boundMethod value, which consists of the method slot
-						// and the instance ID. Using this, we can use the type we get from instance[instanceID]
-						// to lookup the method.
+						// If it's a method, we create a boundMethod value, which consists of the method symbol
+						// and the instance ID.
 						let boundMethod = Value.boundMethod(instance, symbol)
 
 						stack.push(boundMethod)
@@ -519,7 +543,7 @@ public struct VirtualMachine {
 
 				// TODO: Make this user-implementable
 				guard let getSlot = module.chunks.first(where: {
-					$0.key.description.contains("$get$")
+					$0.key.description.contains("\(receiver.type.name)$get$")
 				}) else {
 					throw VirtualMachineError.valueMissing("No get method for receiver: \(receiver)")
 				}
@@ -572,7 +596,7 @@ public struct VirtualMachine {
 		case let .builtin(builtin):
 			try call(builtin: builtin)
 		case let .moduleFunction(moduleFunction):
-			try call(moduleFunction: moduleFunction)
+			try call(chunkID: moduleFunction)
 		case let .struct(structValue):
 			try call(structValue: structValue)
 		case let .boundMethod(instance, symbol):
@@ -589,7 +613,6 @@ public struct VirtualMachine {
 			throw VirtualMachineError.valueMissing("no method found \(boundMethod)")
 		}
 
-		stack[stack.size - Int(methodChunk.arity) - 1] = .instance(instance)
 		try call(chunk: methodChunk, withSelf: .instance(instance))
 	}
 
@@ -607,25 +630,22 @@ public struct VirtualMachine {
 			throw VirtualMachineError.valueMissing("no initializer found for \(structType.name)")
 		}
 
-		// Add the instance to the stack
-		stack[stack.size - Int(initializer.arity) - 1] = instance
-
 		try call(chunk: initializer, withSelf: instance)
 	}
 
 	private mutating func call(chunk: StaticChunk, withSelf: Value? = nil) throws {
-		var frame = CallFrame(
+		let frame = CallFrame(
 			closure: .init(
-				chunk: chunk
+				chunk: chunk,
+				capturing: [:]
 			),
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1,
 			selfValue: withSelf
 		)
 
 		let args = try stack.pop(count: Int(chunk.arity))
 		for i in 0..<Int(chunk.arity) {
-			frame.locals[chunk.locals[i]] = args[i]
+			frame.define(chunk.locals[i], as: args[i])
 		}
 
 		frames.push(frame)
@@ -633,10 +653,6 @@ public struct VirtualMachine {
 
 	private mutating func call(closureID: Symbol) throws {
 		// Find the called chunk from the closure id
-		guard let chunk = module.chunks[closureID] else {
-			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(closureID)")
-		}
-
 		guard let closure = closures[closureID] else {
 			throw VirtualMachineError.valueMissing("No closure with id \(closureID)")
 		}
@@ -644,8 +660,13 @@ public struct VirtualMachine {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1
+			selfValue: currentFrame.selfValue
 		)
+
+		let args = try stack.pop(count: Int(closure.chunk.arity))
+		for i in 0..<Int(closure.chunk.arity) {
+			frame.define(closure.chunk.locals[i], as: args[i])
+		}
 
 		frames.push(frame)
 	}
@@ -655,28 +676,22 @@ public struct VirtualMachine {
 			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(chunkID)")
 		}
 
-		let closure = Closure(chunk: chunk)
-
-		let frame = CallFrame(
-			closure: closure,
-			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1
-		)
-
-		frames.push(frame)
-	}
-
-	private mutating func call(moduleFunction: Symbol) throws {
-		guard let chunk = module.chunks[moduleFunction] else {
-			throw VirtualMachineError.valueMissing("no chunk found for symbol: \(moduleFunction)")
+		let capturing: [Symbol: Capture.Location] = chunk.capturing.reduce(into: [:]) { res, capture in
+			res[capture.symbol] = capture.location
 		}
-		let closure = Closure(chunk: chunk)
+
+		let closure = Closure(chunk: chunk, capturing: capturing)
 
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			stackOffset: stack.size - Int(chunk.arity) - 1
+			selfValue: currentFrame.selfValue
 		)
+
+		let args = try stack.pop(count: Int(chunk.arity))
+		for i in 0..<Int(chunk.arity) {
+			frame.define(chunk.locals[i], as: args[i])
+		}
 
 		frames.push(frame)
 	}
@@ -699,12 +714,12 @@ public struct VirtualMachine {
 			let string = inspect(value) + "\n"
 			try output.write([Byte](Data(string.utf8)), to: .stdout)
 		case .function("_allocate", _):
-			if case let .int(count) = try stack.pop() { // Get the capacity
+			if case let .int(count) = try stack.peek() { // Get the capacity
 				let pointer = heap.allocate(count: Int(count))
 				stack.push(.pointer(pointer))
 			}
 		case .function("_deref", _):
-			if case let .pointer(pointer) = try stack.pop(),
+			if case let .pointer(pointer) = try stack.peek(),
 				 let value = heap.dereference(pointer: pointer)
 			{
 				stack.push(value)
@@ -712,16 +727,14 @@ public struct VirtualMachine {
 		case .function("_free", _):
 			() // TODO:
 		case .function("_storePtr", _):
-			let value = try stack.pop()
-			if case let .pointer(pointer) = try stack.pop() {
+			let value = try stack.peek()
+			if case let .pointer(pointer) = try stack.peek(offset: 1) {
 				heap.store(pointer: pointer, value: value)
 			}
 		case .function("_hash", _):
 			let value = try stack.pop()
 			stack.push(.int(.init(value.hashValue)))
 		case .function("_cast", _):
-			try stack.pop()
-			try stack.pop()
 			() // This is just for the analyzer
 		default:
 			throw VirtualMachineError.valueMissing("unknown builtin: \(builtin)")
@@ -754,47 +767,29 @@ public struct VirtualMachine {
 		return jump
 	}
 
-	private mutating func captureUpvalue(value: Value) -> Upvalue {
-		var previousUpvalue: Upvalue? = nil
-		var upvalue = openUpvalues
-
-		while upvalue != nil /* , upvalue!.value > value */ {
-			previousUpvalue = upvalue
-
-			// swiftlint:disable force_unwrapping
-			upvalue = upvalue!.next
-			// swiftlint:enable force_unwrapping
-		}
-
-		if let upvalue, upvalue.value == value {
-			return upvalue
-		}
-
-		let createdUpvalue = Upvalue(value: value)
-		createdUpvalue.next = upvalue
-
-		if let previousUpvalue {
-			previousUpvalue.next = createdUpvalue
-		} else {
-			openUpvalues = createdUpvalue
-		}
-
-		return createdUpvalue
-	}
-
 	private func runtimeError(_ message: String) -> ExecutionResult {
 		.error(message)
 	}
 
-	@discardableResult private mutating func dumpStack() -> String {
-		if stack.isEmpty { return "" }
-		var result = "       "
+	private func dumpLocals() {
+		var result = "       Locals: "
 
-		if currentFrame.stackOffset > 0 {
-			result += "[ \(currentFrame.stackOffset) skipped ]"
+		for local in currentFrame.locals {
+			result += "[ \(local.key) = \(local.value) ]"
 		}
 
-		for slot in stack.entries()[currentFrame.stackOffset..<stack.size] {
+		if let selfValue = currentFrame.selfValue {
+			result += "       self: \(selfValue)"
+		}
+
+		FileHandle.standardError.write(Data((result + "\n").utf8))
+	}
+
+	@discardableResult private mutating func dumpStack() -> String {
+		if stack.isEmpty { return "" }
+		var result = "       Stack: "
+
+		for slot in stack.entries() {
 			if frames.size == 0 {
 				result += "[ \(slot.description) ]"
 			} else {

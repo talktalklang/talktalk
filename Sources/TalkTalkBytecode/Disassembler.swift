@@ -13,10 +13,8 @@ public protocol Disassemblable {
 	var lines: [UInt32] { get }
 	var constants: [Value] { get }
 	var arity: Byte { get }
-	var localsCount: Byte { get }
 	var locals: [Symbol] { get }
-	var upvalueNames: [String] { get }
-	var upvalueCount: Byte { get }
+	var capturedLocals: Set<Symbol> { get }
 	var depth: Byte { get }
 	var path: String { get }
 }
@@ -44,7 +42,7 @@ public extension Disassemblable {
 	}
 
 	@discardableResult func dump(in module: Module) throws -> String {
-		var result = "[\(name) locals: \(localsCount), upvalues: \(upvalueCount)]\n"
+		var result = "[\(name)]\n"
 		result += try disassemble(in: module).map(\.description).joined(separator: "\n") + "\n"
 		result += "\n"
 
@@ -60,10 +58,6 @@ extension StaticChunk: Disassemblable {
 	
 	public var locals: [Symbol] {
 		debugInfo.locals
-	}
-	
-	public var upvalueNames: [String] {
-		debugInfo.upvalueNames
 	}
 	
 	public var depth: Byte {
@@ -155,7 +149,13 @@ public struct Disassembler<Chunk: Disassemblable> {
 
 	mutating func captureInstruction(opcode: Opcode, start: Int) throws -> Instruction {
 		let capture = try chunk.code[current++].asCapture()
-		return Instruction(path: chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: .capture(name: capture.name, depth: capture.depth))
+		return Instruction(
+			path: chunk.path,
+			opcode: opcode,
+			offset: start,
+			line: chunk.lines[start],
+			metadata: .capture(name: capture.name, capture.location)
+		)
 	}
 
 	mutating func constantInstruction(start: Int) throws -> Instruction {

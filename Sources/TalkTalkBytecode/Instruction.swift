@@ -255,16 +255,16 @@ public extension InstructionMetadata where Self == CallMetadata {
 
 public struct CaptureMetadata: InstructionMetadata {
 	public let name: String
-	public let depth: Int
+	public let location: Capture.Location
 	public var length: Int = 2
 
 	public var description: String {
-		"name: \(name), depth: \(depth)"
+		"name: \(name), location: \(location)"
 	}
 }
 
 public extension InstructionMetadata where Self == CaptureMetadata {
-	static func capture(name: String, depth: Int) -> CaptureMetadata {
-		CaptureMetadata(name: name, depth: depth)
+	static func capture(name: String, _ location: Capture.Location) -> CaptureMetadata {
+		CaptureMetadata(name: name, location: location)
 	}
 }

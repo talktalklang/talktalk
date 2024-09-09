@@ -8,10 +8,10 @@ import Foundation
 
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
-public final class Chunk: Codable {
+public final class Chunk {
 	public enum CodingKeys: CodingKey {
 		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
-		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, upvalueCount, locals, upvalueNames
+		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, capturedLocals, locals, upvalueNames
 	}
 
 	public let name: String
@@ -35,16 +35,13 @@ public final class Chunk: Codable {
 	public var depth: Byte = 0
 	public var parent: Chunk?
 
-	// How many locals does this chunk worry about? We start at 1 to reserve 0
-	// for things like `self`.
-	public var localsCount: Byte = 1
+	public var captures: Set<Capture> = []
 
 	// How many upvalues does this chunk refer to
-	public var upvalueCount: Byte = 0
+	public var capturedLocals: Set<Symbol> = []
 
 	// For debugging names used in this chunk
 	public var locals: [Symbol] = []
-	public var upvalueNames: [String] = []
 
 	public init(name: String, symbol: Symbol, path: String) {
 		self.name = name
@@ -171,7 +168,7 @@ extension Chunk: Equatable {
 			\.constants,
 			\.lines,
 			\.arity,
-			\.upvalueCount,
+			\.capturedLocals,
 		]
 
 		for keypath in keypaths {

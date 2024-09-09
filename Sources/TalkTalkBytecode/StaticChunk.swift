@@ -24,12 +24,11 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 	// How many arguments should this chunk expect
 	public let arity: Byte
 
-	// How many locals does this chunk worry about? We start at 1 to reserve 0
-	// for things like `self`.
-	public let localsCount: Byte
+	// Which of this chunk's locals are captured by a child fn.
+	public let capturedLocals: Set<Symbol>
 
-	// How many upvalues does this chunk refer to
-	public let upvalueCount: Byte
+	// Which of this chunk's locals are captured from a parent
+	public let capturing: Set<Capture>
 
 	// Debug info
 	internal let debugInfo: DebugInfo
@@ -38,24 +37,24 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 		public var name: String
 		public var lines: [UInt32]
 		public var locals: [Symbol]
-		public var upvalueNames: [String]
 		public var depth: Byte
 		public var path: String
 	}
 
 	public init(chunk: Chunk) {
+		print("StaticChunk.init captures: \(chunk.captures)")
+
 		self.code = chunk.code
 		self.symbol = chunk.symbol
 		self.constants = chunk.constants
 		self.data = chunk.data
 		self.arity = chunk.arity
-		self.localsCount = chunk.localsCount
-		self.upvalueCount = chunk.upvalueCount
+		self.capturedLocals = chunk.capturedLocals
+		self.capturing = chunk.captures
 		self.debugInfo = DebugInfo(
 			name: chunk.name,
 			lines: chunk.lines,
 			locals: chunk.locals,
-			upvalueNames: chunk.upvalueNames,
 			depth: chunk.depth,
 			path: chunk.path
 		)

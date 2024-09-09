@@ -11,7 +11,6 @@ public struct Variable {
 	var name: String
 	var code: Code
 	var depth: Int
-	var isCaptured: Bool
 	var getter: Opcode
 	var setter: Opcode
 
@@ -20,7 +19,6 @@ public struct Variable {
 			name: "__reserved__",
 			code: .symbol(.value("__reserved__", "self")),
 			depth: depth,
-			isCaptured: false,
 			getter: .getLocal,
 			setter: .setLocal
 		)

@@ -118,11 +118,11 @@ struct VMEndToEndTests: VMTest {
 	@Test("Func arguments") func funcArgs() throws {
 		#expect(
 			try run(
-				"""
-				func(i) {
-					i + 20
-				}(10)
-				""") == .int(30))
+			"""
+			func(i) {
+				i + 20
+			}(10)
+			""", verbosity: .verbose) == .int(30))
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
@@ -167,23 +167,23 @@ struct VMEndToEndTests: VMTest {
 	}
 
 	@Test("Works with counter") func counter() throws {
-		let module = try compile(
-			"""
-			func makeCounter() {
-				var count = 0
-				func increment() {
-					count = count + 1
-					return count
-				}
-				return increment
+		let source = """
+		func makeCounter() {
+			var count = 0
+			func increment() {
+				count = count + 1
+				return count
 			}
+			return increment
+		}
 
-			var mycounter = makeCounter()
-			mycounter()
-			return mycounter()
-			""")
+		var mycounter = makeCounter()
+		mycounter()
+		return mycounter()
+		"""
 
-		let result = try VirtualMachine.run(module: module).get()
+		let module = try compile(source)
+		let result = try VirtualMachine.run(module: module, verbosity: .lineByLine(source)).get()
 		#expect(result == .int(2))
 	}
 
@@ -198,7 +198,7 @@ struct VMEndToEndTests: VMTest {
 		}
 		return fact(3)
 		"""
-		let result = try run(source, verbosity: .lineByLine(source))
+		let result = try run(source)
 
 		#expect(result == .int(6))
 	}
@@ -222,7 +222,7 @@ struct VMEndToEndTests: VMTest {
 			return n
 		"""
 
-		let result = try run(source)
+		let result = try run(source, verbosity: .lineByLine(source))
 
 		#expect(result == .int(34))
 	}
@@ -254,7 +254,7 @@ struct VMEndToEndTests: VMTest {
 		let result = try run(
 			"func main() { return fizz }",
 			"let fizz = 123"
-		)
+		, verbosity: .verbose)
 
 		#expect(result == .int(123))
 	}

@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import OrderedCollections
+
 public struct Module: Equatable, @unchecked Sendable {
 	// The name of the module. P straightforward.
 	public let name: String
@@ -18,7 +20,7 @@ public struct Module: Equatable, @unchecked Sendable {
 	public var structs: [Symbol: Struct] = [:]
 
 	// A list of symbols this module exports
-	public var symbols: [Symbol: SymbolInfo]
+	public var symbols: OrderedDictionary<Symbol, SymbolInfo>
 
 	// A list of modules this module imports
 	public var imports: [Module] = []
@@ -27,7 +29,7 @@ public struct Module: Equatable, @unchecked Sendable {
 	// here so it can be initialized lazily
 	public var valueInitializers: [Symbol: StaticChunk] = [:]
 
-	public init(name: String, main: StaticChunk? = nil, symbols: [Symbol: SymbolInfo]) {
+	public init(name: String, main: StaticChunk? = nil, symbols: OrderedDictionary<Symbol, SymbolInfo>) {
 		self.name = name
 		self.main = main
 		self.symbols = symbols

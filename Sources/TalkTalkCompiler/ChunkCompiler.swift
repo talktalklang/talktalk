@@ -23,8 +23,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Tracks local variable slots
 	public var locals: [Variable]
 
-	// Tracks which locals have been captured
-	public var captures: [Capture] = []
+	// Tracks which locals have been captured from parents
+	public var captures: Set<Capture> = []
+
+	// Tracks which locals have been captured by children
+	public var capturedLocals: Set<Symbol> = []
 
 	// Track which locals have been created in this scope
 	public var localsCount = 1
@@ -82,7 +85,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 			// Pop the expr off the stack because this is a statement so we don't care about the
 			// return value
 			// TODO: Do we need to pop if the expr stmt returns void?
-			chunk.emit(opcode: .pop, line: expr.location.line)
+			if expr.exprAnalyzed.inferenceType != .void {
+				chunk.emit(opcode: .pop, line: expr.location.line)
+			}
 		case .return:
 			// If this is the only statement in a block, we can sometimes implicitly return
 			// its expr instead of just popping it (like in a function body). We don't want to
@@ -118,7 +123,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			throw CompilerError.typeError("Setting via subscripts doesn't work yet.")
 		}
 
-		let variable = resolveVariable(
+		let variable = try resolveVariable(
 			receiver: expr.receiverAnalyzed,
 			chunk: chunk
 		)
@@ -178,7 +183,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedVarExpr, _ chunk: Chunk) throws {
 		guard
-			let variable = resolveVariable(
+			let variable = try resolveVariable(
 				receiver: expr,
 				chunk: chunk
 			)
@@ -247,10 +252,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedInitDecl, _ chunk: Chunk) throws {
 		// Define the params for this init
 		for parameter in expr.parametersAnalyzed.paramsAnalyzed {
-			_ = defineLocal(name: parameter.name, compiler: self, chunk: chunk)
-
-//			chunk.emit(opcode: .setLocal, line: parameter.location.line)
-//			chunk.emit(byte: variable.slot, line: parameter.location.line)
+			_ = defineLocal(
+				name: parameter.name,
+				compiler: self,
+				chunk: chunk
+			)
 		}
 
 		// Emit the init body
@@ -281,18 +287,23 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Define the params for this function
 		for parameter in expr.analyzedParams.paramsAnalyzed {
-			let variable = defineLocal(name: parameter.name, compiler: functionCompiler, chunk: functionChunk)
-
-			functionChunk.emit(opcode: .setLocal, line: parameter.location.line)
-			functionChunk.emit(variable.code, line: parameter.location.line)
+			_ = functionCompiler.defineLocal(
+				name: parameter.name,
+				compiler: functionCompiler,
+				chunk: functionChunk
+			)
 		}
 
 		if let name = expr.name?.lexeme {
 			if module.moduleFunctionOffset(for: name) != nil {
-				_ = resolveVariable(named: name, symbol: expr.symbol, chunk: chunk)
+				_ = try resolveVariable(named: name, symbol: expr.symbol, chunk: chunk)
 			} else {
 				// Define the function in its enclosing scope
-				_ = defineLocal(name: name, compiler: self, chunk: chunk)
+				_ = defineLocal(
+					name: name,
+					compiler: self,
+					chunk: chunk
+				)
 			}
 		}
 
@@ -305,8 +316,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// We always want to emit a return at the end of a function
 		functionChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
 
-		// Store the upvalues count
-		functionChunk.upvalueCount = Byte(functionCompiler.upvalues.count)
+		// Store which locals this function has captured by children
+		functionChunk.capturedLocals = functionCompiler.capturedLocals
+
+		// Store which locals this function captures from parents
+		functionChunk.captures = functionCompiler.captures
 
 		let line = UInt32(expr.location.line)
 
@@ -429,7 +443,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				// Define the actual params for this initializer
 				for parameter in decl.parametersAnalyzed.paramsAnalyzed {
 					_ = declCompiler.defineLocal(
-						name: parameter.name, compiler: declCompiler, chunk: declChunk
+						name: parameter.name,
+						compiler: declCompiler,
+						chunk: declChunk
 					)
 				}
 
@@ -532,7 +548,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 			return
 		}
 
-		let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+		let variable = defineLocal(
+			name: expr.name,
+			compiler: self,
+			chunk: chunk
+		)
+
 		if let value = expr.valueAnalyzed {
 			try value.accept(self, chunk)
 			chunk.emit(opcode: .setLocal, line: value.location.line)
@@ -554,7 +575,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 			return
 		}
 
-		let variable = defineLocal(name: expr.name, compiler: self, chunk: chunk)
+		let variable = defineLocal(
+			name: expr.name,
+			compiler: self,
+			chunk: chunk
+		)
+
 		if let value = expr.valueAnalyzed {
 			try value.accept(self, chunk)
 			chunk.emit(opcode: .setLocal, line: value.location.line)
@@ -571,6 +597,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// the else stuff.
 		let thenJumpLocation = chunk.emit(jump: .jumpUnless, line: expr.condition.location.line)
 
+		// Pop the condition off the stack
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+
 		// Emit the consequence block
 		try expr.consequenceAnalyzed.accept(self, chunk)
 
@@ -583,7 +612,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(thenJumpLocation)
 
 		// Pop the condition off the stack
-//		chunk.emit(opcode: .pop, line: expr.condition.location.line)
+		chunk.emit(opcode: .pop, line: expr.condition.location.line)
 
 		// Emit the alternative block
 		if let alternativeAnalyzed = expr.alternativeAnalyzed {
@@ -646,7 +675,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// Lookup the variable by name. If we've got it in our locals, just return the slot
 	// for that variable. If we don't, search parent chunks to see if they've got it. If
 	// they do, we've got an upvalue.
-	public func resolveVariable(receiver: any AnalyzedSyntax, chunk: Chunk) -> Variable? {
+	public func resolveVariable(receiver: any AnalyzedSyntax, chunk: Chunk) throws -> Variable? {
 		var varName: String?
 		var symbol: Symbol?
 
@@ -658,7 +687,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			symbol = syntax.symbol
 		}
 
-		if let varName, let variable = resolveVariable(named: varName, symbol: symbol, chunk: chunk) {
+		if let varName, let variable = try resolveVariable(named: varName, symbol: symbol, chunk: chunk) {
 			return variable
 		}
 
@@ -669,7 +698,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				name: syntax.property,
 				code: .symbol(property.symbol),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getProperty,
 				setter: .setProperty
 			)
@@ -678,13 +706,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return nil
 	}
 
-	func resolveVariable(named varName: String, symbol: Symbol?, chunk: Chunk) -> Variable? {
+	func resolveVariable(named varName: String, symbol: Symbol?, chunk: Chunk) throws -> Variable? {
 		if varName == "self" {
 			return Variable(
 				name: varName,
 				code: .symbol(.value(module.name, "self")),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getLocal,
 				setter: .setLocal
 			)
@@ -695,18 +722,16 @@ public class ChunkCompiler: AnalyzedVisitor {
 				name: varName,
 				code: local,
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getLocal,
 				setter: .setLocal
 			)
 		}
 
-		if let capture = resolveCapture(named: varName) {
+		if let capture = try  resolveCapture(named: varName) {
 			return Variable(
 				name: varName,
 				code: .capture(capture),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getCapture,
 				setter: .setCapture
 			)
@@ -717,7 +742,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				name: varName,
 				code: .symbol(symbol),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getModuleFunction,
 				setter: .setModuleFunction
 			)
@@ -728,7 +752,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				name: varName,
 				code: .symbol(symbol),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getModuleValue,
 				setter: .setModuleValue
 			)
@@ -739,7 +762,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				name: varName,
 				code: .symbol(symbol),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getStruct,
 				setter: .setStruct
 			)
@@ -752,7 +774,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				name: varName,
 				code: .symbol(.function("[builtin]", varName, fn.parameters)),
 				depth: scopeDepth,
-				isCaptured: false,
 				getter: .getBuiltin,
 				setter: .setBuiltin
 			)
@@ -791,18 +812,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 //		return nil
 //	}
 
-	private func resolveCapture(named name: String, depth: Int = 0) -> Capture? {
+	private func resolveCapture(named name: String, depth: Int = 0) throws -> Capture? {
 		guard let parent else { return nil }
 
 		if case let .symbol(local) = parent.resolveLocal(named: name) {
+			parent.capturedLocals.insert(local)
+
 			return addCapture(local, name: name, depth: depth + 1)
 		}
 
-		return parent.resolveCapture(named: name, depth: depth + 1)
+		return try parent.resolveCapture(named: name, depth: depth + 1)
 	}
 
 	func addCapture(_ symbol: Symbol, name: String, depth: Int) -> Capture {
-		return Capture(name: name, symbol: symbol, depth: depth)
+		let capture = Capture(name: name, symbol: symbol, location: .stack(depth))
+		captures.insert(capture)
+		return capture
 	}
 
 	// Check the CompilingModule for a global function.
@@ -843,7 +868,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		//
 		// We save a lil chunk that initializes the value along with the module that can get called
 		// when the global is referenced to set the initial value.
-		guard let variable = resolveVariable(receiver: expr, chunk: chunk), let symbol = expr.symbol else {
+		guard let variable = try resolveVariable(receiver: expr, chunk: chunk), let symbol = expr.symbol else {
 			throw CompilerError.unknownIdentifier(expr.nameToken.lexeme)
 		}
 
@@ -878,12 +903,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 			name: name,
 			code: .symbol(.value(module.name, name)),
 			depth: compiler.scopeDepth,
-			isCaptured: false,
 			getter: .getLocal,
 			setter: .setLocal
 		)
 
-		chunk.localsCount += 1
 		chunk.locals.append(.value(module.name, name))
 		compiler.locals.append(variable)
 		return variable
@@ -945,8 +968,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .setProperty, line: 9999)
 			chunk.emit(.symbol(property.symbol), line: 9999)
 
-			chunk.emit(opcode: .pop, line: 9999)
-			chunk.emit(opcode: .pop, line: 9999)
+//			chunk.emit(opcode: .pop, line: 9999)
+//			chunk.emit(opcode: .pop, line: 9999)
 		}
 
 		compiler.endScope(chunk: chunk)
