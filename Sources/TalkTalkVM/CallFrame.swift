@@ -31,7 +31,7 @@ public class CallFrame {
 		self.selfValue = selfValue
 	}
 
-	func updateCapture(_ symbol: Symbol, to location: Capture.Location) {
+	public func updateCapture(_ symbol: Symbol, to location: Capture.Location) {
 		if closure.capturing[symbol] != nil {
 			closure.capturing[symbol] = location
 			print("Updated capture location \(symbol) to \(location)")
