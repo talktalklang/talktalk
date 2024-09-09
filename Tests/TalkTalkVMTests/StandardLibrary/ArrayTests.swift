@@ -37,7 +37,7 @@ struct ArrayTests: StandardLibraryTest {
 		a.append(456)
 		return a.get(1)
 		"""
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source).get()
 
 		#expect(result == .int(456))
 	}
@@ -53,7 +53,7 @@ struct ArrayTests: StandardLibraryTest {
 		 a.append(678)
 		 return a[5]
 		"""
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source).get()
 
 		#expect(result == .int(678))
 	}
@@ -73,7 +73,7 @@ struct ArrayTests: StandardLibraryTest {
 		return a[5]
 		"""
 
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source).get()
 
 		#expect(result == .int(6))
 	}

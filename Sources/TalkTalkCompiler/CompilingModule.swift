@@ -174,11 +174,11 @@ public class CompilingModule {
 				throw CompilerError.analysisError("could not find symbol for: \(fileChunk.symbol.description)")
 			}
 
-			main.emit(opcode: .callChunkID, line: UInt32(offset))
+			main.emit(.opcode(.callChunkID), line: UInt32(offset))
 			main.emit(.symbol(fileChunk.symbol), line: UInt32(offset))
 		}
 
-		main.emit(opcode: .return, line: UInt32(fileChunks.count))
+		main.emit(.opcode(.return), line: UInt32(fileChunks.count))
 
 		return main
 	}

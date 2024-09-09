@@ -22,7 +22,7 @@ struct DictionaryVMTests: StandardLibraryTest {
 		return a["foo"]
 		"""
 
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source).get()
 
 		#expect(result == .string("bar"))
 	}

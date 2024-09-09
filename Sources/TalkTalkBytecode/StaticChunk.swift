@@ -42,8 +42,6 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 	}
 
 	public init(chunk: Chunk) {
-		print("StaticChunk.init captures: \(chunk.captures)")
-
 		self.code = chunk.code
 		self.symbol = chunk.symbol
 		self.constants = chunk.constants

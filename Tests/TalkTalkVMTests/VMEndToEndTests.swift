@@ -122,7 +122,7 @@ struct VMEndToEndTests: VMTest {
 			func(i) {
 				i + 20
 			}(10)
-			""", verbosity: .verbose) == .int(30))
+			""") == .int(30))
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
@@ -183,7 +183,7 @@ struct VMEndToEndTests: VMTest {
 		"""
 
 		let module = try compile(source)
-		let result = try VirtualMachine.run(module: module, verbosity: .lineByLine(source)).get()
+		let result = try VirtualMachine.run(module: module).get()
 		#expect(result == .int(2))
 	}
 
@@ -222,7 +222,7 @@ struct VMEndToEndTests: VMTest {
 			return n
 		"""
 
-		let result = try run(source, verbosity: .lineByLine(source))
+		let result = try run(source)
 
 		#expect(result == .int(34))
 	}
@@ -254,7 +254,7 @@ struct VMEndToEndTests: VMTest {
 		let result = try run(
 			"func main() { return fizz }",
 			"let fizz = 123"
-		, verbosity: .verbose)
+		)
 
 		#expect(result == .int(123))
 	}
@@ -394,7 +394,7 @@ struct VMEndToEndTests: VMTest {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {

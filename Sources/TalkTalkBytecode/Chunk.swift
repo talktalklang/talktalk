@@ -101,14 +101,6 @@ public final class Chunk {
 		write(byte: b, line: line)
 	}
 
-	public func emit(opcode: Opcode, line: UInt32) {
-		write(byte: opcode.byte, line: line)
-	}
-
-//	public func emit(byte: Byte, line: UInt32) {
-//		write(byte: byte, line: line)
-//	}
-
 	public func emit(_ code: Code, line: UInt32) {
 		write(code, line: line)
 	}
@@ -128,8 +120,12 @@ public final class Chunk {
 	public func emit(data value: StaticData, line: UInt32) {
 		let start = data.count
 		data.append(value)
-		emit(opcode: .data, line: line)
+		emit(.opcode(.data), line: line)
 		emit(.byte(Byte(start)), line: line)
+	}
+
+	public func emit(opcode: Opcode, line: UInt32) {
+		write(.opcode(opcode), line: line)
 	}
 
 	private func write(constant value: Value) -> Byte {
@@ -139,7 +135,7 @@ public final class Chunk {
 	}
 
 	private func write(_ opcode: Opcode, line: UInt32) {
-		write(byte: opcode.byte, line: line)
+		write(.opcode(opcode), line: line)
 	}
 
 	private func write(_ code: Code, line: UInt32) {

@@ -13,7 +13,7 @@ struct ChunkTests {
 	@Test("Opcode") func opcode() {
 		let chunk = Chunk(name: "main", symbol: .function("ChunkTests", "main", []), path: "test")
 		chunk.emit(opcode: .true, line: 1)
-
+		print(chunk)
 		#expect(chunk.code == [
 			.opcode(.true),
 		])

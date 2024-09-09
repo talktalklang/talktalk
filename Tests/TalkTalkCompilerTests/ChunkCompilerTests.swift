@@ -153,7 +153,6 @@ class CompilerTests: CompilerTest {
 			.op(.setModuleValue, line: 0, .global(.value("CompilerTests", "i"))),
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setModuleValue, line: 1, .global(.value("CompilerTests", "i"))),
-			.op(.pop, line: 1),
 			.op(.return, line: 0)
 		))
 	}
@@ -199,7 +198,7 @@ class CompilerTests: CompilerTest {
 			.op(.less, line: 1, .simple),
 
 			// Jump that skips the body if the condition isn't true
-			.op(.jumpUnless, line: 1, .jump(offset: 12)),
+			.op(.jumpUnless, line: 1, .jump(offset: 11)),
 
 			// Pop the condition
 			.op(.pop, line: 1, .simple),
@@ -209,8 +208,7 @@ class CompilerTests: CompilerTest {
 			.op(.getModuleValue, line: 2, .global(.value("CompilerTests", "i"))),
 			.op(.add, line: 2, .simple),
 			.op(.setModuleValue, line: 2, .global(.value("CompilerTests", "i"))),
-			.op(.pop, line: 2, .simple),
-			.op(.loop, line: 3, .loop(back: 20)),
+			.op(.loop, line: 3, .loop(back: 19)),
 
 			.op(.pop, line: 1, .simple),
 			.op(.return, line: 0, .simple)
@@ -230,14 +228,16 @@ class CompilerTests: CompilerTest {
 			// The condition
 			.op(.false, line: 0, .simple),
 			// How far to jump if the condition is false
-			.op(.jumpUnless, line: 0, .jump(offset: 6)),
+			.op(.jumpUnless, line: 0, .jump(offset: 7)),
+			.op(.pop, line: 0, .simple),
 
 			// If we're not jumping, here's the value of the consequence block
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 3)),
+			.op(.jump, line: 2, .jump(offset: 4)),
+			.op(.pop, line: 0, .simple),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),
@@ -304,7 +304,6 @@ class CompilerTests: CompilerTest {
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
 			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1)),
 			.op(.call, line: 3),
-			.op(.pop, line: 3),
 			.op(.getLocal, line: 7, .local(.value("CompilerTests", "a"))),
 			.op(.return, line: 7),
 			.op(.return, line: 8)

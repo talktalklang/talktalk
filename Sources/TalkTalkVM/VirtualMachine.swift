@@ -145,11 +145,7 @@ public struct VirtualMachine {
 				}
 			#endif
 
-			let byte = try readByte()
-
-			guard let opcode = Opcode(rawValue: byte) else {
-				throw VirtualMachineError.unknownOpcode(byte)
-			}
+			let opcode = try readOpcode()
 
 			switch opcode {
 			case .return:
@@ -498,8 +494,6 @@ public struct VirtualMachine {
 				// Pop the receiver off the stack
 				let receiver = try stack.pop()
 
-				print("    -> GET PROPERTY \(receiver).\(symbol)")
-
 				switch receiver {
 				case let .instance(instance):
 					if propertyOptions.contains(.isMethod) {
@@ -753,6 +747,11 @@ public struct VirtualMachine {
 	private mutating func readByte() throws -> Byte {
 		defer { ip += 1 }
 		return try chunk.code[Int(ip)].asByte()
+	}
+
+	private mutating func readOpcode() throws -> Opcode {
+		defer { ip += 1 }
+		return try chunk.code[Int(ip)].asOpcode()
 	}
 
 	private mutating func readCapture() throws -> Capture {
