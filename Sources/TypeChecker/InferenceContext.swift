@@ -502,10 +502,19 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
-			localSubstitutions[variable] = substitutions[variable] ?? .typeVar(freshTypeVariable((variable.name ?? "<unnamed>"), file: #file, line: #line))
+			localSubstitutions[variable] = substitutions[variable] ?? .typeVar(
+				freshTypeVariable(
+					(variable.name ?? "<unnamed>"),
+					file: #file,
+					line: #line
+				)
+			)
 		}
 
-		return applySubstitutions(to: scheme.type, with: substitutions.merging(localSubstitutions, uniquingKeysWith: { $1 }))
+		return applySubstitutions(
+			to: scheme.type,
+			with: substitutions.merging(localSubstitutions, uniquingKeysWith: { $1 })
+		)
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {

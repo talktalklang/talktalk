@@ -27,7 +27,7 @@ public enum Opcode: Byte, Codable, Sendable {
 	     getLocal,
 
 	     // Upvalues (captures)
-	     getUpvalue, setUpvalue,
+	     getCapture, setCapture,
 
 	     // Module functions
 	     getModuleFunction, setModuleFunction,

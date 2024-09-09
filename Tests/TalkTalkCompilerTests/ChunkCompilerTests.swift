@@ -298,11 +298,11 @@ class CompilerTests: CompilerTest {
 			"""
 		)
 
-		let chunk = module.compiledChunks[.function("CompilerTests", "", [])]!
+		let chunk = module.compiledChunks[.function("CompilerTests", "_fn__58", [])]!
 		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
-			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1)),
 			.op(.call, line: 3),
 			.op(.pop, line: 3),
 			.op(.getLocal, line: 7, .local(.value("CompilerTests", "a"))),
@@ -310,10 +310,10 @@ class CompilerTests: CompilerTest {
 			.op(.return, line: 8)
 		))
 
-		let subchunk = module.compiledChunks[.function("CompilerTests", "adsf", [])]!
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__44", [])]!
 		#expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
-			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+			.op(.setCapture, line: 4, .capture(name: "a", depth: 1)),
 			.op(.return, line: 4),
 			.op(.return, line: 5) // func return
 		))
@@ -332,7 +332,7 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let result = disassemble(module.compiledChunks[.function("CompilerTests", "", [])]!)
+		let result = disassemble(module.compiledChunks[.function("CompilerTests", "_fn__57", [])]!)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
@@ -343,8 +343,7 @@ class CompilerTests: CompilerTest {
 			.op(.defClosure, line: 3, .closure(
 				name: "_fn__56",
 				arity: 0,
-				depth: 1,
-				upvalues: [.capturing(1), .capturing(2)]
+				depth: 1
 			)),
 
 			.op(.pop, line: 3, .simple),
@@ -353,11 +352,11 @@ class CompilerTests: CompilerTest {
 
 		#expect(result == expected)
 
-		let subchunk = module.compiledChunks[.function("CompilerTests", "", [])]!
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__56", [])]!
 		let subexpected = Instructions(
-			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+			.op(.getCapture, line: 4, .capture(name: "a", depth: 1)),
 			.op(.pop, line: 4, .simple),
-			.op(.getUpvalue, line: 5, .upvalue(slot: 1, name: "b")),
+			.op(.getCapture, line: 5, .capture(name: "b", depth: 1)),
 			.op(.pop, line: 5, .simple),
 			.op(.return, line: 6, .simple)
 		)
@@ -376,22 +375,21 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let chunk = module.compiledChunks[.function("CompilerTests", "", [])]!
+		let chunk = module.compiledChunks[.function("CompilerTests", "_fn__65", [])]!
 
 		let result = disassemble(chunk)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
-			.op(.defClosure, line: 2, .closure(name: "_fn__64", arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.defClosure, line: 2, .closure(name: "_fn__64", arity: 0, depth: 1)),
 			.op(.pop, line: 2),
 			.op(.return, line: 6, .simple)
 		)
 
 		#expect(result == expected)
 
-		let subchunk = module.compiledChunks[.function("CompilerTests", "", [])]!
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__64", [])]!
 
-		#expect(subchunk.upvalueCount == 1)
 
 		let subexpected = Instructions(
 			// Define 'b'
@@ -401,7 +399,7 @@ class CompilerTests: CompilerTest {
 			// Get 'b' to add to a
 			.op(.getLocal, line: 4, .local(.value("CompilerTests", "b"))),
 			// Get 'a' from upvalue
-			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+			.op(.getCapture, line: 4, .capture(name: "a", depth: 1)),
 
 			// Do the addition
 			.op(.add, line: 4),

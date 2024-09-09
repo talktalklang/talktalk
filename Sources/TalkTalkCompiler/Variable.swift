@@ -9,7 +9,7 @@ import TalkTalkBytecode
 
 public struct Variable {
 	var name: String
-	var symbol: Symbol
+	var code: Code
 	var depth: Int
 	var isCaptured: Bool
 	var getter: Opcode
@@ -18,7 +18,7 @@ public struct Variable {
 	static func reserved(depth: Int) -> Variable {
 		Variable(
 			name: "__reserved__",
-			symbol: .value("__reserved__", "self"),
+			code: .symbol(.value("__reserved__", "self")),
 			depth: depth,
 			isCaptured: false,
 			getter: .getLocal,

@@ -98,7 +98,8 @@ struct VMEndToEndTests: VMTest {
 				let b = 20
 				a = a + b
 				return a
-				""") == .int(30))
+				""") == .int(30)
+		)
 	}
 
 	@Test("Basic func/call expr") func funcExpr() throws {

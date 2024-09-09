@@ -59,9 +59,9 @@ struct ModuleCompilerTests: CompilerTest {
 
 		try #expect(chunk.disassemble(in: module) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "foo", arity: 0, depth: 0)),
-			.op(.getModuleFunction, line: 4, .moduleFunction(.function("CompilerTests", "foo", []))),
+			.op(.getModuleFunction, line: 4, .moduleFunction(.function("GlobalFuncs", "foo", []))),
 			.op(.call, line: 4),
-			.op(.setModuleValue, line: 4, .global(.value("CompilerTests", "a"))),
+			.op(.setModuleValue, line: 4, .global(.value("GlobalFuncs", "a"))),
 			.op(.return, line: 0)
 		))
 	}

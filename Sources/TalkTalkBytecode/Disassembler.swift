@@ -119,6 +119,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return try defClosureInstruction(start: index)
 		case .jump, .jumpUnless, .loop:
 			return try jumpInstruction(opcode: opcode, start: index)
+		case .setCapture, .getCapture:
+			return try captureInstruction(opcode: opcode, start: index)
 		case .setLocal, .getLocal:
 			return try variableInstruction(opcode: opcode, start: index, type: .local)
 		case .getModuleFunction, .setModuleFunction:
@@ -135,8 +137,6 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return try variableInstruction(opcode: opcode, start: index, type: .builtin)
 		case .callChunkID:
 			return try variableInstruction(opcode: opcode, start: index, type: .global)
-		case .getUpvalue, .setUpvalue:
-			return try upvalueInstruction(opcode: opcode, start: index)
 		case .initArray:
 			return try initArrayInstruction(start: index)
 		default:
@@ -151,6 +151,11 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		return Instruction(path: self.chunk.path, opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: Int(count)))
+	}
+
+	mutating func captureInstruction(opcode: Opcode, start: Int) throws -> Instruction {
+		let capture = try chunk.code[current++].asCapture()
+		return Instruction(path: chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: .capture(name: capture.name, depth: capture.depth))
 	}
 
 	mutating func constantInstruction(start: Int) throws -> Instruction {
@@ -186,13 +191,13 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		let metadata = ClosureMetadata(name: subchunk.name, arity: subchunk.arity, depth: subchunk.depth)
-		return Instruction(path: self.chunk.path, opcode: .defClosure, offset: start, line: chunk.lines[start], metadata: metadata)
-	}
-
-	mutating func upvalueInstruction(opcode: Opcode, start: Int) throws -> Instruction {
-		let slot = try chunk.code[current++].asByte()
-		let metadata = UpvalueMetadata(slot: slot, name: chunk.upvalueNames[Int(slot)])
-		return Instruction(path: self.chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)
+		return Instruction(
+			path: self.chunk.path,
+			opcode: .defClosure,
+			offset: start,
+			line: chunk.lines[start],
+			metadata: metadata
+		)
 	}
 
 	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type: VariableMetadata.VariableType) throws -> Instruction {

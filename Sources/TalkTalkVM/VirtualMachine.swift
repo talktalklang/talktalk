@@ -355,10 +355,24 @@ public struct VirtualMachine {
 			case .setLocal:
 				let slot = try readByte()
 				stack[Int(slot) + currentFrame.stackOffset] = try stack.peek()
-			case .getUpvalue:
-				()
-			case .setUpvalue:
-				()
+			case .getCapture:
+				let capture = try readCapture()
+				let frame = try frames.peek(offset: capture.depth)
+
+				guard let value = frame.locals[capture.name] else {
+					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found")
+				}
+
+				stack.push(value)
+			case .setCapture:
+				let capture = try readCapture()
+				let frame = try frames.peek(offset: capture.depth)
+
+				guard let value = frame.locals[capture.name] else {
+					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found")
+				}
+
+				frames[frames.size - capture.depth - 1].locals[capture.name] = try stack.peek()
 			case .defClosure:
 				// Read which subchunk this closure points to
 				let symbol = try readSymbol()
@@ -700,6 +714,11 @@ public struct VirtualMachine {
 	private mutating func readByte() throws -> Byte {
 		defer { ip += 1 }
 		return try chunk.code[Int(ip)].asByte()
+	}
+
+	private mutating func readCapture() throws -> Capture {
+		defer { ip += 1 }
+		return try chunk.code[Int(ip)].asCapture()
 	}
 
 	private mutating func readSymbol() throws -> Symbol {

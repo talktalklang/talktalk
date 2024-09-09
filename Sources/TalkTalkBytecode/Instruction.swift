@@ -218,32 +218,11 @@ public extension InstructionMetadata where Self == VariableMetadata {
 }
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
-	public struct Upvalue: Equatable, Hashable {
-		public static func == (lhs: Upvalue, rhs: Upvalue) -> Bool {
-			lhs.isLocal == rhs.isLocal && lhs.index == rhs.index
-		}
-
-		var isLocal: Bool
-		var index: Byte
-
-		public static func capturing(_ index: Byte) -> Upvalue {
-			Upvalue(isLocal: true, index: index)
-		}
-
-		public static func inherited(_ index: Byte) -> Upvalue {
-			Upvalue(isLocal: false, index: index)
-		}
-
-		public var description: String {
-			"isLocal: \(isLocal) i: \(index)"
-		}
-	}
-
 	let name: String?
 	let arity: Byte
 	let depth: Byte
 	public var length: Int {
-		2
+		1
 	}
 
 	public var description: String {
@@ -254,7 +233,7 @@ public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
 }
 
 public extension InstructionMetadata where Self == ClosureMetadata {
-	static func closure(name: String? = nil, arity: Byte, depth: Byte, upvalues: [ClosureMetadata.Upvalue] = []) -> ClosureMetadata {
+	static func closure(name: String? = nil, arity: Byte, depth: Byte) -> ClosureMetadata {
 		ClosureMetadata(name: name, arity: arity, depth: depth)
 	}
 }
@@ -274,18 +253,18 @@ public extension InstructionMetadata where Self == CallMetadata {
 	}
 }
 
-public struct UpvalueMetadata: InstructionMetadata {
-	public let slot: Byte
+public struct CaptureMetadata: InstructionMetadata {
 	public let name: String
+	public let depth: Int
 	public var length: Int = 2
 
 	public var description: String {
-		"local: \(slot), name: \(name)"
+		"name: \(name), depth: \(depth)"
 	}
 }
 
-public extension InstructionMetadata where Self == UpvalueMetadata {
-	static func upvalue(slot: Byte, name: String) -> UpvalueMetadata {
-		UpvalueMetadata(slot: slot, name: name)
+public extension InstructionMetadata where Self == CaptureMetadata {
+	static func capture(name: String, depth: Int) -> CaptureMetadata {
+		CaptureMetadata(name: name, depth: depth)
 	}
 }

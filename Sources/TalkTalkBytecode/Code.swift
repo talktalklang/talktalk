@@ -10,7 +10,7 @@ public enum Code: Codable, Equatable, Sendable {
 		case invalidCode(Code, String)
 	}
 
-	case byte(Byte), opcode(Opcode), symbol(Symbol)
+	case byte(Byte), opcode(Opcode), symbol(Symbol), capture(Capture)
 
 	public func asByte() throws -> Byte {
 		guard case let .byte(byte) = self else {
@@ -34,5 +34,13 @@ public enum Code: Codable, Equatable, Sendable {
 		}
 
 		return symbol
+	}
+
+	public func asCapture() throws -> Capture {
+		guard case let .capture(capture) = self else {
+			throw InvalidCodeError.invalidCode(self, "expected capture")
+		}
+
+		return capture
 	}
 }
