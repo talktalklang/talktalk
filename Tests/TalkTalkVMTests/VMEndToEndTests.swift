@@ -188,18 +188,17 @@ struct VMEndToEndTests: VMTest {
 	}
 
 	@Test("Runs factorial") func factorials() throws {
-		let result = try run(
-			"""
-			func fact(n) {
-			 if n <= 1 {
+		let source = """
+		func fact(n) {
+			if n <= 1 {
 				return 1
-			 } else {
+			} else {
 				return n * fact(n - 1)
-			 }
 			}
-			return fact(3)
-			"""
-		)
+		}
+		return fact(3)
+		"""
+		let result = try run(source, verbosity: .lineByLine(source))
 
 		#expect(result == .int(6))
 	}
@@ -395,7 +394,7 @@ struct VMEndToEndTests: VMTest {
 			]
 		)
 
-		#expect(try VirtualMachine.run(module: module).get() == .int(123))
+		#expect(try VirtualMachine.run(module: module, verbosity: .verbose).get() == .int(123))
 	}
 
 	@Test("Struct init with no args") func structInitNoArgs() throws {
