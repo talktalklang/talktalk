@@ -637,23 +637,26 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+		guard let type = context.inferenceContext.lookup(syntax: expr),
+					let pattern = context.inferenceContext.lookup(syntax: expr.patternSyntax) else {
 			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
 		}
 
-		let patternAnalyzed = try castToAnyAnalyzedExpr(expr.pattern.accept(self, context))
+		let patternAnalyzed = try castToAnyAnalyzedExpr(expr.patternSyntax.accept(self, context))
 		let bodyAnalyzed = try expr.body.compactMap { try $0.accept(self, context) as? any AnalyzedStmt }
 
 		var variables: [String: InferenceType] = [:]
 		if case let .pattern(pattern) = context.inferenceContext.lookup(syntax: patternAnalyzed) {
-			variables.merge(pattern.boundVariables) { $1 }
+			for case let .variable(name, type) in pattern.arguments {
+				variables[name] = type
+			}
 		}
 
 		return AnalyzedCaseStmt(
 			wrapped: expr,
 			patternAnalyzed: patternAnalyzed,
 			bodyAnalyzed: bodyAnalyzed,
-			boundVariables: variables,
+			pattern: pattern,
 			inferenceType: type,
 			environment: context
 		)

@@ -690,7 +690,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// TODO: this
 	}
 
-	public func visit(_ expr: AnalyzedEnumDecl, _ chunk: Chunk) throws {
+	public func visit(_ expr: AnalyzedEnumDecl, _: Chunk) throws {
 		let enumType = Enum(
 			name: expr.nameToken.lexeme,
 			cases: expr.casesAnalyzed.map(\.nameToken.lexeme)
@@ -703,7 +703,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedEnumCaseDecl, _ chunk: Chunk) throws {
 		guard let enumSymbol = module.analysisModule.moduleEnum(named: expr.enumName)?.symbol,
-					let enumSlot = module.analysisModule.symbols[enumSymbol] else {
+		      let enumSlot = module.analysisModule.symbols[enumSymbol]
+		else {
 			throw CompilerError.unknownIdentifier(expr.nameToken.lexeme)
 		}
 
@@ -732,13 +733,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 		for (i, kase) in expr.casesAnalyzed.enumerated() {
 			try chunk.patchJump(caseJumps[i])
 
-			for (name, _) in kase.boundVariables {
-				// These are basically block args. Could be nice to have a more general
-				// solution for that.
-				let variable = defineLocal(name: name, compiler: self, chunk: chunk)
+			if case let .pattern(pattern) = kase.pattern {
+				for case let .variable(name, _) in pattern.arguments {
+					// These are basically block args. Could be nice to have a more general
+					// solution for that.
+					let variable = defineLocal(name: name, compiler: self, chunk: chunk)
 
-				// We need to resolve the values in the target to the variable here...
-				
+					// We need to resolve the values in the target to the variable here...
+				}
 			}
 
 			for stmt in kase.bodyAnalyzed {
@@ -756,14 +758,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCaseStmt, _ chunk: Chunk) throws {
-		switch expr.patternAnalyzed {
-		case let pattern as AnalyzedCallExpr:
-			// Need to emit a pattern to be matched here
-			print(pattern)
-			print()
-		default:
-			try expr.patternAnalyzed.accept(self, chunk)
+		guard let boundPattern = BoundPattern.bind(expr) else {
+			throw CompilerError.invalidPattern("Unable to bind pattern for \(expr)")
 		}
+
+		try boundPattern.emit(into: chunk, with: self)
 	}
 
 	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {
@@ -822,7 +821,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return nil
 	}
 
-	func resolveVariable(named varName: String, symbol: Symbol?, chunk: Chunk) throws -> Variable? {
+	func resolveVariable(named varName: String, symbol: Symbol?, chunk _: Chunk) throws -> Variable? {
 		if varName == "self" {
 			return Variable(
 				name: varName,
@@ -843,7 +842,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			)
 		}
 
-		if let capture = try  resolveCapture(named: varName) {
+		if let capture = try resolveCapture(named: varName) {
 			return Variable(
 				name: varName,
 				code: .capture(capture),

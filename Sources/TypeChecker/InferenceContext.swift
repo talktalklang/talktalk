@@ -471,9 +471,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return .pattern(
 				Pattern(
 					type: applySubstitutions(to: pattern.type, with: substitutions),
-					values: pattern.values.map { applySubstitutions(to: $0, with: substitutions) },
-					boundVariables: pattern.boundVariables.reduce(into: [:]) { res, variable in
-						res[variable.key] = applySubstitutions(to: variable.value, with: substitutions)
+					arguments: pattern.arguments.map {
+						switch $0 {
+						case .value(let type):
+							.value(applySubstitutions(to: type, with: substitutions))
+						case .variable(let name, let type):
+							.variable(name, applySubstitutions(to: type, with: substitutions))
+						}
 					}
 				)
 			)

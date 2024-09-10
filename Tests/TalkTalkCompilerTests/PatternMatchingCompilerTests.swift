@@ -50,11 +50,16 @@ struct PatternMatchingCompilerTests: CompilerTest {
 
 	@Test("var binding") func varBinding() throws {
 		let module = try compile("""
-			enum Thing { case foo(int) }
+			enum Thing {
+			case foo(int)
+			case bar(String)
+			}
 
 			match Thing.foo(123) {
 			case .foo(let a):
 				return a
+			case .bar(let b):
+				return b
 			}
 			"""
 		)

@@ -106,7 +106,7 @@ extension Parser {
 		}
 
 		return CaseStmtSyntax(
-			pattern: pattern,
+			patternSyntax: pattern,
 			body: stmts,
 			isDefault: token.kind == .else,
 			id: nextID(),

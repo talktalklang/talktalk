@@ -823,7 +823,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws {
-		try inferPattern(from: expr.pattern, in: context)
+		try inferPattern(from: expr.patternSyntax, in: context)
 
 		for stmt in expr.body {
 			try stmt.accept(self, context)

@@ -404,7 +404,7 @@ public struct Formatter: Visitor {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> String {
-		var result = try "case " + expr.pattern.accept(self, context) + ":"
+		var result = try "case " + expr.patternSyntax.accept(self, context) + ":"
 
 		if !expr.body.isEmpty {
 			result += "\n"

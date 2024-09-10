@@ -8,25 +8,24 @@
 import TalkTalkSyntax
 
 public struct Pattern: Equatable, Hashable, CustomStringConvertible {
+	public enum Argument: Equatable, Hashable {
+		case value(InferenceType), variable(String, InferenceType)
+	}
+
 	// What is the overall type of this pattern
 	public let type: InferenceType
 
 	// What associated values are in this pattern? So like .foo("bar") would
 	// have .base(.string) ("bar") as an associated value.
-	public let values: [InferenceType]
+	public let arguments: [Argument]
 
-	// What variables are in this pattern? So like .foo(let a) would have "a"
-	// as a bound variable
-	public let boundVariables: [String: InferenceType]
-
-	init(type: InferenceType, values: [InferenceType], boundVariables: [String : InferenceType] = [:]) {
+	init(type: InferenceType, arguments: [Argument]) {
 		self.type = type
-		self.values = values
-		self.boundVariables = boundVariables
+		self.arguments = arguments
 	}
 
 	public var description: String {
-		"\(type), \(values), \(boundVariables)"
+		"\(type), \(arguments)"
 	}
 }
 
@@ -47,8 +46,7 @@ struct PatternVisitor: Visitor {
 		let type = try context.get(expr.callee).asType(in: context)
 		let params: [InferenceType] = try inferenceVisitor.parameters(of: type)
 
-		var values: [InferenceType] = []
-		var variables: [String: InferenceType] = [:]
+		var arguments: [Pattern.Argument] = []
 		for (i, arg) in expr.args.enumerated() {
 			let param = params.indices.contains(i) ? params[i] : nil
 
@@ -61,8 +59,7 @@ struct PatternVisitor: Visitor {
 				}
 
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
-				values.append(.typeVar(typeVar))
-				variables[arg.name] = .typeVar(typeVar)
+				arguments.append(.variable(arg.name, .typeVar(typeVar)))
 			case let arg as LetDecl:
 				let typeVar = context.freshTypeVariable(arg.name)
 				if let param {
@@ -70,8 +67,7 @@ struct PatternVisitor: Visitor {
 				}
 
 				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
-				values.append(.typeVar(typeVar))
-				variables[arg.name] = .typeVar(typeVar)
+				arguments.append(.variable(arg.name, .typeVar(typeVar)))
 			case let arg as CallExprSyntax:
 				var context = context
 				if let param {
@@ -81,14 +77,14 @@ struct PatternVisitor: Visitor {
 				try arg.accept(inferenceVisitor, context)
 				
 				let pattern = try visit(arg, context)
-				values.append(.pattern(pattern))
+				arguments.append(.value(.pattern(pattern)))
 			case let arg as MemberExprSyntax:
 				let pattern = try visit(arg, context)
-				values.append(.pattern(pattern))
+				arguments.append(.value(.pattern(pattern)))
 			case let arg as any Expr:
 				try arg.accept(inferenceVisitor, context)
 				let type = try context.get(arg).asType(in: context)
-				values.append(type)
+				arguments.append(.value(type))
 
 				if let param {
 					context.addConstraint(.equality(type, param, at: arg.location))
@@ -100,8 +96,7 @@ struct PatternVisitor: Visitor {
 
 		return Pattern(
 			type: type,
-			values: values,
-			boundVariables: variables
+			arguments: arguments
 		)
 	}
 
@@ -111,51 +106,51 @@ struct PatternVisitor: Visitor {
 
 	func visit(_ expr: LiteralExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		try inferenceVisitor.visit(expr, context)
-		return try Pattern(type: context.get(expr).asType(in: context), values: [])
+		return try Pattern(type: context.get(expr).asType(in: context), arguments: [])
 	}
 
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: BinaryExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: StructExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: LetDeclSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: SubscriptExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: DictionaryElementExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, values: [])
+		Pattern(type: .any, arguments: [])
 	}
 
 	func visit(_ expr: DefExprSyntax, _ context: InferenceContext) throws -> Pattern {

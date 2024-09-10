@@ -7,7 +7,7 @@ public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
   public let wrapped: CaseStmtSyntax
 	public var patternAnalyzed: any AnalyzedExpr
 	public var bodyAnalyzed: [any AnalyzedStmt]
-	public let boundVariables: [String: InferenceType]
+	public var pattern: InferenceType
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
@@ -20,7 +20,7 @@ public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
 	public var body: [any Stmt] { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
-	public var pattern: any Expr { wrapped.pattern }
+	public var patternSyntax: any Expr { wrapped.patternSyntax }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)
