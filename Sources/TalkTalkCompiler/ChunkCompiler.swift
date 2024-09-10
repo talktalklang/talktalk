@@ -379,7 +379,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedReturnStmt, _ chunk: Chunk) throws {
 		try expr.valueAnalyzed?.accept(self, chunk)
 
-		if expr.valueAnalyzed?.inferenceType != .void {
+		if expr.valueAnalyzed != nil {
 			chunk.emit(opcode: .returnValue, line: expr.location.line)
 		} else {
 			chunk.emit(opcode: .returnVoid, line: expr.location.line)
@@ -723,7 +723,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Emit the cases for comparison with the target pattern
 		for kase in expr.casesAnalyzed {
-			try kase.accept(self, chunk)
+			try PatternCompiler(
+				target: expr.targetAnalyzed,
+				caseStatement: kase,
+				compiler: self,
+				chunk: chunk
+			).compileCase()
+
 			caseJumps.append(
 				chunk.emit(jump: .matchCase, line: kase.location.line)
 			)
@@ -733,19 +739,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 		for (i, kase) in expr.casesAnalyzed.enumerated() {
 			try chunk.patchJump(caseJumps[i])
 
-			if case let .pattern(pattern) = kase.pattern {
-				for case let .variable(name, _) in pattern.arguments {
-					// These are basically block args. Could be nice to have a more general
-					// solution for that.
-					let variable = defineLocal(name: name, compiler: self, chunk: chunk)
-
-					// We need to resolve the values in the target to the variable here...
-				}
-			}
-
-			for stmt in kase.bodyAnalyzed {
-				try stmt.accept(self, chunk)
-			}
+			try PatternCompiler(
+				target: expr.targetAnalyzed,
+				caseStatement: kase,
+				compiler: self,
+				chunk: chunk
+			).compileBody()
 
 			endJumps.append(
 				chunk.emit(jump: .jump, line: kase.bodyAnalyzed.last?.location.line ?? kase.location.line)
@@ -758,11 +757,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCaseStmt, _ chunk: Chunk) throws {
-		guard let boundPattern = BoundPattern.bind(expr) else {
-			throw CompilerError.invalidPattern("Unable to bind pattern for \(expr)")
-		}
-
-		try boundPattern.emit(into: chunk, with: self)
+		// Handled by match stmt
 	}
 
 	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {
@@ -1027,7 +1022,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return variable
 	}
 
-	private func defineLocal(
+	internal func defineLocal(
 		name: String,
 		compiler: ChunkCompiler,
 		chunk: Chunk

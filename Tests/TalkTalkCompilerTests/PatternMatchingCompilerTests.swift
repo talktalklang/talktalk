@@ -27,11 +27,15 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.matchBegin, line: 0),
 
 			// Emit the first pattern
+			.op(.true, line: 0),
 			.op(.false, line: 1),
-			.op(.matchCase, line: 1, .jump(offset: 4)),
+			.op(.equal, line: 1),
+			.op(.matchCase, line: 1, .jump(offset: 6)),
 
 			// Emit the second pattern
+			.op(.true, line: 0),
 			.op(.true, line: 3),
+			.op(.equal, line: 3),
 			.op(.matchCase, line: 3, .jump(offset: 6)),
 
 			// Emit the first body we'd jump to if the first case is true
@@ -66,27 +70,51 @@ struct PatternMatchingCompilerTests: CompilerTest {
 
 		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
 			// Get the target
-			.op(.constant, line: 2, .constant(.int(123))),
-			.op(.getEnum, line: 2, .enum(.enum(module.name, "Thing"))),
-			.op(.call, line: 2),
+			.op(.constant, line: 5, .constant(.int(123))),
+			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
+			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.call, line: 5),
 
 			// Ok we're starting a pattern match
-			.op(.matchBegin, line: 0),
+			.op(.matchBegin, line: 5),
 
-			// Emit the pattern
-			.op(.getEnum, line: 2, .enum(.enum(module.name, "Thing"))),
-			.op(.matchCase, line: 1, .jump(offset: 4)),
+			// Emit the first pattern
+			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
+			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.getEnum, line: 6, .enum(.enum(module.name, "Thing"))),
+			.op(.getProperty, line: 6, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+
+			.op(.equal, line: 6),
+			.op(.matchCase, line: 6, .jump(offset: 14)),
+
+			// Emit the second pattern
+			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
+			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.getEnum, line: 8, .enum(.enum(module.name, "Thing"))),
+			.op(.getProperty, line: 8, .getProperty(.property(module.name, "Thing", "bar"), options: [])),
+
+			.op(.equal, line: 8),
+			.op(.matchCase, line: 8, .jump(offset: 10)),
 
 			// Emit the body we'd jump to if the first case is true
 
-			// Bind the `let a` for the block
-			.op(.constant, line: 2, .constant(.int(123))),
-			.op(.setLocal, line: 3, .local(.value(module.name, "a"))),
+			// Bind the `let a` for the first block
+			.op(.constant, line: 5, .constant(.int(123))),
+			.op(.setLocal, line: 6, .local(.value(module.name, "a"))),
 
-			// Emit the actual code for the block
-			.op(.getLocal, line: 3, .local(.value(module.name, "a"))),
-			.op(.returnValue, line: 3),
-			.op(.jump, line: 3, .jump(offset: 6)),
+			// Emit the actual code for the first block
+			.op(.getLocal, line: 7, .local(.value(module.name, "a"))),
+			.op(.returnValue, line: 7),
+			.op(.jump, line: 7, .jump(offset: 10)),
+
+			// Bind the `let b` for the second block
+			.op(.constant, line: 5, .constant(.int(123))),
+			.op(.setLocal, line: 8, .local(.value(module.name, "b"))),
+
+			// Emit the actual code for the second block
+			.op(.getLocal, line: 9, .local(.value(module.name, "b"))),
+			.op(.returnValue, line: 9),
+			.op(.jump, line: 9, .jump(offset: 0)),
 
 			.op(.returnVoid, line: 0)
 		))

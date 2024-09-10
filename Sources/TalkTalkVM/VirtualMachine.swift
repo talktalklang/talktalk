@@ -222,6 +222,16 @@ public struct VirtualMachine {
 				} else {
 					return runtimeError("Cannot negate \(value)")
 				}
+			case .and:
+				let rhs = try stack.pop()
+				let lhs = try stack.pop()
+
+				switch (lhs, rhs) {
+				case let (.bool(lhs), .bool(rhs)):
+					stack.push(.bool(lhs && rhs))
+				default:
+					return runtimeError("&& requires bool operands. got \(lhs) & \(rhs)")
+				}
 			case .not:
 				let value = try stack.pop()
 				if let bool = value.boolValue {

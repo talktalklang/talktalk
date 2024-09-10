@@ -47,8 +47,11 @@ struct PatternVisitor: Visitor {
 		let params: [InferenceType] = try inferenceVisitor.parameters(of: type)
 
 		var arguments: [Pattern.Argument] = []
+		var argumentsSyntax: [any Syntax] = []
 		for (i, arg) in expr.args.enumerated() {
 			let param = params.indices.contains(i) ? params[i] : nil
+
+			argumentsSyntax.append(arg)
 
 			switch arg.value {
 			case let arg as VarDecl:
@@ -106,51 +109,87 @@ struct PatternVisitor: Visitor {
 
 	func visit(_ expr: LiteralExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		try inferenceVisitor.visit(expr, context)
-		return try Pattern(type: context.get(expr).asType(in: context), arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: BinaryExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: StructExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: LetDeclSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: SubscriptExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: DictionaryElementExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		Pattern(type: .any, arguments: [])
+		return try Pattern(
+			type: context.get(expr).asType(in: context),
+			arguments: []
+		)
 	}
 
 	func visit(_ expr: DefExprSyntax, _ context: InferenceContext) throws -> Pattern {

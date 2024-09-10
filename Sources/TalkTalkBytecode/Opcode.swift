@@ -12,6 +12,7 @@ public enum Opcode: Byte, Codable, Sendable {
 	     constant,
 	     negate,
 	     not,
+			 and,
 
 	     // Callables
 	     call, callChunkID,
