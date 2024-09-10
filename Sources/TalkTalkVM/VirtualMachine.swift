@@ -526,8 +526,14 @@ public struct VirtualMachine {
 
 						stack.push(value)
 					}
+				case let .enum(enumType):
+					guard let kase = enumType.cases[symbol] else {
+						return runtimeError("enum \(enumType.name) has no member \(symbol)")
+					}
+
+					stack.push(.enumCase(enumType, kase))
 				default:
-					return runtimeError("Receiver is not an instance of a struct")
+					return runtimeError("Receiver is not an instance of a struct or enum")
 				}
 			case .is:
 				let lhs = try stack.pop()
@@ -599,11 +605,16 @@ public struct VirtualMachine {
 			case .matchBegin:
 				()
 			case .matchCase:
-				()
-			case .matchEnd:
-				()
+				let jump = try readUInt16()
+				if try stack.peek() == .bool(true) {
+					ip += jump
+				}
 			case .getEnum:
-				()
+				let sym = try readSymbol()
+				guard let enumType = module.enums[sym] else {
+					throw VirtualMachineError.valueMissing("No enum found for symbol: \(sym)")
+				}
+				stack.push(.enum(enumType))
 			}
 		}
 	}

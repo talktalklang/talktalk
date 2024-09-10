@@ -74,7 +74,7 @@ struct PatternCompiler {
 		let targetPattern = try compilerPattern(from: target)
 		let casePattern = try compilerPattern(from: caseStatement.patternAnalyzed)
 
-		if case let (.call(targetType, targetArgs), .call(caseType, caseArgs)) = (targetPattern, casePattern) {
+		if case let (.call(_, targetArgs), .call(_, caseArgs)) = (targetPattern, casePattern) {
 			for (i, arg) in caseArgs.enumerated() where arg is any AnalyzedVarLetDecl {
 				// swiftlint:disable force_cast
 				let arg = arg as! any AnalyzedVarLetDecl

@@ -32,7 +32,7 @@ public class CompilingModule {
 	var structMethods: [Symbol: [Symbol: Chunk]] = [:]
 
 	// Top level enums for this module
-	var enums: [Int: Enum] = [:]
+	var enums: [Symbol: Enum] = [:]
 
 	// The available modules for import
 	let moduleEnvironment: [String: Module]
@@ -100,13 +100,13 @@ public class CompilingModule {
 						continue
 					}
 
-					enums[info.slot] = module.enums[moduleInfo.slot]
+					enums[info.symbol] = module.enums[moduleInfo.symbol]
 				case .internal:
-					guard let enumType = enums[info.slot] else {
+					guard let enumType = enums[info.symbol] else {
 						throw CompilerError.unknownIdentifier("could not find enum for: \(symbol.description)")
 					}
 
-					enums[info.slot] = enumType
+					enums[info.symbol] = enumType
 				}
 			case .value(_), .primitive, .genericType(_), .property:
 				()
@@ -120,7 +120,7 @@ public class CompilingModule {
 		module.structs = moduleStructs
 
 		// Set the module level enums
-		module.enums = enums.sorted(by: { $0.key < $1.key }).map(\.value)
+		module.enums = enums
 
 		if mode == .executable {
 			// If we're in executable compilation mode, we need an entry point. If we already have a func named "main" then

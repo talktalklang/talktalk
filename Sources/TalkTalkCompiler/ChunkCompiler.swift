@@ -693,12 +693,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedEnumDecl, _: Chunk) throws {
 		let enumType = Enum(
 			name: expr.nameToken.lexeme,
-			cases: expr.casesAnalyzed.map(\.nameToken.lexeme)
+			cases: expr.casesAnalyzed.reduce(into: [:]) { res, kase in
+				res[.property(module.name, kase.enumName, kase.nameToken.lexeme)] = kase.nameToken.lexeme
+			}
 		)
 
-		let slot = module.analysisModule.symbols[expr.symbol]!.slot
-
-		module.enums[slot] = enumType
+		module.enums[expr.symbol] = enumType
 	}
 
 	public func visit(_ expr: AnalyzedEnumCaseDecl, _ chunk: Chunk) throws {
@@ -714,7 +714,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedMatchStatement, _ chunk: Chunk) throws {
-		try expr.targetAnalyzed.accept(self, chunk)
+//		try expr.targetAnalyzed.accept(self, chunk)
 
 		chunk.emit(opcode: .matchBegin, line: expr.location.line)
 

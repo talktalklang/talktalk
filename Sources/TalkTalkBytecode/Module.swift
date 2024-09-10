@@ -21,9 +21,9 @@ public struct Enum: Equatable, Sendable, Codable, Hashable {
 	public let name: String
 
 	// What are the cases of this enum
-	public let cases: [String]
+	public let cases: [Symbol: String]
 
-	public init(name: String, cases: [String]) {
+	public init(name: String, cases: [Symbol: String]) {
 		self.name = name
 		self.cases = cases
 	}
@@ -43,7 +43,7 @@ public struct Module: Equatable, @unchecked Sendable {
 	public var structs: [Symbol: Struct] = [:]
 
 	// The list of top level enums in this module
-	public var enums: [Enum] = []
+	public var enums: [Symbol: Enum] = [:]
 
 	// A list of symbols this module exports
 	public var symbols: OrderedDictionary<Symbol, SymbolInfo>

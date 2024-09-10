@@ -77,7 +77,6 @@ public enum Opcode: Byte, Codable, Sendable {
 			 // Pattern matching
 			 matchBegin,
 			 matchCase,
-			 matchEnd,
 
 			 // Enum stuff
 			 getEnum,

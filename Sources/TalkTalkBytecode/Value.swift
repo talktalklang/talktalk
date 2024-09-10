@@ -60,6 +60,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case `struct`(Struct)
 
 	case `enum`(Enum)
+	case enumCase(Enum, String)
 
 	// The type of instance, the instance ID
 	case instance(Instance)
@@ -200,8 +201,10 @@ extension Value: CustomStringConvertible {
 			pointer.description
 		case .primitive:
 			"primitive"
-		case .enum:
-			"enum"
+		case .enum(let enumType):
+			enumType.name
+		case .enumCase(let enumType, let name):
+			"\(enumType.name).\(name)"
 		case .none:
 			"none"
 		}

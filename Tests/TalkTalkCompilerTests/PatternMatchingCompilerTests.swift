@@ -20,10 +20,6 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		)
 
 		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
-			// Emit the target to match
-			.op(.true, line: 0),
-
-			// Ok we're starting a pattern match
 			.op(.matchBegin, line: 0),
 
 			// Emit the first pattern
@@ -69,13 +65,6 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		)
 
 		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
-			// Get the target
-			.op(.constant, line: 5, .constant(.int(123))),
-			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
-			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
-			.op(.call, line: 5),
-
-			// Ok we're starting a pattern match
 			.op(.matchBegin, line: 5),
 
 			// Emit the first pattern
