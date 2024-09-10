@@ -7,6 +7,7 @@
 
 import TalkTalkSyntax
 import TypeChecker
+import TalkTalkBytecode
 
 struct StructDeclAnalyzer: Analyzer {
 	let decl: any StructDecl
@@ -35,7 +36,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 			structType.add(
 				property: Property(
-					slot: structType.properties.count,
+					symbol: .property(context.moduleName, structType.name ?? "", name),
 					name: name,
 					inferenceType: type.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
@@ -51,10 +52,17 @@ struct StructDeclAnalyzer: Analyzer {
 
 			let location = decl.body.decls.first(where: { ($0 as? FuncExpr)?.name?.lexeme == name })?.semanticLocation
 
+			let symbol = context.symbolGenerator.method(
+				structType.name ?? "",
+				name,
+				parameters: params.map(\.description),
+				source: .internal
+			)
+
 			structType.add(
 				method: Method(
 					name: name,
-					slot: structType.methods.count,
+					symbol: symbol,
 					params: params,
 					inferenceType: type.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
@@ -69,11 +77,17 @@ struct StructDeclAnalyzer: Analyzer {
 			}
 
 			let location = decl.body.decls.first(where: { ($0 is InitDecl) })?.semanticLocation
+			let symbol = context.symbolGenerator.method(
+				structType.name ?? "",
+				name,
+				parameters: params.map(\.description),
+				source: .internal
+			)
 
 			structType.add(
 				initializer: Method(
 					name: name,
-					slot: structType.methods.count,
+					symbol: symbol,
 					params: params,
 					inferenceType: type.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
@@ -87,7 +101,12 @@ struct StructDeclAnalyzer: Analyzer {
 			structType.add(
 				initializer: Method(
 					name: "init",
-					slot: structType.methods.count,
+					symbol: context.symbolGenerator.method(
+						context.moduleName,
+						structType.name ?? "",
+						parameters: structType.properties.keys.map(\.description),
+						source: .internal
+					),
 					params: structType.properties.values.map(\.inferenceType),
 					inferenceType: .function(structType.properties.values.map(\.inferenceType), .structType(type)),
 					location: decl.location,

@@ -8,10 +8,10 @@ import Foundation
 
 // A Chunk represents a basic unit of code for a function. Function definitions
 // each have a chunk.
-public final class Chunk: Codable {
+public final class Chunk {
 	public enum CodingKeys: CodingKey {
 		// We're explicitly leaving out `parent` here because it's only needed during compilation and we want to prevent cycles.
-		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, upvalueCount, localNames, upvalueNames
+		case name, code, lines, constants, data, arity, symbol, path, depth, localsCount, capturedLocals, locals, upvalueNames
 	}
 
 	public let name: String
@@ -19,7 +19,7 @@ public final class Chunk: Codable {
 	public let path: String
 
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
-	public var code: ContiguousArray<Byte> = []
+	public var code: ContiguousArray<Code> = []
 
 	// Tracks the code array so we can output line numbers when disassambling
 	public var lines: [UInt32] = []
@@ -35,16 +35,13 @@ public final class Chunk: Codable {
 	public var depth: Byte = 0
 	public var parent: Chunk?
 
-	// How many locals does this chunk worry about? We start at 1 to reserve 0
-	// for things like `self`.
-	public var localsCount: Byte = 1
+	public var captures: Set<Capture> = []
 
 	// How many upvalues does this chunk refer to
-	public var upvalueCount: Byte = 0
+	public var capturedLocals: Set<Symbol> = []
 
 	// For debugging names used in this chunk
-	public var localNames: [String] = ["__reserved__"]
-	public var upvalueNames: [String] = []
+	public var locals: [Symbol] = []
 
 	public init(name: String, symbol: Symbol, path: String) {
 		self.name = name
@@ -62,7 +59,7 @@ public final class Chunk: Codable {
 	}
 
 	public func finalize() -> Chunk {
-		write(.return, line: 0)
+		write(.returnVoid, line: 0)
 		return self
 	}
 
@@ -90,8 +87,8 @@ public final class Chunk: Codable {
 		// Go back and replace the two placeholder bytes from emit(jump:)
 		// the actual offset to jump over.
 		let (a, b) = uint16ToBytes(jump)
-		code[offset] = a
-		code[offset + 1] = b
+		code[offset] = .byte(a)
+		code[offset + 1] = .byte(b)
 	}
 
 	public func emit(loop backToInstruction: Int, line: UInt32) {
@@ -104,18 +101,14 @@ public final class Chunk: Codable {
 		write(byte: b, line: line)
 	}
 
-	public func emit(opcode: Opcode, line: UInt32) {
-		write(byte: opcode.byte, line: line)
+	public func emit(_ code: Code, line: UInt32) {
+		write(code, line: line)
 	}
 
-	public func emit(byte: Byte, line: UInt32) {
-		write(byte: byte, line: line)
-	}
-
-	public func emitClosure(subchunkID: Byte, line: UInt32) {
+	public func emitClosure(subchunk: Symbol, line: UInt32) {
 		// Emit the opcode to define a closure
 		write(.defClosure, line: line)
-		write(byte: subchunkID, line: line)
+		write(.symbol(subchunk), line: line)
 	}
 
 	public func emit(constant value: Value, line: UInt32) {
@@ -127,8 +120,12 @@ public final class Chunk: Codable {
 	public func emit(data value: StaticData, line: UInt32) {
 		let start = data.count
 		data.append(value)
-		emit(opcode: .data, line: line)
-		emit(byte: Byte(start), line: line)
+		emit(.opcode(.data), line: line)
+		emit(.byte(Byte(start)), line: line)
+	}
+
+	public func emit(opcode: Opcode, line: UInt32) {
+		write(.opcode(opcode), line: line)
 	}
 
 	private func write(constant value: Value) -> Byte {
@@ -138,11 +135,16 @@ public final class Chunk: Codable {
 	}
 
 	private func write(_ opcode: Opcode, line: UInt32) {
-		write(byte: opcode.byte, line: line)
+		write(.opcode(opcode), line: line)
+	}
+
+	private func write(_ code: Code, line: UInt32) {
+		self.code.append(code)
+		self.lines.append(line)
 	}
 
 	private func write(byte: Byte, line: UInt32) {
-		code.append(byte)
+		code.append(.byte(byte))
 		lines.append(line)
 	}
 
@@ -162,7 +164,7 @@ extension Chunk: Equatable {
 			\.constants,
 			\.lines,
 			\.arity,
-			\.upvalueCount,
+			\.capturedLocals,
 		]
 
 		for keypath in keypaths {

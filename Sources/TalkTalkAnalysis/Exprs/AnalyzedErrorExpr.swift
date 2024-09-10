@@ -5,12 +5,13 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 	public var expr: any Syntax { wrapped }
 
-	public var slot: Int = -1
+	public var symbol: Symbol = .struct("[error]", "error")
 	public var name: String = ""
 	public var isMutable: Bool = false
 

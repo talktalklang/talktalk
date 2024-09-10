@@ -10,15 +10,13 @@ jobs:
   build:
     env:
       CI: "1"
-    container:
-      image: swiftlang/swift:nightly-jammy
     runs-on: macos-latest
     steps:
     - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        swift-version: "main-snapshot"
+        swift-version: "6.0-snapshot"
     - uses: actions/checkout@v4
     - name: Install deps
       run: swift package update

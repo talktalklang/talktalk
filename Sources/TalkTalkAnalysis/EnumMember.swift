@@ -6,12 +6,13 @@
 //
 
 import TypeChecker
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 public struct EnumMember: Member {
 	public var name: String
 	public var ownerSlot: Int
-	public var slot: Int
+	public var symbol: Symbol
 	public var inferenceType: InferenceType
 	public var location: SourceLocation
 	public var isMutable: Bool

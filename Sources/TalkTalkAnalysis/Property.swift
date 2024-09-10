@@ -6,10 +6,11 @@
 //
 
 import TalkTalkSyntax
+import TalkTalkBytecode
 import TypeChecker
 
 public struct Property: Member {
-	public let slot: Int
+	public let symbol: Symbol
 	public let name: String
 	public let inferenceType: InferenceType
 	public let location: SourceLocation

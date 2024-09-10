@@ -15,7 +15,7 @@ import TalkTalkCompiler
 		[123: 456, 321: 654]
 		""")
 
-		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.main!.disassemble(in: module) == Instructions(
 			// Emit elements onto the stack
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.constant, line: 0, .constant(.int(456))),
@@ -23,7 +23,7 @@ import TalkTalkCompiler
 			.op(.constant, line: 0, .constant(.int(654))),
 			.op(.initDict, line: 0),
 			.op(.pop, line: 0),
-			.op(.return, line: 0)
+			.op(.returnValue, line: 0)
 		))
 	}
 
@@ -33,17 +33,17 @@ import TalkTalkCompiler
 			"""
 		)
 
-		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.main!.disassemble(in: module) == Instructions(
 			.op(.constant, line: 0, .constant(.int(789))),
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.constant, line: 0, .constant(.int(456))),
 			.op(.constant, line: 0, .constant(.int(321))),
 			.op(.constant, line: 0, .constant(.int(654))),
 			.op(.initDict, line: 0),
-			.op(.getProperty, line: 0, .getProperty(slot: 0, options: .isMethod)),
+			.op(.getProperty, line: 0, .getProperty(.method("Standard", "Dictionary", "get", ["index"]), options: .isMethod)),
 			.op(.call, line: 0),
 			.op(.pop, line: 0),
-			.op(.return, line: 0)
+			.op(.returnValue, line: 0)
 		))
 	}
 
@@ -53,17 +53,17 @@ import TalkTalkCompiler
 			"""
 		)
 
-		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.main!.disassemble(in: module) == Instructions(
 			.op(.constant, line: 0, .constant(.int(789))),
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.constant, line: 0, .constant(.int(456))),
 			.op(.constant, line: 0, .constant(.int(321))),
 			.op(.constant, line: 0, .constant(.int(654))),
 			.op(.initDict, line: 0),
-			.op(.getProperty, line: 0, .getProperty(slot: 0, options: .isMethod)),
+			.op(.getProperty, line: 0, .getProperty(.method("Standard", "Dictionary", "get", ["index"]), options: .isMethod)),
 			.op(.call, line: 0),
 			.op(.pop, line: 0),
-			.op(.return, line: 0)
+			.op(.returnValue, line: 0)
 		))
 	}
 }

@@ -8,6 +8,7 @@
 import Foundation
 import TalkTalkSyntax
 import TalkTalkBytecode
+import OrderedCollections
 import TypeChecker
 
 public struct AnalysisModule {
@@ -18,7 +19,7 @@ public struct AnalysisModule {
 	public var files: any Collection<ParsedSourceFile>
 
 	// Keep track of all the different symbols in this module
-	public var symbols: [Symbol: SymbolInfo] = [:]
+	public var symbols: OrderedDictionary<Symbol, SymbolInfo> = [:]
 
 	// The list of analyzed files for this module (this is built up by the module analyzer)
 	public var analyzedFiles: [AnalyzedSourceFile] = []
@@ -39,7 +40,7 @@ public struct AnalysisModule {
 	public var enums: [String: ModuleEnum] = [:]
 
 	// A list of modules this module imports
-	public var imports: [String: ModuleGlobal] = [:]
+	public var imports: OrderedDictionary<String, ModuleGlobal> = [:]
 
 	public func moduleValue(named name: String) -> ModuleValue? {
 		values[name]

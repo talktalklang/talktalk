@@ -29,6 +29,10 @@ public final class Heap {
 			hasher.combine(base)
 			hasher.combine(offset)
 		}
+
+		public var description: String {
+			"pointer(\(base), \(offset))"
+		}
 	}
 
 	// A fake memory block

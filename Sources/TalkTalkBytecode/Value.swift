@@ -11,9 +11,9 @@ public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
 	}
 
 	public let type: Struct
-	public var fields: [Value?]
+	public var fields: [Symbol: Value]
 
-	public init(type: Struct, fields: [Value?]) {
+	public init(type: Struct, fields: [Symbol: Value]) {
 		self.type = type
 		self.fields = fields
 	}
@@ -45,25 +45,27 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case pointer(Heap.Pointer)
 
 	// The index of the closure
-	case closure(Int)
+	case closure(Symbol)
 
 	// The index of the builtin function
-	case builtin(Int)
+	case builtin(Symbol)
 
 	// The index of the builtin struct
 	case builtinStruct(Int)
 
 	// The index of the module function in its lookup table
-	case moduleFunction(Int)
+	case moduleFunction(Symbol)
 
 	// The index of the struct in the module
 	case `struct`(Struct)
+
+	case `enum`(Enum)
 
 	// The type of instance, the instance ID
 	case instance(Instance)
 
 	// The method slot, the type of instance
-	case boundMethod(Instance, Int)
+	case boundMethod(Instance, Symbol)
 
 	case primitive(Primitive)
 
@@ -105,7 +107,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return data
 	}
 
-	public var closureValue: Int? {
+	public var closureValue: Symbol? {
 		guard case let .closure(result) = self else {
 			return nil
 		}
@@ -113,7 +115,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var builtinValue: Int? {
+	public var builtinValue: Symbol? {
 		guard case let .builtin(result) = self else {
 			return nil
 		}
@@ -121,7 +123,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return result
 	}
 
-	public var moduleFunctionValue: Int? {
+	public var moduleFunctionValue: Symbol? {
 		guard case let .moduleFunction(result) = self else {
 			return nil
 		}
@@ -145,20 +147,20 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 		return instance
 	}
 
-	public var boundMethodValue: (instance: Instance, slot: Int)? {
-		guard case let .boundMethod(instance, slot) = self else {
+	public var boundMethodValue: (instance: Instance, symbol: Symbol)? {
+		guard case let .boundMethod(instance, symbol) = self else {
 			return nil
 		}
 
-		return (instance, slot)
+		return (instance, symbol)
 	}
 
 	public func disassemble(in module: Module) -> String {
 		switch self {
-		case .closure(let id):
-			"closure(\(module.chunks[Int(id)].name))"
-		case .moduleFunction(let id):
-			"moduleFunction(\(module.chunks[Int(id)].name))"
+		case .closure(let symbol):
+			"closure(\(module.chunks[symbol]?.name ?? "<symbol not found: \(symbol)>"))"
+		case .moduleFunction(let symbol):
+			"moduleFunction(\(module.chunks[symbol]?.name ?? "<symbol not found: \(symbol)>"))"
 		default:
 			description
 		}
@@ -194,10 +196,12 @@ extension Value: CustomStringConvertible {
 			"bound method \(instance), slot: \(slot)"
 		case .builtinStruct:
 			"builtin struct"
-		case .pointer:
-			"pointer"
+		case let .pointer(pointer):
+			pointer.description
 		case .primitive:
 			"primitive"
+		case .enum:
+			"enum"
 		case .none:
 			"none"
 		}

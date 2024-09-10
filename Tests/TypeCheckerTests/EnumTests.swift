@@ -57,7 +57,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 1)
 
 		#expect(enumType.cases[0].attachedTypes.count == 1)
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 63))
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 80))
 
 		let wrappedVar = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]

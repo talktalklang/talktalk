@@ -19,12 +19,13 @@ struct EnumTests: CompilerTest {
 			"""
 		)
 
-		try #expect(module.chunks[0].disassemble(in: module) == Instructions(
+		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
 			.op(.constant, line: 5, .constant(.int(123))),
-			.op(.getEnumCase, line: 5, .enum(enum: 0, case: 0)),
+			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
+			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
 			.op(.call, line: 5),
 			.op(.pop, line: 5),
-			.op(.return, line: 0)
+			.op(.returnVoid, line: 0)
 		))
 	}
 }

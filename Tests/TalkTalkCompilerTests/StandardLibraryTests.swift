@@ -15,7 +15,7 @@ struct StandardLibraryTests: CompilerTest {
 			"""
 		)
 
-		let main = module.chunks[0]
+		let main = module.chunks[.function(module.name, "0.tlk", [])]!
 
 		// TODO: Something's weird here, this should all be in the value initializer
 		try #expect(main.disassemble(in: module) == Instructions(
@@ -35,21 +35,20 @@ struct StandardLibraryTests: CompilerTest {
 			"""
 		)
 
-		let main = module.chunks[0]
+		let main = module.chunks[.function(module.name, "0.tlk", [])]!
 
 		// TODO: Something's weird here, this should all be in the value initializer
 		try #expect(main.disassemble(in: module) == Instructions(
 			.op(.initArray, line: 0, .array(count: 0)),
-			.op(.setModuleValue, line: 0, .global(slot: 0)),
+			.op(.setModuleValue, line: 0, .global(.value("E2E", "a"))),
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.getModuleValue, line: 1, .global(slot: 0)),
-			.op(.getProperty, line: 1, .getProperty(slot: 2, options: .isMethod)),
+			.op(.getModuleValue, line: 1, .global(.value("E2E", "a"))),
+			.op(.getProperty, line: 1, .getProperty(.method("Standard", "Array", "append", ["item"]), options: .isMethod)),
 			.op(.call, line: 1),
-			.op(.pop, line: 1),
-			.op(.getModuleValue, line: 2, .global(slot: 0)),
-			.op(.getProperty, line: 2, .getProperty(slot: 1, options: [])),
-			.op(.return, line: 2),
-			.op(.return, line: 0)
+			.op(.getModuleValue, line: 2, .global(.value("E2E", "a"))),
+			.op(.getProperty, line: 2, .getProperty(.property("Standard", "Array", "count"), options: [])),
+			.op(.returnValue, line: 2),
+			.op(.returnVoid, line: 0)
 		))
 	}
 }

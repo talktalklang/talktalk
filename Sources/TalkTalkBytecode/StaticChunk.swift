@@ -10,8 +10,10 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 		lhs.code == rhs.code
 	}
 
+	public let symbol: Symbol
+
 	// The main code that the VM runs. It's a mix of opcodes and opcode operands
-	public let code: ContiguousArray<Byte>
+	public let code: ContiguousArray<Code>
 
 	// Constant values emitted from literals found in the source
 	public let constants: [Value]
@@ -22,12 +24,11 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 	// How many arguments should this chunk expect
 	public let arity: Byte
 
-	// How many locals does this chunk worry about? We start at 1 to reserve 0
-	// for things like `self`.
-	public let localsCount: Byte
+	// Which of this chunk's locals are captured by a child fn.
+	public let capturedLocals: Set<Symbol>
 
-	// How many upvalues does this chunk refer to
-	public let upvalueCount: Byte
+	// Which of this chunk's locals are captured from a parent
+	public let capturing: Set<Capture>
 
 	// Debug info
 	internal let debugInfo: DebugInfo
@@ -35,24 +36,23 @@ public final class StaticChunk: Equatable, Codable, Sendable {
 	struct DebugInfo: Equatable, Codable {
 		public var name: String
 		public var lines: [UInt32]
-		public var localNames: [String]
-		public var upvalueNames: [String]
+		public var locals: [Symbol]
 		public var depth: Byte
 		public var path: String
 	}
 
 	public init(chunk: Chunk) {
 		self.code = chunk.code
+		self.symbol = chunk.symbol
 		self.constants = chunk.constants
 		self.data = chunk.data
 		self.arity = chunk.arity
-		self.localsCount = chunk.localsCount
-		self.upvalueCount = chunk.upvalueCount
+		self.capturedLocals = chunk.capturedLocals
+		self.capturing = chunk.captures
 		self.debugInfo = DebugInfo(
 			name: chunk.name,
 			lines: chunk.lines,
-			localNames: chunk.localNames,
-			upvalueNames: chunk.upvalueNames,
+			locals: chunk.locals,
 			depth: chunk.depth,
 			path: chunk.path
 		)

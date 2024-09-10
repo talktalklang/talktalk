@@ -244,6 +244,10 @@ public class Environment {
 		}
 
 			if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
+				for symbol in stdlib.symbols {
+					_ = symbolGenerator.import(symbol.key, from: "Standard")
+				}
+
 				importBinding(
 					as: symbolGenerator.import(.struct("Standard", "Array"), from: "Standard"),
 					from: "Standard",
