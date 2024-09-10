@@ -194,8 +194,8 @@ extension Value: CustomStringConvertible {
 			"bound method \(instance), slot: \(slot)"
 		case .builtinStruct:
 			"builtin struct"
-		case .pointer:
-			"pointer"
+		case let .pointer(pointer):
+			pointer.description
 		case .primitive:
 			"primitive"
 		case .none:

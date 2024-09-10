@@ -165,7 +165,7 @@ public struct VirtualMachine {
 					let pointer = heap.allocate(count: 1)
 					heap.store(pointer: pointer, value: value)
 
-					for (sym, closure) in closures {
+					for (sym, _) in closures {
 						closures[sym]?.capturing[local] = .heap(pointer)
 					}
 				}
@@ -708,26 +708,34 @@ public struct VirtualMachine {
 	private mutating func call(builtin: Symbol) throws {
 		switch builtin.kind {
 		case .function("print", _):
-			let value = try stack.peek()
+			let value = try stack.pop()
 			let string = inspect(value) + "\n"
 			try output.write([Byte](Data(string.utf8)), to: .stdout)
 		case .function("_allocate", _):
-			if case let .int(count) = try stack.peek() { // Get the capacity
+			if case let .int(count) = try stack.pop() { // Get the capacity
 				let pointer = heap.allocate(count: Int(count))
 				stack.push(.pointer(pointer))
 			}
 		case .function("_deref", _):
-			if case let .pointer(pointer) = try stack.peek(),
-				 let value = heap.dereference(pointer: pointer)
-			{
-				stack.push(value)
+			guard case let .pointer(pointer) = try stack.pop() else {
+				throw VirtualMachineError.typeError("cannot dereference non-pointer")
 			}
+
+			guard let value = heap.dereference(pointer: pointer) else {
+				throw VirtualMachineError.valueMissing("no value found for pointer \(pointer)")
+			}
+
+			stack.push(value)
 		case .function("_free", _):
+			try stack.pop()
 			() // TODO:
 		case .function("_storePtr", _):
-			let value = try stack.peek()
-			if case let .pointer(pointer) = try stack.peek(offset: 1) {
+			let value = try stack.pop()
+			let pointer = try stack.pop()
+			if case let .pointer(pointer) = pointer {
 				heap.store(pointer: pointer, value: value)
+			} else {
+				throw VirtualMachineError.typeError("expected pointer, got \(pointer)")
 			}
 		case .function("_hash", _):
 			let value = try stack.pop()

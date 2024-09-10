@@ -102,4 +102,15 @@ struct ArrayTests: StandardLibraryTest {
 
 		#expect(result == .int(3))
 	}
+
+	@Test("something is up") func somethingIsUp() async throws {
+		let source = """
+		var a = [200, 300, 404]
+		a.test()
+		return a[3]
+		"""
+
+		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		#expect(result == .int(404))
+	}
 }
