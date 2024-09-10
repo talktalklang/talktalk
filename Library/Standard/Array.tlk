@@ -19,7 +19,7 @@ struct Array<Element> {
 
 		var i = 0
 		while i < self.count {
-			_storePtr(newStorage, self[i])
+			_storePtr(newStorage + i, self[i])
 			i = i + 1
 		}
 
@@ -38,6 +38,13 @@ struct Array<Element> {
 		self.count = self.count + 1
 	}
 
+	func test() {
+		if (self.count + 1) > self.capacity {
+			self.resize()
+		}
 
+		_storePtr(self._storage + self.count, self[self.count - 1])
+		self.count = self.count + 1
+	}
 }
 

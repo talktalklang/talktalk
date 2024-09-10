@@ -105,7 +105,7 @@ class CompilerTests: CompilerTest {
 
 	@Test("Empty program") func empty() throws {
 		let chunk = try compile("")
-		try #expect(chunk.disassemble()[0].opcode == .return)
+		try #expect(chunk.disassemble()[0].opcode == .returnVoid)
 	}
 
 	@Test("Int literal") func intLiteral() throws {
@@ -114,13 +114,13 @@ class CompilerTests: CompilerTest {
 		let instructions = Instructions([
 			.init(opcode: .constant, line: 0, metadata: .constant(.int(123))),
 			.init(opcode: .pop, line: 0, metadata: .simple),
-			.init(opcode: .return, line: 0, metadata: .simple),
+			.init(opcode: .returnVoid, line: 0, metadata: .simple),
 		])
 
 		let expected = [
 			Instruction(path: chunk.path, opcode: .constant, offset: 0, line: 0, metadata: ConstantMetadata(value: .int(123))),
 			Instruction(path: chunk.path, opcode: .pop, offset: 2, line: 0, metadata: .simple),
-			Instruction(path: chunk.path, opcode: .return, offset: 3, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .returnVoid, offset: 3, line: 0, metadata: .simple),
 		]
 
 		#expect(instructions.instructions == expected)
@@ -136,7 +136,7 @@ class CompilerTests: CompilerTest {
 			Instruction(path: chunk.path, opcode: .add, offset: 4, line: 0, metadata: .simple),
 
 			Instruction(path: chunk.path, opcode: .pop, offset: 5, line: 0, metadata: .simple),
-			Instruction(path: chunk.path, opcode: .return, offset: 6, line: 0, metadata: .simple),
+			Instruction(path: chunk.path, opcode: .returnVoid, offset: 6, line: 0, metadata: .simple),
 		]
 
 		try #expect(chunk.disassemble() == instructions)
@@ -150,11 +150,10 @@ class CompilerTests: CompilerTest {
 
 		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
-			.op(.setModuleValue, line: 0, .global(slot: 0)),
+			.op(.setModuleValue, line: 0, .global(.value("CompilerTests", "i"))),
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.setModuleValue, line: 1, .global(slot: 0)),
-			.op(.pop, line: 1),
-			.op(.return, line: 0)
+			.op(.setModuleValue, line: 1, .global(.value("CompilerTests", "i"))),
+			.op(.returnVoid, line: 0)
 		))
 	}
 
@@ -168,16 +167,16 @@ class CompilerTests: CompilerTest {
 
 		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(123))),
-			.op(.setModuleValue, line: 0, .global(slot: 0)),
-			.op(.getModuleValue, line: 1, .global(slot: 0)),
+			.op(.setModuleValue, line: 0, .global(.value("CompilerTests", "x"))),
+			.op(.getModuleValue, line: 1, .global(.value("CompilerTests", "x"))),
 			.op(.pop, line: 1, .simple),
 
 			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setModuleValue, line: 2, .global(slot: 1)),
-			.op(.getModuleValue, line: 3, .global(slot: 1)),
+			.op(.setModuleValue, line: 2, .global(.value("CompilerTests", "y"))),
+			.op(.getModuleValue, line: 3, .global(.value("CompilerTests", "y"))),
 			.op(.pop, line: 3, .simple),
 
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -191,29 +190,28 @@ class CompilerTests: CompilerTest {
 
 		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 0, .constant(.int(0))),
-			.op(.setModuleValue, line: 0, .global(slot: 0)),
+			.op(.setModuleValue, line: 0, .global(.value("CompilerTests", "i"))),
 
 			// Condition
 			.op(.constant, line: 1, .constant(.int(5))),
-			.op(.getModuleValue, line: 1, .global(slot: 0)),
+			.op(.getModuleValue, line: 1, .global(.value("CompilerTests", "i"))),
 			.op(.less, line: 1, .simple),
 
 			// Jump that skips the body if the condition isn't true
-			.op(.jumpUnless, line: 1, .jump(offset: 12)),
+			.op(.jumpUnless, line: 1, .jump(offset: 11)),
 
 			// Pop the condition
 			.op(.pop, line: 1, .simple),
 
 			// Body
 			.op(.constant, line: 2, .constant(.int(1))),
-			.op(.getModuleValue, line: 2, .global(slot: 0)),
+			.op(.getModuleValue, line: 2, .global(.value("CompilerTests", "i"))),
 			.op(.add, line: 2, .simple),
-			.op(.setModuleValue, line: 2, .global(slot: 0)),
-			.op(.pop, line: 2, .simple),
-			.op(.loop, line: 3, .loop(back: 20)),
+			.op(.setModuleValue, line: 2, .global(.value("CompilerTests", "i"))),
+			.op(.loop, line: 3, .loop(back: 19)),
 
 			.op(.pop, line: 1, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -230,20 +228,22 @@ class CompilerTests: CompilerTest {
 			// The condition
 			.op(.false, line: 0, .simple),
 			// How far to jump if the condition is false
-			.op(.jumpUnless, line: 0, .jump(offset: 6)),
+			.op(.jumpUnless, line: 0, .jump(offset: 7)),
+			.op(.pop, line: 0, .simple),
 
 			// If we're not jumping, here's the value of the consequence block
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.pop, line: 1, .simple),
 
 			// If the condition was true, we want to jump over the alernative block
-			.op(.jump, line: 2, .jump(offset: 3)),
+			.op(.jump, line: 2, .jump(offset: 4)),
+			.op(.pop, line: 0, .simple),
 
 			// If the condition was false, we jumped here
 			.op(.constant, line: 3, .constant(.int(456))),
 			.op(.pop, line: 3, .simple),
 
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -254,18 +254,18 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let chunk = module.compiledChunks[1]
-		let subchunk = module.compiledChunks[0]
+		let chunk = module.compiledChunks[.function("CompilerTests", "1.tlk", [])]!
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__15", [])]!
 
 		#expect(disassemble(chunk) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "_fn__15", arity: 0, depth: 0)),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 
 		#expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.return, line: 1),
-			.op(.return, line: 2)
+			.op(.returnValue, line: 1),
+			.op(.returnValue, line: 2)
 		))
 	}
 
@@ -279,7 +279,7 @@ class CompilerTests: CompilerTest {
 		#expect(disassemble(chunk) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "_fn__16", arity: 0, depth: 0)),
 			.op(.call, line: 0, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -298,24 +298,23 @@ class CompilerTests: CompilerTest {
 			"""
 		)
 
-		let chunk = module.compiledChunks[1]
+		let chunk = module.compiledChunks[.function("CompilerTests", "_fn__58", [])]!
 		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
+			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1)),
 			.op(.call, line: 3),
-			.op(.pop, line: 3),
-			.op(.getLocal, line: 7, .local(slot: 1, name: "a")),
-			.op(.return, line: 7),
-			.op(.return, line: 8)
+			.op(.getLocal, line: 7, .local(.value("CompilerTests", "a"))),
+			.op(.returnValue, line: 7),
+			.op(.returnValue, line: 8)
 		))
 
-		let subchunk = module.compiledChunks[0]
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__44", [])]!
 		#expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
-			.op(.setUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
-			.op(.return, line: 4),
-			.op(.return, line: 5) // func return
+			.op(.setCapture, line: 4, .capture(name: "a", .stack(1))),
+			.op(.returnValue, line: 4),
+			.op(.returnVoid, line: 5) // func return
 		))
 	}
 
@@ -332,34 +331,33 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let result = disassemble(module.compiledChunks[1])
+		let result = disassemble(module.compiledChunks[.function("CompilerTests", "_fn__57", [])]!)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
+			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
 
 			.op(.constant, line: 2, .constant(.int(456))),
-			.op(.setLocal, line: 2, .local(slot: 2, name: "b")),
+			.op(.setLocal, line: 2, .local(.value("CompilerTests", "b"))),
 
 			.op(.defClosure, line: 3, .closure(
 				name: "_fn__56",
 				arity: 0,
-				depth: 1,
-				upvalues: [.capturing(1), .capturing(2)]
+				depth: 1
 			)),
 
 			.op(.pop, line: 3, .simple),
-			.op(.return, line: 7, .simple)
+			.op(.returnValue, line: 7, .simple)
 		)
 
 		#expect(result == expected)
 
-		let subchunk = module.compiledChunks[0]
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__56", [])]!
 		let subexpected = Instructions(
-			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+			.op(.getCapture, line: 4, .capture(name: "a", .stack(1))),
 			.op(.pop, line: 4, .simple),
-			.op(.getUpvalue, line: 5, .upvalue(slot: 1, name: "b")),
+			.op(.getCapture, line: 5, .capture(name: "b", .stack(1))),
 			.op(.pop, line: 5, .simple),
-			.op(.return, line: 6, .simple)
+			.op(.returnValue, line: 6, .simple)
 		)
 
 		try #expect(subchunk.disassemble() == subexpected)
@@ -376,38 +374,35 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let chunk = module.compiledChunks[1]
+		let chunk = module.compiledChunks[.function("CompilerTests", "_fn__65", [])]!
 
 		let result = disassemble(chunk)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
-			.op(.setLocal, line: 1, .local(slot: 1, name: "a")),
-			.op(.defClosure, line: 2, .closure(name: "_fn__64", arity: 0, depth: 1, upvalues: [.capturing(1)])),
+			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
+			.op(.defClosure, line: 2, .closure(name: "_fn__64", arity: 0, depth: 1)),
 			.op(.pop, line: 2),
-			.op(.return, line: 6, .simple)
+			.op(.returnValue, line: 6, .simple)
 		)
 
 		#expect(result == expected)
 
-		let subchunk = module.compiledChunks[0]
-
-		#expect(subchunk.upvalueCount == 1)
-
+		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__64", [])]!
 		let subexpected = Instructions(
 			// Define 'b'
 			.op(.constant, line: 3, .constant(.int(456))),
-			.op(.setLocal, line: 3, .local(slot: 1, name: "b")),
+			.op(.setLocal, line: 3, .local(.value("CompilerTests", "b"))),
 
 			// Get 'b' to add to a
-			.op(.getLocal, line: 4, .local(slot: 1, name: "b")),
+			.op(.getLocal, line: 4, .local(.value("CompilerTests", "b"))),
 			// Get 'a' from upvalue
-			.op(.getUpvalue, line: 4, .upvalue(slot: 0, name: "a")),
+			.op(.getCapture, line: 4, .capture(name: "a", .stack(1))),
 
 			// Do the addition
 			.op(.add, line: 4),
-			.op(.return, line: 4),
+			.op(.returnValue, line: 4),
 
-			.op(.return, line: 5)
+			.op(.returnValue, line: 5)
 		)
 
 		#expect(disassemble(subchunk) == subexpected)
@@ -428,10 +423,10 @@ class CompilerTests: CompilerTest {
 
 		#expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 8, .constant(.int(123))),
-			.op(.getStruct, line: 8, .struct(slot: 4)),
+			.op(.getStruct, line: 8, .struct(.struct("CompilerTests", "Person"))),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -449,10 +444,10 @@ class CompilerTests: CompilerTest {
 		""")
 
 		#expect(disassemble(chunk) == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 4)),
+			.op(.getStruct, line: 8, .struct(.struct("CompilerTests", "Person"))),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -469,11 +464,11 @@ class CompilerTests: CompilerTest {
 
 		try #expect(chunk.disassemble() == Instructions(
 			.op(.constant, line: 6, .constant(.int(123))),
-			.op(.getStruct, line: 6, .struct(slot: 4)),
+			.op(.getStruct, line: 6, .struct(.struct("CompilerTests", "Person"))),
 			.op(.call, line: 6, .simple),
-			.op(.getProperty, line: 6, .getProperty(slot: 0, options: [])),
+			.op(.getProperty, line: 6, .getProperty(.property("CompilerTests", "Person", "age"), options: [])),
 			.op(.pop, line: 6, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 
@@ -492,14 +487,14 @@ class CompilerTests: CompilerTest {
 		Person(age: 123).getAge()
 		""")
 
-		#expect(try chunk.disassemble() == Instructions(
+		#expect(try disassemble(chunk) == Instructions(
 			.op(.constant, line: 10, .constant(.int(123))),
-			.op(.getStruct, line: 10, .struct(slot: 4)),
+			.op(.getStruct, line: 10, .struct(.struct("CompilerTests", "Person"))),
 			.op(.call, line: 10, .simple),
-			.op(.getProperty, line: 10, .getProperty(slot: 0, options: .isMethod)),
+			.op(.getProperty, line: 10, .getProperty(.method("CompilerTests", "Person", "getAge", []), options: .isMethod)),
 			.op(.call, line: 10, .simple),
 			.op(.pop, line: 10, .simple),
-			.op(.return, line: 0, .simple)
+			.op(.returnVoid, line: 0, .simple)
 		))
 	}
 }

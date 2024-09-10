@@ -16,9 +16,17 @@ struct FuncExprAnalyzer: Analyzer {
 	func analyze() throws -> any AnalyzedSyntax {
 		let symbol: Symbol
 		if let scope = context.lexicalScope, let name = scope.scope.name {
-			symbol = context.symbolGenerator.method(name, expr.autoname, parameters: [], source: .internal)
+			symbol = context.symbolGenerator.method(
+				name, expr.autoname,
+				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
+				source: .internal
+			)
 		} else {
-			symbol = context.symbolGenerator.function(expr.autoname, parameters: [], source: .internal)
+			symbol = context.symbolGenerator.function(
+				expr.autoname,
+				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
+				source: .internal
+			)
 		}
 
 		// If a block has one statement, we can treat it as a return value

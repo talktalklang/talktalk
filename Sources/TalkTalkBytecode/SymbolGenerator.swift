@@ -102,10 +102,6 @@ public class SymbolGenerator {
 			return info.symbol
 		}
 
-		if name == "int" {
-
-		}
-
 		let symbolInfo = SymbolInfo(
 			symbol: symbol,
 			slot: structs.count,

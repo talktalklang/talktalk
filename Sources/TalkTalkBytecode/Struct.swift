@@ -8,7 +8,7 @@
 public struct Struct: Equatable, Hashable, Codable, Sendable {
 	public let name: String
 	public let propertyCount: Int
-	public var initializerSlot: Int?
+	public var initializer: Symbol?
 	public var methods: [StaticChunk] = []
 
 	public init(name: String, propertyCount: Int) {

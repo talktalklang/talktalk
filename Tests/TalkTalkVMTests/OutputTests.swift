@@ -31,7 +31,7 @@ struct OutputTests: VMTest {
 			"""
 			print("hello world")
 			"""
-			, output: output
+			, verbosity: .verbose, output: output
 		)
 
 		#expect(output.stdout == "hello world\n")

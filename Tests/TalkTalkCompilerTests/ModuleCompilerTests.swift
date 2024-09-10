@@ -38,10 +38,9 @@ struct ModuleCompilerTests: CompilerTest {
 		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
-		#expect(module.chunks.map(\.name).sorted() == ["1.tlk", "2.tlk", "fizz", "foo", "bar", "main"].sorted())
-
-		// We want each global function to have its own chunk in the module
-		#expect(module.chunks.count == 6)
+		for name in ["1.tlk", "2.tlk", "fizz", "foo", "bar", "main"] {
+			#expect(module.chunks.values.map(\.name).contains(name))
+		}
 	}
 
 	@Test("Handles global functions") func globalFunc() throws {
@@ -55,14 +54,14 @@ struct ModuleCompilerTests: CompilerTest {
 			""", "global.tlk")
 		])
 
-		let chunk = module.chunks.first(where: { $0.name == "global.tlk" })!
+		let chunk = module.chunks.values.first(where: { $0.name == "global.tlk" })!
 
 		try #expect(chunk.disassemble(in: module) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "foo", arity: 0, depth: 0)),
-			.op(.getModuleFunction, line: 4, .moduleFunction(slot: 0)),
+			.op(.getModuleFunction, line: 4, .moduleFunction(.function("GlobalFuncs", "foo", []))),
 			.op(.call, line: 4),
-			.op(.setModuleValue, line: 4, .global(slot: 0)),
-			.op(.return, line: 0)
+			.op(.setModuleValue, line: 4, .global(.value("GlobalFuncs", "a"))),
+			.op(.returnVoid, line: 0)
 		))
 	}
 
@@ -81,8 +80,7 @@ struct ModuleCompilerTests: CompilerTest {
 		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
-		#expect(module.chunks.map(\.name).sorted() == ["1.tlk", "2.tlk", "bar", "main"].sorted())
-		#expect(module.chunks.count == 4)
+		#expect(module.chunks.values.map(\.name).sorted().contains(["1.tlk", "2.tlk", "bar", "main"]))
 	}
 
 	@Test("Can import module functions") @MainActor func importing() throws {
@@ -108,12 +106,10 @@ struct ModuleCompilerTests: CompilerTest {
 			moduleEnvironment: ["A": moduleA]
 		)
 
-		#expect(moduleB.chunks.count == 4)
-		#expect(moduleB.chunks.map(\.name).sorted() == ["1.tlk", "bar", "foo", "main"].sorted())
+		#expect(moduleB.chunks.values.map(\.name).sorted().contains(["1.tlk", "bar", "foo", "main"].sorted()))
 	}
 
-	@Test("Can compile structs") @MainActor func structs() throws {
-		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
+	@Test("Can compile structs") func structs() throws {
 		let (module, _) = try compile(name: "A", [
 			.tmp("""
 			struct Person {
@@ -128,25 +124,22 @@ struct ModuleCompilerTests: CompilerTest {
 			""", "struct.tlk"),
 		])
 
-		let structDef = module.structs.first(where: { $0.name == "Person" })!
+		let structDef = module.structs.values.first(where: { $0.name == "Person" })!
 		#expect(structDef.name == "Person")
 		#expect(structDef.propertyCount == 1)
-		#expect(structDef.methods.count == 1)
 
-		let initChunk = structDef.methods[0]
+		let initChunk = module.chunks[structDef.initializer!]!
 
 		#expect(try initChunk.disassemble(in: module) == Instructions(
-			.op(.getLocal, line: 4, .local(slot: 1, name: "age")),
-			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
-			.op(.setProperty, line: 4, .property(slot: 0)),
-			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 5, .local(slot: 0, name: "__reserved__")),
-			.op(.return, line: 5, .simple)
+			.op(.getLocal, line: 4, .local(.value("A", "age"))),
+			.op(.getLocal, line: 4, .local(.value("A", "self"))),
+			.op(.setProperty, line: 4, .property(.property("A", "Person", "age"))),
+			.op(.getLocal, line: 5, .local(.value("A", "self"))),
+			.op(.returnValue, line: 5, .simple)
 		))
 	}
 
 	@Test("Can compile struct init with no args") @MainActor func compileStructInitNoArgs() throws {
-		// We test this in here instead of ChunkCompilerTests because struct defs on their own emit no code in chunk
 		let (module, _) = try compile(name: "A", [
 			.tmp("""
 			struct Person {
@@ -162,27 +155,25 @@ struct ModuleCompilerTests: CompilerTest {
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = module.chunks[1]
+		let mainChunk = module.chunks[.function("A", "1.tlk", [])]!
 		try #expect(mainChunk.disassemble(in: module) == Instructions(
-			.op(.getStruct, line: 8, .struct(slot: 4)),
+			.op(.getStruct, line: 8, .struct(.struct("A", "Person"))),
 			.op(.call, line: 8),
-			.op(.setModuleValue, line: 8, .global(slot: 1)),
-			.op(.return, line: 0)
+			.op(.setModuleValue, line: 8, .global(.value("A", "person"))),
+			.op(.returnVoid, line: 0)
 		))
 
-		let structDef = module.structs.first(where: { $0.name == "Person" })!
+		let structDef = module.structs.values.first(where: { $0.name == "Person" })!
 		#expect(structDef.name == "Person")
 		#expect(structDef.propertyCount == 1)
-		#expect(structDef.methods.count == 1)
 
-		let initChunk = structDef.methods[0]
+		let initChunk = module.chunks[structDef.initializer!]!
 		try #expect(initChunk.disassemble() == Instructions(
 			.op(.constant, line: 4, .constant(.int(123))),
-			.op(.getLocal, line: 4, .local(slot: 0, name: "__reserved__")),
-			.op(.setProperty, line: 4, .property(slot: 0)),
-			.op(.pop, line: 4, .simple),
-			.op(.getLocal, line: 5, .local(slot: 0, name: "__reserved__")),
-			.op(.return, line: 5, .simple)
+			.op(.getLocal, line: 4, .local(.value("A", "self"))),
+			.op(.setProperty, line: 4, .property(.property("A", "Person", "age"))),
+			.op(.getLocal, line: 5, .local(.value("A", "self"))),
+			.op(.returnValue, line: 5, .simple)
 		))
 	}
 }

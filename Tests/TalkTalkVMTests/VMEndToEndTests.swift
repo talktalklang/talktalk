@@ -98,7 +98,9 @@ struct VMEndToEndTests: VMTest {
 				let b = 20
 				a = a + b
 				return a
-				""") == .int(30))
+				"""
+			) == .int(30)
+		)
 	}
 
 	@Test("Basic func/call expr") func funcExpr() throws {
@@ -116,11 +118,11 @@ struct VMEndToEndTests: VMTest {
 	@Test("Func arguments") func funcArgs() throws {
 		#expect(
 			try run(
-				"""
-				func(i) {
-					i + 20
-				}(10)
-				""") == .int(30))
+			"""
+			func(i) {
+				i + 20
+			}(10)
+			""") == .int(30))
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
@@ -165,39 +167,38 @@ struct VMEndToEndTests: VMTest {
 	}
 
 	@Test("Works with counter") func counter() throws {
-		let module = try compile(
-			"""
-			func makeCounter() {
-				var count = 0
-				func increment() {
-					count = count + 1
-					return count
-				}
-				return increment
+		let source = """
+		func makeCounter() {
+			var count = 0
+			func increment() {
+				count = count + 1
+				return count
 			}
+			return increment
+		}
 
-			var mycounter = makeCounter()
-			mycounter()
-			return mycounter()
-			""")
+		var mycounter = makeCounter()
+		mycounter()
+		return mycounter()
+		"""
 
+		let module = try compile(source)
 		let result = try VirtualMachine.run(module: module).get()
 		#expect(result == .int(2))
 	}
 
 	@Test("Runs factorial") func factorials() throws {
-		let result = try run(
-			"""
-			func fact(n) {
-			 if n <= 1 {
+		let source = """
+		func fact(n) {
+			if n <= 1 {
 				return 1
-			 } else {
+			} else {
 				return n * fact(n - 1)
-			 }
 			}
-			return fact(3)
-			"""
-		)
+		}
+		return fact(3)
+		"""
+		let result = try run(source)
 
 		#expect(result == .int(6))
 	}

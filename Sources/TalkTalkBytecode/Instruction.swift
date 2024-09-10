@@ -161,18 +161,18 @@ public extension InstructionMetadata where Self == LoopMetadata {
 }
 
 public struct GetPropertyMetadata: InstructionMetadata {
-	let slot: Int
+	let symbol: Symbol
 	let options: PropertyOptions
 	public var length: Int = 3
 
 	public var description: String {
-		"slot: \(slot), options: \(options)"
+		"symbol: \(symbol), options: \(options)"
 	}
 }
 
 public extension InstructionMetadata where Self == GetPropertyMetadata {
-	static func getProperty(slot: Int, options: PropertyOptions) -> GetPropertyMetadata {
-		GetPropertyMetadata(slot: slot, options: options)
+	static func getProperty(_ symbol: Symbol, options: PropertyOptions) -> GetPropertyMetadata {
+		GetPropertyMetadata(symbol: symbol, options: options)
 	}
 }
 
@@ -183,81 +183,58 @@ public struct VariableMetadata: InstructionMetadata {
 
 	public var length: Int = 2
 
-	public let slot: Byte
-	public let name: String
+	public let symbol: Symbol
 	public let type: VariableType
 
 	public var description: String {
-		"slot: \(slot), name: \(name)"
+		"symbol: \(symbol), type: \(type)"
 	}
 }
 
 public extension InstructionMetadata where Self == VariableMetadata {
-	static func local(slot: Byte, name: String) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: name, type: .local)
+	static func local(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .local)
 	}
 
-	static func global(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .global)
+	static func global(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .global)
 	}
 
-	static func builtin(slot: Byte, name: String) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: name, type: .builtin)
+	static func builtin(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .builtin)
 	}
 
-	static func `struct`(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .struct)
+	static func `struct`(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .struct)
 	}
 
-	static func property(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .property)
+	static func property(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .property)
 	}
 
-	static func moduleFunction(slot: Byte) -> VariableMetadata {
-		VariableMetadata(slot: slot, name: "slot: \(slot)", type: .moduleFunction)
+	static func moduleFunction(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .moduleFunction)
 	}
 }
 
 public struct ClosureMetadata: InstructionMetadata, CustomStringConvertible {
-	public struct Upvalue: Equatable, Hashable {
-		public static func == (lhs: Upvalue, rhs: Upvalue) -> Bool {
-			lhs.isLocal == rhs.isLocal && lhs.index == rhs.index
-		}
-
-		var isLocal: Bool
-		var index: Byte
-
-		public static func capturing(_ index: Byte) -> Upvalue {
-			Upvalue(isLocal: true, index: index)
-		}
-
-		public static func inherited(_ index: Byte) -> Upvalue {
-			Upvalue(isLocal: false, index: index)
-		}
-
-		public var description: String {
-			"isLocal: \(isLocal) i: \(index)"
-		}
-	}
-
 	let name: String?
 	let arity: Byte
 	let depth: Byte
-	let upvalues: [Upvalue]
 	public var length: Int {
-		2 + (upvalues.count * 2)
+		1
 	}
 
 	public var description: String {
 		var result = if let name { "name: \(name) " } else { "" }
-		result += "arity: \(arity) depth: \(depth) upvalues: [\(upvalues.map(\.description).joined(separator: ", "))]"
+		result += "arity: \(arity) depth: \(depth)"
 		return result
 	}
 }
 
 public extension InstructionMetadata where Self == ClosureMetadata {
-	static func closure(name: String? = nil, arity: Byte, depth: Byte, upvalues: [ClosureMetadata.Upvalue] = []) -> ClosureMetadata {
-		ClosureMetadata(name: name, arity: arity, depth: depth, upvalues: upvalues)
+	static func closure(name: String? = nil, arity: Byte, depth: Byte) -> ClosureMetadata {
+		ClosureMetadata(name: name, arity: arity, depth: depth)
 	}
 }
 
@@ -276,18 +253,18 @@ public extension InstructionMetadata where Self == CallMetadata {
 	}
 }
 
-public struct UpvalueMetadata: InstructionMetadata {
-	public let slot: Byte
+public struct CaptureMetadata: InstructionMetadata {
 	public let name: String
+	public let location: Capture.Location
 	public var length: Int = 2
 
 	public var description: String {
-		"local: \(slot), name: \(name)"
+		"name: \(name), location: \(location)"
 	}
 }
 
-public extension InstructionMetadata where Self == UpvalueMetadata {
-	static func upvalue(slot: Byte, name: String) -> UpvalueMetadata {
-		UpvalueMetadata(slot: slot, name: name)
+public extension InstructionMetadata where Self == CaptureMetadata {
+	static func capture(name: String, _ location: Capture.Location) -> CaptureMetadata {
+		CaptureMetadata(name: name, location: location)
 	}
 }
