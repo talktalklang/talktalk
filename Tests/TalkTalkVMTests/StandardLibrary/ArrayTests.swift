@@ -110,7 +110,7 @@ struct ArrayTests: StandardLibraryTest {
 		return a[3]
 		"""
 
-		let result = try await run(source, verbosity: .lineByLine(source)).get()
+		let result = try await run(source).get()
 		#expect(result == .int(404))
 	}
 }

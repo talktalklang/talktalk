@@ -178,7 +178,7 @@ public class CompilingModule {
 			main.emit(.symbol(fileChunk.symbol), line: UInt32(offset))
 		}
 
-		main.emit(.opcode(.return), line: UInt32(fileChunks.count))
+		main.emit(.opcode(.returnValue), line: UInt32(fileChunks.count))
 
 		return main
 	}

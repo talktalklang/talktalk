@@ -47,8 +47,8 @@ struct StandardLibraryTests: CompilerTest {
 			.op(.call, line: 1),
 			.op(.getModuleValue, line: 2, .global(.value("E2E", "a"))),
 			.op(.getProperty, line: 2, .getProperty(.property("Standard", "Array", "count"), options: [])),
-			.op(.return, line: 2),
-			.op(.return, line: 0)
+			.op(.returnValue, line: 2),
+			.op(.returnVoid, line: 0)
 		))
 	}
 }

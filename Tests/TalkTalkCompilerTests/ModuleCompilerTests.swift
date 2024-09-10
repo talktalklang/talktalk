@@ -61,7 +61,7 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getModuleFunction, line: 4, .moduleFunction(.function("GlobalFuncs", "foo", []))),
 			.op(.call, line: 4),
 			.op(.setModuleValue, line: 4, .global(.value("GlobalFuncs", "a"))),
-			.op(.return, line: 0)
+			.op(.returnVoid, line: 0)
 		))
 	}
 
@@ -135,7 +135,7 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getLocal, line: 4, .local(.value("A", "self"))),
 			.op(.setProperty, line: 4, .property(.property("A", "Person", "age"))),
 			.op(.getLocal, line: 5, .local(.value("A", "self"))),
-			.op(.return, line: 5, .simple)
+			.op(.returnValue, line: 5, .simple)
 		))
 	}
 
@@ -160,7 +160,7 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getStruct, line: 8, .struct(.struct("A", "Person"))),
 			.op(.call, line: 8),
 			.op(.setModuleValue, line: 8, .global(.value("A", "person"))),
-			.op(.return, line: 0)
+			.op(.returnVoid, line: 0)
 		))
 
 		let structDef = module.structs.values.first(where: { $0.name == "Person" })!
@@ -173,7 +173,7 @@ struct ModuleCompilerTests: CompilerTest {
 			.op(.getLocal, line: 4, .local(.value("A", "self"))),
 			.op(.setProperty, line: 4, .property(.property("A", "Person", "age"))),
 			.op(.getLocal, line: 5, .local(.value("A", "self"))),
-			.op(.return, line: 5, .simple)
+			.op(.returnValue, line: 5, .simple)
 		))
 	}
 }

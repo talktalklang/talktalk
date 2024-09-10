@@ -59,7 +59,7 @@ public final class Chunk {
 	}
 
 	public func finalize() -> Chunk {
-		write(.return, line: 0)
+		write(.returnVoid, line: 0)
 		return self
 	}
 

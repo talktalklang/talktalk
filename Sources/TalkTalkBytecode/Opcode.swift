@@ -8,7 +8,7 @@
 public enum Opcode: Byte, Codable, Sendable {
 	public var byte: Byte { rawValue }
 
-	case `return`,
+	case returnValue, returnVoid,
 	     constant,
 	     negate,
 	     not,

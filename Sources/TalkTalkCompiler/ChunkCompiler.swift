@@ -92,7 +92,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			// If this is the only statement in a block, we can sometimes implicitly return
 			// its expr instead of just popping it (like in a function body). We don't want to
 			// do this for things like if/while statements tho.
-			chunk.emit(opcode: .return, line: expr.location.line)
+			chunk.emit(opcode: .returnValue, line: expr.location.line)
 		case .none:
 			() // Leave the value on the stack
 		}
@@ -268,9 +268,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Add the instance to the top of the stack so it'll always be returned
 		chunk.emit(opcode: .getLocal, line: UInt32(expr.location.end.line))
 		chunk.emit(.symbol(.value(module.name, "self")), line: UInt32(expr.location.end.line))
-
-		// We always want to emit a return at the end of a function
-		chunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
+		chunk.emit(opcode: .returnValue, line: UInt32(expr.location.end.line))
 
 		_ = try module.addChunk(chunk)
 	}
@@ -313,8 +311,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// End the scope, which pops or captures locals
 		functionCompiler.endScope(chunk: functionChunk)
 
-		// We always want to emit a return at the end of a function
-		functionChunk.emit(opcode: .return, line: UInt32(expr.location.end.line))
+		// We always want to emit a return at the end of a function. If the function's return value
+		// is void then we just emit returnVoid. Otherwise we emit returnValue which will grab the return
+		// value from the top of the stack.
+		let opcode: Opcode
+		switch expr.inferenceType {
+		case .function(_, .void):
+			opcode = .returnVoid
+		default:
+			opcode = .returnValue
+		}
+
+		functionChunk.emit(opcode: opcode, line: UInt32(expr.location.end.line))
 
 		// Store which locals this function has captured by children
 		functionChunk.capturedLocals = functionCompiler.capturedLocals
@@ -370,7 +378,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedReturnStmt, _ chunk: Chunk) throws {
 		try expr.valueAnalyzed?.accept(self, chunk)
-		chunk.emit(opcode: .return, line: expr.location.line)
+
+		if expr.valueAnalyzed?.inferenceType != .void {
+			chunk.emit(opcode: .returnValue, line: expr.location.line)
+		} else {
+			chunk.emit(opcode: .returnVoid, line: expr.location.line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
@@ -460,7 +473,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				// Make sure the instance is at the top of the stack and return it
 				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
 				declChunk.emit(.symbol(.value(module.name, "self")), line: UInt32(decl.location.end.line))
-				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
+				declChunk.emit(opcode: .returnValue, line: UInt32(decl.location.end.line))
 
 				guard let analysisMethod = expr.structType.methods["init"] else {
 					throw CompilerError.typeError("No `init` found for \(expr.name)")
@@ -503,7 +516,16 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 				// End the scope, which pops locals
 				declCompiler.endScope(chunk: declChunk)
-				declChunk.emit(opcode: .return, line: UInt32(decl.location.end.line))
+
+				let opcode: Opcode
+				switch decl.inferenceType {
+				case .function(_, .void):
+					opcode = .returnVoid
+				default:
+					opcode = .returnValue
+				}
+
+				declChunk.emit(opcode: opcode, line: UInt32(decl.location.end.line))
 
 				guard let analysisMethod = expr.structType.methods[declName] else {
 					throw CompilerError.analysisError("Missing analyzer method for \(name).\(declName)")
@@ -887,7 +909,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		initializerChunk.emit(variable.code, line: expr.location.line)
 
 		// Return from the initialization chunk
-		initializerChunk.emit(opcode: .return, line: expr.location.line)
+		initializerChunk.emit(opcode: .returnValue, line: expr.location.line)
 
 		module.valueInitializers[symbol] = initializerChunk
 
@@ -967,13 +989,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 			// Set the property on self
 			chunk.emit(opcode: .setProperty, line: 9999)
 			chunk.emit(.symbol(property.symbol), line: 9999)
-
-//			chunk.emit(opcode: .pop, line: 9999)
-//			chunk.emit(opcode: .pop, line: 9999)
 		}
 
 		compiler.endScope(chunk: chunk)
-		chunk.emit(opcode: .return, line: 9999)
+		chunk.emit(opcode: .returnValue, line: 9999)
 
 		return chunk
 	}

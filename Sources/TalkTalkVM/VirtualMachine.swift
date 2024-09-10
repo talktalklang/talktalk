@@ -148,27 +148,8 @@ public struct VirtualMachine {
 			let opcode = try readOpcode()
 
 			switch opcode {
-			case .return:
-				// Remove the result from the stack temporarily while we clean it up
-				let	result = try stack.pop()
+			case .returnVoid:
 				let calledFrame = try frames.pop()
-
-				let capturedLocals = calledFrame.closure.chunk.capturedLocals
-				// Take locals from the popped frame, put them on the heap, then update captures to
-				// point to the new location. This is sort of doing a lot of work that could probably
-				// happen elsewhere but like, closures are really none of my business tbh.
-				for local in capturedLocals {
-					guard let value = calledFrame.lookup(local) else {
-						throw VirtualMachineError.valueMissing("missing local for capture: \(local)")
-					}
-
-					let pointer = heap.allocate(count: 1)
-					heap.store(pointer: pointer, value: value)
-
-					for (sym, _) in closures {
-						closures[sym]?.capturing[local] = .heap(pointer)
-					}
-				}
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
@@ -181,8 +162,34 @@ public struct VirtualMachine {
 						}
 					}
 
-					return .ok(result, Date().timeIntervalSince(start))
+					return .ok(.none, Date().timeIntervalSince(start))
 				}
+
+				try transferCaptures(in: calledFrame)
+
+				// Return to where we called from
+				ip = calledFrame.returnTo
+			case .returnValue:
+				let calledFrame = try frames.pop()
+
+				// If there are no frames left, we're done.
+				if frames.size == 0 {
+					// Make sure we didn't leak anything, we should only have the main program
+					// on the stack.
+					if verbosity == .verbose {
+						if stack.size != 0 {
+							print("stack size expected to be 0, got: \(stack.size)")
+							dumpStack()
+						}
+					}
+
+					return .ok((try? stack.pop()) ?? .none, Date().timeIntervalSince(start))
+				}
+
+				// Remove the result from the stack temporarily while we clean it up
+				let	result = try stack.pop()
+
+				try transferCaptures(in: calledFrame)
 
 				// Push the result back onto the stack
 				stack.push(result)
@@ -744,6 +751,25 @@ public struct VirtualMachine {
 			() // This is just for the analyzer
 		default:
 			throw VirtualMachineError.valueMissing("unknown builtin: \(builtin)")
+		}
+	}
+
+	private mutating func transferCaptures(in calledFrame: CallFrame) throws {
+		let capturedLocals = calledFrame.closure.chunk.capturedLocals
+		// Take locals from the popped frame, put them on the heap, then update captures to
+		// point to the new location. This is sort of doing a lot of work that could probably
+		// happen elsewhere but like, closures are really none of my business tbh.
+		for local in capturedLocals {
+			guard let value = calledFrame.lookup(local) else {
+				throw VirtualMachineError.valueMissing("missing local for capture: \(local)")
+			}
+
+			let pointer = heap.allocate(count: 1)
+			heap.store(pointer: pointer, value: value)
+
+			for (sym, _) in closures {
+				closures[sym]?.capturing[local] = .heap(pointer)
+			}
 		}
 	}
 
