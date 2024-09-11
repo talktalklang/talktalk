@@ -371,7 +371,9 @@ public struct SemanticTokensVisitor: Visitor {
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.caseToken)]
 
-		try result.append(contentsOf: expr.patternSyntax.accept(self, context))
+		if let pattern = expr.patternSyntax {
+			try result.append(contentsOf: pattern.accept(self, context))
+		}
 
 		for stmt in expr.body {
 			try result.append(contentsOf: stmt.accept(self, context))

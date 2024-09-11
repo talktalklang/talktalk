@@ -23,6 +23,36 @@ struct PatternMatchTests: VMTest {
 		#expect(result == .int(456))
 	}
 
+	@Test("Basic with else") func basicElse() throws {
+		let result = try run(
+			"""
+			match true {
+			case false:
+				return 123
+			else:
+				return 456
+			}
+			"""
+		)
+
+		#expect(result == .int(456))
+	}
+
+	@Test("else doesn't always win") func basicElse2() throws {
+		let result = try run(
+			"""
+			match true {
+			case true:
+				return 123
+			else:
+				return 456
+			}
+			"""
+		)
+
+		#expect(result == .int(123))
+	}
+
 	@Test("With binding") func withBinding() throws {
 		let result = try run(
 			"""

@@ -23,8 +23,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].patternSyntax
-		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].patternSyntax
+		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
+		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].patternSyntax!
 
 		#expect(
 			context[case1] == .type(.base(.int))
@@ -32,6 +32,33 @@ struct PatternMatchingTests: TypeCheckerTest {
 
 		#expect(
 			context[case2] == .type(.base(.string))
+		)
+	}
+
+	@Test("Can typecheck with else") func patternElse() throws {
+		let syntax = try Parser.parse(
+			"""
+			match thing {
+			case 123:
+				true
+			else:
+				false
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context.errors == [])
+
+		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
+		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].patternSyntax
+
+		#expect(
+			context[case1] == .type(.base(.int))
+		)
+
+		#expect(
+			case2 == nil
 		)
 	}
 
@@ -55,12 +82,12 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let call1 = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0] // .foo(let a)...:
-			.patternSyntax // .foo(let a)
+			.patternSyntax! // .foo(let a)
 			.cast(CallExprSyntax.self)
 
 		let call2 = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[1] // .bar(let b)...:
-			.patternSyntax // .bar(let b)
+			.patternSyntax! // .bar(let b)
 			.cast(CallExprSyntax.self)
 
 		let foo = context.lookup(syntax: call1)
@@ -107,7 +134,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let call1 = syntax[2].cast(MatchStatementSyntax.self).cases[0].patternSyntax
+		let call1 = syntax[2].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
 
 		// Let's just make sure we're testing the right thing
 		#expect(call1.description == ".bottom(.top(let a))")

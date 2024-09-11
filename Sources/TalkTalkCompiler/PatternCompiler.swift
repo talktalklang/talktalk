@@ -42,18 +42,26 @@ struct PatternCompiler {
 	}
 
 	func compileCase() throws {
-		try target.accept(compiler, chunk)
-		try caseStatement.patternAnalyzed.accept(compiler, chunk)
+		if let pattern = caseStatement.patternAnalyzed {
+			try target.accept(compiler, chunk)
+			try pattern.accept(compiler, chunk)
+		} else {
+			// If it's the default case, just emit two trues which will match.
+			chunk.emit(.opcode(.true), line: caseStatement.location.line)
+			chunk.emit(.opcode(.true), line: caseStatement.location.line)
+		}
 
 		chunk.emit(.opcode(.match), line: caseStatement.location.line)
 	}
 
 	func compileBody() throws {
-		let casePattern = try compilerPattern(from: caseStatement.patternAnalyzed)
+		if let pattern = caseStatement.patternAnalyzed {
+			let casePattern = try compilerPattern(from: pattern)
 
-		if case let .call(_, caseArgs) = casePattern {
-			for (i, arg) in caseArgs.enumerated() {
-				defineLocals(for: arg, index: i)
+			if case let .call(_, caseArgs) = casePattern {
+				for (i, arg) in caseArgs.enumerated() {
+					defineLocals(for: arg, index: i)
+				}
 			}
 		}
 

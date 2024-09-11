@@ -50,6 +50,41 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		))
 	}
 
+	@Test("Basic with else") func basicElse() throws {
+		let module = try compile("""
+			match true {
+			case false:
+				return 123
+			else:
+				return 456
+			}
+			"""
+		)
+
+		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+			.op(.matchBegin, line: 0),
+
+			// Emit the first pattern
+			.op(.true, line: 0),
+			.op(.false, line: 1),
+			.op(.match, line: 1),
+			.op(.matchCase, line: 1, .jump(offset: 1)),
+			.op(.pop, line: 1),
+
+			// Emit the first body we'd jump to if the first case is true
+			.op(.constant, line: 2, .constant(.int(123))),
+			.op(.returnValue, line: 2),
+			.op(.jump, line: 2, .jump(offset: 6)),
+
+			// Emit the else body that we should jump to instead
+			.op(.constant, line: 4, .constant(.int(456))),
+			.op(.returnValue, line: 4),
+			.op(.jump, line: 4, .jump(offset: 0)),
+
+			.op(.returnVoid, line: 0)
+		))
+	}
+
 	@Test("var binding") func varBinding() throws {
 		let module = try compile("""
 			enum Thing {

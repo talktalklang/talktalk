@@ -94,7 +94,12 @@ extension Parser {
 
 		let i = startLocation(at: token)
 
-		let pattern = expr()
+		let pattern: (any Expr)?
+		if token.kind != .else {
+			pattern = expr()
+		} else {
+			pattern = nil
+		}
 
 		consume(.colon)
 

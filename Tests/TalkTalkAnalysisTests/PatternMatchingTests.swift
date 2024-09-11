@@ -49,6 +49,25 @@ struct PatternMatchingTests: AnalysisTest {
 		#expect(errors[0].kind == .matchNotExhaustive("Match not exhaustive. Missing bar"))
 	}
 
+	@Test("Doesnt error when not exhaustive with else (enums)") func enumWithElse() async throws {
+		let ast = try await ast("""
+		enum Thing {
+			case foo(String)
+			case bar(int)
+		}
+
+		match Thing.foo("sup") {
+		case .foo(let string):
+			print(string)
+		else:
+			print("it's ok")
+		}
+		""")
+
+		let errors = ast.collectErrors()
+		#expect(errors == [])
+	}
+
 	@Test("Can analyze a match statement") func matchStatement() async throws {
 		let ast = try await ast("""
 		enum Thing {
@@ -65,7 +84,7 @@ struct PatternMatchingTests: AnalysisTest {
 		""")
 
 		let stmt = ast.cast(AnalyzedMatchStatement.self)
-		let foo = stmt.casesAnalyzed[0].patternAnalyzed
+		let foo = stmt.casesAnalyzed[0].patternAnalyzed!
 		#expect(foo.inferenceType == .pattern(
 			Pattern(
 				type: .enumCase(EnumCase(
@@ -78,7 +97,7 @@ struct PatternMatchingTests: AnalysisTest {
 			)
 		))
 
-		let bar = stmt.casesAnalyzed[1].patternAnalyzed
+		let bar = stmt.casesAnalyzed[1].patternAnalyzed!
 		#expect(bar.inferenceType == .pattern(
 			Pattern(
 				type: .enumCase(EnumCase(

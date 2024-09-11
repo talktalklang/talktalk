@@ -29,8 +29,15 @@ public struct Pattern: Equatable, Hashable, CustomStringConvertible {
 	}
 }
 
-public enum PatternError: Error {
+public enum PatternError: Error, CustomStringConvertible {
 	case invalid(String)
+
+	public var description: String {
+		switch self {
+		case .invalid(let string):
+			"Invalid pattern: \(string)"
+		}
+	}
 }
 
 struct PatternVisitor: Visitor {
