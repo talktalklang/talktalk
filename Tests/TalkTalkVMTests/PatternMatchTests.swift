@@ -38,7 +38,7 @@ struct PatternMatchTests: VMTest {
 				return b + 1
 			}
 			"""
-			, verbosity: .verbose)
+		)
 
 		#expect(result == .int(457))
 	}
@@ -60,9 +60,26 @@ struct PatternMatchTests: VMTest {
 				return "yup"
 			}
 			"""
-			, verbosity: .verbose)
+		)
 
 		#expect(result == .string("yup"))
+	}
+
+	@Test("With generics") func withGenerics() throws {
+		let result = try run(
+			"""
+			enum Thing<Wrapped> {
+			case foo(Wrapped)
+			}
+
+			match Thing.foo(789) {
+			case .foo(let wrapped):
+				return wrapped
+			}
+			"""
+		)
+
+		#expect(result == .int(789))
 	}
 
 	@Test("Matching variable") func matchingVariable() throws {
@@ -84,7 +101,7 @@ struct PatternMatchTests: VMTest {
 				return "yup"
 			}
 			"""
-			, verbosity: .verbose)
+		)
 
 		#expect(result == .string("yup"))
 	}

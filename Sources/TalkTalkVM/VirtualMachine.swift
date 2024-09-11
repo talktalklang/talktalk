@@ -622,7 +622,6 @@ public struct VirtualMachine {
 
 				stack.push(value)
 			case .matchBegin:
-				print("hi")
 				()
 			case .matchCase:
 				let jump = try readUInt16()
