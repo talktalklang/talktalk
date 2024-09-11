@@ -68,8 +68,15 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.true, line: 0),
 			.op(.false, line: 1),
 			.op(.match, line: 1),
-			.op(.matchCase, line: 1, .jump(offset: 1)),
+			.op(.matchCase, line: 1, .jump(offset: 8)),
 			.op(.pop, line: 1),
+
+			// Emit the else pattern
+			.op(.true, line: 3),
+			.op(.true, line: 3),
+			.op(.match, line: 3),
+			.op(.matchCase, line: 3, .jump(offset: 7)),
+			.op(.pop, line: 3),
 
 			// Emit the first body we'd jump to if the first case is true
 			.op(.constant, line: 2, .constant(.int(123))),
