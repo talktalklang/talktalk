@@ -123,7 +123,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		if let enumMember = expr.calleeAnalyzed as? AnalyzedEnumMemberExpr {
 			for (i, arg) in expr.argsAnalyzed.enumerated() {
-				if enumMember.paramsAnalyzed[i] != .void {
+				if arg.expr.inferenceType != .void {
 					try arg.accept(self, chunk)
 				} else {
 					chunk.emit(.opcode(.binding), line: arg.location.line)

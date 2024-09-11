@@ -52,24 +52,34 @@ struct PatternCompiler {
 		let casePattern = try compilerPattern(from: caseStatement.patternAnalyzed)
 
 		if case let .call(_, caseArgs) = casePattern {
-			for (i, arg) in caseArgs.enumerated() where arg is any AnalyzedVarLetDecl {
-				// swiftlint:disable force_cast
-				let arg = arg as! any AnalyzedVarLetDecl
-				// swiftlint:enable force_cast
-
-				let variable = compiler.defineLocal(name: arg.name, compiler: compiler, chunk: chunk)
-
-				chunk.emit(.opcode(.binding), line: arg.location.line)
-				chunk.emit(.byte(Byte(i)), line: arg.location.line)
-
-				// TODO: Make sure these values don't leak
-				chunk.emit(.opcode(.setLocal), line: arg.location.line)
-				chunk.emit(variable.code, line: arg.location.line)
+			for (i, arg) in caseArgs.enumerated() {
+				defineLocals(for: arg, index: i)
 			}
 		}
 
 		for stmt in caseStatement.bodyAnalyzed {
 			try stmt.accept(compiler, chunk)
+		}
+	}
+
+	func defineLocals(for arg: any AnalyzedSyntax, index: Int) {
+		switch arg {
+		case let arg as any AnalyzedVarLetDecl:
+			let variable = compiler.defineLocal(name: arg.name, compiler: compiler, chunk: chunk)
+
+			chunk.emit(.opcode(.binding), line: arg.location.line)
+			chunk.emit(.byte(Byte(index)), line: arg.location.line)
+
+			// TODO: Make sure these values don't leak
+			chunk.emit(.opcode(.setLocal), line: arg.location.line)
+			chunk.emit(variable.code, line: arg.location.line)
+		case let arg as AnalyzedCallExpr:
+			for (i, subarg) in arg.argsAnalyzed.enumerated() {
+				defineLocals(for: subarg.expr, index: index)
+			}
+		default:
+			print(arg)
+			()
 		}
 	}
 }

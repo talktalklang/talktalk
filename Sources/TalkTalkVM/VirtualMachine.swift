@@ -614,10 +614,6 @@ public struct VirtualMachine {
 				try call(structValue: dictType)
 			case .binding:
 				let i = try Int(readByte())
-
-//				guard let value = currentFrame.patternBindings[i] else {
-//					return runtimeError("No bound value found for binding #\(i)")
-//				}
 				let value = currentFrame.patternBindings[i] ?? .binding(i)
 
 				stack.push(value)
