@@ -24,6 +24,7 @@ public class CallFrame {
 	var returnTo: UInt64
 	private(set) var locals: OrderedDictionary<String, Value> = [:]
 	var selfValue: Value?
+	var patternBindings: [Int: Value] = [:]
 
 	init(closure: Closure, returnTo: UInt64, selfValue: Value?) {
 		self.closure = closure

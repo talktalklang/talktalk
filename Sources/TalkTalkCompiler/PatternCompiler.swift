@@ -41,47 +41,26 @@ struct PatternCompiler {
 		}
 	}
 
-	func compileBody(from syntax: any AnalyzedExpr) throws {
-		
-	}
-
 	func compileCase() throws {
-		let targetPattern = try compilerPattern(from: target)
-		let casePattern = try compilerPattern(from: caseStatement.patternAnalyzed)
+		try target.accept(compiler, chunk)
+		try caseStatement.patternAnalyzed.accept(compiler, chunk)
 
-		switch (targetPattern, casePattern) {
-		case let (.call(targetType, targetArgs), .call(caseType, caseArgs)):
-			try targetType.accept(compiler, chunk)
-			try caseType.accept(compiler, chunk)
-
-			chunk.emit(.opcode(.equal), line: caseStatement.location.line)
-
-			for (i, arg) in caseArgs.enumerated() where arg.inferenceType != .void {
-				try targetArgs[i].accept(compiler, chunk)
-				try arg.accept(compiler, chunk)
-				chunk.emit(.opcode(.equal), line: arg.location.line)
-				chunk.emit(.opcode(.and), line: arg.location.line)
-			}
-		default:
-			try target.accept(compiler, chunk)
-			try caseStatement.patternAnalyzed.accept(compiler, chunk)
-
-			chunk.emit(.opcode(.equal), line: caseStatement.location.line)
-		}
+		chunk.emit(.opcode(.match), line: caseStatement.location.line)
 	}
 
 	func compileBody() throws {
-		let targetPattern = try compilerPattern(from: target)
 		let casePattern = try compilerPattern(from: caseStatement.patternAnalyzed)
 
-		if case let (.call(_, targetArgs), .call(_, caseArgs)) = (targetPattern, casePattern) {
+		if case let .call(_, caseArgs) = casePattern {
 			for (i, arg) in caseArgs.enumerated() where arg is any AnalyzedVarLetDecl {
 				// swiftlint:disable force_cast
 				let arg = arg as! any AnalyzedVarLetDecl
 				// swiftlint:enable force_cast
 
 				let variable = compiler.defineLocal(name: arg.name, compiler: compiler, chunk: chunk)
-				try targetArgs[i].accept(compiler, chunk)
+
+				chunk.emit(.opcode(.binding), line: arg.location.line)
+				chunk.emit(.byte(Byte(i)), line: arg.location.line)
 
 				// TODO: Make sure these values don't leak
 				chunk.emit(.opcode(.setLocal), line: arg.location.line)

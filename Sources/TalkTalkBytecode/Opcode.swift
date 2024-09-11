@@ -67,6 +67,7 @@ public enum Opcode: Byte, Codable, Sendable {
 	     // Equality
 	     equal,
 	     notEqual,
+			 match,
 
 	     // Jumps
 	     jump,
@@ -77,6 +78,7 @@ public enum Opcode: Byte, Codable, Sendable {
 			 // Pattern matching
 			 matchBegin,
 			 matchCase,
+			 binding,
 
 			 // Enum stuff
 			 getEnum,

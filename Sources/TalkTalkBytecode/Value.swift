@@ -59,8 +59,16 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	// The index of the struct in the module
 	case `struct`(Struct)
 
+	// An enum type
 	case `enum`(Enum)
-	case enumCase(Enum, String)
+
+	// An enum case (with no values). (Type, Name, Arity)
+	case enumCase(EnumCase)
+
+	// An enum case (bound to values) (Type, Name, Values)
+	case boundEnumCase(BoundEnumCase)
+
+	case binding(Int)
 
 	// The type of instance, the instance ID
 	case instance(Instance)
@@ -71,18 +79,6 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case primitive(Primitive)
 
 	case none
-
-	public var isCallable: Bool {
-		switch self {
-		case .closure: true
-		case .builtin: true
-		case .builtinStruct: true
-		case .moduleFunction: true
-		case .struct: true
-		case .boundMethod: true
-		default: false
-		}
-	}
 
 	public var intValue: Int? {
 		guard case let .int(int) = self else {
@@ -203,8 +199,12 @@ extension Value: CustomStringConvertible {
 			"primitive"
 		case .enum(let enumType):
 			enumType.name
-		case .enumCase(let enumType, let name):
-			"\(enumType.name).\(name)"
+		case .enumCase(let enumCase):
+			"\(enumCase.type).\(enumCase.name)[arity: \(enumCase.arity)]"
+		case .boundEnumCase(let enumCase):
+			"\(enumCase.type).\(enumCase.name)(\(enumCase.values))"
+		case .binding(let i):
+			"binding#\(i)"
 		case .none:
 			"none"
 		}

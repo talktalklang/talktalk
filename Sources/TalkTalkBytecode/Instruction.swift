@@ -72,6 +72,23 @@ public extension InstructionMetadata where Self == MatchCaseMetadata {
 	}
 }
 
+public struct BindingMetadata: InstructionMetadata {
+	let index: Int
+	public var length: Int {
+		2
+	}
+
+	public var description: String {
+		"i: \(index)"
+	}
+}
+
+public extension InstructionMetadata where Self == BindingMetadata {
+	static func binding(_ index: Int) -> BindingMetadata {
+		BindingMetadata(index: index)
+	}
+}
+
 public struct FunctionMetadata: InstructionMetadata {
 	let name: String
 

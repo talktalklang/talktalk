@@ -7,13 +7,49 @@
 
 import OrderedCollections
 
-public struct EnumCase: Equatable {
+public final class BoundEnumCase: Equatable, Sendable, Codable, Hashable {
+	public static func ==(lhs: BoundEnumCase, rhs: BoundEnumCase) -> Bool {
+		lhs.type == rhs.type && lhs.name == rhs.name && lhs.values == rhs.values
+	}
+
+	// The name of the enum this case belongs to.
+	public let type: String
+
 	// The name of this case. All cases have names even if they don't have
 	// associated values.
 	public let name: String
 
 	// Associated values for the enum
 	public let values: [Value]
+
+	public init(type: String, name: String, values: [Value]) {
+		self.type = type
+		self.name = name
+		self.values = values
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(type)
+		hasher.combine(name)
+		hasher.combine(values)
+	}
+}
+
+public struct EnumCase: Equatable, Sendable, Codable, Hashable {
+	public let type: String
+
+	// The name of this case. All cases have names even if they don't have
+	// associated values.
+	public let name: String
+
+	// Associated values for the enum
+	public let arity: Int
+
+	public init(type: String, name: String, arity: Int) {
+		self.type = type
+		self.name = name
+		self.arity = arity
+	}
 }
 
 public struct Enum: Equatable, Sendable, Codable, Hashable {
@@ -21,9 +57,9 @@ public struct Enum: Equatable, Sendable, Codable, Hashable {
 	public let name: String
 
 	// What are the cases of this enum
-	public let cases: [Symbol: String]
+	public let cases: [Symbol: EnumCase]
 
-	public init(name: String, cases: [Symbol: String]) {
+	public init(name: String, cases: [Symbol: EnumCase]) {
 		self.name = name
 		self.cases = cases
 	}

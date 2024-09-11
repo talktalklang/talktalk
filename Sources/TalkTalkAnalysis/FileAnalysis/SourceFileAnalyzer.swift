@@ -179,7 +179,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 						throw AnalyzerError.symbolNotFound("expected symbol for struct: \(type.name)")
 					}
 				} else {
-					symbol = context.symbolGenerator.enum(expr.name, source: .internal)
+					symbol = context.symbolGenerator.enum(type.name, source: .internal)
 				}
 			} else {
 				if let module = binding.externalModule {

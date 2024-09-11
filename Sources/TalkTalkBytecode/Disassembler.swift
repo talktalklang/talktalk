@@ -89,6 +89,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 		var result: [Instruction] = []
 
 		while let next = try next() {
+			print(next.description)
 			result.append(next)
 		}
 
@@ -107,6 +108,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		switch opcode {
+		case .binding:
+			return try bindingInstruction(start: index)
 		case .constant:
 			return try constantInstruction(start: index)
 		case .defClosure:
@@ -138,6 +141,17 @@ public struct Disassembler<Chunk: Disassemblable> {
 		default:
 			return Instruction(path: self.chunk.path, opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
+	}
+
+	mutating func bindingInstruction(start: Int) throws -> Instruction {
+		let i = try chunk.code[current++].asByte()
+		return Instruction(
+			path: chunk.path,
+			opcode: .binding,
+			offset: start,
+			line: chunk.lines[start],
+			metadata: .binding(Int(i))
+		)
 	}
 
 	mutating func initArrayInstruction(start: Int) throws -> Instruction {

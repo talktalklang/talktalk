@@ -103,6 +103,42 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
+		if case .pattern(let pattern) = expr.inferenceType {
+			for (i, arg) in expr.argsAnalyzed.enumerated() {
+				if case .value = pattern.arguments[i] {
+					try arg.accept(self, chunk)
+				} else {
+					chunk.emit(.opcode(.binding), line: arg.location.line)
+					chunk.emit(.byte(Byte(i)), line: arg.location.line)
+				}
+			}
+
+			try expr.calleeAnalyzed.accept(self, chunk)
+
+			// Call the callee
+			chunk.emit(opcode: .call, line: expr.location.line)
+
+			return
+		}
+
+		if let enumMember = expr.calleeAnalyzed as? AnalyzedEnumMemberExpr {
+			for (i, arg) in expr.argsAnalyzed.enumerated() {
+				if enumMember.paramsAnalyzed[i] != .void {
+					try arg.accept(self, chunk)
+				} else {
+					chunk.emit(.opcode(.binding), line: arg.location.line)
+					chunk.emit(.byte(Byte(i)), line: arg.location.line)
+				}
+			}
+
+			try expr.calleeAnalyzed.accept(self, chunk)
+
+			// Call the callee
+			chunk.emit(opcode: .call, line: expr.location.line)
+
+			return
+		}
+
 		// Put the function args on the stack
 		for arg in expr.argsAnalyzed {
 			try arg.expr.accept(self, chunk)
@@ -694,7 +730,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let enumType = Enum(
 			name: expr.nameToken.lexeme,
 			cases: expr.casesAnalyzed.reduce(into: [:]) { res, kase in
-				res[.property(module.name, kase.enumName, kase.nameToken.lexeme)] = kase.nameToken.lexeme
+				res[.property(module.name, kase.enumName, kase.nameToken.lexeme)] = EnumCase(
+					type: expr.nameToken.lexeme,
+					name: kase.nameToken.lexeme,
+					arity: kase.attachedTypes.count
+				)
 			}
 		)
 
@@ -733,6 +773,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 			caseJumps.append(
 				chunk.emit(jump: .matchCase, line: kase.location.line)
 			)
+
+			// Pop bool result off the stack
+			chunk.emit(.opcode(.pop), line: kase.location.line)
 		}
 
 		// Emit the bodies that get jumped to from cases
@@ -764,12 +807,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		guard case let .enumCase(enumCase) = expr.inferenceType else {
 			throw CompilerError.unknownIdentifier("\(expr.description)")
 		}
-
-		guard let slot = module.moduleEnumOffset(for: enumCase.typeName) else {
-			throw CompilerError.typeError("missing slot for enum: \(enumCase.typeName)")
-		}
-
-		let enumSlot = Byte(enumCase.index)
 
 		chunk.emit(opcode: .getEnum, line: expr.location.line)
 		chunk.emit(.symbol(.enum(module.name, enumCase.typeName)), line: expr.location.line)
