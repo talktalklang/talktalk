@@ -238,17 +238,28 @@ public struct VirtualMachine {
 					stack.push(.bool(!bool))
 				}
 			case .match:
-				// We leave the values on the stack so we can bind variables later
 				let pattern = try stack.pop()
 				let target = try stack.pop()
 
-				if case let .boundEnumCase(pattern) = pattern,
-					 case let .boundEnumCase(target) = target {
-					for case let .binding(i) in pattern.values {
-						currentFrame.patternBindings[i] = target.values[i]
+				func bind(_ pattern: Value, to target: Value) {
+					if case let .boundEnumCase(pattern) = pattern,
+						 case let .boundEnumCase(target) = target {
+						for (i, value) in pattern.values.enumerated() {
+							switch value {
+							case .binding:
+								if case let .binding(binding) = pattern.values[i] {
+									binding.value = target.values[i]
+								}
+							case .boundEnumCase(let pattern):
+								bind(.boundEnumCase(pattern), to: target.values[i])
+							default:
+								()
+							}
+						}
 					}
 				}
 
+				bind(pattern, to: target)
 				stack.push(.bool(pattern == target))
 			case .equal:
 				let lhs = try stack.pop()
@@ -399,7 +410,12 @@ public struct VirtualMachine {
 					throw VirtualMachineError.valueMissing("did not find local for \(symbol)")
 				}
 
-				stack.push(local)
+				// Unwrap bindings if they have values
+				if case let .binding(binding) = local, let value = binding.value {
+					stack.push(value)
+				} else {
+					stack.push(local)
+				}
 			case .setLocal:
 				let symbol = try readSymbol()
 				currentFrame.define(symbol, as: try stack.peek())
@@ -613,10 +629,14 @@ public struct VirtualMachine {
 
 				try call(structValue: dictType)
 			case .binding:
-				let i = try Int(readByte())
-				let value = currentFrame.patternBindings[i] ?? .binding(i)
-
-				stack.push(value)
+				let sym = try readSymbol()
+				if let binding = currentFrame.patternBindings[sym] {
+					stack.push(binding)
+				} else {
+					let binding: Value = .binding(.new())
+					currentFrame.patternBindings[sym] = binding
+					stack.push(binding)
+				}
 			case .matchBegin:
 				()
 			case .matchCase:
@@ -632,6 +652,8 @@ public struct VirtualMachine {
 				}
 
 				stack.push(.enum(enumType))
+			case .debugPrint:
+				_ = try readByte()
 			}
 		}
 	}
@@ -665,7 +687,7 @@ public struct VirtualMachine {
 				BoundEnumCase(
 					type: enumCase.type,
 					name: enumCase.name,
-					values: stack.pop(count: enumCase.arity)
+					values: stack.pop(count: enumCase.arity).reversed()
 				)
 			)
 		)
@@ -875,8 +897,13 @@ public struct VirtualMachine {
 			result += "[ \(local.key) = \(local.value) ]"
 		}
 
+		if !currentFrame.patternBindings.isEmpty {
+			result += "\n       Pattern bindings: "
+			result += currentFrame.patternBindings.map { "[ \($0) ]" }.joined(separator: ", ")
+		}
+
 		if let selfValue = currentFrame.selfValue {
-			result += "       self: \(selfValue)"
+			result += "\n       self: \(selfValue)"
 		}
 
 		FileHandle.standardError.write(Data((result + "\n").utf8))

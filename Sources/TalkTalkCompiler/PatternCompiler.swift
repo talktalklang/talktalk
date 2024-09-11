@@ -68,17 +68,16 @@ struct PatternCompiler {
 			let variable = compiler.defineLocal(name: arg.name, compiler: compiler, chunk: chunk)
 
 			chunk.emit(.opcode(.binding), line: arg.location.line)
-			chunk.emit(.byte(Byte(index)), line: arg.location.line)
+			chunk.emit(.symbol(.value(compiler.module.name, arg.name)), line: arg.location.line)
 
 			// TODO: Make sure these values don't leak
 			chunk.emit(.opcode(.setLocal), line: arg.location.line)
 			chunk.emit(variable.code, line: arg.location.line)
 		case let arg as AnalyzedCallExpr:
 			for (i, subarg) in arg.argsAnalyzed.enumerated() {
-				defineLocals(for: subarg.expr, index: index)
+				defineLocals(for: subarg.expr, index: i + index + 1)
 			}
 		default:
-			print(arg)
 			()
 		}
 	}

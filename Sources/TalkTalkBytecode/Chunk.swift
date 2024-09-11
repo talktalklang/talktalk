@@ -24,6 +24,9 @@ public final class Chunk {
 	// Tracks the code array so we can output line numbers when disassambling
 	public var lines: [UInt32] = []
 
+	// Tracks logging we do during compilation
+	public var debugLogs: [String] = []
+
 	// Constant values emitted from literals found in the source
 	public var constants: [Value] = []
 
@@ -61,6 +64,13 @@ public final class Chunk {
 	public func finalize() -> Chunk {
 		write(.returnVoid, line: 0)
 		return self
+	}
+
+	public func log(_ message: String, line: UInt32) {
+		let byte = debugLogs.count
+		write(.debugPrint, line: line)
+		debugLogs.append(message)
+		write(byte: Byte(byte), line: line)
 	}
 
 	public func emit(jump opcode: Opcode, line: UInt32) -> Int {

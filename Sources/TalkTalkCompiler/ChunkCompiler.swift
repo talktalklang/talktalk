@@ -103,13 +103,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
-		if case .pattern(let pattern) = expr.inferenceType {
+		if case let .pattern(pattern) = expr.inferenceType {
 			for (i, arg) in expr.argsAnalyzed.enumerated() {
-				if case .value = pattern.arguments[i] {
+				switch pattern.arguments[i] {
+				case .value(_):
 					try arg.accept(self, chunk)
-				} else {
+				case .variable(let name, _):
 					chunk.emit(.opcode(.binding), line: arg.location.line)
-					chunk.emit(.byte(Byte(i)), line: arg.location.line)
+					chunk.emit(.symbol(.value(module.name, name)), line: arg.location.line)
 				}
 			}
 
@@ -121,13 +122,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 			return
 		}
 
-		if let enumMember = expr.calleeAnalyzed as? AnalyzedEnumMemberExpr {
-			for (i, arg) in expr.argsAnalyzed.enumerated() {
-				if arg.expr.inferenceType != .void {
-					try arg.accept(self, chunk)
-				} else {
+		if expr.calleeAnalyzed is AnalyzedEnumMemberExpr {
+			for arg in expr.argsAnalyzed {
+				if let arg = arg.expr as? VarLetDecl {
 					chunk.emit(.opcode(.binding), line: arg.location.line)
-					chunk.emit(.byte(Byte(i)), line: arg.location.line)
+					chunk.emit(.symbol(.value(module.name, arg.name)), line: arg.location.line)
+				} else {
+					try arg.accept(self, chunk)
 				}
 			}
 
@@ -743,12 +744,12 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_ expr: AnalyzedEnumCaseDecl, _ chunk: Chunk) throws {
 		guard let enumSymbol = module.analysisModule.moduleEnum(named: expr.enumName)?.symbol,
-		      let enumSlot = module.analysisModule.symbols[enumSymbol]
+		      module.analysisModule.symbols[enumSymbol] != nil
 		else {
 			throw CompilerError.unknownIdentifier(expr.nameToken.lexeme)
 		}
 
-		let caseSlot = expr.inferenceType
+		_ = expr.inferenceType
 
 		chunk.emit(opcode: .getEnum, line: expr.location.line)
 	}
@@ -799,7 +800,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
-	public func visit(_ expr: AnalyzedCaseStmt, _ chunk: Chunk) throws {
+	public func visit(_: AnalyzedCaseStmt, _: Chunk) throws {
 		// Handled by match stmt
 	}
 
@@ -1059,7 +1060,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return variable
 	}
 
-	internal func defineLocal(
+	func defineLocal(
 		name: String,
 		compiler: ChunkCompiler,
 		chunk: Chunk

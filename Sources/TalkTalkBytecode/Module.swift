@@ -7,7 +7,7 @@
 
 import OrderedCollections
 
-public final class BoundEnumCase: Equatable, Sendable, Codable, Hashable {
+public final class BoundEnumCase: Equatable, Codable, Hashable, CustomStringConvertible {
 	public static func ==(lhs: BoundEnumCase, rhs: BoundEnumCase) -> Bool {
 		lhs.type == rhs.type && lhs.name == rhs.name && lhs.values == rhs.values
 	}
@@ -20,7 +20,7 @@ public final class BoundEnumCase: Equatable, Sendable, Codable, Hashable {
 	public let name: String
 
 	// Associated values for the enum
-	public let values: [Value]
+	public var values: [Value]
 
 	public init(type: String, name: String, values: [Value]) {
 		self.type = type
@@ -32,6 +32,10 @@ public final class BoundEnumCase: Equatable, Sendable, Codable, Hashable {
 		hasher.combine(type)
 		hasher.combine(name)
 		hasher.combine(values)
+	}
+
+	public var description: String {
+		"\(type).\(name)(\(values))"
 	}
 }
 

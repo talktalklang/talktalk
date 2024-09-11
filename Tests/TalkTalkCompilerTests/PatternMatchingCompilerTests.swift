@@ -74,7 +74,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
 			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
 			.op(.call, line: 5),
-			.op(.binding, line: 6, .binding(0)),
+			.op(.binding, line: 6, .binding(.value(module.name, "a"))),
 			.op(.getEnum, line: 6, .enum(.enum(module.name, "Thing"))),
 			.op(.getProperty, line: 6, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
 			.op(.call, line: 6),
@@ -88,7 +88,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
 			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
 			.op(.call, line: 5),
-			.op(.binding, line: 8, .binding(0)),
+			.op(.binding, line: 8, .binding(.value(module.name, "b"))),
 			.op(.getEnum, line: 8, .enum(.enum(module.name, "Thing"))),
 			.op(.getProperty, line: 8, .getProperty(.property(module.name, "Thing", "bar"), options: [])),
 			.op(.call, line: 8),
@@ -96,7 +96,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.match, line: 8),
 			.op(.matchCase, line: 8, .jump(offset: 11)),
 			.op(.pop, line: 8),
-			.op(.binding, line: 6, .binding(0)),
+			.op(.binding, line: 6, .binding(.value(module.name, "a"))),
 
 			// Emit the body we'd jump to if the first case is true
 
@@ -107,7 +107,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.jump, line: 7, .jump(offset: 10)),
 
 			// Bind the `let b` for the second block
-			.op(.binding, line: 8, .binding(0)),
+			.op(.binding, line: 8, .binding(.value(module.name, "b"))),
 			.op(.setLocal, line: 8, .local(.value(module.name, "b"))),
 			.op(.getLocal, line: 9, .local(.value(module.name, "b"))),
 			.op(.returnValue, line: 9),

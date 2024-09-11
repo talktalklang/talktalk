@@ -93,7 +93,10 @@ public enum Opcode: Byte, Codable, Sendable {
 	     add,
 	     subtract,
 	     divide,
-	     multiply
+	     multiply,
+
+			 // Debuggy
+			 debugPrint
 }
 
 extension Opcode {

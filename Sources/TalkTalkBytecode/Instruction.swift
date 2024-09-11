@@ -72,20 +72,37 @@ public extension InstructionMetadata where Self == MatchCaseMetadata {
 	}
 }
 
-public struct BindingMetadata: InstructionMetadata {
-	let index: Int
+public struct DebugLogMetadata: InstructionMetadata {
+	let message: String
 	public var length: Int {
 		2
 	}
 
 	public var description: String {
-		"i: \(index)"
+		message
+	}
+}
+
+public extension InstructionMetadata where Self == DebugLogMetadata {
+	static func debug(_ message: String) -> DebugLogMetadata {
+		DebugLogMetadata(message: message)
+	}
+}
+
+public struct BindingMetadata: InstructionMetadata {
+	let symbol: Symbol
+	public var length: Int {
+		2
+	}
+
+	public var description: String {
+		"\(symbol)"
 	}
 }
 
 public extension InstructionMetadata where Self == BindingMetadata {
-	static func binding(_ index: Int) -> BindingMetadata {
-		BindingMetadata(index: index)
+	static func binding(_ symbol: Symbol) -> BindingMetadata {
+		BindingMetadata(symbol: symbol)
 	}
 }
 

@@ -24,7 +24,31 @@ public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
 	}
 }
 
-public enum Value: Equatable, Hashable, Codable, Sendable {
+public class Binding: Equatable, Hashable, Codable, CustomStringConvertible {
+	public static func ==(lhs: Binding, rhs: Binding) -> Bool {
+		lhs.value == rhs.value
+	}
+
+	public static func new() -> Binding {
+		Binding(value: nil)
+	}
+
+	public var value: Value?
+
+	public init(value: Value? = nil) {
+		self.value = value
+	}
+
+	public var description: String {
+		"\(value?.description ?? "<none>")"
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(value)
+	}
+}
+
+public enum Value: Equatable, Hashable, Codable {
 	// Just a value that goes on the stack
 	case reserved
 
@@ -68,7 +92,7 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	// An enum case (bound to values) (Type, Name, Values)
 	case boundEnumCase(BoundEnumCase)
 
-	case binding(Int)
+	case binding(Binding)
 
 	// The type of instance, the instance ID
 	case instance(Instance)
@@ -79,6 +103,55 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 	case primitive(Primitive)
 
 	case none
+
+	public static func ==(lhs: Value, rhs: Value) -> Bool {
+		switch (lhs, rhs) {
+		case (_, .binding):
+			true
+		case (.binding, _):
+			true
+		case (.reserved, .reserved):
+			true
+		case let (.int(lhs), .int(rhs)):
+			lhs == rhs
+		case let (.bool(lhs), .bool(rhs)):
+			lhs == rhs
+		case let (.data(lhs), .data(rhs)):
+			lhs == rhs
+		case let (.byte(lhs), .byte(rhs)):
+			lhs == rhs
+		case let (.string(lhs), .string(rhs)):
+			lhs == rhs
+		case let (.pointer(lhs), .pointer(rhs)):
+			lhs == rhs
+		case let (.closure(lhs), .closure(rhs)):
+			lhs == rhs
+		case let (.builtin(lhs), .builtin(rhs)):
+			lhs == rhs
+		case let (.builtinStruct(lhs), .builtinStruct(rhs)):
+			lhs == rhs
+		case let (.moduleFunction(lhs), .moduleFunction(rhs)):
+			lhs == rhs
+		case let (.struct(lhs), .struct(rhs)):
+			lhs == rhs
+		case let (.enum(lhs), .enum(rhs)):
+			lhs == rhs
+		case let (.enumCase(lhs), .enumCase(rhs)):
+			lhs == rhs
+		case let (.boundEnumCase(lhs), .boundEnumCase(rhs)):
+			lhs == rhs
+		case let (.instance(lhs), .instance(rhs)):
+			lhs == rhs
+		case let (.boundMethod(lhsA, lhsB), .boundMethod(rhsA, rhsB)):
+			lhsA == rhsA && lhsB == rhsB
+		case let (.primitive(lhs), .primitive(rhs)):
+			lhs == rhs
+		case (.none, .none):
+			true
+		default:
+			false
+		}
+	}
 
 	public var intValue: Int? {
 		guard case let .int(int) = self else {
@@ -154,9 +227,9 @@ public enum Value: Equatable, Hashable, Codable, Sendable {
 
 	public func disassemble(in module: Module) -> String {
 		switch self {
-		case .closure(let symbol):
+		case let .closure(symbol):
 			"closure(\(module.chunks[symbol]?.name ?? "<symbol not found: \(symbol)>"))"
-		case .moduleFunction(let symbol):
+		case let .moduleFunction(symbol):
 			"moduleFunction(\(module.chunks[symbol]?.name ?? "<symbol not found: \(symbol)>"))"
 		default:
 			description
@@ -173,23 +246,23 @@ extension Value: CustomStringConvertible {
 			"reserved"
 		case .byte:
 			"byte"
-		case .int(let int):
+		case let .int(int):
 			".int(\(int))"
-		case .bool(let bool):
+		case let .bool(bool):
 			".bool(\(bool))"
-		case .data(let data):
+		case let .data(data):
 			".data(\(data))"
 		case .closure:
 			"closure"
 		case .builtin:
 			"builtin"
-		case .moduleFunction(let id):
+		case let .moduleFunction(id):
 			"module function \(id)"
 		case let .struct(type):
 			"\(type.name).Type"
-		case .instance(let instance):
+		case let .instance(instance):
 			"instance \(instance.type.name)"
-		case .boundMethod(let instance, let slot):
+		case let .boundMethod(instance, slot):
 			"bound method \(instance), slot: \(slot)"
 		case .builtinStruct:
 			"builtin struct"
@@ -197,13 +270,13 @@ extension Value: CustomStringConvertible {
 			pointer.description
 		case .primitive:
 			"primitive"
-		case .enum(let enumType):
+		case let .enum(enumType):
 			enumType.name
-		case .enumCase(let enumCase):
+		case let .enumCase(enumCase):
 			"\(enumCase.type).\(enumCase.name)[arity: \(enumCase.arity)]"
-		case .boundEnumCase(let enumCase):
+		case let .boundEnumCase(enumCase):
 			"\(enumCase.type).\(enumCase.name)(\(enumCase.values))"
-		case .binding(let i):
+		case let .binding(i):
 			"binding#\(i)"
 		case .none:
 			"none"

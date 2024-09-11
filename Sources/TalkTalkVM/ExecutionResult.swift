@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import Foundation
 
 public extension VirtualMachine {
-	enum ExecutionResult: Sendable {
+	enum ExecutionResult {
 		public enum ReturnValue {
 			case primitive(Value), object(StructInstance)
 		}

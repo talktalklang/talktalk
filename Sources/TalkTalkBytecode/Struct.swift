@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
-public struct Struct: Equatable, Hashable, Codable, Sendable {
+public struct Struct: Equatable, Hashable, Codable {
 	public let name: String
 	public let propertyCount: Int
 	public var initializer: Symbol?

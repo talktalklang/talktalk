@@ -107,28 +107,28 @@ struct PatternMatchTests: VMTest {
 	}
 
 	@Test("Matching nested patterns") func matchingNestedPatterns() throws {
-		let result = try run(
-			"""
-			enum B {
+		let source = """
+		enum B {
 			case fizz(int)
 			case buzz(int)
-			}
+		}
 
-			enum A {
+		enum A {
 			case foo(int, B)
 			case bar(int, B)
-			}
+		}
 
-			let variable = A.foo(10, .fizz(20)) 
+		let variable = A.foo(10, .fizz(20)) 
 
-			match variable {
-			case .bar(let a, .fizz(let b)):
-				return 0
-			case .foo(let a, .fizz(let b)):
-				return a + b
-			}
-			"""
-			, verbosity: .verbose)
+		match variable {
+		case .bar(let a, .fizz(let b)):
+			return 29 // Nope
+		case .foo(let a, .fizz(let b)):
+			return a + b
+		}
+		"""
+
+		let result = try run(source)
 
 		#expect(result == .int(30))
 	}
