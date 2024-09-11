@@ -5,6 +5,7 @@ public protocol MatchStatement: Stmt {
 }
 
 public struct MatchStatementSyntax: MatchStatement {
+	public var matchToken: Token
 	public var target: any Expr
 	public var cases: [CaseStmt]
 

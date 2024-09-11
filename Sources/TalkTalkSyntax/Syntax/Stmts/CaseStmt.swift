@@ -8,6 +8,7 @@ public protocol CaseStmt: Stmt {
 }
 
 public struct CaseStmtSyntax: CaseStmt {
+	public var caseToken: Token
 	public var patternSyntax: any Expr
 	public var body: [any Stmt]
 	public var isDefault: Bool

@@ -21,7 +21,7 @@ public struct EnumDeclSyntax: EnumDecl {
 	public var children: [any Syntax] {
 		[
 			body
-		]
+		] + typeParams
 	}
 
 	// Let this node be visited by visitors

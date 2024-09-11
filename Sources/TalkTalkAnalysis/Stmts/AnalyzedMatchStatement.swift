@@ -10,6 +10,7 @@ public struct AnalyzedMatchStatement: MatchStatement, AnalyzedStmt {
 	public var inferenceType: InferenceType
 	public var environment: Environment
 	public var analyzedChildren: [any AnalyzedSyntax] { [targetAnalyzed] + casesAnalyzed }
+	public var analysisErrors: [AnalysisError]
 
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }

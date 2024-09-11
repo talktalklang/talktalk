@@ -626,13 +626,42 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		let targetAnalyzed = try castToAnyAnalyzedExpr(expr.target.accept(self, context))
 		let casesAnalyzed = try expr.cases.map { try cast($0.accept(self, context), to: AnalyzedCaseStmt.self) }
+		var errors: [AnalysisError] = []
+
+		if case let .enumType(type) = targetAnalyzed.inferenceType {
+			// Check that all enum cases are specified
+			let specifiedCases: [String] = casesAnalyzed.compactMap {
+				guard case let .pattern(pattern) = $0.patternAnalyzed.inferenceType else {
+					return nil
+				}
+
+				guard case let .enumCase(kase) = pattern.type else {
+					return nil
+				}
+
+				return kase.name
+			}
+
+			var missingCases: [String] = []
+
+			for kase in type.cases {
+				if !specifiedCases.contains(kase.name) {
+					missingCases.append(kase.name)
+				}
+			}
+
+			if !missingCases.isEmpty {
+				errors.append(.init(kind: .matchNotExhaustive("Match not exhaustive. Missing \(missingCases.joined(separator: ", "))"), location: expr.location))
+			}
+		}
 
 		return AnalyzedMatchStatement(
 			wrapped: expr,
 			targetAnalyzed: targetAnalyzed,
 			casesAnalyzed: casesAnalyzed,
 			inferenceType: type,
-			environment: context
+			environment: context,
+			analysisErrors: errors
 		)
 	}
 
@@ -643,7 +672,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 
 		let patternAnalyzed = try castToAnyAnalyzedExpr(expr.patternSyntax.accept(self, context))
-		let bodyAnalyzed = try expr.body.compactMap { try $0.accept(self, context) as? any AnalyzedStmt }
+		let bodyAnalyzed = try expr.body.map {
+			let stmt = try $0.accept(self, context)
+
+			if let stmt = stmt as? any AnalyzedStmt {
+				return stmt
+			} else {
+				throw AnalyzerError.unexpectedCast(expected: "any AnalyzedStmt", received: "\(Swift.type(of: stmt))")
+			}
+		}
 
 		var variables: [String: InferenceType] = [:]
 		if case let .pattern(pattern) = context.inferenceContext.lookup(syntax: patternAnalyzed) {

@@ -31,6 +31,24 @@ struct PatternMatchingTests: AnalysisTest {
 		#expect(decl.casesAnalyzed[1].attachedTypesAnalyzed[0].inferenceType == .base(.int))
 	}
 
+	@Test("Errors when match is not exhaustive (enums)") func exhaustiveEnum() async throws {
+		let ast = try await ast("""
+		enum Thing {
+			case foo(String)
+			case bar(int)
+		}
+
+		match Thing.foo("sup") {
+		case .foo(let string):
+			print(string)
+		}
+		""")
+
+		let errors = ast.collectErrors()
+		#expect(errors.count == 1)
+		#expect(errors[0].kind == .matchNotExhaustive("Match not exhaustive. Missing bar"))
+	}
+
 	@Test("Can analyze a match statement") func matchStatement() async throws {
 		let ast = try await ast("""
 		enum Thing {

@@ -339,28 +339,49 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		var result = [make(.keyword, from: expr.enumToken)]
+
+		for child in expr.children {
+			result.append(contentsOf: try child.accept(self, context))
+		}
+
+		return result
 	}
 
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		var result = [make(.keyword, from: expr.caseToken), make(.property, from: expr.nameToken)]
+
+		for type in expr.attachedTypes {
+			try result.append(contentsOf: type.accept(self, context))
+		}
+
+		return result
 	}
 
 	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		var result = [make(.keyword, from: expr.matchToken)]
+
+		for kase in expr.cases {
+			try result.append(contentsOf: kase.accept(self, context))
+		}
+
+		return result
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		var result = [make(.keyword, from: expr.caseToken)]
+
+		try result.append(contentsOf: expr.patternSyntax.accept(self, context))
+
+		for stmt in expr.body {
+			try result.append(contentsOf: stmt.accept(self, context))
+		}
+
+		return result
 	}
 
 	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		try expr.children.flatMap { try $0.accept(self, context) }
 	}
 
 	// GENERATOR_INSERTION

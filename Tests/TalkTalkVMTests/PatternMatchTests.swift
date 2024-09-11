@@ -132,4 +132,44 @@ struct PatternMatchTests: VMTest {
 
 		#expect(result == .int(30))
 	}
+
+	@Test("Runs bodies") func runsBodies() throws {
+		let source = """
+		enum Foo {
+			case fizz(int)
+			case buzz(String)
+		}
+
+		let fooA = Foo.fizz(123)
+
+		print("let's go")
+
+		match fooA {
+		case .fizz(let int):
+			print("Got the int")
+		case .buzz(let string):
+			print("Got the string")
+		}
+
+		let fooB = Foo.buzz("sup")
+
+		match fooB {
+		case .fizz(let int):
+			print("Got the int")
+		case .buzz(let string):
+			print("Got the string")
+		}
+		"""
+
+		let output = TestOutput()
+
+		_ = try run(source, output: output)
+
+		#expect(output.stdout == """
+		let's go
+		Got the int
+		Got the string
+
+		""")
+	}
 }

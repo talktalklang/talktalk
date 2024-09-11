@@ -755,8 +755,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedMatchStatement, _ chunk: Chunk) throws {
-//		try expr.targetAnalyzed.accept(self, chunk)
-
 		chunk.emit(opcode: .matchBegin, line: expr.location.line)
 
 		var caseJumps: [Int] = []

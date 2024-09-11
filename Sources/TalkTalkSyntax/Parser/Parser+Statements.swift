@@ -84,7 +84,7 @@ extension Parser {
 		consume(.rightBrace)
 		skip(.newline)
 
-		return MatchStatementSyntax(target: target, cases: cases, id: nextID(), location: endLocation(i))
+		return MatchStatementSyntax(matchToken: matchToken, target: target, cases: cases, id: nextID(), location: endLocation(i))
 	}
 
 	mutating func caseStmt() -> any Stmt {
@@ -106,6 +106,7 @@ extension Parser {
 		}
 
 		return CaseStmtSyntax(
+			caseToken: token,
 			patternSyntax: pattern,
 			body: stmts,
 			isDefault: token.kind == .else,

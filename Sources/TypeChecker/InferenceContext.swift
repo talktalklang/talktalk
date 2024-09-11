@@ -128,7 +128,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	public func lookup(syntax: any Syntax) -> InferenceType? {
-		let result = self[syntax]?.asType(in: self)
+		guard let result = self[syntax]?.asType(in: self) else {
+			return .error(.init(kind: .unknownError("no type found for: \(syntax.description)"), location: syntax.location))
+		}
 
 		if case let .placeholder(typeVariable) = result {
 			return .error(.init(kind: .undefinedVariable(typeVariable.name ?? "<none>"), location: syntax.location))
