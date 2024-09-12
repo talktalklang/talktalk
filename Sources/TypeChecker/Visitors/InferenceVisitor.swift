@@ -58,12 +58,12 @@ struct InferenceVisitor: Visitor {
 		return context
 	}
 
-	func parameters(of type: InferenceType) throws -> [InferenceType] {
+	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceType] {
 		switch type {
 		case .function(let params, _):
 			return params
 		case .enumCase(let enumCase):
-			return enumCase.attachedTypes
+			return enumCase.instantiate(in: context).attachedTypes
 		default:
 			return []
 		}
@@ -209,8 +209,14 @@ struct InferenceVisitor: Visitor {
 		case "pointer":
 			type = .base(.pointer)
 		default:
-			guard let found = context.lookupVariable(named: expr.identifier.lexeme) else {
-				return context.addError(.typeError("Type not found: \(expr.identifier.lexeme)"), to: expr)
+			let found: InferenceType
+
+			if let existing = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) {
+				found = existing
+			} else {
+				let typeVar = context.freshTypeVariable(expr.identifier.lexeme)
+				found = .typeVar(typeVar)
+				context.definePlaceholder(named: expr.identifier.lexeme, as: .placeholder(typeVar), at: expr.location)
 			}
 
 			switch found {
@@ -224,6 +230,8 @@ struct InferenceVisitor: Visitor {
 				type = .enumType(enumType)
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
+			case let .placeholder(typeVar):
+				type = .placeholder(typeVar)
 			default:
 				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
@@ -262,7 +270,7 @@ struct InferenceVisitor: Visitor {
 		try expr.callee.accept(self, context)
 
 		let callee = try context.get(expr.callee)
-		let params = try parameters(of: callee.asType(in: context))
+		let params = try parameters(of: callee.asType(in: context), in: context)
 
 		for (i, arg) in expr.args.enumerated() {
 			if params.count == expr.args.count {
@@ -275,12 +283,14 @@ struct InferenceVisitor: Visitor {
 
 		let args = try expr.args.map { try context.get($0) }
 
-		let returns = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee),
+		let returns: InferenceType
+
+		if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee),
 										 case let .enumType(type) = context.lookupVariable(named: enumCase.typeName) {
 			// If we determine the callee to be an enum case, then its type is actually the enum type.
-			InferenceType.enumType(type)
+			returns = InferenceType.enumType(type)
 		} else {
-			InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
+			returns = InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
 
 		context.constraints.add(
@@ -784,11 +794,21 @@ struct InferenceVisitor: Visitor {
 					try type.accept(self, enumContext)
 				}
 
+				let substitutions: [TypeVariable: InferenceType] = typeContext.typeParameters.reduce(into: [:]) {
+					if context.substitutions[$1] != nil {
+						$0[$1] = context.applySubstitutions(to: .typeVar($1))
+					} else {
+						$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
+					}
+				}
+
 				let enumCase = try EnumCase(
 					typeName: expr.nameToken.lexeme,
 					name: kase.nameToken.lexeme,
 					index: index,
-					attachedTypes: kase.attachedTypes.map { try context.get($0).asType(in: context) }
+					attachedTypes: kase.attachedTypes.map {
+						try context.get($0).asType(in: context)
+					}
 				)
 
 				index += 1

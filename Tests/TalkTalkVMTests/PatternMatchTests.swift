@@ -138,14 +138,14 @@ struct PatternMatchTests: VMTest {
 
 	@Test("Matching nested patterns") func matchingNestedPatterns() throws {
 		let source = """
-		enum B {
-			case fizz(int)
-			case buzz(int)
-		}
-
 		enum A {
 			case foo(int, B)
 			case bar(int, B)
+		}
+
+		enum B {
+			case fizz(int)
+			case buzz(int)
 		}
 
 		let variable = A.foo(10, .fizz(20)) 

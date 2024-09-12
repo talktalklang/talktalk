@@ -111,6 +111,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	// Enum types
 	case enumType(EnumType)
 	case enumCase(EnumCase)
+	case enumCaseInstance(EnumCaseInstance)
 
 	// Pattern matching (type, associated values)
 	case pattern(Pattern)
@@ -127,6 +128,8 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	public var description: String {
 		switch self {
+		case let .enumCaseInstance(instance):
+			"\(instance.enumCase)\(instance.substitutions)"
 		case .protocol(let protocolType):
 			"\(protocolType.name).Protocol"
 		case .typeVar(let typeVariable):

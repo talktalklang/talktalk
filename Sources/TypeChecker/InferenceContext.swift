@@ -442,6 +442,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		log("New type variable: \(typeVariable), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
 
+		if typeVariable.id == 80 {
+			
+		}
+
 		return typeVariable
 	}
 
@@ -502,6 +506,23 @@ public class InferenceContext: CustomDebugStringConvertible {
 //				}
 //			}
 			return .structInstance(instance)
+		case let .enumType(type):
+			return .enumType(EnumType(
+				name: type.name,
+				cases: type.cases.map {
+					EnumCase.extract(from: .type(applySubstitutions(to: .enumCase($0), with: substitutions)))!
+				},
+				typeContext: type.typeContext
+			))
+		case let .enumCase(kase):
+			return .enumCase(
+				EnumCase(
+					typeName: kase.typeName,
+					name: kase.name,
+					index: kase.index,
+					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
+				)
+			)
 		default:
 			return type // Base/error/void types don't get substitutions
 		}

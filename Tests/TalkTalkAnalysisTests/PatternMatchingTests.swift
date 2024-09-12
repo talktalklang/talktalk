@@ -49,6 +49,35 @@ struct PatternMatchingTests: AnalysisTest {
 		#expect(errors[0].kind == .matchNotExhaustive("Match not exhaustive. Missing bar"))
 	}
 
+	@Test("Errors when match is not exhaustive (non-enums)") func exhaustiveNonEnums() async throws {
+		let ast = try await ast("""
+		match "foo" {
+		case "sup":
+			print("hi")
+		}
+		""")
+
+		let errors = ast.collectErrors()
+		#expect(errors.count == 1)
+		#expect(errors[0].kind == .matchNotExhaustive("Match not exhaustive."))
+	}
+
+	@Test("Doesnt error when match is exhaustive (bools)") func exhaustiveBools() async throws {
+		let ast = try await ast("""
+		let variable = true
+
+		match variable {
+		case true:
+			print("hi")
+		case false:
+			print("hi")
+		}
+		""")
+
+		let errors = ast.collectErrors()
+		#expect(errors.count == 0)
+	}
+
 	@Test("Doesnt error when not exhaustive with else (enums)") func enumWithElse() async throws {
 		let ast = try await ast("""
 		enum Thing {

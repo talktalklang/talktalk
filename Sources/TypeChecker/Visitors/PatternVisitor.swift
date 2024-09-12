@@ -47,11 +47,11 @@ struct PatternVisitor: Visitor {
 	typealias Value = Pattern
 
 	// Call expr is used for a lot of this stuff because it gives us basically the
-	// syntax we want (parens) and means our parser can stay relatively dumb.
+	// syntax we want for enums (parens) and means our parser can stay relatively dumb.
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		try expr.callee.accept(inferenceVisitor, context)
 		let type = try context.get(expr.callee).asType(in: context)
-		let params: [InferenceType] = try inferenceVisitor.parameters(of: type)
+		let params: [InferenceType] = try inferenceVisitor.parameters(of: type, in: context)
 
 		var arguments: [Pattern.Argument] = []
 		var argumentsSyntax: [any Syntax] = []

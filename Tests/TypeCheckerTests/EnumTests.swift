@@ -57,11 +57,12 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 1)
 
 		#expect(enumType.cases[0].attachedTypes.count == 1)
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 80))
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 80)) // Make sure int doesn't leak to outer generic
 
 		let wrappedVar = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
+
 		#expect(context[wrappedVar] == .type(.base(.int)))
 	}
 
@@ -82,6 +83,30 @@ struct EnumTests: TypeCheckerTest {
 		let enumResult = try context.get(syntax[1])
 		let enumType = try #require(EnumType.extract(from: enumResult))
 		#expect(enumType.name == "Thing")
+	}
+
+	@Test("Can infer out of order decls") func outOfOrder() throws {
+		let syntax = try Parser.parse(
+		"""
+		enum A {
+			case foo(B)
+		}
+
+		enum B {
+			case fizz
+		}
+		"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context.errors == [])
+
+		let enumResult = try context.get(syntax[0])
+		let enumType = try #require(EnumType.extract(from: enumResult))
+		#expect(enumType.name == "A")
+
+		let b = try #require(EnumType.extract(from: .type(context.applySubstitutions(to: enumType.cases[0].attachedTypes[0]))))
+		#expect(b.name == "B")
 	}
 
 	@Test("Can infer an unqualified case") func unqualifiedCase() throws {

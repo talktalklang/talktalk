@@ -181,4 +181,43 @@ struct PatternMatchingTests: TypeCheckerTest {
 
 		#expect(actual == expected)
 	}
+
+	@Test("Can infer out of order nested") func outOfOrderNested() throws {
+		let syntax = try Parser.parse(
+			"""
+			enum A {
+				case foo(int, B)
+				case bar(int, B)
+			}
+
+			enum B {
+				case fizz(int)
+				case buzz(int)
+			}
+
+			let variable = A.foo(10, .fizz(20)) 
+
+			match variable {
+			case .bar(let a, .fizz(let b)):
+				return 29 // Nope
+			case .foo(let a, .fizz(let b)):
+				return a + b
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context.errors == [])
+
+		let kaseArg = syntax[3]
+			.cast(MatchStatementSyntax.self).cases[1]
+			.cast(CaseStmtSyntax.self).patternSyntax!
+			.cast(CallExprSyntax.self).args[1].value
+
+		let match = try context.get(kaseArg)
+		let kase = try #require(EnumCase.extract(from: match))
+
+		#expect(kase.typeName == "B")
+		#expect(kase.name == "fizz")
+	}
 }

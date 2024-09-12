@@ -42,6 +42,8 @@ struct EqualityConstraint: Constraint {
 			return .ok
 		}
 
+		
+
 		context.unify(lhs, rhs, location)
 
 		return .ok
@@ -54,6 +56,7 @@ extension Constraint where Self == EqualityConstraint {
 		_ rhs: InferenceResult,
 		at location: SourceLocation
 	) -> EqualityConstraint {
+		
 		EqualityConstraint(lhs: lhs, rhs: rhs, location: location)
 	}
 
@@ -62,6 +65,6 @@ extension Constraint where Self == EqualityConstraint {
 		_ rhs: InferenceType,
 		at location: SourceLocation
 	) -> EqualityConstraint {
-		EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
+		return EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
 	}
 }

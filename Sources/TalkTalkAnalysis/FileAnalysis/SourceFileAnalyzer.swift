@@ -660,6 +660,20 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			if !missingCases.isEmpty {
 				errors.append(.init(kind: .matchNotExhaustive("Match not exhaustive. Missing \(missingCases.joined(separator: ", "))"), location: expr.location))
 			}
+		} else if case .base(.bool) = targetAnalyzed.inferenceType, !hasDefault {
+			let specifiedCases: [Bool] = casesAnalyzed.compactMap {
+				guard let kase = $0.patternAnalyzed as? AnalyzedLiteralExpr, case let .bool(bool) = kase.value else {
+					return nil
+				}
+
+				return bool
+			}
+
+			if !specifiedCases.contains(true) || !specifiedCases.contains(false) {
+				errors.append(.init(kind: .matchNotExhaustive("Match not exhaustive."), location: expr.location))
+			}
+		} else if !hasDefault {
+			errors.append(.init(kind: .matchNotExhaustive("Match not exhaustive."), location: expr.location))
 		}
 
 		return AnalyzedMatchStatement(

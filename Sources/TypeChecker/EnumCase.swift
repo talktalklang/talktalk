@@ -5,11 +5,45 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
+public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
+	let enumCase: EnumCase
+	let substitutions: [TypeVariable: InferenceType]
+
+	var attachedTypes: [InferenceType] {
+		enumCase.attachedTypes.map {
+			if case let .typeVar(typeVar) = $0 {
+				return substitutions[typeVar] ?? $0
+			} else {
+				return $0
+			}
+		}
+	}
+
+	public var description: String {
+		"\(enumCase)\(substitutions)"
+	}
+}
+
 public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	public var typeName: String
 	public var name: String
 	public let index: Int
 	public var attachedTypes: [InferenceType]
+
+	init(typeName: String, name: String, index: Int, attachedTypes: [InferenceType]) {
+		self.typeName = typeName
+		self.name = name
+		self.index = index
+		self.attachedTypes = attachedTypes
+	}
+
+	func instantiate(in context: InferenceContext) -> EnumCaseInstance {
+		return EnumCaseInstance(enumCase: self, substitutions: attachedTypes.reduce(into: [:]) { res, type in
+			if case let .typeVar(typeVar) = type {
+				res[typeVar] = .typeVar(context.freshTypeVariable(type.description))
+			}
+		})
+	}
 
 	public static func extract(from type: InferenceResult) -> EnumCase? {
 		if case let .type(.enumCase(enumCase)) = type {
