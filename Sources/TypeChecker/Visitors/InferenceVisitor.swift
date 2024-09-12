@@ -62,8 +62,8 @@ struct InferenceVisitor: Visitor {
 		switch type {
 		case .function(let params, _):
 			return params
-		case .enumCase(let enumCase):
-			return enumCase.instantiate(in: context).attachedTypes
+		case .enumCaseInstance(let enumCase):
+			return enumCase.attachedTypes
 		default:
 			return []
 		}
@@ -485,7 +485,7 @@ struct InferenceVisitor: Visitor {
 
 		switch receiver {
 		case let .type(.structType(structType)):
-			guard let member = structType.member(named: expr.property)?.asType(in: context) else {
+			guard let member = structType.member(named: expr.property, in: context)?.asType(in: context) else {
 				context.addError(.memberNotFound(.structType(structType), expr.property), to: expr)
 				return
 			}
@@ -662,7 +662,7 @@ struct InferenceVisitor: Visitor {
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
 		case let .structType(structType), let .selfVar(structType):
-			guard let method = structType.member(named: "get") else {
+			guard let method = structType.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` meethod for \(structType)")
 			}
 
@@ -677,7 +677,7 @@ struct InferenceVisitor: Visitor {
 				.call(method, args, returns: getReturns, at: expr.location)
 			)
 		case let .structInstance(structInstance):
-			guard let method = structInstance.member(named: "get") else {
+			guard let method = structInstance.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` meethod for \(structInstance)")
 			}
 

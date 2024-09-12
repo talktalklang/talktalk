@@ -52,7 +52,7 @@ struct GenericsTests {
 		let variable = try #require(ast as? AnalyzedVarExpr)
 		#expect(variable.name == "wrapper")
 
-		let instance = try #require(Instance.extract(from: variable.typeAnalyzed))
+		let instance = try #require(Instance<TypeChecker.StructType>.extract(from: variable.typeAnalyzed))
 		#expect(instance.type.name == "Wrapper")
 
 		let unwrapped = instance.type.context.applySubstitutions(to: instance.relatedType(named: "Wrapped")!, with: instance.substitutions)

@@ -440,11 +440,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		let typeVariable = TypeVariable(name, generateID())
 
-		log("New type variable: \(typeVariable), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
-
-		if typeVariable.id == 80 {
-			
-		}
+		log("New type variable: \(typeVariable.debugDescription), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
 
 		return typeVariable
 	}
@@ -546,7 +542,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		let a = applySubstitutions(to: typeA)
 		let b = applySubstitutions(to: typeB)
 
-		log("Unifying \(typeA) <-> \(typeB)", prefix: " & ")
+		log("Unifying \(typeA.debugDescription) <-> \(typeB.debugDescription)", prefix: " & ")
 
 		switch (a, b) {
 		case let (.base(a), .base(b)) where a != b:
@@ -639,9 +635,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-		}
+//		}
 	}
 }

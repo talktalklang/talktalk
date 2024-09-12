@@ -63,6 +63,7 @@ struct EnumTests: TypeCheckerTest {
 			.cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
 
+		print(context[wrappedVar]?.asType(in: context).debugDescription)
 		#expect(context[wrappedVar] == .type(.base(.int)))
 	}
 

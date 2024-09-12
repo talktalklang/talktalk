@@ -15,7 +15,7 @@ import TalkTalkAnalysis
 		[:]
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed
 
-		let instance = Instance.extract(from: result)
+		let instance = Instance<TypeChecker.StructType>.extract(from: result)
 		#expect(instance?.type.name == "Dictionary")
 	}
 
@@ -24,7 +24,7 @@ import TalkTalkAnalysis
 		["foo": 123]
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed
 
-		let instance = Instance.extract(from: result)
+		let instance = Instance<TypeChecker.StructType>.extract(from: result)
 		#expect(instance?.type.name == "Dictionary")
 		#expect(instance?.relatedType(named: "Key") == .base(.string))
 		#expect(instance?.relatedType(named: "Value") == .base(.int))

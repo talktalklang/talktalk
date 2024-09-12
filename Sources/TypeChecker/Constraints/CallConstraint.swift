@@ -38,6 +38,8 @@ struct CallConstraint: Constraint {
 			return solveStruct(structType: structType, in: context)
 		case .enumCase(let enumCase):
 			return solveEnumCase(enumCase: enumCase, in: context)
+		case .enumCaseInstance(let enumCaseInstance):
+			return solveEnumCaseInstance(enumCaseInstance: enumCaseInstance, in: context)
 		case .placeholder(let typeVar):
 			// If it's a type var that we haven't solved yet, try deferring
 			if isRetry {
@@ -120,7 +122,7 @@ struct CallConstraint: Constraint {
 		let childContext = structType.context
 //		let childContext = structType.context.childTypeContext(withSelf: structType.context.typeContext!.selfVar)
 		let params: [InferenceType]
-		if let initializer = structType.member(named: "init") {
+		if let initializer = structType.member(named: "init", in: context) {
 			switch initializer {
 			case .scheme(let scheme):
 				switch structType.context.instantiate(scheme: scheme) {
@@ -223,6 +225,26 @@ struct CallConstraint: Constraint {
 
 	func solveEnumCase(enumCase: EnumCase, in context: InferenceContext) -> ConstraintCheckResult {
 		context.unify(returns, .enumCase(enumCase), location)
+		return .ok
+	}
+
+	func solveEnumCaseInstance(enumCaseInstance: Instance<EnumCase>, in context: InferenceContext) -> ConstraintCheckResult {
+		if args.count != enumCaseInstance.attachedTypes.count {
+			return .error([
+				Diagnostic(
+					message: "Expected \(enumCaseInstance.attachedTypes.count) args, got \(args.count)",
+					severity: .error,
+					location: location
+				)
+			])
+		}
+
+		for (i, arg) in args.enumerated() {
+			print("--------- Arg: \(arg.asType(in: context).debugDescription), attached: \(enumCaseInstance.attachedTypes[i].debugDescription) ---------------------")
+			context.unify(arg.asType(in: context), enumCaseInstance.attachedTypes[i], location)
+		}
+
+		context.unify(returns, .enumCaseInstance(enumCaseInstance), location)
 		return .ok
 	}
 }

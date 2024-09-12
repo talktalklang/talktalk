@@ -49,8 +49,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.member(named: "name") == .type(.base(.string)))
-		#expect(structType.member(named: "age") == .type(.base(.int)))
+		#expect(structType.member(named: "name", in: context) == .type(.base(.string)))
+		#expect(structType.member(named: "age", in: context) == .type(.base(.int)))
 	}
 
 	@Test("Types custom init") func customInit() throws {
@@ -111,7 +111,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let structType = StructType.extractType(from: context[syntax[0]])!
 
-		guard case let .type(.function(_, returnType)) = structType.member(named: "sup") else {
+		guard case let .type(.function(_, returnType)) = structType.member(named: "sup", in: context) else {
 			#expect(Bool(false)) ; return
 		}
 
@@ -136,7 +136,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.member(named: "greet") == .type(.function([], .base(.string))))
+		#expect(structType.member(named: "greet", in: context) == .type(.function([], .base(.string))))
 
 		let result1 = context[syntax[1]]
 		let expected1 = InferenceResult.type(.function([], .base(.string)))
