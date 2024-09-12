@@ -755,7 +755,21 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedMatchStatement, _ chunk: Chunk) throws {
+		let matchSymbol = Symbol.function(module.name, "match#\(expr.id)", [])
+
+		let matchChunk = Chunk(
+			name: expr.description,
+			symbol: matchSymbol,
+			parent: chunk,
+			arity: 0,
+			depth: Byte(scopeDepth),
+			path: chunk.path
+		)
+
+		let matchCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
+
 		chunk.emit(opcode: .matchBegin, line: expr.location.line)
+		chunk.emit(.symbol(matchSymbol), line: expr.location.line)
 
 		var caseJumps: [Int] = []
 		var endJumps: [Int] = []
@@ -765,37 +779,41 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try PatternCompiler(
 				target: expr.targetAnalyzed,
 				caseStatement: kase,
-				compiler: self,
-				chunk: chunk
+				compiler: matchCompiler,
+				chunk: matchChunk
 			).compileCase()
 
 			caseJumps.append(
-				chunk.emit(jump: .matchCase, line: kase.location.line)
+				matchChunk.emit(jump: .matchCase, line: kase.location.line)
 			)
 
 			// Pop bool result off the stack
-			chunk.emit(.opcode(.pop), line: kase.location.line)
+			matchChunk.emit(.opcode(.pop), line: kase.location.line)
 		}
 
 		// Emit the bodies that get jumped to from cases
 		for (i, kase) in expr.casesAnalyzed.enumerated() {
-			try chunk.patchJump(caseJumps[i])
+			try matchChunk.patchJump(caseJumps[i])
 
 			try PatternCompiler(
 				target: expr.targetAnalyzed,
 				caseStatement: kase,
-				compiler: self,
-				chunk: chunk
+				compiler: matchCompiler,
+				chunk: matchChunk
 			).compileBody()
 
 			endJumps.append(
-				chunk.emit(jump: .jump, line: kase.bodyAnalyzed.last?.location.line ?? kase.location.line)
+				matchChunk.emit(jump: .jump, line: kase.bodyAnalyzed.last?.location.line ?? kase.location.line)
 			)
 		}
 
 		for jump in endJumps {
-			try chunk.patchJump(jump)
+			try matchChunk.patchJump(jump)
 		}
+
+		matchChunk.emit(opcode: .returnVoid, line: expr.location.line)
+
+		module.compiledChunks[matchSymbol] = matchChunk
 	}
 
 	public func visit(_: AnalyzedCaseStmt, _: Chunk) throws {

@@ -112,9 +112,6 @@ struct PatternVisitor: Visitor {
 					// If we're not in a case statement but the param is a type variable, we store it in the match
 					// context so that cases can refer to it.
 					context.matchContext?.substitutions[typeVariable] = type
-					print("set \(typeVariable) to \(type)")
-				} else {
-					print("??")
 				}
 			default:
 				throw PatternError.invalid("Invalid pattern: \(arg)")

@@ -222,7 +222,7 @@ struct VMEndToEndTests: VMTest {
 			return n
 		"""
 
-		let result = try run(source)
+		let result = try run(source, verbosity: .verbose)
 
 		#expect(result == .int(34))
 	}

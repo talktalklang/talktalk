@@ -638,7 +638,8 @@ public struct VirtualMachine {
 					stack.push(binding)
 				}
 			case .matchBegin:
-				()
+				let symbol = try readSymbol()
+				try call(chunkID: symbol)
 			case .matchCase:
 				let jump = try readUInt16()
 				if try stack.peek() == .bool(true) {

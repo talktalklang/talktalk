@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TalkTalkBytecode
 
 struct PatternMatchingCompilerTests: CompilerTest {
 	@Test("Basic") func basic() throws {
@@ -19,9 +20,9 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			"""
 		)
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
-			.op(.matchBegin, line: 0),
+		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(9, 0.tlk)", [])
 
+		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
 			.op(.true, line: 0),
 			.op(.false, line: 1),
@@ -48,6 +49,12 @@ struct PatternMatchingCompilerTests: CompilerTest {
 
 			.op(.returnVoid, line: 0)
 		))
+
+
+		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),
+			.op(.returnVoid, line: 0)
+		))
 	}
 
 	@Test("Basic with else") func basicElse() throws {
@@ -61,9 +68,14 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			"""
 		)
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
-			.op(.matchBegin, line: 0),
+		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(8, 0.tlk)", [])
 
+		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),
+			.op(.returnVoid, line: 0)
+		))
+
+		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
 			.op(.true, line: 0),
 			.op(.false, line: 1),
@@ -108,9 +120,14 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			"""
 		)
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
-			.op(.matchBegin, line: 5),
+		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(25, 0.tlk)", [])
 
+		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+			.op(.matchBegin, line: 5, .variable(matchSymbol, .matchBegin)),
+			.op(.returnVoid, line: 0)
+		))
+
+		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
 			.op(.constant, line: 5, .constant(.int(123))),
 			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
@@ -155,7 +172,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.returnValue, line: 9),
 			.op(.jump, line: 9, .jump(offset: 0)),
 
-			.op(.returnVoid, line: 0)
+			.op(.returnVoid, line: 5)
 		))
 	}
 }

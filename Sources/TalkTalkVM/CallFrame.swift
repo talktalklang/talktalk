@@ -19,10 +19,9 @@ struct Closure {
 }
 
 public class CallFrame {
-	var ip: UInt64 = 0
 	var closure: Closure
 	var returnTo: UInt64
-	private(set) var locals: OrderedDictionary<String, Value> = [:]
+	var locals: OrderedDictionary<String, Value> = [:]
 	var selfValue: Value?
 
 	var patternBindings: [Symbol: Value] = [:]

@@ -68,6 +68,8 @@ struct PatternCompiler {
 		for stmt in caseStatement.bodyAnalyzed {
 			try stmt.accept(compiler, chunk)
 		}
+
+//		chunk.emit(opcode: .returnVoid, line: UInt32(caseStatement.location.end.line))
 	}
 
 	func defineLocals(for arg: any AnalyzedSyntax, index: Int) {

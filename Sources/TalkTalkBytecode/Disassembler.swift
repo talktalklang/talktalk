@@ -114,6 +114,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 		switch opcode {
 		case .binding:
 			return try bindingInstruction(start: index)
+		case .matchBegin:
+			return try variableInstruction(opcode: .matchBegin, start: index, type: .matchBegin)
 		case .constant:
 			return try constantInstruction(start: index)
 		case .defClosure:

@@ -202,4 +202,25 @@ struct PatternMatchTests: VMTest {
 
 		""")
 	}
+
+	@Test("Doesn't leak variables out of bodies") func doesntLeak() throws {
+		let result = try run(
+			"""
+			enum Thing {
+			case foo(int)
+			}
+
+			var a = 123
+
+			match Thing.foo(456) {
+			case .foo(let a):
+				a + 1
+			}
+
+			return a + 2
+			"""
+		)
+
+		#expect(result == .int(125))
+	}
 }

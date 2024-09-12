@@ -115,6 +115,13 @@ public class CompilingModule {
 
 		var module = Module(name: name, main: nil, symbols: analysisModule.symbols)
 
+		// Copy over any other chunks that might be missing
+		for (symbol, chunk) in compiledChunks {
+			if chunks[symbol] == nil {
+				chunks[symbol] = StaticChunk(chunk: chunk)
+			}
+		}
+
 		// Set the module level function chunks
 		module.chunks = chunks
 		module.structs = moduleStructs
