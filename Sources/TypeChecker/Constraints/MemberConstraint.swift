@@ -122,7 +122,7 @@ struct MemberConstraint: Constraint {
 		default:
 			return .error([
 				Diagnostic(
-					message: "Receiver not a struct instance. Got: \(receiver)",
+					message: "Receiver not an instance. Got: \(receiver.debugDescription)",
 					severity: .error,
 					location: location
 				)

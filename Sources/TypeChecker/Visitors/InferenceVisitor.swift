@@ -46,7 +46,25 @@ struct InferenceVisitor: Visitor {
 
 	public init() {}
 
+	func placeholdDecls(for syntax: [any Syntax], in context: InferenceContext) {
+		// Just to through the syntax here and create placeholders for decls if we don't know about them already
+		for decl in syntax where decl is Decl {
+			switch decl {
+			case let decl as EnumDecl:
+				context.definePlaceholder(named: decl.nameToken.lexeme, as: .placeholder(context.freshTypeVariable(decl.nameToken.lexeme)), at: decl.location)
+			case let decl as StructDecl:
+				if context.lookup(syntax: decl) == nil {
+					context.definePlaceholder(named: decl.name, as: .placeholder(context.freshTypeVariable(decl.name)), at: decl.location)
+				}
+			default:
+				()
+			}
+		}
+	}
+
 	func infer(_ syntax: [any Syntax], with context: InferenceContext) -> InferenceContext {
+		placeholdDecls(for: syntax, in: context)
+
 		for syntax in syntax {
 			do {
 				_ = try syntax.accept(self, context)
@@ -58,12 +76,16 @@ struct InferenceVisitor: Visitor {
 		return context
 	}
 
-	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceType] {
+	func parameters(of type: InferenceType, in context: InferenceContext, with substitutions: [TypeVariable: InferenceType]? = nil) throws -> [InferenceType] {
 		switch type {
 		case .function(let params, _):
 			return params
 		case .enumCase(let enumCase):
-			return enumCase.instantiate(in: context).attachedTypes
+			if let substitutions, !substitutions.isEmpty {
+				return enumCase.instantiate(in: context, with: substitutions).attachedTypes
+			} else {
+				return enumCase.attachedTypes
+			}
 		default:
 			return []
 		}
@@ -213,10 +235,11 @@ struct InferenceVisitor: Visitor {
 
 			if let existing = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) {
 				found = existing
+			} else if let typeContext = context.typeContext, let typeParam = typeContext.typeParameters.first(where: { $0.name == expr.identifier.lexeme }) {
+				found = .typeVar(typeParam)
+				context.definePlaceholder(named: expr.identifier.lexeme, as: .placeholder(typeParam), at: expr.location)
 			} else {
-				let typeVar = context.freshTypeVariable(expr.identifier.lexeme)
-				found = .typeVar(typeVar)
-				context.definePlaceholder(named: expr.identifier.lexeme, as: .placeholder(typeVar), at: expr.location)
+				return context.addError(.typeError("\(expr.identifier.lexeme) not found"), to: expr)
 			}
 
 			switch found {
@@ -286,7 +309,7 @@ struct InferenceVisitor: Visitor {
 		let returns: InferenceType
 
 		if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee),
-										 case let .enumType(type) = context.lookupVariable(named: enumCase.typeName) {
+			 case let .enumType(type) = context.lookupVariable(named: enumCase.typeName) {
 			// If we determine the callee to be an enum case, then its type is actually the enum type.
 			returns = InferenceType.enumType(type)
 		} else {
@@ -794,14 +817,6 @@ struct InferenceVisitor: Visitor {
 					try type.accept(self, enumContext)
 				}
 
-				let substitutions: [TypeVariable: InferenceType] = typeContext.typeParameters.reduce(into: [:]) {
-					if context.substitutions[$1] != nil {
-						$0[$1] = context.applySubstitutions(to: .typeVar($1))
-					} else {
-						$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
-					}
-				}
-
 				let enumCase = try EnumCase(
 					typeName: expr.nameToken.lexeme,
 					name: kase.nameToken.lexeme,
@@ -830,13 +845,19 @@ struct InferenceVisitor: Visitor {
 
 	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws {
 		try expr.target.accept(self, context)
+
+		let matchContext = MatchContext(
+			target: context[expr.target]?.asType(in: context) ?? .typeVar(context.freshTypeVariable("\(expr.description)")),
+			current: expr
+		)
+
+		let context = context.withMatchContext(matchContext)
+
 		try inferPattern(from: expr.target, in: context)
 
-		let matchContext = MatchContext(target: context[expr.target]?.asType(in: context) ??
-			.typeVar(context.freshTypeVariable("\(expr.description)")))
-
 		for kase in expr.cases {
-			try kase.accept(self, context.withMatchContext(matchContext))
+			matchContext.current = kase
+			try kase.accept(self, context)
 		}
 
 		context.extend(expr, with: .type(.void))

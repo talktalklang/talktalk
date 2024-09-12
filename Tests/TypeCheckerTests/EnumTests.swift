@@ -57,7 +57,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 1)
 
 		#expect(enumType.cases[0].attachedTypes.count == 1)
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 80)) // Make sure int doesn't leak to outer generic
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 81)) // Make sure int doesn't leak to outer generic
 
 		let wrappedVar = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]

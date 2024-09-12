@@ -126,6 +126,43 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 		InferenceType.typeVar(TypeVariable(name, id))
 	}
 
+	public var debugDescription: String {
+		switch self {
+		case let .enumCaseInstance(instance):
+			"\(instance.enumCase)\(instance.substitutions)"
+		case .protocol(let protocolType):
+			"\(protocolType.name).Protocol"
+		case .typeVar(let typeVariable):
+			typeVariable.debugDescription
+		case .base(let primitive):
+			"\(primitive)"
+		case .function(let vars, let inferenceType):
+			"function(\(vars.map(\.debugDescription).joined(separator: ", "))), returns(\(inferenceType))"
+		case .error(let error):
+			"error(\(error))"
+		case .structType(let structType):
+			structType.name + ".Type"
+		case .kind(let type):
+			"\(type).Kind"
+		case .structInstance(let instance):
+			instance.description
+		case .any:
+			"any"
+		case let .selfVar(type):
+			"\(type.description) (self)"
+		case let .placeholder(variable):
+			"\(variable) (placeholder)"
+		case let .enumType(type):
+			type.description
+		case let .enumCase(kase):
+			kase.description
+		case let .pattern(pattern):
+			"pattern: \(pattern)"
+		case .void:
+			"void"
+		}
+	}
+
 	public var description: String {
 		switch self {
 		case let .enumCaseInstance(instance):

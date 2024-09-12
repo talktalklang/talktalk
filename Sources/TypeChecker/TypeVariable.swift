@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, Sendable {
+public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible, Sendable {
 	var id: VariableID
 	var name: String?
 
@@ -16,6 +16,14 @@ public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, Sendab
 	init(_ name: String?, _ id: VariableID) {
 		self.id = id
 		self.name = name
+	}
+
+	public var debugDescription: String {
+		if let name {
+			"T(\(id) \(name))"
+		} else {
+			"T(\(id))"
+		}
 	}
 
 	public var description: String {

@@ -49,8 +49,15 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
-struct MatchContext {
+class MatchContext {
 	let target: InferenceType
+	var current: any Syntax
+	var substitutions: [TypeVariable: InferenceType] = [:]
+
+	init(target: InferenceType, current: any Syntax) {
+		self.target = target
+		self.current = current
+	}
 }
 
 public class InferenceContext: CustomDebugStringConvertible {
@@ -440,11 +447,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		let typeVariable = TypeVariable(name, generateID())
 
-		log("New type variable: \(typeVariable), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
-
-		if typeVariable.id == 80 {
-			
-		}
+		log("New type variable: \(typeVariable.debugDescription), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
 
 		return typeVariable
 	}

@@ -70,7 +70,9 @@ struct PatternMatchingTests: TypeCheckerTest {
 				case bar(int)
 			}
 
-			match Thing.foo("sup") {
+			let m = Thing.foo("sup")
+
+			match m {
 			case .foo(let a):
 				a
 			case .bar(let b):
@@ -80,12 +82,12 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let call1 = syntax[1].cast(MatchStatementSyntax.self)
+		let call1 = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0] // .foo(let a)...:
 			.patternSyntax! // .foo(let a)
 			.cast(CallExprSyntax.self)
 
-		let call2 = syntax[1].cast(MatchStatementSyntax.self)
+		let call2 = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[1] // .bar(let b)...:
 			.patternSyntax! // .bar(let b)
 			.cast(CallExprSyntax.self)
@@ -106,7 +108,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			arguments: [.variable("b", .base(.int))]
 		)))
 
-		let body = syntax[1].cast(MatchStatementSyntax.self)
+		let body = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)

@@ -49,29 +49,35 @@ struct PatternVisitor: Visitor {
 	// Call expr is used for a lot of this stuff because it gives us basically the
 	// syntax we want for enums (parens) and means our parser can stay relatively dumb.
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		try expr.callee.accept(inferenceVisitor, context)
-		let type = try context.get(expr.callee).asType(in: context)
-		let params: [InferenceType] = try inferenceVisitor.parameters(of: type, in: context)
+		guard let matchContext = context.matchContext else {
+			throw InferencerError.parametersNotAvailable("Could not get match context for \(expr.description)")
+		}
 
+		let isInCaseStatement = matchContext.current is CaseStmtSyntax
+
+		// Make sure the callee is inferred
+		try expr.callee.accept(inferenceVisitor, context)
+
+		// Get the callee type
+		let type = try context.get(expr.callee).asType(in: context)
+
+		// Get the parameters expected for the callee. For enum cases, this will be the attached types.
+		let params: [InferenceType] = try inferenceVisitor.parameters(of: type, in: context, with: isInCaseStatement ? matchContext.substitutions : nil)
+
+		// Pattern arguments in case statements can be either values or variables. If they're variables, we need to bind those
+		// to the values in the match target expression.
 		var arguments: [Pattern.Argument] = []
 		var argumentsSyntax: [any Syntax] = []
+
 		for (i, arg) in expr.args.enumerated() {
 			let param = params.indices.contains(i) ? params[i] : nil
 
 			argumentsSyntax.append(arg)
 
 			switch arg.value {
-			case let arg as VarDecl:
+			case let arg as VarLetDecl:
 				let typeVar = context.freshTypeVariable(arg.name)
 
-				if let param {
-					context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
-				}
-
-				context.defineVariable(named: arg.name, as: .typeVar(typeVar), at: arg.location)
-				arguments.append(.variable(arg.name, .typeVar(typeVar)))
-			case let arg as LetDecl:
-				let typeVar = context.freshTypeVariable(arg.name)
 				if let param {
 					context.addConstraint(.equality(.typeVar(typeVar), param, at: arg.location))
 				}
@@ -80,6 +86,7 @@ struct PatternVisitor: Visitor {
 				arguments.append(.variable(arg.name, .typeVar(typeVar)))
 			case let arg as CallExprSyntax:
 				var context = context
+
 				if let param {
 					context = context.expecting(param)
 				}
@@ -94,10 +101,20 @@ struct PatternVisitor: Visitor {
 			case let arg as any Expr:
 				try arg.accept(inferenceVisitor, context)
 				let type = try context.get(arg).asType(in: context)
+
 				arguments.append(.value(type))
 
-				if let param {
+				if isInCaseStatement, let param {
+					// If we have a normal expr value and are in a case statement, we want to unify the argument
+					// and param.
 					context.addConstraint(.equality(type, param, at: arg.location))
+				} else if case let .typeVar(typeVariable) = param {
+					// If we're not in a case statement but the param is a type variable, we store it in the match
+					// context so that cases can refer to it.
+					context.matchContext?.substitutions[typeVariable] = type
+					print("set \(typeVariable) to \(type)")
+				} else {
+					print("??")
 				}
 			default:
 				throw PatternError.invalid("Invalid pattern: \(arg)")
