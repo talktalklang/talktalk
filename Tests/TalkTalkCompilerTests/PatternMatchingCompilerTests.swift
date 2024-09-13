@@ -47,7 +47,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.returnValue, line: 4),
 			.op(.jump, line: 4, .jump(offset: 0)),
 
-			.op(.returnVoid, line: 0)
+			.op(.endInline, line: 0)
 		))
 
 
@@ -100,7 +100,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.returnValue, line: 4),
 			.op(.jump, line: 4, .jump(offset: 0)),
 
-			.op(.returnVoid, line: 0)
+			.op(.endInline, line: 0)
 		))
 	}
 
@@ -172,7 +172,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.returnValue, line: 9),
 			.op(.jump, line: 9, .jump(offset: 0)),
 
-			.op(.returnVoid, line: 5)
+			.op(.endInline, line: 5)
 		))
 	}
 }

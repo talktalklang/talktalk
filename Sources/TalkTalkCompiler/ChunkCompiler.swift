@@ -811,7 +811,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try matchChunk.patchJump(jump)
 		}
 
-		matchChunk.emit(opcode: .returnVoid, line: expr.location.line)
+		matchChunk.emit(opcode: .endInline, line: expr.location.line)
 
 		module.compiledChunks[matchSymbol] = matchChunk
 	}

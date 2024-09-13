@@ -223,4 +223,23 @@ struct PatternMatchTests: VMTest {
 
 		#expect(result == .int(125))
 	}
+
+	@Test("Doesn't prevent returns") func canReturn() throws {
+		let result = try run(
+			"""
+			return func() {
+				match true {
+				case true:
+					return "good"
+				case false:
+					return "whatever"
+				}
+
+				return "bad"
+			}()
+			"""
+		)
+
+		#expect(result == .string("good"))
+	}
 }

@@ -19,6 +19,7 @@ struct Closure {
 }
 
 public class CallFrame {
+	var isInline: Bool = false
 	var closure: Closure
 	var returnTo: UInt64
 	var locals: OrderedDictionary<String, Value> = [:]

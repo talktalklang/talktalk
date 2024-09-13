@@ -80,6 +80,10 @@ public enum Opcode: Byte, Codable, Sendable {
 			 matchCase,
 			 binding,
 
+			 // For operations that should have their own scope but allow returning from
+			 // their parent, like match statement bodies
+			 endInline,
+
 			 // Enum stuff
 			 getEnum,
 

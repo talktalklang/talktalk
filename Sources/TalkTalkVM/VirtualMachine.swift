@@ -149,7 +149,11 @@ public struct VirtualMachine {
 
 			switch opcode {
 			case .returnVoid:
-				let calledFrame = try frames.pop()
+				var calledFrame = try frames.pop()
+
+				while calledFrame.isInline {
+					calledFrame = try frames.pop()
+				}
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
@@ -170,7 +174,7 @@ public struct VirtualMachine {
 				// Return to where we called from
 				ip = calledFrame.returnTo
 			case .returnValue:
-				let calledFrame = try frames.pop()
+				var calledFrame = try frames.pop()
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
@@ -188,6 +192,10 @@ public struct VirtualMachine {
 
 				// Remove the result from the stack temporarily while we clean it up
 				let	result = try stack.pop()
+
+				while calledFrame.isInline {
+					calledFrame = try frames.pop()
+				}
 
 				try transferCaptures(in: calledFrame)
 
@@ -637,9 +645,15 @@ public struct VirtualMachine {
 					currentFrame.patternBindings[sym] = binding
 					stack.push(binding)
 				}
+			case .endInline:
+				var inlineFrame = try frames.pop()
+				guard inlineFrame.isInline else {
+					return runtimeError("Frame not inline!")
+				}
+				self.ip = inlineFrame.returnTo
 			case .matchBegin:
 				let symbol = try readSymbol()
-				try call(chunkID: symbol)
+				try call(chunkID: symbol, inline: true)
 			case .matchCase:
 				let jump = try readUInt16()
 				if try stack.peek() == .bool(true) {
@@ -759,7 +773,7 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(chunkID: Symbol) throws {
+	private mutating func call(chunkID: Symbol, inline: Bool = false) throws {
 		guard let chunk = module.chunks[chunkID] else {
 			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(chunkID)")
 		}
@@ -775,6 +789,8 @@ public struct VirtualMachine {
 			returnTo: ip,
 			selfValue: currentFrame.selfValue
 		)
+
+		frame.isInline = inline
 
 		let args = try stack.pop(count: Int(chunk.arity))
 		for i in 0..<Int(chunk.arity) {
