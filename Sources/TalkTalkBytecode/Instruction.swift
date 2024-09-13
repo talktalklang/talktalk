@@ -130,6 +130,26 @@ public struct SimpleMetadata: InstructionMetadata {
 	}
 }
 
+public struct DataMetadata: InstructionMetadata {
+	public var data: StaticData
+
+	public var length: Int = 2
+
+	public init(data: StaticData) {
+		self.data = data
+	}
+
+	public var description: String {
+		"\(data)"
+	}
+}
+
+public extension InstructionMetadata where Self == DataMetadata {
+	static func data(_ data: StaticData) -> DataMetadata {
+		DataMetadata(data: data)
+	}
+}
+
 public struct ConstantMetadata: InstructionMetadata {
 	public var value: Value
 

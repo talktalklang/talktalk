@@ -386,5 +386,20 @@ public struct SemanticTokensVisitor: Visitor {
 		try expr.children.flatMap { try $0.accept(self, context) }
 	}
 
+	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result: [RawSemanticToken] = []
+
+		for segment in expr.segments {
+			switch segment {
+			case .expr(let interpolation):
+				try result.append(contentsOf: interpolation.expr.accept(self, context))
+			case .string(_, let token):
+				result.append(make(.string, from: token))
+			}
+		}
+
+		return result
+	}
+
 	// GENERATOR_INSERTION
 }

@@ -669,6 +669,10 @@ public struct VirtualMachine {
 				stack.push(.enum(enumType))
 			case .debugPrint:
 				_ = try readByte()
+			case .appendInterpolation:
+				let new = try stack.pop()
+				let old = try stack.pop()
+				stack.push(.string(inspect(old) + inspect(new)))
 			}
 		}
 	}

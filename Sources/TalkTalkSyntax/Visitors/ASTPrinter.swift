@@ -324,5 +324,9 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
+	@StringBuilder public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	// GENERATOR_INSERTION
 }

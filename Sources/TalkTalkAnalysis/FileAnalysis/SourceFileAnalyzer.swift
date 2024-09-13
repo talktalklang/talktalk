@@ -743,8 +743,34 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: EnumMemberExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
 		return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
+	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not find type for \(expr)", environment: context)
+		}
+
+		return AnalyzedInterpolatedStringExpr(
+			wrapped: expr,
+			segmentsAnalyzed: try expr.segments.map {
+				switch $0 {
+				case .string(let string, let token):
+					return .string(string, token)
+				case .expr(let interpolation):
+					return try .expr(
+						.init(
+							exprAnalyzed: castToAnyAnalyzedExpr(interpolation.expr.accept(self, context)),
+							startToken: interpolation.startToken,
+							endToken: interpolation.endToken
+						)
+
+					)
+				}
+			},
+			inferenceType: type,
+			environment: context
+		)
 	}
 
 	// GENERATOR_INSERTION

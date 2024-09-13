@@ -5,10 +5,16 @@
 //  Created by Pat Nakajima on 9/3/24.
 //
 
-public enum InferencerError: Error, CustomStringConvertible {
+import Foundation
+
+public enum InferencerError: Error, CustomStringConvertible, LocalizedError {
 	case typeNotInferred(String)
 	case cannotInfer(String)
 	case parametersNotAvailable(String)
+
+	public var errorDescription: String? {
+		description
+	}
 
 	public var description: String {
 		switch self {

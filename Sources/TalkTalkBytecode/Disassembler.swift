@@ -10,6 +10,7 @@ import Foundation
 public protocol Disassemblable {
 	var name: String { get }
 	var code: ContiguousArray<Code> { get }
+	var data: [StaticData] { get }
 	var debugLogs: [String] { get }
 	var lines: [UInt32] { get }
 	var constants: [Value] { get }
@@ -112,6 +113,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		switch opcode {
+		case .data:
+			return try dataInstruction(start: index)
 		case .binding:
 			return try bindingInstruction(start: index)
 		case .matchBegin:
@@ -149,6 +152,19 @@ public struct Disassembler<Chunk: Disassemblable> {
 		default:
 			return Instruction(path: self.chunk.path, opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
+	}
+
+	mutating func dataInstruction(start: Int) throws -> Instruction {
+		let i = try chunk.code[current++].asByte()
+		let data = chunk.data[Int(i)]
+
+		return Instruction(
+			path: chunk.path,
+			opcode: .data,
+			offset: start,
+			line: chunk.lines[start],
+			metadata: .data(data)
+		)
 	}
 
 	mutating func debugPrintInstruction(start: Int) throws -> Instruction {

@@ -19,6 +19,9 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow,
 				 plusEquals, minusEquals
 
+		// String interpolation
+		case interpolationStart, interpolationEnd
+
 		// Keywords
 		case `func`, `true`, `false`, `return`,
 		     `if`, `in`, call, `else`,
@@ -73,6 +76,7 @@ public struct Lexer {
 	var column = 0
 
 	var errors: [SyntaxError]
+	var nextBuffer: [Token] = []
 
 	public init(_ source: SourceFile) {
 		self.path = source.path
@@ -94,7 +98,9 @@ public struct Lexer {
 
 	public mutating func rewind(count _: Int) {}
 
-	public mutating func next() -> Token {
+	public mutating func next(terminator: Character? = nil) -> Token {
+		if !nextBuffer.isEmpty { return nextBuffer.removeFirst() }
+
 		skipWhitespace()
 		skipComments()
 
@@ -105,6 +111,11 @@ public struct Lexer {
 		start = current
 
 		let char = advance()
+
+		if let terminator, char == terminator {
+			return make(.eof)
+		}
+
 		return switch char {
 		case "(": make(.leftParen)
 		case ")": make(.rightParen)
@@ -166,7 +177,25 @@ public struct Lexer {
 	}
 
 	mutating func string() -> Token {
+		let stringStart = current
+
 		while peek() != "\"" {
+			if isAtEnd {
+				error("unterminated string literal")
+				return make(.string)
+			}
+
+			// When we encounter the escape char (\), it's either string interpolation
+			// or an escape sequence.
+			if peek() == "\\" {
+				if peekNext() == "(" {
+					stringInterpolation(start: stringStart)
+					continue
+				}
+
+				advance()
+			}
+
 			advance()
 
 			if isAtEnd {
@@ -177,7 +206,36 @@ public struct Lexer {
 
 		advance()
 
-		return make(.string)
+		nextBuffer.append(make(.string))
+		let returnToken = nextBuffer.removeFirst()
+
+		return returnToken
+	}
+
+	mutating func stringInterpolation(start stringStart: Int) {
+		var buffer: [Token] = []
+
+		buffer.append(make(.string))
+
+		start = current
+		advance() // Consume '\'
+		advance() // Consume '('
+
+		// Save the interpolation start.
+		buffer.append(make(.interpolationStart))
+
+		var next = next(terminator: ")")
+		while next.kind != .eof {
+			buffer.append(next)
+			next = self.next(terminator: ")")
+		}
+
+		// Add the end of the interpolation to the buffer
+		buffer.append(make(.interpolationEnd))
+
+		start = current
+
+		self.nextBuffer.append(contentsOf: buffer)
 	}
 
 	mutating func newline() -> Token {
@@ -293,12 +351,13 @@ public struct Lexer {
 		if source.indices.contains(current) {
 			return source[current]
 		} else {
-			return Character("")
+			return Character("\0")
 		}
 	}
 
 	mutating func make(_ kind: Token.Kind) -> Token {
 		let length = current - start
+
 		return Token(
 			path: path,
 			kind: kind,
