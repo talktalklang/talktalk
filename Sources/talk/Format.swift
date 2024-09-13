@@ -13,7 +13,7 @@ struct Format: TalkTalkCommand {
 		abstract: "Format the given input"
 	)
 
-	@Argument(help: "The input to format.", completion: .file(extensions: [".tlk"]))
+	@ArgumentParser.Argument(help: "The input to format.", completion: .file(extensions: [".tlk"]))
 	var input: String
 
 	func run() async throws {

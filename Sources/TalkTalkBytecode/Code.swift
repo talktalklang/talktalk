@@ -30,7 +30,7 @@ public enum Code: Codable, Equatable, Sendable {
 
 	public func asSymbol() throws -> Symbol {
 		guard case let .symbol(symbol) = self else {
-			throw InvalidCodeError.invalidCode(self, "expected symbol")
+			throw InvalidCodeError.invalidCode(self, "expected symbol, got \(self)")
 		}
 
 		return symbol

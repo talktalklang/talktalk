@@ -28,6 +28,15 @@ public protocol Syntax: CustomStringConvertible {
 }
 
 public extension Syntax {
+	var isStandardLibrary: Bool {
+		[
+			"Array.tlk",
+			"Dictionary.tlk",
+			"Int.tlk",
+			"String.tlk"
+		].contains(id.path)
+	}
+
 	var semanticLocation: SourceLocation? {
 		nil
 	}
@@ -37,7 +46,7 @@ public extension Syntax {
 			return casted
 		} else {
 			// swiftlint:disable fatal_error
-			fatalError("Could not cast \(self) to \(T.self) (\(file):\(line))")
+			fatalError("Could not cast \(type(of: self)) \(self) to \(T.self) (\(file):\(line))")
 			// swiftlint:enable fatal_error
 		}
 	}

@@ -5,13 +5,87 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
+public enum DeclContext {
+	case `struct`, `enum`, topLevel, argument
+
+	var allowed: Set<Token.Kind> {
+		switch self {
+		case .struct:
+			[.enum, .struct, .protocol, .func, .initialize, .var, .let]
+		case .enum:
+			[.enum, .struct, .protocol, .func, .case]
+		case .topLevel:
+			[.enum, .struct, .protocol, .func, .var, .let]
+		case .argument:
+			[.var, .func, .let]
+		}
+	}
+}
+
 public extension Parser {
+	mutating func enumDecl() -> any Decl {
+		let token = previous.unsafelyUnwrapped
+		let i = startLocation(at: token)
+		guard let nameToken = consume(.identifier) else {
+			return error(
+				at: current, .unexpectedToken(expected: .identifier, got: current),
+				expectation: .none
+			)
+		}
+
+		var typeParams: [TypeExprSyntax] = []
+		if didMatch(.less) {
+			// We've got a generic param list
+			typeParams = typeParameters()
+		}
+
+		let body = declBlock(context: .enum)
+
+		return EnumDeclSyntax(
+			enumToken: token,
+			nameToken: nameToken,
+			body: body,
+			typeParams: typeParams,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
+	mutating func enumCaseDecl() -> any Decl {
+		let token = previous.unsafelyUnwrapped
+		let i = startLocation(at: token)
+
+		guard let nameToken = consume(.identifier) else {
+			return error(
+				at: current, .unexpectedToken(expected: .identifier, got: current),
+				expectation: .none
+			)
+		}
+
+		var typeExprs: [TypeExprSyntax] = []
+		if didMatch(.leftParen) {
+			repeat {
+				typeExprs.append(typeExpr())
+			} while didMatch(.comma)
+
+			consume(.rightParen)
+		}
+
+		return EnumCaseDeclSyntax(
+			caseToken: token,
+			nameToken: nameToken,
+			attachedTypes: typeExprs,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
 	mutating func letVarDecl(_ kind: Token.Kind) -> any Decl {
 		let token = previous.unsafelyUnwrapped
 
 		let i = startLocation(at: previous)
 
-		guard let nameToken = consume(.identifier, "expected identifier after var") else {
+		guard let nameToken = consume(.identifier) else {
 			return error(at: current, .unexpectedToken(expected: .identifier, got: current), expectation: .identifier)
 		}
 
@@ -52,7 +126,7 @@ public extension Parser {
 		let i = startLocation(at: previous.unsafelyUnwrapped)
 		let initToken = previous.unsafelyUnwrapped
 		skip(.newline)
-		consume(.leftParen, "expected '(' before params")
+		consume(.leftParen)
 
 		// Parse parameter list
 		skip(.newline)
@@ -69,8 +143,8 @@ public extension Parser {
 		)
 	}
 
-	mutating func declBlock() -> DeclBlockSyntax {
-		consume(.leftBrace, "expected '{' before block")
+	mutating func declBlock(context: DeclContext) -> DeclBlockSyntax {
+		consume(.leftBrace)
 		skip(.newline)
 
 		let i = startLocation(at: previous)
@@ -79,11 +153,11 @@ public extension Parser {
 
 		while !check(.eof), !check(.rightBrace) {
 			skip(.newline)
-			decls.append(decl())
+			decls.append(decl(context: context))
 			skip(.newline)
 		}
 
-		consume(.rightBrace, "expected '}' after block")
+		consume(.rightBrace)
 		skip(.newline)
 
 		return DeclBlockSyntax(id: nextID(), decls: decls, location: endLocation(i))
@@ -113,10 +187,10 @@ public extension Parser {
 			} while didMatch(.comma)
 		}
 
-		let body = declBlock()
+		let body = declBlock(context: .struct)
 
 		return StructDeclSyntax(
-			id: nextID(), 
+			id: nextID(),
 			structToken: structToken,
 			name: name.lexeme,
 			nameToken: name,
@@ -157,7 +231,7 @@ public extension Parser {
 	}
 
 	mutating func protocolDeclBlock() -> ProtocolBodyDeclSyntax {
-		consume(.leftBrace, "expected '{' before block")
+		consume(.leftBrace)
 		skip(.newline)
 
 		let i = startLocation(at: previous)
@@ -193,7 +267,7 @@ public extension Parser {
 			skip(.newline)
 		}
 
-		consume(.rightBrace, "expected '}' after block")
+		consume(.rightBrace)
 		skip(.newline)
 
 		return ProtocolBodyDeclSyntax(decls: decls, id: nextID(), location: endLocation(i))

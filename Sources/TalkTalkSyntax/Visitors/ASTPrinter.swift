@@ -123,8 +123,10 @@ public struct ASTPrinter: Visitor {
 
 	@StringBuilder public func visit(_ expr: MemberExprSyntax, _ context: Context) throws -> String {
 		dump(expr, "property: \(expr.property)")
-		indent {
-			try expr.receiver.accept(self, context)
+		if let receiver = expr.receiver {
+			indent {
+				try receiver.accept(self, context)
+			}
 		}
 	}
 
@@ -140,7 +142,7 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: CallArgument, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: Argument, _ context: Context) throws -> String {
 		dump(expr, "name: \(expr.label?.lexeme ?? "<none>")")
 		indent {
 			try expr.value.accept(self, context)
@@ -299,6 +301,26 @@ public struct ASTPrinter: Visitor {
 	}
 
 	@StringBuilder public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
+	@StringBuilder public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> String {
 		dump(expr)
 	}
 

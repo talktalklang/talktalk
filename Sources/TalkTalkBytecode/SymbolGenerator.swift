@@ -18,7 +18,8 @@ public class SymbolGenerator {
 	private(set) var values: OrderedDictionary<Symbol, SymbolInfo> = [:]
 	private(set) var structs: OrderedDictionary<Symbol, SymbolInfo> = [:]
 	private(set) var properties: OrderedDictionary<Symbol, SymbolInfo> = [:]
-	private(set) var generics:OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var generics: OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var enums: OrderedDictionary<Symbol, SymbolInfo> = [:]
 
 	public var symbols: OrderedDictionary<Symbol, SymbolInfo> = [:]
 
@@ -50,6 +51,8 @@ public class SymbolGenerator {
 			return method(type, name, parameters: params, source: .external(moduleName))
 		case .property(let type, let name):
 			return property(type, name, source: .external(moduleName))
+		case .enum(let name):
+			return self.enum(name, source: .external(moduleName))
 		case .genericType(let name):
 			return generic(name, source: .external(moduleName))
 		}
@@ -82,6 +85,35 @@ public class SymbolGenerator {
 
 		// Need to import the struct's methods too
 
+
+		return symbol
+	}
+
+	public func `enum`(_ name: String, source: SymbolInfo.Source) -> Symbol {
+		if let parent {
+			return parent.enum(name, source: source)
+		}
+
+		// Structs are top level (for now...) so they should not be namespaced
+		let symbol = if case .external(let moduleName) = source {
+			Symbol(module: moduleName, kind: .enum(name))
+		} else {
+			Symbol(module: moduleName, kind: .enum(name))
+		}
+
+		if let info = enums[symbol] {
+			return info.symbol
+		}
+
+		let symbolInfo = SymbolInfo(
+			symbol: symbol,
+			slot: enums.count,
+			source: source,
+			isBuiltin: false
+		)
+
+		enums[symbol] = symbolInfo
+		symbols[symbol] = symbolInfo
 
 		return symbol
 	}

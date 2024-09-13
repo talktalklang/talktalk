@@ -18,7 +18,7 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public let memberAnalyzed: any Member
 	public let analysisErrors: [AnalysisError]
 
-	public var receiver: any Expr { wrapped.receiver }
+	public var receiver: (any Expr)? { wrapped.receiver }
 	public var property: String { wrapped.property }
 	public var propertyToken: Token { wrapped.propertyToken }
 	public var isMutable: Bool

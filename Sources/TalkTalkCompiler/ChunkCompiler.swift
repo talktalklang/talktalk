@@ -103,6 +103,43 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
+		if case let .pattern(pattern) = expr.inferenceType {
+			for (i, arg) in expr.argsAnalyzed.enumerated() {
+				switch pattern.arguments[i] {
+				case .value(_):
+					try arg.accept(self, chunk)
+				case .variable(let name, _):
+					chunk.emit(.opcode(.binding), line: arg.location.line)
+					chunk.emit(.symbol(.value(module.name, name)), line: arg.location.line)
+				}
+			}
+
+			try expr.calleeAnalyzed.accept(self, chunk)
+
+			// Call the callee
+			chunk.emit(opcode: .call, line: expr.location.line)
+
+			return
+		}
+
+		if expr.calleeAnalyzed is AnalyzedEnumMemberExpr {
+			for arg in expr.argsAnalyzed {
+				if let arg = arg.expr as? VarLetDecl {
+					chunk.emit(.opcode(.binding), line: arg.location.line)
+					chunk.emit(.symbol(.value(module.name, arg.name)), line: arg.location.line)
+				} else {
+					try arg.accept(self, chunk)
+				}
+			}
+
+			try expr.calleeAnalyzed.accept(self, chunk)
+
+			// Call the callee
+			chunk.emit(opcode: .call, line: expr.location.line)
+
+			return
+		}
+
 		// Put the function args on the stack
 		for arg in expr.argsAnalyzed {
 			try arg.expr.accept(self, chunk)
@@ -379,7 +416,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedReturnStmt, _ chunk: Chunk) throws {
 		try expr.valueAnalyzed?.accept(self, chunk)
 
-		if expr.valueAnalyzed?.inferenceType != .void {
+		if expr.valueAnalyzed != nil {
 			chunk.emit(opcode: .returnValue, line: expr.location.line)
 		} else {
 			chunk.emit(opcode: .returnVoid, line: expr.location.line)
@@ -690,6 +727,111 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// TODO: this
 	}
 
+	public func visit(_ expr: AnalyzedEnumDecl, _: Chunk) throws {
+		let enumType = Enum(
+			name: expr.nameToken.lexeme,
+			cases: expr.casesAnalyzed.reduce(into: [:]) { res, kase in
+				res[.property(module.name, kase.enumName, kase.nameToken.lexeme)] = EnumCase(
+					type: expr.nameToken.lexeme,
+					name: kase.nameToken.lexeme,
+					arity: kase.attachedTypes.count
+				)
+			}
+		)
+
+		module.enums[expr.symbol] = enumType
+	}
+
+	public func visit(_ expr: AnalyzedEnumCaseDecl, _ chunk: Chunk) throws {
+		guard let enumSymbol = module.analysisModule.moduleEnum(named: expr.enumName)?.symbol,
+		      module.analysisModule.symbols[enumSymbol] != nil
+		else {
+			throw CompilerError.unknownIdentifier(expr.nameToken.lexeme)
+		}
+
+		_ = expr.inferenceType
+
+		chunk.emit(opcode: .getEnum, line: expr.location.line)
+	}
+
+	public func visit(_ expr: AnalyzedMatchStatement, _ chunk: Chunk) throws {
+		let matchSymbol = Symbol.function(module.name, "match#\(expr.id)", [])
+
+		let matchChunk = Chunk(
+			name: expr.description,
+			symbol: matchSymbol,
+			parent: chunk,
+			arity: 0,
+			depth: Byte(scopeDepth),
+			path: chunk.path
+		)
+
+		let matchCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
+
+		chunk.emit(opcode: .matchBegin, line: expr.location.line)
+		chunk.emit(.symbol(matchSymbol), line: expr.location.line)
+
+		var caseJumps: [Int] = []
+		var endJumps: [Int] = []
+
+		// Emit the cases for comparison with the target pattern
+		for kase in expr.casesAnalyzed {
+			try PatternCompiler(
+				target: expr.targetAnalyzed,
+				caseStatement: kase,
+				compiler: matchCompiler,
+				chunk: matchChunk
+			).compileCase()
+
+			caseJumps.append(
+				matchChunk.emit(jump: .matchCase, line: kase.location.line)
+			)
+
+			// Pop bool result off the stack
+			matchChunk.emit(.opcode(.pop), line: kase.location.line)
+		}
+
+		// Emit the bodies that get jumped to from cases
+		for (i, kase) in expr.casesAnalyzed.enumerated() {
+			try matchChunk.patchJump(caseJumps[i])
+
+			try PatternCompiler(
+				target: expr.targetAnalyzed,
+				caseStatement: kase,
+				compiler: matchCompiler,
+				chunk: matchChunk
+			).compileBody()
+
+			endJumps.append(
+				matchChunk.emit(jump: .jump, line: kase.bodyAnalyzed.last?.location.line ?? kase.location.line)
+			)
+		}
+
+		for jump in endJumps {
+			try matchChunk.patchJump(jump)
+		}
+
+		matchChunk.emit(opcode: .endInline, line: expr.location.line)
+
+		module.compiledChunks[matchSymbol] = matchChunk
+	}
+
+	public func visit(_: AnalyzedCaseStmt, _: Chunk) throws {
+		// Handled by match stmt
+	}
+
+	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {
+		guard case let .enumCase(enumCase) = expr.inferenceType else {
+			throw CompilerError.unknownIdentifier("\(expr.description)")
+		}
+
+		chunk.emit(opcode: .getEnum, line: expr.location.line)
+		chunk.emit(.symbol(.enum(module.name, enumCase.typeName)), line: expr.location.line)
+		chunk.emit(.opcode(.getProperty), line: expr.location.line)
+		chunk.emit(.symbol(.property(module.name, enumCase.typeName, enumCase.name)), line: expr.location.line)
+		chunk.emit(.byte(0), line: expr.location.line) // Emit empty property options
+	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers
@@ -728,7 +870,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return nil
 	}
 
-	func resolveVariable(named varName: String, symbol: Symbol?, chunk: Chunk) throws -> Variable? {
+	func resolveVariable(named varName: String, symbol: Symbol?, chunk _: Chunk) throws -> Variable? {
 		if varName == "self" {
 			return Variable(
 				name: varName,
@@ -749,13 +891,23 @@ public class ChunkCompiler: AnalyzedVisitor {
 			)
 		}
 
-		if let capture = try  resolveCapture(named: varName) {
+		if let capture = try resolveCapture(named: varName) {
 			return Variable(
 				name: varName,
 				code: .capture(capture),
 				depth: scopeDepth,
 				getter: .getCapture,
 				setter: .setCapture
+			)
+		}
+
+		if let symbol = resolveEnum(named: varName) {
+			return Variable(
+				name: varName,
+				code: .symbol(symbol),
+				depth: scopeDepth,
+				getter: .getEnum,
+				setter: .getEnum
 			)
 		}
 
@@ -852,6 +1004,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return capture
 	}
 
+	private func resolveEnum(named name: String) -> Symbol? {
+		if module.analysisModule.lookup(symbol: .enum(name)) != nil {
+			return .enum(module.name, name)
+		}
+
+		return nil
+	}
+
 	// Check the CompilingModule for a global function.
 	private func resolveModuleFunction(named name: String) -> Symbol? {
 		if let moduleFunc = module.analysisModule.moduleFunctions.first(where: { $0.key == name }) {
@@ -916,7 +1076,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return variable
 	}
 
-	private func defineLocal(
+	func defineLocal(
 		name: String,
 		compiler: ChunkCompiler,
 		chunk: Chunk

@@ -114,7 +114,7 @@ extension Parser {
 
 		skip(.newline)
 
-		consume(.leftParen, "expected '(' before params")
+		consume(.leftParen)
 
 		// Parse parameter list
 		let params = parameterList()
@@ -155,7 +155,7 @@ extension Parser {
 
 		skip(.newline)
 
-		consume(.leftParen, "expected '(' before params")
+		consume(.leftParen)
 
 		// Parse parameter list
 		let params = parameterList()
@@ -225,7 +225,7 @@ extension Parser {
 			}
 		} while didMatch(.comma)
 
-		consume(.rightBracket, "expected ']' after \(isDictionary ? "dictionary" : "array") literal")
+		consume(.rightBracket)
 
 		let literal: any Expr = if isDictionary {
 			DictionaryLiteralExprSyntax(
@@ -292,7 +292,7 @@ extension Parser {
 			typeParameters = self.typeParameters()
 		}
 
-		let body = declBlock()
+		let body = declBlock(context: .struct)
 
 		return StructExprSyntax(
 			id: nextID(),
@@ -318,7 +318,7 @@ extension Parser {
 	mutating func blockStmt(_: Bool) -> BlockStmtSyntax {
 		let i = startLocation()
 		skip(.newline)
-		consume(.leftBrace, "expected '{' before block body")
+		consume(.leftBrace)
 		skip(.newline)
 
 		var body: [any Stmt] = []
@@ -327,7 +327,7 @@ extension Parser {
 			skip(.newline)
 		}
 
-		consume(.rightBrace, "expected '}' after block body")
+		consume(.rightBrace)
 
 		return BlockStmtSyntax(id: nextID(), stmts: body, location: endLocation(i))
 	}
@@ -372,7 +372,7 @@ extension Parser {
 
 		consume(.leftParen) // This is how we got here.
 
-		var args: [CallArgument] = []
+		var args: [Argument] = []
 		if !didMatch(.rightParen) {
 			args = argumentList()
 		}
@@ -397,11 +397,27 @@ extension Parser {
 		}
 	}
 
-	mutating func dot(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
+	mutating func dot(_ canAssign: Bool) -> any Expr {
+		let i = startLocation()
+		consume(.dot)
+		guard let property = consume(.identifier) else {
+			return error(at: current, expected(.identifier), expectation: .identifier)
+		}
+
+		return MemberExprSyntax(
+			id: nextID(),
+			receiver: nil,
+			property: property.lexeme,
+			propertyToken: property,
+			location: endLocation(i)
+		)
+	}
+
+	mutating func member(_ canAssign: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: previous)
 		consume(.dot)
 
-		guard let member = consume(.identifier, "expected identifier for property access") else {
+		guard let member = consume(.identifier) else {
 			_ = error(
 				at: current,
 				.unexpectedToken(expected: .identifier, got: current),
@@ -506,11 +522,15 @@ extension Parser {
 		}
 
 		return TypeExprSyntax(
-			id: nextID(), 
+			id: nextID(),
 			identifier: typeID ?? .synthetic(.error),
 			genericParams: typeParameters,
 			location: endLocation(i),
 			errors: errors
 		)
+	}
+
+	func expected(_ kind: Token.Kind) -> SyntaxErrorKind {
+		.unexpectedToken(expected: kind, got: current)
 	}
 }

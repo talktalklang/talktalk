@@ -15,6 +15,22 @@ import TalkTalkBytecode
 protocol CompilerTest {}
 
 extension CompilerTest {
+	func analyze(_ string: String) async throws -> AnalysisModule {
+		let analyzer = try ModuleAnalyzer(
+			name: "AnalysisTest",
+			files: [.tmp(string, "Analysis.tlk")],
+			moduleEnvironment: [:],
+			importedModules: []
+		)
+
+		return try analyzer.analyze()
+	}
+
+	func ast(_ string: String) async throws -> any AnalyzedSyntax {
+		let syntax = try await analyze(string).analyzedFiles[0].syntax
+		return syntax.last!
+	}
+
 	func compile(_ strings: String...) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",

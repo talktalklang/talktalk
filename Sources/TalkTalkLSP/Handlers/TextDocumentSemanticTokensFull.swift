@@ -106,7 +106,7 @@ public struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: CallArgument, _ context: Context) throws -> [RawSemanticToken] {
+	public func visit(_ expr: Argument, _ context: Context) throws -> [RawSemanticToken] {
 		var result: [RawSemanticToken] = []
 		if let label = expr.label {
 			result.append(make(.parameter, from: label))
@@ -236,7 +236,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: MemberExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		var result = try expr.receiver.accept(self, context)
+		var result = try expr.receiver?.accept(self, context) ?? []
 		result.append(make(.property, from: expr.propertyToken))
 		return result
 	}
@@ -336,6 +336,54 @@ public struct SemanticTokensVisitor: Visitor {
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		return [make(.keyword, from: expr.funcToken)]
+	}
+
+	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.keyword, from: expr.enumToken)]
+
+		for child in expr.children {
+			result.append(contentsOf: try child.accept(self, context))
+		}
+
+		return result
+	}
+
+	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.keyword, from: expr.caseToken), make(.property, from: expr.nameToken)]
+
+		for type in expr.attachedTypes {
+			try result.append(contentsOf: type.accept(self, context))
+		}
+
+		return result
+	}
+
+	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.keyword, from: expr.matchToken)]
+
+		for kase in expr.cases {
+			try result.append(contentsOf: kase.accept(self, context))
+		}
+
+		return result
+	}
+
+	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.keyword, from: expr.caseToken)]
+
+		if let pattern = expr.patternSyntax {
+			try result.append(contentsOf: pattern.accept(self, context))
+		}
+
+		for stmt in expr.body {
+			try result.append(contentsOf: stmt.accept(self, context))
+		}
+
+		return result
+	}
+
+	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		try expr.children.flatMap { try $0.accept(self, context) }
 	}
 
 	// GENERATOR_INSERTION

@@ -13,21 +13,32 @@ struct MemberConstraint: Constraint {
 	let type: InferenceResult
 
 	func result(in context: InferenceContext) -> String {
-		let receiver = context.applySubstitutions(to: receiver.asType(in: context))
+		let receiver =
+			receiver.asType(in: context)
+
 		let type = context.applySubstitutions(to: type.asType(in: context))
 
 		return "MemberConstraint(receiver: \(receiver), name: \(name), type: \(type))"
 	}
 
+	func resolveReceiver(_ receiver: InferenceResult?) -> InferenceResult {
+		if let receiver {
+			return receiver
+		}
+
+		return .type(.any)
+	}
+
 	var description: String {
-		"MemberConstraint(receiver: \(receiver), name: \(name), type: \(type))"
+		"MemberConstraint(receiver: \(receiver.description), name: \(name), type: \(type))"
 	}
 
 	var location: SourceLocation
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
+		let receiver = context.applySubstitutions(to: resolveReceiver(receiver).asType(in: context))
 		return resolve(
-			withReceiver: receiver.asType(in: context),
+			withReceiver: receiver,
 			name: self.name,
 			type: self.type.asType(in: context),
 			in: context
@@ -49,6 +60,24 @@ struct MemberConstraint: Constraint {
 			context.unify(
 				context.applySubstitutions(to: member.asType(in: context)),
 				context.applySubstitutions(to: resolvedType),
+				location
+			)
+		case .enumCase(let enumCase):
+			context.unify(
+				context.applySubstitutions(to: .enumCase(enumCase)),
+				resolvedType,
+				location
+			)
+		case .enumType(let enumType):
+			guard let member = enumType.cases.first(where: { $0.name == name }) else {
+				return .error(
+					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
+				)
+			}
+
+			context.unify(
+				context.applySubstitutions(to: .enumCase(member)),
+				resolvedType,
 				location
 			)
 		case .structInstance(let instance):
@@ -91,7 +120,13 @@ struct MemberConstraint: Constraint {
 				location
 			)
 		default:
-			return .error([Diagnostic(message: "Receiver not a struct instance. Got: \(receiver)", severity: .error, location: location)])
+			return .error([
+				Diagnostic(
+					message: "Receiver not an instance. Got: \(receiver.debugDescription)",
+					severity: .error,
+					location: location
+				)
+			])
 		}
 
 		return .ok

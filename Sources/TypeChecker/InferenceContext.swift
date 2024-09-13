@@ -49,22 +49,62 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
-public class InferenceContext: CustomDebugStringConvertible {
-	var environment: Environment
-	var parent: InferenceContext?
-	var imports: [InferenceContext]
-	let depth: Int
-	public var errors: [InferenceError] = []
-	var constraints: Constraints
+class MatchContext {
+	let target: InferenceType
+	var current: any Syntax
 	var substitutions: [TypeVariable: InferenceType] = [:]
+
+	init(target: InferenceType, current: any Syntax) {
+		self.target = target
+		self.current = current
+	}
+}
+
+public class InferenceContext: CustomDebugStringConvertible {
+	// Stores the mappings of syntax nodes to inference types
+	var environment: Environment
+
+	// Names that we know at inference time
 	private(set) public var namedVariables: [String: InferenceType] = [:]
+
+	// Names that we're going to have to solve for later
 	private(set) var namedPlaceholders: [String: InferenceType] = [:]
+
+	// Does this context have a parent?
+	var parent: InferenceContext?
+
+	// Makes info from other contexts available
+	var imports: [InferenceContext]
+
+	// How many parents does this context have
+	let depth: Int
+
+	// Errors that occur
+	public var errors: [InferenceError] = []
+
+	// The list of constraints to solve
+	var constraints: Constraints
+
+	// Known substitutions due to unification
+	var substitutions: [TypeVariable: InferenceType] = [:]
+
+	// Gives subexpressions a hint about what type they're expected to be.
+	var expectation: InferenceType?
+
+	// For fresh variable generation
 	var nextID: VariableID = 0
-	var verbose: Bool = false
+
+	// Used for generating specific IDs, like for struct instances
 	private var namedCounters: [String: Int] = [:]
+
+	// Should we be logging?
+	var verbose: Bool = false
 
 	// Type-level context info like methods, properties, etc
 	var typeContext: TypeContext?
+
+	// Match target context, used for match statements
+	var matchContext: MatchContext?
 
 	// Instance-level context info like generic parameter bindings
 	var instanceContext: InstanceContext?
@@ -76,7 +116,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 		constraints: Constraints,
 		substitutions: [TypeVariable: InferenceType] = [:],
 		typeContext: TypeContext? = nil,
-		instanceContext: InstanceContext? = nil
+		instanceContext: InstanceContext? = nil,
+		expectation: InferenceType? = nil,
+		matchContext: MatchContext? = nil
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -86,12 +128,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.substitutions = substitutions
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
+		self.expectation = expectation
+		self.matchContext = matchContext
 
 		log("New context with depth \(depth)", prefix: " * ")
 	}
 
 	public func lookup(syntax: any Syntax) -> InferenceType? {
-		let result = self[syntax]?.asType(in: self)
+		guard let result = self[syntax]?.asType(in: self) else {
+			return .error(.init(kind: .unknownError("no type found for: \(syntax.description)"), location: syntax.location))
+		}
 
 		if case let .placeholder(typeVariable) = result {
 			return .error(.init(kind: .undefinedVariable(typeVariable.name ?? "<none>"), location: syntax.location))
@@ -212,7 +258,20 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment.childEnvironment(),
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext
+			typeContext: typeContext,
+			expectation: expectation,
+			matchContext: matchContext
+		)
+	}
+
+	func withMatchContext(_ matchContext: MatchContext) -> InferenceContext {
+		InferenceContext(
+			parent: self,
+			environment: environment.childEnvironment(),
+			constraints: constraints,
+			substitutions: substitutions,
+			typeContext: typeContext,
+			matchContext: matchContext
 		)
 	}
 
@@ -232,7 +291,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext,
-			instanceContext: instanceContext
+			instanceContext: instanceContext,
+			expectation: expectation,
+			matchContext: matchContext
 		)
 	}
 
@@ -242,11 +303,25 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext()
+			typeContext: typeContext ?? TypeContext(),
+			expectation: expectation,
+			matchContext: matchContext
 		)
 	}
 
-	func lookupType(named name: String) -> InferenceType? {
+	func expecting(_ type: InferenceType) -> InferenceContext {
+		InferenceContext(
+			parent: self,
+			environment: environment,
+			constraints: constraints,
+			substitutions: substitutions,
+			typeContext: typeContext ?? TypeContext(),
+			expectation: type,
+			matchContext: matchContext
+		)
+	}
+
+	func lookupPrimitive(named name: String) -> InferenceType? {
 		switch name {
 		case "int":
 			return .base(.int)
@@ -292,7 +367,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func extend(_ syntax: any Syntax, with result: InferenceResult) {
 		environment.extend(syntax, with: result)
-
 		parent?.extend(syntax, with: result)
 	}
 
@@ -373,7 +447,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		let typeVariable = TypeVariable(name, generateID())
 
-		log("New type variable: \(typeVariable), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
+		log("New type variable: \(typeVariable.debugDescription), \(file):\(line)", prefix: " + ", context: creatingContext ?? self)
 
 		return typeVariable
 	}
@@ -402,6 +476,20 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
+		case let .pattern(pattern):
+			return .pattern(
+				Pattern(
+					type: applySubstitutions(to: pattern.type, with: substitutions),
+					arguments: pattern.arguments.map {
+						switch $0 {
+						case .value(let type):
+							.value(applySubstitutions(to: type, with: substitutions))
+						case .variable(let name, let type):
+							.variable(name, applySubstitutions(to: type, with: substitutions))
+						}
+					}
+				)
+			)
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
@@ -410,16 +498,34 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 			return substitutions[typeVariable] ?? type
 		case let .function(params, returning):
-			return .function(params.map { applySubstitutions(to: $0, with: substitutions) }, applySubstitutions(to: returning, with: substitutions))
+			return .function(
+				params.map { applySubstitutions(to: $0, with: substitutions) },
+				applySubstitutions(to: returning, with: substitutions)
+			)
 		case let .structInstance(instance):
 //			for case let (key, .typeVar(val)) in substitutions {
 //				if instance.substitutions[val] != nil {
 //					instance.substitutions[val] = .typeVar(key)
 //				}
 //			}
-
-			// Help here:
 			return .structInstance(instance)
+		case let .enumType(type):
+			return .enumType(EnumType(
+				name: type.name,
+				cases: type.cases.map {
+					EnumCase.extract(from: .type(applySubstitutions(to: .enumCase($0), with: substitutions)))!
+				},
+				typeContext: type.typeContext
+			))
+		case let .enumCase(kase):
+			return .enumCase(
+				EnumCase(
+					typeName: kase.typeName,
+					name: kase.name,
+					index: kase.index,
+					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
+				)
+			)
 		default:
 			return type // Base/error/void types don't get substitutions
 		}
@@ -482,6 +588,24 @@ public class InferenceContext: CustomDebugStringConvertible {
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
+			}
+		case let (.enumType(type), .enumCase(kase)):
+			if type.name != kase.typeName {
+				addError(
+					.init(
+						kind: .unificationError(typeA, typeB),
+						location: location
+					)
+				)
+			}
+		case let (.enumCase(kase), .enumType(type)):
+			if type.name != kase.typeName {
+				addError(
+					.init(
+						kind: .unificationError(typeA, typeB),
+						location: location
+					)
+				)
 			}
 		default:
 			if a != b, a != .any, b != .any {

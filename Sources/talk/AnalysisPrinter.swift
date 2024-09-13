@@ -17,7 +17,7 @@ struct AnalysisPrinter: TalkTalkCommand {
 		abstract: "Print the analysis for the given input"
 	)
 
-	@Argument(help: "The input to analyze.", completion: .file(extensions: [".tlk"]))
+	@ArgumentParser.Argument(help: "The input to analyze.", completion: .file(extensions: [".tlk"]))
 	var input: String
 
 	func run() async throws {

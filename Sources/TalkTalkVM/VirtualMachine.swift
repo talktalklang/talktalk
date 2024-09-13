@@ -149,7 +149,11 @@ public struct VirtualMachine {
 
 			switch opcode {
 			case .returnVoid:
-				let calledFrame = try frames.pop()
+				var calledFrame = try frames.pop()
+
+				while calledFrame.isInline {
+					calledFrame = try frames.pop()
+				}
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
@@ -170,7 +174,7 @@ public struct VirtualMachine {
 				// Return to where we called from
 				ip = calledFrame.returnTo
 			case .returnValue:
-				let calledFrame = try frames.pop()
+				var calledFrame = try frames.pop()
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
@@ -188,6 +192,10 @@ public struct VirtualMachine {
 
 				// Remove the result from the stack temporarily while we clean it up
 				let	result = try stack.pop()
+
+				while calledFrame.isInline {
+					calledFrame = try frames.pop()
+				}
 
 				try transferCaptures(in: calledFrame)
 
@@ -222,14 +230,49 @@ public struct VirtualMachine {
 				} else {
 					return runtimeError("Cannot negate \(value)")
 				}
+			case .and:
+				let rhs = try stack.pop()
+				let lhs = try stack.pop()
+
+				switch (lhs, rhs) {
+				case let (.bool(lhs), .bool(rhs)):
+					stack.push(.bool(lhs && rhs))
+				default:
+					return runtimeError("&& requires bool operands. got \(lhs) & \(rhs)")
+				}
 			case .not:
 				let value = try stack.pop()
 				if let bool = value.boolValue {
 					stack.push(.bool(!bool))
 				}
+			case .match:
+				let pattern = try stack.pop()
+				let target = try stack.pop()
+
+				func bind(_ pattern: Value, to target: Value) {
+					if case let .boundEnumCase(pattern) = pattern,
+						 case let .boundEnumCase(target) = target {
+						for (i, value) in pattern.values.enumerated() {
+							switch value {
+							case .binding:
+								if case let .binding(binding) = pattern.values[i] {
+									binding.value = target.values[i]
+								}
+							case .boundEnumCase(let pattern):
+								bind(.boundEnumCase(pattern), to: target.values[i])
+							default:
+								()
+							}
+						}
+					}
+				}
+
+				bind(pattern, to: target)
+				stack.push(.bool(pattern == target))
 			case .equal:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
+
 				stack.push(.bool(lhs == rhs))
 			case .notEqual:
 				let lhs = try stack.pop()
@@ -375,7 +418,12 @@ public struct VirtualMachine {
 					throw VirtualMachineError.valueMissing("did not find local for \(symbol)")
 				}
 
-				stack.push(local)
+				// Unwrap bindings if they have values
+				if case let .binding(binding) = local, let value = binding.value {
+					stack.push(value)
+				} else {
+					stack.push(local)
+				}
 			case .setLocal:
 				let symbol = try readSymbol()
 				currentFrame.define(symbol, as: try stack.peek())
@@ -433,11 +481,7 @@ public struct VirtualMachine {
 				closures[symbol] = Closure(chunk: subchunk, capturing: capturing)
 			case .call:
 				let callee = try stack.pop()
-				if callee.isCallable {
-					try call(callee)
-				} else {
-					return runtimeError("\(callee) is not callable")
-				}
+				try call(callee)
 			case .callChunkID:
 				let symbol = try readSymbol()
 				try call(chunkID: symbol)
@@ -516,8 +560,14 @@ public struct VirtualMachine {
 
 						stack.push(value)
 					}
+				case let .enum(enumType):
+					guard let kase = enumType.cases[symbol] else {
+						return runtimeError("enum \(enumType.name) has no member \(symbol)")
+					}
+
+					stack.push(.enumCase(kase))
 				default:
-					return runtimeError("Receiver is not an instance of a struct")
+					return runtimeError("Receiver is not an instance of a struct or enum")
 				}
 			case .is:
 				let lhs = try stack.pop()
@@ -586,6 +636,39 @@ public struct VirtualMachine {
 				}
 
 				try call(structValue: dictType)
+			case .binding:
+				let sym = try readSymbol()
+				if let binding = currentFrame.patternBindings[sym] {
+					stack.push(binding)
+				} else {
+					let binding: Value = .binding(.new())
+					currentFrame.patternBindings[sym] = binding
+					stack.push(binding)
+				}
+			case .endInline:
+				var inlineFrame = try frames.pop()
+				guard inlineFrame.isInline else {
+					return runtimeError("Frame not inline!")
+				}
+				self.ip = inlineFrame.returnTo
+			case .matchBegin:
+				let symbol = try readSymbol()
+				try call(chunkID: symbol, inline: true)
+			case .matchCase:
+				let jump = try readUInt16()
+				if try stack.peek() == .bool(true) {
+					ip += jump
+				}
+			case .getEnum:
+				let sym = try readSymbol()
+
+				guard let enumType = module.enums[sym] else {
+					throw VirtualMachineError.valueMissing("No enum found for symbol: \(sym)")
+				}
+
+				stack.push(.enum(enumType))
+			case .debugPrint:
+				_ = try readByte()
 			}
 		}
 	}
@@ -606,9 +689,23 @@ public struct VirtualMachine {
 			try call(structValue: structValue)
 		case let .boundMethod(instance, symbol):
 			try call(boundMethod: symbol, on: instance)
+		case let .enumCase(callee):
+			try bind(enum: callee)
 		default:
 			throw VirtualMachineError.typeError("\(callee) is not callable")
 		}
+	}
+
+	private mutating func bind(enum enumCase: EnumCase) throws {
+		try stack.push(
+			.boundEnumCase(
+				BoundEnumCase(
+					type: enumCase.type,
+					name: enumCase.name,
+					values: stack.pop(count: enumCase.arity).reversed()
+				)
+			)
+		)
 	}
 
 	// Call a method on an instance.
@@ -676,7 +773,7 @@ public struct VirtualMachine {
 		frames.push(frame)
 	}
 
-	private mutating func call(chunkID: Symbol) throws {
+	private mutating func call(chunkID: Symbol, inline: Bool = false) throws {
 		guard let chunk = module.chunks[chunkID] else {
 			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(chunkID)")
 		}
@@ -692,6 +789,8 @@ public struct VirtualMachine {
 			returnTo: ip,
 			selfValue: currentFrame.selfValue
 		)
+
+		frame.isInline = inline
 
 		let args = try stack.pop(count: Int(chunk.arity))
 		for i in 0..<Int(chunk.arity) {
@@ -815,8 +914,13 @@ public struct VirtualMachine {
 			result += "[ \(local.key) = \(local.value) ]"
 		}
 
+		if !currentFrame.patternBindings.isEmpty {
+			result += "\n       Pattern bindings: "
+			result += currentFrame.patternBindings.map { "[ \($0) ]" }.joined(separator: ", ")
+		}
+
 		if let selfValue = currentFrame.selfValue {
-			result += "       self: \(selfValue)"
+			result += "\n       self: \(selfValue)"
 		}
 
 		FileHandle.standardError.write(Data((result + "\n").utf8))
