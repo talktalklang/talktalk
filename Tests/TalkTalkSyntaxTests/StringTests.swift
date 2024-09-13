@@ -96,7 +96,7 @@ struct StringTests {
 		])
 	}
 
-	@Test("Can have interpolated string") func interpolated() throws {
+	@Test("Can parse interpolated string") func interpolated() throws {
 		let parsed = try Parser.parse(#" "foo \("bar")" "#)[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(InterpolatedStringExprSyntax.self)

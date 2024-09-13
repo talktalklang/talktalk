@@ -359,7 +359,7 @@ public struct Lexer {
 
 	mutating func make(_ kind: Token.Kind) -> Token {
 		let length = current - start
-		print("Make \(kind), lexeme: \(kind == .eof ? "EOF" : String(source[start ..< current])) current: \(current)")
+
 		return Token(
 			path: path,
 			kind: kind,
