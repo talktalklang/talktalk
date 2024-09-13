@@ -39,12 +39,12 @@ struct StringTests {
 	}
 
 	@Test("tab") func tab() throws {
-		let parsed = try Parser.parse(#" "foo\tbar" "#)[0]
+		let parsed = try Parser.parse(#" " foo\tbar" "#)[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(LiteralExprSyntax.self)
 
 		#expect(parsed.value == .string("""
-		foo	bar
+		 foo	bar
 		"""))
 	}
 
