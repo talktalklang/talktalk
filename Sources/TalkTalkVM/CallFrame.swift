@@ -19,11 +19,13 @@ struct Closure {
 }
 
 public class CallFrame {
-	var ip: UInt64 = 0
+	var isInline: Bool = false
 	var closure: Closure
 	var returnTo: UInt64
-	private(set) var locals: OrderedDictionary<String, Value> = [:]
+	var locals: OrderedDictionary<String, Value> = [:]
 	var selfValue: Value?
+
+	var patternBindings: [Symbol: Value] = [:]
 
 	init(closure: Closure, returnTo: UInt64, selfValue: Value?) {
 		self.closure = closure

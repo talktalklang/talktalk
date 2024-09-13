@@ -12,6 +12,7 @@ public enum Opcode: Byte, Codable, Sendable {
 	     constant,
 	     negate,
 	     not,
+			 and,
 
 	     // Callables
 	     call, callChunkID,
@@ -66,12 +67,25 @@ public enum Opcode: Byte, Codable, Sendable {
 	     // Equality
 	     equal,
 	     notEqual,
+			 match,
 
 	     // Jumps
 	     jump,
 	     jumpUnless,
 	     jumpPlaceholder,
 	     loop,
+
+			 // Pattern matching
+			 matchBegin,
+			 matchCase,
+			 binding,
+
+			 // For operations that should have their own scope but allow returning from
+			 // their parent, like match statement bodies
+			 endInline,
+
+			 // Enum stuff
+			 getEnum,
 
 	     // Comparisons
 	     less,
@@ -83,7 +97,10 @@ public enum Opcode: Byte, Codable, Sendable {
 	     add,
 	     subtract,
 	     divide,
-	     multiply
+	     multiply,
+
+			 // Debuggy
+			 debugPrint
 }
 
 extension Opcode {

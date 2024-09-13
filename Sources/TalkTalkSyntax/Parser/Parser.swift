@@ -71,7 +71,7 @@ public struct Parser {
 		while current.kind != .eof {
 			skip(.newline)
 
-			results.append(decl())
+			results.append(decl(context: .topLevel))
 
 			skip(.newline)
 		}
@@ -88,36 +88,46 @@ public struct Parser {
 		return results
 	}
 
-	mutating func decl() -> any Syntax {
-		if didMatch(.struct) {
+	mutating func decl(context: DeclContext) -> any Syntax {
+		if didMatch(.enum), context.allowed.contains(.enum) {
+			return enumDecl()
+		}
+
+		if didMatch(.struct), context.allowed.contains(.struct) {
 			return structDecl()
 		}
 
-		if didMatch(.protocol) {
+		if didMatch(.protocol), context.allowed.contains(.protocol) {
 			return protocolDecl()
 		}
 
-		if didMatch(.func) {
+		if didMatch(.func), context.allowed.contains(.func) {
 			return funcExpr()
 		}
 
-		if didMatch(.initialize) {
+		if didMatch(.case), context.allowed.contains(.case) {
+			return enumCaseDecl()
+		}
+
+		if didMatch(.initialize), context.allowed.contains(.initialize) {
 			return _init()
 		}
 
-		if didMatch(.var) {
+		if didMatch(.var), context.allowed.contains(.var) {
 			return letVarDecl(.var)
 		}
 
-		if didMatch(.let) {
+		if didMatch(.let), context.allowed.contains(.let) {
 			return letVarDecl(.let)
 		}
 
-		if didMatch(.initialize) {
-			return _init()
+		if context == .argument {
+			// If we're parsing an argument, we just want to return an expression here.
+			return expr()
+		} else {
+			// Otherwise allow statements.
+			return stmt()
 		}
-
-		return stmt()
 	}
 
 	mutating func expr() -> Expr {
@@ -127,6 +137,10 @@ public struct Parser {
 
 	mutating func stmt() -> any Stmt {
 		skip(.semicolon)
+
+		if didMatch(.match) {
+			return matchStmt()
+		}
 
 		if didMatch(.import) {
 			return importStmt()
@@ -196,7 +210,7 @@ public struct Parser {
 			params.append(ParamSyntax(id: nextID(), name: identifier.lexeme, type: type, location: [identifier]))
 		} while didMatch(.comma)
 
-		consume(terminator, "Expected '\(terminator)' after parameter list")
+		consume(terminator)
 
 		return ParamsExprSyntax(
 			id: nextID(),
@@ -205,8 +219,8 @@ public struct Parser {
 		)
 	}
 
-	mutating func argumentList(terminator: Token.Kind = .rightParen) -> [CallArgument] {
-		var args: [CallArgument] = []
+	mutating func argumentList(terminator: Token.Kind = .rightParen) -> [Argument] {
+		var args: [Argument] = []
 		repeat {
 			let i = startLocation()
 			var name: Token?
@@ -217,11 +231,11 @@ public struct Parser {
 				name = identifier
 			}
 
-			let value = parse(precedence: .assignment)
-			args.append(CallArgument(id: nextID(), location: endLocation(i), label: name, value: value))
+			let value = decl(context: .argument)
+			args.append(Argument(id: nextID(), location: endLocation(i), label: name, value: value))
 		} while didMatch(.comma)
 
-		consume(terminator, "expected '\(terminator)' after arguments")
+		consume(terminator)
 		return args
 	}
 
@@ -242,10 +256,10 @@ public struct Parser {
 		current = lexer.next()
 	}
 
-	@discardableResult mutating func consume(_ kind: Token.Kind, _: String? = nil) -> Token? {
+	@discardableResult mutating func consume(_ kinds: Token.Kind...) -> Token? {
 		checkForInfiniteLoop()
 
-		if peek().kind == kind {
+		if kinds.contains(peek().kind) {
 			defer {
 				advance()
 			}
@@ -255,8 +269,8 @@ public struct Parser {
 
 		_ = error(
 			at: peek(),
-			.unexpectedToken(expected: kind, got: peek()),
-			expectation: .guess(from: kind)
+			.unexpectedToken(expected: kinds[0], got: peek()),
+			expectation: .guess(from: kinds[0])
 		)
 		return nil
 	}
@@ -280,8 +294,8 @@ public struct Parser {
 		return false
 	}
 
-	func check(_ kind: Token.Kind) -> Bool {
-		peek().kind == kind
+	func check(_ kinds: Token.Kind...) -> Bool {
+		kinds.contains(peek().kind)
 	}
 
 	func checkNext(_ kind: Token.Kind) -> Bool {

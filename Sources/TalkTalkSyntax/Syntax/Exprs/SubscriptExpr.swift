@@ -3,13 +3,13 @@
 public protocol SubscriptExpr: Expr {
 	// Insert SubscriptExpr specific fields here
 	var receiver: any Expr { get }
-	var args: [CallArgument] { get }
+	var args: [Argument] { get }
 }
 
 public struct SubscriptExprSyntax: SubscriptExpr {
 	public var id: SyntaxID
 	public var receiver: any Expr
-	public var args: [CallArgument]
+	public var args: [Argument]
 
 	// Where does this syntax live
 	public var location: SourceLocation

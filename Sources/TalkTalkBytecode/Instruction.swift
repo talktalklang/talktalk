@@ -54,6 +54,58 @@ public extension InstructionMetadata where Self == SimpleMetadata {
 	static var simple: SimpleMetadata { .init() }
 }
 
+public struct MatchCaseMetadata: InstructionMetadata {
+	let offset: Int
+	public var length: Int {
+		// 1 byte for the opcode itself, 2 bytes for the offset
+		3
+	}
+
+	public var description: String {
+		"offset: \(offset)"
+	}
+}
+
+public extension InstructionMetadata where Self == MatchCaseMetadata {
+	static func matchCase(offset: Int) -> MatchCaseMetadata {
+		MatchCaseMetadata(offset: offset)
+	}
+}
+
+public struct DebugLogMetadata: InstructionMetadata {
+	let message: String
+	public var length: Int {
+		2
+	}
+
+	public var description: String {
+		message
+	}
+}
+
+public extension InstructionMetadata where Self == DebugLogMetadata {
+	static func debug(_ message: String) -> DebugLogMetadata {
+		DebugLogMetadata(message: message)
+	}
+}
+
+public struct BindingMetadata: InstructionMetadata {
+	let symbol: Symbol
+	public var length: Int {
+		2
+	}
+
+	public var description: String {
+		"\(symbol)"
+	}
+}
+
+public extension InstructionMetadata where Self == BindingMetadata {
+	static func binding(_ symbol: Symbol) -> BindingMetadata {
+		BindingMetadata(symbol: symbol)
+	}
+}
+
 public struct FunctionMetadata: InstructionMetadata {
 	let name: String
 
@@ -178,7 +230,7 @@ public extension InstructionMetadata where Self == GetPropertyMetadata {
 
 public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
-		case local, global, builtin, `struct`, property, moduleFunction
+		case local, global, builtin, `struct`, property, moduleFunction, `enum`, matchBegin
 	}
 
 	public var length: Int = 2
@@ -192,6 +244,10 @@ public struct VariableMetadata: InstructionMetadata {
 }
 
 public extension InstructionMetadata where Self == VariableMetadata {
+	static func variable(_ symbol: Symbol, _ type: VariableMetadata.VariableType) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: type)
+	}
+
 	static func local(_ symbol: Symbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .local)
 	}
@@ -214,6 +270,10 @@ public extension InstructionMetadata where Self == VariableMetadata {
 
 	static func moduleFunction(_ symbol: Symbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .moduleFunction)
+	}
+
+	static func `enum`(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .enum)
 	}
 }
 

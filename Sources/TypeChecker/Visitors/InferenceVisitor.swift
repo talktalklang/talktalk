@@ -46,7 +46,25 @@ struct InferenceVisitor: Visitor {
 
 	public init() {}
 
+	func placeholdDecls(for syntax: [any Syntax], in context: InferenceContext) {
+		// Just to through the syntax here and create placeholders for decls if we don't know about them already
+		for decl in syntax where decl is Decl {
+			switch decl {
+			case let decl as EnumDecl:
+				context.definePlaceholder(named: decl.nameToken.lexeme, as: .placeholder(context.freshTypeVariable(decl.nameToken.lexeme)), at: decl.location)
+			case let decl as StructDecl:
+				if context.lookup(syntax: decl) == nil {
+					context.definePlaceholder(named: decl.name, as: .placeholder(context.freshTypeVariable(decl.name)), at: decl.location)
+				}
+			default:
+				()
+			}
+		}
+	}
+
 	func infer(_ syntax: [any Syntax], with context: InferenceContext) -> InferenceContext {
+		placeholdDecls(for: syntax, in: context)
+
 		for syntax in syntax {
 			do {
 				_ = try syntax.accept(self, context)
@@ -56,6 +74,21 @@ struct InferenceVisitor: Visitor {
 		}
 
 		return context
+	}
+
+	func parameters(of type: InferenceType, in context: InferenceContext, with substitutions: [TypeVariable: InferenceType]? = nil) throws -> [InferenceType] {
+		switch type {
+		case .function(let params, _):
+			return params
+		case .enumCase(let enumCase):
+			if let substitutions, !substitutions.isEmpty {
+				return enumCase.instantiate(in: context, with: substitutions).attachedTypes
+			} else {
+				return enumCase.attachedTypes
+			}
+		default:
+			return []
+		}
 	}
 
 	func handleFuncLike(_ expr: any FuncLike, _ context: InferenceContext) throws {
@@ -93,7 +126,7 @@ struct InferenceVisitor: Visitor {
 				variables: variables,
 				type: .function(
 					expr.params.params.map { try childContext.get($0).asType(in: childContext) },
-					returnType.asType(in: childContext)
+					childContext.applySubstitutions(to: returnType.asType(in: childContext))
 				)
 			)
 		)
@@ -198,8 +231,15 @@ struct InferenceVisitor: Visitor {
 		case "pointer":
 			type = .base(.pointer)
 		default:
-			guard let found = context.lookupVariable(named: expr.identifier.lexeme) else {
-				return context.addError(.typeError("Type not found: \(expr.identifier.lexeme)"), to: expr)
+			let found: InferenceType
+
+			if let existing = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) {
+				found = existing
+			} else if let typeContext = context.typeContext, let typeParam = typeContext.typeParameters.first(where: { $0.name == expr.identifier.lexeme }) {
+				found = .typeVar(typeParam)
+				context.definePlaceholder(named: expr.identifier.lexeme, as: .placeholder(typeParam), at: expr.location)
+			} else {
+				return context.addError(.typeError("\(expr.identifier.lexeme) not found"), to: expr)
 			}
 
 			switch found {
@@ -209,14 +249,25 @@ struct InferenceVisitor: Visitor {
 				}
 
 				type = .structType(structType)
+			case let .enumType(enumType):
+				type = .enumType(enumType)
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
+			case let .placeholder(typeVar):
+				type = .placeholder(typeVar)
 			default:
 				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
 		}
 
 		return type
+	}
+
+	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws {
+		let patternVisitor = PatternVisitor(inferenceVisitor: self)
+		let pattern = try syntax.accept(patternVisitor, context)
+
+		context.extend(syntax, with: .type(.pattern(pattern)))
 	}
 
 	// Visits
@@ -240,13 +291,30 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws {
 		try expr.callee.accept(self, context)
-		for arg in expr.args {
-			try arg.accept(self, context)
-		}
 
 		let callee = try context.get(expr.callee)
+		let params = try parameters(of: callee.asType(in: context), in: context)
+
+		for (i, arg) in expr.args.enumerated() {
+			if params.count == expr.args.count {
+				// If we can match the arg with a param, try to expect it.
+				try visit(arg, context.expecting(params[i]))
+			} else {
+				try visit(arg, context)
+			}
+		}
+
 		let args = try expr.args.map { try context.get($0) }
-		let returns = InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
+
+		let returns: InferenceType
+
+		if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee),
+			 case let .enumType(type) = context.lookupVariable(named: enumCase.typeName) {
+			// If we determine the callee to be an enum case, then its type is actually the enum type.
+			returns = InferenceType.enumType(type)
+		} else {
+			returns = InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
+		}
 
 		context.constraints.add(
 			.call(callee, args, returns: returns, at: expr.location)
@@ -291,7 +359,7 @@ struct InferenceVisitor: Visitor {
 					context.applySubstitutions(to: defined)
 				)
 			)
-		} else if let type = context.lookupType(named: expr.name) {
+		} else if let type = context.lookupPrimitive(named: expr.name) {
 			context.extend(expr, with: .type(.kind(type)))
 		} else {
 			let typeVar = context.freshTypeVariable(expr.name)
@@ -394,7 +462,7 @@ struct InferenceVisitor: Visitor {
 		// Handled in type expr visits
 	}
 
-	func visit(_ expr: CallArgument, _ context: InferenceContext) throws {
+	func visit(_ expr: Argument, _ context: InferenceContext) throws {
 		try expr.value.accept(self, context)
 		try context.extend(expr, with: context.get(expr.value))
 	}
@@ -424,26 +492,44 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws {
-		try expr.receiver.accept(self, context)
+		try expr.receiver?.accept(self, context)
 		let returns: InferenceType
 
-		switch context[expr.receiver] {
-//		case let .type(.structInstance(receiver)):
-//			returns = receiver.member(named: expr.property)!
+		let receiver: InferenceResult?
+		if let rec = expr.receiver {
+			receiver = context[rec]
+		} else if let expectation = context.expectation {
+			receiver = .type(expectation)
+		} else if let matchContext = context.matchContext {
+			receiver = .type(matchContext.target)
+		} else {
+			receiver = nil
+		}
+
+		switch receiver {
 		case let .type(.structType(structType)):
 			guard let member = structType.member(named: expr.property)?.asType(in: context) else {
-				context.addError(.memberNotFound(structType, expr.property), to: expr)
+				context.addError(.memberNotFound(.structType(structType), expr.property), to: expr)
 				return
 			}
 
 			returns = member
+		case let .type(.enumCase(enumCase)):
+			returns = .enumCase(enumCase)
+		case let .type(.enumType(enumType)):
+			guard let member = enumType.cases.first(where: { $0.name == expr.property }) else {
+				context.addError(.memberNotFound(.enumType(enumType), expr.property), to: expr)
+				return
+			}
+
+			returns = .enumCase(member)
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
 
-		try context.constraints.add(
+		context.constraints.add(
 			MemberConstraint(
-				receiver: context.get(expr.receiver),
+				receiver: receiver ?? .type(.typeVar(context.freshTypeVariable("RECEIVER" + expr.description))),
 				name: expr.property,
 				type: .type(returns),
 				location: expr.location
@@ -702,5 +788,95 @@ struct InferenceVisitor: Visitor {
 		// TODO: this
 	}
 
+	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws {
+		let enumContext = context.childTypeContext()
+		let typeContext = enumContext.typeContext!
+
+		var cases: [EnumCase] = []
+
+		for typeParameter in expr.typeParams {
+			// Define the name first
+			let typeVar: TypeVariable = enumContext.freshTypeVariable("\(typeParameter.identifier.lexeme)", file: #file, line: #line)
+
+			typeContext.typeParameters.append(typeVar)
+
+			// Add this type to the struct's named variables for resolution
+			enumContext.defineVariable(
+				named: typeParameter.identifier.lexeme,
+				as: .typeVar(typeVar),
+				at: typeParameter.location
+			)
+
+			try visit(typeParameter, enumContext)
+		}
+
+		var index = 0
+		for kase in expr.body.decls {
+			if let kase = kase as? EnumCaseDecl {
+				for type in kase.attachedTypes {
+					try type.accept(self, enumContext)
+				}
+
+				let enumCase = try EnumCase(
+					typeName: expr.nameToken.lexeme,
+					name: kase.nameToken.lexeme,
+					index: index,
+					attachedTypes: kase.attachedTypes.map {
+						try context.get($0).asType(in: context)
+					}
+				)
+
+				index += 1
+				cases.append(enumCase)
+				context.extend(kase, with: .type(.enumCase(enumCase)))
+			}
+		}
+
+		let enumType = EnumType(name: expr.nameToken.lexeme, cases: cases, typeContext: typeContext)
+
+		// Let this enum be referred to by name
+		context.defineVariable(named: enumType.name, as: .enumType(enumType), at: expr.location)
+		context.extend(expr, with: .type(.enumType(enumType)))
+	}
+
+	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws {
+		// Handled by EnumDeclSyntax
+	}
+
+	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws {
+		try expr.target.accept(self, context)
+
+		let matchContext = MatchContext(
+			target: context[expr.target]?.asType(in: context) ?? .typeVar(context.freshTypeVariable("\(expr.description)")),
+			current: expr
+		)
+
+		let context = context.withMatchContext(matchContext)
+
+		try inferPattern(from: expr.target, in: context)
+
+		for kase in expr.cases {
+			matchContext.current = kase
+			try kase.accept(self, context)
+		}
+
+		context.extend(expr, with: .type(.void))
+	}
+
+	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws {
+		if let patternSyntax = expr.patternSyntax {
+			try inferPattern(from: patternSyntax, in: context)
+		}
+
+		for stmt in expr.body {
+			try stmt.accept(self, context)
+		}
+
+		context.extend(expr, with: .type(.void))
+	}
+
+	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws {
+	}
+	
 	// GENERATOR_INSERTION
 }

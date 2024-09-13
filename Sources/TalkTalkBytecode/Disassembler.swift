@@ -10,6 +10,7 @@ import Foundation
 public protocol Disassemblable {
 	var name: String { get }
 	var code: ContiguousArray<Code> { get }
+	var debugLogs: [String] { get }
 	var lines: [UInt32] { get }
 	var constants: [Value] { get }
 	var arity: Byte { get }
@@ -55,7 +56,11 @@ extension StaticChunk: Disassemblable {
 	public var lines: [UInt32] {
 		debugInfo.lines
 	}
-	
+
+	public var debugLogs: [String] {
+		debugInfo.debugLogs
+	}
+
 	public var locals: [Symbol] {
 		debugInfo.locals
 	}
@@ -107,11 +112,15 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		switch opcode {
+		case .binding:
+			return try bindingInstruction(start: index)
+		case .matchBegin:
+			return try variableInstruction(opcode: .matchBegin, start: index, type: .matchBegin)
 		case .constant:
 			return try constantInstruction(start: index)
 		case .defClosure:
 			return try defClosureInstruction(start: index)
-		case .jump, .jumpUnless, .loop:
+		case .jump, .jumpUnless, .loop, .matchCase:
 			return try jumpInstruction(opcode: opcode, start: index)
 		case .setCapture, .getCapture:
 			return try captureInstruction(opcode: opcode, start: index)
@@ -131,11 +140,38 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return try variableInstruction(opcode: opcode, start: index, type: .builtin)
 		case .callChunkID:
 			return try variableInstruction(opcode: opcode, start: index, type: .global)
+		case .getEnum:
+			return try variableInstruction(opcode: opcode, start: index, type: .enum)
 		case .initArray:
 			return try initArrayInstruction(start: index)
+		case .debugPrint:
+			return try debugPrintInstruction(start: index)
 		default:
 			return Instruction(path: self.chunk.path, opcode: opcode, offset: index, line: chunk.lines[index], metadata: .simple)
 		}
+	}
+
+	mutating func debugPrintInstruction(start: Int) throws -> Instruction {
+		let i = try chunk.code[current++].asByte()
+		let message = chunk.debugLogs[Int(i)]
+		return Instruction(
+			path: chunk.path,
+			opcode: .debugPrint,
+			offset: start,
+			line: chunk.lines[start],
+			metadata: .debug(message)
+		)
+	}
+
+	mutating func bindingInstruction(start: Int) throws -> Instruction {
+		let symbol = try chunk.code[current++].asSymbol()
+		return Instruction(
+			path: chunk.path,
+			opcode: .binding,
+			offset: start,
+			line: chunk.lines[start],
+			metadata: .binding(symbol)
+		)
 	}
 
 	mutating func initArrayInstruction(start: Int) throws -> Instruction {

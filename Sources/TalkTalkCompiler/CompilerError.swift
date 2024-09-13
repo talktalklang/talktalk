@@ -13,5 +13,6 @@ public enum CompilerError: Error {
 			 analysisErrors(String),
 			 typeError(String),
 			 chunkMissing(String),
+			 invalidPattern(String),
 			 unreachable
 }

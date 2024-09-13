@@ -17,7 +17,7 @@ public struct AnalyzedSubscriptExpr: SubscriptExpr, AnalyzedExpr {
 	public var receiver: any Expr { wrapped.receiver }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
-	public var args: [CallArgument] { wrapped.args }
+	public var args: [Argument] { wrapped.args }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

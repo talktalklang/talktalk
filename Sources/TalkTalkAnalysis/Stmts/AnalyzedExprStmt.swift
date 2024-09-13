@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, AnalyzedExpr {
+public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, AnalyzedStmt {
 	public enum ExitBehavior {
 		case none, pop, `return`
 	}

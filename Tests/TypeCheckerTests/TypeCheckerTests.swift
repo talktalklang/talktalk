@@ -223,7 +223,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 		#expect(context[syntax[0]] == .type(.base(.string)))
 	}
 
-	@Test("Types factorial (recursion test)", .disabled(if: ProcessInfo.processInfo.environment["CI"] == "1", "This is flakey for some reason.")) func factorial() throws {
+	@Test("Types factorial (recursion test)") func factorial() async throws {
 		let syntax = try Parser.parse(
 			"""
 			func fact(n) {

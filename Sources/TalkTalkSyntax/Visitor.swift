@@ -23,7 +23,7 @@ public protocol Visitor {
 	func visit(_ expr: ParamsExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: ParamSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: GenericParamsSyntax, _ context: Context) throws -> Value
-	func visit(_ expr: CallArgument, _ context: Context) throws -> Value
+	func visit(_ expr: Argument, _ context: Context) throws -> Value
 	func visit(_ expr: StructExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: DeclBlockSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: VarDeclSyntax, _ context: Context) throws -> Value
@@ -44,5 +44,10 @@ public protocol Visitor {
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

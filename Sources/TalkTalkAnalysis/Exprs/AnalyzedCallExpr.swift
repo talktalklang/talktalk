@@ -20,7 +20,7 @@ public struct AnalyzedArgument: AnalyzedSyntax {
 	}
 
 	public let label: Token?
-	public let wrapped: CallArgument
+	public let wrapped: Argument
 	public let expr: any AnalyzedExpr
 }
 
@@ -38,7 +38,7 @@ public struct AnalyzedCallExpr: AnalyzedExpr, CallExpr {
 	public let environment: Environment
 
 	public var callee: any Expr { wrapped.callee }
-	public var args: [CallArgument] { wrapped.args }
+	public var args: [Argument] { wrapped.args }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(wrapped, scope)

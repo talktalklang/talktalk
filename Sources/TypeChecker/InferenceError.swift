@@ -13,7 +13,7 @@ public enum InferenceErrorKind: Equatable, Hashable, CustomStringConvertible {
 	case constraintError(String)
 	case argumentError(expected: Int, actual: Int)
 	case typeError(String)
-	case memberNotFound(StructType, String)
+	case memberNotFound(InferenceType, String)
 	case missingConstraint(InferenceType)
 	case subscriptNotAllowed(InferenceType)
 	case unificationError(InferenceType, InferenceType)
@@ -28,13 +28,13 @@ public enum InferenceErrorKind: Equatable, Hashable, CustomStringConvertible {
 		case .undefinedVariable(let string):
 			"Undefined variable: \(string)"
 		case .unknownError(let string):
-			string
+			string.description
 		case .constraintError(let string):
 			"Unresolved constraint: \(string)"
 		case .argumentError(let expected, let actual):
 			"Expected \(expected) args, got \(actual)"
 		case .typeError(let string):
-			string
+			string.description
 		case .memberNotFound(let structType, let string):
 			"\(structType) has no member `\(string)`"
 		case .missingConstraint(let inferenceType):

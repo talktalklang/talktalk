@@ -58,4 +58,65 @@ extension Parser {
 		let module = IdentifierExprSyntax(id: nextID(), name: name.lexeme, location: [name])
 		return ImportStmtSyntax(id: nextID(), token: importToken, module: module, location: endLocation(i))
 	}
+
+	mutating func matchStmt() -> any Stmt {
+		let matchToken = previous.unsafelyUnwrapped
+		let i = startLocation(at: matchToken)
+		let target = expr()
+
+		skip(.newline)
+		consume(.leftBrace)
+		skip(.newline)
+
+		var cases: [CaseStmt] = []
+		while !check(.eof), !check(.rightBrace) {
+			skip(.newline)
+			let stmt = caseStmt()
+			skip(.newline)
+			if let stmt = stmt as? CaseStmt {
+				cases.append(stmt)
+			} else {
+				return error(at: current, .syntaxError("Expected case statement, got \(stmt)"), expectation: .none)
+			}
+		}
+
+		skip(.newline)
+		consume(.rightBrace)
+		skip(.newline)
+
+		return MatchStatementSyntax(matchToken: matchToken, target: target, cases: cases, id: nextID(), location: endLocation(i))
+	}
+
+	mutating func caseStmt() -> any Stmt {
+		guard let token = consume(.case, .else) else {
+			return error(at: current, .unexpectedToken(expected: .case, got: current), expectation: .none)
+		}
+
+		let i = startLocation(at: token)
+
+		let pattern: (any Expr)?
+		if token.kind != .else {
+			pattern = expr()
+		} else {
+			pattern = nil
+		}
+
+		consume(.colon)
+
+		var stmts: [any Stmt] = []
+		while !check(.case, .else), !check(.rightBrace), !check(.eof) {
+			skip(.newline)
+			stmts.append(stmt())
+			skip(.newline)
+		}
+
+		return CaseStmtSyntax(
+			caseToken: token,
+			patternSyntax: pattern,
+			body: stmts,
+			isDefault: token.kind == .else,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
 }

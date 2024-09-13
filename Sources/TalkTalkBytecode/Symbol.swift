@@ -44,6 +44,9 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		// (Struct name, Offset)
 		case `struct`(String)
 
+		// Enum
+		case `enum`(String)
+
 		// (Struct name, Method name, Param names, Offset)
 		case method(String, String, [String])
 
@@ -56,6 +59,10 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 
 	public static func primitive(_ name: String) -> Symbol {
 		Symbol(module: "[builtin]", kind: .primitive(name))
+	}
+
+	public static func `enum`(_ module: String, _ name: String) -> Symbol {
+		Symbol(module: module, kind: .enum(name))
 	}
 
 	public static func function(_ module: String, _ name: String, _ params: [String]) -> Symbol {
@@ -106,6 +113,8 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 			"$M\(module)$\(type)$\(name)$\(params.joined(separator: "_"))"
 		case let .genericType(name):
 			"$G\(module)$\(name)"
+		case let .enum(name):
+			"$E\(module)$\(name)"
 		}
 	}
 }
