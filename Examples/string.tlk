@@ -2,4 +2,4 @@
 print("Hello\nworld")
 
 print("\("hello") world")
-print("it's true: \(true)")
+print("It's true: \(true)")
