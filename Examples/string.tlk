@@ -1,5 +1,13 @@
 // Can print a newline
 print("Hello\nworld")
 
+// Can interpolate a string IN a string
 print("\("hello") world")
+
+// Can interpolate a bool in a string
 print("It's true: \(true)")
+
+// Can interpolate an INTERPOLATION INSIDE AN INTERPOLATION WHAT
+print("It's \("true: \(true)")")
+
+

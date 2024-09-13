@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-public enum Opcode: Byte, Codable, Sendable {
+public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	public var byte: Byte { rawValue }
 
 	case returnValue, returnVoid,
@@ -79,6 +79,9 @@ public enum Opcode: Byte, Codable, Sendable {
 			 matchBegin,
 			 matchCase,
 			 binding,
+
+			 // String interpolation
+			 appendInterpolation,
 
 			 // For operations that should have their own scope but allow returning from
 			 // their parent, like match statement bodies

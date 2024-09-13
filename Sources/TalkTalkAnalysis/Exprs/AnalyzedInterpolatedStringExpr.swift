@@ -2,13 +2,61 @@
 
 import TalkTalkSyntax
 
+public enum AnalyzedInterpolatedStringSegment: Equatable, CustomStringConvertible {
+	public struct AnalyzedInterpolatedExpr: Equatable {
+		public static func ==(lhs: Self, rhs: Self) -> Bool {
+			lhs.exprAnalyzed.id == rhs.exprAnalyzed.id
+		}
+
+		public let exprAnalyzed: any AnalyzedExpr
+		public let startToken: Token
+		public let endToken: Token
+	}
+
+	case string(String, Token)
+	case expr(AnalyzedInterpolatedExpr)
+
+	var asString: String? {
+		if case let .string(string, _) = self {
+			return string
+		}
+
+		return nil
+	}
+
+	var asExpr: AnalyzedInterpolatedExpr? {
+		if case let .expr(analyzedInterpolatedExpr) = self {
+			return analyzedInterpolatedExpr
+		}
+
+		return nil
+	}
+
+	public var description: String {
+		switch self {
+		case .string(let string, _):
+			"string(\(string))"
+		case .expr(let interpolatedExpr):
+			"expr(\(interpolatedExpr))"
+		}
+	}
+}
+
 public struct AnalyzedInterpolatedStringExpr: InterpolatedStringExpr, AnalyzedExpr {
   public let wrapped: InterpolatedStringExprSyntax
-	public var segmentsAnalyzed: [InterpolatedStringSegment]
+	public var segmentsAnalyzed: [AnalyzedInterpolatedStringSegment]
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
-	public var analyzedChildren: [any AnalyzedSyntax] { [] }
+	public var analyzedChildren: [any AnalyzedSyntax] {
+		segmentsAnalyzed.compactMap {
+			if case let .expr(expr) = $0 {
+				return expr.exprAnalyzed
+			} else {
+				return nil
+			}
+		}
+	}
 
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }

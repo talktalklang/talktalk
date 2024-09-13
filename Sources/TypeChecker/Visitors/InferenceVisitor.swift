@@ -875,11 +875,14 @@ struct InferenceVisitor: Visitor {
 		context.extend(expr, with: .type(.void))
 	}
 
-	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws {
-	}
+	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws {}
 
 	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws {
-		
+		for case let .expr(interpolation) in expr.segments {
+			try interpolation.expr.accept(self, context)
+		}
+
+		context.extend(expr, with: .type(.base(.string)))
 	}
 
 	// GENERATOR_INSERTION

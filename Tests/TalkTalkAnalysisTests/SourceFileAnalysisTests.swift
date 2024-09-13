@@ -393,4 +393,21 @@ struct AnalysisTests {
 
 		#expect(ast.cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed == .base(.int))
 	}
+
+	@Test("Can analyze interpolated strings") func interpolatedStrings() throws {
+		let ast = ast(
+			#"""
+			"foo \(true) bar"
+			"""#
+		)
+
+		let interpolated = ast
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedInterpolatedStringExpr.self)
+
+		#expect(interpolated.segmentsAnalyzed.count == 3)
+		#expect(interpolated.segmentsAnalyzed[0].asString! == "foo ")
+		#expect(interpolated.segmentsAnalyzed[1].asExpr!.exprAnalyzed.cast(AnalyzedLiteralExpr.self).value == .bool(true))
+		#expect(interpolated.segmentsAnalyzed[2].asString! == " bar")
+	}
 }

@@ -320,4 +320,6 @@ struct PatternVisitor: Visitor {
 	func visit(_ expr: InterpolatedStringExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		throw PatternError.invalid(expr.description)
 	}
+
+	// GENERATOR_INSERTION
 }

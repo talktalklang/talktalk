@@ -16,7 +16,7 @@ public enum InterpolatedStringSegment: Equatable, CustomStringConvertible {
 
 	public var description: String {
 		switch self {
-		case .string(let string, let token):
+		case .string(let string, _):
 			"string(\(string))"
 		case .expr(let interpolatedExpr):
 			"expr(\(interpolatedExpr))"
