@@ -266,7 +266,14 @@ extension Parser {
 			}
 
 			do {
-				let value = try StringParser.parse(previous.lexeme)
+				let stringParserContext: StringParser<String>.Context = check(.interpolationStart) ? .beforeInterpolation : .normal
+				let beginString = previous.lexeme
+
+				if didMatch(.interpolationStart) {
+					return interpolatedString(startToken: previous, beginString: beginString, interpolationStart: previous)
+				}
+
+				let value = try StringParser.parse(previous.lexeme, context: stringParserContext)
 				return LiteralExprSyntax(id: nextID(), value: .string(value), location: [previous])
 			} catch let error as StringParser<String>.StringError {
 				return self.error(at: previous, .syntaxError(error.errorDescription))
@@ -276,7 +283,6 @@ extension Parser {
 		}
 
 		if didMatch(.int), let int = Int(previous.lexeme) {
-
 			return LiteralExprSyntax(id: nextID(), value: .int(int), location: [previous])
 		}
 
@@ -285,6 +291,64 @@ extension Parser {
 		}
 
 		return ParseErrorSyntax(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
+	}
+
+	mutating func interpolatedString(startToken: Token, beginString: String, interpolationStart: Token) -> any Expr {
+		let i = startLocation(at: startToken)
+		var stringParserContext: StringParser<String>.Context = .beforeInterpolation
+		var segments: [InterpolatedStringSegment] = []
+
+		do {
+			let beginString = try StringParser.parse(beginString, context: stringParserContext)
+
+			segments.append(.string(beginString))
+
+			try segments.append(
+				.expr(
+					interpolation(start: interpolationStart)
+				)
+			)
+
+			stringParserContext = .afterInterpolation
+
+			// Finish the string
+			while check(.interpolationStart) || check(.string) {
+				if check(.eof) {
+					return error(at: current, .syntaxError("Unterminated string interpolation"))
+				}
+
+				if let start = match(.interpolationStart) {
+					try segments.append(.expr(interpolation(start: start)))
+					stringParserContext = .afterInterpolation
+				} else if let string = match(.string) {
+					let value = try StringParser.parse(string.lexeme, context: stringParserContext)
+
+					if value != "" {
+						segments.append(.string(value))
+					}
+
+					stringParserContext = .normal
+				}
+			}
+		} catch {
+			return self.error(at: current, .syntaxError(error.localizedDescription))
+		}
+
+		return InterpolatedStringExprSyntax(segments: segments, id: nextID(), location: endLocation(i))
+	}
+
+	mutating func interpolation(start: Token) throws -> InterpolatedStringSegment.InterpolatedExpr {
+		// We're in an interpolation, so we want the expression
+		let interpolated = expr()
+
+		// Make sure the interpolation ends
+		guard let end = consume(.interpolationEnd) else {
+			throw ParserError.couldNotParse([
+				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd))
+			])
+		}
+
+		return .init(expr: interpolated, startToken: start, endToken: end)
 	}
 
 	mutating func returning(_: Bool) -> any Stmt {

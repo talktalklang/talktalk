@@ -58,7 +58,7 @@ struct StringTests {
 
 	@Test("Throws if it's not a valid escape sequence") func throwsIfInvalid() throws {
 		#expect(throws: StringParser<String>.StringError.self) {
-			try StringParser.parse(#""\o""#)
+			try StringParser.parse(#""\o""#, context: .normal)
 		}
 	}
 
@@ -97,10 +97,12 @@ struct StringTests {
 	}
 
 	@Test("Can parse interpolated string") func interpolated() throws {
-		let parsed = try Parser.parse(#" "foo \("bar")" "#)[0]
+		let parsed = try Parser.parse(#" "foo \("bar") " "#)[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(InterpolatedStringExprSyntax.self)
 
-		#expect(parsed.segments.count == 2)
+		#expect(parsed.segments.count == 3)
+		#expect(parsed.segments[0] == .string("foo "))
+		#expect(parsed.segments[2] == .string(" "))
 	}
 }

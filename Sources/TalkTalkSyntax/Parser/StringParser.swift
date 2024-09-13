@@ -8,6 +8,10 @@
 import Foundation
 
 struct StringParser<S: StringProtocol> {
+	enum Context {
+		case normal, beforeInterpolation, afterInterpolation
+	}
+
 	enum StringError: Error, LocalizedError {
 		case invalidEscapeSequence(Character)
 
@@ -20,29 +24,45 @@ struct StringParser<S: StringProtocol> {
 	}
 
 	let input: S
-
 	var current: String.Index
+	let context: Context
+	var endOffset: Int = 0
 
-	static func parse(_ string: S) throws -> String {
-		var parser = StringParser(input: string)
+	static func parse(_ string: S, context: Context) throws -> String {
+		var parser = StringParser(input: string, context: context)
 		return try parser.parsed()
 	}
 
-	init(input: S) {
+	init(input: S, context: Context) {
 		self.input = input
 		self.current = input.startIndex
+		self.context = context
+
+		switch context {
+		case .normal:
+			// Skip the opening '"'
+			advance()
+			// Skip the ending '"'
+			endOffset = -1
+		case .beforeInterpolation:
+			// Skip the opening '"'
+			advance()
+			// but don't look for '"' at the end
+			endOffset = 0
+		case .afterInterpolation:
+			// Don't bother skipping opening '"'
+			endOffset = -1
+		}
 	}
 
 	mutating func next() -> Character? {
-		if input.count < 2 {
+		if current == input.index(input.endIndex, offsetBy: endOffset) {
 			return nil
 		}
 
-		if current == input.index(input.endIndex, offsetBy: -2) {
-			return nil
+		defer {
+			advance()
 		}
-
-		advance()
 
 		return input[current]
 	}
@@ -51,8 +71,8 @@ struct StringParser<S: StringProtocol> {
 		current = input.index(after: current)
 	}
 
-	mutating func parsed() throws -> String {
-		if input.count == 2 {
+	mutating internal func parsed() throws -> String {
+		if input.count == 2 - endOffset {
 			return ""
 		}
 
