@@ -324,7 +324,7 @@ public struct Parser {
 		current
 	}
 
-	mutating func error(at: Token, _ kind: SyntaxErrorKind, expectation: ParseExpectation) -> ParseError {
+	mutating func error(at: Token, _ kind: SyntaxErrorKind, expectation: ParseExpectation = .none) -> ParseError {
 		errors.append(
 			SyntaxError(
 				line: at.line,

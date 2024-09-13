@@ -57,6 +57,17 @@ struct TalkTalkLexerTests {
 		#expect(tokens[0].length == 13)
 	}
 
+	@Test("Escaped Strings") func escapedStrings() throws {
+		var lexer = Lexer(#""\"""#)
+		let tokens = lexer.collect()
+		#expect(tokens.map(\.kind) == [
+			.string,
+			.eof,
+		])
+
+		#expect(tokens[0].length == 4)
+	}
+
 	@Test("Floats") func floats() async throws {
 		var lexer = Lexer("1.23")
 		let token = lexer.collect()[0]

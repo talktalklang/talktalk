@@ -161,6 +161,10 @@ public struct Lexer {
 
 	mutating func string() -> Token {
 		while peek() != "\"" {
+			if peek() == "\\" {
+				advance()
+			}
+
 			advance()
 
 			if isAtEnd {
@@ -284,7 +288,7 @@ public struct Lexer {
 		if source.indices.contains(current) {
 			return source[current]
 		} else {
-			return Character("")
+			return Character("\0")
 		}
 	}
 

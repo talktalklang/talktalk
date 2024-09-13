@@ -1,0 +1,2 @@
+// Can print a newline
+print("Hello\nworld")

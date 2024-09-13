@@ -256,8 +256,23 @@ extension Parser {
 		}
 
 		if didMatch(.string) {
-			let string = previous.lexeme.split(separator: "")[1 ..< previous.lexeme.count - 1].joined(separator: "")
-			return LiteralExprSyntax(id: nextID(), value: .string(string), location: [previous])
+			if previous.lexeme.count == 2 {
+				// It's an empty string, no need to parse
+				return LiteralExprSyntax(
+					id: nextID(),
+					value: .string(""),
+					location: [previous]
+				)
+			}
+
+			do {
+				let value = try StringParser.parse(previous.lexeme)
+				return LiteralExprSyntax(id: nextID(), value: .string(value), location: [previous])
+			} catch let error as StringParser<String>.StringError {
+				return self.error(at: previous, .syntaxError(error.errorDescription))
+			} catch {
+				return self.error(at: previous, .syntaxError("\(error)"))
+			}
 		}
 
 		if didMatch(.int), let int = Int(previous.lexeme) {
