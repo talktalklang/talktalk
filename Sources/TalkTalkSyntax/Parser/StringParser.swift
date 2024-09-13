@@ -56,6 +56,10 @@ struct StringParser<S: StringProtocol> {
 	}
 
 	mutating func next() -> Character? {
+		if current == input.endIndex {
+			return nil
+		}
+
 		if current == input.index(input.endIndex, offsetBy: endOffset) {
 			return nil
 		}
@@ -68,7 +72,9 @@ struct StringParser<S: StringProtocol> {
 	}
 
 	mutating func advance() {
-		current = input.index(after: current)
+		if current < input.endIndex {
+			current = input.index(after: current)
+		}
 	}
 
 	mutating internal func parsed() throws -> String {

@@ -1,2 +1,5 @@
 // Can print a newline
 print("Hello\nworld")
+
+print("\("hello") world")
+print("it's true: \(true)")

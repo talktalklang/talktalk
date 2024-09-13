@@ -215,9 +215,7 @@ public struct Lexer {
 	mutating func stringInterpolation(start stringStart: Int) {
 		var buffer: [Token] = []
 
-		if current > stringStart {
-			buffer.append(make(.string))
-		}
+		buffer.append(make(.string))
 
 		start = current
 		advance() // Consume '\'

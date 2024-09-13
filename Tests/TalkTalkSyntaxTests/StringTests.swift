@@ -62,6 +62,21 @@ struct StringTests {
 		}
 	}
 
+	@Test("Lexing interpolated with no prefix") func interpolateNoPrefix() throws {
+		let tokens = Lexer.collect(#"""
+		"\("bar") fizz"
+		"""#)
+
+		#expect(tokens.map(\.kind) == [
+			.string,
+			.interpolationStart,
+			.string,
+			.interpolationEnd,
+			.string,
+			.eof
+		])
+	}
+
 	@Test("Lexing interpolated string") func interpolateLex() throws {
 		let tokens = Lexer.collect(#"""
 		"foo \("bar") fizz"
@@ -96,13 +111,19 @@ struct StringTests {
 		])
 	}
 
+	@Test("Doesn't crash up on bad interpolation") func badInterpolation() throws {
+		#expect(throws: Parser.ParserError.self) {
+			try Parser.parse(#" "foo \(" "#)[0]
+		}
+	}
+
 	@Test("Can parse interpolated string") func interpolated() throws {
 		let parsed = try Parser.parse(#" "foo \("bar") " "#)[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(InterpolatedStringExprSyntax.self)
 
 		#expect(parsed.segments.count == 3)
-		#expect(parsed.segments[0] == .string("foo "))
-		#expect(parsed.segments[2] == .string(" "))
+		#expect(parsed.segments[0].description == "string(foo )")
+		#expect(parsed.segments[2].description == "string( )")
 	}
 }

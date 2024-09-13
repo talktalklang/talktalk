@@ -267,10 +267,13 @@ extension Parser {
 
 			do {
 				let stringParserContext: StringParser<String>.Context = check(.interpolationStart) ? .beforeInterpolation : .normal
-				let beginString = previous.lexeme
+
+				// swiftlint:disable force_unwrapping
+				let beginString = previous!
+				// swiftlint:enable force_unwrapping
 
 				if didMatch(.interpolationStart) {
-					return interpolatedString(startToken: previous, beginString: beginString, interpolationStart: previous)
+					return interpolatedString(startToken: previous, beginStringToken: beginString, interpolationStart: previous)
 				}
 
 				let value = try StringParser.parse(previous.lexeme, context: stringParserContext)
@@ -293,15 +296,15 @@ extension Parser {
 		return ParseErrorSyntax(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
-	mutating func interpolatedString(startToken: Token, beginString: String, interpolationStart: Token) -> any Expr {
+	mutating func interpolatedString(startToken: Token, beginStringToken: Token, interpolationStart: Token) -> any Expr {
 		let i = startLocation(at: startToken)
 		var stringParserContext: StringParser<String>.Context = .beforeInterpolation
 		var segments: [InterpolatedStringSegment] = []
 
 		do {
-			let beginString = try StringParser.parse(beginString, context: stringParserContext)
+			let beginString = try StringParser.parse(beginStringToken.lexeme, context: stringParserContext)
 
-			segments.append(.string(beginString))
+			segments.append(.string(beginString, beginStringToken))
 
 			try segments.append(
 				.expr(
@@ -323,10 +326,7 @@ extension Parser {
 				} else if let string = match(.string) {
 					let value = try StringParser.parse(string.lexeme, context: stringParserContext)
 
-					if value != "" {
-						segments.append(.string(value))
-					}
-
+					segments.append(.string(value, string))
 					stringParserContext = .normal
 				}
 			}
