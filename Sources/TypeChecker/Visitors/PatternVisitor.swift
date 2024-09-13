@@ -316,4 +316,8 @@ struct PatternVisitor: Visitor {
 	func visit(_ expr: EnumMemberExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		throw PatternError.invalid(expr.description)
 	}
+
+	func visit(_ expr: InterpolatedStringExprSyntax, _ context: InferenceContext) throws -> Pattern {
+		throw PatternError.invalid(expr.description)
+	}
 }

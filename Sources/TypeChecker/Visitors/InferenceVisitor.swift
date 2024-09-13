@@ -877,6 +877,10 @@ struct InferenceVisitor: Visitor {
 
 	public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws {
 	}
-	
+
+	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws {
+		
+	}
+
 	// GENERATOR_INSERTION
 }

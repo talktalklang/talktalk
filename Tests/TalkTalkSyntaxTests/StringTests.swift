@@ -61,4 +61,46 @@ struct StringTests {
 			try StringParser.parse(#""\o""#)
 		}
 	}
+
+	@Test("Lexing interpolated string") func interpolateLex() throws {
+		let tokens = Lexer.collect(#"""
+		"foo \("bar") fizz"
+		"""#)
+
+		#expect(tokens.map(\.kind) == [
+			.string,
+			.interpolationStart,
+			.string,
+			.interpolationEnd,
+			.string,
+			.eof
+		])
+	}
+
+	@Test("Lexing nested interpolated string") func interpolateNestedLex() throws {
+		let tokens = Lexer.collect(#"""
+		"foo \("fizz \("buzz")") bar"
+		"""#)
+
+		#expect(tokens.map(\.kind) == [
+			.string,
+			.interpolationStart,
+			.string,
+			.interpolationStart,
+			.string,
+			.interpolationEnd,
+			.string,
+			.interpolationEnd,
+			.string,
+			.eof
+		])
+	}
+
+	@Test("Can have interpolated string") func interpolated() throws {
+		let parsed = try Parser.parse(#" "foo \("bar")" "#)[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(InterpolatedStringExprSyntax.self)
+
+		#expect(parsed.segments.count == 2)
+	}
 }

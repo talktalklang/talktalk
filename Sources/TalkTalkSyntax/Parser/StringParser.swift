@@ -34,6 +34,10 @@ struct StringParser<S: StringProtocol> {
 	}
 
 	mutating func next() -> Character? {
+		if input.count < 2 {
+			return nil
+		}
+
 		if current == input.index(input.endIndex, offsetBy: -2) {
 			return nil
 		}

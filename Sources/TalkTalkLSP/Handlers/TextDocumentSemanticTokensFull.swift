@@ -386,5 +386,10 @@ public struct SemanticTokensVisitor: Visitor {
 		try expr.children.flatMap { try $0.accept(self, context) }
 	}
 
+	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
 	// GENERATOR_INSERTION
 }

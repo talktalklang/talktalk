@@ -93,6 +93,8 @@ extension Token.Kind {
 		case .enum: .none
 		case .match: .none
 		case .`case`: .none
+		case .interpolationStart: .none
+		case .interpolationEnd: .none
 		}
 	}
 }
