@@ -33,6 +33,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		case eof
 		case error
 		case builtin
+		case comment
 	}
 
 	public let path: String
@@ -49,7 +50,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 	}
 
 	public var debugDescription: String {
-		"Token(kind: .\(kind), line: \(line), column: \(column), position: \(start), length: \(length), lexeme: \(lexeme.debugDescription))"
+		"Token(kind: .\(kind), start: \(start), path: \(path), line: \(line), column: \(column), position: \(start), length: \(length), lexeme: \(lexeme.debugDescription))"
 	}
 
 	public static func synthetic(_ kind: Kind, lexeme: String? = nil) -> Token {
@@ -78,10 +79,15 @@ public struct Lexer {
 	var errors: [SyntaxError]
 	var nextBuffer: [Token] = []
 
-	public init(_ source: SourceFile) {
+	// Comment handling (disabled by default)
+	var preserveComments: Bool
+	var comments: [Token] = []
+
+	public init(_ source: SourceFile, preserveComments: Bool = false) {
 		self.path = source.path
 		self.source = ContiguousArray<Character>(source.text)
 		self.errors = []
+		self.preserveComments = preserveComments
 
 		if source.path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
 			#if DEBUG
@@ -99,10 +105,17 @@ public struct Lexer {
 	public mutating func rewind(count _: Int) {}
 
 	public mutating func next(terminator: Character? = nil) -> Token {
+		// When parsing interpolated strings, we may need to buffer tokens for the interpolated
+		// expressions. If we've done that, we want to empty that buffer first.
 		if !nextBuffer.isEmpty { return nextBuffer.removeFirst() }
 
 		skipWhitespace()
-		skipComments()
+
+		if preserveComments {
+			saveComments()
+		} else {
+			skipComments()
+		}
 
 		if isAtEnd {
 			return make(.eof)
@@ -308,6 +321,20 @@ public struct Lexer {
 	mutating func skipWhitespace() {
 		while !isAtEnd, check(\.isWhitespace), !check(\.isNewline) {
 			advance()
+		}
+	}
+
+	mutating func saveComments() {
+		if peek() == "/", peekNext() == "/" {
+			start = current
+
+			while !isAtEnd, peek() != "\n" {
+				advance()
+			}
+
+			comments.append(
+				make(.comment)
+			)
 		}
 	}
 

@@ -48,8 +48,8 @@ public struct Parser {
 		try ParsedSourceFile(path: sourceFile.path, syntax: parse(sourceFile))
 	}
 
-	public static func parse(_ source: SourceFile, allowErrors: Bool = false) throws -> [any Syntax] {
-		var parser = Parser(Lexer(source))
+	public static func parse(_ source: SourceFile, allowErrors: Bool = false, preserveComments: Bool = false) throws -> [any Syntax] {
+		var parser = Parser(Lexer(source, preserveComments: preserveComments))
 		let result = parser.parse()
 		if !parser.errors.isEmpty {
 			if !allowErrors {

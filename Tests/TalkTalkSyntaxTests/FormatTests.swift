@@ -15,10 +15,83 @@ struct FormatTests {
 
 	@Test("Basic binary op") func binaryOp() throws {
 		let formatted = format("""
-		1+   2
+		1 +  
+			2
 		""")
 
 		#expect(formatted == "1 + 2")
+	}
+
+	@Test("Basic comment with nothing else") func basicComment() throws {
+		let formatted = format(
+		"""
+		// hello
+		//
+		// world
+		"""
+		)
+
+		#expect(formatted == """
+		// hello
+		//
+		// world
+		""")
+	}
+
+	@Test("Basic leading comment") func leadingComment() throws {
+		let formatted = format(
+		"""
+			// hello
+		func foo {}
+		"""
+		)
+
+		#expect(formatted == """
+		// hello
+		func foo() {}
+		""")
+	}
+
+	@Test("Basic trailing comment") func trailingComment() throws {
+		let formatted = format(
+		"""
+		func foo {}
+			// hello
+		"""
+		)
+
+		#expect(formatted == """
+		func foo() {}
+		// hello
+		""")
+	}
+
+	@Test("Basic dangling comment (in a func)") func danglingFuncComment() throws {
+		let formatted = format(
+		"""
+		func foo {
+		// hello
+		}
+		"""
+		)
+
+		#expect(formatted == """
+		func foo() {
+			// hello
+		}
+		""")
+	}
+
+	@Test("Basic dangling comment (same line)") func danglingLineComment() throws {
+		let formatted = format(
+		"""
+		let a = 123	 			// hello
+		"""
+		)
+
+		#expect(formatted == """
+		let a = 123 // hello
+		""")
 	}
 
 	@Test("Repects newlines at top line") func respectsNewlines() throws {

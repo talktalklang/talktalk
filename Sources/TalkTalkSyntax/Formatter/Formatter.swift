@@ -12,12 +12,34 @@ public struct Formatter {
 	}
 
 	public func format(width: Int = 84) throws -> String {
-		let visitor = FormatterVisitor()
-		let context = FormatterVisitor.Context(kind: .topLevel)
+		var parser = Parser(Lexer(input, preserveComments: true))
 
-		let ast = try Parser.parse(input)
+		let ast = parser.parse()
 		var last: (any Syntax)? = nil
 		var output = ""
+
+		if ast.isEmpty {
+			var lastComment: Token?
+			for comment in parser.lexer.comments {
+				if let last = lastComment {
+					switch comment.line - last.line {
+					case 0: output += "\n"
+					case 1: output += "\n"
+					default: output += "\n\n"
+					}
+				}
+
+				output += format(
+					document: .text(comment.lexeme),
+					width: width
+				)
+
+				lastComment = comment
+			}
+		}
+
+		let visitor = FormatterVisitor(commentsStore: CommentStore(comments: parser.lexer.comments))
+		let context = FormatterVisitor.Context(kind: .topLevel)
 
 		for syntax in ast {
 			if let lastNode = last {
@@ -41,7 +63,7 @@ public struct Formatter {
 
 	func format(document: Doc, width: Int) -> String {
 		var output = ""
-		var queue: [(Int, Doc)] = [(0, document)]
+		var queue: [(UInt8, Doc)] = [(0, document)]
 		var column = 0
 		var wasNewline = false
 
@@ -53,7 +75,7 @@ public struct Formatter {
 			case let .text(str):
 				if wasNewline {
 					// Only indent if the previous line wasn't a newline
-					output += String(repeating: "\t", count: indent)
+					output += String(repeating: "\t", count: Int(indent))
 					wasNewline = false
 				}
 				output += str
@@ -82,7 +104,7 @@ public struct Formatter {
 
 	func peekBlankLine(queue: [(Int, Doc)]) -> Bool {
 		if let first = queue.first {
-			return [.line, .softline, .hardline].contains(first.1)
+			return first.1.isLineBreak
 		}
 
 		return false

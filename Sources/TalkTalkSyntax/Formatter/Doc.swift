@@ -21,35 +21,29 @@ indirect enum Doc {
 	// A line break that does not collapse
 	case hardline
 
-	// Adds indentation to a document
-	case nest(Int, Doc)
+	// Adds indentation to a document.
+	//
+	// Note: This is stored as a UInt8 because using Int was causing circular reference
+	// errors for some reason in the swift compiler.
+	case nest(UInt8, Doc)
 
 	// Two documents that need to be concatenated
 	case concat(Doc, Doc)
 
 	// A choice between two layouts for a document
 	case group(Doc)
-}
 
-extension Doc: Equatable {
-	static func == (lhs: Doc, rhs: Doc) -> Bool {
-		switch (lhs, rhs) {
-		case (.empty, .empty):
+	var isEmpty: Bool {
+		switch self {
+		case .empty: true
+		default: false
+		}
+	}
+
+	var isLineBreak: Bool {
+		switch self {
+		case .line, .softline, .hardline:
 			true
-		case let (.text(lText), .text(rText)):
-			lText == rText
-		case (.line, .line):
-			true
-		case (.softline, .softline):
-			true
-		case (.hardline, .hardline):
-			true
-		case let (.nest(lIndent, lDoc), .nest(rIndent, rDoc)):
-			lIndent == rIndent && lDoc == rDoc
-		case let (.concat(lLeft, lRight), .concat(rLeft, rRight)):
-			lLeft == rLeft && lRight == rRight
-		case let (.group(lDoc), .group(rDoc)):
-			lDoc == rDoc
 		default:
 			false
 		}

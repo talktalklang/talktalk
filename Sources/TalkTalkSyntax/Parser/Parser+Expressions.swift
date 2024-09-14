@@ -564,6 +564,8 @@ extension Parser {
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: lhs.location.start)
 
+		skip(.newline)
+
 		let op: BinaryOperator = switch current.kind {
 		case .bangEqual: .bangEqual
 		case .equalEqual: .equalEqual
@@ -583,11 +585,18 @@ extension Parser {
 		}
 
 		advance()
-		let rhs = if op == .is {
-			typeExpr()
+		skip(.newline)
+
+		let rhs: any Expr
+
+		if op == .is {
+			rhs = typeExpr()
 		} else {
-			parse(precedence: current.kind.rule.precedence + 1)
+			rhs = parse(precedence: current.kind.rule.precedence + 1)
 		}
+
+		skip(.newline)
+
 		return BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
 	}
 
