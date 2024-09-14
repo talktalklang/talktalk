@@ -18,7 +18,7 @@ struct Format: TalkTalkCommand {
 
 	func run() async throws {
 		let source = try get(input: input).text
-		let formatted = try Formatter.format(source)
+		let formatted = try OldFormatter.format(source)
 		print(formatted)
 	}
 }

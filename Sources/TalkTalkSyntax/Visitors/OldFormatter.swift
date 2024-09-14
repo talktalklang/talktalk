@@ -1,6 +1,6 @@
 import Foundation
 
-public struct Formatter: Visitor {
+public struct OldFormatter: Visitor {
 	public class Context {
 		var lastType: (any Syntax)? = nil
 	}
@@ -11,8 +11,8 @@ public struct Formatter: Visitor {
 
 	public static func format(_ input: String) throws -> String {
 		let parsed = try Parser.parse(SourceFile(path: "", text: input))
-		let formatter = Formatter()
-		let context = Formatter.Context()
+		let formatter = OldFormatter()
+		let context = OldFormatter.Context()
 
 		var result: [String] = []
 		for expr in parsed {
@@ -438,7 +438,7 @@ public struct Formatter: Visitor {
 
 	// MARK: Helpers
 
-	public func indenting(perform: (inout Formatter) throws -> String) rethrows -> String {
+	public func indenting(perform: (inout OldFormatter) throws -> String) rethrows -> String {
 		var copy = self
 		copy.indent += 1
 		let indentation = String(repeating: "\t", count: 1)

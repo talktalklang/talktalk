@@ -154,8 +154,8 @@ extension Parser {
 		let name: Token? = match(.identifier)
 
 		skip(.newline)
-
 		consume(.leftParen)
+		skip(.newline)
 
 		// Parse parameter list
 		let params = parameterList()

@@ -59,11 +59,11 @@ public extension Syntax {
 		do {
 			switch self {
 			case let syntax as any Expr:
-				return try syntax.accept(Formatter(), Formatter.Context())
+				return try syntax.accept(OldFormatter(), OldFormatter.Context())
 			case let syntax as any Decl:
-				return try syntax.accept(Formatter(), Formatter.Context())
+				return try syntax.accept(OldFormatter(), OldFormatter.Context())
 			case let syntax as any Stmt:
-				return try syntax.accept(Formatter(), Formatter.Context())
+				return try syntax.accept(OldFormatter(), OldFormatter.Context())
 			default:
 				return "No description found for \(debugDescription)"
 			}

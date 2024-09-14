@@ -6,6 +6,7 @@
 //
 
 import TalkTalkCore
+import Foundation
 
 struct SourceLocationStack {
 	var locations: [Token] = []
@@ -20,8 +21,15 @@ struct SourceLocationStack {
 }
 
 public struct Parser {
-	public enum ParserError: Error {
+	public enum ParserError: Error, LocalizedError {
 		case couldNotParse([SyntaxError])
+
+		public var errorDescription: String? {
+			switch self {
+			case .couldNotParse(let array):
+				array.map { "\($0)" }.joined(separator: ", ")
+			}
+		}
 	}
 
 	var parserRepeats: [Int: Int] = [:]
@@ -221,20 +229,26 @@ public struct Parser {
 
 	mutating func argumentList(terminator: Token.Kind = .rightParen) -> [Argument] {
 		var args: [Argument] = []
+		skip(.newline)
 		repeat {
 			let i = startLocation()
 			var name: Token?
 
 			if check(.identifier), checkNext(.colon) {
+				skip(.newline)
 				let identifier = consume(.identifier).unsafelyUnwrapped
+				skip(.newline)
 				consume(.colon)
+				skip(.newline)
 				name = identifier
 			}
 
 			let value = decl(context: .argument)
+			skip(.newline)
 			args.append(Argument(id: nextID(), location: endLocation(i), label: name, value: value))
 		} while didMatch(.comma)
 
+		skip(.newline)
 		consume(terminator)
 		return args
 	}
