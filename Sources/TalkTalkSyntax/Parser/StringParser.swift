@@ -108,4 +108,25 @@ struct StringParser<S: StringProtocol> {
 
 		return result
 	}
+
+	public static func escape(_ string: S) -> String {
+		var escapedString = ""
+
+		for char in string {
+			switch char {
+			case "\n":
+				escapedString += "\\n"
+			case "\t":
+				escapedString += "\\t"
+			case "\"":
+				escapedString += "\\\""
+			case "\\":
+				escapedString += "\\\\"
+			default:
+				escapedString.append(char)
+			}
+		}
+
+		return escapedString
+	}
 }

@@ -587,12 +587,10 @@ extension Parser {
 		advance()
 		skip(.newline)
 
-		let rhs: any Expr
-
-		if op == .is {
-			rhs = typeExpr()
+		let rhs: any Expr = if op == .is {
+			typeExpr()
 		} else {
-			rhs = parse(precedence: current.kind.rule.precedence + 1)
+			parse(precedence: current.kind.rule.precedence + 1)
 		}
 
 		skip(.newline)

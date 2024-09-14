@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/14/24.
 //
 
-import Testing
 @testable import TalkTalkSyntax
+import Testing
 
 struct CommentStoreTests {
 	func attachWithAST(comments: [Token], to string: String) -> (CommentStore, [any Syntax]) {
@@ -30,7 +30,7 @@ struct CommentStoreTests {
 
 	@Test("Can attach leading (basic)") func leadingBasic() throws {
 		let comments = [
-			Token(path: "test", kind: .comment, start: 0, length: 18, line: 0, column: 0, lexeme: "// This is leading")
+			Token(path: "test", kind: .comment, start: 0, length: 18, line: 0, column: 0, lexeme: "// This is leading"),
 		]
 
 		let set = attach(comments: comments, to: """
@@ -39,13 +39,13 @@ struct CommentStoreTests {
 		""")
 
 		#expect(set.leadingComments == [
-			comments[0]
+			comments[0],
 		])
 	}
 
 	@Test("Can attach trailing (basic)") func trailingBasic() throws {
 		let comments = [
-			Token(path: "test", kind: .comment, start: 14, length: 19, line: 1, column: 0, lexeme: "// This is trailing")
+			Token(path: "test", kind: .comment, start: 14, length: 19, line: 1, column: 0, lexeme: "// This is trailing"),
 		]
 
 		let set = attach(comments: comments, to: """
@@ -55,13 +55,13 @@ struct CommentStoreTests {
 		""")
 
 		#expect(set.trailingComments == [
-			comments[0]
+			comments[0],
 		])
 	}
 
 	@Test("Can attach dangling (basic)") func danglingBasic() throws {
 		let comments = [
-			Token(path: "test", kind: .comment, start: 13, length: 19, line: 1, column: 0, lexeme: "// This is dangling")
+			Token(path: "test", kind: .comment, start: 13, length: 19, line: 1, column: 0, lexeme: "// This is dangling"),
 		]
 
 		let (store, ast) = attachWithAST(comments: comments, to: """
@@ -74,13 +74,13 @@ struct CommentStoreTests {
 		let set = store.get(for: block, context: .init(kind: .topLevel))
 
 		#expect(set.danglingComments == [
-			comments[0]
+			comments[0],
 		])
 	}
 
 	@Test("Can attach dangling (same line)") func danglingSameLine() throws {
 		let comments = [
-			Token(path: "test", kind: .comment, start: 12, length: 19, line: 0, column: 12, lexeme: "// This is dangling")
+			Token(path: "test", kind: .comment, start: 12, length: 19, line: 0, column: 12, lexeme: "// This is dangling"),
 		]
 
 		let (store, ast) = attachWithAST(comments: comments, to: """
@@ -91,7 +91,7 @@ struct CommentStoreTests {
 		let set = store.get(for: literal, context: .init(kind: .topLevel))
 
 		#expect(set.danglingComments == [
-			comments[0]
+			comments[0],
 		])
 	}
 }

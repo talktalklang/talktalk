@@ -54,7 +54,7 @@ struct FormatterVisitor: Visitor {
 		case let .bool(bool):
 			.text("\(bool)")
 		case let .string(string):
-			.text(#"""# + string + #"""#)
+			.text(#"""# + StringParser.escape(string) + #"""#)
 		case .none:
 			.text("none")
 		}
@@ -270,11 +270,10 @@ struct FormatterVisitor: Visitor {
 	func visit(_ expr: MemberExprSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
 
-		let result: Doc
-		if let receiver = try expr.receiver?.accept(self, context) {
-			result = group(receiver <> text("." + expr.property))
+		let result: Doc = if let receiver = try expr.receiver?.accept(self, context) {
+			group(receiver <> text("." + expr.property))
 		} else {
-			result = text("." + expr.property)
+			text("." + expr.property)
 		}
 
 		return comments.leading <> result <> comments.dangling <> comments.trailing
@@ -283,11 +282,10 @@ struct FormatterVisitor: Visitor {
 	func visit(_ expr: ReturnStmtSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
 
-		let result: Doc
-		if let value = expr.value {
-			result = try text("return") <+> value.accept(self, context)
+		let result: Doc = if let value = expr.value {
+			try text("return") <+> value.accept(self, context)
 		} else {
-			result = text("return")
+			text("return")
 		}
 
 		return comments.leading <> result <> comments.dangling <> comments.trailing
@@ -397,15 +395,15 @@ struct FormatterVisitor: Visitor {
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
 
-	func visit(_: ProtocolDeclSyntax, _ context: Context) throws -> Doc {
+	func visit(_: ProtocolDeclSyntax, _: Context) throws -> Doc {
 		.empty // TODO:
 	}
 
-	func visit(_: ProtocolBodyDeclSyntax, _ context: Context) throws -> Doc {
+	func visit(_: ProtocolBodyDeclSyntax, _: Context) throws -> Doc {
 		.empty // TODO:
 	}
 
-	func visit(_: FuncSignatureDeclSyntax, _ context: Context) throws -> Doc {
+	func visit(_: FuncSignatureDeclSyntax, _: Context) throws -> Doc {
 		.empty // TODO:
 	}
 
@@ -465,7 +463,7 @@ struct FormatterVisitor: Visitor {
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
 
-	func visit(_: EnumMemberExprSyntax, _ context: Context) throws -> Doc {
+	func visit(_: EnumMemberExprSyntax, _: Context) throws -> Doc {
 		.empty
 	}
 
@@ -477,7 +475,7 @@ struct FormatterVisitor: Visitor {
 			case let .string(string, _):
 				res <> text(string)
 			case let .expr(interpolatedExpr):
-				try res <> interpolatedExpr.expr.accept(self, context)
+				try res <> text("\\(") <> interpolatedExpr.expr.accept(self, context) <> text(")")
 			}
 		}
 

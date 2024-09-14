@@ -11,4 +11,3 @@ person.greet()
 person
 
 let a = Array()
-

@@ -24,11 +24,11 @@ struct FormatTests {
 
 	@Test("Basic comment with nothing else") func basicComment() throws {
 		let formatted = format(
-		"""
-		// hello
-		//
-		// world
-		"""
+			"""
+			// hello
+			//
+			// world
+			"""
 		)
 
 		#expect(formatted == """
@@ -40,10 +40,10 @@ struct FormatTests {
 
 	@Test("Basic leading comment") func leadingComment() throws {
 		let formatted = format(
-		"""
-			// hello
-		func foo {}
-		"""
+			"""
+				// hello
+			func foo {}
+			"""
 		)
 
 		#expect(formatted == """
@@ -54,10 +54,10 @@ struct FormatTests {
 
 	@Test("Basic trailing comment") func trailingComment() throws {
 		let formatted = format(
-		"""
-		func foo {}
-			// hello
-		"""
+			"""
+			func foo {}
+				// hello
+			"""
 		)
 
 		#expect(formatted == """
@@ -68,11 +68,11 @@ struct FormatTests {
 
 	@Test("Basic dangling comment (in a func)") func danglingFuncComment() throws {
 		let formatted = format(
-		"""
-		func foo {
-		// hello
-		}
-		"""
+			"""
+			func foo {
+			// hello
+			}
+			"""
 		)
 
 		#expect(formatted == """
@@ -84,9 +84,9 @@ struct FormatTests {
 
 	@Test("Basic dangling comment (same line)") func danglingLineComment() throws {
 		let formatted = format(
-		"""
-		let a = 123	 			// hello
-		"""
+			"""
+			let a = 123	 			// hello
+			"""
 		)
 
 		#expect(formatted == """
@@ -303,5 +303,25 @@ struct FormatTests {
 			i = i + 1
 		}
 		""")
+	}
+
+	@Test("Formats escaped strings") func escapedBasic() throws {
+		let formatted = format(#"""
+		"hello\nworld"
+		"""#)
+
+		#expect(formatted == #"""
+		"hello\nworld"
+		"""#)
+	}
+
+	@Test("Formats interpolation") func interpolationBasic() throws {
+		let formatted = format(#"""
+		"hello \(  "world" )"
+		"""#)
+
+		#expect(formatted == #"""
+		"hello \("world")"
+		"""#)
 	}
 }

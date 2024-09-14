@@ -7,7 +7,7 @@
 
 extension Syntax {
 	var canHaveTrailingComment: Bool {
-		return self is Decl || self is Stmt
+		self is Decl || self is Stmt
 	}
 }
 
@@ -79,8 +79,8 @@ class CommentStore {
 			return true
 		}
 
-		if comment.line > syntax.location.end.line, syntax.canHaveTrailingComment {
-			// It's after the node, make it a trailing comment
+		// It's right after the node, make it a trailing comment
+		if comment.line - 1 == syntax.location.end.line {
 			commentsBySyntax[syntax.id, default: .init()].trailingComments.append(comment)
 			comments.removeFirst()
 			return true

@@ -21,7 +21,19 @@ public struct Range: Codable, Sendable, Hashable {
 	}
 }
 
-public struct Position: Codable, Sendable, Hashable {
+public struct Position: Codable, Sendable, Hashable, Comparable {
+	public static func < (lhs: Position, rhs: Position) -> Bool {
+		if lhs.line < rhs.line {
+			return true
+		}
+
+		if lhs.line == rhs.line, lhs.character < rhs.character {
+			return true
+		}
+
+		return false
+	}
+
 	public let line: Int
 	public let character: Int
 
