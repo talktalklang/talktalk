@@ -115,14 +115,9 @@ struct FormatterVisitor: Visitor {
 
 	func visit(_ expr: WhileStmtSyntax, _ context: Context) throws -> Doc {
 		let condition = try expr.condition.accept(self, context)
-		let body = try expr.accept(self, context)
+		let body = try expr.body.accept(self, context)
 
-		return group(
-			text("while") <+> condition <+> text("{")
-				<> .nest(1, .line <> body)
-				<> .line
-				<> text("}")
-		)
+		return text("while") <+> condition <+> body
 	}
 
 	func visit(_ expr: BlockStmtSyntax, _ context: Context) throws -> Doc {
@@ -286,19 +281,9 @@ struct FormatterVisitor: Visitor {
 		let alternative = try expr.alternative?.accept(self, context)
 
 		if let alternative {
-			return group(
-				text("if") <+> condition <+> text("{")
-					<> .nest(1, .line <> consequence) <> .line
-					<> text("}") <+> text("else") <+> text("{")
-					<> .nest(1, .line <> alternative) <> .line
-					<> text("}")
-			)
+			return text("if") <+> condition <+> consequence <+> text("else") <+> alternative
 		} else {
-			return group(
-				text("if") <+> condition <+> text("{")
-					<> .nest(1, .line <> consequence) <> .line
-					<> text("}")
-			)
+			return text("if") <+> condition <+> consequence
 		}
 	}
 
@@ -312,7 +297,7 @@ struct FormatterVisitor: Visitor {
 				<> text(">")
 		}
 
-		return try result <+> expr.body.accept(self, context)
+		return try result <+> expr.body.accept(self, context) <> .line
 	}
 
 	func visit(_ expr: ArrayLiteralExprSyntax, _ context: Context) throws -> Doc {

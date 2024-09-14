@@ -40,7 +40,7 @@ struct TextDocumentFormatting {
 		}
 
 		do {
-			let formatted = try await OldFormatter.format(source.text)
+			let formatted = try await Formatter(input: .init(path: source.uri, text: source.text)).format()
 			await server.respond(to: request.id, with: [TextEdit(range: source.range, newText: formatted)])
 		} catch {
 			Log.error("Error formatting: \(error)")
