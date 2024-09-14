@@ -9,10 +9,10 @@ import TalkTalkAnalysis
 
 public enum CompilerError: Error {
 	case unknownIdentifier(String),
-			 analysisError(String),
-			 analysisErrors(String),
-			 typeError(String),
-			 chunkMissing(String),
-			 invalidPattern(String),
-			 unreachable
+	     analysisError(String),
+	     analysisErrors(String),
+	     typeError(String),
+	     chunkMissing(String),
+	     invalidPattern(String),
+	     unreachable
 }

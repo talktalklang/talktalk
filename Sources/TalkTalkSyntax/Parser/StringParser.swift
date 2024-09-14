@@ -17,7 +17,7 @@ struct StringParser<S: StringProtocol> {
 
 		var errorDescription: String {
 			switch self {
-			case .invalidEscapeSequence(let character):
+			case let .invalidEscapeSequence(character):
 				"Invalid escape sequence: \\\(character)"
 			}
 		}
@@ -43,15 +43,15 @@ struct StringParser<S: StringProtocol> {
 			// Skip the opening '"'
 			advance()
 			// Skip the ending '"'
-			endOffset = -1
+			self.endOffset = -1
 		case .beforeInterpolation:
 			// Skip the opening '"'
 			advance()
 			// but don't look for '"' at the end
-			endOffset = 0
+			self.endOffset = 0
 		case .afterInterpolation:
 			// Don't bother skipping opening '"'
-			endOffset = -1
+			self.endOffset = -1
 		}
 	}
 
@@ -77,7 +77,7 @@ struct StringParser<S: StringProtocol> {
 		}
 	}
 
-	mutating internal func parsed() throws -> String {
+	mutating func parsed() throws -> String {
 		if input.count == 2 - endOffset {
 			return ""
 		}

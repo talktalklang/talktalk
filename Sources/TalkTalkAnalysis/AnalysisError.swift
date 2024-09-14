@@ -68,7 +68,6 @@ public enum AnalysisErrorKind: Hashable {
 			hasher.combine(name)
 		}
 	}
-
 }
 
 public struct AnalysisError: Hashable {
@@ -117,5 +116,4 @@ public struct AnalysisError: Hashable {
 			message
 		}
 	}
-
 }

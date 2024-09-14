@@ -6,8 +6,8 @@
 //
 
 import TalkTalkAnalysis
-@testable import TalkTalkLSP
 import TalkTalkDriver
+@testable import TalkTalkLSP
 import TalkTalkSyntax
 import Testing
 

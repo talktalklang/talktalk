@@ -11,9 +11,9 @@ extension InferenceType {
 	func assignable(from other: InferenceType) -> Bool {
 		switch (self, other) {
 		case let (.base(lhs), .base(rhs)):
-			return lhs == rhs
+			lhs == rhs
 		default:
-			return false
+			false
 		}
 	}
 }

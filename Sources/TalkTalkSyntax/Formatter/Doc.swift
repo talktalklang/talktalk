@@ -1,5 +1,5 @@
 //
-//  Document.swift
+//  Doc.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 9/13/24.
@@ -32,38 +32,38 @@ indirect enum Doc {
 }
 
 extension Doc: Equatable {
-	static func ==(lhs: Doc, rhs: Doc) -> Bool {
+	static func == (lhs: Doc, rhs: Doc) -> Bool {
 		switch (lhs, rhs) {
 		case (.empty, .empty):
-			return true
-		case (.text(let lText), .text(let rText)):
-			return lText == rText
+			true
+		case let (.text(lText), .text(rText)):
+			lText == rText
 		case (.line, .line):
-			return true
+			true
 		case (.softline, .softline):
-			return true
+			true
 		case (.hardline, .hardline):
-			return true
-		case (.nest(let lIndent, let lDoc), .nest(let rIndent, let rDoc)):
-			return lIndent == rIndent && lDoc == rDoc
-		case (.concat(let lLeft, let lRight), .concat(let rLeft, let rRight)):
-			return lLeft == rLeft && lRight == rRight
-		case (.group(let lDoc), .group(let rDoc)):
-			return lDoc == rDoc
+			true
+		case let (.nest(lIndent, lDoc), .nest(rIndent, rDoc)):
+			lIndent == rIndent && lDoc == rDoc
+		case let (.concat(lLeft, lRight), .concat(rLeft, rRight)):
+			lLeft == rLeft && lRight == rRight
+		case let (.group(lDoc), .group(rDoc)):
+			lDoc == rDoc
 		default:
-			return false
+			false
 		}
 	}
 }
 
 extension Doc {
 	// Return a concat of these two documents
-	static func <>(lhs: Doc, rhs: Doc) -> Doc {
+	static func <> (lhs: Doc, rhs: Doc) -> Doc {
 		.concat(lhs, rhs)
 	}
 
 	// Return a concat of these two documents with a space
-	static func <+>(lhs: Doc, rhs: Doc) -> Doc {
+	static func <+> (lhs: Doc, rhs: Doc) -> Doc {
 		lhs <> .text(" ") <> rhs
 	}
 }

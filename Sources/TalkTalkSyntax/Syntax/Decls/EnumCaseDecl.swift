@@ -11,8 +11,8 @@ public struct EnumCaseDeclSyntax: EnumCaseDecl {
 	public var nameToken: Token
 	public var attachedTypes: [TypeExpr]
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation

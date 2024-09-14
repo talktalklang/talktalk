@@ -60,9 +60,9 @@ struct ArrayTests: StandardLibraryTest {
 
 	@Test("can create array literal") func arrayLiteral() async throws {
 		let result = try await run("""
-			var a = [1,2,3,4,5,6]
-			return a[5]
-			""").get()
+		var a = [1,2,3,4,5,6]
+		return a[5]
+		""").get()
 
 		#expect(result == .int(6))
 	}

@@ -34,25 +34,25 @@ struct InfixOperatorConstraint: Constraint {
 		// Default rules for primitive types
 		switch (lhs, rhs, op) {
 		case (.base(.pointer), .base(.int), .plus),
-					(.base(.pointer), .base(.int), .minus):
+		     (.base(.pointer), .base(.int), .minus):
 
 			context.unify(.typeVar(returns), .base(.pointer), location)
 
 			return .ok
-		case (.base(.int), let type, .plus),
-		     (.base(.int), let type, .minus),
-		     (.base(.int), let type, .star),
-		     (.base(.int), let type, .slash),
-				 (let type, .base(.int), .plus),
-				 (let type, .base(.int), .minus),
-				 (let type, .base(.int), .star),
-				 (let type, .base(.int), .slash):
+		case let (.base(.int), type, .plus),
+		     let (.base(.int), type, .minus),
+		     let (.base(.int), type, .star),
+		     let (.base(.int), type, .slash),
+		     let (type, .base(.int), .plus),
+		     let (type, .base(.int), .minus),
+		     let (type, .base(.int), .star),
+		     let (type, .base(.int), .slash):
 
 			context.unify(type, .base(.int), location)
 
 			return checkReturnType(type, expect: .base(.int), context: context)
-		case (.base(.string), let type, .plus),
-				 (let type, .base(.string), .plus):
+		case let (.base(.string), type, .plus),
+		     let (type, .base(.string), .plus):
 			context.unify(type, .base(.string), location)
 
 			return checkReturnType(type, expect: .base(.string), context: context)
@@ -76,7 +76,7 @@ struct InfixOperatorConstraint: Constraint {
 
 	private func checkReturnType(_ type: InferenceType, expect: InferenceType, context: InferenceContext) -> ConstraintCheckResult {
 		if context.applySubstitutions(to: type) == expect {
-			context.unify(.typeVar(self.returns), type, location)
+			context.unify(.typeVar(returns), type, location)
 
 			return .ok
 		} else {

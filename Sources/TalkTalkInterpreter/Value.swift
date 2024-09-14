@@ -74,27 +74,27 @@ public indirect enum Value: Equatable, Comparable {
 
 	public var type: Value {
 		switch self {
-		case .int(_):
+		case .int:
 			.type("int")
-		case .bool(_):
+		case .bool:
 			.type("bool")
-		case .string(_):
+		case .string:
 			.type("String")
 		case .none:
 			.type("none")
-		case .error(_):
+		case .error:
 			.type("error")
-		case .fn(_):
+		case .fn:
 			.type("func")
-		case .method(_, _):
+		case .method:
 			.type("method")
 		case let .type(string):
 			.type(string)
-		case .struct(_):
+		case .struct:
 			.type("Struct")
 		case let .instance(structInstance):
 			.type(structInstance.type.name ?? "<no name>")
-		case .return(_):
+		case .return:
 			.type("Return")
 		case let .builtin(string):
 			.type(string)

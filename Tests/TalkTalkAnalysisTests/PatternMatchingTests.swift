@@ -8,8 +8,8 @@
 import TalkTalkAnalysis
 import TalkTalkCore
 import TalkTalkSyntax
-@testable import TypeChecker
 import Testing
+@testable import TypeChecker
 
 struct PatternMatchingTests: AnalysisTest {
 	@Test("Can analyze an enum") func enumStmt() async throws {

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/13/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 
 struct FormatTests {
 	func format(_ input: SourceFile, width: Int = 80) -> String {
@@ -194,6 +194,7 @@ struct FormatTests {
 				print("yoyo")
 			}
 		}
+
 		""")
 	}
 
@@ -218,9 +219,7 @@ struct FormatTests {
 
 		#expect(formatted == """
 		func fib(n) {
-			if (n <= 1) {
-				return n
-			}
+			if n <= 1 { return n }
 
 			return fib(n - 2) + fib(n - 1)
 		}

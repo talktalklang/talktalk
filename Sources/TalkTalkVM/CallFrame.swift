@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/4/24.
 //
 
-import TalkTalkBytecode
 import OrderedCollections
+import TalkTalkBytecode
 
 struct Closure {
 	var chunk: StaticChunk
@@ -44,20 +44,20 @@ public class CallFrame {
 
 	func lookup(_ symbol: Symbol) -> Value? {
 		switch symbol.kind {
-		case .function(let name, _):
-			return locals[name]
-		case .value(let name):
-			return locals[name]
+		case let .function(name, _):
+			locals[name]
+		case let .value(name):
+			locals[name]
 		default:
-			return nil
+			nil
 		}
 	}
 
 	func define(_ symbol: Symbol, as value: Value) {
 		switch symbol.kind {
-		case .function(let name, _):
+		case let .function(name, _):
 			locals[name] = value
-		case .value(let name):
+		case let .value(name):
 			locals[name] = value
 		default:
 			()

@@ -10,8 +10,8 @@ import Testing
 struct StringTests: CompilerTest {
 	@Test("Basic string interpolation") func basicInterpolation() throws {
 		let module = try compile(#"""
-		"foo \(123)"
-		"""#
+			"foo \(123)"
+			"""#
 		)
 
 		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(

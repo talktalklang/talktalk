@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 9/10/24.
 //
 
-import TypeChecker
 import TalkTalkAnalysis
 import TalkTalkBytecode
+import TypeChecker
 
 enum CompilerPattern {
 	// If we're matching something that looks like a call expr

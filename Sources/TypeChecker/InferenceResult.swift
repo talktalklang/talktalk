@@ -10,9 +10,9 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
 
 	public var description: String {
 		switch self {
-		case .scheme(let scheme):
+		case let .scheme(scheme):
 			"scheme(\(scheme))"
-		case .type(let inferenceType):
+		case let .type(inferenceType):
 			inferenceType.description
 		}
 	}
@@ -27,9 +27,9 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
 
 	public func asType(in context: InferenceContext) -> InferenceType {
 		switch self {
-		case .scheme(let scheme):
+		case let .scheme(scheme):
 			context.instantiate(scheme: scheme)
-		case .type(let inferenceType):
+		case let .type(inferenceType):
 			inferenceType
 		}
 	}

@@ -29,13 +29,12 @@ public struct VirtualMachine {
 	var chunk: StaticChunk
 
 	// The frames stack
-	var frames: Stack<CallFrame>
-	{
+	var frames: Stack<CallFrame> {
 		willSet {
 			#if DEBUG
-			if frames.size != newValue.size, frames.size > 0, verbosity != .quiet {
-				log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
-			}
+				if frames.size != newValue.size, frames.size > 0, verbosity != .quiet {
+					log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+				}
 			#endif
 		}
 
@@ -48,9 +47,9 @@ public struct VirtualMachine {
 				chunk = currentFrame.closure.chunk
 
 				#if DEBUG
-				if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
-					log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
-				}
+					if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
+						log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+					}
 				#endif
 			} catch {
 				print("Frames in invalid state! \(error)")
@@ -136,7 +135,8 @@ public struct VirtualMachine {
 						} else {
 							var line = ""
 							if let url = URL(string: "file://" + i.path),
-								 let filelines = try? String(contentsOf: url).components(separatedBy: .newlines) {
+							   let filelines = try? String(contentsOf: url).components(separatedBy: .newlines)
+							{
 								line = filelines[Int(i.line)] + " "
 							}
 							FileHandle.standardError.write(Data("        \(line)<\(i.path.components(separatedBy: "/").last ?? i.path):\(i.line)>\n".utf8))
@@ -191,7 +191,7 @@ public struct VirtualMachine {
 				}
 
 				// Remove the result from the stack temporarily while we clean it up
-				let	result = try stack.pop()
+				let result = try stack.pop()
 
 				while calledFrame.isInline {
 					calledFrame = try frames.pop()
@@ -221,7 +221,7 @@ public struct VirtualMachine {
 				guard let primitive = Primitive(rawValue: byte) else {
 					throw VirtualMachineError.valueMissing("No primitive found for byte: \(byte)")
 				}
-				
+
 				stack.push(.primitive(primitive))
 			case .negate:
 				let value = try stack.pop()
@@ -251,14 +251,15 @@ public struct VirtualMachine {
 
 				func bind(_ pattern: Value, to target: Value) {
 					if case let .boundEnumCase(pattern) = pattern,
-						 case let .boundEnumCase(target) = target {
+					   case let .boundEnumCase(target) = target
+					{
 						for (i, value) in pattern.values.enumerated() {
 							switch value {
 							case .binding:
 								if case let .binding(binding) = pattern.values[i] {
 									binding.value = target.values[i]
 								}
-							case .boundEnumCase(let pattern):
+							case let .boundEnumCase(pattern):
 								bind(.boundEnumCase(pattern), to: target.values[i])
 							default:
 								()
@@ -338,7 +339,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot multiply \(lhs) & \(rhs) operands")
 				}
@@ -358,7 +359,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -368,7 +369,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -378,7 +379,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -426,7 +427,7 @@ public struct VirtualMachine {
 				}
 			case .setLocal:
 				let symbol = try readSymbol()
-				currentFrame.define(symbol, as: try stack.peek())
+				try currentFrame.define(symbol, as: stack.peek())
 			case .getCapture:
 				let capture = try readCapture()
 
@@ -453,9 +454,9 @@ public struct VirtualMachine {
 
 				switch currentFrame.closure.capturing[capture.symbol] {
 				case let .stack(depth):
-					frames[frames.size - depth - 1].define(capture.symbol, as: try stack.peek())
+					try frames[frames.size - depth - 1].define(capture.symbol, as: stack.peek())
 				case let .heap(pointer):
-					heap.store(pointer: pointer, value: try stack.peek())
+					try heap.store(pointer: pointer, value: stack.peek())
 				default:
 					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in closure")
 				}
@@ -579,7 +580,7 @@ public struct VirtualMachine {
 				let instance = try stack.pop()
 				let propertyValue = try stack.peek()
 
-				guard let (receiver) = instance.instanceValue else {
+				guard let receiver = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
@@ -592,7 +593,7 @@ public struct VirtualMachine {
 				()
 			case .get:
 				let instance = try stack.pop()
-				guard let (receiver) = instance.instanceValue else {
+				guard let receiver = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
@@ -619,14 +620,14 @@ public struct VirtualMachine {
 				}
 
 				let pointer = heap.allocate(count: Int(capacity))
-				for i in 0..<count {
+				for i in 0 ..< count {
 					try heap.store(pointer: pointer + Int(i), value: stack.pop())
 				}
 
 				let instance = Instance(type: arrayType, fields: [
 					.property("Standard", "Array", "_storage"): .pointer(pointer),
 					.property("Standard", "Array", "count"): .int(.init(count)),
-					.property("Standard", "Array", "capacity"): .int(.init(capacity))
+					.property("Standard", "Array", "capacity"): .int(.init(capacity)),
 				])
 
 				stack.push(.instance(instance))
@@ -650,7 +651,7 @@ public struct VirtualMachine {
 				guard inlineFrame.isInline else {
 					return runtimeError("Frame not inline!")
 				}
-				self.ip = inlineFrame.returnTo
+				ip = inlineFrame.returnTo
 			case .matchBegin:
 				let symbol = try readSymbol()
 				try call(chunkID: symbol, inline: true)
@@ -750,7 +751,7 @@ public struct VirtualMachine {
 		)
 
 		let args = try stack.pop(count: Int(chunk.arity))
-		for i in 0..<Int(chunk.arity) {
+		for i in 0 ..< Int(chunk.arity) {
 			frame.define(chunk.locals[i], as: args[i])
 		}
 
@@ -770,7 +771,7 @@ public struct VirtualMachine {
 		)
 
 		let args = try stack.pop(count: Int(closure.chunk.arity))
-		for i in 0..<Int(closure.chunk.arity) {
+		for i in 0 ..< Int(closure.chunk.arity) {
 			frame.define(closure.chunk.locals[i], as: args[i])
 		}
 
@@ -797,7 +798,7 @@ public struct VirtualMachine {
 		frame.isInline = inline
 
 		let args = try stack.pop(count: Int(chunk.arity))
-		for i in 0..<Int(chunk.arity) {
+		for i in 0 ..< Int(chunk.arity) {
 			frame.define(chunk.locals[i], as: args[i])
 		}
 

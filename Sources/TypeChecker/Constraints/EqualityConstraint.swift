@@ -25,16 +25,16 @@ struct EqualityConstraint: Constraint {
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let lhs = switch lhs {
-		case .scheme(let scheme):
+		case let .scheme(scheme):
 			context.applySubstitutions(to: context.instantiate(scheme: scheme))
-		case .type(let type):
+		case let .type(type):
 			context.applySubstitutions(to: type)
 		}
 
 		let rhs = switch rhs {
-		case .scheme(let scheme):
+		case let .scheme(scheme):
 			context.applySubstitutions(to: context.instantiate(scheme: scheme))
-		case .type(let type):
+		case let .type(type):
 			context.applySubstitutions(to: type)
 		}
 
@@ -54,7 +54,6 @@ extension Constraint where Self == EqualityConstraint {
 		_ rhs: InferenceResult,
 		at location: SourceLocation
 	) -> EqualityConstraint {
-		
 		EqualityConstraint(lhs: lhs, rhs: rhs, location: location)
 	}
 
@@ -63,6 +62,6 @@ extension Constraint where Self == EqualityConstraint {
 		_ rhs: InferenceType,
 		at location: SourceLocation
 	) -> EqualityConstraint {
-		return EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
+		EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
 	}
 }

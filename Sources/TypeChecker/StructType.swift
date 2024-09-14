@@ -5,11 +5,11 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 import Foundation
-import TalkTalkSyntax
 import OrderedCollections
+import TalkTalkSyntax
 
 public struct StructType: Equatable, Hashable, CustomStringConvertible {
-	public static func ==(lhs: StructType, rhs: StructType) -> Bool {
+	public static func == (lhs: StructType, rhs: StructType) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
 

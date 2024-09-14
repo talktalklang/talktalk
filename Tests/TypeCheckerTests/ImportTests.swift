@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/31/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 @testable import TypeChecker
 
 struct ImportTests: TypeCheckerTest {

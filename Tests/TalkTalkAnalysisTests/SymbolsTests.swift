@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/21/24.
 //
 
-import Testing
 import TalkTalkAnalysis
+import Testing
 
 struct SymbolsTests: AnalysisTest {
 //	@Test("Generates symbol for top level function") func topLevelFunction() async throws {

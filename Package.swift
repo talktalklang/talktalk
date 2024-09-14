@@ -38,12 +38,12 @@ let package = Package(
 		.library(
 			name: "TalkTalkLSP",
 			targets: ["TalkTalkLSP"]
-		)
+		),
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
 		.package(url: "https://github.com/apple/swift-collections", branch: "main"),
-		.package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.56.2")
+		.package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.56.2"),
 	],
 	targets: [
 		.executableTarget(
@@ -63,7 +63,7 @@ let package = Package(
 		.target(
 			name: "TalkTalkSyntax",
 			dependencies: [
-				"TalkTalkCore"
+				"TalkTalkCore",
 			]
 		),
 		.target(
@@ -73,7 +73,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkBytecode",
 				"TypeChecker",
-				.product(name: "OrderedCollections", package: "swift-collections")
+				.product(name: "OrderedCollections", package: "swift-collections"),
 			]
 		),
 		.target(
@@ -88,7 +88,7 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCore",
 				"TalkTalkSyntax",
-				.product(name: "OrderedCollections", package: "swift-collections")
+				.product(name: "OrderedCollections", package: "swift-collections"),
 			],
 			resources: [
 				.copy("../../Library/Standard"),
@@ -102,7 +102,7 @@ let package = Package(
 				"TalkTalkCompiler",
 				"TalkTalkDriver",
 				"TalkTalkSyntax",
-				"TypeChecker"
+				"TypeChecker",
 			]
 		),
 		.target(
@@ -112,7 +112,7 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
-				.product(name: "OrderedCollections", package: "swift-collections")
+				.product(name: "OrderedCollections", package: "swift-collections"),
 			]
 		),
 		.target(
@@ -123,7 +123,7 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkBytecode",
-				"TypeChecker"
+				"TypeChecker",
 			]
 		),
 		.target(
@@ -135,7 +135,7 @@ let package = Package(
 				"TalkTalkBytecode",
 				"TalkTalkDriver",
 				"TalkTalkCore",
-				.product(name: "OrderedCollections", package: "swift-collections")
+				.product(name: "OrderedCollections", package: "swift-collections"),
 			]
 		),
 		.target(
@@ -144,14 +144,14 @@ let package = Package(
 				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
-				"TypeChecker"
+				"TypeChecker",
 			]
 		),
 		.target(
 			name: "TalkTalkBytecode",
 			dependencies: [
 				"TalkTalkCore",
-				.product(name: "OrderedCollections", package: "swift-collections")
+				.product(name: "OrderedCollections", package: "swift-collections"),
 			]
 		),
 		.testTarget(
@@ -220,9 +220,9 @@ let package = Package(
 			name: "TypeCheckerTests",
 			dependencies: [
 				"TypeChecker",
-				"TalkTalkSyntax"
+				"TalkTalkSyntax",
 			]
-		)
+		),
 	]
 )
 

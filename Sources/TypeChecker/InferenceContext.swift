@@ -1,13 +1,13 @@
 //
-//  Context.swift
+//  InferenceContext.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/25/24.
 //
 
 import Foundation
-import TalkTalkSyntax
 import OrderedCollections
+import TalkTalkSyntax
 
 typealias VariableID = Int
 
@@ -65,7 +65,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var environment: Environment
 
 	// Names that we know at inference time
-	private(set) public var namedVariables: [String: InferenceType] = [:]
+	public private(set) var namedVariables: [String: InferenceType] = [:]
 
 	// Names that we're going to have to solve for later
 	private(set) var namedPlaceholders: [String: InferenceType] = [:]
@@ -275,7 +275,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		)
 	}
 
-	func childInstanceContext(withSelf: TypeVariable) -> InferenceContext {
+	func childInstanceContext(withSelf _: TypeVariable) -> InferenceContext {
 		assert(instanceContext == nil, "trying to instantiate an instance context when we're already in one")
 		guard let typeContext else {
 			// swiftlint:disable fatal_error
@@ -324,15 +324,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 	func lookupPrimitive(named name: String) -> InferenceType? {
 		switch name {
 		case "int":
-			return .base(.int)
+			.base(.int)
 		case "String":
-			return .base(.string)
+			.base(.string)
 		case "bool":
-			return .base(.bool)
+			.base(.bool)
 		case "pointer":
-			return .base(.pointer)
+			.base(.pointer)
 		default:
-			return nil
+			nil
 		}
 	}
 
@@ -410,10 +410,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 	subscript(syntax: any Syntax) -> InferenceResult? {
 		get {
 			switch environment[syntax] ?? parent?[syntax] {
-			case let .scheme(scheme): return .scheme(scheme)
-			case let .type(type): return .type(applySubstitutions(to: type))
+			case let .scheme(scheme): .scheme(scheme)
+			case let .type(type): .type(applySubstitutions(to: type))
 			default:
-				return nil
+				nil
 			}
 		}
 
@@ -482,9 +482,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 					type: applySubstitutions(to: pattern.type, with: substitutions),
 					arguments: pattern.arguments.map {
 						switch $0 {
-						case .value(let type):
+						case let .value(type):
 							.value(applySubstitutions(to: type, with: substitutions))
-						case .variable(let name, let type):
+						case let .variable(name, type):
 							.variable(name, applySubstitutions(to: type, with: substitutions))
 						}
 					}
@@ -531,17 +531,17 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 	}
 
-	func applySubstitutions(to type: InferenceType, withParents: Bool = false) -> InferenceType {
+	func applySubstitutions(to type: InferenceType, withParents _: Bool = false) -> InferenceType {
 		let parentResult = parent?.applySubstitutions(to: type) ?? type
 		return applySubstitutions(to: parentResult, with: substitutions)
 	}
 
-	func applySubstitutions(to result: InferenceResult, withParents: Bool = false) -> InferenceType {
-		return applySubstitutions(to: result.asType(in: self))
+	func applySubstitutions(to result: InferenceResult, withParents _: Bool = false) -> InferenceType {
+		applySubstitutions(to: result.asType(in: self))
 	}
 
 	func applySubstitutions(to result: InferenceResult, with: [TypeVariable: InferenceType]) -> InferenceType {
-		return applySubstitutions(to: result.asType(in: self), with: with)
+		applySubstitutions(to: result.asType(in: self), with: with)
 	}
 
 	// See if these types are compatible. If so, bind 'em.
@@ -628,7 +628,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		for case let .typeVar(variable) in scheme.variables {
 			localSubstitutions[variable] = substitutions[variable] ?? .typeVar(
 				freshTypeVariable(
-					(variable.name ?? "<unnamed>"),
+					variable.name ?? "<unnamed>",
 					file: #file,
 					line: #line
 				)

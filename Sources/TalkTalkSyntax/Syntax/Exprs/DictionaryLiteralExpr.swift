@@ -8,7 +8,7 @@ public struct DictionaryLiteralExprSyntax: DictionaryLiteralExpr {
 	public var id: SyntaxID
 
 	public var elements: [any DictionaryElementExpr]
-	
+
 	// Where does this syntax live
 	public var location: SourceLocation
 

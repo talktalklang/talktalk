@@ -6,16 +6,16 @@
 //
 
 import Foundation
+import TalkTalkSyntax
 import Testing
 @testable import TypeChecker
-import TalkTalkSyntax
 
 struct AnyTypeVar {
-	static func ==(lhs: AnyTypeVar, rhs: TypeVariable) -> Bool {
+	static func == (lhs: AnyTypeVar, rhs: TypeVariable) -> Bool {
 		lhs.name == rhs.name
 	}
 
-	static func ==(lhs: TypeVariable, rhs: AnyTypeVar) -> Bool {
+	static func == (lhs: TypeVariable, rhs: AnyTypeVar) -> Bool {
 		lhs.name == rhs.name
 	}
 
@@ -53,7 +53,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let expr = try Parser.parse("func(x) { x }")
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
-		
+
 		#expect(
 			result == .scheme(
 				Scheme(
@@ -208,8 +208,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 					kind: .undefinedVariable("x"),
 					location: syntax[1].location
 				)
-		
-		))
+
+			))
 	}
 
 	@Test("Types function return annotations") func funcReturnAnnotations() throws {
@@ -233,7 +233,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 					return n * fact(n - 1)
 				}
 			}
-			
+
 			fact(3)
 			"""
 		)

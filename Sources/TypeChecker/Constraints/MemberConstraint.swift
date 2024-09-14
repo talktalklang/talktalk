@@ -39,8 +39,8 @@ struct MemberConstraint: Constraint {
 		let receiver = context.applySubstitutions(to: resolveReceiver(receiver).asType(in: context))
 		return resolve(
 			withReceiver: receiver,
-			name: self.name,
-			type: self.type.asType(in: context),
+			name: name,
+			type: type.asType(in: context),
 			in: context
 		)
 	}
@@ -49,7 +49,7 @@ struct MemberConstraint: Constraint {
 		let resolvedType = context.applySubstitutions(to: type)
 
 		switch context.applySubstitutions(to: receiver) {
-		case .structType(let structType):
+		case let .structType(structType):
 			// It's a type parameter, try to unify it with a property
 			guard let member = structType.member(named: name) else {
 				return .error(
@@ -62,13 +62,13 @@ struct MemberConstraint: Constraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
-		case .enumCase(let enumCase):
+		case let .enumCase(enumCase):
 			context.unify(
 				context.applySubstitutions(to: .enumCase(enumCase)),
 				resolvedType,
 				location
 			)
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			guard let member = enumType.cases.first(where: { $0.name == name }) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
@@ -80,7 +80,7 @@ struct MemberConstraint: Constraint {
 				resolvedType,
 				location
 			)
-		case .structInstance(let instance):
+		case let .structInstance(instance):
 			// It's an instance member
 			guard var member = instance.member(named: name) else {
 				return .error(
@@ -97,7 +97,7 @@ struct MemberConstraint: Constraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
-		case .selfVar(let structType):
+		case let .selfVar(structType):
 			guard var member = structType.member(named: name) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
@@ -125,7 +125,7 @@ struct MemberConstraint: Constraint {
 					message: "Receiver not an instance. Got: \(receiver.debugDescription)",
 					severity: .error,
 					location: location
-				)
+				),
 			])
 		}
 

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/20/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 
 struct SubscriptsTests {
 	@Test("Array literals") func arrayLiterals() throws {

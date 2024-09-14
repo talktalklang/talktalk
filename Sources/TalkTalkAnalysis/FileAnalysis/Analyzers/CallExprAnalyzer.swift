@@ -21,11 +21,11 @@ struct CallExprAnalyzer: Analyzer {
 		var errors: [AnalysisError] = []
 
 		let args = try expr.args.map {
-			AnalyzedArgument(
+			try AnalyzedArgument(
 				environment: context,
 				label: $0.label,
 				wrapped: $0,
-				expr: try castToAnyAnalyzedExpr($0.value.accept(visitor, context))
+				expr: castToAnyAnalyzedExpr($0.value.accept(visitor, context))
 			)
 		}
 
@@ -41,10 +41,10 @@ struct CallExprAnalyzer: Analyzer {
 			)
 		}
 
-		return AnalyzedCallExpr(
+		return try AnalyzedCallExpr(
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(CallExprSyntax.self),
-			calleeAnalyzed: try castToAnyAnalyzedExpr(callee),
+			calleeAnalyzed: castToAnyAnalyzedExpr(callee),
 			argsAnalyzed: args,
 			analysisErrors: errors,
 			environment: context

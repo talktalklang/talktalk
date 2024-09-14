@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 9/2/24.
 //
 
-import Testing
 import Foundation
 import TalkTalkBytecode
 import TalkTalkVM
+import Testing
 
 class TestOutput: OutputBuffer {
 	var stdout: String = ""
@@ -30,8 +30,8 @@ struct OutputTests: VMTest {
 		_ = try run(
 			"""
 			print("hello world")
-			"""
-			, output: output
+			""",
+			output: output
 		)
 
 		#expect(output.stdout == "hello world\n")

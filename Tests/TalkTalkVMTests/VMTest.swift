@@ -8,9 +8,9 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
+import TalkTalkCore
 import TalkTalkSyntax
 import TalkTalkVM
-import TalkTalkCore
 import Testing
 
 @MainActor

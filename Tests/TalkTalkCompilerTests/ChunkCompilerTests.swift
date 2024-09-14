@@ -95,7 +95,7 @@ class CompilerTests: CompilerTest {
 			importedModules: []
 		).analyze()
 
-		self.module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
+		module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
 		return try module.compile(file: AnalyzedSourceFile(path: "1.tlk", syntax: analyzed))
 	}
 

@@ -64,24 +64,24 @@ struct FormatterVisitor: Visitor {
 		return lhs <+> text("=") <+> rhs
 	}
 
-	func visit(_ expr: IdentifierExprSyntax, _ context: Context) throws -> Doc {
+	func visit(_ expr: IdentifierExprSyntax, _: Context) throws -> Doc {
 		.text(expr.name)
 	}
 
-	func visit(_ expr: LiteralExprSyntax, _ context: Context) throws -> Doc {
+	func visit(_ expr: LiteralExprSyntax, _: Context) throws -> Doc {
 		switch expr.value {
-		case .int(let int):
+		case let .int(int):
 			.text("\(int)")
-		case .bool(let bool):
+		case let .bool(bool):
 			.text("\(bool)")
-		case .string(let string):
+		case let .string(string):
 			.text(#"""# + string + #"""#)
 		case .none:
 			.text("none")
 		}
 	}
 
-	func visit(_ expr: VarExprSyntax, _ context: Context) throws -> Doc {
+	func visit(_ expr: VarExprSyntax, _: Context) throws -> Doc {
 		.text(expr.name)
 	}
 
@@ -225,23 +225,23 @@ struct FormatterVisitor: Visitor {
 		try handleVarLet("let", expr: expr, in: context)
 	}
 
-	func visit(_ expr: ParseErrorSyntax, _ context: Context) throws -> Doc {
+	func visit(_ expr: ParseErrorSyntax, _: Context) throws -> Doc {
 		text(expr.message)
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: Context) throws -> Doc {
 		if let receiver = try expr.receiver?.accept(self, context) {
-			return group(receiver <> text("." + expr.property))
+			group(receiver <> text("." + expr.property))
 		} else {
-			return text("." + expr.property)
+			text("." + expr.property)
 		}
 	}
 
 	func visit(_ expr: ReturnStmtSyntax, _ context: Context) throws -> Doc {
 		if let value = expr.value {
-			return try text("return") <+> value.accept(self, context)
+			try text("return") <+> value.accept(self, context)
 		} else {
-			return text("return")
+			text("return")
 		}
 	}
 
@@ -254,7 +254,7 @@ struct FormatterVisitor: Visitor {
 			<+> expr.body.accept(self, context)
 	}
 
-	func visit(_ expr: ImportStmtSyntax, _ context: Context) throws -> Doc {
+	func visit(_ expr: ImportStmtSyntax, _: Context) throws -> Doc {
 		text("import") <+> text(expr.module.name)
 	}
 
@@ -319,15 +319,15 @@ struct FormatterVisitor: Visitor {
 		try expr.key.accept(self, context) <> text(":") <+> expr.value.accept(self, context) <> .line
 	}
 
-	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> Doc {
+	func visit(_: ProtocolDeclSyntax, _: Context) throws -> Doc {
 		.empty // TODO:
 	}
 
-	func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> Doc {
+	func visit(_: ProtocolBodyDeclSyntax, _: Context) throws -> Doc {
 		.empty // TODO:
 	}
 
-	func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> Doc {
+	func visit(_: FuncSignatureDeclSyntax, _: Context) throws -> Doc {
 		.empty // TODO:
 	}
 
@@ -355,7 +355,7 @@ struct FormatterVisitor: Visitor {
 	}
 
 	func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> Doc {
-		return try text("match") <+> expr.target.accept(self, context) <+> text("{")
+		try text("match") <+> expr.target.accept(self, context) <+> text("{")
 			<> .line
 			<> join(expr.cases.map { try $0.accept(self, context) }, with: .line)
 			<> .line
@@ -365,26 +365,26 @@ struct FormatterVisitor: Visitor {
 
 	func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> Doc {
 		if let pattern = expr.patternSyntax {
-			return try text("case") <+> pattern.accept(self, context)
+			try text("case") <+> pattern.accept(self, context)
 				<> text(":")
 				<> .line
 				<> .nest(1, preservingNewlines(expr.body, in: context))
 		} else {
-			return try text("else") <> .line <> join(expr.body.map { try $0.accept(self, context) }, with: .line)
+			try text("else") <> .line <> join(expr.body.map { try $0.accept(self, context) }, with: .line)
 		}
 	}
 
-	func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> Doc {
+	func visit(_: EnumMemberExprSyntax, _: Context) throws -> Doc {
 		.empty
 	}
 
 	func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws -> Doc {
 		let segments: Doc = try expr.segments.reduce(.empty) { res, segment in
 			switch segment {
-			case .string(let string, _):
-				return res <> text(string)
-			case .expr(let interpolatedExpr):
-				return try res <> interpolatedExpr.expr.accept(self, context)
+			case let .string(string, _):
+				res <> text(string)
+			case let .expr(interpolatedExpr):
+				try res <> interpolatedExpr.expr.accept(self, context)
 			}
 		}
 
@@ -450,9 +450,9 @@ struct FormatterVisitor: Visitor {
 
 	private func preserveNewline(_ a: any Syntax, last: (any Syntax)?) -> Bool {
 		if let last {
-			return a.location.start.line - last.location.end.line >= 2
+			a.location.start.line - last.location.end.line >= 2
 		} else {
-			return false
+			false
 		}
 	}
 }

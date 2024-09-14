@@ -17,11 +17,12 @@ struct MemberExprAnalyzer: Analyzer {
 
 		// If it's an enum case we want to return a different syntax expression...
 		if case let .enumCase(enumCase) = type,
-			 let enumBinding = context.lookup(enumCase.typeName),
-			 case let .enumType(enumType) = enumBinding.type,
-			 let kase = enumType.cases.enumerated().first(where: { $0.element.name == expr.property }) {
-			return AnalyzedEnumMemberExpr(
-				wrapped: try cast(expr, to: MemberExprSyntax.self),
+		   let enumBinding = context.lookup(enumCase.typeName),
+		   case let .enumType(enumType) = enumBinding.type,
+		   let kase = enumType.cases.enumerated().first(where: { $0.element.name == expr.property })
+		{
+			return try AnalyzedEnumMemberExpr(
+				wrapped: cast(expr, to: MemberExprSyntax.self),
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.element.attachedTypes,
 				inferenceType: .enumCase(kase.element),
@@ -42,27 +43,28 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if case let .structInstance(instance) = receiver.typeAnalyzed,
-			 let structType = try context.lookupStruct(named: instance.type.name) {
+		   let structType = try context.lookupStruct(named: instance.type.name)
+		{
 			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
 		}
 
 		guard let member else {
-			return AnalyzedMemberExpr(
+			return try AnalyzedMemberExpr(
 				inferenceType: type ?? .any,
 				wrapped: expr.cast(MemberExprSyntax.self),
 				environment: context,
-				receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
+				receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
 				memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
 				analysisErrors: [],
 				isMutable: true
 			)
 		}
 
-		return AnalyzedMemberExpr(
+		return try AnalyzedMemberExpr(
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
-			receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
+			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
 			memberAnalyzed: member,
 			analysisErrors: [],
 			isMutable: member.isMutable

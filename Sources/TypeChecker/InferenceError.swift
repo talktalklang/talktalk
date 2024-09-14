@@ -21,25 +21,25 @@ public enum InferenceErrorKind: Equatable, Hashable, CustomStringConvertible {
 
 	public var description: String {
 		switch self {
-		case .invalidRedeclaration(let name):
+		case let .invalidRedeclaration(name):
 			"Variable already declared: \(name)"
-		case .unificationError(let a, let b):
+		case let .unificationError(a, b):
 			"Cannot unify \(a) and \(b)"
-		case .undefinedVariable(let string):
+		case let .undefinedVariable(string):
 			"Undefined variable: \(string)"
-		case .unknownError(let string):
+		case let .unknownError(string):
 			string.description
-		case .constraintError(let string):
+		case let .constraintError(string):
 			"Unresolved constraint: \(string)"
-		case .argumentError(let expected, let actual):
+		case let .argumentError(expected, actual):
 			"Expected \(expected) args, got \(actual)"
-		case .typeError(let string):
+		case let .typeError(string):
 			string.description
-		case .memberNotFound(let structType, let string):
+		case let .memberNotFound(structType, string):
 			"\(structType) has no member `\(string)`"
-		case .missingConstraint(let inferenceType):
+		case let .missingConstraint(inferenceType):
 			"Constraint missing: \(inferenceType)"
-		case .subscriptNotAllowed(let inferenceType):
+		case let .subscriptNotAllowed(inferenceType):
 			"Subscript not implemented for \(inferenceType)"
 		}
 	}

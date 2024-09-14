@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import TalkTalkSyntax
 import OrderedCollections
+import TalkTalkSyntax
 
 public struct EnumType: Equatable, Hashable, CustomStringConvertible {
-	public static func ==(lhs: EnumType, rhs: EnumType) -> Bool {
+	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {
 		lhs.name == rhs.name && lhs.cases == rhs.cases
 	}
 

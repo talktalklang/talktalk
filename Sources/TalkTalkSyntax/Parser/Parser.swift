@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalkCore
 import Foundation
+import TalkTalkCore
 
 struct SourceLocationStack {
 	var locations: [Token] = []
@@ -26,7 +26,7 @@ public struct Parser {
 
 		public var errorDescription: String? {
 			switch self {
-			case .couldNotParse(let array):
+			case let .couldNotParse(array):
 				array.map { "\($0)" }.joined(separator: ", ")
 			}
 		}

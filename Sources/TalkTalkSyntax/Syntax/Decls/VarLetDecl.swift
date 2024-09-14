@@ -12,10 +12,10 @@ public protocol VarLetDecl: Decl, Stmt {
 	var value: (any Expr)? { get }
 }
 
-extension VarLetDecl {
-	public var semanticLocation: SourceLocation? {
+public extension VarLetDecl {
+	var semanticLocation: SourceLocation? {
 		[
-			nameToken
+			nameToken,
 		]
 	}
 }

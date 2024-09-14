@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
-import TypeChecker
 import TalkTalkBytecode
 import TalkTalkSyntax
+import TypeChecker
 
 public struct EnumMember: Member {
 	public var name: String

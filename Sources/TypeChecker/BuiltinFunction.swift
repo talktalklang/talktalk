@@ -19,7 +19,7 @@ public struct BuiltinFunction {
 			._deref,
 			._storePtr,
 			._hash,
-			._cast
+			._cast,
 		]
 	}
 
@@ -32,7 +32,7 @@ public struct BuiltinFunction {
 			name: "print",
 			type: .function(
 				[
-					InferenceType.any
+					InferenceType.any,
 				],
 				.void
 			)
@@ -77,7 +77,7 @@ public struct BuiltinFunction {
 			type: .function(
 				[
 					.base(.pointer),
-					.any
+					.any,
 				],
 				.void
 			)

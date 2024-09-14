@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/9/24.
 //
 
-import TalkTalkBytecode
 import Foundation
+import TalkTalkBytecode
 
 public extension VirtualMachine {
 	enum ExecutionResult {

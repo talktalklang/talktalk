@@ -35,14 +35,14 @@ public actor Server {
 	init() async throws {
 		Log.info("Compiled stdlib")
 
-		analyzer = try ModuleAnalyzer(
+		self.analyzer = try ModuleAnalyzer(
 			name: "LSP",
 			files: [],
 			moduleEnvironment: [:],
 			importedModules: []
 		)
 
-		analysis = try analyzer.analyze()
+		self.analysis = try analyzer.analyze()
 	}
 
 	var analyzedFilePaths: [String] {

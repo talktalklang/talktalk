@@ -19,7 +19,7 @@ extension Analyzer {
 		}
 	}
 
-	func cast<T>(_ syntax: any Syntax, to type: T.Type) throws -> T {
+	func cast<T>(_ syntax: any Syntax, to _: T.Type) throws -> T {
 		if let syntax = syntax as? T {
 			return syntax
 		} else {
@@ -27,7 +27,7 @@ extension Analyzer {
 		}
 	}
 
-	func cast<T>(_ syntax: [any Syntax], to type: T.Type) throws -> T {
+	func cast<T>(_ syntax: [any Syntax], to _: T.Type) throws -> T {
 		if let syntax = syntax as? T {
 			return syntax
 		} else {

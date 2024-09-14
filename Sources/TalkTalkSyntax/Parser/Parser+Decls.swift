@@ -89,7 +89,7 @@ public extension Parser {
 			return error(at: current, .unexpectedToken(expected: .identifier, got: current), expectation: .identifier)
 		}
 
-		var typeExpr: (any TypeExpr)? = nil
+		var typeExpr: (any TypeExpr)?
 		if didMatch(.colon) {
 			typeExpr = self.typeExpr()
 		}

@@ -7,8 +7,8 @@ public protocol ProtocolBodyDecl: Decl {
 public struct ProtocolBodyDeclSyntax: ProtocolBodyDecl {
 	public var decls: [any Decl]
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation

@@ -35,7 +35,7 @@ public extension Library {
 				"Int.tlk",
 				"String.tlk",
 				"Array.tlk",
-				"Dictionary.tlk"
+				"Dictionary.tlk",
 			]
 		)
 	}

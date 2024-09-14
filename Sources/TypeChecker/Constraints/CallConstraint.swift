@@ -32,18 +32,18 @@ struct CallConstraint: Constraint {
 		)
 
 		switch callee {
-		case .function(let params, let fnReturns):
+		case let .function(params, fnReturns):
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
-		case .structType(let structType):
+		case let .structType(structType):
 			return solveStruct(structType: structType, in: context)
-		case .enumCase(let enumCase):
+		case let .enumCase(enumCase):
 			return solveEnumCase(enumCase: enumCase, in: context)
-		case .placeholder(let typeVar):
+		case let .placeholder(typeVar):
 			// If it's a type var that we haven't solved yet, try deferring
 			if isRetry {
 				context.log("Deferred constraint not fulfilled", prefix: " ! ")
 				return .error([
-					Diagnostic(message: "\(typeVar) not callable", severity: .error, location: location)
+					Diagnostic(message: "\(typeVar) not callable", severity: .error, location: location),
 				])
 			} else {
 				// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
@@ -51,12 +51,12 @@ struct CallConstraint: Constraint {
 				context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
 				return .ok
 			}
-		case .error(let error):
+		case let .error(error):
 			if case let .undefinedVariable(name) = error.kind {
 				if isRetry {
 					context.log("Deferred constraint not fulfilled", prefix: " ! ")
 					return .error([
-						Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+						Diagnostic(message: "\(callee) not callable", severity: .error, location: location),
 					])
 				} else {
 					// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
@@ -67,11 +67,11 @@ struct CallConstraint: Constraint {
 			}
 
 			return .error([
-				Diagnostic(message: "\(callee) not callable", severity: .error, location: location)
+				Diagnostic(message: "\(callee) not callable", severity: .error, location: location),
 			])
 		default:
 			return .error([
-				Diagnostic(message: "\(returns) not callable", severity: .error, location: location)
+				Diagnostic(message: "\(returns) not callable", severity: .error, location: location),
 			])
 		}
 	}
@@ -85,7 +85,7 @@ struct CallConstraint: Constraint {
 					message: "Expected \(params.count) args, got \(args.count)",
 					severity: .error,
 					location: location
-				)
+				),
 			])
 		}
 
@@ -122,15 +122,15 @@ struct CallConstraint: Constraint {
 		let params: [InferenceType]
 		if let initializer = structType.member(named: "init") {
 			switch initializer {
-			case .scheme(let scheme):
+			case let .scheme(scheme):
 				switch structType.context.instantiate(scheme: scheme) {
-				case .function(let fnParams, let fnReturns):
+				case let .function(fnParams, fnReturns):
 					context.unify(returns, fnReturns, location)
 					params = fnParams
 				default:
 					params = []
 				}
-			case .type(.function(let fnParams, _)):
+			case let .type(.function(fnParams, _)):
 				params = fnParams
 			default:
 				params = []
@@ -138,9 +138,9 @@ struct CallConstraint: Constraint {
 		} else {
 			// We don't have an init so we need to synthesize one
 			var substitutions: [TypeVariable: InferenceType] = [:]
-			
+
 			params = structType.properties.map { name, type in
-				if case .type(.typeVar(let typeVar)) = type,
+				if case let .type(.typeVar(typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
 				{
 					let fresh: InferenceType = context.freshTypeVariable(name, file: #file, line: #line)
@@ -161,11 +161,11 @@ struct CallConstraint: Constraint {
 					message: "Expected \(params.count) args, got \(args.count)",
 					severity: .error,
 					location: location
-				)
+				),
 			])
 		}
 
-		guard case .structInstance(let instance) = context.applySubstitutions(to: returns) else {
+		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
 
@@ -173,7 +173,7 @@ struct CallConstraint: Constraint {
 			let paramType: InferenceType
 
 			switch context.applySubstitutions(to: param) {
-			case .typeVar(let param):
+			case let .typeVar(param):
 				// If the member type is generic, we need to swap it out for the instance's copy so we don't unify
 				// for the whole struct.
 				if let instanceType = instance.substitutions[param] {
@@ -185,9 +185,9 @@ struct CallConstraint: Constraint {
 				let type = arg.asType(in: childContext)
 				instance.substitutions[param] = type
 				childContext.unify(type, arg.asType(in: childContext), location)
-			case .structType(let structType):
+			case let .structType(structType):
 				var substitutions: [TypeVariable: InferenceType] = [:]
-				if case .structInstance(let instance) = context.applySubstitutions(to: arg.asType(in: context)) {
+				if case let .structInstance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions
 				}
 

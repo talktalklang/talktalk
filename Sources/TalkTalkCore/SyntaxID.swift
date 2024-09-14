@@ -17,11 +17,11 @@ public struct SyntaxID: Hashable, Sendable, Codable, CustomStringConvertible {
 		self.path = path
 
 		#if DEBUG
-		// swiftlint:disable fatal_error
-		if path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
-			fatalError("empty path not allowed")
-		}
-		// swiftlint:enable fatal_error
+			// swiftlint:disable fatal_error
+			if path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
+				fatalError("empty path not allowed")
+			}
+			// swiftlint:enable fatal_error
 		#endif
 	}
 
@@ -36,7 +36,7 @@ public struct SyntaxID: Hashable, Sendable, Codable, CustomStringConvertible {
 
 extension SyntaxID: ExpressibleByIntegerLiteral {
 	public init(integerLiteral value: Int) {
-		id = value
-		path = "synthetic"
+		self.id = value
+		self.path = "synthetic"
 	}
 }

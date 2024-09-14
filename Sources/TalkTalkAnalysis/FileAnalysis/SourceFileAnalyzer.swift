@@ -242,7 +242,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			errors.append(
 				.init(
 					kind: .expressionCount("Only 1 expression is allowed in an if expression block"),
-					location: expr.consequence.stmts[expr.consequence.stmts.count-1].location
+					location: expr.consequence.stmts[expr.consequence.stmts.count - 1].location
 				)
 			)
 		}
@@ -256,7 +256,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			errors.append(
 				.init(
 					kind: .expressionCount("Only 1 expression is allowed in an if expression block"),
-					location: expr.alternative.stmts[expr.alternative.stmts.count-1].location
+					location: expr.alternative.stmts[expr.alternative.stmts.count - 1].location
 				)
 			)
 		}
@@ -277,17 +277,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let symbol: Symbol
-
-		switch context.inferenceContext.lookup(syntax: expr) {
+		let symbol: Symbol = switch context.inferenceContext.lookup(syntax: expr) {
 		case .typeVar:
-			symbol = context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
+			context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case let .base(type):
-			symbol = .primitive("\(type)")
+			.primitive("\(type)")
 		case .structType:
-			symbol = context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
+			context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
 		default:
-			symbol = context.symbolGenerator.generic("error", source: .internal)
+			context.symbolGenerator.generic("error", source: .internal)
 		}
 
 		return AnalyzedTypeExpr(
@@ -495,11 +493,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: IfStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let alternativeAnalyzed: (any AnalyzedExpr)?
-		if let alternative = expr.alternative {
-			alternativeAnalyzed = try castToAnyAnalyzedExpr(alternative.accept(self, context))
+		let alternativeAnalyzed: (any AnalyzedExpr)? = if let alternative = expr.alternative {
+			try castToAnyAnalyzedExpr(alternative.accept(self, context))
 		} else {
-			alternativeAnalyzed = nil
+			nil
 		}
 
 		return try AnalyzedIfStmt(
@@ -566,15 +563,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
@@ -743,7 +740,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: EnumMemberExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
@@ -751,20 +748,19 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			return error(at: expr, "Could not find type for \(expr)", environment: context)
 		}
 
-		return AnalyzedInterpolatedStringExpr(
+		return try AnalyzedInterpolatedStringExpr(
 			wrapped: expr,
-			segmentsAnalyzed: try expr.segments.map {
+			segmentsAnalyzed: expr.segments.map {
 				switch $0 {
-				case .string(let string, let token):
-					return .string(string, token)
-				case .expr(let interpolation):
-					return try .expr(
+				case let .string(string, token):
+					.string(string, token)
+				case let .expr(interpolation):
+					try .expr(
 						.init(
 							exprAnalyzed: castToAnyAnalyzedExpr(interpolation.expr.accept(self, context)),
 							startToken: interpolation.startToken,
 							endToken: interpolation.endToken
 						)
-
 					)
 				}
 			},

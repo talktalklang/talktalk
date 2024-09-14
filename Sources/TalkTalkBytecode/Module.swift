@@ -8,7 +8,7 @@
 import OrderedCollections
 
 public final class BoundEnumCase: Equatable, Codable, Hashable, CustomStringConvertible {
-	public static func ==(lhs: BoundEnumCase, rhs: BoundEnumCase) -> Bool {
+	public static func == (lhs: BoundEnumCase, rhs: BoundEnumCase) -> Bool {
 		lhs.type == rhs.type && lhs.name == rhs.name && lhs.values == rhs.values
 	}
 

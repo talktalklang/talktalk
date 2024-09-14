@@ -27,7 +27,7 @@ struct Run: TalkTalkCommand {
 		let analyzed = try ModuleAnalyzer(
 			name: source.filename,
 			files: [
-				ParsedSourceFile(path: source.path, syntax: Parser.parse(source))
+				ParsedSourceFile(path: source.path, syntax: Parser.parse(source)),
 			],
 			moduleEnvironment: [:],
 			importedModules: []
@@ -43,7 +43,7 @@ struct Run: TalkTalkCommand {
 			moduleEnvironment: [:]
 		).compile(mode: .executable)
 
-		if case .error(_) = try VirtualMachine.run(module: module)  {
+		if case .error = try VirtualMachine.run(module: module) {
 			throw ExitCode.failure
 		} else {
 			throw ExitCode.success

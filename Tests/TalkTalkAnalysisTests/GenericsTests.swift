@@ -78,7 +78,6 @@ struct GenericsTests {
 		wrapper.value()
 		""")
 
-
 		let exprStmt = ast[3].cast(AnalyzedExprStmt.self)
 		let callExpr = exprStmt.exprAnalyzed.cast(AnalyzedCallExpr.self)
 		#expect(callExpr.typeAnalyzed == .base(.int))

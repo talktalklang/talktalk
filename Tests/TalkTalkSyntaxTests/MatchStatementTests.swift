@@ -1,12 +1,12 @@
 //
-//  CaseStatementTests.swift
+//  MatchStatementTests.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 9/4/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 
 struct MatchStatementTests {
 	@Test("Can lex") func lexin() throws {
@@ -21,11 +21,11 @@ struct MatchStatementTests {
 
 		#expect(tokens.map(\.kind) == [
 			.match, .identifier, .leftBrace, .newline,
-			.`case`, .dot, .identifier, .leftParen, .identifier, .rightParen, .colon, .newline,
+			.case, .dot, .identifier, .leftParen, .identifier, .rightParen, .colon, .newline,
 			.true, .newline,
-			.`case`, .dot, .identifier, .leftParen, .identifier, .rightParen, .comma, .dot, .identifier, .colon, .newline,
+			.case, .dot, .identifier, .leftParen, .identifier, .rightParen, .comma, .dot, .identifier, .colon, .newline,
 			.false, .newline,
-			.rightBrace, .eof
+			.rightBrace, .eof,
 		])
 	}
 

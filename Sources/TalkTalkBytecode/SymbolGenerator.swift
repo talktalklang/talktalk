@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/21/24.
 //
 import Foundation
-import TalkTalkCore
 import OrderedCollections
+import TalkTalkCore
 
 public class SymbolGenerator {
 	public let moduleName: String
@@ -39,22 +39,22 @@ public class SymbolGenerator {
 
 	public func `import`(_ symbol: Symbol, from moduleName: String) -> Symbol {
 		switch symbol.kind {
-		case .primitive(_):
-			return symbol
-		case .function(let name, let params):
-			return function(name, parameters: params, source: .external(moduleName))
-		case .value(let string):
-			return value(string, source: .external(moduleName))
-		case .struct(let name):
-			return self.struct(name, source: .external(moduleName))
-		case .method(let type, let name, let params):
-			return method(type, name, parameters: params, source: .external(moduleName))
-		case .property(let type, let name):
-			return property(type, name, source: .external(moduleName))
-		case .enum(let name):
-			return self.enum(name, source: .external(moduleName))
-		case .genericType(let name):
-			return generic(name, source: .external(moduleName))
+		case .primitive:
+			symbol
+		case let .function(name, params):
+			function(name, parameters: params, source: .external(moduleName))
+		case let .value(string):
+			value(string, source: .external(moduleName))
+		case let .struct(name):
+			self.struct(name, source: .external(moduleName))
+		case let .method(type, name, params):
+			method(type, name, parameters: params, source: .external(moduleName))
+		case let .property(type, name):
+			property(type, name, source: .external(moduleName))
+		case let .enum(name):
+			self.enum(name, source: .external(moduleName))
+		case let .genericType(name):
+			generic(name, source: .external(moduleName))
 		}
 	}
 
@@ -63,7 +63,7 @@ public class SymbolGenerator {
 			return parent.generic(name, source: source)
 		}
 
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .genericType(name))
 		} else {
 			Symbol(module: moduleName, kind: .genericType(name))
@@ -85,7 +85,6 @@ public class SymbolGenerator {
 
 		// Need to import the struct's methods too
 
-
 		return symbol
 	}
 
@@ -95,7 +94,7 @@ public class SymbolGenerator {
 		}
 
 		// Structs are top level (for now...) so they should not be namespaced
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .enum(name))
 		} else {
 			Symbol(module: moduleName, kind: .enum(name))
@@ -124,7 +123,7 @@ public class SymbolGenerator {
 		}
 
 		// Structs are top level (for now...) so they should not be namespaced
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .struct(name))
 		} else {
 			Symbol(module: moduleName, kind: .struct(name))
@@ -152,7 +151,7 @@ public class SymbolGenerator {
 			return parent.value(name, source: source)
 		}
 
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .value(name))
 		} else {
 			Symbol(module: moduleName, kind: .value(name))
@@ -160,9 +159,7 @@ public class SymbolGenerator {
 
 		if let info = values[symbol] {
 			return info.symbol
-		} else {
-
-		}
+		} else {}
 
 		let symbolInfo = SymbolInfo(
 			symbol: symbol,
@@ -182,7 +179,7 @@ public class SymbolGenerator {
 			return parent.function(name, parameters: parameters, source: source)
 		}
 
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .function(name, parameters))
 		} else {
 			Symbol(module: moduleName, kind: .function(name, parameters))
@@ -217,7 +214,7 @@ public class SymbolGenerator {
 		}
 
 		// Methods don't have a namespace since they're already namespaced to their type
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .method(type, name, parameters))
 		} else {
 			Symbol(module: moduleName, kind: .method(type, name, parameters))
@@ -245,7 +242,7 @@ public class SymbolGenerator {
 			return parent.property(type, name, source: source)
 		}
 
-		let symbol = if case .external(let moduleName) = source {
+		let symbol = if case let .external(moduleName) = source {
 			Symbol(module: moduleName, kind: .property(type, name))
 		} else {
 			Symbol(module: moduleName, kind: .property(type, name))

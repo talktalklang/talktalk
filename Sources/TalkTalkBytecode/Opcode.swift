@@ -12,7 +12,7 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     constant,
 	     negate,
 	     not,
-			 and,
+	     and,
 
 	     // Callables
 	     call, callChunkID,
@@ -47,11 +47,11 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     getBuiltin, setBuiltin,
 	     getBuiltinStruct, setBuiltinStruct,
 
-			 // Dictionaries
-			 initDict,
+	     // Dictionaries
+	     initDict,
 
-			 // Arrays
-			 initArray, get,
+	     // Arrays
+	     initArray, get,
 
 	     // Literals
 	     `true`,
@@ -67,7 +67,7 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     // Equality
 	     equal,
 	     notEqual,
-			 match,
+	     match,
 
 	     // Jumps
 	     jump,
@@ -75,20 +75,20 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     jumpPlaceholder,
 	     loop,
 
-			 // Pattern matching
-			 matchBegin,
-			 matchCase,
-			 binding,
+	     // Pattern matching
+	     matchBegin,
+	     matchCase,
+	     binding,
 
-			 // String interpolation
-			 appendInterpolation,
+	     // String interpolation
+	     appendInterpolation,
 
-			 // For operations that should have their own scope but allow returning from
-			 // their parent, like match statement bodies
-			 endInline,
+	     // For operations that should have their own scope but allow returning from
+	     // their parent, like match statement bodies
+	     endInline,
 
-			 // Enum stuff
-			 getEnum,
+	     // Enum stuff
+	     getEnum,
 
 	     // Comparisons
 	     less,
@@ -102,8 +102,8 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     divide,
 	     multiply,
 
-			 // Debuggy
-			 debugPrint
+	     // Debuggy
+	     debugPrint
 }
 
 extension Opcode {

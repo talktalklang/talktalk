@@ -21,7 +21,7 @@ struct DebugStack<Element> {
 		}
 	}
 
-	init(capacity: Int) {
+	init(capacity _: Int) {
 		self.storage = []
 	}
 
@@ -53,7 +53,7 @@ struct DebugStack<Element> {
 		return last
 	}
 
-	func peek(offset: Int = 0) throws -> Element {
+	func peek(offset _: Int = 0) throws -> Element {
 		guard let last = storage.last else {
 			throw VirtualMachineError.stackImbalance("Cannot peek empty stack")
 		}
@@ -62,7 +62,7 @@ struct DebugStack<Element> {
 	}
 
 	mutating func pop(count: Int) throws -> [Element] {
-		try (0..<count).map { _ in
+		try (0 ..< count).map { _ in
 			guard let last = storage.popLast() else {
 				throw VirtualMachineError.stackImbalance("Cannot pop \(count) from stack.")
 			}
@@ -80,7 +80,7 @@ struct Stack<Element> {
 					newBuffer.withUnsafeMutablePointerToElements { newElements in
 						newElements.initialize(from: elements, count: count)
 					}
-				// swiftlint:disable force_cast
+					// swiftlint:disable force_cast
 				} as! Storage
 				// swiftlint:disable force_cast
 			}
@@ -93,8 +93,8 @@ struct Stack<Element> {
 						newElements.moveInitialize(from: oldElements, count: oldSize)
 					}
 					// swiftlint:disable force_cast
-					} as! Storage
-					// swiftlint:disable force_cast
+				} as! Storage
+				// swiftlint:disable force_cast
 			}
 		}
 	}

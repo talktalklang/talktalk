@@ -36,7 +36,7 @@ class Constraints {
 		return false
 	}
 
-	func exists<T: Constraint>(for type: T.Type, where block: (T) -> Bool) -> Bool {
+	func exists<T: Constraint>(for _: T.Type, where block: (T) -> Bool) -> Bool {
 		for constraint in constraints where constraint is T {
 			if let constraint = constraint as? T, block(constraint) {
 				return true

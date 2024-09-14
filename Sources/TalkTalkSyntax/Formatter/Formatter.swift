@@ -50,7 +50,7 @@ public struct Formatter {
 			switch currentDoc {
 			case .empty:
 				continue
-			case .text(let str):
+			case let .text(str):
 				if wasNewline {
 					// Only indent if the previous line wasn't a newline
 					output += String(repeating: "\t", count: indent)
@@ -62,12 +62,12 @@ public struct Formatter {
 				output += "\n"
 				wasNewline = true
 				column = 0
-			case .concat(let lhs, let rhs):
+			case let .concat(lhs, rhs):
 				queue.insert((indent, rhs), at: 0)
 				queue.insert((indent, lhs), at: 0)
-			case .nest(let ind, let nestedDoc):
+			case let .nest(ind, nestedDoc):
 				queue.insert((indent + ind, nestedDoc), at: 0)
-			case .group(let groupedDoc):
+			case let .group(groupedDoc):
 				let flat = flatten(groupedDoc)
 				// Use the current column position in the calculation
 				if fits(width - column, doc: flat) {
@@ -91,19 +91,19 @@ public struct Formatter {
 	func flatten(_ doc: Doc) -> Doc {
 		switch doc {
 		case .empty, .text:
-			return doc
+			doc
 		case .hardline:
-			return .hardline
+			.hardline
 		case .softline:
-			return .text("")
+			.text("")
 		case .line:
-			return .text(" ")
-		case .concat(let left, let right):
-			return .concat(flatten(left), flatten(right))
-		case .nest(let indent, let nestedDoc):
-			return .nest(indent, flatten(nestedDoc))
-		case .group(let groupedDoc):
-			return flatten(groupedDoc)
+			.text(" ")
+		case let .concat(left, right):
+			.concat(flatten(left), flatten(right))
+		case let .nest(indent, nestedDoc):
+			.nest(indent, flatten(nestedDoc))
+		case let .group(groupedDoc):
+			flatten(groupedDoc)
 		}
 	}
 
@@ -111,12 +111,12 @@ public struct Formatter {
 		var width = remainingWidth
 		var queue: [Doc] = [doc]
 
-		while width >= 0 && !queue.isEmpty {
+		while width >= 0, !queue.isEmpty {
 			let currentDoc = queue.removeFirst()
 			switch currentDoc {
 			case .empty:
 				continue
-			case .text(let str):
+			case let .text(str):
 				width -= str.count
 			case .line:
 				return true
@@ -124,12 +124,12 @@ public struct Formatter {
 				return true
 			case .hardline:
 				return true
-			case .concat(let left, let right):
+			case let .concat(left, right):
 				queue.insert(right, at: 0)
 				queue.insert(left, at: 0)
-			case .nest(_, let nestedDoc):
+			case let .nest(_, nestedDoc):
 				queue.insert(nestedDoc, at: 0)
-			case .group(let groupedDoc):
+			case let .group(groupedDoc):
 				queue.insert(groupedDoc, at: 0)
 			}
 		}

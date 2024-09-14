@@ -159,11 +159,11 @@ struct PatternMatchingTests: TypeCheckerTest {
 										name: "top",
 										index: 0,
 										attachedTypes: [.base(.string)]
-									)
+									),
 								],
 								typeContext: .init()
 							)
-						)
+						),
 					]
 				)
 			),
@@ -177,7 +177,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 							arguments: [.variable("a", .base(.string))]
 						)
 					)
-				)
+				),
 			]
 		))
 

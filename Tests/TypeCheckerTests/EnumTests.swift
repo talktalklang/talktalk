@@ -13,12 +13,12 @@ import Testing
 struct EnumTests: TypeCheckerTest {
 	@Test("Can infer an enum type") func basic() throws {
 		let syntax = try Parser.parse(
-		"""
-		enum Thing {
-			case foo(String)
-			case bar(int)
-		}
-		"""
+			"""
+			enum Thing {
+				case foo(String)
+				case bar(int)
+			}
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -37,16 +37,16 @@ struct EnumTests: TypeCheckerTest {
 
 	@Test("Can infer a generic enum type") func generics() throws {
 		let syntax = try Parser.parse(
-		"""
-		enum Thing<Wrapped> {
-			case foo(Wrapped)
-		}
+			"""
+			enum Thing<Wrapped> {
+				case foo(Wrapped)
+			}
 
-		match Thing.foo(123) {
-		case .foo(let wrapped):
-			wrapped
-		}
-		"""
+			match Thing.foo(123) {
+			case .foo(let wrapped):
+				wrapped
+			}
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -68,14 +68,14 @@ struct EnumTests: TypeCheckerTest {
 
 	@Test("Can infer a case") func cases() throws {
 		let syntax = try Parser.parse(
-		"""
-		enum Thing {
-			case foo(String)
-			case bar(int)
-		}
+			"""
+			enum Thing {
+				case foo(String)
+				case bar(int)
+			}
 
-		Thing.foo("sup")
-		"""
+			Thing.foo("sup")
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -87,15 +87,15 @@ struct EnumTests: TypeCheckerTest {
 
 	@Test("Can infer out of order decls") func outOfOrder() throws {
 		let syntax = try Parser.parse(
-		"""
-		enum A {
-			case foo(B)
-		}
+			"""
+			enum A {
+				case foo(B)
+			}
 
-		enum B {
-			case fizz
-		}
-		"""
+			enum B {
+				case fizz
+			}
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -111,18 +111,18 @@ struct EnumTests: TypeCheckerTest {
 
 	@Test("Can infer an unqualified case") func unqualifiedCase() throws {
 		let syntax = try Parser.parse(
-		"""
-		enum Thing {
-			case foo(String)
-			case bar(int)
-		}
+			"""
+			enum Thing {
+				case foo(String)
+				case bar(int)
+			}
 
-		func check(thing: Thing) {
-			thing
-		}
+			func check(thing: Thing) {
+				thing
+			}
 
-		check(.foo("hello"))
-		"""
+			check(.foo("hello"))
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -135,9 +135,9 @@ struct EnumTests: TypeCheckerTest {
 			.cast(CallExprSyntax.self).args[0].value
 
 		#expect(enumType.cases == [
-				EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)]),
-				EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)]),
-			]
+			EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)]),
+			EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)]),
+		]
 		)
 	}
 }

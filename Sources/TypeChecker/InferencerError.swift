@@ -18,11 +18,11 @@ public enum InferencerError: Error, CustomStringConvertible, LocalizedError {
 
 	public var description: String {
 		switch self {
-		case .typeNotInferred(let string):
+		case let .typeNotInferred(string):
 			"Type not inferred for \(string.debugDescription)"
-		case .cannotInfer(let string):
+		case let .cannotInfer(string):
 			"Type cannot be inferred for \(string.debugDescription)"
-		case .parametersNotAvailable(let string):
+		case let .parametersNotAvailable(string):
 			"Parameters not available for \(string)"
 		}
 	}

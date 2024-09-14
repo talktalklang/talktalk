@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/23/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 import TypeChecker
-import TalkTalkBytecode
 
 struct StructDeclAnalyzer: Analyzer {
 	let decl: any StructDecl
@@ -76,7 +76,7 @@ struct StructDeclAnalyzer: Analyzer {
 				return error(at: decl, "invalid method", environment: context, expectation: .none)
 			}
 
-			let location = decl.body.decls.first(where: { ($0 is InitDecl) })?.semanticLocation
+			let location = decl.body.decls.first(where: { $0 is InitDecl })?.semanticLocation
 			let symbol = context.symbolGenerator.method(
 				structType.name ?? "",
 				name,
@@ -149,10 +149,10 @@ struct StructDeclAnalyzer: Analyzer {
 		// Do a second pass to try to fill in method returns
 		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
 
-		let analyzed = AnalyzedStructDecl(
+		let analyzed = try AnalyzedStructDecl(
 			symbol: symbol,
-			wrapped: try cast(decl, to: StructDeclSyntax.self),
-			bodyAnalyzed: try cast(bodyAnalyzed, to:  AnalyzedDeclBlock.self),
+			wrapped: cast(decl, to: StructDeclSyntax.self),
+			bodyAnalyzed: cast(bodyAnalyzed, to: AnalyzedDeclBlock.self),
 			structType: structType,
 			lexicalScope: lexicalScope,
 			inferenceType: inferenceType,

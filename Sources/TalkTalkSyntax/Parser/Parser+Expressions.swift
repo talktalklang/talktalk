@@ -344,7 +344,7 @@ extension Parser {
 		// Make sure the interpolation ends
 		guard let end = consume(.interpolationEnd) else {
 			throw ParserError.couldNotParse([
-				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd))
+				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd)),
 			])
 		}
 
@@ -482,7 +482,7 @@ extension Parser {
 		}
 	}
 
-	mutating func dot(_ canAssign: Bool) -> any Expr {
+	mutating func dot(_: Bool) -> any Expr {
 		let i = startLocation()
 		consume(.dot)
 		guard let property = consume(.identifier) else {

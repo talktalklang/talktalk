@@ -276,55 +276,55 @@ public struct ASTPrinter: Visitor {
 		}
 	}
 
-	@StringBuilder public func visit(_ expr: ArrayLiteralExprSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ArrayLiteralExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: SubscriptExprSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: SubscriptExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: DictionaryLiteralExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: DictionaryElementExprSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: DictionaryElementExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ProtocolDeclSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ProtocolBodyDeclSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: FuncSignatureDeclSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: EnumDeclSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: EnumCaseDeclSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: MatchStatementSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: CaseStmtSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: EnumMemberExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: InterpolatedStringExprSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 

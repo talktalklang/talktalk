@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
-import Testing
 import TalkTalkBytecode
+import Testing
 
 struct PatternMatchingCompilerTests: CompilerTest {
 	@Test("Basic") func basic() throws {
@@ -49,7 +49,6 @@ struct PatternMatchingCompilerTests: CompilerTest {
 
 			.op(.endInline, line: 0)
 		))
-
 
 		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
 			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),

@@ -5,13 +5,13 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 @testable import TypeChecker
 
 struct ProtocolTests {
 	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		return try Inferencer(imports: []).infer(expr).solve()
+		try Inferencer(imports: []).infer(expr).solve()
 	}
 
 	@Test("Types protocol decl") func protocolType() throws {

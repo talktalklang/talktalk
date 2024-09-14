@@ -1,5 +1,5 @@
 //
-//  Analysis+Module.swift
+//  AnalysisModule+Completions.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/17/24.
@@ -92,7 +92,7 @@ public extension AnalysisModule {
 		for match in matches {
 			guard let match = match as? AnalyzedExprStmt,
 			      let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
-						case let .structInstance(instance) = memberExpr.receiverAnalyzed.inferenceType
+			      case let .structInstance(instance) = memberExpr.receiverAnalyzed.inferenceType
 			else {
 				continue
 			}

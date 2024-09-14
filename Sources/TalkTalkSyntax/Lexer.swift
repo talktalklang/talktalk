@@ -11,13 +11,13 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		// Single char tokens
 		case leftParen, rightParen,
 		     leftBrace, rightBrace,
-				 leftBracket, rightBracket,
+		     leftBracket, rightBracket,
 		     semicolon, symbol, plus, equals, comma, bang,
 		     colon, dot, less, greater, minus, star, slash
 
 		// Multiple char tokens
 		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow,
-				 plusEquals, minusEquals
+		     plusEquals, minusEquals
 
 		// String interpolation
 		case interpolationStart, interpolationEnd
@@ -27,7 +27,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     `if`, `in`, call, `else`,
 		     `while`, `var`, `let`, initialize,
 		     `struct`, `self`, `Self`, `import`, `is`, `protocol`,
-				 `enum`, match, `case`
+		     `enum`, match, `case`
 
 		case newline
 		case eof
@@ -85,8 +85,8 @@ public struct Lexer {
 
 		if source.path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
 			#if DEBUG
-			print("empty source path is discouraged")
-			raise(SIGINT)
+				print("empty source path is discouraged")
+				raise(SIGINT)
 			#endif
 		}
 	}
@@ -212,7 +212,7 @@ public struct Lexer {
 		return returnToken
 	}
 
-	mutating func stringInterpolation(start stringStart: Int) {
+	mutating func stringInterpolation(start _: Int) {
 		var buffer: [Token] = []
 
 		buffer.append(make(.string))
@@ -235,7 +235,7 @@ public struct Lexer {
 
 		start = current
 
-		self.nextBuffer.append(contentsOf: buffer)
+		nextBuffer.append(contentsOf: buffer)
 	}
 
 	mutating func newline() -> Token {
@@ -275,7 +275,7 @@ public struct Lexer {
 		case "protocol": make(.protocol)
 		case "enum": make(.enum)
 		case "match": make(.match)
-		case "case": make(.`case`)
+		case "case": make(.case)
 		default:
 			make(.identifier)
 		}

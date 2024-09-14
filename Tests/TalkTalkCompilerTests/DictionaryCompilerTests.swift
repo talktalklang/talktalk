@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/22/24.
 //
 
-import Testing
 import TalkTalkBytecode
 import TalkTalkCompiler
+import Testing
 
 @Suite(.disabled()) struct DictionaryCompilerTests: CompilerTest {
 	@Test("Compiles dictionary") func testDictionary() async throws {

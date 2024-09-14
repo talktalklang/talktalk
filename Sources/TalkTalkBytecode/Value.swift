@@ -6,7 +6,7 @@
 //
 
 public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
-	public static func ==(lhs: Instance, rhs: Instance) -> Bool {
+	public static func == (lhs: Instance, rhs: Instance) -> Bool {
 		lhs.type == rhs.type && lhs.fields == rhs.fields
 	}
 
@@ -25,7 +25,7 @@ public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
 }
 
 public class Binding: Equatable, Hashable, Codable, CustomStringConvertible {
-	public static func ==(lhs: Binding, rhs: Binding) -> Bool {
+	public static func == (lhs: Binding, rhs: Binding) -> Bool {
 		lhs.value == rhs.value
 	}
 
@@ -104,7 +104,7 @@ public enum Value: Equatable, Hashable, Codable {
 
 	case none
 
-	public static func ==(lhs: Value, rhs: Value) -> Bool {
+	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch (lhs, rhs) {
 		case (_, .binding):
 			true

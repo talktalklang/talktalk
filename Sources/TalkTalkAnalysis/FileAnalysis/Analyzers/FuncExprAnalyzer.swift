@@ -14,15 +14,14 @@ struct FuncExprAnalyzer: Analyzer {
 	var context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
-		let symbol: Symbol
-		if let scope = context.lexicalScope, let name = scope.scope.name {
-			symbol = context.symbolGenerator.method(
+		let symbol: Symbol = if let scope = context.lexicalScope, let name = scope.scope.name {
+			context.symbolGenerator.method(
 				name, expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal
 			)
 		} else {
-			symbol = context.symbolGenerator.function(
+			context.symbolGenerator.function(
 				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal
@@ -64,12 +63,12 @@ struct FuncExprAnalyzer: Analyzer {
 
 		let body = try expr.body.accept(visitor, environment)
 
-		return AnalyzedFuncExpr(
+		return try AnalyzedFuncExpr(
 			symbol: symbol,
 			type: type ?? .any,
-			wrapped: try cast(expr, to: FuncExprSyntax.self),
+			wrapped: cast(expr, to: FuncExprSyntax.self),
 			analyzedParams: params,
-			bodyAnalyzed: try cast(body, to: AnalyzedBlockStmt.self),
+			bodyAnalyzed: cast(body, to: AnalyzedBlockStmt.self),
 			analysisErrors: visitor.errors(for: expr, in: context.inferenceContext),
 			returnType: returns,
 			environment: environment
