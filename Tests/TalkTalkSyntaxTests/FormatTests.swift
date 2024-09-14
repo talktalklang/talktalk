@@ -237,6 +237,31 @@ struct FormatTests {
 		""")
 	}
 
+	@Test("Basic dict") func basicDict() throws {
+		let formatted = format("""
+		[1: "foo",2: "fizz",  3:		"buzz", 4:"bar"
+		]
+		""")
+
+		#expect(formatted == """
+		[1: "foo", 2: "fizz", 3: "buzz", 4: "bar"]
+		""")
+
+		let narrow = format("""
+		[1: "foo",2: "fizz",  3:		"buzz", 4:"bar"
+		]
+		""", width: 5)
+
+		#expect(narrow == """
+		[
+			1: "foo",
+			2: "fizz",
+			3: "buzz",
+			4: "bar"
+		]
+		""")
+	}
+
 	@Test("Basic struct") func basicStruct() throws {
 		let formatted = format("""
 		struct  Foo<

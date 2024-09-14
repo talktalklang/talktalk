@@ -385,13 +385,20 @@ struct FormatterVisitor: Visitor {
 
 	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
-		let result = try text("[") <> .line <> .nest(1, join(expr.elements.map { try $0.accept(self, context) }, with: text(",") <> .line)) <> .line <> text("]")
+		let result = try group(
+			text("[")
+				<> .nest(1, join(expr.elements.enumerated().map {
+					try ($0 == 0 ? .softline : .line) <> $1.accept(self, context)
+				}, with: text(",")))
+				<> .softline
+				<> text("]")
+		)
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
 
 	func visit(_ expr: DictionaryElementExprSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
-		let result = try expr.key.accept(self, context) <> text(":") <+> expr.value.accept(self, context) <> .line
+		let result = try expr.key.accept(self, context) <> text(":") <+> expr.value.accept(self, context)
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
 

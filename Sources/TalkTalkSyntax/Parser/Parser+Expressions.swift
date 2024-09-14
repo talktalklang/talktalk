@@ -218,14 +218,18 @@ extension Parser {
 					break
 				}
 
+				skip(.newline)
 				let value = parse(precedence: .assignment)
+				skip(.newline)
 				exprs.append(DictionaryElementExprSyntax(id: nextID(), key: expr, value: value, location: [expr.location.start, value.location.end]))
 			} else {
 				exprs.append(expr)
 			}
 		} while didMatch(.comma)
+		skip(.newline)
 
 		consume(.rightBracket)
+		skip(.newline)
 
 		let literal: any Expr = if isDictionary {
 			DictionaryLiteralExprSyntax(
