@@ -80,7 +80,7 @@ class CommentStore {
 		}
 
 		// It's right after the node, make it a trailing comment
-		if comment.line - 1 == syntax.location.end.line {
+		if comment.line - 1 == syntax.location.end.line, syntax.canHaveTrailingComment {
 			commentsBySyntax[syntax.id, default: .init()].trailingComments.append(comment)
 			comments.removeFirst()
 			return true
