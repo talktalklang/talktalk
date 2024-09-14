@@ -23,8 +23,17 @@ public extension TalkTalkCommand {
 		if FileManager.default.fileExists(atPath: input) {
 			filename = input
 			source = try String(contentsOf: URL.currentDirectory().appending(path: input), encoding: .utf8)
-		} else {
+		} else if input == "-" {
 			filename = "<stdin>"
+
+			var lines: [String] = []
+			while let line = readLine() {
+				lines.append(line)
+			}
+
+			source = lines.joined(separator: "\n")
+		} else {
+			filename = "<>"
 			source = input
 		}
 

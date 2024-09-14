@@ -21,6 +21,44 @@ struct FormatTests {
 		#expect(formatted == "1 + 2")
 	}
 
+	@Test("Repects newlines at top line") func respectsNewlines() throws {
+		let a = format("""
+		print("foo")
+		print("bar")
+		""")
+
+		#expect(a == """
+		print("foo")
+		print("bar")
+		""")
+
+		let b = format("""
+		print("foo")
+
+		print("bar")
+		""")
+
+		#expect(b == """
+		print("foo")
+
+		print("bar")
+		""")
+
+		let c = format("""
+		print("foo")
+
+
+		print("bar")
+		""")
+
+		// Make sure it collapses a bunch of newlines
+		#expect(c == """
+		print("foo")
+
+		print("bar")
+		""")
+	}
+
 	@Test("Basic func") func basicFunc() throws {
 		let formatted = format("""
 		func foo(
@@ -55,6 +93,20 @@ struct FormatTests {
 		#expect(narrow == """
 		func foo() {
 			"bar"
+		}
+		""")
+	}
+
+	@Test("Nested functions") func nestedFuncs() throws {
+		let formatted = format("""
+		func foo(
+			) {
+		func bar() { "fizz" } }
+		""")
+
+		#expect(formatted == """
+		func foo() {
+			func bar() { "fizz" }
 		}
 		""")
 	}
@@ -109,6 +161,39 @@ struct FormatTests {
 			3,
 			4
 		]
+		""")
+	}
+
+	@Test("Basic struct") func basicStruct() throws {
+		let formatted = format("""
+		struct  Foo<
+			Fizz> {
+			var bar:   String
+
+				init() {}
+
+				func foo(  ) { 
+		print( 
+				"sup")
+
+
+			print("yoyo")
+				}
+		}
+		""")
+
+		#expect(formatted == """
+		struct Foo<Fizz> {
+			var bar: String
+
+			init() {}
+
+			func foo() {
+				print("sup")
+
+				print("yoyo")
+			}
+		}
 		""")
 	}
 }

@@ -386,10 +386,14 @@ extension Parser {
 	mutating func typeParameters() -> [TypeExprSyntax] {
 		var types: [TypeExprSyntax] = []
 		repeat {
+			skip(.newline)
 			types.append(typeExpr())
+			skip(.newline)
 		} while didMatch(.comma)
 
+		skip(.newline)
 		consume(.greater)
+		skip(.newline)
 
 		return types
 	}
@@ -449,7 +453,9 @@ extension Parser {
 	mutating func call(_: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: lhs.location.start)
 
+		skip(.newline)
 		consume(.leftParen) // This is how we got here.
+		skip(.newline)
 
 		var args: [Argument] = []
 		if !didMatch(.rightParen) {
@@ -589,11 +595,15 @@ extension Parser {
 		let typeID = consume(.identifier)
 		let i = startLocation(at: previous.unsafelyUnwrapped)
 
+		skip(.newline)
 		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
+			skip(.newline)
 			typeParameters = self.typeParameters()
+			skip(.newline)
 		}
 
+		skip(.newline)
 		var errors: [String] = []
 
 		if typeID == nil {
