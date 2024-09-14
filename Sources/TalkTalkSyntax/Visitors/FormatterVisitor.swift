@@ -153,10 +153,17 @@ struct FormatterVisitor: Visitor {
 
 		context.childTraits.add(.hasFunc)
 
+		let type: Doc = if let type = expr.typeDecl {
+			try text(" ->") <+> type.accept(self, context)
+		} else {
+			.empty
+		}
+
 		return start
 			<> text("(")
 			<> params
 			<> text(")")
+			<> type
 			<+> body
 	}
 

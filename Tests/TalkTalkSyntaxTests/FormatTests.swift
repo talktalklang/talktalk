@@ -101,12 +101,12 @@ struct FormatTests {
 		let formatted = format("""
 		func foo(
 			) {
-		func bar() { "fizz" } }
+		func bar() -> String { "fizz" } }
 		""")
 
 		#expect(formatted == """
 		func foo() {
-			func bar() { "fizz" }
+			func bar() -> String { "fizz" }
 		}
 		""")
 	}
