@@ -296,6 +296,30 @@ struct FormatTests {
 		""")
 	}
 
+	@Test("Init with body") func initBody() throws {
+		let formatted = format("""
+		struct  Foo<
+			Fizz> {
+			var bar:   String
+
+				init() {
+			self.bar =  "oh hi"
+						}
+		}
+		""")
+
+		#expect(formatted == """
+		struct Foo<Fizz> {
+			var bar: String
+
+			init() {
+				self.bar = "oh hi"
+			}
+		}
+
+		""")
+	}
+
 	@Test("Fib") func fib() throws {
 		let formatted = format(
 			"""
