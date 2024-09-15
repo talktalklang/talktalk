@@ -18,6 +18,8 @@ struct ProtocolTests {
 		let syntax = try Parser.parse(
 			"""
 			protocol Greetable {
+				var name: String
+
 				func greet() -> String
 			}
 			"""
@@ -25,6 +27,32 @@ struct ProtocolTests {
 
 		let context = try infer(syntax)
 
-		#expect(context[syntax[0]] == .type(.protocol(ProtocolType(name: "Greetable"))))
+		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
+		#expect(protocolType.name == "Greetable")
+		#expect(protocolType.properties["name"] == .type(.base(.string)))
+		#expect(protocolType.methods["greet"] == .scheme(Scheme(name: "greet", variables: [], type: .function([], .base(.string)))))
+	}
+
+	@Test("Types protocol method", .disabled("Waitin for instantiatable refactor")) func protocolMethod() throws {
+		let syntax = try Parser.parse(
+			"""
+			protocol Greetable {
+				func greet() -> String
+			}
+
+			func greetGreetable(greetable: Greetable) {
+				greetable.greet()
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context.errors.isEmpty)
+
+		let fn = context[syntax[1]]!.asType(in: context)
+
+		#expect(fn == .function([
+			// TODO.
+		], .base(.string)))
 	}
 }

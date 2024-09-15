@@ -8,7 +8,7 @@ import Foundation
 import OrderedCollections
 import TalkTalkSyntax
 
-public struct StructType: Equatable, Hashable, CustomStringConvertible {
+public struct StructType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
 	public static func == (lhs: StructType, rhs: StructType) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
@@ -62,7 +62,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
 	}
 
-	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance {
+	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance<StructType> {
 		let instance = Instance(
 			id: context.nextIdentifier(named: name),
 			type: self,
@@ -86,7 +86,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		typeContext.initializers
 	}
 
-	func member(named name: String) -> InferenceResult? {
+	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 			return .type(context.applySubstitutions(to: member.asType(in: context)))
 		}

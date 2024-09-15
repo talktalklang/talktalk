@@ -51,7 +51,7 @@ struct MemberConstraint: Constraint {
 		switch context.applySubstitutions(to: receiver) {
 		case let .structType(structType):
 			// It's a type parameter, try to unify it with a property
-			guard let member = structType.member(named: name) else {
+			guard let member = structType.member(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
@@ -82,7 +82,7 @@ struct MemberConstraint: Constraint {
 			)
 		case let .structInstance(instance):
 			// It's an instance member
-			guard var member = instance.member(named: name) else {
+			guard var member = instance.member(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
@@ -98,7 +98,7 @@ struct MemberConstraint: Constraint {
 				location
 			)
 		case let .selfVar(structType):
-			guard var member = structType.member(named: name) else {
+			guard var member = structType.member(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)

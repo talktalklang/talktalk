@@ -5,80 +5,60 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 import Foundation
+import OrderedCollections
 
 public struct ProtocolType: Equatable, Hashable {
+	public static func == (lhs: Self, rhs: Self) -> Bool {
+		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
+	}
+
 	public let name: String
-}
-
-public class Instance: Equatable, Hashable, CustomStringConvertible {
-	public static func == (lhs: Instance, rhs: Instance) -> Bool {
-		lhs.type == rhs.type && lhs.substitutions == rhs.substitutions
-	}
-
-	let id: Int
-	public let type: StructType
-	var substitutions: [TypeVariable: InferenceType]
-
-	public static func extract(from type: InferenceType) -> Instance? {
-		if case let .structInstance(instance) = type {
-			return instance
-		}
-
-		return nil
-	}
-
-	public static func synthesized(_ type: StructType) -> Instance {
-		Instance(id: -9999, type: type, substitutions: [:])
-	}
-
-	init(id: Int, type: StructType, substitutions: [TypeVariable: InferenceType]) {
-		self.id = id
-		self.type = type
-		self.substitutions = substitutions
-	}
-
-	public func relatedType(named name: String) -> InferenceType? {
-		for substitution in substitutions.keys {
-			if substitution.name == name {
-				return substitutions[substitution]
-			}
-		}
-
-		return nil
-	}
-
-	func member(named name: String) -> InferenceType? {
-		guard let structMember = type.member(named: name) else {
-			return nil
-		}
-
-		var instanceMember: InferenceType
-		switch structMember {
-		case let .scheme(scheme):
-			// It's a method
-			let type = type.context.instantiate(scheme: scheme)
-			instanceMember = self.type.context.applySubstitutions(to: type, with: substitutions)
-		case let .type(inferenceType):
-			// It's a property
-			instanceMember = type.context.applySubstitutions(to: inferenceType, with: substitutions)
-		}
-
-		return instanceMember
-	}
-
-	public var description: String {
-		if substitutions.isEmpty {
-			"\(type.name)()#\(id)"
-		} else {
-			"\(type.name)<\(substitutions.keys.map(\.description).joined(separator: ", "))>()#\(id)"
-		}
-	}
+	let typeContext: TypeContext
 
 	public func hash(into hasher: inout Hasher) {
-		hasher.combine(type)
-		hasher.combine(substitutions)
+		hasher.combine(name)
+		hasher.combine(typeContext.properties)
+		hasher.combine(typeContext.methods)
+	}
+
+	public static func extract(from type: InferenceType) -> ProtocolType? {
+		if case let .protocol(type) = type {
+			return type
+		}
+
+		return nil
+	}
+
+	func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+		if let member = properties[name] ?? methods[name] {
+			return .type(context.applySubstitutions(to: member.asType(in: context)))
+		}
+
+		if let typeParam = typeContext.typeParameters.first(where: { $0.name == name }) {
+			return .type(.typeVar(typeParam))
+		}
+
+		return nil
+	}
+
+	func method(named name: String, in context: InferenceContext) -> InferenceResult? {
+		if let member = methods[name] {
+			return .type(context.applySubstitutions(to: member.asType(in: context)))
+		}
+
+		return nil
+	}
+
+	public var properties: OrderedDictionary<String, InferenceResult> {
+		typeContext.properties
+	}
+
+	public var methods: OrderedDictionary<String, InferenceResult> {
+		typeContext.methods
 	}
 }
+
+
 
 public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	// Something we'll fill in later.
@@ -90,9 +70,11 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceType], InferenceType)
 
+	case instance(Instance<StructType>)
+
 	// Struct stuff
 	case structType(StructType)
-	case structInstance(Instance)
+	case structInstance(Instance<StructType>)
 
 	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)
@@ -129,6 +111,8 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	public var debugDescription: String {
 		switch self {
+		case let .instance(instance):
+			"\(instance)"
 		case let .enumCaseInstance(instance):
 			"\(instance.enumCase)\(instance.substitutions)"
 		case let .protocol(protocolType):
@@ -166,6 +150,8 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	public var description: String {
 		switch self {
+		case let .instance(instance):
+			"\(instance)"
 		case let .enumCaseInstance(instance):
 			"\(instance.enumCase)\(instance.substitutions)"
 		case let .protocol(protocolType):

@@ -57,4 +57,16 @@ struct ProtocolTests {
 		#expect(varDecl.name == "name")
 		#expect(varDecl.typeExpr?.identifier.lexeme == "String")
 	}
+
+	@Test("Can parse a conformance") func conformance() throws {
+		let parsed = try Parser.parse(
+			"""
+			struct Fizz: Buzz {}
+			"""
+		)
+
+		let structDef = try #require(parsed[0] as? StructDeclSyntax)
+		#expect(structDef.name == "Fizz")
+		#expect(structDef.conformances[0].identifier.lexeme == "Buzz")
+	}
 }

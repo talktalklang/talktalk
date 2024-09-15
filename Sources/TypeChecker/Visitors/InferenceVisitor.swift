@@ -56,6 +56,8 @@ struct InferenceVisitor: Visitor {
 				if context.lookup(syntax: decl) == nil {
 					context.definePlaceholder(named: decl.name, as: .placeholder(context.freshTypeVariable(decl.name)), at: decl.location)
 				}
+			case let decl as ProtocolDecl:
+				context.definePlaceholder(named: decl.name.lexeme, as: .placeholder(context.freshTypeVariable(decl.name.lexeme)), at: decl.location)
 			default:
 				()
 			}
@@ -504,7 +506,7 @@ struct InferenceVisitor: Visitor {
 
 		switch receiver {
 		case let .type(.structType(structType)):
-			guard let member = structType.member(named: expr.property)?.asType(in: context) else {
+			guard let member = structType.member(named: expr.property, in: context)?.asType(in: context) else {
 				context.addError(.memberNotFound(.structType(structType), expr.property), to: expr)
 				return
 			}
@@ -681,7 +683,7 @@ struct InferenceVisitor: Visitor {
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
 		case let .structType(structType), let .selfVar(structType):
-			guard let method = structType.member(named: "get") else {
+			guard let method = structType.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` meethod for \(structType)")
 			}
 
@@ -696,7 +698,7 @@ struct InferenceVisitor: Visitor {
 				.call(method, args, returns: getReturns, at: expr.location)
 			)
 		case let .structInstance(structInstance):
-			guard let method = structInstance.member(named: "get") else {
+			guard let method = structInstance.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` meethod for \(structInstance)")
 			}
 
@@ -765,7 +767,13 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws {
-		let protocolType = ProtocolType(name: expr.name.lexeme)
+		let context = context.childTypeContext()
+
+		// swiftlint:disable force_unwrapping
+		let typeContext = context.typeContext!
+		// swiftlint:enable force_unwrapping
+
+		let protocolType = ProtocolType(name: expr.name.lexeme, typeContext: typeContext)
 		let protocolTypeVar: InferenceType = context.freshTypeVariable(expr.name.lexeme, file: #file, line: #line)
 
 		context.constraints.add(
@@ -776,15 +784,54 @@ struct InferenceVisitor: Visitor {
 			)
 		)
 
+		try expr.body.accept(self, context)
+
+		// Save property requirements for the protocol
+		for decl in expr.body.decls {
+			guard let decl = decl as? VarLetDecl else {
+				continue
+			}
+
+			if let type = context[decl] {
+				typeContext.properties[decl.name] = type
+			}
+		}
+
+		context.defineVariable(named: expr.name.lexeme, as: .protocol(protocolType), at: expr.location)
 		context.extend(expr, with: .type(.protocol(protocolType)))
 	}
 
-	func visit(_: ProtocolBodyDeclSyntax, _: Context) throws {
-		// TODO: this
+	func visit(_ decl: ProtocolBodyDeclSyntax, _ context: Context) throws {
+		for decl in decl.decls {
+			try decl.accept(self, context)
+		}
 	}
 
-	func visit(_: FuncSignatureDeclSyntax, _: Context) throws {
-		// TODO: this
+	func visit(_ decl: FuncSignatureDeclSyntax, _ context: Context) throws {
+		guard let typeContext = context.typeContext else {
+			throw InferencerError.cannotInfer("No type context to define func signature in")
+		}
+
+		let params = try decl.params.params.map {
+			try $0.accept(self, context)
+
+			guard let type = context[$0]?.asType(in: context) else {
+				throw InferencerError.cannotInfer("Could not determine parameter type: \($0.description)")
+			}
+
+			return type
+		}
+
+		try decl.returnDecl.accept(self, context)
+		guard let returnType = context[decl.returnDecl]?.asType(in: context) else {
+			throw InferencerError.cannotInfer("Could not determine return type: \(decl.description)")
+		}
+
+		typeContext.methods[decl.name.lexeme] = .scheme(Scheme(
+			name: decl.name.lexeme,
+			variables: [],
+			type: .function(params, returnType)
+		))
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws {
