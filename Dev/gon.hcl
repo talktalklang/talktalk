@@ -1,12 +1,8 @@
-source = [
-  "./talk"
-]
-
 bundle_id = "sh.talktalk"
 
 sign {}
 
 notarize {
-  path = "./talk"
+  path = "./TalkTalk.zip"
   bundle_id = "sh.talktalk"
 }
