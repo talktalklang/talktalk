@@ -2,9 +2,8 @@ name: Build a release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    tags:
+      - "*"
   # workflow_run:
   #   workflows: ["Run Tests"]
   #   branches: [main]
