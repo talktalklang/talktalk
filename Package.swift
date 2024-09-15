@@ -81,6 +81,7 @@ let package = Package(
 			dependencies: [],
 			resources: [
 				.copy("../../Library/Standard"),
+				.copy("../../Library/REPL"),
 			]
 		),
 		.target(
@@ -92,6 +93,7 @@ let package = Package(
 			],
 			resources: [
 				.copy("../../Library/Standard"),
+				.copy("../../Library/REPL"),
 			]
 		),
 		.target(
