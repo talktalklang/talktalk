@@ -1,8 +1,6 @@
 bundle_id = "sh.talktalk"
 
-source {
-  path = ".build/release/talk"
-}
+source = [".build/release/talk"]
 
 sign {}
 
