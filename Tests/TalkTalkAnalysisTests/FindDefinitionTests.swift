@@ -35,10 +35,10 @@ struct FindDefinitionTests {
 			var person = Person()
 			person.greet()
 
-			""", "person.tlk")
+			""", "person.talk")
 		)
 
-		let found = module.findSymbol(line: 7, column: 9, path: "person.tlk")!.cast(AnalyzedMemberExpr.self)
+		let found = module.findSymbol(line: 7, column: 9, path: "person.talk")!.cast(AnalyzedMemberExpr.self)
 		let node = try #require(found)
 		#expect(node.receiverAnalyzed.cast(AnalyzedVarExpr.self).name == "person")
 		#expect(node.property == "greet")
@@ -59,10 +59,10 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", "person.tlk")
+			""", "person.talk")
 		)
 
-		let found = module.findSymbol(line: 5, column: 9, path: "person.tlk")!
+		let found = module.findSymbol(line: 5, column: 9, path: "person.talk")!
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedMemberExpr.self)
 		let node = try #require(found)
@@ -85,10 +85,10 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", "person.tlk")
+			""", "person.talk")
 		)
 
-		let found = module.findSymbol(line: 4, column: 15, path: "person.tlk")!
+		let found = module.findSymbol(line: 4, column: 15, path: "person.talk")!
 			.cast(AnalyzedVarExpr.self)
 		let node = try #require(found)
 		#expect(node.name == "Person")
@@ -106,10 +106,10 @@ struct FindDefinitionTests {
 			var age = 123
 			age
 
-			""", "person.tlk")
+			""", "person.talk")
 		)
 
-		let found = module.findSymbol(line: 1, column: 1, path: "person.tlk")!
+		let found = module.findSymbol(line: 1, column: 1, path: "person.talk")!
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedVarExpr.self)
 		let node = try #require(found)
@@ -131,10 +131,10 @@ struct FindDefinitionTests {
 
 			var person = Person()
 			person.name
-			""", "person.tlk")
+			""", "person.talk")
 		)
 
-		let found = module.findSymbol(line: 5, column: 3, path: "person.tlk")!
+		let found = module.findSymbol(line: 5, column: 3, path: "person.talk")!
 			.cast(AnalyzedVarExpr.self)
 		let node = try #require(found)
 		#expect(node.name == "person")
@@ -156,10 +156,10 @@ struct FindDefinitionTests {
 					self.name
 				}
 			}
-			""", "person.tlk")
+			""", "person.talk")
 		)
 
-		let found = module.findSymbol(line: 4, column: 8, path: "person.tlk")!
+		let found = module.findSymbol(line: 4, column: 8, path: "person.talk")!
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.as(AnalyzedMemberExpr.self)
 		let node = try #require(found)

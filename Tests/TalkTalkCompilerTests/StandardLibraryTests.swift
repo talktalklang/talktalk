@@ -15,7 +15,7 @@ struct StandardLibraryTests: CompilerTest {
 			"""
 		)
 
-		let main = module.chunks[.function(module.name, "0.tlk", [])]!
+		let main = module.chunks[.function(module.name, "0.talk", [])]!
 
 		// TODO: Something's weird here, this should all be in the value initializer
 		try #expect(main.disassemble(in: module) == Instructions(
@@ -35,7 +35,7 @@ struct StandardLibraryTests: CompilerTest {
 			"""
 		)
 
-		let main = module.chunks[.function(module.name, "0.tlk", [])]!
+		let main = module.chunks[.function(module.name, "0.talk", [])]!
 
 		// TODO: Something's weird here, this should all be in the value initializer
 		try #expect(main.disassemble(in: module) == Instructions(

@@ -20,7 +20,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			"""
 		)
 
-		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(9, 0.tlk)", [])
+		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(9, 0.talk)", [])
 
 		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
@@ -50,7 +50,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			.op(.endInline, line: 0)
 		))
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
 			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),
 			.op(.returnVoid, line: 0)
 		))
@@ -67,9 +67,9 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			"""
 		)
 
-		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(8, 0.tlk)", [])
+		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(8, 0.talk)", [])
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
 			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),
 			.op(.returnVoid, line: 0)
 		))
@@ -119,9 +119,9 @@ struct PatternMatchingCompilerTests: CompilerTest {
 			"""
 		)
 
-		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(25, 0.tlk)", [])
+		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(25, 0.talk)", [])
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
 			.op(.matchBegin, line: 5, .variable(matchSymbol, .matchBegin)),
 			.op(.returnVoid, line: 0)
 		))

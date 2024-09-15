@@ -24,7 +24,7 @@ extension VMTest {
 	func compile(_ strings: [String]) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: strings.enumerated().map { .tmp($1, "\($0).tlk") },
+			files: strings.enumerated().map { .tmp($1, "\($0).talk") },
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()

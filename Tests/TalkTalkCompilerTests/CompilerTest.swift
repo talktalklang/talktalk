@@ -18,7 +18,7 @@ extension CompilerTest {
 	func analyze(_ string: String) async throws -> AnalysisModule {
 		let analyzer = try ModuleAnalyzer(
 			name: "AnalysisTest",
-			files: [.tmp(string, "Analysis.tlk")],
+			files: [.tmp(string, "Analysis.talk")],
 			moduleEnvironment: [:],
 			importedModules: []
 		)
@@ -34,7 +34,7 @@ extension CompilerTest {
 	func compile(_ strings: String...) throws -> Module {
 		let analysisModule = try ModuleAnalyzer(
 			name: "E2E",
-			files: strings.enumerated().map { .tmp($1, "\($0).tlk") },
+			files: strings.enumerated().map { .tmp($1, "\($0).talk") },
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()

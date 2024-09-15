@@ -14,7 +14,7 @@ struct StringTests: CompilerTest {
 			"""#
 		)
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
 			.op(.data, line: 0, .data(.init(kind: .string, bytes: [UInt8]("foo ".utf8)))),
 			.op(.constant, line: 0, .constant(.int(123))),
 			.op(.appendInterpolation, line: 0),

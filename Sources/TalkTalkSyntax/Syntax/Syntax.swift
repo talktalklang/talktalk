@@ -30,10 +30,10 @@ public protocol Syntax: CustomStringConvertible {
 public extension Syntax {
 	var isStandardLibrary: Bool {
 		[
-			"Array.tlk",
-			"Dictionary.tlk",
-			"Int.tlk",
-			"String.tlk",
+			"Array.talk",
+			"Dictionary.talk",
+			"Int.talk",
+			"String.talk",
 		].contains(id.path)
 	}
 
