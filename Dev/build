@@ -1,5 +1,4 @@
 #!/bin/sh
 
 swift build --configuration release
-cd .build/release
-zip -r -D ../../../TalkTalk.zip talk TalkTalk_TalkTalkCore.bundle
+cp .build/release/talk .

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+swift build --configuration release
+cp -r .build/release/TalkTalk_TalkTalkCore.bundle .
+zip -r TalkTalk.zip talk TalkTalk_TalkTalkCore.bundle
+echo "Created TalkTalk.zip"
