@@ -54,3 +54,34 @@ jobs:
         AC_APPLICATION_IDENTITY: ${{ secrets.AC_APPLICATION_IDENTITY }}
       run: |
         gon Dev/gon.hcl
+    - name: Release
+      env:
+        GON_HCL: ${{ secrets.GON_HCL }}
+        AC_USERNAME: ${{ secrets.AC_USERNAME }}
+        AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+        AC_PROVIDER: ${{ secrets.AC_PROVIDER }}
+        AC_APPLICATION_IDENTITY: ${{ secrets.AC_APPLICATION_IDENTITY }}
+      run: |
+        gon gon.hcl
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: v${{ github.ref }}
+        body: |
+          Automated release v${{ github.ref_name }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+        asset_path: ./TalkTalk.zip
+        asset_name: TalkTalk.zip
+        asset_content_type: application/zip

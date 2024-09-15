@@ -4,4 +4,4 @@ swift build --configuration release
 mkdir -p Release/
 cp .build/release/talk Release/talk
 cp -r .build/release/TalkTalk_TalkTalkCore.bundle Release/Library
-zip -r Talk.zip Release
+zip -r TalkTalk.zip Release
