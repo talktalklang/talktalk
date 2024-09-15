@@ -2,4 +2,4 @@
 
 swift build --configuration release
 cd .build/release
-zip -r -D ../../../talk.zip talk
+zip ../../../talk.zip talk
