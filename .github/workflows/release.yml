@@ -11,11 +11,12 @@ on:
   #   types: 
   #     - completed
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-latest
-    permissions:
-      contents: read
     steps:
     - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
       env:
