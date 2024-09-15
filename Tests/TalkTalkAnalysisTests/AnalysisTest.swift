@@ -15,7 +15,7 @@ public extension AnalysisTest {
 	func analyze(_ string: String) async throws -> AnalysisModule {
 		let analyzer = try ModuleAnalyzer(
 			name: "AnalysisTest",
-			files: [.tmp(string, "Analysis.tlk")],
+			files: [.tmp(string, "Analysis.talk")],
 			moduleEnvironment: [:],
 			importedModules: []
 		)

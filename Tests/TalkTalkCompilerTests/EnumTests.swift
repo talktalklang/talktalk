@@ -19,7 +19,7 @@ struct EnumTests: CompilerTest {
 			"""
 		)
 
-		try #expect(module.chunks[.function(module.name, "0.tlk", [])]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
 			.op(.constant, line: 5, .constant(.int(123))),
 			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
 			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),

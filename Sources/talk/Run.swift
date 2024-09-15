@@ -18,7 +18,7 @@ struct Run: TalkTalkCommand {
 		abstract: "Compile and run a TalkTalk program"
 	)
 
-	@ArgumentParser.Argument(help: "The program file to run.", completion: .file(extensions: [".tlk"]))
+	@ArgumentParser.Argument(help: "The program file to run.", completion: .file(extensions: [".talk"]))
 	var input: String
 
 	func run() async throws {

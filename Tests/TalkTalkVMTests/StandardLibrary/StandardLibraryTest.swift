@@ -24,7 +24,7 @@ extension StandardLibraryTest {
 		moduleEnvironment: [String: Module] = [:],
 		verbosity: Verbosity = .quiet
 	) async throws -> VirtualMachine.ExecutionResult {
-		let files: [ParsedSourceFile] = [.tmp(input, "1.tlk")]
+		let files: [ParsedSourceFile] = [.tmp(input, "1.talk")]
 		let analyzer = try ModuleAnalyzer(
 			name: "StdLibTest",
 			files: files,

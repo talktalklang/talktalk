@@ -32,10 +32,10 @@ public extension Library {
 			name: "Standard",
 			location: libraryURL.appending(path: "Standard"),
 			paths: [
-				"Int.tlk",
-				"String.tlk",
-				"Array.tlk",
-				"Dictionary.tlk",
+				"Int.talk",
+				"String.talk",
+				"Array.talk",
+				"Dictionary.talk",
 			]
 		)
 	}

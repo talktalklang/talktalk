@@ -262,7 +262,7 @@ struct VMEndToEndTests: VMTest {
 
 	@Test("Can run functions across modules") func AcrossModule() throws {
 		let (moduleA, analysisA) = try compile(
-			name: "A", [.tmp("func foo() { 123 }", "1.tlk")], analysisEnvironment: [:], moduleEnvironment: [:]
+			name: "A", [.tmp("func foo() { 123 }", "1.talk")], analysisEnvironment: [:], moduleEnvironment: [:]
 		)
 		let (moduleB, _) = try compile(
 			name: "B",
@@ -276,7 +276,7 @@ struct VMEndToEndTests: VMTest {
 					}
 
 					return bar()
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			],
 			analysisEnvironment: ["A": analysisA],
@@ -303,7 +303,7 @@ struct VMEndToEndTests: VMTest {
 
 					let person = Person(age: 123)
 					return person.age
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			]
 		)
@@ -332,7 +332,7 @@ struct VMEndToEndTests: VMTest {
 					let person = Person(age: 123)
 					let method = person.getAge
 					return method()
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			]
 		)
@@ -353,7 +353,7 @@ struct VMEndToEndTests: VMTest {
 							self.age = age
 						}
 					}
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			]
 		)
@@ -369,7 +369,7 @@ struct VMEndToEndTests: VMTest {
 						let person = Person(age: 123)
 						return person.age
 					}()
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			],
 			analysisEnvironment: ["A": analysisA],
@@ -391,7 +391,7 @@ struct VMEndToEndTests: VMTest {
 
 					let person = Person(age: 123)
 					return person.age
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			]
 		)
@@ -415,7 +415,7 @@ struct VMEndToEndTests: VMTest {
 
 					let person = Person()
 					return person.age
-					""", "1.tlk"
+					""", "1.talk"
 				),
 			]
 		)

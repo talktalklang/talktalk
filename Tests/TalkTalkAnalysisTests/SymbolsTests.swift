@@ -12,21 +12,21 @@ struct SymbolsTests: AnalysisTest {
 //	@Test("Generates symbol for top level function") func topLevelFunction() async throws {
 //		let analysis = try await analyze("func foo() {}")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.function("AnalysisTest", "foo", [])] != nil)
 //	}
 //
 //	@Test("Generates symbol for top level var") func topLevelVar() async throws {
 //		let analysis = try await analyze("var foo = 123")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.value("AnalysisTest", "foo")] != nil)
 //	}
 //
 //	@Test("Generates symbol for top level let") func topLevelLet() async throws {
 //		let analysis = try await analyze("let foo = 123")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.value("AnalysisTest", "foo")] != nil)
 //	}
 //
@@ -37,7 +37,7 @@ struct SymbolsTests: AnalysisTest {
 //		}
 //		""")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.function("AnalysisTest", "_fn__25", [])] != nil)
 //		#expect(analysis.symbols[.function("AnalysisTest", "_fn__26", [])] != nil)
 //	}
@@ -50,7 +50,7 @@ struct SymbolsTests: AnalysisTest {
 //		}
 //		""")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.function("AnalysisTest", "foo", [])] != nil)
 //		#expect(analysis.symbols[.function("AnalysisTest", "bar", [])] != nil)
 //	}
@@ -116,7 +116,7 @@ struct SymbolsTests: AnalysisTest {
 //		}
 //		""")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.value("AnalysisTest", "self")] != nil)
 //		#expect(analysis.symbols[.property("AnalysisTest", "Person", "age")] != nil)
 //		#expect(analysis.symbols[.struct("AnalysisTest", "Person")] != nil)
@@ -129,7 +129,7 @@ struct SymbolsTests: AnalysisTest {
 //		}
 //		""")
 //
-//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.tlk", [])] != nil)
+//		#expect(analysis.symbols[.function("AnalysisTest", "Analysis.talk", [])] != nil)
 //		#expect(analysis.symbols[.function("AnalysisTest", "_fn__23", [])] != nil)
 //	}
 //

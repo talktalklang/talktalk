@@ -27,18 +27,18 @@ struct ModuleCompilerTests: CompilerTest {
 			func foo() {
 				bar()
 			}
-			""", "1.tlk"),
+			""", "1.talk"),
 			.tmp("""
 			func bar() {
 				123
 			}
-			""", "2.tlk"),
+			""", "2.talk"),
 		]
 
 		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
-		for name in ["1.tlk", "2.tlk", "fizz", "foo", "bar", "main"] {
+		for name in ["1.talk", "2.talk", "fizz", "foo", "bar", "main"] {
 			#expect(module.chunks.values.map(\.name).contains(name))
 		}
 	}
@@ -51,10 +51,10 @@ struct ModuleCompilerTests: CompilerTest {
 			}
 
 			let a = foo()
-			""", "global.tlk"),
+			""", "global.talk"),
 		])
 
-		let chunk = module.chunks.values.first(where: { $0.name == "global.tlk" })!
+		let chunk = module.chunks.values.first(where: { $0.name == "global.talk" })!
 
 		try #expect(chunk.disassemble(in: module) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "foo", arity: 0, depth: 0)),
@@ -69,25 +69,25 @@ struct ModuleCompilerTests: CompilerTest {
 		let files: [ParsedSourceFile] = [
 			.tmp("""
 			let fizz = 123
-			""", "1.tlk"),
+			""", "1.talk"),
 			.tmp("""
 			func bar() {
 				fizz
 			}
-			""", "2.tlk"),
+			""", "2.talk"),
 		]
 
 		let (module, _) = try compile(name: "CompilerTests", files)
 		#expect(module.name == "CompilerTests")
 
-		#expect(module.chunks.values.map(\.name).sorted().contains(["1.tlk", "2.tlk", "bar", "main"]))
+		#expect(module.chunks.values.map(\.name).sorted().contains(["1.talk", "2.talk", "bar", "main"]))
 	}
 
 	@Test("Can import module functions") @MainActor func importing() throws {
 		let (moduleA, analysisA) = try compile(
 			name: "A",
 			[
-				.tmp("func foo() { 123 }", "1.tlk"),
+				.tmp("func foo() { 123 }", "1.talk"),
 			]
 		)
 		let (moduleB, _) = try compile(
@@ -99,13 +99,13 @@ struct ModuleCompilerTests: CompilerTest {
 				func bar() {
 					foo()
 				}
-				""", "1.tlk"),
+				""", "1.talk"),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
 		)
 
-		#expect(moduleB.chunks.values.map(\.name).sorted().contains(["1.tlk", "bar", "foo", "main"].sorted()))
+		#expect(moduleB.chunks.values.map(\.name).sorted().contains(["1.talk", "bar", "foo", "main"].sorted()))
 	}
 
 	@Test("Can compile structs") func structs() throws {
@@ -120,7 +120,7 @@ struct ModuleCompilerTests: CompilerTest {
 			}
 
 			let person = Person(age: 123)
-			""", "struct.tlk"),
+			""", "struct.talk"),
 		])
 
 		let structDef = module.structs.values.first(where: { $0.name == "Person" })!
@@ -150,11 +150,11 @@ struct ModuleCompilerTests: CompilerTest {
 			}
 
 			let person = Person()
-			""", "1.tlk"),
+			""", "1.talk"),
 		])
 
 		// Get the actual code, not the synthesized main
-		let mainChunk = module.chunks[.function("A", "1.tlk", [])]!
+		let mainChunk = module.chunks[.function("A", "1.talk", [])]!
 		try #expect(mainChunk.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 8, .struct(.struct("A", "Person"))),
 			.op(.call, line: 8),

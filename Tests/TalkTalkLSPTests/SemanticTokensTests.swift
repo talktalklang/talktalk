@@ -25,7 +25,7 @@ struct SemanticTokensTests {
 
 		let visitor = SemanticTokensVisitor()
 		let tokens = try RelativeSemanticToken.generate(
-			from: Parser.parse(.init(path: "tokentest.tlk", text: string)).flatMap {
+			from: Parser.parse(.init(path: "tokentest.talk", text: string)).flatMap {
 				try $0.accept(visitor, .topLevel)
 			}
 		)

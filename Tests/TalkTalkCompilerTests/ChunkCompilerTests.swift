@@ -77,7 +77,7 @@ class CompilerTests: CompilerTest {
 	var module: CompilingModule!
 
 	@discardableResult func compile(_ string: String) throws -> Chunk {
-		let parsed = try Parser.parse(.init(path: "chunkcompilertests.tlk", text: string))
+		let parsed = try Parser.parse(.init(path: "chunkcompilertests.talk", text: string))
 		let inferencer = try Inferencer(imports: []).infer(parsed)
 		let analyzed = try! SourceFileAnalyzer.analyze(
 			parsed,
@@ -90,13 +90,13 @@ class CompilerTests: CompilerTest {
 
 		let analysisModule = try ModuleAnalyzer(
 			name: "CompilerTests",
-			files: [.tmp(string, "1.tlk")],
+			files: [.tmp(string, "1.talk")],
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
 
 		module = CompilingModule(name: "CompilerTests", analysisModule: analysisModule, moduleEnvironment: [:])
-		return try module.compile(file: AnalyzedSourceFile(path: "1.tlk", syntax: analyzed))
+		return try module.compile(file: AnalyzedSourceFile(path: "1.talk", syntax: analyzed))
 	}
 
 	func disassemble(_ chunk: Chunk) -> [Instruction] {
@@ -254,7 +254,7 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let chunk = module.compiledChunks[.function("CompilerTests", "1.tlk", [])]!
+		let chunk = module.compiledChunks[.function("CompilerTests", "1.talk", [])]!
 		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__15", [])]!
 
 		#expect(disassemble(chunk) == Instructions(
