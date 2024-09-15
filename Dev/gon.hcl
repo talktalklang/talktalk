@@ -1,6 +1,6 @@
 source = [
   ".build/release/talk",
-  "TalkTalk_TalkTalkCore.bundle"
+  ".build/release/TalkTalk_TalkTalkCore.bundle"
 ]
 
 bundle_id = "sh.talktalk"
