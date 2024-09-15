@@ -1,8 +1,3 @@
-source = [
-  ".build/release/talk",
-  ".build/release/TalkTalk_TalkTalkCore.bundle"
-]
-
 bundle_id = "sh.talktalk"
 
 sign {
