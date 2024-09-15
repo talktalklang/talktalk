@@ -1,4 +1,8 @@
-source = ["./Release/talk"]
+source = [
+  "./Release/talk",
+  "./Release/Library"
+]
+
 bundle_id = "sh.talktalk"
 
 sign {
@@ -6,10 +10,10 @@ sign {
 }
 
 zip {
-  output_path = "talk.zip"
+  output_path = "TalkTalk.zip"
 }
 
 notarize {
-  path = "./talk.zip"
+  path = "./TalkTalk.zip"
   bundle_id = "sh.talktalk"
 }
