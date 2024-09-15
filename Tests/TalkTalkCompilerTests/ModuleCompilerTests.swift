@@ -51,7 +51,7 @@ struct ModuleCompilerTests: CompilerTest {
 			}
 
 			let a = foo()
-			""", "global.tlk")
+			""", "global.tlk"),
 		])
 
 		let chunk = module.chunks.values.first(where: { $0.name == "global.tlk" })!
@@ -94,13 +94,12 @@ struct ModuleCompilerTests: CompilerTest {
 			name: "B",
 			[
 				.tmp("""
-					import A
+				import A
 
-					func bar() {
-						foo()
-					}
-					""", "1.tlk"
-				),
+				func bar() {
+					foo()
+				}
+				""", "1.tlk"),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]

@@ -4,7 +4,7 @@ import TalkTalkSyntax
 
 public enum AnalyzedInterpolatedStringSegment: Equatable, CustomStringConvertible {
 	public struct AnalyzedInterpolatedExpr: Equatable {
-		public static func ==(lhs: Self, rhs: Self) -> Bool {
+		public static func == (lhs: Self, rhs: Self) -> Bool {
 			lhs.exprAnalyzed.id == rhs.exprAnalyzed.id
 		}
 
@@ -34,16 +34,16 @@ public enum AnalyzedInterpolatedStringSegment: Equatable, CustomStringConvertibl
 
 	public var description: String {
 		switch self {
-		case .string(let string, _):
+		case let .string(string, _):
 			"string(\(string))"
-		case .expr(let interpolatedExpr):
+		case let .expr(interpolatedExpr):
 			"expr(\(interpolatedExpr))"
 		}
 	}
 }
 
 public struct AnalyzedInterpolatedStringExpr: InterpolatedStringExpr, AnalyzedExpr {
-  public let wrapped: InterpolatedStringExprSyntax
+	public let wrapped: InterpolatedStringExprSyntax
 	public var segmentsAnalyzed: [AnalyzedInterpolatedStringSegment]
 
 	public var inferenceType: InferenceType
@@ -51,9 +51,9 @@ public struct AnalyzedInterpolatedStringExpr: InterpolatedStringExpr, AnalyzedEx
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		segmentsAnalyzed.compactMap {
 			if case let .expr(expr) = $0 {
-				return expr.exprAnalyzed
+				expr.exprAnalyzed
 			} else {
-				return nil
+				nil
 			}
 		}
 	}

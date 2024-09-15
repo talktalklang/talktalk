@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkCore
 import TalkTalkBytecode
+import TalkTalkCore
 import TalkTalkSyntax
 import TypeChecker
 
@@ -27,7 +27,7 @@ public struct ModuleAnalyzer: Analyzer {
 		name: String,
 		files: [ParsedSourceFile],
 		moduleEnvironment: [String: AnalysisModule],
-		importedModules: [AnalysisModule]
+		importedModules _: [AnalysisModule]
 	) throws {
 		self.name = name
 		self.files = files
@@ -40,7 +40,7 @@ public struct ModuleAnalyzer: Analyzer {
 		if moduleEnvironment["Standard"] == nil, name != "Standard" {
 			let stdlib = try importStandardLibrary()
 			self.moduleEnvironment["Standard"] = stdlib
-			self.importedModules.append(stdlib)
+			importedModules.append(stdlib)
 		}
 	}
 
@@ -170,7 +170,7 @@ public struct ModuleAnalyzer: Analyzer {
 					isMutable: false
 				)
 			} else if case let .struct(name) = symbol.kind,
-								let structType = binding.externalModule?.structs[name]
+			          let structType = binding.externalModule?.structs[name]
 			{
 				analysisModule.structs[name] = ModuleStruct(
 					id: structType.id,
@@ -184,7 +184,8 @@ public struct ModuleAnalyzer: Analyzer {
 					typeParameters: structType.typeParameters
 				)
 			} else if case let .enum(name) = symbol.kind,
-								let enumType = binding.externalModule?.enums[name] {
+			          let enumType = binding.externalModule?.enums[name]
+			{
 				analysisModule.enums[name] = ModuleEnum(
 					name: name,
 					symbol: symbol,
@@ -306,7 +307,7 @@ public struct ModuleAnalyzer: Analyzer {
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
-			let analyzed = try cast(try visitor.visit(syntax.cast(DefExprSyntax.self), environment), to: AnalyzedDefExpr.self)
+			let analyzed = try cast(visitor.visit(syntax.cast(DefExprSyntax.self), environment), to: AnalyzedDefExpr.self)
 
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
 				guard let symbol = syntax.symbol else {

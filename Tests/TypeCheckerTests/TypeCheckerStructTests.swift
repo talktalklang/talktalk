@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 @testable import TypeChecker
 
 @MainActor
@@ -32,7 +32,6 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		print()
 		let instance = try #require(StructType.extractInstance(from: context[syntax[1]]))
 		#expect(instance.name == "Person")
 	}
@@ -91,7 +90,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax	)
+		let context = try infer(syntax)
 		#expect(context[syntax[1]] == .type(.base(.string)))
 	}
 
@@ -112,7 +111,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		let structType = StructType.extractType(from: context[syntax[0]])!
 
 		guard case let .type(.function(_, returnType)) = structType.member(named: "sup") else {
-			#expect(Bool(false)) ; return
+			#expect(Bool(false)); return
 		}
 
 		#expect(returnType == .selfVar(structType))

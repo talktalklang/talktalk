@@ -20,10 +20,10 @@ struct SubscriptExprAnalyzer: Analyzer {
 			throw AnalyzerError.typeNotInferred("\(expr.description)")
 		}
 
-		return AnalyzedSubscriptExpr(
-			receiverAnalyzed: try castToAnyAnalyzedExpr(receiver),
+		return try AnalyzedSubscriptExpr(
+			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
 			argsAnalyzed: args,
-			wrapped: try cast(expr, to: SubscriptExprSyntax.self),
+			wrapped: cast(expr, to: SubscriptExprSyntax.self),
 			inferenceType: inferenceType,
 			environment: context,
 			analysisErrors: []

@@ -7,8 +7,8 @@
 
 @testable import TalkTalkAnalysis
 import TalkTalkSyntax
-import TypeChecker
 import Testing
+import TypeChecker
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {

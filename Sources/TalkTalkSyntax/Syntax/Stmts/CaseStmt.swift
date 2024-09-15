@@ -13,8 +13,8 @@ public struct CaseStmtSyntax: CaseStmt {
 	public var body: [any Stmt]
 	public var isDefault: Bool
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation

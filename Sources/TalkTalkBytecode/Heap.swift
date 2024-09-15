@@ -9,11 +9,11 @@
 public final class Heap {
 	// A fake pointer
 	public final class Pointer: Hashable, Equatable, Codable, Sendable {
-		public static func ==(lhs: Pointer, rhs: Pointer) -> Bool {
+		public static func == (lhs: Pointer, rhs: Pointer) -> Bool {
 			lhs.base == rhs.base && lhs.offset == rhs.offset
 		}
 
-		public static func +(lhs: Pointer, rhs: Int) -> Pointer {
+		public static func + (lhs: Pointer, rhs: Int) -> Pointer {
 			Pointer(blockID: lhs.base, offset: lhs.offset + rhs)
 		}
 

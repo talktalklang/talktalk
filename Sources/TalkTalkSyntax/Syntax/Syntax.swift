@@ -33,7 +33,7 @@ public extension Syntax {
 			"Array.tlk",
 			"Dictionary.tlk",
 			"Int.tlk",
-			"String.tlk"
+			"String.tlk",
 		].contains(id.path)
 	}
 
@@ -43,7 +43,7 @@ public extension Syntax {
 
 	func cast<T: Syntax>(_: T.Type, _ file: String = #file, _ line: UInt32 = #line) -> T {
 		if let casted = self as? T {
-			return casted
+			casted
 		} else {
 			// swiftlint:disable fatal_error
 			fatalError("Could not cast \(type(of: self)) \(self) to \(T.self) (\(file):\(line))")
@@ -59,11 +59,11 @@ public extension Syntax {
 		do {
 			switch self {
 			case let syntax as any Expr:
-				return try syntax.accept(Formatter(), Formatter.Context())
+				return try syntax.accept(OldFormatter(), OldFormatter.Context())
 			case let syntax as any Decl:
-				return try syntax.accept(Formatter(), Formatter.Context())
+				return try syntax.accept(OldFormatter(), OldFormatter.Context())
 			case let syntax as any Stmt:
-				return try syntax.accept(Formatter(), Formatter.Context())
+				return try syntax.accept(OldFormatter(), OldFormatter.Context())
 			default:
 				return "No description found for \(debugDescription)"
 			}

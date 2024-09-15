@@ -6,9 +6,9 @@
 //
 
 import Foundation
-import TalkTalkSyntax
-import TalkTalkBytecode
 import OrderedCollections
+import TalkTalkBytecode
+import TalkTalkSyntax
 import TypeChecker
 
 public struct AnalysisModule {

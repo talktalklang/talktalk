@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/2/24.
 //
 
-import TalkTalkBytecode
 import Foundation
+import TalkTalkBytecode
 
 public enum OutputDestination {
 	case stdout, stderr

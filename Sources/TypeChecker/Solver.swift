@@ -14,7 +14,7 @@ struct Solver {
 			let constraint = context.constraints.constraints.removeFirst()
 			context.log(constraint.description, prefix: "-> ")
 			switch constraint.solve(in: context) {
-			case .error(let diagnostics):
+			case let .error(diagnostics):
 				context.log(diagnostics.map(\.message).joined(separator: ", "), prefix: " ! ")
 			case .ok:
 				context.log(constraint.result(in: context), prefix: "<- ")
@@ -29,7 +29,7 @@ struct Solver {
 			let constraint = context.constraints.deferredConstraints.removeFirst()
 			context.log(constraint.description, prefix: "-> ")
 			switch constraint.solve(in: context) {
-			case .error(let diagnostics):
+			case let .error(diagnostics):
 				context.log(diagnostics.map(\.message).joined(separator: ", "), prefix: " ! ")
 			case .ok:
 				context.log(constraint.result(in: context), prefix: "<- ")

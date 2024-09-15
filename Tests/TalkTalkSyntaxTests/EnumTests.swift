@@ -5,23 +5,23 @@
 //  Created by Pat Nakajima on 9/4/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 
 struct EnumTests {
 	@Test("Can lex an enum") func lexin() throws {
 		let tokens = Lexer.collect(
-		"""
-		enum Thing {
-			case foo
-		}
-		"""
+			"""
+			enum Thing {
+				case foo
+			}
+			"""
 		)
 
 		#expect(tokens.map(\.kind) == [
 			.enum, .identifier, .leftBrace, .newline,
 			.case, .identifier, .newline,
-			.rightBrace, .eof
+			.rightBrace, .eof,
 		])
 	}
 

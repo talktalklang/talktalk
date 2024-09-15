@@ -150,7 +150,7 @@ public final class Chunk {
 
 	private func write(_ code: Code, line: UInt32) {
 		self.code.append(code)
-		self.lines.append(line)
+		lines.append(line)
 	}
 
 	private func write(byte: Byte, line: UInt32) {

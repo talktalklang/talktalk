@@ -3,7 +3,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedMatchStatement: MatchStatement, AnalyzedStmt {
-  public let wrapped: MatchStatementSyntax
+	public let wrapped: MatchStatementSyntax
 	public var targetAnalyzed: any AnalyzedExpr
 	public var casesAnalyzed: [AnalyzedCaseStmt]
 

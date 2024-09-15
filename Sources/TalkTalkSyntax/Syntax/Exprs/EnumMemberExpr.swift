@@ -9,8 +9,8 @@ public struct EnumMemberExprSyntax: EnumMemberExpr {
 	public var property: Token
 	public var params: [ParamSyntax]
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation

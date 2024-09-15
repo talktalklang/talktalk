@@ -106,9 +106,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if case let .pattern(pattern) = expr.inferenceType {
 			for (i, arg) in expr.argsAnalyzed.enumerated() {
 				switch pattern.arguments[i] {
-				case .value(_):
+				case .value:
 					try arg.accept(self, chunk)
-				case .variable(let name, _):
+				case let .variable(name, _):
 					chunk.emit(.opcode(.binding), line: arg.location.line)
 					chunk.emit(.symbol(.value(module.name, name)), line: arg.location.line)
 				}
@@ -351,12 +351,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// We always want to emit a return at the end of a function. If the function's return value
 		// is void then we just emit returnVoid. Otherwise we emit returnValue which will grab the return
 		// value from the top of the stack.
-		let opcode: Opcode
-		switch expr.inferenceType {
+		let opcode: Opcode = switch expr.inferenceType {
 		case .function(_, .void):
-			opcode = .returnVoid
+			.returnVoid
 		default:
-			opcode = .returnValue
+			.returnValue
 		}
 
 		functionChunk.emit(opcode: opcode, line: UInt32(expr.location.end.line))
@@ -554,12 +553,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 				// End the scope, which pops locals
 				declCompiler.endScope(chunk: declChunk)
 
-				let opcode: Opcode
-				switch decl.inferenceType {
+				let opcode: Opcode = switch decl.inferenceType {
 				case .function(_, .void):
-					opcode = .returnVoid
+					.returnVoid
 				default:
-					opcode = .returnValue
+					.returnValue
 				}
 
 				declChunk.emit(opcode: opcode, line: UInt32(decl.location.end.line))
@@ -840,23 +838,24 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Emit the first segment so that the append call has two operands to concat
 		var segments = expr.segmentsAnalyzed
 		switch segments.removeFirst() {
-		case .string(let string, _):
+		case let .string(string, _):
 			chunk.emit(data: .init(kind: .string, bytes: [Byte](string.utf8)), line: expr.location.line)
-		case .expr(let interpolation):
+		case let .expr(interpolation):
 			try interpolation.exprAnalyzed.accept(self, chunk)
 		}
 
 		for segment in segments {
 			switch segment {
-			case .string(let string, _):
+			case let .string(string, _):
 				chunk.emit(data: .init(kind: .string, bytes: [Byte](string.utf8)), line: expr.location.line)
-			case .expr(let interpolation):
+			case let .expr(interpolation):
 				try interpolation.exprAnalyzed.accept(self, chunk)
 			}
 
 			chunk.emit(.opcode(.appendInterpolation), line: expr.location.line)
 		}
 	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkSyntax
-import TalkTalkBytecode
 import OrderedCollections
+import TalkTalkBytecode
+import TalkTalkSyntax
 
 public class StructType {
 	public let id: SyntaxID

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkSyntax
 import TalkTalkBytecode
+import TalkTalkSyntax
 import TypeChecker
 
 public struct Property: Member {

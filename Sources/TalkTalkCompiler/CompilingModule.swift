@@ -59,8 +59,9 @@ public class CompilingModule {
 
 				// Copy the external method into our chunks, using the slot we want
 				if case let .external(name) = info.source,
-					 let module = moduleEnvironment[name],
-					 let moduleInfo = module.symbols[symbol] {
+				   let module = moduleEnvironment[name],
+				   let moduleInfo = module.symbols[symbol]
+				{
 					chunks[symbol] = module.chunks[moduleInfo.symbol]
 					continue
 				}
@@ -68,7 +69,7 @@ public class CompilingModule {
 				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
 			case let .struct(structName):
 				switch info.source {
-				case .external(let name):
+				case let .external(name):
 					guard let module = moduleEnvironment[name], module.symbols[symbol] != nil else {
 						continue
 					}
@@ -94,9 +95,10 @@ public class CompilingModule {
 				}
 			case .enum:
 				switch info.source {
-				case .external(let name):
+				case let .external(name):
 					guard let module = moduleEnvironment[name],
-								let moduleInfo = module.symbols[symbol] else {
+					      let moduleInfo = module.symbols[symbol]
+					else {
 						continue
 					}
 
@@ -167,7 +169,8 @@ public class CompilingModule {
 	// If the analysis says that we don't have a global by this name, return nil.
 	public func moduleFunctionOffset(for string: String) -> Int? {
 		if let symbol = analysisModule.moduleFunctions[string]?.symbol,
-			 let info = analysisModule.symbols[symbol] {
+		   let info = analysisModule.symbols[symbol]
+		{
 			return info.slot
 		}
 

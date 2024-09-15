@@ -5,15 +5,15 @@
 //  Created by Pat Nakajima on 8/22/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 
 struct DictionaryTests {
 	@Test("Empty dictionary") func empty() throws {
 		let parsed = try Parser.parse(
-	 """
-	 [:]
-	 """
+			"""
+			[:]
+			"""
 		)[0].cast(ExprStmtSyntax.self).expr
 
 		let dictionaryLiteral = try #require(parsed as? DictionaryLiteralExprSyntax)
@@ -46,7 +46,7 @@ struct DictionaryTests {
 			"""
 		)[0].cast(ExprStmtSyntax.self).expr
 			.cast(SubscriptExprSyntax.self)
-		
+
 		let dictionaryLiteral = try #require(parsed.receiver as? DictionaryLiteralExprSyntax)
 		#expect(dictionaryLiteral.elements.count == 2)
 

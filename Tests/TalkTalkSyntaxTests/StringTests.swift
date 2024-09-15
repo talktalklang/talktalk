@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/12/24.
 //
 
-import Testing
 @testable import TalkTalkSyntax
+import Testing
 
 struct StringTests {
 	@Test("Basic") func basic() throws {
@@ -73,7 +73,7 @@ struct StringTests {
 			.string,
 			.interpolationEnd,
 			.string,
-			.eof
+			.eof,
 		])
 	}
 
@@ -88,7 +88,7 @@ struct StringTests {
 			.string,
 			.interpolationEnd,
 			.string,
-			.eof
+			.eof,
 		])
 	}
 
@@ -107,7 +107,7 @@ struct StringTests {
 			.string,
 			.interpolationEnd,
 			.string,
-			.eof
+			.eof,
 		])
 	}
 

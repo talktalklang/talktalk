@@ -7,8 +7,8 @@
 
 import TalkTalkAnalysis
 import TalkTalkBytecode
-import TalkTalkSyntax
 import TalkTalkCore
+import TalkTalkSyntax
 import TypeChecker
 
 public typealias BuiltinFunction = TypeChecker.BuiltinFunction
@@ -69,7 +69,7 @@ public struct ModuleCompiler {
 			throw CompilerError.analysisErrors("Cannot compile \(name), found \(errors.count) analysis errors: \(errors.all.map(\.description))")
 		}
 
-		var moduleEnvironment = self.moduleEnvironment
+		var moduleEnvironment = moduleEnvironment
 
 		if name != "Standard", let (stdlibModule, _) = try compileStandardLibrary() {
 			moduleEnvironment["Standard"] = stdlibModule

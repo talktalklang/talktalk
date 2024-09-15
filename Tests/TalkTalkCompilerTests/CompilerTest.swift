@@ -5,12 +5,12 @@
 //  Created by Pat Nakajima on 8/21/24.
 //
 
-import Testing
-import TalkTalkCore
-import TalkTalkCompiler
-import TalkTalkSyntax
 import TalkTalkAnalysis
 import TalkTalkBytecode
+import TalkTalkCompiler
+import TalkTalkCore
+import TalkTalkSyntax
+import Testing
 
 protocol CompilerTest {}
 

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 
-import Testing
 import TalkTalkSyntax
+import Testing
 
 struct ProtocolTests {
 	@Test("Can parse a protocol") func basic() throws {

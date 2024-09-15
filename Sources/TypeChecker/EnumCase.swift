@@ -12,9 +12,9 @@ public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 	var attachedTypes: [InferenceType] {
 		enumCase.attachedTypes.map {
 			if case let .typeVar(typeVar) = $0 {
-				return substitutions[typeVar] ?? $0
+				substitutions[typeVar] ?? $0
 			} else {
-				return $0
+				$0
 			}
 		}
 	}
@@ -38,7 +38,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	func instantiate(in context: InferenceContext, with substitutions: [TypeVariable: InferenceType]) -> EnumCaseInstance {
-		return EnumCaseInstance(enumCase: self, substitutions: attachedTypes.reduce(into: [:]) { res, type in
+		EnumCaseInstance(enumCase: self, substitutions: attachedTypes.reduce(into: [:]) { res, type in
 			if case let .typeVar(typeVar) = type {
 				res[typeVar] = substitutions[typeVar] ?? .typeVar(context.freshTypeVariable(type.description))
 			}

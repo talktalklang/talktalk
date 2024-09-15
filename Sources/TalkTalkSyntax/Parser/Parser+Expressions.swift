@@ -154,8 +154,8 @@ extension Parser {
 		let name: Token? = match(.identifier)
 
 		skip(.newline)
-
 		consume(.leftParen)
+		skip(.newline)
 
 		// Parse parameter list
 		let params = parameterList()
@@ -218,14 +218,18 @@ extension Parser {
 					break
 				}
 
+				skip(.newline)
 				let value = parse(precedence: .assignment)
+				skip(.newline)
 				exprs.append(DictionaryElementExprSyntax(id: nextID(), key: expr, value: value, location: [expr.location.start, value.location.end]))
 			} else {
 				exprs.append(expr)
 			}
 		} while didMatch(.comma)
+		skip(.newline)
 
 		consume(.rightBracket)
+		skip(.newline)
 
 		let literal: any Expr = if isDictionary {
 			DictionaryLiteralExprSyntax(
@@ -344,7 +348,7 @@ extension Parser {
 		// Make sure the interpolation ends
 		guard let end = consume(.interpolationEnd) else {
 			throw ParserError.couldNotParse([
-				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd))
+				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd)),
 			])
 		}
 
@@ -386,10 +390,14 @@ extension Parser {
 	mutating func typeParameters() -> [TypeExprSyntax] {
 		var types: [TypeExprSyntax] = []
 		repeat {
+			skip(.newline)
 			types.append(typeExpr())
+			skip(.newline)
 		} while didMatch(.comma)
 
+		skip(.newline)
 		consume(.greater)
+		skip(.newline)
 
 		return types
 	}
@@ -449,7 +457,9 @@ extension Parser {
 	mutating func call(_: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: lhs.location.start)
 
+		skip(.newline)
 		consume(.leftParen) // This is how we got here.
+		skip(.newline)
 
 		var args: [Argument] = []
 		if !didMatch(.rightParen) {
@@ -476,7 +486,7 @@ extension Parser {
 		}
 	}
 
-	mutating func dot(_ canAssign: Bool) -> any Expr {
+	mutating func dot(_: Bool) -> any Expr {
 		let i = startLocation()
 		consume(.dot)
 		guard let property = consume(.identifier) else {
@@ -558,6 +568,8 @@ extension Parser {
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: lhs.location.start)
 
+		skip(.newline)
+
 		let op: BinaryOperator = switch current.kind {
 		case .bangEqual: .bangEqual
 		case .equalEqual: .equalEqual
@@ -577,11 +589,16 @@ extension Parser {
 		}
 
 		advance()
-		let rhs = if op == .is {
+		skip(.newline)
+
+		let rhs: any Expr = if op == .is {
 			typeExpr()
 		} else {
 			parse(precedence: current.kind.rule.precedence + 1)
 		}
+
+		skip(.newline)
+
 		return BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: rhs, op: op, location: endLocation(i))
 	}
 
@@ -589,11 +606,15 @@ extension Parser {
 		let typeID = consume(.identifier)
 		let i = startLocation(at: previous.unsafelyUnwrapped)
 
+		skip(.newline)
 		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
+			skip(.newline)
 			typeParameters = self.typeParameters()
+			skip(.newline)
 		}
 
+		skip(.newline)
 		var errors: [String] = []
 
 		if typeID == nil {

@@ -11,13 +11,13 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		// Single char tokens
 		case leftParen, rightParen,
 		     leftBrace, rightBrace,
-				 leftBracket, rightBracket,
+		     leftBracket, rightBracket,
 		     semicolon, symbol, plus, equals, comma, bang,
 		     colon, dot, less, greater, minus, star, slash
 
 		// Multiple char tokens
 		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow,
-				 plusEquals, minusEquals
+		     plusEquals, minusEquals
 
 		// String interpolation
 		case interpolationStart, interpolationEnd
@@ -27,12 +27,13 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     `if`, `in`, call, `else`,
 		     `while`, `var`, `let`, initialize,
 		     `struct`, `self`, `Self`, `import`, `is`, `protocol`,
-				 `enum`, match, `case`
+		     `enum`, match, `case`
 
 		case newline
 		case eof
 		case error
 		case builtin
+		case comment
 	}
 
 	public let path: String
@@ -49,7 +50,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 	}
 
 	public var debugDescription: String {
-		"Token(kind: .\(kind), line: \(line), column: \(column), position: \(start), length: \(length), lexeme: \(lexeme.debugDescription))"
+		"Token(kind: .\(kind), start: \(start), path: \(path), line: \(line), column: \(column), position: \(start), length: \(length), lexeme: \(lexeme.debugDescription))"
 	}
 
 	public static func synthetic(_ kind: Kind, lexeme: String? = nil) -> Token {
@@ -78,15 +79,20 @@ public struct Lexer {
 	var errors: [SyntaxError]
 	var nextBuffer: [Token] = []
 
-	public init(_ source: SourceFile) {
+	// Comment handling (disabled by default)
+	var preserveComments: Bool
+	var comments: [Token] = []
+
+	public init(_ source: SourceFile, preserveComments: Bool = false) {
 		self.path = source.path
 		self.source = ContiguousArray<Character>(source.text)
 		self.errors = []
+		self.preserveComments = preserveComments
 
 		if source.path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
 			#if DEBUG
-			print("empty source path is discouraged")
-			raise(SIGINT)
+				print("empty source path is discouraged")
+				raise(SIGINT)
 			#endif
 		}
 	}
@@ -99,10 +105,17 @@ public struct Lexer {
 	public mutating func rewind(count _: Int) {}
 
 	public mutating func next(terminator: Character? = nil) -> Token {
+		// When parsing interpolated strings, we may need to buffer tokens for the interpolated
+		// expressions. If we've done that, we want to empty that buffer first.
 		if !nextBuffer.isEmpty { return nextBuffer.removeFirst() }
 
 		skipWhitespace()
-		skipComments()
+
+		if preserveComments {
+			saveComments()
+		} else {
+			skipComments()
+		}
 
 		if isAtEnd {
 			return make(.eof)
@@ -212,7 +225,7 @@ public struct Lexer {
 		return returnToken
 	}
 
-	mutating func stringInterpolation(start stringStart: Int) {
+	mutating func stringInterpolation(start _: Int) {
 		var buffer: [Token] = []
 
 		buffer.append(make(.string))
@@ -235,7 +248,7 @@ public struct Lexer {
 
 		start = current
 
-		self.nextBuffer.append(contentsOf: buffer)
+		nextBuffer.append(contentsOf: buffer)
 	}
 
 	mutating func newline() -> Token {
@@ -275,7 +288,7 @@ public struct Lexer {
 		case "protocol": make(.protocol)
 		case "enum": make(.enum)
 		case "match": make(.match)
-		case "case": make(.`case`)
+		case "case": make(.case)
 		default:
 			make(.identifier)
 		}
@@ -308,6 +321,20 @@ public struct Lexer {
 	mutating func skipWhitespace() {
 		while !isAtEnd, check(\.isWhitespace), !check(\.isNewline) {
 			advance()
+		}
+	}
+
+	mutating func saveComments() {
+		if peek() == "/", peekNext() == "/" {
+			start = current
+
+			while !isAtEnd, peek() != "\n" {
+				advance()
+			}
+
+			comments.append(
+				make(.comment)
+			)
 		}
 	}
 

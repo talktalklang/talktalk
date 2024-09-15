@@ -4,7 +4,7 @@ import TalkTalkSyntax
 import TypeChecker
 
 public struct AnalyzedCaseStmt: CaseStmt, AnalyzedStmt {
-  public let wrapped: CaseStmtSyntax
+	public let wrapped: CaseStmtSyntax
 	public var patternAnalyzed: (any AnalyzedExpr)?
 	public var bodyAnalyzed: [any AnalyzedStmt]
 	public var pattern: InferenceType

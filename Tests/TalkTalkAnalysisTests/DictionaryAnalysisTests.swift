@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/22/24.
 //
 
+import TalkTalkAnalysis
 import Testing
 import TypeChecker
-import TalkTalkAnalysis
 
 @Suite() struct DictionaryAnalysisTests: AnalysisTest {
 	@Test("Basic") func basic() async throws {
@@ -34,8 +34,8 @@ import TalkTalkAnalysis
 		let result = try await ast("""
 		["foo": 123]["foo"]
 		""")
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
-			.cast(AnalyzedSubscriptExpr.self)
+		.cast(AnalyzedExprStmt.self).exprAnalyzed
+		.cast(AnalyzedSubscriptExpr.self)
 
 		#expect(result.typeAnalyzed == .base(.int))
 	}

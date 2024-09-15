@@ -24,12 +24,12 @@ struct SubscriptConstraint: Constraint {
 		case let .structInstance(instance):
 			guard let getMethod = instance.type.method(named: "get") else {
 				return .error([
-					Diagnostic(message: "\(instance.type.name) has no get method", severity: .error, location: location)
+					Diagnostic(message: "\(instance.type.name) has no get method", severity: .error, location: location),
 				])
 			}
 
 			switch context.applySubstitutions(to: getMethod, with: instance.substitutions) {
-			case .function(let params, let fnReturns):
+			case let .function(params, fnReturns):
 				// TODO: Validate params/args count
 				for (arg, param) in zip(args, params) {
 					context.unify(arg.asType(in: context), param, location)
@@ -44,7 +44,6 @@ struct SubscriptConstraint: Constraint {
 				} else {
 					context.unify(returns, fnReturns, location)
 				}
-
 
 			default:
 				()

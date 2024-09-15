@@ -40,8 +40,15 @@ struct TextDocumentFormatting {
 		}
 
 		do {
-			let formatted = try await Formatter.format(source.text)
-			await server.respond(to: request.id, with: [TextEdit(range: source.range, newText: formatted)])
+			let formatted = try await Formatter(input: .init(path: source.uri, text: source.text)).format()
+			let parts = formatted.components(separatedBy: .newlines)
+
+			let fullRange = Range(
+				start: Position(line: 0, character: 0),
+				end: max(Position(line: parts.count, character: parts.last?.count ?? 0), source.range.end)
+			)
+
+			await server.respond(to: request.id, with: [TextEdit(range: fullRange, newText: formatted)])
 		} catch {
 			Log.error("Error formatting: \(error)")
 		}

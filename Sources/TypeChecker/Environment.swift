@@ -11,7 +11,7 @@ class Environment {
 	var types: [SyntaxID: InferenceResult] = [:]
 	var functionStack: [[InferenceResult]] = []
 
-	init(types: [SyntaxID : InferenceResult] = [:], functionStack: [[InferenceResult]] = []) {
+	init(types: [SyntaxID: InferenceResult] = [:], functionStack: [[InferenceResult]] = []) {
 		self.types = types
 		self.functionStack = functionStack
 	}
@@ -27,7 +27,7 @@ class Environment {
 	}
 
 	func childEnvironment() -> Environment {
-		let types = self.types // Copy the types
+		let types = types // Copy the types
 		return Environment(types: types)
 	}
 
@@ -38,8 +38,8 @@ class Environment {
 	}
 
 	func trackReturn(_ result: InferenceResult) {
-		if functionStack.indices.contains(functionStack.count-1) {
-			functionStack[functionStack.count-1].append(result)
+		if functionStack.indices.contains(functionStack.count - 1) {
+			functionStack[functionStack.count - 1].append(result)
 		}
 	}
 

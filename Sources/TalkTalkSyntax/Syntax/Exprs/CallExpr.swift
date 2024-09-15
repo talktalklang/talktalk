@@ -10,10 +10,10 @@ public struct Argument: Syntax {
 	public var location: SourceLocation
 	public var children: [any Syntax] { [value] }
 
-	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V : Visitor {
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(self, context)
 	}
-	
+
 	public let label: Token?
 	public let value: any Syntax
 }

@@ -10,8 +10,8 @@ public struct FuncSignatureDeclSyntax: FuncSignatureDecl {
 	public var params: ParamsExprSyntax
 	public var returnDecl: TypeExpr
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation
@@ -20,7 +20,7 @@ public struct FuncSignatureDeclSyntax: FuncSignatureDecl {
 	public var children: [any Syntax] {
 		[
 			params,
-			returnDecl
+			returnDecl,
 		]
 	}
 

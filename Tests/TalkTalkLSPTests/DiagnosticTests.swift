@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 import TalkTalkAnalysis
-import TalkTalkLSP
 import TalkTalkDriver
+import TalkTalkLSP
 import Testing
 
 @MainActor

@@ -29,9 +29,9 @@ struct StringTests: StandardLibraryTest {
 
 	@Test("Basic string interpolation") func interpolate() async throws {
 		let result = try await run(#"""
-			var a = "hello \("world")"
-			return a
-		"""#
+				var a = "hello \("world")"
+				return a
+			"""#
 		).get()
 
 		#expect(result == .string("hello world"))
@@ -39,9 +39,9 @@ struct StringTests: StandardLibraryTest {
 
 	@Test("Basic interpolation with number") func interpolateNumber() async throws {
 		let result = try await run(#"""
-			var a = "hello \(123) world"
-			return a
-		"""#
+				var a = "hello \(123) world"
+				return a
+			"""#
 		).get()
 
 		#expect(result == .string("hello 123 world"))

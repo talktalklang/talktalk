@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/20/24.
 //
 
-import Testing
 import TalkTalkAnalysis
+import Testing
 import TypeChecker
 
 struct ArrayAnalysisTests: AnalysisTest {
@@ -15,7 +15,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 		var a = []
 		a
 		""")
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
+		.cast(AnalyzedExprStmt.self).exprAnalyzed
 
 		let instance = try #require(Instance.extract(from: result.typeAnalyzed))
 		#expect(instance.type.name == "Array")
@@ -25,16 +25,16 @@ struct ArrayAnalysisTests: AnalysisTest {
 		let result1 = try await ast("""
 		[123][0]
 		""")
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
-			.cast(AnalyzedSubscriptExpr.self)
+		.cast(AnalyzedExprStmt.self).exprAnalyzed
+		.cast(AnalyzedSubscriptExpr.self)
 
 		#expect(result1.typeAnalyzed == .base(.int))
 
 		let result2 = try await ast("""
 		["foo"][0]
 		""")
-			.cast(AnalyzedExprStmt.self).exprAnalyzed
-			.cast(AnalyzedSubscriptExpr.self)
+		.cast(AnalyzedExprStmt.self).exprAnalyzed
+		.cast(AnalyzedSubscriptExpr.self)
 
 		#expect(result2.typeAnalyzed == .base(.string))
 	}

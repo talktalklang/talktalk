@@ -7,8 +7,8 @@
 
 import TalkTalkAnalysis
 import TalkTalkSyntax
-import TypeChecker
 import Testing
+import TypeChecker
 
 struct ModuleAnalysisTests {
 	func analyzer(

@@ -9,9 +9,9 @@ import Foundation
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
+import TalkTalkCore
 import TalkTalkSyntax
 import TalkTalkVM
-import TalkTalkCore
 import Testing
 
 struct VMEndToEndTests: VMTest {
@@ -118,11 +118,11 @@ struct VMEndToEndTests: VMTest {
 	@Test("Func arguments") func funcArgs() throws {
 		#expect(
 			try run(
-			"""
-			func(i) {
-				i + 20
-			}(10)
-			""") == .int(30))
+				"""
+				func(i) {
+					i + 20
+				}(10)
+				""") == .int(30))
 	}
 
 	@Test("Get var from enlosing scope") func enclosing() throws {
@@ -242,10 +242,11 @@ struct VMEndToEndTests: VMTest {
 
 	@Test("Can run functions across files") func runsFunctionsAcrossFiles() throws {
 		let result = try run(
-				"func main() { fizz() }",
-				"func foo() { bar() }",
-				"func bar() { 123 }",
-				"func fizz() { foo() }")
+			"func main() { fizz() }",
+			"func foo() { bar() }",
+			"func bar() { 123 }",
+			"func fizz() { foo() }"
+		)
 
 		#expect(result == .int(123))
 	}
@@ -276,7 +277,7 @@ struct VMEndToEndTests: VMTest {
 
 					return bar()
 					""", "1.tlk"
-				)
+				),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -303,7 +304,7 @@ struct VMEndToEndTests: VMTest {
 					let person = Person(age: 123)
 					return person.age
 					""", "1.tlk"
-				)
+				),
 			]
 		)
 
@@ -332,7 +333,7 @@ struct VMEndToEndTests: VMTest {
 					let method = person.getAge
 					return method()
 					""", "1.tlk"
-				)
+				),
 			]
 		)
 
@@ -353,7 +354,7 @@ struct VMEndToEndTests: VMTest {
 						}
 					}
 					""", "1.tlk"
-				)
+				),
 			]
 		)
 
@@ -368,7 +369,8 @@ struct VMEndToEndTests: VMTest {
 						let person = Person(age: 123)
 						return person.age
 					}()
-					""", "1.tlk")
+					""", "1.tlk"
+				),
 			],
 			analysisEnvironment: ["A": analysisA],
 			moduleEnvironment: ["A": moduleA]
@@ -390,7 +392,7 @@ struct VMEndToEndTests: VMTest {
 					let person = Person(age: 123)
 					return person.age
 					""", "1.tlk"
-				)
+				),
 			]
 		)
 
@@ -414,7 +416,7 @@ struct VMEndToEndTests: VMTest {
 					let person = Person()
 					return person.age
 					""", "1.tlk"
-				)
+				),
 			]
 		)
 
@@ -470,7 +472,7 @@ struct VMEndToEndTests: VMTest {
 				i += 1
 			}
 			"""
-		)
+			, output: TestOutput())
 	}
 
 	@Test("+=") func plusEquals() throws {

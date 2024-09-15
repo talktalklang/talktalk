@@ -1,5 +1,5 @@
 //
-//  DictionaryTests.swift
+//  DictionaryVMTests.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/22/24.

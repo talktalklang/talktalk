@@ -2,7 +2,7 @@
 
 public enum InterpolatedStringSegment: Equatable, CustomStringConvertible {
 	public struct InterpolatedExpr: Equatable {
-		public static func ==(lhs: Self, rhs: Self) -> Bool {
+		public static func == (lhs: Self, rhs: Self) -> Bool {
 			lhs.expr.id == rhs.expr.id
 		}
 
@@ -16,9 +16,9 @@ public enum InterpolatedStringSegment: Equatable, CustomStringConvertible {
 
 	public var description: String {
 		switch self {
-		case .string(let string, _):
+		case let .string(string, _):
 			"string(\(string))"
-		case .expr(let interpolatedExpr):
+		case let .expr(interpolatedExpr):
 			"expr(\(interpolatedExpr))"
 		}
 	}
@@ -31,8 +31,8 @@ public protocol InterpolatedStringExpr: Expr {
 public struct InterpolatedStringExprSyntax: InterpolatedStringExpr {
 	public var segments: [InterpolatedStringSegment]
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation
@@ -41,9 +41,9 @@ public struct InterpolatedStringExprSyntax: InterpolatedStringExpr {
 	public var children: [any Syntax] {
 		segments.compactMap {
 			if case let .expr(expr) = $0 {
-				return expr.expr
+				expr.expr
 			} else {
-				return nil
+				nil
 			}
 		}
 	}

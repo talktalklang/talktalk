@@ -326,23 +326,23 @@ public struct SemanticTokensVisitor: Visitor {
 		return results
 	}
 
-	public func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		return [make(.keyword, from: expr.keywordToken)]
+	public func visit(_ expr: ProtocolDeclSyntax, _: Context) throws -> [RawSemanticToken] {
+		[make(.keyword, from: expr.keywordToken)]
 	}
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		return try expr.decls.flatMap { try $0.accept(self, context) }
+		try expr.decls.flatMap { try $0.accept(self, context) }
 	}
 
-	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		return [make(.keyword, from: expr.funcToken)]
+	public func visit(_ expr: FuncSignatureDeclSyntax, _: Context) throws -> [RawSemanticToken] {
+		[make(.keyword, from: expr.funcToken)]
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [make(.keyword, from: expr.enumToken)]
 
 		for child in expr.children {
-			result.append(contentsOf: try child.accept(self, context))
+			try result.append(contentsOf: child.accept(self, context))
 		}
 
 		return result
@@ -391,9 +391,9 @@ public struct SemanticTokensVisitor: Visitor {
 
 		for segment in expr.segments {
 			switch segment {
-			case .expr(let interpolation):
+			case let .expr(interpolation):
 				try result.append(contentsOf: interpolation.expr.accept(self, context))
-			case .string(_, let token):
+			case let .string(_, token):
 				result.append(make(.string, from: token))
 			}
 		}

@@ -6,7 +6,7 @@
 //
 
 public final class StaticChunk: Equatable, Codable {
-	public static func ==(lhs: StaticChunk, rhs: StaticChunk) -> Bool {
+	public static func == (lhs: StaticChunk, rhs: StaticChunk) -> Bool {
 		lhs.code == rhs.code
 	}
 
@@ -31,7 +31,7 @@ public final class StaticChunk: Equatable, Codable {
 	public let capturing: Set<Capture>
 
 	// Debug info
-	internal let debugInfo: DebugInfo
+	let debugInfo: DebugInfo
 
 	struct DebugInfo: Equatable, Codable {
 		public var name: String

@@ -3,7 +3,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedProtocolBodyDecl: ProtocolBodyDecl, AnalyzedDecl {
-  public let wrapped: ProtocolBodyDeclSyntax
+	public let wrapped: ProtocolBodyDeclSyntax
 	public var declsAnalyzed: [any Decl]
 
 	public var inferenceType: InferenceType

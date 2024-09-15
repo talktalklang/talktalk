@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 
+import OrderedCollections
 import TalkTalkBytecode
 import TalkTalkSyntax
-import OrderedCollections
 
 // Module structs are type level structs that can be shared across
 // module boundaries.

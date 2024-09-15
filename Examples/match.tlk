@@ -22,5 +22,3 @@ case .fizz(let int):
 case .buzz(let string):
 	print("Got the string")
 }
-
-

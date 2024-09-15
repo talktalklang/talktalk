@@ -11,8 +11,8 @@ public struct EnumDeclSyntax: EnumDecl {
 	public var body: DeclBlockSyntax
 	public var typeParams: [TypeExprSyntax]
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation
@@ -20,7 +20,7 @@ public struct EnumDeclSyntax: EnumDecl {
 	// Useful for just traversing the whole tree
 	public var children: [any Syntax] {
 		[
-			body
+			body,
 		] + typeParams
 	}
 

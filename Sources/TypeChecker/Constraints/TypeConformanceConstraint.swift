@@ -23,7 +23,7 @@ struct TypeConformanceConstraint: Constraint {
 
 	var location: SourceLocation
 
-	func solve(in context: InferenceContext) -> ConstraintCheckResult {
+	func solve(in _: InferenceContext) -> ConstraintCheckResult {
 		.ok
 	}
 }

@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/30/24.
 //
 
+import TalkTalkSyntax
 import Testing
 @testable import TypeChecker
-import TalkTalkSyntax
 
 struct StandardLibraryTests: TypeCheckerTest {
 	@Test("Knows about array") func array() throws {
