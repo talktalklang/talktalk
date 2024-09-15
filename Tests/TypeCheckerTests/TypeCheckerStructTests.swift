@@ -32,7 +32,6 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		print()
 		let instance = try #require(StructType.extractInstance(from: context[syntax[1]]))
 		#expect(instance.name == "Person")
 	}

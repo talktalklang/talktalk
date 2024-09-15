@@ -472,7 +472,7 @@ struct VMEndToEndTests: VMTest {
 				i += 1
 			}
 			"""
-		)
+			, output: TestOutput())
 	}
 
 	@Test("+=") func plusEquals() throws {
