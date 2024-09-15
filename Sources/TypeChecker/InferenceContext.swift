@@ -513,7 +513,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return .enumType(EnumType(
 				name: type.name,
 				cases: type.cases.map {
+					// swiftlint:disable force_unwrapping
 					EnumCase.extract(from: .type(applySubstitutions(to: .enumCase($0), with: substitutions)))!
+					// swiftlint:enable force_unwrapping
 				},
 				typeContext: type.typeContext
 			))

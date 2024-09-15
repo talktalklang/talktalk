@@ -789,7 +789,9 @@ struct InferenceVisitor: Visitor {
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws {
 		let enumContext = context.childTypeContext()
-		let typeContext = enumContext.typeContext!
+		guard let typeContext = enumContext.typeContext else {
+			throw InferencerError.cannotInfer("No type context found for \(expr)")
+		}
 
 		var cases: [EnumCase] = []
 

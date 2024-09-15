@@ -28,7 +28,9 @@ public extension Library {
 				return url
 			} else {
 				print("Could not find bundle path from environment key: \(talktalkLibraryEnvKey)")
+				// swiftlint:disable fatal_error
 				fatalError("No bundle found.")
+				// swiftlint:enable fatal_error
 			}
 		} else {
 			// swiftlint:disable force_unwrapping
