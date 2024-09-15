@@ -1,6 +1,10 @@
 source = [
   ".build/release/talk",
-  ".build/release/TalkTalk_TalkTalkCore.bundle/Standard/*.talk"
+  ".build/release/TalkTalk_TalkTalkCore.bundle/Standard/Int.talk",
+  ".build/release/TalkTalk_TalkTalkCore.bundle/Standard/Array.talk",
+  ".build/release/TalkTalk_TalkTalkCore.bundle/Standard/Dictionary.talk",
+  ".build/release/TalkTalk_TalkTalkCore.bundle/Standard/String.talk",
+  ".build/release/TalkTalk_TalkTalkCore.bundle/REPL/repl.talk"
 ]
 
 bundle_id = "sh.talktalk"
