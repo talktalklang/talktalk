@@ -22,7 +22,7 @@ struct SubscriptConstraint: Constraint {
 		let receiver = context.applySubstitutions(to: receiver)
 		switch receiver {
 		case let .structInstance(instance):
-			guard let getMethod = instance.type.method(named: "get") else {
+			guard let getMethod = instance.type.member(named: "get", in: context) else {
 				return .error([
 					Diagnostic(message: "\(instance.type.name) has no get method", severity: .error, location: location),
 				])

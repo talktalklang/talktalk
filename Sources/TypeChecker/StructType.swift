@@ -98,13 +98,13 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 		return nil
 	}
 
-	func method(named name: String) -> InferenceResult? {
-		if let member = methods[name] {
-			return .type(context.applySubstitutions(to: member.asType(in: context)))
-		}
-
-		return nil
-	}
+//	func method(named name: String) -> InferenceResult? {
+//		if let member = methods[name] {
+//			return .type(context.applySubstitutions(to: member.asType(in: context)))
+//		}
+//
+//		return nil
+//	}
 
 	public var properties: OrderedDictionary<String, InferenceResult> {
 		typeContext.properties
