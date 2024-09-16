@@ -20,6 +20,7 @@ public class SymbolGenerator {
 	private(set) var properties: OrderedDictionary<Symbol, SymbolInfo> = [:]
 	private(set) var generics: OrderedDictionary<Symbol, SymbolInfo> = [:]
 	private(set) var enums: OrderedDictionary<Symbol, SymbolInfo> = [:]
+	private(set) var protocols: OrderedDictionary<Symbol, SymbolInfo> = [:]
 
 	public var symbols: OrderedDictionary<Symbol, SymbolInfo> = [:]
 
@@ -41,6 +42,8 @@ public class SymbolGenerator {
 		switch symbol.kind {
 		case .primitive:
 			symbol
+		case let .protocol(name):
+			self.protocol(name, source: .external(moduleName))
 		case let .function(name, params):
 			function(name, parameters: params, source: .external(moduleName))
 		case let .value(string):
@@ -58,136 +61,58 @@ public class SymbolGenerator {
 		}
 	}
 
-	public func generic(_ name: String, source: SymbolInfo.Source) -> Symbol {
+	private func make(_ kind: Symbol.Kind, source: SymbolInfo.Source, group: ReferenceWritableKeyPath<SymbolGenerator, OrderedDictionary<Symbol, SymbolInfo>>) -> Symbol {
 		if let parent {
-			return parent.generic(name, source: source)
+			return parent.make(kind, source: source, group: group)
 		}
 
 		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .genericType(name))
+			Symbol(module: moduleName, kind: kind)
 		} else {
-			Symbol(module: moduleName, kind: .genericType(name))
+			Symbol(module: moduleName, kind: kind)
 		}
 
-		if let info = generics[symbol] {
+		if let info = self[keyPath: group][symbol] {
 			return info.symbol
 		}
 
 		let symbolInfo = SymbolInfo(
 			symbol: symbol,
-			slot: generics.count,
+			slot: self[keyPath: group].count,
 			source: source,
 			isBuiltin: false
 		)
 
 		symbols[symbol] = symbolInfo
-		generics[symbol] = symbolInfo
+		self[keyPath: group][symbol] = symbolInfo
 
 		// Need to import the struct's methods too
 
 		return symbol
 	}
 
+	public func `protocol`(_ name: String, source: SymbolInfo.Source) -> Symbol {
+		make(.protocol(name), source: source, group: \.protocols)
+	}
+
+	public func generic(_ name: String, source: SymbolInfo.Source) -> Symbol {
+		make(.genericType(name), source: source, group: \.generics)
+	}
+
 	public func `enum`(_ name: String, source: SymbolInfo.Source) -> Symbol {
-		if let parent {
-			return parent.enum(name, source: source)
-		}
-
-		// Structs are top level (for now...) so they should not be namespaced
-		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .enum(name))
-		} else {
-			Symbol(module: moduleName, kind: .enum(name))
-		}
-
-		if let info = enums[symbol] {
-			return info.symbol
-		}
-
-		let symbolInfo = SymbolInfo(
-			symbol: symbol,
-			slot: enums.count,
-			source: source,
-			isBuiltin: false
-		)
-
-		enums[symbol] = symbolInfo
-		symbols[symbol] = symbolInfo
-
-		return symbol
+		make(.enum(name), source: source, group: \.enums)
 	}
 
 	public func `struct`(_ name: String, source: SymbolInfo.Source) -> Symbol {
-		if let parent {
-			return parent.struct(name, source: source)
-		}
-
-		// Structs are top level (for now...) so they should not be namespaced
-		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .struct(name))
-		} else {
-			Symbol(module: moduleName, kind: .struct(name))
-		}
-
-		if let info = structs[symbol] {
-			return info.symbol
-		}
-
-		let symbolInfo = SymbolInfo(
-			symbol: symbol,
-			slot: structs.count,
-			source: source,
-			isBuiltin: false
-		)
-
-		structs[symbol] = symbolInfo
-		symbols[symbol] = symbolInfo
-
-		return symbol
+		make(.struct(name), source: source, group: \.enums)
 	}
 
 	public func value(_ name: String, source: SymbolInfo.Source) -> Symbol {
-		if let parent {
-			return parent.value(name, source: source)
-		}
-
-		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .value(name))
-		} else {
-			Symbol(module: moduleName, kind: .value(name))
-		}
-
-		if let info = values[symbol] {
-			return info.symbol
-		} else {}
-
-		let symbolInfo = SymbolInfo(
-			symbol: symbol,
-			slot: values.count,
-			source: source,
-			isBuiltin: false
-		)
-
-		values[symbol] = symbolInfo
-		symbols[symbol] = symbolInfo
-
-		return symbol
+		make(.value(name), source: source, group: \.values)
 	}
 
 	public func function(_ name: String, parameters: [String], source: SymbolInfo.Source) -> Symbol {
-		if let parent {
-			return parent.function(name, parameters: parameters, source: source)
-		}
-
-		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .function(name, parameters))
-		} else {
-			Symbol(module: moduleName, kind: .function(name, parameters))
-		}
-
-		if let info = functions[symbol] {
-			return info.symbol
-		}
+		let symbol = make(.function(name, parameters), source: source, group: \.functions)
 
 		let symbolInfo = SymbolInfo(
 			symbol: symbol,
@@ -209,59 +134,10 @@ public class SymbolGenerator {
 	}
 
 	public func method(_ type: String, _ name: String, parameters: [String], source: SymbolInfo.Source) -> Symbol {
-		if let parent {
-			return parent.method(type, name, parameters: parameters, source: source)
-		}
-
-		// Methods don't have a namespace since they're already namespaced to their type
-		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .method(type, name, parameters))
-		} else {
-			Symbol(module: moduleName, kind: .method(type, name, parameters))
-		}
-
-		if let info = functions[symbol] {
-			return info.symbol
-		}
-
-		let symbolInfo = SymbolInfo(
-			symbol: symbol,
-			slot: functions.count,
-			source: source,
-			isBuiltin: false
-		)
-
-		functions[symbol] = symbolInfo
-		symbols[symbol] = symbolInfo
-
-		return symbol
+		make(.method(type, name, parameters), source: source, group: \.functions)
 	}
 
 	public func property(_ type: String, _ name: String, source: SymbolInfo.Source) -> Symbol {
-		if let parent {
-			return parent.property(type, name, source: source)
-		}
-
-		let symbol = if case let .external(moduleName) = source {
-			Symbol(module: moduleName, kind: .property(type, name))
-		} else {
-			Symbol(module: moduleName, kind: .property(type, name))
-		}
-
-		if let info = properties[symbol] {
-			return info.symbol
-		}
-
-		let symbolInfo = SymbolInfo(
-			symbol: symbol,
-			slot: properties.count,
-			source: source,
-			isBuiltin: false
-		)
-
-		properties[symbol] = symbolInfo
-		symbols[symbol] = symbolInfo
-
-		return symbol
+		make(.property(type, name), source: source, group: \.properties)
 	}
 }

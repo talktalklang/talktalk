@@ -51,6 +51,7 @@ public class CompilingModule {
 			if info.isBuiltin { continue }
 
 			switch symbol.kind {
+			case .protocol: ()
 			case .function, .method:
 				if let chunk = compiledChunks[symbol] {
 					chunks[info.symbol] = StaticChunk(chunk: chunk)

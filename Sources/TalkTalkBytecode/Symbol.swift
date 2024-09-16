@@ -47,10 +47,13 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		// Enum
 		case `enum`(String)
 
-		// (Struct name, Method name, Param names, Offset)
+		// Protocol name
+		case `protocol`(String)
+
+		// (Type name, Method name, Param names, Offset)
 		case method(String, String, [String])
 
-		// (Struct name, Property name, Offset)
+		// (Type name, Property name, Offset)
 		case property(String, String)
 
 		// (Type name)
@@ -99,6 +102,8 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		switch kind {
 		case let .primitive(name):
 			"\(name)"
+		case let .protocol(name):
+			"$T\(module)$\(name)"
 		case let .function(name, params):
 			"$F\(module)$\(name)$\(params.joined(separator: "_"))"
 		case let .value(name):
