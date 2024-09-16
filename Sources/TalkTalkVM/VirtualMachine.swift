@@ -538,7 +538,7 @@ public struct VirtualMachine {
 				return runtimeError("Cannot set struct")
 			case .getProperty:
 				// Get the slot of the member
-				let symbol = try readSymbol()
+				var symbol = try readSymbol()
 
 				// PropertyOptions let us see if this member is a method
 				let propertyOptions = try PropertyOptions(rawValue: readByte())
@@ -555,6 +555,10 @@ public struct VirtualMachine {
 
 						stack.push(boundMethod)
 					} else {
+						if case let .property(nil, name) = symbol.kind {
+							symbol = .property(symbol.module, instance.type.name, name)
+						}
+
 						guard let value = instance.fields[symbol] else {
 							return runtimeError("uninitialized value in slot \(symbol) for \(instance)")
 						}
