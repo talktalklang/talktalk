@@ -80,9 +80,6 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     matchCase,
 	     binding,
 
-			 // Protocol handling
-			 unbox,
-
 	     // String interpolation
 	     appendInterpolation,
 

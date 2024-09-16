@@ -647,7 +647,7 @@ public struct VirtualMachine {
 					stack.push(binding)
 				}
 			case .endInline:
-				var inlineFrame = try frames.pop()
+				let inlineFrame = try frames.pop()
 				guard inlineFrame.isInline else {
 					return runtimeError("Frame not inline!")
 				}
@@ -674,8 +674,6 @@ public struct VirtualMachine {
 				let new = try stack.pop()
 				let old = try stack.pop()
 				stack.push(.string(inspect(old) + inspect(new)))
-			case .unbox:
-				()
 			}
 		}
 	}
@@ -718,6 +716,12 @@ public struct VirtualMachine {
 	// Call a method on an instance.
 	// Takes the method offset, instance and type that defines the method.
 	private mutating func call(boundMethod: Symbol, on instance: Instance) throws {
+		var boundMethod = boundMethod
+
+		if case let .method(nil, name, params) = boundMethod.kind {
+			boundMethod = .init(module: boundMethod.module, kind: .method(instance.type.name, name, params))
+		}
+
 		guard let methodChunk = module.chunks[boundMethod] else {
 			throw VirtualMachineError.valueMissing("no method found \(boundMethod)")
 		}

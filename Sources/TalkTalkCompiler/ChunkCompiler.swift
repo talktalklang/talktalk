@@ -434,11 +434,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 			throw CompilerError.unknownIdentifier("Member not found for \(expr.receiverAnalyzed.description): \(expr.memberAnalyzed)")
 		}
 
-		// If the member is a protocol requirement, we need to unbox the receiver
-		if symbol.needsUnboxing {
-			chunk.emit(opcode: .unbox, line: expr.location.line)
-		}
-
 		// Emit the getter
 		chunk.emit(opcode: .getProperty, line: expr.location.line)
 		chunk.emit(.symbol(symbol), line: expr.location.line)
@@ -463,7 +458,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(.symbol(symbol), line: expr.location.line)
 		} else {
-//			let type = expr.environment.type(named: expr.identifier.lexeme)
 			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
 		}
 	}
@@ -1180,6 +1174,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		compiler.endScope(chunk: chunk)
+
+		// Put `self` back on the stack so we always return this new instance
+		chunk.emit(opcode: .getLocal, line: 9999)
+		chunk.emit(.symbol(.value(module.name, "self")), line: 9999)
 		chunk.emit(opcode: .returnValue, line: 9999)
 
 		return chunk
