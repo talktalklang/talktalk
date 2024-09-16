@@ -124,9 +124,9 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		case let .struct(name):
 			"$S\(module)$\(name)"
 		case let .property(type, name):
-			"$P\(module)$\(type)$\(name)"
+			"$P\(module)$\(type ?? "_")$\(name)"
 		case let .method(type, name, params):
-			"$M\(module)$\(type)$\(name)$\(params.joined(separator: "_"))"
+			"$M\(module)$\(type ?? "_")$\(name)$\(params.joined(separator: "_"))"
 		case let .genericType(name):
 			"$G\(module)$\(name)"
 		case let .enum(name):

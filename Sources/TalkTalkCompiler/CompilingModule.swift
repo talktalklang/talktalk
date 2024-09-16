@@ -68,7 +68,7 @@ public class CompilingModule {
 				}
 
 				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
-			case let .method(typeName, name, params):
+			case let .method(typeName, _, _):
 				if typeName == nil {
 					// This is a protocol requirement, so its chunk will be supplied by whatever concrete type implements it.
 					continue
@@ -87,6 +87,8 @@ public class CompilingModule {
 					chunks[symbol] = module.chunks[moduleInfo.symbol]
 					continue
 				}
+
+				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
 			case let .struct(structName):
 				switch info.source {
 				case let .external(name):

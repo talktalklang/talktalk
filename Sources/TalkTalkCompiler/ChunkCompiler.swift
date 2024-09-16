@@ -435,7 +435,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// If the member is a protocol requirement, we need to unbox the receiver
-		chunk.emit(opcode: .unbox, line: expr.location.line)
+		if symbol.needsUnboxing {
+			chunk.emit(opcode: .unbox, line: expr.location.line)
+		}
 
 		// Emit the getter
 		chunk.emit(opcode: .getProperty, line: expr.location.line)
