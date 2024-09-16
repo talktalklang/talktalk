@@ -56,7 +56,7 @@ struct MemberExprAnalyzer: Analyzer {
 			case let .function(params, returns):
 				Method(
 					name: propertyName,
-					symbol: context.symbolGenerator.method(instance.type.name, propertyName, parameters: params.map(\.description), source: .internal),
+					symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
 					params: params,
 					inferenceType: type,
 					location: expr.location,
@@ -64,7 +64,7 @@ struct MemberExprAnalyzer: Analyzer {
 				)
 			default:
 				Property(
-					symbol: context.symbolGenerator.property(instance.type.name, propertyName, source: .internal),
+					symbol: context.symbolGenerator.property(nil, propertyName, source: .internal),
 					name: propertyName,
 					inferenceType: type,
 					location: expr.location,

@@ -51,10 +51,12 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		case `protocol`(String)
 
 		// (Type name, Method name, Param names, Offset)
-		case method(String, String, [String])
+		// If the type name is nil, that means that this came from a protocol
+		case method(String?, String, [String])
 
 		// (Type name, Property name, Offset)
-		case property(String, String)
+		// If the type name is nil, that means that this came from a protocol
+		case property(String?, String)
 
 		// (Type name)
 		case genericType(String)
@@ -80,11 +82,11 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		Symbol(module: module, kind: .struct(name))
 	}
 
-	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String]) -> Symbol {
+	public static func method(_ module: String, _ type: String?, _ name: String, _ params: [String]) -> Symbol {
 		Symbol(module: module, kind: .method(type, name, params))
 	}
 
-	public static func property(_ module: String, _ type: String, _ name: String) -> Symbol {
+	public static func property(_ module: String, _ type: String?, _ name: String) -> Symbol {
 		Symbol(module: module, kind: .property(type, name))
 	}
 
@@ -96,6 +98,17 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 
 		self.module = module
 		self.kind = kind
+	}
+
+	public var needsUnboxing: Bool {
+		switch kind {
+		case .method(let type, _, _):
+			return type == nil
+		case .property(let type, _):
+			return type == nil
+		default:
+			return false
+		}
 	}
 
 	public var description: String {

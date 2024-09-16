@@ -425,9 +425,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
 		try expr.receiverAnalyzed.accept(self, chunk)
 
-		// Emit the getter
-		chunk.emit(opcode: .getProperty, line: expr.location.line)
-
 		// Emit the property's slot
 		let symbol = if let property = expr.memberAnalyzed as? Property {
 			property.symbol
@@ -437,6 +434,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 			throw CompilerError.unknownIdentifier("Member not found for \(expr.receiverAnalyzed.description): \(expr.memberAnalyzed)")
 		}
 
+		// If the member is a protocol requirement, we need to unbox the receiver
+		chunk.emit(opcode: .unbox, line: expr.location.line)
+
+		// Emit the getter
+		chunk.emit(opcode: .getProperty, line: expr.location.line)
 		chunk.emit(.symbol(symbol), line: expr.location.line)
 
 		// Emit the property's optionset

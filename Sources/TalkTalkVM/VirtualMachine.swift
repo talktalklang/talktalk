@@ -674,6 +674,8 @@ public struct VirtualMachine {
 				let new = try stack.pop()
 				let old = try stack.pop()
 				stack.push(.string(inspect(old) + inspect(new)))
+			case .unbox:
+				()
 			}
 		}
 	}
