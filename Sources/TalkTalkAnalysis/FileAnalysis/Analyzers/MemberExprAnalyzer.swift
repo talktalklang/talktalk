@@ -35,42 +35,43 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		let propertyName = expr.property
-
-		// ...otherwise treat it as a struct member
 		var member: (any Member)? = nil
-		if let scope = context.getLexicalScope()?.scope {
-			member = (scope.methods[propertyName] ?? scope.properties[propertyName])
-		}
+		var memberType: InferenceType? = nil
 
 		if case let .structInstance(instance) = receiver.typeAnalyzed,
 		   let structType = try context.lookupStruct(named: instance.type.name)
 		{
-			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
+			memberType = instance.member(named: propertyName, in: instance.type.context)
 		}
 
 		if case let .boxedInstance(instance) = receiver.typeAnalyzed {
 			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
 				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
 			}
-			member = switch type {
-			case let .function(params, returns):
-				Method(
-					name: propertyName,
-					symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
-					params: params,
-					inferenceType: type,
-					location: expr.location,
-					returnTypeID: returns
-				)
-			default:
-				Property(
-					symbol: context.symbolGenerator.property(nil, propertyName, source: .internal),
-					name: propertyName,
-					inferenceType: type,
-					location: expr.location,
-					isMutable: false
-				)
-			}
+
+			memberType = type
+		}
+
+		member = switch memberType {
+		case let .function(params, returns):
+			Method(
+				name: propertyName,
+				symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
+				params: params,
+				inferenceType: .function(params, returns),
+				location: expr.location,
+				returnTypeID: returns
+			)
+		default:
+			Property(
+				symbol: context.symbolGenerator.property(nil, propertyName, source: .internal),
+				name: propertyName,
+				// swiftlint:disable force_unwrapping
+				inferenceType: type!,
+				// swiftlint:enable force_unwrapping
+				location: expr.location,
+				isMutable: false
+			)
 		}
 
 		guard let member else {

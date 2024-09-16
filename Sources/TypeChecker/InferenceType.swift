@@ -88,7 +88,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	case kind(InferenceType)
 
 	// Used for `self` in types that support it
-	case selfVar(StructType)
+	case selfVar(TypeContext)
 
 	// Enum types
 	case enumType(EnumType)
@@ -130,7 +130,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 		case .any:
 			"any"
 		case let .selfVar(type):
-			"\(type.description) (self)"
+			"\(type) (self)"
 		case let .placeholder(variable):
 			"\(variable) (placeholder)"
 		case let .enumType(type):
@@ -167,7 +167,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 		case .any:
 			"any"
 		case let .selfVar(type):
-			"\(type.description) (self)"
+			"\(type) (self)"
 		case let .placeholder(variable):
 			"\(variable) (placeholder)"
 		case let .enumType(type):

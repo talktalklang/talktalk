@@ -161,7 +161,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 										attachedTypes: [.base(.string)]
 									),
 								],
-								typeContext: .init()
+								typeContext: .init(name: "Bottom")
 							)
 						),
 					]

@@ -437,12 +437,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: VarDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
-		// not locals inside methods.
 		var symbol: Symbol?
 		var isGlobal = false
-		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+
+		if let typeContext = context.inferenceContext.typeContext {
+			symbol = context.symbolGenerator.property(typeContext.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
@@ -465,12 +464,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: LetDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
-		// not locals inside methods.
 		var symbol: Symbol?
 		var isGlobal = false
-		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+
+		if let typeContext = context.inferenceContext.typeContext {
+			// FIXME: This isn't what we want because it will generate property symbols for locals inside methods
+			symbol = context.symbolGenerator.property(typeContext.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
@@ -599,11 +598,32 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let analyzedBody = try cast(expr.body.accept(self, context), to: AnalyzedDeclBlock.self)
-
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+		guard let type = context.inferenceContext.lookup(syntax: expr),
+					case let .enumType(enumType) = type else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
+
+		let bodyContext = context.add(namespace: expr.nameToken.lexeme)
+
+		bodyContext.define(
+			local: "self",
+			as: AnalyzedVarExpr(
+				inferenceType: type,
+				wrapped: VarExprSyntax(
+					id: -8,
+					token: .synthetic(.self),
+					location: [.synthetic(.self)]
+				),
+				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
+				environment: bodyContext,
+				analysisErrors: [],
+				isMutable: false
+			),
+
+			isMutable: false
+		)
+
+		let analyzedBody = try cast(expr.body.accept(self, context), to: AnalyzedDeclBlock.self)
 
 		var cases: [AnalyzedEnumCaseDecl] = []
 		for decl in analyzedBody.declsAnalyzed {

@@ -242,4 +242,23 @@ struct PatternMatchTests: VMTest {
 
 		#expect(result == .string("good"))
 	}
+
+	@Test("Enum methods") func enumMethods() throws {
+		let result = try run(
+			"""
+			enum Thing {
+				case foo
+				case bar
+
+				func isFoo() {
+					self == .foo
+				}
+			}
+
+			return Thing.foo.isFoo()
+			"""
+		)
+
+		#expect(result == .bool(true))
+	}
 }

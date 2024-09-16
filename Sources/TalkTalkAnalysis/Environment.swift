@@ -13,12 +13,12 @@ import TypeChecker
 public class Environment {
 	private var parent: Environment?
 	private var locals: [String: Binding]
-	private var structTypes: [String: StructType] = [:]
+	private var structTypes: [String: AnalysisStructType] = [:]
 
 	let inferenceContext: InferenceContext
 
 	public var isModuleScope: Bool
-	public var lexicalScope: LexicalScope?
+	public var lexicalScope: AnyLexicalScope?
 	public var captures: [Capture]
 	public var capturedValues: [Binding]
 	public var importedModules: [AnalysisModule]
@@ -103,9 +103,9 @@ public class Environment {
 		return environment
 	}
 
-	func addLexicalScope(_ scope: LexicalScope) -> Environment {
+	func addLexicalScope<T: Instantiatable>(for scope: T) -> Environment {
 		let environment = Environment(inferenceContext: inferenceContext, symbolGenerator: symbolGenerator, parent: self)
-		environment.lexicalScope = scope
+		environment.lexicalScope = AnyLexicalScope(scope: scope)
 		return environment
 	}
 
@@ -113,7 +113,7 @@ public class Environment {
 		importedModules.append(analysisModule)
 	}
 
-	public func define(struct name: String, as type: StructType) {
+	public func define(struct name: String, as type: AnalysisStructType) {
 		structTypes[name] = type
 	}
 
@@ -171,7 +171,7 @@ public class Environment {
 		return parent?.infer(name)
 	}
 
-	func getLexicalScope() -> LexicalScope? {
+	func getLexicalScope() -> AnyLexicalScope? {
 		lexicalScope ?? parent?.getLexicalScope()
 	}
 
@@ -319,7 +319,7 @@ public class Environment {
 		_ = symbolGenerator.import(symbol, from: moduleName)
 	}
 
-	public func lookupStruct(named name: String) throws -> StructType? {
+	public func lookupStruct(named name: String) throws -> AnalysisStructType? {
 		if let type = structTypes[name] {
 			return type
 		}
@@ -339,7 +339,7 @@ public class Environment {
 					from: module.name,
 					binding: binding
 				)
-				return StructType(
+				return AnalysisStructType(
 					id: structType.id,
 					name: name,
 					properties: structType.properties,

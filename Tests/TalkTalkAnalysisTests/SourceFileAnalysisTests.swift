@@ -8,7 +8,7 @@
 @testable import TalkTalkAnalysis
 import TalkTalkSyntax
 import Testing
-import TypeChecker
+@testable import TypeChecker
 
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
@@ -366,7 +366,7 @@ struct AnalysisTests {
 		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))!
 		let sup = type.methods["sup"]!.returnTypeID
 
-		#expect(sup == .selfVar(structType))
+		#expect(sup == .selfVar(structType.typeContext))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {

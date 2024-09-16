@@ -6,13 +6,20 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
+
+public class AnyLexicalScope {
+	let scope: any Instantiatable
+
+	init(scope: any Instantiatable) {
+		self.scope = scope
+	}
+}
 
 public class LexicalScope {
-	public var scope: StructType
-	var expr: any Syntax
+	public var scope: AnalysisStructType
 
-	init(scope: StructType, expr: any Syntax) {
+	init(scope: AnalysisStructType) {
 		self.scope = scope
-		self.expr = expr
 	}
 }

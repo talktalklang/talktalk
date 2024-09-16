@@ -26,7 +26,7 @@ struct StructDeclAnalyzer: Analyzer {
 			return error(at: decl, "did not find struct type from \(decl.name)", environment: context, expectation: .none)
 		}
 
-		let structType = StructType(
+		let structType = AnalysisStructType(
 			id: decl.id,
 			name: decl.name,
 			properties: [:],
@@ -144,8 +144,7 @@ struct StructDeclAnalyzer: Analyzer {
 			)
 		}
 
-		let lexicalScope = LexicalScope(scope: structType, expr: decl)
-		let bodyContext = context.addLexicalScope(lexicalScope)
+		let bodyContext = context.add(namespace: structType.name ?? "")
 
 		bodyContext.define(
 			local: "self",
@@ -194,7 +193,6 @@ struct StructDeclAnalyzer: Analyzer {
 			wrapped: cast(decl, to: StructDeclSyntax.self),
 			bodyAnalyzed: cast(bodyAnalyzed, to: AnalyzedDeclBlock.self),
 			structType: structType,
-			lexicalScope: lexicalScope,
 			inferenceType: inferenceType,
 			analysisErrors: errors,
 			environment: context
@@ -204,8 +202,6 @@ struct StructDeclAnalyzer: Analyzer {
 		bodyContext.define(struct: decl.name, as: structType)
 
 		context.define(local: decl.name, as: analyzed, isMutable: false)
-
-		bodyContext.lexicalScope = lexicalScope
 
 		return analyzed
 	}

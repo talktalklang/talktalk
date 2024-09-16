@@ -1131,7 +1131,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 //		return Byte(upvalues.count - 1)
 //	}
 
-	private func synthesizeInit(for structType: StructType) -> Chunk {
+	private func synthesizeInit(for structType: AnalysisStructType) -> Chunk {
 		let params = Array(structType.properties.keys)
 		let symbol = Symbol.method(
 			module.name, structType.name ?? "<struct \(structType.id)>",

@@ -97,8 +97,8 @@ struct MemberConstraint: Constraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
-		case let .selfVar(structType):
-			guard var member = structType.member(named: name, in: context) else {
+		case let .selfVar(typeContext):
+			guard var member = typeContext.member(named: name) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)

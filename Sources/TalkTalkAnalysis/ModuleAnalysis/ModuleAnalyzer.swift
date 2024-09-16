@@ -339,9 +339,9 @@ public struct ModuleAnalyzer: Analyzer {
 				location: syntax.location,
 				typeID: analyzedStructDecl.inferenceType,
 				source: .module,
-				properties: analyzedStructDecl.lexicalScope.scope.properties,
-				methods: analyzedStructDecl.lexicalScope.scope.methods,
-				typeParameters: analyzedStructDecl.lexicalScope.scope.typeParameters
+				properties: analyzedStructDecl.structType.properties,
+				methods: analyzedStructDecl.structType.methods,
+				typeParameters: analyzedStructDecl.structType.typeParameters
 			)
 		default:
 			()
@@ -350,3 +350,4 @@ public struct ModuleAnalyzer: Analyzer {
 		return result
 	}
 }
+

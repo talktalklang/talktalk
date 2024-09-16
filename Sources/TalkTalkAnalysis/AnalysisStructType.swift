@@ -1,5 +1,5 @@
 //
-//  StructType.swift
+//  AnalysisStructType.swift
 //  TalkTalk
 //
 //  Created by Pat Nakajima on 8/7/24.
@@ -9,7 +9,7 @@ import OrderedCollections
 import TalkTalkBytecode
 import TalkTalkSyntax
 
-public class StructType {
+public class AnalysisStructType {
 	public let id: SyntaxID
 	public let name: String?
 	public private(set) var properties: OrderedDictionary<String, Property>

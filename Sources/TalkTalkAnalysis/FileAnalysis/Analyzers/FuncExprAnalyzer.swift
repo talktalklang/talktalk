@@ -14,14 +14,21 @@ struct FuncExprAnalyzer: Analyzer {
 	var context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
-		let symbol: Symbol = if let scope = context.lexicalScope, let name = scope.scope.name {
-			context.symbolGenerator.method(
-				name, expr.autoname,
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		let symbol: Symbol
+
+		if let typeContext = context.inferenceContext.typeContext {
+			symbol = context.symbolGenerator.method(
+				typeContext.name,
+				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal
 			)
 		} else {
-			context.symbolGenerator.function(
+			symbol = context.symbolGenerator.function(
 				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal
@@ -42,8 +49,7 @@ struct FuncExprAnalyzer: Analyzer {
 			environment.define(parameter: param.name, as: param)
 		}
 
-		// Find the actual type of the fn
-		let type = context.inferenceContext.lookup(syntax: expr)
+
 
 		let returns = if case let .function(_, fnReturns) = type {
 			fnReturns

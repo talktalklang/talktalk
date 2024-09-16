@@ -14,7 +14,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	}
 
 	public let name: String
-	private(set) var context: InferenceContext
+	private(set) public var context: InferenceContext
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
 
@@ -37,7 +37,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	init(name: String, parentContext: InferenceContext) {
 		self.name = name
 
-		let context = parentContext.childTypeContext()
+		let context = parentContext.childTypeContext(named: name)
 
 		self.context = context
 
@@ -48,7 +48,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 		}
 		self.typeContext = typeContext
 
-		context.defineVariable(named: "self", as: .selfVar(self), at: [.synthetic(.struct)])
+		context.defineVariable(named: "self", as: .selfVar(typeContext), at: [.synthetic(.struct)])
 	}
 
 	public func hash(into hasher: inout Hasher) {

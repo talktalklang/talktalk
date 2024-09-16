@@ -12,22 +12,40 @@ import TalkTalkSyntax
 typealias VariableID = Int
 
 // If we're inside a type's body, we can save methods/properties in here
-class TypeContext {
+public class TypeContext: Equatable, Hashable {
+	public static func ==(lhs: TypeContext, rhs: TypeContext) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public var name: String
 	var methods: OrderedDictionary<String, InferenceResult>
 	var initializers: OrderedDictionary<String, InferenceResult>
 	var properties: OrderedDictionary<String, InferenceResult>
 	var typeParameters: [TypeVariable]
 
 	init(
+		name: String,
 		methods: OrderedDictionary<String, InferenceResult> = [:],
 		initializers: OrderedDictionary<String, InferenceResult> = [:],
 		properties: OrderedDictionary<String, InferenceResult> = [:],
 		typeParameters: [TypeVariable] = []
 	) {
+		self.name = name
 		self.methods = methods
 		self.initializers = initializers
 		self.properties = properties
 		self.typeParameters = typeParameters
+	}
+
+	public func member(named name: String) -> InferenceResult? {
+		methods[name] ?? properties[name] ?? initializers[name]
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(methods.keys)
+		hasher.combine(initializers)
+		hasher.combine(properties)
+		hasher.combine(typeParameters)
 	}
 }
 
@@ -101,7 +119,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var verbose: Bool = false
 
 	// Type-level context info like methods, properties, etc
-	var typeContext: TypeContext?
+	public var typeContext: TypeContext?
 
 	// Match target context, used for match statements
 	var matchContext: MatchContext?
@@ -297,13 +315,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 		)
 	}
 
-	func childTypeContext() -> InferenceContext {
+	func childTypeContext(named name: String) -> InferenceContext {
 		InferenceContext(
 			parent: self,
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext(),
+			typeContext: typeContext ?? TypeContext(name: name),
 			expectation: expectation,
 			matchContext: matchContext
 		)
@@ -315,7 +333,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext(),
+			typeContext: typeContext ?? TypeContext(name: type.description),
 			expectation: type,
 			matchContext: matchContext
 		)

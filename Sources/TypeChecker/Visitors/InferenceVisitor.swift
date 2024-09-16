@@ -692,9 +692,20 @@ struct InferenceVisitor: Visitor {
 
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
-		case let .structType(structType), let .selfVar(structType):
+		case let .selfVar(typeContext):
+			guard let method = typeContext.methods["get"] else {
+				throw InferencerError.cannotInfer("No `get` method for \(typeContext)")
+			}
+
+			// We can assume it's a method so we can destructure to get our return type
+			guard case let .function(_, getReturns) = method.asType(in: context) else {
+				return
+			}
+
+			returns = getReturns
+		case let .structType(structType):
 			guard let method = structType.member(named: "get", in: context) else {
-				throw InferencerError.cannotInfer("No `get` meethod for \(structType)")
+				throw InferencerError.cannotInfer("No `get` method for \(structType)")
 			}
 
 			// We can assume it's a method so we can destructure to get our return type
@@ -777,7 +788,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws {
-		let childContext = context.childTypeContext()
+		let childContext = context.childTypeContext(named: expr.name.lexeme)
 
 		// swiftlint:disable force_unwrapping
 		let typeContext = childContext.typeContext!
@@ -848,7 +859,8 @@ struct InferenceVisitor: Visitor {
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws {
-		let enumContext = context.childTypeContext()
+		let enumContext = context.childTypeContext(named: expr.nameToken.lexeme)
+
 		guard let typeContext = enumContext.typeContext else {
 			throw InferencerError.cannotInfer("No type context found for \(expr)")
 		}
@@ -870,6 +882,8 @@ struct InferenceVisitor: Visitor {
 
 			try visit(typeParameter, enumContext)
 		}
+
+		enumContext.defineVariable(named: "self", as: .selfVar(typeContext), at: expr.location)
 
 		var index = 0
 		for kase in expr.body.decls {

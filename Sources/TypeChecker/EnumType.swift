@@ -9,7 +9,11 @@ import Foundation
 import OrderedCollections
 import TalkTalkSyntax
 
-public struct EnumType: Equatable, Hashable, CustomStringConvertible {
+public struct EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
+	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+		typeContext.member(named: name)
+	}
+
 	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {
 		lhs.name == rhs.name && lhs.cases == rhs.cases
 	}
