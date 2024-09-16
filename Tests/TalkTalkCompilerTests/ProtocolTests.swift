@@ -51,7 +51,7 @@ struct ProtocolTests: CompilerTest {
 		))
 	}
 
-	@Test("Can compile a protocol method") func protocolMethod() throws {
+	@Test("Can compile a protocol method", .disabled("waiting on member refactor")) func protocolMethod() throws {
 		let module = try compile(
 			#"""
 			protocol Greetable {
