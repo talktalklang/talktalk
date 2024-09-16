@@ -15,11 +15,11 @@ struct VariableConstraint: Constraint {
 	func result(in context: InferenceContext) -> String {
 		let typeVar = context.applySubstitutions(to: typeVar)
 		let value = context.applySubstitutions(to: value.asType(in: context))
-		return "VariableConstraint(typeVar: \(typeVar), value: \(value))"
+		return "VariableConstraint(typeVar: \(typeVar.debugDescription), value: \(value.debugDescription))"
 	}
 
 	var description: String {
-		"VariableConstraint(typeVar: \(typeVar), value: \(value))"
+		"VariableConstraint(typeVar: \(typeVar.debugDescription), value: \(value.debugDescription))"
 	}
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {

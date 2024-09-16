@@ -32,10 +32,15 @@ public enum AnalysisErrorKind: Hashable {
 	case expressionCount(String)
 	case matchNotExhaustive(String)
 	case unexpectedType(expected: InferenceType, received: InferenceType, message: String)
+	case conformanceError(name: String, type: InferenceType, conformances: [ProtocolType])
 	case inferenceError(InferenceErrorKind)
 
 	public func hash(into hasher: inout Hasher) {
 		switch self {
+		case let .conformanceError(name, type, conformances):
+			hasher.combine(name)
+			hasher.combine(type)
+			hasher.combine(conformances)
 		case let .inferenceError(inferenceError):
 			hasher.combine(inferenceError)
 		case let .expressionCount(message):
@@ -84,6 +89,8 @@ public struct AnalysisError: Hashable {
 
 	public var message: String {
 		switch kind {
+		case let .conformanceError(name, type, conformances):
+			"Type does not conform to: \(conformances.map(\.name).joined(separator: ", ")). Missing: \(type.description)"
 		case let .inferenceError(inferenceError):
 			inferenceError.description
 		case let .argumentError(expected: a, received: b):

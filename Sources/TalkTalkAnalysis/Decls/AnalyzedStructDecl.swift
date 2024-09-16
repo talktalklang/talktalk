@@ -19,6 +19,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 		]
 	}
 
+	public var analysisErrors: [AnalysisError]
 	public var environment: Environment
 
 	// Delegate these to the wrapped node

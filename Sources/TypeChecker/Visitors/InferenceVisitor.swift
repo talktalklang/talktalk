@@ -127,7 +127,11 @@ struct InferenceVisitor: Visitor {
 				name: expr.name?.lexeme,
 				variables: variables,
 				type: .function(
-					expr.params.params.map { try childContext.get($0).asType(in: childContext) },
+					expr.params.params.map {
+						try $0.accept(self, childContext)
+
+						return try childContext.get($0).asType(in: childContext)
+					},
 					childContext.applySubstitutions(to: returnType.asType(in: childContext))
 				)
 			)
@@ -191,7 +195,7 @@ struct InferenceVisitor: Visitor {
 		case "pointer":
 			type = .base(.pointer)
 		default:
-			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
 
 			switch found {
 			case let .structType(structType):
@@ -209,8 +213,12 @@ struct InferenceVisitor: Visitor {
 						substitutions: substitutions
 					)
 				)
+			case let .protocol(protocolType):
+				type = .boxedInstance(Instance(id: context.nextIdentifier(named: protocolType.name), type: protocolType, substitutions: [:]))
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
+			case let .placeholder(placeholder):
+				type = .placeholder(placeholder)
 			default:
 				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
@@ -251,6 +259,8 @@ struct InferenceVisitor: Visitor {
 				}
 
 				type = .structType(structType)
+			case let .protocol(protocolType):
+				type = .protocol(protocolType)
 			case let .enumType(enumType):
 				type = .enumType(enumType)
 			case let .typeVar(typeVar):
@@ -447,8 +457,8 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ParamSyntax, _ context: InferenceContext) throws {
-		var type: InferenceType = if let typeExpr = expr.type {
-			try typeFrom(expr: typeExpr, in: context)
+		let type: InferenceType = if let typeExpr = expr.type {
+			try memberTypeFrom(expr: typeExpr, in: context)
 		} else {
 			.typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line))
 		}
@@ -767,14 +777,18 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws {
-		let context = context.childTypeContext()
+		let childContext = context.childTypeContext()
 
 		// swiftlint:disable force_unwrapping
-		let typeContext = context.typeContext!
+		let typeContext = childContext.typeContext!
 		// swiftlint:enable force_unwrapping
 
 		let protocolType = ProtocolType(name: expr.name.lexeme, typeContext: typeContext)
-		let protocolTypeVar: InferenceType = context.freshTypeVariable(expr.name.lexeme, file: #file, line: #line)
+		context.defineVariable(named: expr.name.lexeme, as: .protocol(protocolType), at: expr.location)
+
+		// swiftlint:disable force_unwrapping
+		let protocolTypeVar = context.lookupVariable(named: expr.name.lexeme)!
+		// swiftlint:enable force_unwrapping
 
 		context.constraints.add(
 			EqualityConstraint(
@@ -784,7 +798,7 @@ struct InferenceVisitor: Visitor {
 			)
 		)
 
-		try expr.body.accept(self, context)
+		try expr.body.accept(self, childContext)
 
 		// Save property requirements for the protocol
 		for decl in expr.body.decls {
@@ -797,7 +811,6 @@ struct InferenceVisitor: Visitor {
 			}
 		}
 
-		context.defineVariable(named: expr.name.lexeme, as: .protocol(protocolType), at: expr.location)
 		context.extend(expr, with: .type(.protocol(protocolType)))
 	}
 

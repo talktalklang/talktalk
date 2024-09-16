@@ -27,4 +27,9 @@ public extension AnalysisTest {
 		let syntax = try await analyze(string).analyzedFiles[0].syntax
 		return syntax.last!
 	}
+
+	func asts(_ string: String) async throws -> [any AnalyzedSyntax] {
+		let syntax = try await analyze(string).analyzedFiles[0].syntax
+		return syntax
+	}
 }

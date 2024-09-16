@@ -9,6 +9,11 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 import TypeChecker
 
+struct ConformanceRequirement: Hashable {
+	let name: String
+	let type: InferenceResult
+}
+
 struct StructDeclAnalyzer: Analyzer {
 	let decl: any StructDecl
 	let visitor: SourceFileAnalyzer
@@ -31,6 +36,18 @@ struct StructDeclAnalyzer: Analyzer {
 			}
 		)
 
+		var conformanceRequirements: [ConformanceRequirement: [ProtocolType]] = [:]
+		for conformance in decl.conformances {
+			guard case let .protocol(conformanceType) = context.inferenceContext.lookup(syntax: conformance) else {
+				return error(at: conformance, "Could not determine conformance requirements for \(conformance.identifier.lexeme)", environment: context)
+			}
+
+			for (name, method) in conformanceType.methods {
+				let req = ConformanceRequirement(name: name, type: method)
+				conformanceRequirements[req, default: []].append(conformanceType)
+			}
+		}
+
 		for (name, type) in type.properties {
 			let location = decl.body.decls.first(where: { ($0 as? VarLetDecl)?.name == name })?.semanticLocation
 
@@ -49,6 +66,9 @@ struct StructDeclAnalyzer: Analyzer {
 			guard case let .function(params, returns) = type.asType(in: context.inferenceContext) else {
 				return error(at: decl, "invalid method", environment: context, expectation: .none)
 			}
+
+			// Make this requirement as satisfied
+			conformanceRequirements.removeValue(forKey: .init(name: name, type: type))
 
 			let location = decl.body.decls.first(where: { ($0 as? FuncExpr)?.name?.lexeme == name })?.semanticLocation
 
@@ -145,9 +165,21 @@ struct StructDeclAnalyzer: Analyzer {
 		}
 
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
-
-		// Do a second pass to try to fill in method returns
 		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
+
+		var errors: [AnalysisError] = []
+		for (type, conformances) in conformanceRequirements {
+			errors.append(
+				.init(
+					kind: .conformanceError(
+						name: type.name,
+						type: type.type.asType(in: context.inferenceContext),
+						conformances: conformances
+					),
+					location: decl.location
+				)
+			)
+		}
 
 		let analyzed = try AnalyzedStructDecl(
 			symbol: symbol,
@@ -156,6 +188,7 @@ struct StructDeclAnalyzer: Analyzer {
 			structType: structType,
 			lexicalScope: lexicalScope,
 			inferenceType: inferenceType,
+			analysisErrors: errors,
 			environment: context
 		)
 

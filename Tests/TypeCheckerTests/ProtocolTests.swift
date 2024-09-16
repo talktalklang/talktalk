@@ -33,7 +33,7 @@ struct ProtocolTests {
 		#expect(protocolType.methods["greet"] == .scheme(Scheme(name: "greet", variables: [], type: .function([], .base(.string)))))
 	}
 
-	@Test("Types protocol method", .disabled("Waitin for instantiatable refactor")) func protocolMethod() throws {
+	@Test("Types protocol method") func protocolMethod() throws {
 		let syntax = try Parser.parse(
 			"""
 			protocol Greetable {
@@ -49,10 +49,35 @@ struct ProtocolTests {
 		let context = try infer(syntax)
 		#expect(context.errors.isEmpty)
 
+		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([
-			// TODO.
+			.boxedInstance(Instance(id: 0, type: protocolType, substitutions: [:]))
+		], .base(.string)))
+	}
+
+	@Test("Types protocol property") func protocolProperty() throws {
+		let syntax = try Parser.parse(
+			"""
+			protocol Greetable {
+				var name: String
+			}
+
+			func greetGreetable(greetable: Greetable) {
+				greetable.name
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context.errors.isEmpty)
+
+		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
+		let fn = context[syntax[1]]!.asType(in: context)
+
+		#expect(fn == .function([
+			.boxedInstance(Instance(id: 0, type: protocolType, substitutions: [:]))
 		], .base(.string)))
 	}
 }

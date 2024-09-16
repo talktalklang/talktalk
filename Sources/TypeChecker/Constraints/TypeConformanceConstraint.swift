@@ -14,11 +14,11 @@ struct TypeConformanceConstraint: Constraint {
 	func result(in context: InferenceContext) -> String {
 		let type = context.applySubstitutions(to: type)
 		let conformsTo = context.applySubstitutions(to: conformsTo)
-		return "TypeConformanceConstraint(type: \(type), conformsTo: \(conformsTo))"
+		return "TypeConformanceConstraint(type: \(type.debugDescription), conformsTo: \(conformsTo.debugDescription))"
 	}
 
 	var description: String {
-		"TypeConformanceConstraint(type: \(type), conformsTo: \(conformsTo))"
+		"TypeConformanceConstraint(type: \(type.debugDescription), conformsTo: \(conformsTo.debugDescription))"
 	}
 
 	var location: SourceLocation

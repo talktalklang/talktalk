@@ -18,7 +18,7 @@ struct MemberConstraint: Constraint {
 
 		let type = context.applySubstitutions(to: type.asType(in: context))
 
-		return "MemberConstraint(receiver: \(receiver), name: \(name), type: \(type))"
+		return "MemberConstraint(receiver: \(receiver.debugDescription), name: \(name), type: \(type.debugDescription))"
 	}
 
 	func resolveReceiver(_ receiver: InferenceResult?) -> InferenceResult {
@@ -30,7 +30,7 @@ struct MemberConstraint: Constraint {
 	}
 
 	var description: String {
-		"MemberConstraint(receiver: \(receiver.description), name: \(name), type: \(type))"
+		"MemberConstraint(receiver: \(receiver.debugDescription), name: \(name), type: \(type.debugDescription))"
 	}
 
 	var location: SourceLocation
@@ -116,6 +116,24 @@ struct MemberConstraint: Constraint {
 
 			context.unify(
 				context.applySubstitutions(to: member.asType(in: context)),
+				context.applySubstitutions(to: resolvedType),
+				location
+			)
+		case let .boxedInstance(protocolType):
+			guard let member = protocolType.member(named: name, in: context) else {
+				return .error(
+					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
+				)
+			}
+
+			context.unify(
+				context.applySubstitutions(to: resolvedType),
+				context.applySubstitutions(to: member),
+				location
+			)
+
+			context.unify(
+				context.applySubstitutions(to: member),
 				context.applySubstitutions(to: resolvedType),
 				location
 			)

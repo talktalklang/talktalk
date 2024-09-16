@@ -19,11 +19,11 @@ struct CallConstraint: Constraint {
 		let args = args.map { context.applySubstitutions(to: $0.asType(in: context)) }.map(\.description).joined(separator: ", ")
 		let returns = context.applySubstitutions(to: returns)
 
-		return "CallConstraint(callee: \(callee), args: \(args), returns: \(returns))"
+		return "CallConstraint(callee: \(callee.debugDescription), args: \(args.debugDescription), returns: \(returns.debugDescription))"
 	}
 
 	var description: String {
-		"CallConstraint(callee: \(callee), args: \(args), returns: \(returns))"
+		"CallConstraint(callee: \(callee.debugDescription), args: \(args.debugDescription), returns: \(returns.debugDescription))"
 	}
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {

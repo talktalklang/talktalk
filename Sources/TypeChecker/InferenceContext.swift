@@ -503,11 +503,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 				applySubstitutions(to: returning, with: substitutions)
 			)
 		case let .structInstance(instance):
-//			for case let (key, .typeVar(val)) in substitutions {
-//				if instance.substitutions[val] != nil {
-//					instance.substitutions[val] = .typeVar(key)
-//				}
-//			}
 			return .structInstance(instance)
 		case let .enumType(type):
 			return .enumType(EnumType(

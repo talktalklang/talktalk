@@ -7,7 +7,7 @@
 import Foundation
 import OrderedCollections
 
-public struct ProtocolType: Equatable, Hashable {
+public struct ProtocolType: Equatable, Hashable, Instantiatable {
 	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
@@ -29,7 +29,7 @@ public struct ProtocolType: Equatable, Hashable {
 		return nil
 	}
 
-	func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 			return .type(context.applySubstitutions(to: member.asType(in: context)))
 		}
@@ -70,8 +70,6 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceType], InferenceType)
 
-	case instance(Instance<StructType>)
-
 	// Struct stuff
 	case structType(StructType)
 	case structInstance(Instance<StructType>)
@@ -81,6 +79,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	// A protocol Type
 	case `protocol`(ProtocolType)
+	case boxedInstance(Instance<ProtocolType>)
 
 	// Errors
 	case error(InferenceError)
@@ -111,7 +110,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	public var debugDescription: String {
 		switch self {
-		case let .instance(instance):
+		case let .boxedInstance(instance):
 			"\(instance)"
 		case let .enumCaseInstance(instance):
 			"\(instance.enumCase)\(instance.substitutions)"
@@ -150,7 +149,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	public var description: String {
 		switch self {
-		case let .instance(instance):
+		case let .boxedInstance(instance):
 			"\(instance)"
 		case let .enumCaseInstance(instance):
 			"\(instance.enumCase)\(instance.substitutions)"

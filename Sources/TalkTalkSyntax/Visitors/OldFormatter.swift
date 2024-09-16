@@ -362,8 +362,8 @@ public struct OldFormatter: Visitor {
 		return result
 	}
 
-	public func visit(_: ProtocolDeclSyntax, _: Context) throws -> String {
-		"(typeName)"
+	public func visit(_ syntax: ProtocolDeclSyntax, _: Context) throws -> String {
+		"\(syntax.name.lexeme).Protocol"
 	}
 
 	public func visit(_: ProtocolBodyDeclSyntax, _: Context) throws -> String {
