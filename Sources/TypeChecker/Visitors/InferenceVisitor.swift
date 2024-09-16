@@ -195,7 +195,7 @@ struct InferenceVisitor: Visitor {
 		case "pointer":
 			type = .base(.pointer)
 		default:
-			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
 
 			switch found {
 			case let .structType(structType):
@@ -217,6 +217,8 @@ struct InferenceVisitor: Visitor {
 				type = .boxedInstance(Instance(id: context.nextIdentifier(named: protocolType.name), type: protocolType, substitutions: [:]))
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
+			case let .enumType(enumType):
+				type = .enumType(enumType)
 			case let .placeholder(placeholder):
 				type = .placeholder(placeholder)
 			default:
