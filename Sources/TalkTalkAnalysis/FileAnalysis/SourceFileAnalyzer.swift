@@ -563,15 +563,39 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		guard let body = try visit(expr.body, context) as? AnalyzedProtocolBodyDecl else {
+			return error(at: expr, "Invalid body type for \(expr)", environment: context)
+		}
+
+		return AnalyzedProtocolDecl(bodyAnalyzed: body, wrapped: expr, inferenceType: type, environment: context)
 	}
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		let decls = try expr.decls.map {
+			guard let decl = try $0.accept(self, context) as? any AnalyzedDecl else {
+				throw AnalyzerError.unexpectedCast(expected: "AnalyzedDecl", received: "\($0)")
+			}
+
+			return decl
+		}
+
+		return AnalyzedProtocolBodyDecl(wrapped: expr, declsAnalyzed: decls, inferenceType: type, environment: context)
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		return AnalyzedFuncSignatureDecl(wrapped: expr, inferenceType: type, environment: context)
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {

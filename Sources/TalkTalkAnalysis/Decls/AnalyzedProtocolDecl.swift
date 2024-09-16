@@ -3,9 +3,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedProtocolDecl: ProtocolDecl, AnalyzedDecl {
-	public var keywordTokenAnalyzed: Token
-	public var nameAnalyzed: Token
-	public var bodyAnalyzed: DeclBlockSyntax
+	public var bodyAnalyzed: AnalyzedProtocolBodyDecl
 	public let wrapped: ProtocolDeclSyntax
 
 	public var inferenceType: InferenceType
@@ -15,7 +13,7 @@ public struct AnalyzedProtocolDecl: ProtocolDecl, AnalyzedDecl {
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
-	public var keywordToken: TalkTalkSyntax.Token { wrapped.keywordToken }
+	public var keywordToken: Token { wrapped.keywordToken }
 	public var name: Token { wrapped.name }
 	public var body: ProtocolBodyDeclSyntax { wrapped.body }
 	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }

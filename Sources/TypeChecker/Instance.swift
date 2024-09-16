@@ -47,7 +47,7 @@ public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringCo
 		return nil
 	}
 
-	func member(named name: String, in context: InferenceContext) -> InferenceType? {
+	public func member(named name: String, in context: InferenceContext) -> InferenceType? {
 		guard let structMember = type.member(named: name, in: context) else {
 			return nil
 		}

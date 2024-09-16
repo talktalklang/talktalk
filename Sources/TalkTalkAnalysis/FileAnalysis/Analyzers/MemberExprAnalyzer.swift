@@ -48,6 +48,31 @@ struct MemberExprAnalyzer: Analyzer {
 			member = (structType.methods[propertyName] ?? structType.properties[propertyName])
 		}
 
+		if case let .boxedInstance(instance) = receiver.typeAnalyzed {
+			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
+				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
+			}
+			member = switch type {
+			case let .function(params, returns):
+				Method(
+					name: propertyName,
+					symbol: context.symbolGenerator.method(instance.type.name, propertyName, parameters: params.map(\.description), source: .internal),
+					params: params,
+					inferenceType: type,
+					location: expr.location,
+					returnTypeID: returns
+				)
+			default:
+				Property(
+					symbol: context.symbolGenerator.property(instance.type.name, propertyName, source: .internal),
+					name: propertyName,
+					inferenceType: type,
+					location: expr.location,
+					isMutable: false
+				)
+			}
+		}
+
 		guard let member else {
 			return try AnalyzedMemberExpr(
 				inferenceType: type ?? .any,
