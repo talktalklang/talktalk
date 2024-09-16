@@ -8,6 +8,26 @@
 import Testing
 
 struct ProtocolTests: VMTest {
+	@Test("Properties") func properties() throws {
+		let result = try run(
+		"""
+		protocol Greetable { var name: String }
+
+		struct Person: Greetable {
+			var name: String
+		}
+
+		func greet(greetable: Greetable) {
+			"hi, " + greetable.name
+		}
+
+		return greet(greetable: Person(name: "pat"))
+		"""
+		)
+
+		#expect(result == .string("hi, pat"))
+	}
+
 	@Test("Methods") func methods() throws {
 		let result = try run(
 		"""
