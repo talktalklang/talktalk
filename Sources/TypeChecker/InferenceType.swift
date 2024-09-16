@@ -93,7 +93,6 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	// Enum types
 	case enumType(EnumType)
 	case enumCase(EnumCase)
-	case enumCaseInstance(EnumCaseInstance)
 
 	// Pattern matching (type, associated values)
 	case pattern(Pattern)
@@ -112,8 +111,6 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 		switch self {
 		case let .boxedInstance(instance):
 			"\(instance)"
-		case let .enumCaseInstance(instance):
-			"\(instance.enumCase)\(instance.substitutions)"
 		case let .protocol(protocolType):
 			"\(protocolType.name).Protocol"
 		case let .typeVar(typeVariable):
@@ -151,8 +148,6 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 		switch self {
 		case let .boxedInstance(instance):
 			"\(instance)"
-		case let .enumCaseInstance(instance):
-			"\(instance.enumCase)\(instance.substitutions)"
 		case let .protocol(protocolType):
 			"\(protocolType.name).Protocol"
 		case let .typeVar(typeVariable):

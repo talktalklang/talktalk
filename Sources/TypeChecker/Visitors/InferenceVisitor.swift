@@ -128,9 +128,7 @@ struct InferenceVisitor: Visitor {
 				variables: variables,
 				type: .function(
 					expr.params.params.map {
-						try $0.accept(self, childContext)
-
-						return try childContext.get($0).asType(in: childContext)
+						try childContext.get($0).asType(in: childContext)
 					},
 					childContext.applySubstitutions(to: returnType.asType(in: childContext))
 				)

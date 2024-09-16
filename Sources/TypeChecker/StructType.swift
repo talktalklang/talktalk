@@ -55,7 +55,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 		hasher.combine(name)
 		hasher.combine(typeContext.initializers)
 		hasher.combine(typeContext.properties)
-		hasher.combine(typeContext.methods)
+		hasher.combine(typeContext.methods.keys)
 	}
 
 	public var description: String {
