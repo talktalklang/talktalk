@@ -42,6 +42,11 @@ struct StructDeclAnalyzer: Analyzer {
 				return error(at: conformance, "Could not determine conformance requirements for \(conformance.identifier.lexeme)", environment: context)
 			}
 
+			for (name, method) in conformanceType.properties {
+				let req = ConformanceRequirement(name: name, type: method)
+				conformanceRequirements[req, default: []].append(conformanceType)
+			}
+
 			for (name, method) in conformanceType.methods {
 				let req = ConformanceRequirement(name: name, type: method)
 				conformanceRequirements[req, default: []].append(conformanceType)
@@ -50,6 +55,9 @@ struct StructDeclAnalyzer: Analyzer {
 
 		for (name, type) in type.properties {
 			let location = decl.body.decls.first(where: { ($0 as? VarLetDecl)?.name == name })?.semanticLocation
+
+			// Make this requirement as satisfied
+			conformanceRequirements.removeValue(forKey: .init(name: name, type: type))
 
 			structType.add(
 				property: Property(

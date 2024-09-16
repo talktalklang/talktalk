@@ -90,7 +90,7 @@ public struct AnalysisError: Hashable {
 	public var message: String {
 		switch kind {
 		case let .conformanceError(name, type, conformances):
-			"Type does not conform to: \(conformances.map(\.name).joined(separator: ", ")). Missing: \(type.description)"
+			"Type does not conform to: \(conformances.map(\.name).joined(separator: ", ")). Missing: \(name) (\(type.description))"
 		case let .inferenceError(inferenceError):
 			inferenceError.description
 		case let .argumentError(expected: a, received: b):
