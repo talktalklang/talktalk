@@ -13,7 +13,7 @@ import TypeChecker
 public class Environment {
 	private var parent: Environment?
 	private var locals: [String: Binding]
-	private var structTypes: [String: AnalysisStructType] = [:]
+	private var types: [String: any LexicalScopeType] = [:]
 
 	let inferenceContext: InferenceContext
 
@@ -113,8 +113,8 @@ public class Environment {
 		importedModules.append(analysisModule)
 	}
 
-	public func define(struct name: String, as type: AnalysisStructType) {
-		structTypes[name] = type
+	public func define(type name: String, as type: any LexicalScopeType) {
+		types[name] = type
 	}
 
 	public func define(parameter: String, as expr: any AnalyzedExpr) {
@@ -320,12 +320,12 @@ public class Environment {
 		_ = symbolGenerator.import(symbol, from: moduleName)
 	}
 
-	public func lookupStruct(named name: String) throws -> AnalysisStructType? {
-		if let type = structTypes[name] {
+	public func type(named name: String) throws -> (any LexicalScopeType)? {
+		if let type = types[name] {
 			return type
 		}
 
-		if let type = try parent?.lookupStruct(named: name) {
+		if let type = try parent?.type(named: name) {
 			return type
 		}
 
@@ -346,6 +346,18 @@ public class Environment {
 					properties: structType.properties,
 					methods: structType.methods,
 					typeParameters: structType.typeParameters
+				)
+			}
+
+			if let enumType = module.enums[name] {
+				importBinding(
+					as: enumType.symbol,
+					from: module.name,
+					binding: binding
+				)
+				return AnalysisEnum(
+					name: name,
+					methods: enumType.methods
 				)
 			}
 		}

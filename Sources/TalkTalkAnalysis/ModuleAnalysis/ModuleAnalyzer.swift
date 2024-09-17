@@ -255,7 +255,7 @@ public struct ModuleAnalyzer: Analyzer {
 				location: syntax.location,
 				typeID: analyzed.inferenceType,
 				source: .module,
-				methods: []
+				methods: [:]
 			)
 
 			environment.define(

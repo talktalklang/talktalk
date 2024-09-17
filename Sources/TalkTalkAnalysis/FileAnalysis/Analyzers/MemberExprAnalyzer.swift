@@ -30,6 +30,17 @@ struct MemberExprAnalyzer: Analyzer {
 			)
 		}
 
+		if case let .enumType(enumType) = type,
+			 let kase = enumType.cases.first(where: { $0.name == expr.property }) {
+			return try AnalyzedEnumMemberExpr(
+				wrapped: cast(expr, to: MemberExprSyntax.self),
+				propertyAnalyzed: expr.property,
+				paramsAnalyzed: kase.attachedTypes,
+				inferenceType: .enumCase(kase),
+				environment: context
+			)
+		}
+
 		guard let receiver = try expr.receiver?.accept(visitor, context) else {
 			return error(at: expr, "Could not determine receiver", environment: context)
 		}
@@ -72,8 +83,14 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if member == nil, case let .structInstance(instance) = receiver.typeAnalyzed {
-			if let structType = try context.lookupStruct(named: instance.type.name) {
+			if let structType = try context.type(named: instance.type.name) {
 				member = (structType.methods[propertyName] ?? structType.properties[propertyName])
+			}
+		}
+
+		if member == nil, case let .enumCase(enumCase) = receiver.typeAnalyzed {
+			if let enumType = try context.type(named: enumCase.typeName) {
+				member = enumType.methods[propertyName]
 			}
 		}
 

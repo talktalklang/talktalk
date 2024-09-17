@@ -571,6 +571,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 		log("Unifying \(typeA) <-> \(typeB)", prefix: " & ")
 
 		switch (a, b) {
+		case let (.selfVar(type), .typeVar(typeVar)):
+			bind(typeVar: typeVar, to: type)
+		case let (.typeVar(typeVar), .selfVar(type)):
+			bind(typeVar: typeVar, to: type)
 		case let (.base(a), .base(b)) where a != b:
 			log("Cannot unify \(a) and \(b)", prefix: " ! ")
 			addError(

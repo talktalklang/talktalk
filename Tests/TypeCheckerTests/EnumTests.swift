@@ -140,4 +140,41 @@ struct EnumTests: TypeCheckerTest {
 		]
 		)
 	}
+
+	@Test("Can infer self") func enumSelf() throws {
+		let syntax = try Parser.parse(
+			"""
+			enum Thing {
+				case foo
+				case bar
+
+				func isFoo() {
+					self == .foo
+				}
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		let enumType = syntax[0].cast(EnumDeclSyntax.self)
+		let enumInferenceType = try EnumType.extract(from: context.get(enumType))!
+		let fn = enumType.body.decls[2].cast(FuncExprSyntax.self)
+		let binaryExpr = fn.body.stmts[0]
+			.cast(ExprStmtSyntax.self)
+			.expr.cast(BinaryExprSyntax.self)
+		let selfVar = binaryExpr.lhs.cast(VarExprSyntax.self)
+		let foo = binaryExpr.rhs.cast(MemberExprSyntax.self)
+
+		// Make sure we can infer `self`
+		let selfVarType = try context.get(selfVar)
+		#expect(selfVarType == InferenceResult.type(.selfVar(.enumType(enumInferenceType))))
+
+		// Make sure we can infer `.foo`
+		let fooType = try context.get(foo)
+		#expect(fooType == .type(.enumType(enumInferenceType)))
+
+		// Make sure the method has the right type
+		let fnType = try context.applySubstitutions(to: context.get(fn))
+		#expect(fnType ==	.function([], .base(.bool)))
+	}
 }

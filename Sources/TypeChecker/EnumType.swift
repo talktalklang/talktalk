@@ -9,7 +9,7 @@ import Foundation
 import OrderedCollections
 import TalkTalkSyntax
 
-public struct EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
+public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
 	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
 		typeContext.member(named: name)
 	}
@@ -23,6 +23,12 @@ public struct EnumType: Equatable, Hashable, CustomStringConvertible, Instantiat
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
 
+	init(name: String, cases: [EnumCase] = [], typeContext: TypeContext) {
+		self.name = name
+		self.cases = cases
+		self.typeContext = typeContext
+	}
+
 	public static func extract(from type: InferenceResult) -> EnumType? {
 		if case let .type(.enumType(enumType)) = type {
 			return enumType
@@ -33,6 +39,10 @@ public struct EnumType: Equatable, Hashable, CustomStringConvertible, Instantiat
 
 	public var description: String {
 		"\(name)"
+	}
+
+	public var methods: OrderedDictionary<String, InferenceResult> {
+		typeContext.methods
 	}
 
 	public func hash(into hasher: inout Hasher) {

@@ -198,8 +198,8 @@ struct StructDeclAnalyzer: Analyzer {
 			environment: context
 		)
 
-		context.define(struct: decl.name, as: structType)
-		bodyContext.define(struct: decl.name, as: structType)
+		context.define(type: decl.name, as: structType)
+		bodyContext.define(type: decl.name, as: structType)
 
 		context.define(local: decl.name, as: analyzed, isMutable: false)
 

@@ -7,6 +7,7 @@
 
 import TalkTalkBytecode
 import TalkTalkSyntax
+import OrderedCollections
 
 public struct ModuleEnum: ModuleGlobal {
 	public let name: String
@@ -14,7 +15,7 @@ public struct ModuleEnum: ModuleGlobal {
 	public let location: SourceLocation
 	public let typeID: InferenceType
 	public var source: ModuleSource
-	public var methods: [Method]
+	public var methods: OrderedDictionary<String, Method>
 
 	public var isImport: Bool {
 		if case .module = source {

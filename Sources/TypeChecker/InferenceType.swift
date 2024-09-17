@@ -88,7 +88,7 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	case kind(InferenceType)
 
 	// Used for `self` in types that support it
-	case selfVar(TypeContext)
+	case selfVar(InferenceType)
 
 	// Enum types
 	case enumType(EnumType)

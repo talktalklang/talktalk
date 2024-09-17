@@ -286,7 +286,7 @@ struct AnalysisTests {
 		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))
 		#expect(structType?.name == "Person")
 
-		let stype = try s.environment.lookupStruct(named: "Person")
+		let stype = try s.environment.type(named: "Person")
 		let type = try #require(stype)
 		#expect(type.name == "Person")
 		#expect(type.methods["init"] != nil)
@@ -322,7 +322,7 @@ struct AnalysisTests {
 
 		#expect(structType.name == "Person")
 
-		let stype = try s.environment.lookupStruct(named: "Person")
+		let stype = try s.environment.type(named: "Person")
 		let type = try #require(stype)
 		#expect(type.name == "Person")
 		#expect(type.methods["init"] != nil)
@@ -361,12 +361,12 @@ struct AnalysisTests {
 			""")
 
 		let s = try #require(ast as? AnalyzedStructDecl)
-		let type = try #require(try! s.environment.lookupStruct(named: "Person"))
+		let type = try #require(try! s.environment.type(named: "Person"))
 
 		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))!
 		let sup = type.methods["sup"]!.returnTypeID
 
-		#expect(sup == .selfVar(structType.typeContext))
+		#expect(sup == .selfVar(.structType(structType)))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {

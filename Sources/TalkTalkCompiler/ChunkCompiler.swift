@@ -516,55 +516,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 				module.compiledChunks[analysisMethod.symbol] = declChunk
 				structType.initializer = analysisMethod.symbol
 			case let decl as AnalyzedFuncExpr:
-				guard let declName = decl.name?.lexeme else {
-					throw CompilerError.unknownIdentifier(decl.description)
+				guard let analysisMethod = expr.structType.methods[decl.autoname] else {
+					throw CompilerError.analysisError("Missing analyzer method for \(name).\(decl.autoname)")
 				}
 
-				let symbol = Symbol.method(module.name, name, declName, decl.params.params.map {
-					module.analysisModule.inferenceContext.lookup(syntax: $0)?.description ?? "_"
-				})
-
-				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
-				let declChunk = Chunk(
-					name: symbol.description,
-					symbol: symbol,
-					parent: chunk,
-					arity: Byte(decl.params.count),
-					depth: Byte(scopeDepth),
-					path: chunk.path
-				)
-
-				// Define the params for this function
-				for parameter in decl.analyzedParams.paramsAnalyzed {
-					_ = declCompiler.defineLocal(
-						name: parameter.name,
-						compiler: declCompiler,
-						chunk: declChunk
-					)
-				}
-
-				// Emit the body
-				for expr in decl.bodyAnalyzed.stmtsAnalyzed {
-					try expr.accept(declCompiler, declChunk)
-				}
-
-				// End the scope, which pops locals
-				declCompiler.endScope(chunk: declChunk)
-
-				let opcode: Opcode = switch decl.inferenceType {
-				case .function(_, .void):
-					.returnVoid
-				default:
-					.returnValue
-				}
-
-				declChunk.emit(opcode: opcode, line: UInt32(decl.location.end.line))
-
-				guard let analysisMethod = expr.structType.methods[declName] else {
-					throw CompilerError.analysisError("Missing analyzer method for \(name).\(declName)")
-				}
-
-				module.compiledChunks[analysisMethod.symbol] = declChunk
+				try compile(type: name, method: decl, in: chunk, symbol: analysisMethod.symbol)
 			case is AnalyzedVarDecl: ()
 			case is AnalyzedLetDecl: ()
 			default:
@@ -723,7 +679,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// TODO: this
 	}
 
-	public func visit(_ expr: AnalyzedEnumDecl, _: Chunk) throws {
+	public func visit(_ expr: AnalyzedEnumDecl, _ chunk: Chunk) throws {
 		let enumType = Enum(
 			name: expr.nameToken.lexeme,
 			cases: expr.casesAnalyzed.reduce(into: [:]) { res, kase in
@@ -734,6 +690,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 				)
 			}
 		)
+
+		for decl in expr.bodyAnalyzed.declsAnalyzed {
+			guard let decl = decl as? AnalyzedFuncExpr else {
+				continue
+			}
+
+			guard let analysisMethod = expr.analysisEnum.methods[decl.autoname] else {
+				throw CompilerError.analysisError("Missing analyzer method for \(expr.nameToken.lexeme).\(decl.autoname)")
+			}
+
+			try compile(type: expr.nameToken.lexeme, method: decl, in: chunk, symbol: analysisMethod.symbol)
+		}
 
 		module.enums[expr.symbol] = enumType
 	}
@@ -857,6 +825,54 @@ public class ChunkCompiler: AnalyzedVisitor {
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers
+
+	func compile(type: String, method decl: AnalyzedFuncExpr, in chunk: Chunk, symbol: Symbol) throws {
+		guard let declName = decl.name?.lexeme else {
+			throw CompilerError.unknownIdentifier(decl.description)
+		}
+
+		let symbol = Symbol.method(module.name, type, declName, decl.params.params.map {
+			module.analysisModule.inferenceContext.lookup(syntax: $0)?.description ?? "_"
+		})
+
+		let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
+		let declChunk = Chunk(
+			name: symbol.description,
+			symbol: symbol,
+			parent: chunk,
+			arity: Byte(decl.params.count),
+			depth: Byte(scopeDepth),
+			path: chunk.path
+		)
+
+		// Define the params for this function
+		for parameter in decl.analyzedParams.paramsAnalyzed {
+			_ = declCompiler.defineLocal(
+				name: parameter.name,
+				compiler: declCompiler,
+				chunk: declChunk
+			)
+		}
+
+		// Emit the body
+		for expr in decl.bodyAnalyzed.stmtsAnalyzed {
+			try expr.accept(declCompiler, declChunk)
+		}
+
+		// End the scope, which pops locals
+		declCompiler.endScope(chunk: declChunk)
+
+		let opcode: Opcode = switch decl.inferenceType {
+		case .function(_, .void):
+			.returnVoid
+		default:
+			.returnValue
+		}
+
+		declChunk.emit(opcode: opcode, line: UInt32(decl.location.end.line))
+
+		module.compiledChunks[symbol] = declChunk
+	}
 
 	// Lookup the variable by name. If we've got it in our locals, just return the slot
 	// for that variable. If we don't, search parent chunks to see if they've got it. If

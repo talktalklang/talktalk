@@ -627,7 +627,11 @@ struct InferenceVisitor: Visitor {
 		}
 
 		// Make `self` available inside the struct
-		structContext.defineVariable(named: "self", as: .selfVar(typeContext), at: [.synthetic(.struct)])
+		structContext.defineVariable(
+			named: "self",
+			as: .selfVar(.structType(structType)),
+			at: [.synthetic(.struct)]
+		)
 
 		for decl in expr.body.decls {
 			try decl.accept(self, structContext)
@@ -695,9 +699,9 @@ struct InferenceVisitor: Visitor {
 
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
-		case let .selfVar(typeContext):
-			guard let method = typeContext.methods["get"] else {
-				throw InferencerError.cannotInfer("No `get` method for \(typeContext)")
+		case .selfVar(.structType(let type)):
+			guard let method = type.typeContext.methods["get"] else {
+				throw InferencerError.cannotInfer("No `get` method for \(type)")
 			}
 
 			// We can assume it's a method so we can destructure to get our return type
@@ -868,8 +872,6 @@ struct InferenceVisitor: Visitor {
 			throw InferencerError.cannotInfer("No type context found for \(expr)")
 		}
 
-		var cases: [EnumCase] = []
-
 		for typeParameter in expr.typeParams {
 			// Define the name first
 			let typeVar: TypeVariable = enumContext.freshTypeVariable("\(typeParameter.identifier.lexeme)", file: #file, line: #line)
@@ -886,11 +888,13 @@ struct InferenceVisitor: Visitor {
 			try visit(typeParameter, enumContext)
 		}
 
-		enumContext.defineVariable(named: "self", as: .selfVar(typeContext), at: expr.location)
+		let enumType = EnumType(name: expr.nameToken.lexeme, cases: [], typeContext: typeContext)
+
+		enumContext.defineVariable(named: "self", as: .selfVar(.enumType(enumType)), at: expr.location)
 
 		var index = 0
-		for kase in expr.body.decls {
-			if let kase = kase as? EnumCaseDecl {
+		for decl in expr.body.decls {
+			if let kase = decl as? EnumCaseDecl {
 				for type in kase.attachedTypes {
 					try type.accept(self, enumContext)
 				}
@@ -905,12 +909,12 @@ struct InferenceVisitor: Visitor {
 				)
 
 				index += 1
-				cases.append(enumCase)
+				enumType.cases.append(enumCase)
 				context.extend(kase, with: .type(.enumCase(enumCase)))
+			} else {
+				try decl.accept(self, enumContext)
 			}
 		}
-
-		let enumType = EnumType(name: expr.nameToken.lexeme, cases: cases, typeContext: typeContext)
 
 		// Let this enum be referred to by name
 		context.defineVariable(named: enumType.name, as: .enumType(enumType), at: expr.location)

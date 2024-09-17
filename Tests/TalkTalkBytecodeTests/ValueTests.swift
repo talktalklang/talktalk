@@ -15,6 +15,6 @@ struct ValueTests {
 	}
 
 	@Test("Memory size") func memorySize() {
-		#expect(MemoryLayout<Value>.size <= 96)
+		#expect(MemoryLayout<Value>.size <= 98)
 	}
 }

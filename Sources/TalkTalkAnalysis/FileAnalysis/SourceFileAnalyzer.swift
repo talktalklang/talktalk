@@ -607,7 +607,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
-		let bodyContext = context.add(namespace: expr.nameToken.lexeme)
+		let analysisEnumType = AnalysisEnum(
+			name: expr.nameToken.lexeme,
+			methods: [:]
+		)
+
+		let bodyContext = context.addLexicalScope(for: analysisEnumType)
 
 		bodyContext.define(
 			local: "self",
@@ -623,22 +628,39 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-
+			type: type,
 			isMutable: false
 		)
 
-		let analyzedBody = try cast(expr.body.accept(self, context), to: AnalyzedDeclBlock.self)
+		let analyzedBody = try cast(expr.body.accept(self, bodyContext), to: AnalyzedDeclBlock.self)
 
 		var cases: [AnalyzedEnumCaseDecl] = []
 		for decl in analyzedBody.declsAnalyzed {
 			if let decl = decl as? AnalyzedEnumCaseDecl {
 				cases.append(decl)
-			} else {}
+			} else {
+				_ = try decl.accept(self, bodyContext)
+				if let decl = decl as? FuncExpr,
+					 let name = decl.name?.lexeme,
+					 case let .function(params, returns) = context.inferenceContext.lookup(syntax: decl) {
+					analysisEnumType.methods[name] = Method(
+						name: name,
+						symbol: context.symbolGenerator.method(enumType.name, name, parameters: params.map(\.description), source: .internal),
+						params: params,
+						inferenceType: .function(params, returns),
+						location: decl.location,
+						returnTypeID: returns
+					)
+				}
+			}
 		}
+
+		context.define(type: expr.nameToken.lexeme, as: analysisEnumType)
 
 		return AnalyzedEnumDecl(
 			wrapped: expr,
 			symbol: context.symbolGenerator.enum(expr.nameToken.lexeme, source: .internal),
+			analysisEnum: analysisEnumType,
 			casesAnalyzed: cases,
 			inferenceType: type,
 			environment: context,

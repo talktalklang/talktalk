@@ -5,8 +5,9 @@ import TalkTalkSyntax
 
 public struct AnalyzedEnumDecl: EnumDecl, AnalyzedDecl {
 	public let wrapped: EnumDeclSyntax
-
 	public var symbol: Symbol
+	public var analysisEnum: AnalysisEnum
+
 	public var casesAnalyzed: [AnalyzedEnumCaseDecl]
 	public var inferenceType: InferenceType
 	public var environment: Environment
