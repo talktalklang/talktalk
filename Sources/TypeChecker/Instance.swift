@@ -10,7 +10,7 @@ public protocol Instantiatable: Equatable, Hashable {
 	func member(named name: String, in context: InferenceContext) -> InferenceResult?
 }
 
-public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringConvertible {
+public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	public static func == (lhs: Instance<Kind>, rhs: Instance<Kind>) -> Bool {
 		lhs.type == rhs.type && lhs.substitutions == rhs.substitutions
 	}
@@ -64,6 +64,14 @@ public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringCo
 		}
 
 		return instanceMember
+	}
+
+	public var debugDescription: String {
+		if substitutions.isEmpty {
+			"\(type.name)()#\(id)"
+		} else {
+			"\(type.name)<\(substitutions.keys.map(\.debugDescription).joined(separator: ", "))>()#\(id)"
+		}
 	}
 
 	public var description: String {

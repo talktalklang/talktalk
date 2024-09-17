@@ -53,7 +53,7 @@ struct InferenceVisitor: Visitor {
 			case let decl as EnumDecl:
 				context.definePlaceholder(named: decl.nameToken.lexeme, as: .placeholder(context.freshTypeVariable(decl.nameToken.lexeme)), at: decl.location)
 			case let decl as StructDecl:
-				if context.lookup(syntax: decl) == nil {
+				if !context.exists(syntax: decl) {
 					context.definePlaceholder(named: decl.name, as: .placeholder(context.freshTypeVariable(decl.name)), at: decl.location)
 				}
 			case let decl as ProtocolDecl:
@@ -625,6 +625,9 @@ struct InferenceVisitor: Visitor {
 				)
 			)
 		}
+
+		// Make `self` available inside the struct
+		structContext.defineVariable(named: "self", as: .selfVar(typeContext), at: [.synthetic(.struct)])
 
 		for decl in expr.body.decls {
 			try decl.accept(self, structContext)

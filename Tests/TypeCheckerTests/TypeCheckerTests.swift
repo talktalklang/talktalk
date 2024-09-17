@@ -58,8 +58,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 			result == .scheme(
 				Scheme(
 					name: nil,
-					variables: [.typeVar("x", 80)],
-					type: .function([.typeVar("x", 80)], .typeVar("x", 80))
+					variables: [.typeVar("x", 85)],
+					type: .function([.typeVar("x", 85)], .typeVar("x", 85))
 				)
 			)
 		)
@@ -246,7 +246,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 				Scheme(
 					name: "fact",
 					variables: [],
-					type: .function([.typeVar("n", 80)], .base(.int))
+					type: .function([.typeVar("n", 85)], .base(.int))
 				)
 			)
 		)

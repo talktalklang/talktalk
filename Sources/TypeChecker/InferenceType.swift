@@ -118,15 +118,15 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 		case let .base(primitive):
 			"\(primitive)"
 		case let .function(vars, inferenceType):
-			"function(\(vars.map(\.debugDescription).joined(separator: ", "))), returns(\(inferenceType))"
+			"function(\(vars.map(\.debugDescription).joined(separator: ", "))), returns(\(inferenceType.debugDescription))"
 		case let .error(error):
 			"error(\(error))"
 		case let .structType(structType):
 			structType.name + ".Type"
 		case let .kind(type):
-			"\(type).Kind"
+			"\(type.debugDescription).Kind"
 		case let .structInstance(instance):
-			instance.description
+			instance.debugDescription
 		case .any:
 			"any"
 		case let .selfVar(type):

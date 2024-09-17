@@ -311,7 +311,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(
-				lexicalScope.scope.name ?? "<no name>",
+				lexicalScope.type.name,
 				"init",
 				parameters: paramsAnalyzed.paramsAnalyzed.map(\.inferenceType.description),
 				source: .internal
@@ -444,7 +444,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// Note we use .lexicalScope instead of .getLexicalScope() here because we only want top level decls to count
 		// as properties. If we didn't do this then any locals defined inside methods could be created as properties.
 		if let lexicalScope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(lexicalScope.scope.name, expr.name, source: .internal)
+			symbol = context.symbolGenerator.property(lexicalScope.type.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
@@ -473,7 +473,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// Note we use .lexicalScope instead of .getLexicalScope() here because we only want top level decls to count
 		// as properties. If we didn't do this then any locals defined inside methods could be created as properties.
 		if let lexicalScope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(lexicalScope.scope.name, expr.name, source: .internal)
+			symbol = context.symbolGenerator.property(lexicalScope.type.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)

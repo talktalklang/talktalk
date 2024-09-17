@@ -47,8 +47,6 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 			// swiftlint:enable fatal_error
 		}
 		self.typeContext = typeContext
-
-		context.defineVariable(named: "self", as: .selfVar(typeContext), at: [.synthetic(.struct)])
 	}
 
 	public func hash(into hasher: inout Hasher) {

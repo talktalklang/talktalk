@@ -36,42 +36,45 @@ struct MemberExprAnalyzer: Analyzer {
 
 		let propertyName = expr.property
 		var member: (any Member)? = nil
-		var memberType: InferenceType? = nil
 
-		if case let .structInstance(instance) = receiver.typeAnalyzed,
-		   let structType = try context.lookupStruct(named: instance.type.name)
-		{
-			memberType = instance.member(named: propertyName, in: instance.type.context)
+		// If we have an existing lexical scope, use that
+		if let scope = context.getLexicalScope() {
+			member = (scope.methods[propertyName] ?? scope.properties[propertyName])
 		}
 
+		// If it's boxed, we create members
 		if case let .boxedInstance(instance) = receiver.typeAnalyzed {
 			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
 				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
 			}
 
-			memberType = type
+			member = switch type {
+			case let .function(params, returns):
+				Method(
+					name: propertyName,
+					symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
+					params: params,
+					inferenceType: .function(params, returns),
+					location: expr.location,
+					returnTypeID: returns
+				)
+			default:
+				Property(
+					symbol: context.symbolGenerator.property(nil, propertyName, source: .internal),
+					name: propertyName,
+					// swiftlint:disable force_unwrapping
+					inferenceType: type,
+					// swiftlint:enable force_unwrapping
+					location: expr.location,
+					isMutable: false
+				)
+			}
 		}
 
-		member = switch memberType {
-		case let .function(params, returns):
-			Method(
-				name: propertyName,
-				symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
-				params: params,
-				inferenceType: .function(params, returns),
-				location: expr.location,
-				returnTypeID: returns
-			)
-		default:
-			Property(
-				symbol: context.symbolGenerator.property(nil, propertyName, source: .internal),
-				name: propertyName,
-				// swiftlint:disable force_unwrapping
-				inferenceType: type!,
-				// swiftlint:enable force_unwrapping
-				location: expr.location,
-				isMutable: false
-			)
+		if member == nil, case let .structInstance(instance) = receiver.typeAnalyzed {
+			if let structType = try context.lookupStruct(named: instance.type.name) {
+				member = (structType.methods[propertyName] ?? structType.properties[propertyName])
+			}
 		}
 
 		guard let member else {

@@ -131,7 +131,7 @@ struct StructDeclAnalyzer: Analyzer {
 					name: "init",
 					symbol: context.symbolGenerator.method(
 						context.moduleName,
-						structType.name ?? "",
+						structType.name,
 						parameters: structType.properties.keys.map(\.description),
 						source: .internal
 					),
@@ -144,7 +144,7 @@ struct StructDeclAnalyzer: Analyzer {
 			)
 		}
 
-		let bodyContext = context.addLexicalScope(for: type)
+		let bodyContext = context.addLexicalScope(for: structType)
 
 		bodyContext.define(
 			local: "self",
@@ -160,7 +160,7 @@ struct StructDeclAnalyzer: Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-
+			type: .structInstance(.synthesized(type)),
 			isMutable: false
 		)
 

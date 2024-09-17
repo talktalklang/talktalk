@@ -22,7 +22,7 @@ struct FuncExprAnalyzer: Analyzer {
 
 		if let lexicalScope = context.lexicalScope {
 			symbol = context.symbolGenerator.method(
-				lexicalScope.scope.name,
+				lexicalScope.type.name,
 				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal

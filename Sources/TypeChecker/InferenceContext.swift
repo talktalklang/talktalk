@@ -152,6 +152,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 		log("New context with depth \(depth)", prefix: " * ")
 	}
 
+	public func exists(syntax: any Syntax) -> Bool {
+		self[syntax] != nil
+	}
+
 	public func lookup(syntax: any Syntax) -> InferenceType? {
 		guard let result = self[syntax]?.asType(in: self) else {
 			return .error(.init(kind: .unknownError("no type found for: \(syntax.description)"), location: syntax.location))

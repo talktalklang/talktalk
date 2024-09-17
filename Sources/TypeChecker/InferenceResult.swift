@@ -20,7 +20,7 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 	public var debugDescription: String {
 		switch self {
 		case let .scheme(scheme):
-			"scheme(\(scheme))"
+			"scheme(\(scheme.debugDescription))"
 		case let .type(inferenceType):
 			inferenceType.debugDescription
 		}

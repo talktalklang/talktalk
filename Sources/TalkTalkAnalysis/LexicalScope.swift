@@ -7,11 +7,26 @@
 
 import TalkTalkSyntax
 import TypeChecker
+import OrderedCollections
+
+public protocol LexicalScopeType {
+	var name: String { get }
+	var methods: OrderedDictionary<String, Method> { get }
+	var properties: OrderedDictionary<String, Property> { get }
+}
 
 public class LexicalScope {
-	public var scope: any Instantiatable
+	public var type: any LexicalScopeType
 
-	init(scope: any Instantiatable) {
-		self.scope = scope
+	init(type: any LexicalScopeType) {
+		self.type = type
+	}
+
+	var methods: OrderedDictionary<String, Method> {
+		type.methods
+	}
+
+	var properties: OrderedDictionary<String, Property> {
+		type.properties
 	}
 }

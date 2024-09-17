@@ -103,9 +103,9 @@ public class Environment {
 		return environment
 	}
 
-	func addLexicalScope<T: Instantiatable>(for scope: T) -> Environment {
+	func addLexicalScope<T: LexicalScopeType>(for type: T) -> Environment {
 		let environment = Environment(inferenceContext: inferenceContext, symbolGenerator: symbolGenerator, parent: self)
-		environment.lexicalScope = LexicalScope(scope: scope)
+		environment.lexicalScope = LexicalScope(type: type)
 		return environment
 	}
 
@@ -129,14 +129,15 @@ public class Environment {
 	public func define(
 		local: String,
 		as expr: any Syntax,
+		type: InferenceType? = nil,
 		isMutable: Bool,
 		isGlobal: Bool = false
 	) {
 		locals[local] = Binding(
 			name: local,
 			location: expr.location,
-			definition: Definition(location: expr.semanticLocation ?? expr.location, type: inferenceContext.lookup(syntax: expr) ?? .void),
-			type: inferenceContext.lookup(syntax: expr) ?? .void,
+			definition: Definition(location: expr.semanticLocation ?? expr.location, type: type ?? inferenceContext.lookup(syntax: expr) ?? .void),
+			type: type ?? inferenceContext.lookup(syntax: expr) ?? .void,
 			isGlobal: isGlobal,
 			isMutable: isMutable
 		)
