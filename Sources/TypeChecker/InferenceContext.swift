@@ -333,7 +333,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func expecting(_ type: InferenceType, perform: () throws -> Void) rethrows {
-		var oldExpecting = expectation
+		let oldExpecting = expectation
 		expectation = type
 		try perform()
 		expectation = oldExpecting
@@ -620,6 +620,20 @@ public class InferenceContext: CustomDebugStringConvertible {
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
+		case let (.selfVar(.structType(a)), .structInstance(b)), let (.structInstance(b), .selfVar(.structType(a))):
+			if a == b.type {
+				break
+			}
+		case let (.selfVar(.enumType(a)), .enumCase(b)), let (.enumCase(b), .selfVar(.enumType(a))):
+			if a == b.type {
+				break
+			}
+		case let (.structType(a), .structInstance(b)) where a.name == b.type.name:
+			// Unify struct type parameters if needed
+			break
+		case let (.structInstance(a), .structType(b)) where a.type.name == b.name:
+			// Unify struct instance type parameters if needed
+			break
 		case let (.enumType(type), .enumCase(kase)):
 			if type.name != kase.type.name {
 				addError(

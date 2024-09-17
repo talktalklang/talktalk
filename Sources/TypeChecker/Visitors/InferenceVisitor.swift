@@ -93,7 +93,7 @@ struct InferenceVisitor: Visitor {
 		}
 	}
 
-	func handleFuncLike(_ expr: any FuncLike, _ context: InferenceContext) throws {
+	func handleFuncLike(_ expr: any FuncLike, _ context: InferenceContext, isInit: Bool) throws {
 		let childContext = context.childContext()
 
 		try expr.params.accept(self, childContext)
@@ -112,7 +112,16 @@ struct InferenceVisitor: Visitor {
 			return nil
 		}
 
-		var returnType = returns.first ?? childContext[expr.body] ?? .type(.void)
+		var returnType: InferenceResult
+		if isInit {
+			guard let selfVar = context.lookupVariable(named: "self") else {
+				throw InferencerError.cannotInfer("did not find self for \(expr.description)")
+			}
+
+			returnType = .type(selfVar)
+		} else {
+			returnType = returns.first ?? childContext[expr.body] ?? .type(.void)
+		}
 
 		if let typeDecl = expr.typeDecl, expr.name?.lexeme != "init" {
 			try typeDecl.accept(self, context)
@@ -445,7 +454,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: FuncExprSyntax, _ context: InferenceContext) throws {
-		try handleFuncLike(expr, context)
+		try handleFuncLike(expr, context, isInit: false)
 	}
 
 	func visit(_ expr: ParamsExprSyntax, _ context: InferenceContext) throws {
@@ -559,7 +568,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: InitDeclSyntax, _ context: InferenceContext) throws {
-		try handleFuncLike(expr, context)
+		try handleFuncLike(expr, context, isInit: true)
 	}
 
 	func visit(_: ImportStmtSyntax, _ context: InferenceContext) throws {

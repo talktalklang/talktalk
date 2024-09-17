@@ -120,7 +120,7 @@ struct CallConstraint: Constraint {
 		let childContext = structType.context
 //		let childContext = structType.context.childTypeContext(withSelf: structType.context.typeContext!.selfVar)
 		let params: [InferenceType]
-		if let initializer = structType.member(named: "init", in: childContext) {
+		if let initializer = structType.initializers["init"] {
 			switch initializer {
 			case let .scheme(scheme):
 				switch structType.context.instantiate(scheme: scheme) {

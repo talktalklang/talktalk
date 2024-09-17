@@ -13,7 +13,7 @@ struct Dictionary<Key, Value> {
 	var storage: Array<DictionaryEntry<Key, Value>>
 
 	init() {
-		self.storage = []
+		self.storage = Array<DictionaryEntry<Key, Value>>()
 	}
 
 	func get(key: Key) -> Value {
