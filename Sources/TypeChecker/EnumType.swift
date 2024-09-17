@@ -10,7 +10,7 @@ import OrderedCollections
 import TalkTalkSyntax
 
 public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
-	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
 		typeContext.member(named: name)
 	}
 

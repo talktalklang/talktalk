@@ -103,7 +103,7 @@ public class Environment {
 		return environment
 	}
 
-	func addLexicalScope<T: LexicalScopeType>(for type: T) -> Environment {
+	func addLexicalScope(for type: some LexicalScopeType) -> Environment {
 		let environment = Environment(inferenceContext: inferenceContext, symbolGenerator: symbolGenerator, parent: self)
 		environment.lexicalScope = LexicalScope(type: type)
 		return environment

@@ -6,8 +6,8 @@
 //
 
 import TalkTalkAnalysis
-import TypeChecker
 import Testing
+import TypeChecker
 
 struct ProtocolTests: AnalysisTest {
 	@Test("Validates conformance (method)") func validatesConformanceMethod() async throws {

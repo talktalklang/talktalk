@@ -102,12 +102,12 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 
 	public var needsUnboxing: Bool {
 		switch kind {
-		case .method(let type, _, _):
-			return type == nil
-		case .property(let type, _):
-			return type == nil
+		case let .method(type, _, _):
+			type == nil
+		case let .property(type, _):
+			type == nil
 		default:
-			return false
+			false
 		}
 	}
 

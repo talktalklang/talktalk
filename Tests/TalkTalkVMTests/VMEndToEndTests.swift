@@ -471,8 +471,9 @@ struct VMEndToEndTests: VMTest {
 				print(a[i])
 				i += 1
 			}
-			"""
-			, output: TestOutput())
+			""",
+			output: TestOutput()
+		)
 	}
 
 	@Test("+=") func plusEquals() throws {

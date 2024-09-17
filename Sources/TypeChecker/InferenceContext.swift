@@ -13,7 +13,7 @@ typealias VariableID = Int
 
 // If we're inside a type's body, we can save methods/properties in here
 public class TypeContext: Equatable, Hashable {
-	public static func ==(lhs: TypeContext, rhs: TypeContext) -> Bool {
+	public static func == (lhs: TypeContext, rhs: TypeContext) -> Bool {
 		lhs.hashValue == rhs.hashValue
 	}
 

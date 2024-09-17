@@ -14,7 +14,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	}
 
 	public let name: String
-	private(set) public var context: InferenceContext
+	public private(set) var context: InferenceContext
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
 

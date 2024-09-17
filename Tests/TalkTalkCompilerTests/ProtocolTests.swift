@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/15/24.
 //
 
-import Testing
 import TalkTalkBytecode
+import Testing
 
 struct ProtocolTests: CompilerTest {
 	@Test("Can compile a protocol property") func protocolProperty() throws {

@@ -175,6 +175,6 @@ struct EnumTests: TypeCheckerTest {
 
 		// Make sure the method has the right type
 		let fnType = try context.applySubstitutions(to: context.get(fn))
-		#expect(fnType ==	.function([], .base(.bool)))
+		#expect(fnType == .function([], .base(.bool)))
 	}
 }

@@ -18,17 +18,15 @@ struct FuncExprAnalyzer: Analyzer {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
-		let symbol: Symbol
-
-		if let lexicalScope = context.lexicalScope {
-			symbol = context.symbolGenerator.method(
+		let symbol: Symbol = if let lexicalScope = context.lexicalScope {
+			context.symbolGenerator.method(
 				lexicalScope.type.name,
 				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal
 			)
 		} else {
-			symbol = context.symbolGenerator.function(
+			context.symbolGenerator.function(
 				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal

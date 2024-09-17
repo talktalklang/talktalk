@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
+import OrderedCollections
 import TalkTalkBytecode
 import TalkTalkSyntax
-import OrderedCollections
 
 public struct ModuleEnum: ModuleGlobal {
 	public let name: String

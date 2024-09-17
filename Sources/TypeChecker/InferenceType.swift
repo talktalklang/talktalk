@@ -58,8 +58,6 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 	}
 }
 
-
-
 public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
 	// Something we'll fill in later.
 	case typeVar(TypeVariable)

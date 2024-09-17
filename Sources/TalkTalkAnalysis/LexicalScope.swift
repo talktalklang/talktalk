@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import OrderedCollections
 import TalkTalkSyntax
 import TypeChecker
-import OrderedCollections
 
 public protocol LexicalScopeType {
 	var name: String { get }

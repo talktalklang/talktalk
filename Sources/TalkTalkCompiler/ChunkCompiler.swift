@@ -826,7 +826,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// MARK: Helpers
 
-	func compile(type: String, method decl: AnalyzedFuncExpr, in chunk: Chunk, symbol: Symbol) throws {
+	func compile(type: String, method decl: AnalyzedFuncExpr, in chunk: Chunk, symbol _: Symbol) throws {
 		guard let declName = decl.name?.lexeme else {
 			throw CompilerError.unknownIdentifier(decl.description)
 		}

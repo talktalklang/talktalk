@@ -350,4 +350,3 @@ public struct ModuleAnalyzer: Analyzer {
 		return result
 	}
 }
-

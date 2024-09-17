@@ -81,8 +81,8 @@ public class CompilingModule {
 
 				// Copy the external method into our chunks, using the slot we want
 				if case let .external(name) = info.source,
-					 let module = moduleEnvironment[name],
-					 let moduleInfo = module.symbols[symbol]
+				   let module = moduleEnvironment[name],
+				   let moduleInfo = module.symbols[symbol]
 				{
 					chunks[symbol] = module.chunks[moduleInfo.symbol]
 					continue

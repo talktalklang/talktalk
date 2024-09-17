@@ -31,7 +31,8 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if case let .enumType(enumType) = type,
-			 let kase = enumType.cases.first(where: { $0.name == expr.property }) {
+		   let kase = enumType.cases.first(where: { $0.name == expr.property })
+		{
 			return try AnalyzedEnumMemberExpr(
 				wrapped: cast(expr, to: MemberExprSyntax.self),
 				propertyAnalyzed: expr.property,

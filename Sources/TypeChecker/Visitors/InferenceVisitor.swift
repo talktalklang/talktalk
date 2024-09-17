@@ -699,7 +699,7 @@ struct InferenceVisitor: Visitor {
 
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
-		case .selfVar(.structType(let type)):
+		case let .selfVar(.structType(type)):
 			guard let method = type.typeContext.methods["get"] else {
 				throw InferencerError.cannotInfer("No `get` method for \(type)")
 			}

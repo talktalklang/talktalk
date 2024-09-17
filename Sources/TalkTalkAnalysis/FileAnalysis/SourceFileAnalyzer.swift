@@ -603,7 +603,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		guard let type = context.inferenceContext.lookup(syntax: expr),
-					case let .enumType(enumType) = type else {
+		      case let .enumType(enumType) = type
+		else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
@@ -641,8 +642,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			} else {
 				_ = try decl.accept(self, bodyContext)
 				if let decl = decl as? FuncExpr,
-					 let name = decl.name?.lexeme,
-					 case let .function(params, returns) = context.inferenceContext.lookup(syntax: decl) {
+				   let name = decl.name?.lexeme,
+				   case let .function(params, returns) = context.inferenceContext.lookup(syntax: decl)
+				{
 					analysisEnumType.methods[name] = Method(
 						name: name,
 						symbol: context.symbolGenerator.method(enumType.name, name, parameters: params.map(\.description), source: .internal),

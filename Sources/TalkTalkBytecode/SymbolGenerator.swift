@@ -138,6 +138,6 @@ public class SymbolGenerator {
 	}
 
 	public func property(_ type: String?, _ name: String, source: SymbolInfo.Source) -> Symbol {
-		return make(.property(type, name), source: source, group: \.properties)
+		make(.property(type, name), source: source, group: \.properties)
 	}
 }
