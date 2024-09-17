@@ -102,15 +102,16 @@ struct InferenceVisitor: Visitor {
 			try expr.body.accept(self, childContext)
 		}
 
-		let variables = expr.params.params.compactMap {
-			if let type = childContext[$0]?.asType(in: context),
-			   childContext.isFreeVariable(type)
-			{
-				return type
-			}
-
-			return nil
-		}
+//		let variables = expr.params.params.compactMap {
+//			if let type = childContext[$0]?.asType(in: context),
+//			   childContext.isFreeVariable(type)
+//			{
+//				return type
+//			}
+//
+//			return nil
+//		}
+//		let variables = context.typeContext?.typeParameters.map { InferenceType.typeVar($0) } ?? []
 
 		var returnType: InferenceResult
 		if isInit {
@@ -134,7 +135,7 @@ struct InferenceVisitor: Visitor {
 		let funcType = try InferenceResult.scheme(
 			Scheme(
 				name: expr.name?.lexeme,
-				variables: variables,
+				variables: [],
 				type: .function(
 					expr.params.params.map {
 						try childContext.get($0).asType(in: childContext)
@@ -601,7 +602,6 @@ struct InferenceVisitor: Visitor {
 
 		let structContext = structType.context
 		let typeContext = structType.typeContext
-		let structInstance = structType.instantiate(with: [:], in: structContext)
 
 		for typeParameter in expr.typeParameters {
 			// Define the name first
@@ -639,7 +639,7 @@ struct InferenceVisitor: Visitor {
 		// Make `self` available inside the struct
 		structContext.defineVariable(
 			named: "self",
-			as: .selfVar(.structInstance(structInstance)),
+			as: .selfVar(.structType(structType)),
 			at: [.synthetic(.struct)]
 		)
 

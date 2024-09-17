@@ -622,22 +622,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.selfVar(.structInstance(a)), .structInstance(b)), let (.structInstance(b), .selfVar(.structInstance(a))):
-			if a == b {
+		case let (.selfVar(.structType(a)), .structInstance(b)), let (.structInstance(b), .selfVar(.structType(a))):
+			if a == b.type {
 				break
 			}
 
-			unify(.structInstance(a), .structInstance(b), location)
+//			unify(.structType(a), .structType(b.type), location)
 		case let (.selfVar(.enumType(a)), .enumCase(b)), let (.enumCase(b), .selfVar(.enumType(a))):
 			if a == b.type {
 				break
 			}
-		case let (.structType(a), .structInstance(b)) where a.name == b.type.name:
-			// Unify struct type parameters if needed
-			break
-		case let (.structInstance(a), .structType(b)) where a.type.name == b.name:
-			// Unify struct instance type parameters if needed
-			break
 		case let (.enumType(type), .enumCase(kase)):
 			if type.name != kase.type.name {
 				addError(

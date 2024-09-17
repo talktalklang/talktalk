@@ -166,9 +166,11 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
+		guard case let .structType(type) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
+
+		let instance = type.instantiate(with: type.context.substitutions, in: context)
 
 		for (arg, param) in zip(args, params) {
 			let paramType: InferenceType
@@ -212,7 +214,7 @@ struct CallConstraint: Constraint {
 		}
 
 		childContext.unify(
-			.structInstance(instance),
+			.structType(instance.type),
 			returns,
 			location
 		)
