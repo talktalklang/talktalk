@@ -28,7 +28,7 @@ jobs:
     - name: Write version file
       run: |
            echo 'let TalkTalkVersion = "v${{ github.ref_name }}"' > Sources/TalkTalkCore/Version.swift
-    - name: Build release
+    - name: Build for release
       run: Dev/build
     - name: Install the Apple certificate
       env:
@@ -61,6 +61,8 @@ jobs:
         AC_APPLICATION_IDENTITY: ${{ secrets.AC_APPLICATION_IDENTITY }}
       run: |
         gon Dev/gon.hcl
+    - name: Zip up release
+      run: Dev/release
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1

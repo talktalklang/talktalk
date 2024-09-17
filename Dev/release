@@ -1,0 +1,4 @@
+#!/bin/sh
+
+cd .build/release
+zip -r -D ../../../TalkTalk.zip talk TalkTalk_TalkTalkCore.bundle
