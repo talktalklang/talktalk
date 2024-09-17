@@ -39,22 +39,26 @@ extension Parser {
 			}
 		}
 
-		return lhs ?? ParseErrorSyntax(
-			location: [previous, current],
-			message: "Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)",
-			expectation: .expr
-		)
+		return lhs
+			?? ParseErrorSyntax(
+				location: [previous, current],
+				message:
+					"Expected lhs parsing at: \(current) pos:\(current.start) prev: \(previous.lexeme)",
+				expectation: .expr
+			)
 	}
 
 	mutating func grouping(_: Bool) -> any Expr {
 		guard consume(.leftParen) != nil else {
-			return error(at: current, .unexpectedToken(expected: .leftParen, got: current), expectation: .none)
+			return error(
+				at: current, .unexpectedToken(expected: .leftParen, got: current), expectation: .none)
 		}
 
 		let expr = parse(precedence: .assignment)
 
 		guard consume(.rightParen) != nil else {
-			return error(at: current, .unexpectedToken(expected: .rightParen, got: current), expectation: .none)
+			return error(
+				at: current, .unexpectedToken(expected: .rightParen, got: current), expectation: .none)
 		}
 
 		return expr
@@ -121,20 +125,23 @@ extension Parser {
 
 		skip(.newline)
 
-		let typeDecl = if didMatch(.forwardArrow) {
-			// We've got a type decl
-			typeExpr()
-		} else {
-			{
-				_ = error(at: previous, .unexpectedToken(expected: .forwardArrow, got: current), expectation: .type)
-				return TypeExprSyntax(
-					id: nextID(),
-					identifier: .synthetic(.identifier, lexeme: "<missing>"),
-					genericParams: [],
-					location: [previous]
-				)
-			}()
-		}
+		let typeDecl =
+			if didMatch(.forwardArrow) {
+				// We've got a type decl
+				typeExpr()
+			} else {
+				{
+					_ = error(
+						at: previous, .unexpectedToken(expected: .forwardArrow, got: current),
+						expectation: .type)
+					return TypeExprSyntax(
+						id: nextID(),
+						identifier: .synthetic(.identifier, lexeme: "<missing>"),
+						genericParams: [],
+						location: [previous]
+					)
+				}()
+			}
 
 		return FuncSignatureDeclSyntax(
 			funcToken: funcToken,
@@ -162,12 +169,13 @@ extension Parser {
 
 		skip(.newline)
 
-		let typeDecl: (any TypeExpr)? = if didMatch(.forwardArrow) {
-			// We've got a type decl
-			typeExpr()
-		} else {
-			nil
-		}
+		let typeDecl: (any TypeExpr)? =
+			if didMatch(.forwardArrow) {
+				// We've got a type decl
+				typeExpr()
+			} else {
+				nil
+			}
 
 		let body = blockStmt(false)
 
@@ -221,7 +229,10 @@ extension Parser {
 				skip(.newline)
 				let value = parse(precedence: .assignment)
 				skip(.newline)
-				exprs.append(DictionaryElementExprSyntax(id: nextID(), key: expr, value: value, location: [expr.location.start, value.location.end]))
+				exprs.append(
+					DictionaryElementExprSyntax(
+						id: nextID(), key: expr, value: value,
+						location: [expr.location.start, value.location.end]))
 			} else {
 				exprs.append(expr)
 			}
@@ -231,17 +242,18 @@ extension Parser {
 		consume(.rightBracket)
 		skip(.newline)
 
-		let literal: any Expr = if isDictionary {
-			DictionaryLiteralExprSyntax(
-				id: nextID(),
-				// swiftlint:disable force_cast
-				elements: exprs as! [any DictionaryElementExpr],
-				// swiftlint:enable force_cast
-				location: endLocation(i)
-			)
-		} else {
-			ArrayLiteralExprSyntax(id: nextID(), exprs: exprs, location: endLocation(i))
-		}
+		let literal: any Expr =
+			if isDictionary {
+				DictionaryLiteralExprSyntax(
+					id: nextID(),
+					// swiftlint:disable force_cast
+					elements: exprs as! [any DictionaryElementExpr],
+					// swiftlint:enable force_cast
+					location: endLocation(i)
+				)
+			} else {
+				ArrayLiteralExprSyntax(id: nextID(), exprs: exprs, location: endLocation(i))
+			}
 
 		if check(.leftBracket) {
 			return subscriptCall(canAssign, literal)
@@ -270,14 +282,16 @@ extension Parser {
 			}
 
 			do {
-				let stringParserContext: StringParser<String>.Context = check(.interpolationStart) ? .beforeInterpolation : .normal
+				let stringParserContext: StringParser<String>.Context =
+					check(.interpolationStart) ? .beforeInterpolation : .normal
 
 				// swiftlint:disable force_unwrapping
 				let beginString = previous!
 				// swiftlint:enable force_unwrapping
 
 				if didMatch(.interpolationStart) {
-					return interpolatedString(startToken: previous, beginStringToken: beginString, interpolationStart: previous)
+					return interpolatedString(
+						startToken: previous, beginStringToken: beginString, interpolationStart: previous)
 				}
 
 				let value = try StringParser.parse(previous.lexeme, context: stringParserContext)
@@ -297,16 +311,20 @@ extension Parser {
 			return funcExpr()
 		}
 
-		return ParseErrorSyntax(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
+		return ParseErrorSyntax(
+			location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)
 	}
 
-	mutating func interpolatedString(startToken: Token, beginStringToken: Token, interpolationStart: Token) -> any Expr {
+	mutating func interpolatedString(
+		startToken: Token, beginStringToken: Token, interpolationStart: Token
+	) -> any Expr {
 		let i = startLocation(at: startToken)
 		var stringParserContext: StringParser<String>.Context = .beforeInterpolation
 		var segments: [InterpolatedStringSegment] = []
 
 		do {
-			let beginString = try StringParser.parse(beginStringToken.lexeme, context: stringParserContext)
+			let beginString = try StringParser.parse(
+				beginStringToken.lexeme, context: stringParserContext)
 
 			segments.append(.string(beginString, beginStringToken))
 
@@ -348,7 +366,7 @@ extension Parser {
 		// Make sure the interpolation ends
 		guard let end = consume(.interpolationEnd) else {
 			throw ParserError.couldNotParse([
-				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd)),
+				.init(line: current.line, column: current.column, kind: expected(.interpolationEnd))
 			])
 		}
 
@@ -361,7 +379,8 @@ extension Parser {
 
 		let value = parse(precedence: .none)
 
-		return ReturnStmtSyntax(id: nextID(), returnToken: returnToken, location: endLocation(i), value: value)
+		return ReturnStmtSyntax(
+			id: nextID(), returnToken: returnToken, location: endLocation(i), value: value)
 	}
 
 	mutating func structExpr(_: Bool) -> StructExpr {
@@ -402,6 +421,26 @@ extension Parser {
 		return types
 	}
 
+	mutating func blockExpr(allowParams: Bool) -> BlockStmtSyntax {
+		let i = startLocation()
+		skip(.newline)
+
+		var params: ParamsExprSyntax?
+		if allowParams, upcoming(.in, before: .rightBrace) {
+			params = parameterList(terminator: .in)
+		}
+
+		var body: [any Stmt] = []
+		while !check(.eof), !check(.rightBrace) {
+			body.append(stmt())
+			skip(.newline)
+		}
+
+		consume(.rightBrace)
+
+		return BlockStmtSyntax(id: nextID(), stmts: body, params: params, location: endLocation(i))
+	}
+
 	mutating func blockStmt(_: Bool) -> BlockStmtSyntax {
 		let i = startLocation()
 		skip(.newline)
@@ -416,14 +455,15 @@ extension Parser {
 
 		consume(.rightBrace)
 
-		return BlockStmtSyntax(id: nextID(), stmts: body, location: endLocation(i))
+		return BlockStmtSyntax(id: nextID(), stmts: body, params: nil, location: endLocation(i))
 	}
 
 	mutating func variable(_ canAssign: Bool) -> any Expr {
 		let i = startLocation()
 
 		guard let token = consume(.identifier) else {
-			return ParseErrorSyntax(location: [current], message: "Expected identifier for variable", expectation: .variable)
+			return ParseErrorSyntax(
+				location: [current], message: "Expected identifier for variable", expectation: .variable)
 		}
 
 		let lhs = VarExprSyntax(id: nextID(), token: token, location: endLocation(i))
@@ -446,7 +486,8 @@ extension Parser {
 			skip(.newline)
 			let genericParams = typeParameters()
 			skip(.newline)
-			return TypeExprSyntax(id: nextID(), identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
+			return TypeExprSyntax(
+				id: nextID(), identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
 		}
 
 		return lhs
@@ -458,7 +499,7 @@ extension Parser {
 		let i = startLocation(at: lhs.location.start)
 
 		skip(.newline)
-		consume(.leftParen) // This is how we got here.
+		consume(.leftParen)  // This is how we got here.
 		skip(.newline)
 
 		var args: [Argument] = []
@@ -476,9 +517,12 @@ extension Parser {
 		let args = argumentList(terminator: .rightBracket)
 
 		if didMatch(.equals), canAssign {
-			let assignee = SubscriptExprSyntax(id: nextID(), receiver: lhs, args: args, location: endLocation(i))
+			let assignee = SubscriptExprSyntax(
+				id: nextID(), receiver: lhs, args: args, location: endLocation(i))
 			let value = parse(precedence: .assignment)
-			return DefExprSyntax(id: nextID(), receiver: assignee, value: value, location: [assignee.location.start, value.location.end])
+			return DefExprSyntax(
+				id: nextID(), receiver: assignee, value: value,
+				location: [assignee.location.start, value.location.end])
 		} else if didMatch(.equals) {
 			return error(at: current, .cannotAssign, expectation: .none)
 		} else {
@@ -556,11 +600,12 @@ extension Parser {
 		}
 
 		let add = parse(precedence: .assignment)
-		let binaryExpr = if op.kind == .plusEquals {
-			BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .plus, location: add.location)
-		} else {
-			BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .minus, location: add.location)
-		}
+		let binaryExpr =
+			if op.kind == .plusEquals {
+				BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .plus, location: add.location)
+			} else {
+				BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .minus, location: add.location)
+			}
 
 		return DefExprSyntax(id: nextID(), receiver: lhs, value: binaryExpr, location: endLocation(i))
 	}
@@ -570,32 +615,34 @@ extension Parser {
 
 		skip(.newline)
 
-		let op: BinaryOperator = switch current.kind {
-		case .bangEqual: .bangEqual
-		case .equalEqual: .equalEqual
-		case .plus: .plus
-		case .minus: .minus
-		case .star: .star
-		case .slash: .slash
-		case .less: .less
-		case .lessEqual: .lessEqual
-		case .greater: .greater
-		case .greaterEqual: .greaterEqual
-		case .is: .is
-		default:
+		let op: BinaryOperator =
+			switch current.kind {
+			case .bangEqual: .bangEqual
+			case .equalEqual: .equalEqual
+			case .plus: .plus
+			case .minus: .minus
+			case .star: .star
+			case .slash: .slash
+			case .less: .less
+			case .lessEqual: .lessEqual
+			case .greater: .greater
+			case .greaterEqual: .greaterEqual
+			case .is: .is
+			default:
+				// swiftlint:disable fatal_error
+				fatalError("unreachable")
 			// swiftlint:disable fatal_error
-			fatalError("unreachable")
-			// swiftlint:disable fatal_error
-		}
+			}
 
 		advance()
 		skip(.newline)
 
-		let rhs: any Expr = if op == .is {
-			typeExpr()
-		} else {
-			parse(precedence: current.kind.rule.precedence + 1)
-		}
+		let rhs: any Expr =
+			if op == .is {
+				typeExpr()
+			} else {
+				parse(precedence: current.kind.rule.precedence + 1)
+			}
 
 		skip(.newline)
 

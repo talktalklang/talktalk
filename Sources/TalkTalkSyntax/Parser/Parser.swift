@@ -174,8 +174,8 @@ public struct Parser {
 			return letVarDecl(.let)
 		}
 
-		if check(.leftBrace) {
-			return blockStmt(false)
+		if didMatch(.leftBrace) {
+			return blockExpr(allowParams: true)
 		}
 
 		// At this level, we want an ExprStmt, not just a normal expr
@@ -257,9 +257,9 @@ public struct Parser {
 		return args
 	}
 
-	func upcoming(_ type: Token.Kind) -> Bool {
+	func upcoming(_ type: Token.Kind, before: Token.Kind = .rightParen) -> Bool {
 		var copy = self
-		while !copy.check(.eof), !copy.check(.rightParen) {
+		while !copy.check(.eof), !copy.check(before) {
 			if copy.check(type) {
 				return true
 			}

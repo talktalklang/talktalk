@@ -379,6 +379,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			wrapped: stmt.cast(BlockStmtSyntax.self),
 			inferenceType: context.inferenceContext.lookup(syntax: stmt) ?? .any,
 			stmtsAnalyzed: bodyAnalyzed,
+			paramsAnalyzed: nil,
 			environment: context
 		)
 	}
