@@ -20,7 +20,7 @@ extension TypeCheckerTest {
 		let inferencer = try Inferencer(imports: imports)
 		let context = inferencer.infer(expr).solve().solveDeferred()
 
-		#expect(context.errors.count == expectedErrors)
+		#expect(context.errors.count == expectedErrors, "expected \(expectedErrors) errors. got \(context.errors.count): \(context.errors)")
 
 		return context
 	}

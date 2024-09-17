@@ -39,11 +39,19 @@ public extension Parser {
 			typeParams = typeParameters()
 		}
 
+		var conformances: [TypeExprSyntax] = []
+		if didMatch(.colon) {
+			repeat {
+				conformances.append(typeExpr().cast(TypeExprSyntax.self))
+			} while didMatch(.comma)
+		}
+
 		let body = declBlock(context: .enum)
 
 		return EnumDeclSyntax(
 			enumToken: token,
 			nameToken: nameToken,
+			conformances: conformances,
 			body: body,
 			typeParams: typeParams,
 			id: nextID(),

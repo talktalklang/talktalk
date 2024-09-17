@@ -630,10 +630,11 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.boxedInstance(boxed), .structInstance(instance)):
-			()
-		case let (.structInstance(instance), .boxedInstance(boxed)):
-			()
+		case (.boxedInstance(_), .structInstance(_)),
+				 (.structInstance(_), .boxedInstance(_)),
+				 (.boxedInstance(_), .enumCase(_)),
+				 (.enumCase(_), .boxedInstance(_)):
+			() // The boxed thing is type erased so don't want to type it.
 		default:
 			if a != b, a != .any, b != .any {
 				addError(

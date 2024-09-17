@@ -177,4 +177,34 @@ struct EnumTests: TypeCheckerTest {
 		let fnType = try context.applySubstitutions(to: context.get(fn))
 		#expect(fnType == .function([], .base(.bool)))
 	}
+
+	@Test("Can infer protocol conformance") func protocols() throws {
+		let syntax = try Parser.parse(
+			"""
+			protocol Greetable {
+				func fizz() -> String
+			}
+
+			enum Thing: Greetable {
+				case foo
+				case bar
+
+				func fizz() {
+					"buzz"
+				}
+			}
+
+			func greet(greetable: Greetable) {
+				greetable.fizz()
+			}
+
+			greet(Thing.foo)
+			"""
+		)
+
+		let context = try infer(syntax)
+		let ret = context[syntax[3]]!.asType(in: context)
+
+		#expect(ret == .base(.string))
+	}
 }

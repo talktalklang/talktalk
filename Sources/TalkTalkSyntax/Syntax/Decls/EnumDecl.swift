@@ -3,11 +3,13 @@
 public protocol EnumDecl: Decl {
 	// Insert EnumDecl specific fields here
 	var nameToken: Token { get }
+	var conformances: [TypeExprSyntax] { get }
 }
 
 public struct EnumDeclSyntax: EnumDecl {
 	public var enumToken: Token
 	public var nameToken: Token
+	public var conformances: [TypeExprSyntax]
 	public var body: DeclBlockSyntax
 	public var typeParams: [TypeExprSyntax]
 

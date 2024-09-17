@@ -8,7 +8,7 @@
 import Testing
 
 struct ProtocolTests: VMTest {
-	@Test("Properties") func properties() throws {
+	@Test("Properties on structs") func propertiesStruct() throws {
 		let result = try run(
 			"""
 			protocol Greetable { var name: String }
@@ -28,7 +28,7 @@ struct ProtocolTests: VMTest {
 		#expect(result == .string("hi, pat"))
 	}
 
-	@Test("Methods") func methods() throws {
+	@Test("Methods on structs") func methodsOnStructs() throws {
 		let result = try run(
 			"""
 			protocol Greetable { func name() -> String }
@@ -44,6 +44,30 @@ struct ProtocolTests: VMTest {
 			}
 
 			return greet(greetable: Person())
+			"""
+		)
+
+		#expect(result == .string("hi, pat"))
+	}
+
+	@Test("Methods on enums") func methodsOnEnums() throws {
+		let result = try run(
+			"""
+			protocol Greetable { func name() -> String }
+
+			enum Person: Greetable {
+				case main
+
+				func name() -> String {
+					"pat"
+				}
+			}
+
+			func greet(greetable: Greetable) {
+				"hi, " + greetable.name()
+			}
+
+			return greet(greetable: Person.main)
 			"""
 		)
 
