@@ -1,0 +1,7 @@
+protocol Iterator<Element> {
+	func next() -> Element
+}
+
+protocol Iterable<Element> {
+	func makeIterator() -> Iterator<Element>
+}

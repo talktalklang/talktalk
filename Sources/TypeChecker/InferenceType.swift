@@ -14,6 +14,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 
 	public let name: String
 	let typeContext: TypeContext
+	public var conformances: [ProtocolType] { typeContext.conformances }
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)

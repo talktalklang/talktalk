@@ -45,6 +45,7 @@ public extension Library {
 			name: "Standard",
 			location: libraryURL.appending(path: "Standard"),
 			paths: [
+				"Iterable.talk",
 				"Int.talk",
 				"String.talk",
 				"Array.talk",

@@ -679,7 +679,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return try AnalyzedEnumCaseDecl(
 			wrapped: expr,
-			enumName: enumCase.typeName,
+			enumName: enumCase.type.name,
 			attachedTypesAnalyzed: expr.attachedTypes.map { try cast($0.accept(self, context), to: AnalyzedTypeExpr.self) },
 			inferenceType: type,
 			environment: context
@@ -839,6 +839,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			inferenceType: type,
 			environment: context
 		)
+	}
+
+	public func visit(_ expr: ForStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	// GENERATOR_INSERTION

@@ -137,9 +137,16 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		try Pattern(
-			type: context.get(expr).asType(in: context),
-			arguments: []
+		let type = context.expectation ?? context[expr]?.asType(in: context) ?? .any
+
+		// If it's a var expr in a pattern, we want to define its value for this scope
+		context.defineVariable(named: expr.name, as: type, at: expr.location)
+
+		return Pattern(
+			type: type,
+			arguments: [
+				.value(type)
+			]
 		)
 	}
 
@@ -318,6 +325,10 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: InterpolatedStringExprSyntax, _: InferenceContext) throws -> Pattern {
+		throw PatternError.invalid(expr.description)
+	}
+
+	func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> Pattern {
 		throw PatternError.invalid(expr.description)
 	}
 

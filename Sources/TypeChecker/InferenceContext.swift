@@ -22,6 +22,7 @@ public class TypeContext: Equatable, Hashable {
 	var initializers: OrderedDictionary<String, InferenceResult>
 	var properties: OrderedDictionary<String, InferenceResult>
 	var typeParameters: [TypeVariable]
+	var conformances: [ProtocolType] = []
 
 	init(
 		name: String,
@@ -331,6 +332,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 		)
 	}
 
+	func expecting(_ type: InferenceType, perform: () throws -> Void) rethrows {
+		var oldExpecting = expectation
+		expectation = type
+		try perform()
+		expectation = oldExpecting
+	}
+
 	func expecting(_ type: InferenceType) -> InferenceContext {
 		InferenceContext(
 			parent: self,
@@ -539,7 +547,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let .enumCase(kase):
 			return .enumCase(
 				EnumCase(
-					typeName: kase.typeName,
+					type: kase.type,
 					name: kase.name,
 					index: kase.index,
 					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
@@ -613,7 +621,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				unify(subA.value, subB.value, location)
 			}
 		case let (.enumType(type), .enumCase(kase)):
-			if type.name != kase.typeName {
+			if type.name != kase.type.name {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),
@@ -622,7 +630,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			}
 		case let (.enumCase(kase), .enumType(type)):
-			if type.name != kase.typeName {
+			if type.name != kase.type.name {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),
@@ -635,6 +643,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 				 (.boxedInstance(_), .enumCase(_)),
 				 (.enumCase(_), .boxedInstance(_)):
 			() // The boxed thing is type erased so don't want to type it.
+		case let (.pattern(pattern), rhs):
+			unify(pattern.type, rhs, location)
+		case let (lhs, .pattern(pattern)):
+			unify(lhs, pattern.type, location)
 		default:
 			if a != b, a != .any, b != .any {
 				addError(

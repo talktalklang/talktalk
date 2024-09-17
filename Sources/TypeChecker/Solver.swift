@@ -16,9 +16,14 @@ struct Solver {
 			switch constraint.solve(in: context) {
 			case let .error(diagnostics):
 				context.log(diagnostics.map(\.message).joined(separator: ", "), prefix: " ! ")
+				self.diagnostics.append(contentsOf: diagnostics)
 			case .ok:
 				context.log(constraint.result(in: context), prefix: "<- ")
 			}
+		}
+
+		for diagnostic in diagnostics where diagnostic.severity == .error {
+//			context.addError(.init(kind: .diagnosticError(diagnostic), location: diagnostic.location))
 		}
 
 		return context

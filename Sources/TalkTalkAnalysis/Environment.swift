@@ -232,12 +232,16 @@ public class Environment {
 	}
 
 	func importStdlib() throws {
+		_ = symbolGenerator.import(.struct("Standard", "Iterable"), from: "Standard")
+		_ = symbolGenerator.import(.struct("Standard", "Iterator"), from: "Standard")
 		_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
 		_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
 		_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
 		_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
 
-		guard let arrayType = inferenceContext.namedVariables["Array"],
+		guard let iterableType = inferenceContext.namedVariables["Iterable"],
+					let iteratorType = inferenceContext.namedVariables["Iterator"],
+					let arrayType = inferenceContext.namedVariables["Array"],
 		      let stringType = inferenceContext.namedVariables["String"],
 		      let intType = inferenceContext.namedVariables["Int"],
 		      let dictType = inferenceContext.namedVariables["Dictionary"]
@@ -249,6 +253,28 @@ public class Environment {
 			for symbol in stdlib.symbols {
 				_ = symbolGenerator.import(symbol.key, from: "Standard")
 			}
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Iterable"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Iterable",
+					location: [.synthetic(.identifier)],
+					type: iterableType,
+					externalModule: stdlib
+				)
+			)
+
+			importBinding(
+				as: symbolGenerator.import(.struct("Standard", "Iterator"), from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: "Iterator",
+					location: [.synthetic(.identifier)],
+					type: iteratorType,
+					externalModule: stdlib
+				)
+			)
 
 			importBinding(
 				as: symbolGenerator.import(.struct("Standard", "Array"), from: "Standard"),

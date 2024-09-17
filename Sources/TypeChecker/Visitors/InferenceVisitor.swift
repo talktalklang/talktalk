@@ -318,11 +318,9 @@ struct InferenceVisitor: Visitor {
 
 		let args = try expr.args.map { try context.get($0) }
 
-		let returns: InferenceType = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee),
-		                                case let .enumType(type) = context.lookupVariable(named: enumCase.typeName)
-		{
+		let returns: InferenceType = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee) {
 			// If we determine the callee to be an enum case, then its type is actually the enum type.
-			InferenceType.enumType(type)
+			InferenceType.enumType(enumCase.type)
 		} else {
 			InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -372,6 +370,8 @@ struct InferenceVisitor: Visitor {
 			)
 		} else if let type = context.lookupPrimitive(named: expr.name) {
 			context.extend(expr, with: .type(.kind(type)))
+		} else if let expectation = context.expectation {
+			context.extend(expr, with: .type(expectation))
 		} else {
 			let typeVar = context.freshTypeVariable(expr.name)
 			context.definePlaceholder(named: expr.name, as: .placeholder(typeVar), at: expr.location)
@@ -619,8 +619,8 @@ struct InferenceVisitor: Visitor {
 
 			try context.constraints.add(
 				TypeConformanceConstraint(
-					type: structInferenceType,
-					conformsTo: context.get(typeParameter).asType(in: context),
+					type: .type(structInferenceType),
+					conformsTo: context.get(typeParameter),
 					location: typeParameter.location
 				)
 			)
@@ -808,6 +808,22 @@ struct InferenceVisitor: Visitor {
 		let protocolTypeVar = context.lookupVariable(named: expr.name.lexeme)!
 		// swiftlint:enable force_unwrapping
 
+		for typeParameter in expr.typeParameters {
+			// Define the name first
+			let typeVar: TypeVariable = childContext.freshTypeVariable("\(typeParameter.identifier.lexeme)", file: #file, line: #line)
+
+			typeContext.typeParameters.append(typeVar)
+
+			// Add this type to the struct's named variables for resolution
+			childContext.defineVariable(
+				named: typeParameter.identifier.lexeme,
+				as: .typeVar(typeVar),
+				at: typeParameter.location
+			)
+
+			try visit(typeParameter, childContext)
+		}
+
 		context.constraints.add(
 			EqualityConstraint(
 				lhs: .type(.protocol(protocolType)),
@@ -900,7 +916,7 @@ struct InferenceVisitor: Visitor {
 				}
 
 				let enumCase = try EnumCase(
-					typeName: expr.nameToken.lexeme,
+					type: enumType,
 					name: kase.nameToken.lexeme,
 					index: index,
 					attachedTypes: kase.attachedTypes.map {
@@ -967,5 +983,56 @@ struct InferenceVisitor: Visitor {
 		context.extend(expr, with: .type(.base(.string)))
 	}
 
+	public func visit(_ expr: ForStmtSyntax, _ context: Context) throws {
+		let bodyContext = context.childContext()
+
+		// Visit the sequence so we can get its type
+		try expr.sequence.accept(self, context)
+		let sequenceType = try context.get(expr.sequence)
+
+		// Get the builtin iterable protocol
+		guard let iterable = context.lookupVariable(named: "Iterable") else {
+			throw InferencerError.cannotInfer("Could not find builtin Iterable protocol")
+		}
+
+		context.constraints.add(TypeConformanceConstraint(type: sequenceType, conformsTo: .type(iterable), location: expr.location))
+
+		guard let expectedElementType = genericParameter(for: sequenceType.asType(in: context), named: "Element", in: context) else {
+			throw InferencerError.parametersNotAvailable("Could not determine Element type of \(sequenceType)")
+		}
+
+		try bodyContext.expecting(expectedElementType) {
+			try inferPattern(from: expr.element, in: bodyContext)
+		}
+
+		let elementType = try bodyContext.get(expr.element)
+		context.constraints.add(.equality(.type(expectedElementType), elementType, at: expr.element.location))
+
+		try expr.body.accept(self, bodyContext)
+
+		context.extend(expr, with: .type(.void))
+	}
+
 	// GENERATOR_INSERTION
+
+	func genericParameter(for type: InferenceType, named name: String, in context: InferenceContext) -> InferenceType? {
+		switch type {
+		case .structType(let structType):
+			return structType.context.lookupVariable(named: name)
+		case .structInstance(let instance):
+			return instance.relatedType(named: name) ?? instance.type.context.lookupVariable(named: name)
+		case .enumType(let enumType):
+			if let typeVar = enumType.typeContext.typeParameters.first(where: { $0.name == name }) {
+				return .typeVar(typeVar)
+			}
+		case .enumCase(let enumCase):
+			if let typeVar = enumCase.type.typeContext.typeParameters.first(where: { $0.name == name }) {
+				return .typeVar(typeVar)
+			}
+		default:
+			()
+		}
+
+		return nil
+	}
 }

@@ -151,6 +151,10 @@ public struct Parser {
 			return matchStmt()
 		}
 
+		if didMatch(.for) {
+			return forStmt()
+		}
+
 		if didMatch(.import) {
 			return importStmt()
 		}

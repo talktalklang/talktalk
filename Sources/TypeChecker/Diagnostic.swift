@@ -7,7 +7,7 @@
 
 import TalkTalkSyntax
 
-struct Diagnostic: Equatable {
+public struct Diagnostic: Equatable, Hashable {
 	enum Severity: Equatable {
 		case error, warning, info
 	}

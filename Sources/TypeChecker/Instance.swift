@@ -7,6 +7,7 @@
 
 public protocol Instantiatable: Equatable, Hashable {
 	var name: String { get }
+	var conformances: [ProtocolType] { get }
 	func member(named name: String, in context: InferenceContext) -> InferenceResult?
 }
 

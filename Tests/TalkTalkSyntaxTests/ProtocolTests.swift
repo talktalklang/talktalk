@@ -69,4 +69,19 @@ struct ProtocolTests {
 		#expect(structDef.name == "Fizz")
 		#expect(structDef.conformances[0].identifier.lexeme == "Buzz")
 	}
+
+	@Test("Can parse a type requirement") func typeRequirement() throws {
+		let parsed = try Parser.parse(
+			"""
+			protocol Basic<Wrapped> {
+				var name: Wrapped
+			}
+			"""
+		)
+
+		let protocolDef = try #require(parsed[0] as? ProtocolDeclSyntax)
+		#expect(protocolDef.name.lexeme == "Basic")
+		#expect(protocolDef.typeParameters.count == 1)
+		#expect(protocolDef.typeParameters[0].identifier.lexeme == "Wrapped")
+	}
 }

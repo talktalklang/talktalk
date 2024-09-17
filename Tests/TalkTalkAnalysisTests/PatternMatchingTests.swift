@@ -98,7 +98,7 @@ struct PatternMatchingTests: AnalysisTest {
 	}
 
 	@Test("Can analyze a match statement") func matchStatement() async throws {
-		let ast = try await ast("""
+		let asts = try await asts("""
 		enum Thing {
 			case foo(String)
 			case bar(int)
@@ -112,12 +112,14 @@ struct PatternMatchingTests: AnalysisTest {
 		}
 		""")
 
-		let stmt = ast.cast(AnalyzedMatchStatement.self)
+		let enumType = EnumType.extract(from: .type(asts[0].typeAnalyzed))!
+
+		let stmt = asts[1].cast(AnalyzedMatchStatement.self)
 		let foo = stmt.casesAnalyzed[0].patternAnalyzed!
 		#expect(foo.inferenceType == .pattern(
 			Pattern(
 				type: .enumCase(EnumCase(
-					typeName: "Thing",
+					type: enumType,
 					name: "foo",
 					index: 0,
 					attachedTypes: [.base(.string)]
@@ -130,7 +132,7 @@ struct PatternMatchingTests: AnalysisTest {
 		#expect(bar.inferenceType == .pattern(
 			Pattern(
 				type: .enumCase(EnumCase(
-					typeName: "Thing",
+					type: enumType,
 					name: "bar",
 					index: 1,
 					attachedTypes: [.base(.int)]

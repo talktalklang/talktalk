@@ -328,5 +328,9 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
+	@StringBuilder public func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> String {
+		dump(expr)
+	}
+
 	// GENERATOR_INSERTION
 }

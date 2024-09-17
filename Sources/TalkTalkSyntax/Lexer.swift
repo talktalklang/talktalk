@@ -27,7 +27,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     `if`, `in`, call, `else`,
 		     `while`, `var`, `let`, initialize,
 		     `struct`, `self`, `Self`, `import`, `is`, `protocol`,
-		     `enum`, match, `case`
+		     `enum`, match, `case`, `for`
 
 		case newline
 		case eof
@@ -289,6 +289,7 @@ public struct Lexer {
 		case "enum": make(.enum)
 		case "match": make(.match)
 		case "case": make(.case)
+		case "for": make(.for)
 		default:
 			make(.identifier)
 		}

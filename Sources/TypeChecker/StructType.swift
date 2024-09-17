@@ -17,6 +17,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	public private(set) var context: InferenceContext
 	var typeBindings: [TypeVariable: InferenceType] = [:]
 	let typeContext: TypeContext
+	public var conformances: [ProtocolType] { typeContext.conformances }
 
 	public static func extractType(from result: InferenceResult?) -> StructType? {
 		if case let .type(.structType(structType)) = result {
@@ -85,7 +86,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	}
 
 	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
-		if let member = properties[name] ?? methods[name] {
+		if let member = properties[name] ?? methods[name] ?? initializers[name] {
 			return .type(context.applySubstitutions(to: member.asType(in: context)))
 		}
 

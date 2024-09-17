@@ -25,13 +25,13 @@ public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 }
 
 public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
-	public var typeName: String
+	public var type: EnumType
 	public var name: String
 	public let index: Int
 	public var attachedTypes: [InferenceType]
 
-	init(typeName: String, name: String, index: Int, attachedTypes: [InferenceType]) {
-		self.typeName = typeName
+	init(type: EnumType, name: String, index: Int, attachedTypes: [InferenceType]) {
+		self.type = type
 		self.name = name
 		self.index = index
 		self.attachedTypes = attachedTypes

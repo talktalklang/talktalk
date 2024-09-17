@@ -31,6 +31,33 @@ extension Parser {
 		)
 	}
 
+	mutating func forStmt() -> any Stmt {
+		let forToken = previous!
+		let i = startLocation(at: forToken)
+
+		guard let element = consume(.identifier) else {
+			return error(at: current, expected(.identifier))
+		}
+
+		guard let inToken = consume(.in) else {
+			return error(at: current, expected(.in))
+		}
+
+		let sequence = expr()
+
+		let body = blockStmt(false)
+
+		return ForStmtSyntax(
+			element: VarExprSyntax(id: nextID(), token: element, location: [element]),
+			sequence: sequence,
+			body: body,
+			forToken: forToken,
+			inToken: inToken,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
 	mutating func whileStmt() -> any Stmt {
 		let whileToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: whileToken)
