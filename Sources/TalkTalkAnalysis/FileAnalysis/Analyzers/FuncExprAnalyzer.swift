@@ -20,9 +20,9 @@ struct FuncExprAnalyzer: Analyzer {
 
 		let symbol: Symbol
 
-		if let typeContext = context.inferenceContext.typeContext {
+		if let lexicalScope = context.lexicalScope {
 			symbol = context.symbolGenerator.method(
-				typeContext.name,
+				lexicalScope.scope.name,
 				expr.autoname,
 				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
 				source: .internal
