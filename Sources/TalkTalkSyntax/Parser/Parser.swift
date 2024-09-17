@@ -174,6 +174,10 @@ public struct Parser {
 			return letVarDecl(.let)
 		}
 
+		if check(.leftBrace) {
+			return blockStmt(false)
+		}
+
 		// At this level, we want an ExprStmt, not just a normal expr
 		let expr = expr()
 		return ExprStmtSyntax(id: nextID(), expr: expr, location: expr.location)
