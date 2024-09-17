@@ -144,6 +144,33 @@ struct TalkTalkLexerTests {
 		#expect(lexer.collect().map(\.kind) == [.forwardArrow, .eof])
 	}
 
+	@Test("Dangling comment") func danglingComment() throws {
+		var lexer = Lexer("""
+				// a
+		123 		//		 b
+
+		123
+		""", preserveComments: true)
+
+		let tokens = lexer.collect()
+
+		#expect(tokens.map(\.kind) == [
+			.newline,
+			.int,
+			.newline,
+			.int,
+			.eof
+		])
+
+		#expect(tokens.map(\.line) == [
+			1,
+			1,
+			3,
+			3,
+			3
+		])
+	}
+
 	@Test("Comments") func comments() async throws {
 		var lexer = Lexer("""
 		// This is a comment

@@ -294,9 +294,7 @@ struct FormatterVisitor: Visitor {
 	func visit(_ expr: InitDeclSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
 
-		let start: Doc = context.lastNode == nil ? .empty : .hardline
-
-		let result = try start <> text("init(")
+		let result = try text("init(")
 			<> group(expr.params.accept(self, context))
 			<> text(")")
 			<+> expr.body.accept(self, context)
@@ -402,16 +400,35 @@ struct FormatterVisitor: Visitor {
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
 
-	func visit(_: ProtocolDeclSyntax, _: Context) throws -> Doc {
-		.empty // TODO:
+	func visit(_ syntax: ProtocolDeclSyntax, _ context: Context) throws -> Doc {
+		return try text("protocol") <+> text(syntax.name.lexeme) <+> syntax.body.accept(self, context)
 	}
 
-	func visit(_: ProtocolBodyDeclSyntax, _: Context) throws -> Doc {
-		.empty // TODO:
+	func visit(_ body: ProtocolBodyDeclSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: body, context: context)
+
+		let leading = comments.leading.isEmpty ? .empty : comments.leading
+
+		return try text("{")
+			<> .line
+			<> comments.dangling
+			<> .nest(1, leading <> preservingNewlines(body.decls, in: context))
+			<> .line
+			<> text("}") <> comments.trailing
 	}
 
-	func visit(_: FuncSignatureDeclSyntax, _: Context) throws -> Doc {
-		.empty // TODO:
+	func visit(_ decl: FuncSignatureDeclSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: decl, context: context)
+
+		let start = comments.leading <> text("func") <+> text(decl.name.lexeme)
+		let params = try decl.params.accept(self, context)
+		let returns = try text(" ->") <+> decl.returnDecl.accept(self, context)
+
+		return comments.leading
+			<> start
+			<> params
+			<> returns
+			<> comments.dangling <> comments.trailing
 	}
 
 	func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> Doc {

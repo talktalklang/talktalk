@@ -37,6 +37,7 @@ public struct Parser {
 	var lexer: Lexer
 	var current: Token
 	var previous: Token!
+	var previousBeforeNewline: Token?
 	var lastID = 0
 
 	// The location stack is used for tracking source locations while parsing
@@ -268,6 +269,10 @@ public struct Parser {
 	mutating func advance() {
 		previous = current
 		current = lexer.next()
+
+		if previous.kind != .newline {
+			previousBeforeNewline = previous
+		}
 	}
 
 	@discardableResult mutating func consume(_ kinds: Token.Kind...) -> Token? {
@@ -387,7 +392,7 @@ public struct Parser {
 		return SourceLocation(
 			path: start.path,
 			start: start,
-			end: previous
+			end: previousBeforeNewline ?? previous
 		)
 	}
 }
