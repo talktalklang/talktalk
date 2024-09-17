@@ -49,8 +49,6 @@ struct FuncExprAnalyzer: Analyzer {
 			environment.define(parameter: param.name, as: param)
 		}
 
-
-
 		let returns = if case let .function(_, fnReturns) = type {
 			fnReturns
 		} else {
@@ -71,7 +69,7 @@ struct FuncExprAnalyzer: Analyzer {
 
 		return try AnalyzedFuncExpr(
 			symbol: symbol,
-			type: type ?? .any,
+			type: type,
 			wrapped: cast(expr, to: FuncExprSyntax.self),
 			analyzedParams: params,
 			bodyAnalyzed: cast(body, to: AnalyzedBlockStmt.self),

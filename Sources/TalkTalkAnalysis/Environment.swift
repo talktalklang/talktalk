@@ -18,7 +18,7 @@ public class Environment {
 	let inferenceContext: InferenceContext
 
 	public var isModuleScope: Bool
-	public var lexicalScope: AnyLexicalScope?
+	public var lexicalScope: LexicalScope?
 	public var captures: [Capture]
 	public var capturedValues: [Binding]
 	public var importedModules: [AnalysisModule]
@@ -105,7 +105,7 @@ public class Environment {
 
 	func addLexicalScope<T: Instantiatable>(for scope: T) -> Environment {
 		let environment = Environment(inferenceContext: inferenceContext, symbolGenerator: symbolGenerator, parent: self)
-		environment.lexicalScope = AnyLexicalScope(scope: scope)
+		environment.lexicalScope = LexicalScope(scope: scope)
 		return environment
 	}
 
@@ -171,7 +171,7 @@ public class Environment {
 		return parent?.infer(name)
 	}
 
-	func getLexicalScope() -> AnyLexicalScope? {
+	func getLexicalScope() -> LexicalScope? {
 		lexicalScope ?? parent?.getLexicalScope()
 	}
 

@@ -417,8 +417,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
 		for decl in expr.decls {
-			guard let declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
-				continue
+			let analyzed = try decl.accept(self, context)
+			guard let declAnalyzed = analyzed as? any AnalyzedDecl else {
+				throw AnalyzerError.unexpectedCast(expected: "any AnalyzedDecl", received: analyzed.description)
 			}
 
 			declsAnalyzed.append(declAnalyzed)
@@ -440,8 +441,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		var symbol: Symbol?
 		var isGlobal = false
 
-		if let typeContext = context.inferenceContext.typeContext {
-			symbol = context.symbolGenerator.property(typeContext.name, expr.name, source: .internal)
+		// Note we use .lexicalScope instead of .getLexicalScope() here because we only want top level decls to count
+		// as properties. If we didn't do this then any locals defined inside methods could be created as properties.
+		if let lexicalScope = context.lexicalScope {
+			symbol = context.symbolGenerator.property(lexicalScope.scope.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
@@ -467,9 +470,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		var symbol: Symbol?
 		var isGlobal = false
 
-		if let typeContext = context.inferenceContext.typeContext {
-			// FIXME: This isn't what we want because it will generate property symbols for locals inside methods
-			symbol = context.symbolGenerator.property(typeContext.name, expr.name, source: .internal)
+		// Note we use .lexicalScope instead of .getLexicalScope() here because we only want top level decls to count
+		// as properties. If we didn't do this then any locals defined inside methods could be created as properties.
+		if let lexicalScope = context.lexicalScope {
+			symbol = context.symbolGenerator.property(lexicalScope.scope.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)

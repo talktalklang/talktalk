@@ -144,7 +144,7 @@ struct StructDeclAnalyzer: Analyzer {
 			)
 		}
 
-		let bodyContext = context.add(namespace: structType.name ?? "")
+		let bodyContext = context.addLexicalScope(for: type)
 
 		bodyContext.define(
 			local: "self",
