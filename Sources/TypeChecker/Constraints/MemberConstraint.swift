@@ -97,25 +97,25 @@ struct MemberConstraint: Constraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
-		case let .selfVar(.structType(type)):
-			guard var member = type.typeContext.member(named: name) else {
+		case let .selfVar(.structInstance(instance)):
+			guard var member = instance.member(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
 			}
 
-			if case let .structType(structType) = member.asType(in: context) {
-				member = .type(.structInstance(structType.instantiate(with: [:], in: context)))
+			if case let .structType(structType) = member {
+				member = .structInstance(structType.instantiate(with: [:], in: context))
 			}
 
 			context.unify(
 				context.applySubstitutions(to: resolvedType),
-				context.applySubstitutions(to: member.asType(in: context)),
+				context.applySubstitutions(to: member),
 				location
 			)
 
 			context.unify(
-				context.applySubstitutions(to: member.asType(in: context)),
+				context.applySubstitutions(to: member),
 				context.applySubstitutions(to: resolvedType),
 				location
 			)

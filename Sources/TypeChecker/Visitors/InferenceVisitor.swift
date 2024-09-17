@@ -601,6 +601,7 @@ struct InferenceVisitor: Visitor {
 
 		let structContext = structType.context
 		let typeContext = structType.typeContext
+		let structInstance = structType.instantiate(with: [:], in: structContext)
 
 		for typeParameter in expr.typeParameters {
 			// Define the name first
@@ -638,7 +639,7 @@ struct InferenceVisitor: Visitor {
 		// Make `self` available inside the struct
 		structContext.defineVariable(
 			named: "self",
-			as: .selfVar(.structType(structType)),
+			as: .selfVar(.structInstance(structInstance)),
 			at: [.synthetic(.struct)]
 		)
 

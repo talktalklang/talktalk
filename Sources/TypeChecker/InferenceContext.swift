@@ -553,6 +553,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
 				)
 			)
+		case let .selfVar(type):
+			return applySubstitutions(to: type, with: substitutions)
 		default:
 			return type // Base/error/void types don't get substitutions
 		}
@@ -576,7 +578,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		let a = applySubstitutions(to: typeA)
 		let b = applySubstitutions(to: typeB)
 
-		log("Unifying \(typeA) <-> \(typeB)", prefix: " & ")
+		log("Unifying \(typeA.debugDescription) <-> \(typeB.debugDescription)", prefix: " & ")
 
 		switch (a, b) {
 		case let (.selfVar(type), .typeVar(typeVar)):
@@ -620,10 +622,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.selfVar(.structType(a)), .structInstance(b)), let (.structInstance(b), .selfVar(.structType(a))):
-			if a == b.type {
+		case let (.selfVar(.structInstance(a)), .structInstance(b)), let (.structInstance(b), .selfVar(.structInstance(a))):
+			if a == b {
 				break
 			}
+
+			unify(.structInstance(a), .structInstance(b), location)
 		case let (.selfVar(.enumType(a)), .enumCase(b)), let (.enumCase(b), .selfVar(.enumType(a))):
 			if a == b.type {
 				break
@@ -696,9 +700,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-		}
+//		}
 	}
 }

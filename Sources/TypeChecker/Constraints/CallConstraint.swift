@@ -115,6 +115,7 @@ struct CallConstraint: Constraint {
 		return .ok
 	}
 
+	// Handle inits for structs
 	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
 		// Create a child context to evaluate args and params so we don't get leaks
 		let childContext = structType.context
