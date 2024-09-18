@@ -81,7 +81,7 @@ struct MemberConstraint: Constraint {
 				resolvedType,
 				location
 			)
-		case let .structInstance(instance):
+		case let .instance(instance):
 			// It's an instance member
 			guard var member = instance.member(named: name, in: context) else {
 				return .error(
@@ -90,7 +90,15 @@ struct MemberConstraint: Constraint {
 			}
 
 			if case let .structType(structType) = member {
-				member = .structInstance(structType.instantiate(with: instance.substitutions, in: context))
+				member = .instance(structType.instantiate(with: instance.substitutions, in: context))
+			}
+
+			if case let .enumType(enumType) = member {
+				member = .instance(enumType.instantiate(with: instance.substitutions, in: context))
+			}
+
+			if case let .protocol(protocolType) = member {
+				member = .instance(protocolType.instantiate(with: instance.substitutions, in: context))
 			}
 
 			context.unify(
@@ -105,8 +113,16 @@ struct MemberConstraint: Constraint {
 				)
 			}
 
-			if case let .structType(structType) = member.asType(in: context) {
-				member = .type(.structInstance(structType.instantiate(with: [:], in: context)))
+			if case let .type(.structType(structType)) = member {
+				member = .type(.instance(structType.instantiate(with: [:], in: context)))
+			}
+
+			if case let .type(.enumType(enumType)) = member {
+				member = .type(.instance(enumType.instantiate(with: [:], in: context)))
+			}
+
+			if case let .type(.protocol(protocolType)) = member {
+				member = .type(.instance(protocolType.instantiate(with: [:], in: context)))
 			}
 
 			context.unify(
@@ -127,8 +143,16 @@ struct MemberConstraint: Constraint {
 				)
 			}
 
-			if case let .structType(structType) = member.asType(in: context) {
-				member = .type(.structInstance(structType.instantiate(with: [:], in: context)))
+			if case let .type(.structType(structType)) = member {
+				member = .type(.instance(structType.instantiate(with: [:], in: context)))
+			}
+
+			if case let .type(.enumType(enumType)) = member {
+				member = .type(.instance(enumType.instantiate(with: [:], in: context)))
+			}
+
+			if case let .type(.protocol(protocolType)) = member {
+				member = .type(.instance(protocolType.instantiate(with: [:], in: context)))
 			}
 
 			context.unify(
@@ -139,24 +163,6 @@ struct MemberConstraint: Constraint {
 
 			context.unify(
 				context.applySubstitutions(to: member.asType(in: context)),
-				context.applySubstitutions(to: resolvedType),
-				location
-			)
-		case let .boxedInstance(protocolType):
-			guard let member = protocolType.member(named: name, in: context) else {
-				return .error(
-					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
-				)
-			}
-
-			context.unify(
-				context.applySubstitutions(to: resolvedType),
-				context.applySubstitutions(to: member),
-				location
-			)
-
-			context.unify(
-				context.applySubstitutions(to: member),
 				context.applySubstitutions(to: resolvedType),
 				location
 			)

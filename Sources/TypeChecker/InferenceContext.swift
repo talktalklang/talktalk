@@ -532,8 +532,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 				params.map { applySubstitutions(to: $0, with: substitutions) },
 				applySubstitutions(to: returning, with: substitutions)
 			)
-		case let .structInstance(instance):
-			return .structInstance(instance)
+		case let .instance(instance):
+			return .instance(instance)
 		case let .enumType(type):
 			return .enumType(EnumType(
 				name: type.name,
@@ -616,13 +616,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let (.structType(a), .structType(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
-		case let (.structInstance(a), .structInstance(b)) where a.type.name == b.type.name:
+		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.selfVar(.structType(a)), .structInstance(b)), let (.structInstance(b), .selfVar(.structType(a))):
-			if a == b.type {
+		case let (.selfVar(type), .instance(b)), let (.instance(b), .selfVar(type)):
+			if a == type {
 				break
 			}
 
@@ -649,10 +649,11 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case (.boxedInstance(_), .structInstance(_)),
-				 (.structInstance(_), .boxedInstance(_)),
-				 (.boxedInstance(_), .enumCase(_)),
-				 (.enumCase(_), .boxedInstance(_)):
+		case let (.instance(lhs), .instance(rhs)):
+			if lhs.type is ProtocolType || rhs.type is ProtocolType {
+				break
+			}
+		case let (.enumCase(kase), .instance(instance)), let (.instance(instance), .enumCase(kase)):
 			() // The boxed thing is type erased so don't want to type it.
 		case let (.pattern(pattern), rhs):
 			unify(pattern.type, rhs, location)

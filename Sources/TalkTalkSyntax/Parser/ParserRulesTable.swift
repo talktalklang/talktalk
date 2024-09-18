@@ -91,6 +91,7 @@ extension Token.Kind {
 		case .interpolationEnd: .none
 		case .comment: .none
 		case .for: .none
+		case .questionMark: .none
 		}
 	}
 }

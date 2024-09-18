@@ -21,7 +21,6 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	public var name: String
 	public var cases: [EnumCase]
 	public var conformances: [ProtocolType] { typeContext.conformances }
-	var typeBindings: [TypeVariable: InferenceType] = [:]
 	public let context: InferenceContext
 	public let typeContext: TypeContext
 

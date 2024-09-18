@@ -119,7 +119,7 @@ struct InferenceVisitor: Visitor {
 			try typeDecl.accept(self, context)
 			let inferredReturnType = returnType
 			let explicitReturnType = try memberTypeFrom(expr: typeDecl, in: context)
-			returnType = .type(explicitReturnType)
+			returnType = explicitReturnType
 			context.addConstraint(.equality(inferredReturnType, returnType, at: typeDecl.location))
 		}
 
@@ -164,7 +164,7 @@ struct InferenceVisitor: Visitor {
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]) \(type) == \(value!)", prefix: " @ ")
 			context.constraints.add(.equality(typeExpr!, value!, at: expr.location))
 		case let (typeExpr, nil) where typeExpr != nil:
-			type = try .type(memberTypeFrom(expr: expr.typeExpr!, in: context))
+			type = try memberTypeFrom(expr: expr.typeExpr!, in: context)
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]), already has type specified: \(type)", prefix: " @ ")
 		case let (nil, value) where value != nil:
 			type = value!
@@ -182,7 +182,7 @@ struct InferenceVisitor: Visitor {
 
 	// Return a type from a type expression, suitable for an instance member. This can include things
 	// like generic parameter substitutions.
-	func memberTypeFrom(expr: any TypeExpr, in context: InferenceContext) throws -> InferenceType {
+	func memberTypeFrom(expr: any TypeExpr, in context: InferenceContext) throws -> InferenceResult {
 		let type: InferenceType
 		switch expr.identifier.lexeme {
 		case "int":
@@ -205,7 +205,7 @@ struct InferenceVisitor: Visitor {
 					substitutions[typeParam] = context[paramSyntax]?.asType(in: context)
 				}
 
-				type = .structInstance(
+				type = .instance(
 					Instance(
 						id: context.nextIdentifier(named: structType.name),
 						type: structType,
@@ -213,7 +213,7 @@ struct InferenceVisitor: Visitor {
 					)
 				)
 			case let .protocol(protocolType):
-				type = .boxedInstance(Instance(id: context.nextIdentifier(named: protocolType.name), type: protocolType, substitutions: [:]))
+				type = .instance(Instance(id: context.nextIdentifier(named: protocolType.name), type: protocolType, substitutions: [:]))
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
 			case let .enumType(enumType):
@@ -225,7 +225,29 @@ struct InferenceVisitor: Visitor {
 			}
 		}
 
-		return type
+		if expr.isOptional {
+			guard case let .enumType(optionalType) = context.lookupVariable(named: "Optional") else {
+				// swiftlint:disable fatal_error
+				fatalError("Could not find builtin type Optional")
+				// swiftlint:enable fatal_error
+			}
+
+			let t = optionalType.typeContext.typeParameters.first!
+
+			return .type(
+				.instance(
+					Instance(
+						id: context.nextIdentifier(named: "Optional"),
+						type: optionalType,
+						substitutions: [
+							t: type
+						]
+					)
+				)
+			)
+		}
+
+		return .type(type)
 	}
 
 	// Get a type from a type expression. Note that this might ignore things like generic parameters
@@ -458,14 +480,14 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: ParamSyntax, _ context: InferenceContext) throws {
-		let type: InferenceType = if let typeExpr = expr.type {
+		let type: InferenceResult = if let typeExpr = expr.type {
 			try memberTypeFrom(expr: typeExpr, in: context)
 		} else {
-			.typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line))
+			.type(.typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line)))
 		}
 
-		context.defineVariable(named: expr.name, as: type, at: expr.location)
-		context.extend(expr, with: .type(type))
+		context.defineVariable(named: expr.name, as: type.asType(in: context), at: expr.location)
+		context.extend(expr, with: type)
 	}
 
 	func visit(_: GenericParamsSyntax, _: InferenceContext) throws {
@@ -680,7 +702,7 @@ struct InferenceVisitor: Visitor {
 			arrayInstance.substitutions[elementTypeParameter] = elementType
 		}
 
-		let returns = InferenceType.structInstance(arrayInstance)
+		let returns = InferenceType.instance(arrayInstance)
 
 		context.addConstraint(
 			.call(
@@ -727,9 +749,9 @@ struct InferenceVisitor: Visitor {
 			context.addConstraint(
 				.call(method, args, returns: getReturns, at: expr.location)
 			)
-		case let .structInstance(structInstance):
-			guard let method = structInstance.member(named: "get", in: context) else {
-				throw InferencerError.cannotInfer("No `get` meethod for \(structInstance)")
+		case let .instance(instance):
+			guard let method = instance.member(named: "get", in: context) else {
+				throw InferencerError.cannotInfer("No `get` meethod for \(instance)")
 			}
 
 			context.addConstraint(
@@ -774,7 +796,7 @@ struct InferenceVisitor: Visitor {
 			dictInstance.substitutions[valueType] = try context.get(element.value).asType(in: context)
 		}
 
-		let returns = InferenceType.structInstance(dictInstance)
+		let returns = InferenceType.instance(dictInstance)
 
 		context.addConstraint(
 			.call(
@@ -1021,7 +1043,7 @@ struct InferenceVisitor: Visitor {
 		switch type {
 		case .structType(let structType):
 			return structType.context.lookupVariable(named: name)
-		case .structInstance(let instance):
+		case .instance(let instance):
 			return instance.relatedType(named: name) ?? instance.type.context.lookupVariable(named: name)
 		case .enumType(let enumType):
 			if let typeVar = enumType.typeContext.typeParameters.first(where: { $0.name == name }) {

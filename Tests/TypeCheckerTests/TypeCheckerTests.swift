@@ -54,15 +54,24 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
 
-		#expect(
-			result == .scheme(
-				Scheme(
-					name: nil,
-					variables: [.typeVar("x", 99)],
-					type: .function([.typeVar("x", 99)], .typeVar("x", 99))
-				)
-			)
-		)
+		guard case let .scheme(scheme) = result else {
+			#expect(Bool(false), "Result is not a scheme")
+			return
+		}
+
+		#expect(scheme.name == nil)
+		#expect(scheme.variables.count == 1)
+
+		let typeVar = TypeVariable.extract(from: scheme.variables[0])!
+		let id = typeVar.id
+
+		guard case let .function(params, returns) = scheme.type else {
+			#expect(Bool(false), "scheme type is not a function")
+			return
+		}
+
+		#expect(params == [.typeVar("x", id)])
+		#expect(returns == .typeVar("x", id))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {
@@ -246,7 +255,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 				Scheme(
 					name: "fact",
 					variables: [],
-					type: .function([.typeVar("n", 99)], .base(.int))
+					type: .function([.typeVar("n", 101)], .base(.int))
 				)
 			)
 		)

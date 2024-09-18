@@ -16,6 +16,26 @@ public protocol Instantiatable: Equatable, Hashable {
 }
 
 public extension Instantiatable {
+	func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> Instance {
+		let instance = Instance(
+			id: context.nextIdentifier(named: name),
+			type: self,
+			substitutions: typeContext.typeParameters.reduce(into: [:]) {
+				if let sub = substitutions[$1] {
+					$0[$1] = sub
+				} else if context.substitutions[$1] != nil {
+					$0[$1] = context.applySubstitutions(to: .typeVar($1))
+				} else {
+					$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
+				}
+			}
+		)
+
+		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
+
+		return instance
+	}
+
 	var typeParameters: [TypeVariable] {
 		typeContext.typeParameters
 	}
@@ -29,28 +49,28 @@ public extension Instantiatable {
 	}
 }
 
-public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
-	public static func == (lhs: Instance<Kind>, rhs: Instance<Kind>) -> Bool {
-		lhs.type == rhs.type && lhs.substitutions == rhs.substitutions
+public class Instance: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
+	public static func == (lhs: Instance, rhs: Instance) -> Bool {
+		lhs.type.hashValue == rhs.type.hashValue && lhs.substitutions == rhs.substitutions
 	}
 
 	let id: Int
-	public let type: Kind
+	public let type: any Instantiatable
 	var substitutions: OrderedDictionary<TypeVariable, InferenceType>
 
-	public static func extract(from type: InferenceType) -> Instance<StructType>? {
-		if case let .structInstance(instance) = type {
-			return instance
+	public static func extract(from type: InferenceType) -> Instance? {
+		guard case let .instance(instance) = type else {
+			return nil
 		}
 
-		return nil
+		return instance
 	}
 
-	public static func synthesized(_ type: Kind) -> Instance {
+	public static func synthesized(_ type: any Instantiatable) -> Instance {
 		Instance(id: -9999, type: type, substitutions: [:])
 	}
 
-	init(id: Int, type: Kind, substitutions: OrderedDictionary<TypeVariable, InferenceType>) {
+	init(id: Int, type: any Instantiatable, substitutions: OrderedDictionary<TypeVariable, InferenceType>) {
 		self.id = id
 		self.type = type
 		self.substitutions = substitutions
@@ -102,7 +122,7 @@ public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringCo
 	}
 
 	public func hash(into hasher: inout Hasher) {
-		hasher.combine(type)
+		hasher.combine(type.hashValue)
 		hasher.combine(substitutions)
 	}
 }

@@ -156,7 +156,7 @@ struct CallConstraint: Constraint {
 		}
 
 		let instance = structType.instantiate(with: substitutions, in: context)
-		context.unify(returns, .structInstance(instance), location)
+		context.unify(returns, .instance(instance), location)
 
 		if args.count != params.count {
 			return .error([
@@ -168,7 +168,7 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
+		guard case let .instance(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
 
@@ -190,11 +190,11 @@ struct CallConstraint: Constraint {
 				childContext.unify(type, arg.asType(in: childContext), location)
 			case let .structType(structType):
 				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
-				if case let .structInstance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
+				if case let .instance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions
 				}
 
-				paramType = .structInstance(
+				paramType = .instance(
 					structType.instantiate(
 						with: substitutions,
 						in: context
@@ -214,7 +214,7 @@ struct CallConstraint: Constraint {
 		}
 
 		childContext.unify(
-			.structInstance(instance),
+			.instance(instance),
 			returns,
 			location
 		)

@@ -6,6 +6,7 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
 
 struct MemberExprAnalyzer: Analyzer {
 	let expr: any MemberExpr
@@ -53,7 +54,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		// If it's boxed, we create members
-		if case let .boxedInstance(instance) = receiver.typeAnalyzed {
+		if case let .instance(instance) = receiver.typeAnalyzed, instance.type is ProtocolType {
 			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
 				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
 			}
@@ -81,9 +82,9 @@ struct MemberExprAnalyzer: Analyzer {
 			}
 		}
 
-		if member == nil, case let .structInstance(instance) = receiver.typeAnalyzed {
-			if let structType = try context.type(named: instance.type.name) {
-				member = (structType.methods[propertyName] ?? structType.properties[propertyName])
+		if member == nil, case let .instance(instance) = receiver.typeAnalyzed {
+			if let type = try context.type(named: instance.type.name) {
+				member = (type.methods[propertyName] ?? type.properties[propertyName])
 			}
 		}
 

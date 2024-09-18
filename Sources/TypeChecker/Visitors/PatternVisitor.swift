@@ -179,7 +179,9 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		try Pattern(
+		try inferenceVisitor.visit(expr, context)
+
+		return try Pattern(
 			type: context.get(expr).asType(in: context),
 			arguments: []
 		)

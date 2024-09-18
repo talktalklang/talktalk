@@ -348,7 +348,10 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		var result = [make(.keyword, from: expr.caseToken), make(.property, from: expr.nameToken)]
+		var result = [
+			make(.keyword, from: expr.caseToken),
+			make(.property, from: expr.nameToken)
+		]
 
 		for type in expr.attachedTypes {
 			try result.append(contentsOf: type.accept(self, context))

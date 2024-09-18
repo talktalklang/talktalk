@@ -233,6 +233,7 @@ public class Environment {
 
 	func importStdlib() throws {
 		let types = [
+			"Optional",
 			"Iterable",
 			"Iterator",
 			"Array",

@@ -211,10 +211,13 @@ public struct Parser {
 					typeParameters = self.typeParameters()
 				}
 
+				let isOptional = didMatch(.questionMark)
+
 				type = TypeExprSyntax(
 					id: nextID(),
 					identifier: typeID,
 					genericParams: typeParameters,
+					isOptional: isOptional,
 					location: endLocation(i)
 				)
 			}

@@ -15,7 +15,6 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 
 	public let name: String
 	public private(set) var context: InferenceContext
-	var typeBindings: [TypeVariable: InferenceType] = [:]
 	public let typeContext: TypeContext
 	public var conformances: [ProtocolType] { typeContext.conformances }
 
@@ -28,8 +27,8 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	}
 
 	public static func extractInstance(from result: InferenceResult?) -> StructType? {
-		if case let .type(.structInstance(instance)) = result {
-			return instance.type
+		if case let .type(.instance(instance)) = result {
+			return instance.type as? StructType
 		}
 
 		return nil
@@ -59,26 +58,6 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 
 	public var description: String {
 		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
-	}
-
-	func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> Instance<StructType> {
-		let instance = Instance(
-			id: context.nextIdentifier(named: name),
-			type: self,
-			substitutions: typeContext.typeParameters.reduce(into: [:]) {
-				if let sub = substitutions[$1] {
-					$0[$1] = sub
-				} else if context.substitutions[$1] != nil {
-					$0[$1] = context.applySubstitutions(to: .typeVar($1))
-				} else {
-					$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
-				}
-			}
-		)
-
-		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
-
-		return instance
 	}
 
 	public var initializers: OrderedDictionary<String, InferenceResult> {

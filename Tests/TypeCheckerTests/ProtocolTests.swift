@@ -53,7 +53,7 @@ struct ProtocolTests {
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([
-			.boxedInstance(Instance(id: 0, type: protocolType, substitutions: [:])),
+			.instance(Instance(id: 0, type: protocolType, substitutions: [:])),
 		], .base(.string)))
 	}
 
@@ -77,7 +77,7 @@ struct ProtocolTests {
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([
-			.boxedInstance(Instance(id: 0, type: protocolType, substitutions: [:])),
+			.instance(Instance(id: 0, type: protocolType, substitutions: [:])),
 		], .base(.string)))
 	}
 }

@@ -110,7 +110,7 @@ struct StructDeclAnalyzer: Analyzer {
 					params: structType.properties.values.map(\.inferenceType),
 					inferenceType: .function(structType.properties.values.map(\.inferenceType), .structType(type)),
 					location: decl.location,
-					returnTypeID: .structInstance(.synthesized(type)),
+					returnTypeID: .instance(.synthesized(type)),
 					isSynthetic: true
 				)
 			)
@@ -121,7 +121,7 @@ struct StructDeclAnalyzer: Analyzer {
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				inferenceType: .structInstance(.synthesized(type)),
+				inferenceType: .instance(.synthesized(type)),
 				wrapped: VarExprSyntax(
 					id: -8,
 					token: .synthetic(.self),
@@ -132,7 +132,7 @@ struct StructDeclAnalyzer: Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-			type: .structInstance(.synthesized(type)),
+			type: .instance(.synthesized(type)),
 			isMutable: false
 		)
 

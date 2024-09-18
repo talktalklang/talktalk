@@ -9,7 +9,7 @@ public protocol VarDecl: Decl, VarLetDecl {
 	var token: Token { get }
 	var name: String { get }
 	var nameToken: Token { get }
-	var typeExpr: (any TypeExpr)? { get }
+	var typeExpr: TypeExprSyntax? { get }
 	var value: (any Expr)? { get }
 }
 
@@ -18,7 +18,7 @@ public struct VarDeclSyntax: VarDecl {
 	public var token: Token
 	public var name: String
 	public var nameToken: Token
-	public var typeExpr: (any TypeExpr)?
+	public var typeExpr: TypeExprSyntax?
 	public var value: (any Expr)?
 
 	public var location: SourceLocation

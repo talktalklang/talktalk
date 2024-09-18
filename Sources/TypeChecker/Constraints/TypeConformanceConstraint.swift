@@ -47,7 +47,7 @@ struct TypeConformanceConstraint: Constraint {
 		switch type {
 		case .structType(let structType):
 			return checkConformance(of: structType, to: protocolType, in: structType.context)
-		case .structInstance(let instance):
+		case .instance(let instance):
 			return checkConformance(of: instance.type, to: protocolType, in: instance.type.context)
 		case .enumType(let enumType):
 			return checkConformance(of: enumType, to: protocolType, in: context)
