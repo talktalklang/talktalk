@@ -137,7 +137,7 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		let type = context.expectation ?? context[expr]?.asType(in: context) ?? .any
+		let type = context.matchContext?.target ?? context.expectation ?? context[expr]?.asType(in: context) ?? .any
 
 		// If it's a var expr in a pattern, we want to define its value for this scope
 		context.defineVariable(named: expr.name, as: type, at: expr.location)
@@ -145,7 +145,7 @@ struct PatternVisitor: Visitor {
 		return Pattern(
 			type: type,
 			arguments: [
-				.value(type)
+				.variable(expr.name, type)
 			]
 		)
 	}

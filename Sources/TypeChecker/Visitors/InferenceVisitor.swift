@@ -539,6 +539,11 @@ struct InferenceVisitor: Visitor {
 			returns = member
 		case let .type(.enumCase(enumCase)):
 			returns = .enumCase(enumCase)
+		case let .type(.instance(instance)) where instance.type is EnumType:
+			// swiftlint:disable force_unwrapping force_cast
+			let enumType = instance.type as! EnumType
+			returns = enumType.member(named: expr.property, in: context)!.asType(in: context)
+			// swiftlint:enable force_unwrapping force_cast
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}

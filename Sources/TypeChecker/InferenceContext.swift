@@ -604,6 +604,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 			bind(typeVar: a, to: b)
 		case let (.kind(a), .kind(.typeVar(b))):
 			bind(typeVar: b, to: a)
+
+		// MARK: Instantiable stuff
+
 		case let (.instantiatable(a), .instantiatable(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
@@ -612,18 +615,20 @@ public class InferenceContext: CustomDebugStringConvertible {
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.selfVar(type), .instance(b)), let (.instance(b), .selfVar(type)):
-			if a == type {
+		case let (.selfVar(.instantiatable(selfVar)), .instance(instance)), let (.instance(instance), .selfVar(.instantiatable(selfVar))):
+			if selfVar.name == instance.type.name {
 				break
 			}
 
-//			unify(.structType(a), .structType(b.type), location)
+		// MARK: Enum special cases
+
 		case let (.selfVar(.instantiatable(a as EnumType)), .enumCase(b)),
 				 let (.enumCase(b), .selfVar(.instantiatable(a as EnumType))):
 			if a == b.type {
 				break
 			}
-		case let (.instantiatable(type as EnumType), .enumCase(kase)):
+		case let (.instantiatable(type as EnumType), .enumCase(kase)),
+				 let (.enumCase(kase), .instantiatable(type as EnumType)):
 			if type.name != kase.type.name {
 				addError(
 					.init(
@@ -632,11 +637,40 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.enumCase(kase), .instantiatable(type as EnumType)):
-			if type.name != kase.type.name {
+		case let (.enumCase(a), .enumCase(b)):
+			for (lhs, rhs) in zip(a.attachedTypes, b.attachedTypes) {
+				unify(lhs, rhs, location)
+			}
+		case let (.instantiatable(type as EnumType), .enumCase(kase)),
+				 let (.enumCase(kase), .instantiatable(type as EnumType)):
+			if kase.type != type {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),
+						location: location
+					)
+				)
+			}
+		case let (.instantiatable(type as EnumType), .instance(instance)),
+			let (.instance(instance), .instantiatable(type as EnumType)):
+			if case let enumType = instance.type as? EnumType, enumType == type {
+				break
+			}
+
+			addError(
+				.init(
+					kind: .unificationError(typeA, typeB),
+					location: location
+				)
+			)
+		// Handle case where we're trying to unify an enum case with a protocol
+		case let (.instance(instance), .enumCase(kase)),
+				 let (.enumCase(kase), .instance(instance)):
+			if let type = instance.type as? ProtocolType {
+				deferConstraint(
+					TypeConformanceConstraint(
+						type: .type(.instantiatable(kase.type)),
+						conformsTo: .type(.instantiatable(type)),
 						location: location
 					)
 				)
@@ -645,8 +679,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 			if lhs.type is ProtocolType || rhs.type is ProtocolType {
 				break
 			}
-		case let (.enumCase(kase), .instance(instance)), let (.instance(instance), .enumCase(kase)):
-			() // The boxed thing is type erased so don't want to type it.
 		case let (.pattern(pattern), rhs):
 			unify(pattern.type, rhs, location)
 		case let (lhs, .pattern(pattern)):
@@ -654,7 +686,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case (.void, .void):
 			() // This is chill
 		default:
-			if a != b, a != .any, b != .any {
+			if !(a <= b), a != .any, b != .any {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),

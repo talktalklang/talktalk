@@ -9,7 +9,7 @@ import Testing
 @testable import TypeChecker
 
 struct OptionalsTest: TypeCheckerTest {
-	@Test("Can infer optional", .disabled("Waiting on instantiable refactor")) func basic() throws {
+	@Test("Can infer optional") func basic() throws {
 		let syntax = try Parser.parse(
 			"""
 			var foo: int?
