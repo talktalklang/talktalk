@@ -608,7 +608,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		guard let type = context.inferenceContext.lookup(syntax: expr),
-					case let .instantiatable(enumType as EnumType) = type
+		      case let .instantiatable(enumType as EnumType) = type
 		else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
@@ -848,7 +848,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: ForStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	// GENERATOR_INSERTION

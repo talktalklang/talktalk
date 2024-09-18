@@ -145,7 +145,7 @@ struct PatternVisitor: Visitor {
 		return Pattern(
 			type: type,
 			arguments: [
-				.variable(expr.name, type)
+				.variable(expr.name, type),
 			]
 		)
 	}
@@ -330,7 +330,7 @@ struct PatternVisitor: Visitor {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_ expr: ForStmtSyntax, _: Context) throws -> Pattern {
 		throw PatternError.invalid(expr.description)
 	}
 

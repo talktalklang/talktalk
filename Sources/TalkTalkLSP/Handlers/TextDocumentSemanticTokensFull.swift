@@ -350,7 +350,7 @@ public struct SemanticTokensVisitor: Visitor {
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.caseToken),
-			make(.property, from: expr.nameToken)
+			make(.property, from: expr.nameToken),
 		]
 
 		for type in expr.attachedTypes {
@@ -404,7 +404,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		return try [
+		try [
 			make(.keyword, from: expr.forToken),
 			make(.keyword, from: expr.inToken),
 		] + expr.element.accept(self, context) + expr.sequence.accept(self, context) + expr.body.accept(self, context)

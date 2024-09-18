@@ -240,7 +240,7 @@ public class Environment {
 			"ArrayIterator",
 			"Dictionary",
 			"String",
-			"Int"
+			"Int",
 		]
 
 		for typeName in types {

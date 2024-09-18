@@ -328,7 +328,7 @@ public struct ASTPrinter: Visitor {
 		dump(expr)
 	}
 
-	@StringBuilder public func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> String {
+	@StringBuilder public func visit(_ expr: ForStmtSyntax, _: Context) throws -> String {
 		dump(expr)
 	}
 

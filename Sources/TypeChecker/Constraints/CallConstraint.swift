@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/27/24.
 //
 
-import TalkTalkSyntax
 import OrderedCollections
+import TalkTalkSyntax
 
 struct CallConstraint: Constraint {
 	let callee: InferenceResult

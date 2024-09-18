@@ -40,7 +40,7 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	}
 
 	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
-		return .instantiatable(EnumType(
+		.instantiatable(EnumType(
 			name: name,
 			cases: cases.map {
 				// swiftlint:disable force_unwrapping
@@ -52,7 +52,7 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 		))
 	}
 
-	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
 		if let member = typeContext.member(named: name) {
 			return member
 		}

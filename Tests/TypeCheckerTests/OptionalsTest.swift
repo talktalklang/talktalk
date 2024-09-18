@@ -15,7 +15,7 @@ struct OptionalsTest: TypeCheckerTest {
 			var foo: int?
 
 			foo
-			
+
 			match foo {
 			case .some(let val):
 				val

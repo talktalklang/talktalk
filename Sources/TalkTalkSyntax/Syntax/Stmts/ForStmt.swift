@@ -12,8 +12,8 @@ public struct ForStmtSyntax: ForStmt {
 	public var forToken: Token
 	public var inToken: Token
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation

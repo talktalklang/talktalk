@@ -5,9 +5,9 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
+import OrderedCollections
 import TalkTalkCore
 import TalkTalkSyntax
-import OrderedCollections
 
 public struct Inferencer {
 	let visitor = InferenceVisitor()
@@ -236,7 +236,7 @@ struct InferenceVisitor: Visitor {
 						id: context.nextIdentifier(named: "Optional"),
 						type: optionalType,
 						substitutions: [
-							t: type
+							t: type,
 						]
 					)
 				)
@@ -543,7 +543,7 @@ struct InferenceVisitor: Visitor {
 			// swiftlint:disable force_unwrapping force_cast
 			let enumType = instance.type as! EnumType
 			returns = enumType.member(named: expr.property, in: context)!.asType(in: context)
-			// swiftlint:enable force_unwrapping force_cast
+		// swiftlint:enable force_unwrapping force_cast
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -1029,13 +1029,13 @@ struct InferenceVisitor: Visitor {
 
 	// GENERATOR_INSERTION
 
-	func genericParameter(for type: InferenceType, named name: String, in context: InferenceContext) -> InferenceType? {
+	func genericParameter(for type: InferenceType, named name: String, in _: InferenceContext) -> InferenceType? {
 		switch type {
-		case .instantiatable(let structType):
+		case let .instantiatable(structType):
 			return structType.context.lookupVariable(named: name)
-		case .instance(let instance):
+		case let .instance(instance):
 			return instance.relatedType(named: name) ?? instance.type.context.lookupVariable(named: name)
-		case .enumCase(let enumCase):
+		case let .enumCase(enumCase):
 			if let typeVar = enumCase.type.typeContext.typeParameters.first(where: { $0.name == name }) {
 				return .typeVar(typeVar)
 			}

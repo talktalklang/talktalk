@@ -11,9 +11,9 @@ import Testing
 struct ForLoopTests {
 	@Test("Can lex a for loop") func lexin() throws {
 		let tokens = Lexer.collect(
-		"""
-		for i in a { }
-		"""
+			"""
+			for i in a { }
+			"""
 		)
 
 		#expect(tokens.map(\.kind) == [
@@ -23,7 +23,7 @@ struct ForLoopTests {
 			.identifier,
 			.leftBrace,
 			.rightBrace,
-			.eof
+			.eof,
 		])
 	}
 

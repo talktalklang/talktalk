@@ -11,7 +11,7 @@ extension Syntax {
 	}
 
 	var canHaveTrailingComment: Bool {
-		(self is Decl || self is Stmt)
+		self is Decl || self is Stmt
 	}
 }
 

@@ -18,7 +18,7 @@ struct MemberExprAnalyzer: Analyzer {
 
 		// If it's an enum case we want to return a different syntax expression...
 		if case let .enumCase(enumCase) = type,
-			 let kase = enumCase.type.cases.enumerated().first(where: { $0.element.name == expr.property })
+		   let kase = enumCase.type.cases.enumerated().first(where: { $0.element.name == expr.property })
 		{
 			return try AnalyzedEnumMemberExpr(
 				wrapped: cast(expr, to: MemberExprSyntax.self),

@@ -3,7 +3,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedForStmt: ForStmt, AnalyzedStmt {
-  public let wrapped: ForStmtSyntax
+	public let wrapped: ForStmtSyntax
 	public var elementAnalyzed: any Syntax
 	public var sequenceAnalyzed: any Expr
 	public var bodyAnalyzed: BlockStmtSyntax

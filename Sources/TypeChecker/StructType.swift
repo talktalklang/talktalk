@@ -60,7 +60,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
 	}
 
-	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
+	public func apply(substitutions _: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InferenceType {
 		.instantiatable(self)
 	}
 

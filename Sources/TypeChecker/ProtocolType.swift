@@ -35,7 +35,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 		return missingRequirements
 	}
 
-	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
+	public func apply(substitutions _: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InferenceType {
 		.instantiatable(self)
 	}
 

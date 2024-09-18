@@ -39,24 +39,24 @@ struct TypeConformanceConstraint: Constraint {
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		guard case let .instantiatable(protocolType as ProtocolType) = conformsTo.asType else {
 			return .error([
-				Diagnostic(message: "\(conformsTo) is not a protocol", severity: .error, location: location)
+				Diagnostic(message: "\(conformsTo) is not a protocol", severity: .error, location: location),
 			])
 		}
 
 		let type = context.applySubstitutions(to: type)
 		switch type {
-		case .instantiatable(let type):
+		case let .instantiatable(type):
 			return checkConformance(of: type, to: protocolType, in: type.context)
-		case .instance(let instance):
+		case let .instance(instance):
 			return checkConformance(of: instance.type, to: protocolType, in: instance.type.context)
-		case .enumCase(let enumCase):
+		case let .enumCase(enumCase):
 			return checkConformance(of: enumCase.type, to: protocolType, in: context)
 		default:
 			()
 		}
 
 		return .error([
-			Diagnostic(message: "\(type) does not conform to \(conformsTo)", severity: .error, location: location)
+			Diagnostic(message: "\(type) does not conform to \(conformsTo)", severity: .error, location: location),
 		])
 	}
 
@@ -90,7 +90,7 @@ struct TypeConformanceConstraint: Constraint {
 				}
 			}
 			return .error([
-				Diagnostic(message: "\(type.name) does not conform to \(conformsTo). Missing: \(missing)", severity: .error, location: location)
+				Diagnostic(message: "\(type.name) does not conform to \(conformsTo). Missing: \(missing)", severity: .error, location: location),
 			])
 		}
 	}

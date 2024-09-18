@@ -15,26 +15,24 @@ public struct ModuleAnalyzer: Analyzer {
 		case moduleNotFound(String)
 	}
 
-	nonisolated(unsafe) static let stdlib: AnalysisModule = {
-		return try! ModuleAnalyzer(
-			name: "Standard",
-			files: Library.standard.paths.map {
-				let parsed = try Parser.parse(
-					SourceFile(
-						path: $0,
-						text: String(
-							contentsOf: Library.standard.location.appending(path: $0),
-							encoding: .utf8
-						)
+	nonisolated(unsafe) static let stdlib: AnalysisModule = try! ModuleAnalyzer(
+		name: "Standard",
+		files: Library.standard.paths.map {
+			let parsed = try Parser.parse(
+				SourceFile(
+					path: $0,
+					text: String(
+						contentsOf: Library.standard.location.appending(path: $0),
+						encoding: .utf8
 					)
 				)
+			)
 
-				return ParsedSourceFile(path: $0, syntax: parsed)
-			},
-			moduleEnvironment: [:],
-			importedModules: []
-		).analyze()
-	}()
+			return ParsedSourceFile(path: $0, syntax: parsed)
+		},
+		moduleEnvironment: [:],
+		importedModules: []
+	).analyze()
 
 	public let name: String
 	public var files: [ParsedSourceFile]
@@ -66,7 +64,7 @@ public struct ModuleAnalyzer: Analyzer {
 	}
 
 	public func importStandardLibrary() throws -> AnalysisModule {
-		return ModuleAnalyzer.stdlib
+		ModuleAnalyzer.stdlib
 	}
 
 	public func analyze() throws -> AnalysisModule {

@@ -159,7 +159,7 @@ struct TalkTalkLexerTests {
 			.int,
 			.newline,
 			.int,
-			.eof
+			.eof,
 		])
 
 		#expect(tokens.map(\.line) == [
@@ -167,7 +167,7 @@ struct TalkTalkLexerTests {
 			1,
 			3,
 			3,
-			3
+			3,
 		])
 	}
 

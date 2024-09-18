@@ -11,24 +11,24 @@ import Testing
 struct OptionalsTests {
 	@Test("Can lex a question mark") func lexin() throws {
 		let tokens = Lexer.collect(
-		"""
-		foo?
-		"""
+			"""
+			foo?
+			"""
 		)
 
 		#expect(tokens.map(\.kind) == [
 			.identifier,
 			.questionMark,
-			.eof
+			.eof,
 		])
 	}
 
 	@Test("Can parse an optional") func parsin() throws {
 		let parsed = try Parser.parse(
-		"""
-		var foo: int?
-		var bar: String?
-		"""
+			"""
+			var foo: int?
+			var bar: String?
+			"""
 		)
 
 		let syntax1 = parsed[0].cast(VarDeclSyntax.self).typeExpr!

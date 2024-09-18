@@ -606,7 +606,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 			bind(typeVar: b, to: a)
 
 		// MARK: Instantiable stuff
-
 		case let (.instantiatable(a), .instantiatable(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
@@ -621,14 +620,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 			}
 
 		// MARK: Enum special cases
-
 		case let (.selfVar(.instantiatable(a as EnumType)), .enumCase(b)),
-				 let (.enumCase(b), .selfVar(.instantiatable(a as EnumType))):
+		     let (.enumCase(b), .selfVar(.instantiatable(a as EnumType))):
 			if a == b.type {
 				break
 			}
 		case let (.instantiatable(type as EnumType), .enumCase(kase)),
-				 let (.enumCase(kase), .instantiatable(type as EnumType)):
+		     let (.enumCase(kase), .instantiatable(type as EnumType)):
 			if type.name != kase.type.name {
 				addError(
 					.init(
@@ -642,7 +640,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				unify(lhs, rhs, location)
 			}
 		case let (.instantiatable(type as EnumType), .enumCase(kase)),
-				 let (.enumCase(kase), .instantiatable(type as EnumType)):
+		     let (.enumCase(kase), .instantiatable(type as EnumType)):
 			if kase.type != type {
 				addError(
 					.init(
@@ -652,7 +650,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			}
 		case let (.instantiatable(type as EnumType), .instance(instance)),
-			let (.instance(instance), .instantiatable(type as EnumType)):
+		     let (.instance(instance), .instantiatable(type as EnumType)):
 			if case let enumType = instance.type as? EnumType, enumType == type {
 				break
 			}
@@ -665,7 +663,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			)
 		// Handle case where we're trying to unify an enum case with a protocol
 		case let (.instance(instance), .enumCase(kase)),
-				 let (.enumCase(kase), .instance(instance)):
+		     let (.enumCase(kase), .instance(instance)):
 			if let type = instance.type as? ProtocolType {
 				deferConstraint(
 					TypeConformanceConstraint(
