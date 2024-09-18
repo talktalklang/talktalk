@@ -15,7 +15,9 @@ public struct ModuleAnalyzer: Analyzer {
 		case moduleNotFound(String)
 	}
 
+	// swiftlint:disable force_try
 	nonisolated(unsafe) static let stdlib: AnalysisModule = try! ModuleAnalyzer(
+	// swiftlint:enable force_try
 		name: "Standard",
 		files: Library.standard.paths.map {
 			let parsed = try Parser.parse(

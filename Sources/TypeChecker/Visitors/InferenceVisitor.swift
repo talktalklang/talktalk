@@ -228,7 +228,9 @@ struct InferenceVisitor: Visitor {
 				// swiftlint:enable fatal_error
 			}
 
+			// swiftlint:disable force_unwrapping
 			let t = optionalType.typeContext.typeParameters.first!
+			// swiftlint:enable force_unwrapping
 
 			return .type(
 				.instance(

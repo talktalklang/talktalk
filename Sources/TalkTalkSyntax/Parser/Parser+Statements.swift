@@ -32,7 +32,10 @@ extension Parser {
 	}
 
 	mutating func forStmt() -> any Stmt {
-		let forToken = previous!
+		guard let forToken = previous else {
+			return error(at: current, expected(.for))
+		}
+
 		let i = startLocation(at: forToken)
 
 		guard let element = consume(.identifier) else {
