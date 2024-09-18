@@ -16,7 +16,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	public let name: String
 	public private(set) var context: InferenceContext
 	var typeBindings: [TypeVariable: InferenceType] = [:]
-	let typeContext: TypeContext
+	public let typeContext: TypeContext
 	public var conformances: [ProtocolType] { typeContext.conformances }
 
 	public static func extractType(from result: InferenceResult?) -> StructType? {
@@ -61,7 +61,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
 	}
 
-	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance<StructType> {
+	func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> Instance<StructType> {
 		let instance = Instance(
 			id: context.nextIdentifier(named: name),
 			type: self,

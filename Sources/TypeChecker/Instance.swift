@@ -5,10 +5,28 @@
 //  Created by Pat Nakajima on 9/15/24.
 //
 
+import OrderedCollections
+
 public protocol Instantiatable: Equatable, Hashable {
 	var name: String { get }
+	var context: InferenceContext { get }
+	var typeContext: TypeContext { get }
 	var conformances: [ProtocolType] { get }
 	func member(named name: String, in context: InferenceContext) -> InferenceResult?
+}
+
+public extension Instantiatable {
+	var typeParameters: [TypeVariable] {
+		typeContext.typeParameters
+	}
+
+	var methods: OrderedDictionary<String, InferenceResult> {
+		typeContext.methods
+	}
+
+	var properties: OrderedDictionary<String, InferenceResult> {
+		typeContext.properties
+	}
 }
 
 public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
@@ -18,7 +36,7 @@ public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringCo
 
 	let id: Int
 	public let type: Kind
-	var substitutions: [TypeVariable: InferenceType]
+	var substitutions: OrderedDictionary<TypeVariable, InferenceType>
 
 	public static func extract(from type: InferenceType) -> Instance<StructType>? {
 		if case let .structInstance(instance) = type {
@@ -32,7 +50,7 @@ public class Instance<Kind: Instantiatable>: Equatable, Hashable, CustomStringCo
 		Instance(id: -9999, type: type, substitutions: [:])
 	}
 
-	init(id: Int, type: Kind, substitutions: [TypeVariable: InferenceType]) {
+	init(id: Int, type: Kind, substitutions: OrderedDictionary<TypeVariable, InferenceType>) {
 		self.id = id
 		self.type = type
 		self.substitutions = substitutions

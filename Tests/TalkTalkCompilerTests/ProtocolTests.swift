@@ -68,14 +68,13 @@ struct ProtocolTests: CompilerTest {
 				"hi " + greetable.name()
 			}
 
-			greet(Person("pat"))
+			greet(Person())
 			"""#
 		)
 
 		let main = module.chunks[.function(module.name, "0.talk", [])]!
 		try #expect(main.disassemble(in: module) == Instructions(
 			.op(.defClosure, line: 10, .closure(name: "greet", arity: 1, depth: 0)),
-			.op(.data, line: 14, .data(.init(kind: .string, bytes: [Byte]("pat".utf8)))),
 			.op(.getStruct, line: 14, .struct(.struct("E2E", "Person"))),
 			.op(.call, line: 14),
 			.op(.getModuleFunction, line: 14, .moduleFunction(.function("E2E", "greet", ["Greetable()#0"]))),

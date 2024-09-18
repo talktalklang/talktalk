@@ -21,7 +21,7 @@ struct ProtocolTests: AnalysisTest {
 
 		let errors = ast[1].cast(AnalyzedStructDecl.self).collectErrors()
 		#expect(errors.count == 1)
-		#expect(errors[0].message == "Type does not conform to: Greetable. Missing: greet (function(), returns(string))")
+		#expect(errors[0].message.contains("Person does not conform to Greetable"))
 	}
 
 	@Test("Validates conformance (property)") func validatesConformanceProperty() async throws {
@@ -35,6 +35,6 @@ struct ProtocolTests: AnalysisTest {
 
 		let errors = ast[1].cast(AnalyzedStructDecl.self).collectErrors()
 		#expect(errors.count == 1)
-		#expect(errors[0].message == "Type does not conform to: Greetable. Missing: name (string)")
+		#expect(errors[0].message.contains("Person does not conform to Greetable"))
 	}
 }

@@ -6,6 +6,7 @@
 //
 
 import TalkTalkSyntax
+import OrderedCollections
 
 struct CallConstraint: Constraint {
 	let callee: InferenceResult
@@ -121,13 +122,15 @@ struct CallConstraint: Constraint {
 		let childContext = structType.context
 		let params: [InferenceType]
 
-		// FIXME: This is wrong! Member doesn't check init so we _always_ go to the else case here.
-		if let initializer = structType.member(named: "init", in: context) {
+		// Create a local substitutions map for this instance
+		var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+
+		// If we have an init, use the params from that init
+		if let initializer = structType.initializers["init"] {
 			switch initializer {
 			case let .scheme(scheme):
 				switch structType.context.instantiate(scheme: scheme) {
-				case let .function(fnParams, fnReturns):
-					context.unify(returns, fnReturns, location)
+				case let .function(fnParams, _):
 					params = fnParams
 				default:
 					params = []
@@ -138,9 +141,7 @@ struct CallConstraint: Constraint {
 				params = []
 			}
 		} else {
-			// We don't have an init so we need to synthesize one
-			var substitutions: [TypeVariable: InferenceType] = [:]
-
+			// We don't have an init so we need to synthesize one from the struct's properties
 			params = structType.properties.map { name, type in
 				if case let .type(.typeVar(typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
@@ -152,20 +153,20 @@ struct CallConstraint: Constraint {
 
 				return type.asType(in: structType.context)
 			}
-
-			let instance = structType.instantiate(with: substitutions, in: context)
-			context.unify(returns, .structInstance(instance), location)
 		}
 
-//		if args.count != params.count {
-//			return .error([
-//				Diagnostic(
-//					message: "Expected \(params.count) args, got \(args.count)",
-//					severity: .error,
-//					location: location
-//				),
-//			])
-//		}
+		let instance = structType.instantiate(with: substitutions, in: context)
+		context.unify(returns, .structInstance(instance), location)
+
+		if args.count != params.count {
+			return .error([
+				Diagnostic(
+					message: "Expected \(params.count) args, got \(args.count)",
+					severity: .error,
+					location: location
+				),
+			])
+		}
 
 		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
@@ -188,7 +189,7 @@ struct CallConstraint: Constraint {
 				instance.substitutions[param] = type
 				childContext.unify(type, arg.asType(in: childContext), location)
 			case let .structType(structType):
-				var substitutions: [TypeVariable: InferenceType] = [:]
+				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 				if case let .structInstance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions
 				}

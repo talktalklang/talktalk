@@ -9,11 +9,6 @@ import TalkTalkBytecode
 import TalkTalkSyntax
 import TypeChecker
 
-struct ConformanceRequirement: Hashable {
-	let name: String
-	let type: InferenceResult
-}
-
 struct StructDeclAnalyzer: Analyzer {
 	let decl: any StructDecl
 	let visitor: SourceFileAnalyzer
@@ -36,32 +31,12 @@ struct StructDeclAnalyzer: Analyzer {
 			}
 		)
 
-		var conformanceRequirements: [ConformanceRequirement: [ProtocolType]] = [:]
-		for conformance in decl.conformances {
-			guard case let .protocol(conformanceType) = context.inferenceContext.lookup(syntax: conformance) else {
-				return error(at: conformance, "Could not determine conformance requirements for \(conformance.identifier.lexeme)", environment: context)
-			}
-
-			for (name, method) in conformanceType.properties {
-				let req = ConformanceRequirement(name: name, type: method)
-				conformanceRequirements[req, default: []].append(conformanceType)
-			}
-
-			for (name, method) in conformanceType.methods {
-				let req = ConformanceRequirement(name: name, type: method)
-				conformanceRequirements[req, default: []].append(conformanceType)
-			}
-		}
-
 		for (name, type) in type.properties {
 			let location = decl.body.decls.first(where: { ($0 as? VarLetDecl)?.name == name })?.semanticLocation
 
-			// Make this requirement as satisfied
-			conformanceRequirements.removeValue(forKey: .init(name: name, type: type))
-
 			structType.add(
 				property: Property(
-					symbol: .property(context.moduleName, structType.name ?? "", name),
+					symbol: .property(context.moduleName, structType.name, name),
 					name: name,
 					inferenceType: type.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
@@ -75,13 +50,10 @@ struct StructDeclAnalyzer: Analyzer {
 				return error(at: decl, "invalid method", environment: context, expectation: .none)
 			}
 
-			// Make this requirement as satisfied
-			conformanceRequirements.removeValue(forKey: .init(name: name, type: type))
-
 			let location = decl.body.decls.first(where: { ($0 as? FuncExpr)?.name?.lexeme == name })?.semanticLocation
 
 			let symbol = context.symbolGenerator.method(
-				structType.name ?? "",
+				structType.name,
 				name,
 				parameters: params.map(\.description),
 				source: .internal
@@ -106,7 +78,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 			let location = decl.body.decls.first(where: { $0 is InitDecl })?.semanticLocation
 			let symbol = context.symbolGenerator.method(
-				structType.name ?? "",
+				structType.name,
 				name,
 				parameters: params.map(\.description),
 				source: .internal
@@ -175,15 +147,11 @@ struct StructDeclAnalyzer: Analyzer {
 		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
 
 		var errors: [AnalysisError] = []
-		for (type, conformances) in conformanceRequirements {
+		for error in context.inferenceContext.errors {
 			errors.append(
 				.init(
-					kind: .conformanceError(
-						name: type.name,
-						type: type.type.asType(in: context.inferenceContext),
-						conformances: conformances
-					),
-					location: decl.location
+					kind: .inferenceError(error.kind),
+					location: error.location
 				)
 			)
 		}

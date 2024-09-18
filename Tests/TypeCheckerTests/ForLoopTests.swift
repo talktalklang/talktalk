@@ -41,6 +41,6 @@ struct ForLoopTests: TypeCheckerTest {
 			"""
 		)
 
-		_ = try infer(syntax, expectedErrors: 1)
+		_ = try infer(syntax, expectedErrors: 2) // Expect a conformance error and could not determine Element
 	}
 }

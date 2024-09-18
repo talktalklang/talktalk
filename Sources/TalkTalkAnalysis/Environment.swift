@@ -232,93 +232,39 @@ public class Environment {
 	}
 
 	func importStdlib() throws {
-		_ = symbolGenerator.import(.struct("Standard", "Iterable"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Iterator"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
+		let types = [
+			"Iterable",
+			"Iterator",
+			"Array",
+			"ArrayIterator",
+			"Dictionary",
+			"String",
+			"Int"
+		]
 
-		guard let iterableType = inferenceContext.namedVariables["Iterable"],
-					let iteratorType = inferenceContext.namedVariables["Iterator"],
-					let arrayType = inferenceContext.namedVariables["Array"],
-		      let stringType = inferenceContext.namedVariables["String"],
-		      let intType = inferenceContext.namedVariables["Int"],
-		      let dictType = inferenceContext.namedVariables["Dictionary"]
-		else {
-			throw AnalyzerError.stdlibNotFound
-		}
+		for typeName in types {
+			_ = symbolGenerator.import(.struct("Standard", typeName), from: "Standard")
 
-		if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
-			for symbol in stdlib.symbols {
-				_ = symbolGenerator.import(symbol.key, from: "Standard")
+			guard let type = inferenceContext.namedVariables[typeName] else {
+				throw AnalyzerError.stdlibNotFound
 			}
 
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Iterable"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Iterable",
-					location: [.synthetic(.identifier)],
-					type: iterableType,
-					externalModule: stdlib
-				)
-			)
+			if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
+				for symbol in stdlib.symbols {
+					_ = symbolGenerator.import(symbol.key, from: "Standard")
+				}
 
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Iterator"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Iterator",
-					location: [.synthetic(.identifier)],
-					type: iteratorType,
-					externalModule: stdlib
+				importBinding(
+					as: symbolGenerator.import(.struct("Standard", typeName), from: "Standard"),
+					from: "Standard",
+					binding: .init(
+						name: typeName,
+						location: [.synthetic(.identifier)],
+						type: type,
+						externalModule: stdlib
+					)
 				)
-			)
-
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Array"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Array",
-					location: [.synthetic(.identifier)],
-					type: arrayType,
-					externalModule: stdlib
-				)
-			)
-
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "String"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "String",
-					location: [.synthetic(.identifier)],
-					type: stringType,
-					externalModule: stdlib
-				)
-			)
-
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Int"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Int",
-					location: [.synthetic(.identifier)],
-					type: intType,
-					externalModule: stdlib
-				)
-			)
-
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Dictionary",
-					location: [.synthetic(.identifier)],
-					type: dictType,
-					externalModule: stdlib
-				)
-			)
+			}
 		}
 	}
 

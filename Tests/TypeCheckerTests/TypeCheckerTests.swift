@@ -54,14 +54,12 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
 
-		print(result.debugDescription)
-
 		#expect(
 			result == .scheme(
 				Scheme(
 					name: nil,
-					variables: [.typeVar("x", 89)],
-					type: .function([.typeVar("x", 89)], .typeVar("x", 89))
+					variables: [.typeVar("x", 99)],
+					type: .function([.typeVar("x", 99)], .typeVar("x", 99))
 				)
 			)
 		)
@@ -248,7 +246,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 				Scheme(
 					name: "fact",
 					variables: [],
-					type: .function([.typeVar("n", 89)], .base(.int))
+					type: .function([.typeVar("n", 99)], .base(.int))
 				)
 			)
 		)

@@ -159,6 +159,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 							.init(
 								name: "Top",
 								cases: topType.cases,
+								context: topType.context,
 								typeContext: .init(name: "Bottom")
 							)
 						),

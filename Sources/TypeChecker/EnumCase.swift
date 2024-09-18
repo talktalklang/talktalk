@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
+import OrderedCollections
+
 public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 	let enumCase: EnumCase
 	let substitutions: [TypeVariable: InferenceType]
@@ -37,7 +39,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 		self.attachedTypes = attachedTypes
 	}
 
-	func instantiate(in context: InferenceContext, with substitutions: [TypeVariable: InferenceType]) -> EnumCaseInstance {
+	func instantiate(in context: InferenceContext, with substitutions: OrderedDictionary<TypeVariable, InferenceType>) -> EnumCaseInstance {
 		EnumCaseInstance(enumCase: self, substitutions: attachedTypes.reduce(into: [:]) { res, type in
 			if case let .typeVar(typeVar) = type {
 				res[typeVar] = substitutions[typeVar] ?? .typeVar(context.freshTypeVariable(type.description))

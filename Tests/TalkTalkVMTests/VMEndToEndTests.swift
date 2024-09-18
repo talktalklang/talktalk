@@ -14,6 +14,7 @@ import TalkTalkSyntax
 import TalkTalkVM
 import Testing
 
+@MainActor
 struct VMEndToEndTests: VMTest {
 	func runAsync(_ strings: String...) throws {
 		let module = try compile(strings)

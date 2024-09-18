@@ -252,8 +252,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: StructDeclSyntax, _: Context) throws -> [RawSemanticToken] {
-		var result = [make(.keyword, from: expr.structToken)]
-		result.append(make(.type, from: expr.nameToken))
+		var result = [make(.keyword, from: expr.structToken), make(.type, from: expr.nameToken)]
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
 	}

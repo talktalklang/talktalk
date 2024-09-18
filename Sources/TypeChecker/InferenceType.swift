@@ -13,13 +13,40 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 	}
 
 	public let name: String
-	let typeContext: TypeContext
+	public let context: InferenceContext
+	public let typeContext: TypeContext
 	public var conformances: [ProtocolType] { typeContext.conformances }
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
 		hasher.combine(typeContext.properties)
 		hasher.combine(typeContext.methods)
+	}
+
+	public func missingConformanceRequirements(for type: any Instantiatable, in context: InferenceContext) -> Set<ConformanceRequirement> {
+		var missingRequirements: Set<ConformanceRequirement> = []
+
+		for requirement in requirements(in: context) {
+			if !requirement.satisfied(by: type, in: context) {
+				missingRequirements.insert(requirement)
+			}
+		}
+
+		return missingRequirements
+	}
+
+	public func requirements(in context: InferenceContext) -> Set<ConformanceRequirement> {
+		var result: Set<ConformanceRequirement> = []
+
+		for (name, type) in typeContext.methods {
+			result.insert(.init(name: name, type: context.applySubstitutions(to: type)))
+		}
+
+		for (name, type) in typeContext.properties {
+			result.insert(.init(name: name, type: context.applySubstitutions(to: type)))
+		}
+		
+		return result
 	}
 
 	public static func extract(from type: InferenceType) -> ProtocolType? {
@@ -177,6 +204,42 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 			"pattern: \(pattern)"
 		case .void:
 			"void"
+		}
+	}
+}
+
+extension Array where Element == InferenceType {
+	static func <=(lhs: [InferenceType], rhs: [InferenceType]) -> Bool {
+		if lhs.count != rhs.count {
+			return false
+		}
+		
+		for (lhsElement, rhsElement) in zip(lhs, rhs) {
+			if !(lhsElement <= rhsElement) {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
+// Variance helpers
+extension InferenceType {
+	static func <=(lhs: InferenceType, rhs: InferenceType) -> Bool {
+		switch (lhs, rhs) {
+		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
+			return lhsParams <= rhsParams && lhsReturns <= rhsReturns
+		case let (lhs as any Instantiatable, .protocol(protocolType)):
+			return protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
+		case let (.structInstance(lhs), .protocol(protocolType)):
+			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+		case let (.enumCase(lhs), .protocol(protocolType)):
+			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+		case let (.boxedInstance(lhs), .protocol(protocolType)):
+			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+		default:
+			return lhs == rhs
 		}
 	}
 }

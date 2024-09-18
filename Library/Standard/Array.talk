@@ -1,4 +1,17 @@
-struct Array<Element> {
+struct ArrayIterator<Element>: Iterator {
+	var current: int
+	var array: Array<Element>
+
+	init(array: Array<Element>) {
+		self.array = array
+	}
+
+	func next() -> Element {
+		self.array[self.current]
+	}
+}
+
+struct Array<Element>: Iterable {
 	var _storage: pointer
 	var count: int
 	var capacity: int
@@ -7,6 +20,10 @@ struct Array<Element> {
 		self.count = 0
 		self.capacity = 4
 		self._storage = _allocate(4)
+	}
+
+	func makeIterator() -> ArrayIterator<Element> {
+		ArrayIterator(array: self)
 	}
 
 	func get(index: int) -> Element {

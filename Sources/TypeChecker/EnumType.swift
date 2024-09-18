@@ -22,11 +22,13 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	public var cases: [EnumCase]
 	public var conformances: [ProtocolType] { typeContext.conformances }
 	var typeBindings: [TypeVariable: InferenceType] = [:]
-	let typeContext: TypeContext
+	public let context: InferenceContext
+	public let typeContext: TypeContext
 
-	init(name: String, cases: [EnumCase] = [], typeContext: TypeContext) {
+	init(name: String, cases: [EnumCase] = [], context: InferenceContext, typeContext: TypeContext) {
 		self.name = name
 		self.cases = cases
+		self.context = context
 		self.typeContext = typeContext
 	}
 

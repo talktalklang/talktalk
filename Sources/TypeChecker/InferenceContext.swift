@@ -51,7 +51,7 @@ public class TypeContext: Equatable, Hashable {
 }
 
 class InstanceContext: CustomDebugStringConvertible {
-	var substitutions: [TypeVariable: InferenceType] = [:]
+	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 	var debugDescription: String {
 		"InstanceContext(\(substitutions))"
@@ -71,7 +71,7 @@ class InstanceContext: CustomDebugStringConvertible {
 class MatchContext {
 	let target: InferenceType
 	var current: any Syntax
-	var substitutions: [TypeVariable: InferenceType] = [:]
+	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 	init(target: InferenceType, current: any Syntax) {
 		self.target = target
@@ -84,10 +84,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var environment: Environment
 
 	// Names that we know at inference time
-	public private(set) var namedVariables: [String: InferenceType] = [:]
+	public private(set) var namedVariables: OrderedDictionary<String, InferenceType> = [:]
 
 	// Names that we're going to have to solve for later
-	private(set) var namedPlaceholders: [String: InferenceType] = [:]
+	private(set) var namedPlaceholders: OrderedDictionary<String, InferenceType> = [:]
 
 	// Does this context have a parent?
 	var parent: InferenceContext?
@@ -105,7 +105,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var constraints: Constraints
 
 	// Known substitutions due to unification
-	var substitutions: [TypeVariable: InferenceType] = [:]
+	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 	// Gives subexpressions a hint about what type they're expected to be.
 	var expectation: InferenceType?
@@ -133,7 +133,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		imports: [InferenceContext] = [],
 		environment: Environment,
 		constraints: Constraints,
-		substitutions: [TypeVariable: InferenceType] = [:],
+		substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:],
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
 		expectation: InferenceType? = nil,
@@ -498,7 +498,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func applySubstitutions(
 		to type: InferenceType,
-		with substitutions: [TypeVariable: InferenceType],
+		with substitutions: OrderedDictionary<TypeVariable, InferenceType>,
 		count: Int = 0
 	) -> InferenceType {
 		if substitutions.isEmpty {
@@ -542,6 +542,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 					EnumCase.extract(from: .type(applySubstitutions(to: .enumCase($0), with: substitutions)))!
 					// swiftlint:enable force_unwrapping
 				},
+				context: type.context,
 				typeContext: type.typeContext
 			))
 		case let .enumCase(kase):
@@ -567,7 +568,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		applySubstitutions(to: result.asType(in: self))
 	}
 
-	func applySubstitutions(to result: InferenceResult, with: [TypeVariable: InferenceType]) -> InferenceType {
+	func applySubstitutions(to result: InferenceResult, with: OrderedDictionary<TypeVariable, InferenceType>) -> InferenceType {
 		applySubstitutions(to: result.asType(in: self), with: with)
 	}
 
@@ -672,7 +673,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	// Turn this scheme into an actual type, using whatever environment we
 	// have at this moment
 	func instantiate(scheme: Scheme) -> InferenceType {
-		var localSubstitutions: [TypeVariable: InferenceType] = [:]
+		var localSubstitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
@@ -685,9 +686,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 			)
 		}
 
+
 		return applySubstitutions(
 			to: scheme.type,
-			with: substitutions.merging(localSubstitutions, uniquingKeysWith: { $1 })
+			with: localSubstitutions.merging(substitutions.elements, uniquingKeysWith: { $1 })
 		)
 	}
 

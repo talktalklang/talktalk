@@ -7,6 +7,7 @@
 
 import TalkTalkCore
 import TalkTalkSyntax
+import OrderedCollections
 
 public struct Inferencer {
 	let visitor = InferenceVisitor()
@@ -78,7 +79,7 @@ struct InferenceVisitor: Visitor {
 		return context
 	}
 
-	func parameters(of type: InferenceType, in context: InferenceContext, with substitutions: [TypeVariable: InferenceType]? = nil) throws -> [InferenceType] {
+	func parameters(of type: InferenceType, in context: InferenceContext, with substitutions: OrderedDictionary<TypeVariable, InferenceType>? = nil) throws -> [InferenceType] {
 		switch type {
 		case let .function(params, _):
 			params
@@ -197,7 +198,7 @@ struct InferenceVisitor: Visitor {
 
 			switch found {
 			case let .structType(structType):
-				var substitutions: [TypeVariable: InferenceType] = [:]
+				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 				for (typeParam, paramSyntax) in zip(structType.typeContext.typeParameters, expr.genericParams) {
 					try visit(paramSyntax, context)
@@ -540,6 +541,7 @@ struct InferenceVisitor: Visitor {
 				receiver: receiver ?? .type(.typeVar(context.freshTypeVariable("RECEIVER" + expr.description))),
 				name: expr.property,
 				type: .type(returns),
+				isRetry: false,
 				location: expr.location
 			)
 		)
@@ -630,7 +632,7 @@ struct InferenceVisitor: Visitor {
 		structContext.defineVariable(
 			named: "self",
 			as: .selfVar(.structType(structType)),
-			at: [.synthetic(.struct)]
+			at: expr.location
 		)
 
 		for decl in expr.body.decls {
@@ -801,7 +803,7 @@ struct InferenceVisitor: Visitor {
 		let typeContext = childContext.typeContext!
 		// swiftlint:enable force_unwrapping
 
-		let protocolType = ProtocolType(name: expr.name.lexeme, typeContext: typeContext)
+		let protocolType = ProtocolType(name: expr.name.lexeme, context: childContext, typeContext: typeContext)
 		context.defineVariable(named: expr.name.lexeme, as: .protocol(protocolType), at: expr.location)
 
 		// swiftlint:disable force_unwrapping
@@ -904,7 +906,7 @@ struct InferenceVisitor: Visitor {
 			try visit(typeParameter, enumContext)
 		}
 
-		let enumType = EnumType(name: expr.nameToken.lexeme, cases: [], typeContext: typeContext)
+		let enumType = EnumType(name: expr.nameToken.lexeme, cases: [], context: enumContext, typeContext: typeContext)
 
 		enumContext.defineVariable(named: "self", as: .selfVar(.enumType(enumType)), at: expr.location)
 

@@ -11,6 +11,7 @@ struct MemberConstraint: Constraint {
 	let receiver: InferenceResult
 	let name: String
 	let type: InferenceResult
+	var isRetry: Bool
 
 	func result(in context: InferenceContext) -> String {
 		let receiver =
@@ -160,13 +161,19 @@ struct MemberConstraint: Constraint {
 				location
 			)
 		default:
-			return .error([
-				Diagnostic(
-					message: "Receiver not an instance. Got: \(receiver.debugDescription)",
-					severity: .error,
-					location: location
-				),
-			])
+			if isRetry {
+				return .error([
+					Diagnostic(
+						message: "Receiver not an instance. Got: \(receiver.debugDescription)",
+						severity: .error,
+						location: location
+					),
+				])
+			} else {
+				var deferred = self
+				deferred.isRetry = true
+				context.deferConstraint(deferred)
+			}
 		}
 
 		return .ok
