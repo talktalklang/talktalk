@@ -52,8 +52,8 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
-		hasher.combine(typeContext.initializers)
-		hasher.combine(typeContext.properties)
+		hasher.combine(typeContext.initializers.keys)
+		hasher.combine(typeContext.properties.keys)
 		hasher.combine(typeContext.methods.keys)
 	}
 

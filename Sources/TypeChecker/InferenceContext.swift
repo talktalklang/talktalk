@@ -553,8 +553,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
 				)
 			)
-		case let .selfVar(type):
-			return applySubstitutions(to: type, with: substitutions)
 		default:
 			return type // Base/error/void types don't get substitutions
 		}
@@ -694,9 +692,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-//		if verbose {
+		if verbose {
 			let context = context ?? self
 			print("\(context.depth) " + prefix + msg)
-//		}
+		}
 	}
 }

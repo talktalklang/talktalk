@@ -22,6 +22,10 @@ struct Solver {
 			}
 		}
 
+		for diagnostic in diagnostics where diagnostic.severity == .error {
+			context.addError(.init(kind: .diagnosticError(diagnostic), location: diagnostic.location))
+		}
+
 		return context
 	}
 

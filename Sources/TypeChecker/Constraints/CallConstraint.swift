@@ -119,9 +119,10 @@ struct CallConstraint: Constraint {
 	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
 		// Create a child context to evaluate args and params so we don't get leaks
 		let childContext = structType.context
-//		let childContext = structType.context.childTypeContext(withSelf: structType.context.typeContext!.selfVar)
 		let params: [InferenceType]
-		if let initializer = structType.initializers["init"] {
+
+		// FIXME: This is wrong! Member doesn't check init so we _always_ go to the else case here.
+		if let initializer = structType.member(named: "init", in: context) {
 			switch initializer {
 			case let .scheme(scheme):
 				switch structType.context.instantiate(scheme: scheme) {
@@ -156,21 +157,19 @@ struct CallConstraint: Constraint {
 			context.unify(returns, .structInstance(instance), location)
 		}
 
-		if args.count != params.count {
-			return .error([
-				Diagnostic(
-					message: "Expected \(params.count) args, got \(args.count)",
-					severity: .error,
-					location: location
-				),
-			])
-		}
+//		if args.count != params.count {
+//			return .error([
+//				Diagnostic(
+//					message: "Expected \(params.count) args, got \(args.count)",
+//					severity: .error,
+//					location: location
+//				),
+//			])
+//		}
 
-		guard case let .structType(type) = context.applySubstitutions(to: returns) else {
+		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
-
-		let instance = type.instantiate(with: type.context.substitutions, in: context)
 
 		for (arg, param) in zip(args, params) {
 			let paramType: InferenceType
@@ -214,7 +213,7 @@ struct CallConstraint: Constraint {
 		}
 
 		childContext.unify(
-			.structType(instance.type),
+			.structInstance(instance),
 			returns,
 			location
 		)

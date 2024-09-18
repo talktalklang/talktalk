@@ -93,7 +93,7 @@ struct InferenceVisitor: Visitor {
 		}
 	}
 
-	func handleFuncLike(_ expr: any FuncLike, _ context: InferenceContext, isInit: Bool) throws {
+	func handleFuncLike(_ expr: any FuncLike, _ context: InferenceContext) throws {
 		let childContext = context.childContext()
 
 		try expr.params.accept(self, childContext)
@@ -102,27 +102,17 @@ struct InferenceVisitor: Visitor {
 			try expr.body.accept(self, childContext)
 		}
 
-//		let variables = expr.params.params.compactMap {
-//			if let type = childContext[$0]?.asType(in: context),
-//			   childContext.isFreeVariable(type)
-//			{
-//				return type
-//			}
-//
-//			return nil
-//		}
-//		let variables = context.typeContext?.typeParameters.map { InferenceType.typeVar($0) } ?? []
-
-		var returnType: InferenceResult
-		if isInit {
-			guard let selfVar = context.lookupVariable(named: "self") else {
-				throw InferencerError.cannotInfer("did not find self for \(expr.description)")
+		let variables = expr.params.params.compactMap {
+			if let type = childContext[$0]?.asType(in: context),
+			   childContext.isFreeVariable(type)
+			{
+				return type
 			}
 
-			returnType = .type(selfVar)
-		} else {
-			returnType = returns.first ?? childContext[expr.body] ?? .type(.void)
+			return nil
 		}
+
+		var returnType = returns.first ?? childContext[expr.body] ?? .type(.void)
 
 		if let typeDecl = expr.typeDecl, expr.name?.lexeme != "init" {
 			try typeDecl.accept(self, context)
@@ -135,7 +125,7 @@ struct InferenceVisitor: Visitor {
 		let funcType = try InferenceResult.scheme(
 			Scheme(
 				name: expr.name?.lexeme,
-				variables: [],
+				variables: variables,
 				type: .function(
 					expr.params.params.map {
 						try childContext.get($0).asType(in: childContext)
@@ -455,7 +445,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: FuncExprSyntax, _ context: InferenceContext) throws {
-		try handleFuncLike(expr, context, isInit: false)
+		try handleFuncLike(expr, context)
 	}
 
 	func visit(_ expr: ParamsExprSyntax, _ context: InferenceContext) throws {
@@ -569,7 +559,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: InitDeclSyntax, _ context: InferenceContext) throws {
-		try handleFuncLike(expr, context, isInit: true)
+		try handleFuncLike(expr, context)
 	}
 
 	func visit(_: ImportStmtSyntax, _ context: InferenceContext) throws {
