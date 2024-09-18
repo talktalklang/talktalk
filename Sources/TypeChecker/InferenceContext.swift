@@ -673,7 +673,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	// Turn this scheme into an actual type, using whatever environment we
 	// have at this moment
 	func instantiate(scheme: Scheme) -> InferenceType {
-		var localSubstitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+		var localSubstitutions = substitutions
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
@@ -686,10 +686,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 			)
 		}
 
-
 		return applySubstitutions(
 			to: scheme.type,
-			with: localSubstitutions.merging(substitutions.elements, uniquingKeysWith: { $1 })
+			with: localSubstitutions
 		)
 	}
 

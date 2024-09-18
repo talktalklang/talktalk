@@ -46,7 +46,7 @@ public class Environment {
 		self.capturedValues = []
 		self.importedModules = importedModules
 
-		if symbolGenerator.moduleName != "Standard" {
+		if symbolGenerator.moduleName != "Standard", isModuleScope {
 			do {
 				try importStdlib()
 			} catch {

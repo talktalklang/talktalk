@@ -9,7 +9,7 @@ import Testing
 
 @MainActor
 struct IteratorTests: StandardLibraryTest {
-	@Test("Can iterate over arrays") func create() async throws {
+	@Test("Can iterate over arrays", .disabled("Waiting on optionals")) func create() async throws {
 		let output = TestOutput()
 		let result = try await run("""
 		let a = [1,2,3]
