@@ -143,11 +143,13 @@ struct EnumTests: TypeCheckerTest {
 		let context = try infer(syntax)
 
 		let result = try context.get(syntax[2])
-		let enumType = EnumType.extract(from: result)!
+		let enumType = Instance.extract(from: result.asType(in: context))!.type as! EnumType
 		#expect(enumType.name == "Thing")
 
 		let arg = syntax[2].cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0].value
+
+		#expect(context[arg] == .type(.enumCase(enumType.cases[0])))
 
 		#expect(enumType.cases == [
 			EnumCase(type: enumType, name: "foo", index: 0, attachedTypes: [.base(.string)]),
@@ -182,11 +184,11 @@ struct EnumTests: TypeCheckerTest {
 
 		// Make sure we can infer `self`
 		let selfVarType = try context.get(selfVar)
-		#expect(selfVarType == InferenceResult.type(.selfVar(.enumType(enumInferenceType))))
+		#expect(selfVarType == InferenceResult.type(.selfVar(.instantiatable(enumInferenceType))))
 
 		// Make sure we can infer `.foo`
 		let fooType = try context.get(foo)
-		#expect(fooType == .type(.enumType(enumInferenceType)))
+		#expect(fooType == .type(.instantiatable(enumInferenceType)))
 
 		// Make sure the method has the right type
 		let fnType = try context.applySubstitutions(to: context.get(fn))

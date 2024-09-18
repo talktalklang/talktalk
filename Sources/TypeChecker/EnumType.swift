@@ -10,10 +10,6 @@ import OrderedCollections
 import TalkTalkSyntax
 
 public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
-	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
-		typeContext.member(named: name)
-	}
-
 	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {
 		lhs.name == rhs.name && lhs.cases == rhs.cases
 	}
@@ -32,8 +28,8 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	}
 
 	public static func extract(from type: InferenceResult) -> EnumType? {
-		if case let .type(.enumType(enumType)) = type {
-			return enumType
+		if case let .type(.instantiatable(enumType)) = type {
+			return enumType as? EnumType
 		}
 
 		return nil
@@ -43,12 +39,37 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 		"\(name)"
 	}
 
+	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
+		return .instantiatable(EnumType(
+			name: name,
+			cases: cases.map {
+				// swiftlint:disable force_unwrapping
+				EnumCase.extract(from: .type(context.applySubstitutions(to: .enumCase($0), with: substitutions)))!
+				// swiftlint:enable force_unwrapping
+			},
+			context: context,
+			typeContext: typeContext
+		))
+	}
+
+	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+		if let member = typeContext.member(named: name) {
+			return member
+		}
+
+		if let kase = cases.first(where: { $0.name == name }) {
+			return .type(.enumCase(kase))
+		}
+
+		return nil
+	}
+
 	public var methods: OrderedDictionary<String, InferenceResult> {
 		typeContext.methods
 	}
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
-		hasher.combine(cases)
+		hasher.combine(cases.map(\.name))
 	}
 }

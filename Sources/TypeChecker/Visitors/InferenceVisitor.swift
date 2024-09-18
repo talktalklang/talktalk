@@ -197,7 +197,7 @@ struct InferenceVisitor: Visitor {
 			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
 
 			switch found {
-			case let .structType(structType):
+			case let .instantiatable(structType):
 				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 				for (typeParam, paramSyntax) in zip(structType.typeContext.typeParameters, expr.genericParams) {
@@ -212,12 +212,8 @@ struct InferenceVisitor: Visitor {
 						substitutions: substitutions
 					)
 				)
-			case let .protocol(protocolType):
-				type = .instance(Instance(id: context.nextIdentifier(named: protocolType.name), type: protocolType, substitutions: [:]))
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
-			case let .enumType(enumType):
-				type = .enumType(enumType)
 			case let .placeholder(placeholder):
 				type = .placeholder(placeholder)
 			default:
@@ -226,7 +222,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			guard case let .enumType(optionalType) = context.lookupVariable(named: "Optional") else {
+			guard case let .instantiatable(optionalType as EnumType) = context.lookupVariable(named: "Optional") else {
 				// swiftlint:disable fatal_error
 				fatalError("Could not find builtin type Optional")
 				// swiftlint:enable fatal_error
@@ -276,16 +272,12 @@ struct InferenceVisitor: Visitor {
 			}
 
 			switch found {
-			case let .structType(structType):
+			case let .instantiatable(instantiatable):
 				for paramSyntax in expr.genericParams {
 					try visit(paramSyntax, context)
 				}
 
-				type = .structType(structType)
-			case let .protocol(protocolType):
-				type = .protocol(protocolType)
-			case let .enumType(enumType):
-				type = .enumType(enumType)
+				type = .instantiatable(instantiatable)
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
 			case let .placeholder(typeVar):
@@ -314,10 +306,10 @@ struct InferenceVisitor: Visitor {
 			return returnType(for: .type(type), in: context)
 		case let .type(inferenceType):
 			switch inferenceType {
-			case let .structType(structType):
-				return .structType(structType)
-			case let .function(_, type):
-				return type
+			case let .instantiatable(instantiatable):
+				return .instantiatable(instantiatable)
+			case let .function(_, returns):
+				return returns
 			default:
 				return .typeVar(context.freshTypeVariable(result.description + " -> returns", file: #file, line: #line))
 			}
@@ -343,7 +335,7 @@ struct InferenceVisitor: Visitor {
 
 		let returns: InferenceType = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee) {
 			// If we determine the callee to be an enum case, then its type is actually the enum type.
-			InferenceType.enumType(enumCase.type)
+			InferenceType.instantiatable(enumCase.type)
 		} else {
 			InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -538,22 +530,15 @@ struct InferenceVisitor: Visitor {
 		}
 
 		switch receiver {
-		case let .type(.structType(structType)):
-			guard let member = structType.member(named: expr.property, in: context)?.asType(in: context) else {
-				context.addError(.memberNotFound(.structType(structType), expr.property), to: expr)
+		case let .type(.instantiatable(instanceType)):
+			guard let member = instanceType.member(named: expr.property, in: context)?.asType(in: context) else {
+				context.addError(.memberNotFound(.instantiatable(instanceType), expr.property), to: expr)
 				return
 			}
 
 			returns = member
 		case let .type(.enumCase(enumCase)):
 			returns = .enumCase(enumCase)
-		case let .type(.enumType(enumType)):
-			guard let member = enumType.cases.first(where: { $0.name == expr.property }) else {
-				context.addError(.memberNotFound(.enumType(enumType), expr.property), to: expr)
-				return
-			}
-
-			returns = .enumCase(member)
 		default:
 			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
@@ -633,7 +618,7 @@ struct InferenceVisitor: Visitor {
 			try visit(typeParameter, structContext)
 		}
 
-		let structInferenceType = InferenceType.structType(structType)
+		let structInferenceType = InferenceType.instantiatable(structType)
 
 		// Make this type available by name outside its own context
 		context.defineVariable(named: expr.name, as: structInferenceType, at: expr.location)
@@ -653,7 +638,7 @@ struct InferenceVisitor: Visitor {
 		// Make `self` available inside the struct
 		structContext.defineVariable(
 			named: "self",
-			as: .selfVar(.structType(structType)),
+			as: .selfVar(.instantiatable(structType)),
 			at: expr.location
 		)
 
@@ -723,7 +708,7 @@ struct InferenceVisitor: Visitor {
 
 		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
-		case let .selfVar(.structType(type)):
+		case let .selfVar(.instantiatable(type)):
 			guard let method = type.typeContext.methods["get"] else {
 				throw InferencerError.cannotInfer("No `get` method for \(type)")
 			}
@@ -734,7 +719,7 @@ struct InferenceVisitor: Visitor {
 			}
 
 			returns = getReturns
-		case let .structType(structType):
+		case let .instantiatable(structType):
 			guard let method = structType.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` method for \(structType)")
 			}
@@ -826,7 +811,7 @@ struct InferenceVisitor: Visitor {
 		// swiftlint:enable force_unwrapping
 
 		let protocolType = ProtocolType(name: expr.name.lexeme, context: childContext, typeContext: typeContext)
-		context.defineVariable(named: expr.name.lexeme, as: .protocol(protocolType), at: expr.location)
+		context.defineVariable(named: expr.name.lexeme, as: .instantiatable(protocolType), at: expr.location)
 
 		// swiftlint:disable force_unwrapping
 		let protocolTypeVar = context.lookupVariable(named: expr.name.lexeme)!
@@ -850,7 +835,7 @@ struct InferenceVisitor: Visitor {
 
 		context.constraints.add(
 			EqualityConstraint(
-				lhs: .type(.protocol(protocolType)),
+				lhs: .type(.instantiatable(protocolType)),
 				rhs: .type(protocolTypeVar),
 				location: expr.location
 			)
@@ -869,7 +854,7 @@ struct InferenceVisitor: Visitor {
 			}
 		}
 
-		context.extend(expr, with: .type(.protocol(protocolType)))
+		context.extend(expr, with: .type(.instantiatable(protocolType)))
 	}
 
 	func visit(_ decl: ProtocolBodyDeclSyntax, _ context: Context) throws {
@@ -930,7 +915,7 @@ struct InferenceVisitor: Visitor {
 
 		let enumType = EnumType(name: expr.nameToken.lexeme, cases: [], context: enumContext, typeContext: typeContext)
 
-		enumContext.defineVariable(named: "self", as: .selfVar(.enumType(enumType)), at: expr.location)
+		enumContext.defineVariable(named: "self", as: .selfVar(.instantiatable(enumType)), at: expr.location)
 
 		var index = 0
 		for decl in expr.body.decls {
@@ -957,8 +942,8 @@ struct InferenceVisitor: Visitor {
 		}
 
 		// Let this enum be referred to by name
-		context.defineVariable(named: enumType.name, as: .enumType(enumType), at: expr.location)
-		context.extend(expr, with: .type(.enumType(enumType)))
+		context.defineVariable(named: enumType.name, as: .instantiatable(enumType), at: expr.location)
+		context.extend(expr, with: .type(.instantiatable(enumType)))
 	}
 
 	public func visit(_: EnumCaseDeclSyntax, _: Context) throws {
@@ -1041,14 +1026,10 @@ struct InferenceVisitor: Visitor {
 
 	func genericParameter(for type: InferenceType, named name: String, in context: InferenceContext) -> InferenceType? {
 		switch type {
-		case .structType(let structType):
+		case .instantiatable(let structType):
 			return structType.context.lookupVariable(named: name)
 		case .instance(let instance):
 			return instance.relatedType(named: name) ?? instance.type.context.lookupVariable(named: name)
-		case .enumType(let enumType):
-			if let typeVar = enumType.typeContext.typeParameters.first(where: { $0.name == name }) {
-				return .typeVar(typeVar)
-			}
 		case .enumCase(let enumCase):
 			if let typeVar = enumCase.type.typeContext.typeParameters.first(where: { $0.name == name }) {
 				return .typeVar(typeVar)

@@ -534,17 +534,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			)
 		case let .instance(instance):
 			return .instance(instance)
-		case let .enumType(type):
-			return .enumType(EnumType(
-				name: type.name,
-				cases: type.cases.map {
-					// swiftlint:disable force_unwrapping
-					EnumCase.extract(from: .type(applySubstitutions(to: .enumCase($0), with: substitutions)))!
-					// swiftlint:enable force_unwrapping
-				},
-				context: type.context,
-				typeContext: type.typeContext
-			))
+		case let .instantiatable(type):
+			return type.apply(substitutions: substitutions, in: self)
 		case let .enumCase(kase):
 			return .enumCase(
 				EnumCase(
@@ -613,7 +604,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			bind(typeVar: a, to: b)
 		case let (.kind(a), .kind(.typeVar(b))):
 			bind(typeVar: b, to: a)
-		case let (.structType(a), .structType(b)) where a.name == b.name:
+		case let (.instantiatable(a), .instantiatable(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
 		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
@@ -627,11 +618,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 			}
 
 //			unify(.structType(a), .structType(b.type), location)
-		case let (.selfVar(.enumType(a)), .enumCase(b)), let (.enumCase(b), .selfVar(.enumType(a))):
+		case let (.selfVar(.instantiatable(a as EnumType)), .enumCase(b)),
+				 let (.enumCase(b), .selfVar(.instantiatable(a as EnumType))):
 			if a == b.type {
 				break
 			}
-		case let (.enumType(type), .enumCase(kase)):
+		case let (.instantiatable(type as EnumType), .enumCase(kase)):
 			if type.name != kase.type.name {
 				addError(
 					.init(
@@ -640,7 +632,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.enumCase(kase), .enumType(type)):
+		case let (.enumCase(kase), .instantiatable(type as EnumType)):
 			if type.name != kase.type.name {
 				addError(
 					.init(
@@ -659,6 +651,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			unify(pattern.type, rhs, location)
 		case let (lhs, .pattern(pattern)):
 			unify(lhs, pattern.type, location)
+		case (.void, .void):
+			() // This is chill
 		default:
 			if a != b, a != .any, b != .any {
 				addError(

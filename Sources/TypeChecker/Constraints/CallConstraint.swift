@@ -35,7 +35,7 @@ struct CallConstraint: Constraint {
 		switch callee {
 		case let .function(params, fnReturns):
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
-		case let .structType(structType):
+		case let .instantiatable(structType as StructType):
 			return solveStruct(structType: structType, in: context)
 		case let .enumCase(enumCase):
 			return solveEnumCase(enumCase: enumCase, in: context)
@@ -188,7 +188,7 @@ struct CallConstraint: Constraint {
 				let type = arg.asType(in: childContext)
 				instance.substitutions[param] = type
 				childContext.unify(type, arg.asType(in: childContext), location)
-			case let .structType(structType):
+			case let .instantiatable(structType):
 				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 				if case let .instance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions

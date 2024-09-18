@@ -37,7 +37,7 @@ struct TypeConformanceConstraint: Constraint {
 	var location: SourceLocation
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
-		guard case let .protocol(protocolType) = conformsTo.asType else {
+		guard case let .instantiatable(protocolType as ProtocolType) = conformsTo.asType else {
 			return .error([
 				Diagnostic(message: "\(conformsTo) is not a protocol", severity: .error, location: location)
 			])
@@ -45,12 +45,10 @@ struct TypeConformanceConstraint: Constraint {
 
 		let type = context.applySubstitutions(to: type)
 		switch type {
-		case .structType(let structType):
-			return checkConformance(of: structType, to: protocolType, in: structType.context)
+		case .instantiatable(let type):
+			return checkConformance(of: type, to: protocolType, in: type.context)
 		case .instance(let instance):
 			return checkConformance(of: instance.type, to: protocolType, in: instance.type.context)
-		case .enumType(let enumType):
-			return checkConformance(of: enumType, to: protocolType, in: context)
 		case .enumCase(let enumCase):
 			return checkConformance(of: enumCase.type, to: protocolType, in: context)
 		default:

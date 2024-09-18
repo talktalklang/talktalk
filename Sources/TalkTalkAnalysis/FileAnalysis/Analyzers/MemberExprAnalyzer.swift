@@ -29,7 +29,7 @@ struct MemberExprAnalyzer: Analyzer {
 			)
 		}
 
-		if case let .enumType(enumType) = type,
+		if case let .instantiatable(enumType as EnumType) = type,
 		   let kase = enumType.cases.first(where: { $0.name == expr.property })
 		{
 			return try AnalyzedEnumMemberExpr(

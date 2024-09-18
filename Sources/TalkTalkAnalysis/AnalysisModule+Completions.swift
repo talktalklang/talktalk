@@ -137,7 +137,7 @@ public extension AnalysisModule {
 						let kind: Completion.Kind = switch binding.type {
 						case .function:
 							.function
-						case .structType:
+						case .instantiatable:
 							.type
 						default:
 							.variable

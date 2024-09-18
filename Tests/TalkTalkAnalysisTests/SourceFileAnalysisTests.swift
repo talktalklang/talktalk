@@ -366,7 +366,7 @@ struct AnalysisTests {
 		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))!
 		let sup = type.methods["sup"]!.returnTypeID
 
-		#expect(sup == .selfVar(.structType(structType)))
+		#expect(sup == .selfVar(.instantiatable(structType as StructType)))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {

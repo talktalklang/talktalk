@@ -155,8 +155,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 					name: "bottom",
 					index: 0,
 					attachedTypes: [
-						.enumType(
-							.init(
+						.instantiatable(
+							EnumType(
 								name: "Top",
 								cases: topType.cases,
 								context: topType.context,

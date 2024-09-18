@@ -13,6 +13,7 @@ public protocol Instantiatable: Equatable, Hashable {
 	var typeContext: TypeContext { get }
 	var conformances: [ProtocolType] { get }
 	func member(named name: String, in context: InferenceContext) -> InferenceResult?
+	func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType
 }
 
 public extension Instantiatable {
