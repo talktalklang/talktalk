@@ -223,7 +223,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			guard case let .instantiatable(optionalType as EnumType) = context.lookupVariable(named: "Optional") else {
+			guard case let .instantiatable(.enumType(optionalType)) = context.lookupVariable(named: "Optional") else {
 				// swiftlint:disable fatal_error
 				fatalError("Could not find builtin type Optional")
 				// swiftlint:enable fatal_error
@@ -283,7 +283,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			guard case let .instantiatable(optionalType as EnumType) = context.lookupVariable(named: "Optional") else {
+			guard case let .instantiatable(.enumType(optionalType)) = context.lookupVariable(named: "Optional") else {
 				// swiftlint:disable fatal_error
 				fatalError("Could not find builtin type Optional")
 				// swiftlint:enable fatal_error
@@ -638,7 +638,7 @@ struct InferenceVisitor: Visitor {
 			try visit(typeParameter, structContext)
 		}
 
-		let structInferenceType = InferenceType.instantiatable(structType)
+		let structInferenceType = InferenceType.instantiatable(.struct(structType))
 
 		// Make this type available by name outside its own context
 		context.defineVariable(named: expr.name, as: structInferenceType, at: expr.location)
@@ -658,7 +658,7 @@ struct InferenceVisitor: Visitor {
 		// Make `self` available inside the struct
 		structContext.defineVariable(
 			named: "self",
-			as: .selfVar(.instantiatable(structType)),
+			as: .selfVar(.instantiatable(.struct(structType))),
 			at: expr.location
 		)
 
@@ -831,7 +831,7 @@ struct InferenceVisitor: Visitor {
 		// swiftlint:enable force_unwrapping
 
 		let protocolType = ProtocolType(name: expr.name.lexeme, context: childContext, typeContext: typeContext)
-		context.defineVariable(named: expr.name.lexeme, as: .instantiatable(protocolType), at: expr.location)
+		context.defineVariable(named: expr.name.lexeme, as: .instantiatable(.protocol(protocolType)), at: expr.location)
 
 		// swiftlint:disable force_unwrapping
 		let protocolTypeVar = context.lookupVariable(named: expr.name.lexeme)!
@@ -855,7 +855,7 @@ struct InferenceVisitor: Visitor {
 
 		context.constraints.add(
 			EqualityConstraint(
-				lhs: .type(.instantiatable(protocolType)),
+				lhs: .type(.instantiatable(.protocol(protocolType))),
 				rhs: .type(protocolTypeVar),
 				location: expr.location
 			)
@@ -874,7 +874,7 @@ struct InferenceVisitor: Visitor {
 			}
 		}
 
-		context.extend(expr, with: .type(.instantiatable(protocolType)))
+		context.extend(expr, with: .type(.instantiatable(.protocol(protocolType))))
 	}
 
 	func visit(_ decl: ProtocolBodyDeclSyntax, _ context: Context) throws {
@@ -935,7 +935,7 @@ struct InferenceVisitor: Visitor {
 
 		let enumType = EnumType(name: expr.nameToken.lexeme, cases: [], context: enumContext, typeContext: typeContext)
 
-		enumContext.defineVariable(named: "self", as: .selfVar(.instantiatable(enumType)), at: expr.location)
+		enumContext.defineVariable(named: "self", as: .selfVar(.instantiatable(.enumType(enumType))), at: expr.location)
 
 		for decl in expr.body.decls {
 			if let kase = decl as? EnumCaseDecl {
@@ -959,8 +959,8 @@ struct InferenceVisitor: Visitor {
 		}
 
 		// Let this enum be referred to by name
-		context.defineVariable(named: enumType.name, as: .instantiatable(enumType), at: expr.location)
-		context.extend(expr, with: .type(.instantiatable(enumType)))
+		context.defineVariable(named: enumType.name, as: .instantiatable(.enumType(enumType)), at: expr.location)
+		context.extend(expr, with: .type(.instantiatable(.enumType(enumType))))
 	}
 
 	public func visit(_: EnumCaseDeclSyntax, _: Context) throws {

@@ -154,7 +154,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		if let binding = context.lookup(expr.name) {
 			var symbol: Symbol? = nil
 
-			if case let .instantiatable(type as StructType) = binding.type {
+			if case let .instantiatable(.struct(type)) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.structs[type.name]?.symbol
 					guard symbol != nil else {
@@ -172,7 +172,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
-			} else if case let .instantiatable(type as EnumType) = binding.type {
+			} else if case let .instantiatable(.enumType(type)) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.enums[type.name]?.symbol
 					guard symbol != nil else {
@@ -283,11 +283,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case let .base(type):
 			.primitive("\(type)")
-		case .instantiatable(_ as StructType):
+		case .instantiatable(.struct):
 			context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
-		case .instantiatable(_ as EnumType):
+		case .instantiatable(.enumType):
 			context.symbolGenerator.enum(expr.identifier.lexeme, source: .internal)
-		case .instantiatable(_ as ProtocolType):
+		case .instantiatable(.protocol):
 			context.symbolGenerator.protocol(expr.identifier.lexeme, source: .internal)
 		default:
 			context.symbolGenerator.generic("error", source: .internal)
@@ -608,7 +608,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		guard let type = context.inferenceContext.lookup(syntax: expr),
-		      case let .instantiatable(enumType as EnumType) = type
+					case let .instantiatable(.enumType(enumType)) = type
 		else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
@@ -709,7 +709,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 		var errors: [AnalysisError] = []
 
-		if case let .instantiatable(type as EnumType) = targetAnalyzed.inferenceType, !hasDefault {
+		if case let .instantiatable(.enumType(type)) = targetAnalyzed.inferenceType, !hasDefault {
 			// Check that all enum cases are specified
 			let specifiedCases: [String] = casesAnalyzed.compactMap {
 				guard case let .pattern(pattern) = $0.patternAnalyzed?.inferenceType else {

@@ -21,7 +21,7 @@ public indirect enum InferenceType {
 	case instance(InstanceType)
 
 	// Struct stuff
-	case instantiatable(any Instantiatable)
+	case instantiatable(InstantiatableType)
 
 	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)

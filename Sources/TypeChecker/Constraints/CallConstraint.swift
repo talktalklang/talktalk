@@ -35,7 +35,7 @@ struct CallConstraint: Constraint {
 		switch callee {
 		case let .function(params, fnReturns):
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
-		case let .instantiatable(structType as StructType):
+		case let .instantiatable(.struct(structType)):
 			return solveStruct(structType: structType, in: context)
 		case let .enumCase(enumCase):
 			return solveEnumCase(enumCase: enumCase, in: context)

@@ -227,7 +227,7 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern {
-		guard let receiver = expr.receiver else {
+		if expr.receiver == nil {
 			return try unresolvedReceiver(expr, context: context)
 		}
 

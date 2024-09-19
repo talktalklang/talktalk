@@ -19,7 +19,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	public var conformances: [ProtocolType] { typeContext.conformances }
 
 	public static func extractType(from result: InferenceResult?) -> StructType? {
-		if case let .type(.instantiatable(structType as StructType)) = result {
+		if case let .type(.instantiatable(.struct(structType))) = result {
 			return structType
 		}
 
@@ -61,7 +61,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	}
 
 	public func apply(substitutions _: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InferenceType {
-		.instantiatable(self)
+		.instantiatable(.struct(self))
 	}
 
 	public var initializers: OrderedDictionary<String, InferenceResult> {

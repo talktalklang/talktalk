@@ -114,7 +114,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			#expect(Bool(false)); return
 		}
 
-		#expect(returnType == .selfVar(.instantiatable(structType)))
+		#expect(returnType == .selfVar(.instantiatable(.struct(structType))))
 	}
 
 	@Test("Types instance methods") func instanceMethod() throws {

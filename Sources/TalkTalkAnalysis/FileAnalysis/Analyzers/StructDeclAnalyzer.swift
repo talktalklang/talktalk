@@ -108,7 +108,7 @@ struct StructDeclAnalyzer: Analyzer {
 						source: .internal
 					),
 					params: structType.properties.values.map(\.inferenceType),
-					inferenceType: .function(structType.properties.values.map(\.inferenceType), .instantiatable(type)),
+					inferenceType: .function(structType.properties.values.map(\.inferenceType), .instantiatable(.struct(type))),
 					location: decl.location,
 					returnTypeID: .instance(.synthesized(type)),
 					isSynthetic: true

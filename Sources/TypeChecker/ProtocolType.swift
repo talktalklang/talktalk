@@ -36,7 +36,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 	}
 
 	public func apply(substitutions _: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InferenceType {
-		.instantiatable(self)
+		.instantiatable(.protocol(self))
 	}
 
 	public func requirements(in context: InferenceContext) -> Set<ConformanceRequirement> {
@@ -54,7 +54,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 	}
 
 	public static func extract(from type: InferenceType) -> ProtocolType? {
-		if case let .instantiatable(type as ProtocolType) = type {
+		if case let .instantiatable(.protocol(type)) = type {
 			return type
 		}
 

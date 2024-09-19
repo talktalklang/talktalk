@@ -187,11 +187,11 @@ struct EnumTests: TypeCheckerTest {
 
 		// Make sure we can infer `self`
 		let selfVarType = try context.get(selfVar)
-		#expect(selfVarType == InferenceResult.type(.selfVar(.instantiatable(enumInferenceType))))
+		#expect(selfVarType == InferenceResult.type(.selfVar(.instantiatable(.enumType(enumInferenceType)))))
 
 		// Make sure we can infer `.foo`
 		let fooType = try context.get(foo)
-		#expect(fooType == .type(.instantiatable(enumInferenceType)))
+		#expect(fooType == .type(.instantiatable(.enumType(enumInferenceType))))
 
 		// Make sure the method has the right type
 		let fnType = try context.applySubstitutions(to: context.get(fn))

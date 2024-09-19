@@ -35,11 +35,11 @@ public extension Instantiatable {
 		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
 
 		return switch self {
-		case let type as StructType:
+		case is StructType:
 			.struct(instance as! Instance<StructType>)
-		case let type as EnumType:
+		case is EnumType:
 			.enumType(instance as! Instance<EnumType>)
-		case let type as ProtocolType:
+		case is ProtocolType:
 			.protocol(instance as! Instance<ProtocolType>)
 		default:
 			fatalError("Unhandled type: \(self)")

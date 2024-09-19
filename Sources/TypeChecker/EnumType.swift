@@ -28,8 +28,8 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	}
 
 	public static func extract(from type: InferenceResult) -> EnumType? {
-		if case let .type(.instantiatable(enumType)) = type {
-			return enumType as? EnumType
+		if case let .type(.instantiatable(.enumType(enumType))) = type {
+			return enumType
 		}
 
 		if case let .type(.instance(instance)) = type {
@@ -44,7 +44,7 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	}
 
 	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
-		.instantiatable(EnumType(
+		.instantiatable(.enumType(EnumType(
 			name: name,
 			cases: cases.map {
 				// swiftlint:disable force_unwrapping
@@ -53,7 +53,7 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 			},
 			context: context,
 			typeContext: typeContext
-		))
+		)))
 	}
 
 	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {

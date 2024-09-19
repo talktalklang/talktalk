@@ -27,11 +27,11 @@ public extension InferenceType {
 		switch (lhs, rhs) {
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
 			lhsParams <= rhsParams && lhsReturns <= rhsReturns
-		case let (lhs as any Instantiatable, .instantiatable(protocolType as ProtocolType)):
+		case let (lhs as any Instantiatable, .instantiatable(.protocol(protocolType))):
 			protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
-		case let (.instance(lhs), .instantiatable(protocolType as ProtocolType)):
+		case let (.instance(lhs), .instantiatable(.protocol(protocolType))):
 			protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
-		case let (.enumCase(lhs), .instantiatable(protocolType as ProtocolType)):
+		case let (.enumCase(lhs), .instantiatable(.protocol(protocolType))):
 			protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		default:
 			lhs == rhs
