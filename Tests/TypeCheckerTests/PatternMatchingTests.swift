@@ -99,9 +99,14 @@ struct PatternMatchingTests: TypeCheckerTest {
 			type: .enumCase(
 				EnumCase(type: enumType, name: "foo", index: 0, attachedTypes: [.base(.string)])
 			),
-			arguments: [.value(
-				.base(.string)
-			)]
+			arguments: [
+				.value(.pattern(
+					Pattern(
+						type: .base(.string),
+						arguments: [.variable("a", .base(.string))]
+					)
+				))
+			]
 		)))
 
 		let bar = context.lookup(syntax: call2)
@@ -109,9 +114,14 @@ struct PatternMatchingTests: TypeCheckerTest {
 			type: .enumCase(
 				EnumCase(type: enumType, name: "bar", index: 1, attachedTypes: [.base(.int)])
 			),
-			arguments: [.value(
-				.base(.int)
-			)]
+			arguments: [
+				.value(.pattern(
+					Pattern(
+						type: .base(.int),
+						arguments: [.variable("b", .base(.int))]
+					)
+				))
+			]
 		)))
 
 		let body = syntax[2].cast(MatchStatementSyntax.self)
@@ -233,7 +243,13 @@ struct PatternMatchingTests: TypeCheckerTest {
 							type: .enumCase(
 								EnumCase(type: topType, name: "top", index: 0, attachedTypes: [.base(.string)])
 							),
-							arguments: [.value(.base(.string))]
+							arguments: [
+								.value(
+									.pattern(
+										Pattern(type: .base(.string), arguments: [.variable("a", .base(.string))])
+									)
+								)
+							]
 						)
 					)
 				),
