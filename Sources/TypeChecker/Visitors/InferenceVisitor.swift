@@ -368,8 +368,8 @@ struct InferenceVisitor: Visitor {
 		let args = try expr.args.map { try context.get($0) }
 
 		let returns: InferenceType = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee) {
-			// If we determine the callee to be an enum case, then its type is actually the enum type.
-//			InferenceType.instantiatable(enumCase.type)
+			// If we determine the callee to be an enum case, then its type is actually the enum type. We instantiate the
+			// enum type with substitutions coming from the args
 			.instance(enumCase.type.instantiate(with: zip(enumCase.attachedTypes, args).reduce(into: [:]) { res, pair in
 				let (type, arg) = pair
 
