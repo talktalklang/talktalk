@@ -1001,7 +1001,7 @@ struct InferenceVisitor: Visitor {
 		let context = context.childContext()
 
 		if let patternSyntax = expr.patternSyntax {
-			try inferPattern(from: patternSyntax, in: context)
+			_ = try inferPattern(from: patternSyntax, in: context)
 		}
 
 		for stmt in expr.body {

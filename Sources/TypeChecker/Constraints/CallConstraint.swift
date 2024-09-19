@@ -225,6 +225,16 @@ struct CallConstraint: Constraint {
 	}
 
 	func solveEnumCase(enumCase: EnumCase, in context: InferenceContext) -> ConstraintCheckResult {
+		// We need to unify the enum case attached types with args here
+
+		let scheme = Scheme(name: enumCase.name, variables: enumCase.attachedTypes, type: .enumCase(enumCase))
+		let instantiated = context.instantiate(scheme: scheme)
+
+		// The naive thing which is too global
+		for (type, arg) in zip(enumCase.attachedTypes, args) {
+			context.unify(type, arg.asType(in: context), location)
+		}
+
 		context.unify(returns, .enumCase(enumCase), location)
 		return .ok
 	}

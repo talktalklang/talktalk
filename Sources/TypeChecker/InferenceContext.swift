@@ -136,8 +136,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 		substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:],
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
-		expectations: [InferenceType] = []
+		expectations: [InferenceType] = [],
 //		matchContext: MatchContext? = nil
+		file: String = #file,
+		line: UInt32 = #line
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -150,7 +152,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.expectations = expectations
 //		self.matchContext = matchContext
 
-		log("New context with depth \(depth)", prefix: " * ")
+		log("New context with depth \(depth) \(file):\(line)", prefix: " * ")
 	}
 
 	public func exists(syntax: any Syntax) -> Bool {

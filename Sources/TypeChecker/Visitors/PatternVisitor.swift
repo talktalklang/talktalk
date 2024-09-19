@@ -209,7 +209,9 @@ struct PatternVisitor: Visitor {
 
 		return try Pattern(
 			type: context.get(expr).asType(in: context),
-			arguments: []
+			arguments: [
+				.variable(expr.name, context.get(expr).asType(in: context))
+			]
 		)
 	}
 
@@ -218,7 +220,9 @@ struct PatternVisitor: Visitor {
 
 		return try Pattern(
 			type: context.get(expr).asType(in: context),
-			arguments: []
+			arguments: [
+				.variable(expr.name, context.get(expr).asType(in: context))
+			]
 		)
 	}
 
