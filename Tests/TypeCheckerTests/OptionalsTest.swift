@@ -27,7 +27,7 @@ struct OptionalsTest: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let optionalType = context[syntax[1]]!
-		let optional = Instance.extract(from: optionalType.asType(in: context))!
+		let optional = Instance<EnumType>.extract(from: optionalType.asType(in: context))!
 
 		#expect(optional.type.name == "Optional")
 		#expect(optional.substitutions.count == 1)

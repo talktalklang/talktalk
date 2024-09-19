@@ -18,7 +18,7 @@ public indirect enum InferenceType {
 	case function([InferenceType], InferenceType)
 
 	// Instances
-	case instance(Instance)
+	case instance(InstanceType)
 
 	// Struct stuff
 	case instantiatable(any Instantiatable)

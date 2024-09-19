@@ -212,13 +212,7 @@ struct InferenceVisitor: Visitor {
 					substitutions[typeParam] = context[paramSyntax]?.asType(in: context)
 				}
 
-				type = .instance(
-					Instance(
-						id: context.nextIdentifier(named: structType.name),
-						type: structType,
-						substitutions: substitutions
-					)
-				)
+				type = .instance(structType.instantiate(with: substitutions, in: context))
 			case let .typeVar(typeVar):
 				type = .typeVar(typeVar)
 			case let .placeholder(placeholder):
@@ -240,15 +234,7 @@ struct InferenceVisitor: Visitor {
 			// swiftlint:enable force_unwrapping
 
 			return .type(
-				.instance(
-					Instance(
-						id: context.nextIdentifier(named: "Optional"),
-						type: optionalType,
-						substitutions: [
-							t: type,
-						]
-					)
-				)
+				.instance(optionalType.instantiate(with: [t: type], in: context))
 			)
 		}
 
@@ -307,16 +293,7 @@ struct InferenceVisitor: Visitor {
 			let t = optionalType.typeContext.typeParameters.first!
 			// swiftlint:enable force_unwrapping
 
-			return
-				.instance(
-					Instance(
-						id: context.nextIdentifier(named: "Optional"),
-						type: optionalType,
-						substitutions: [
-							t: type,
-						]
-					)
-				)
+			return .instance(optionalType.instantiate(with: [t: type], in: context))
 		}
 
 		return type
@@ -722,7 +699,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		// TODO: Handle homogenous arrays or error
-		let arrayInstance = arrayStructType.instantiate(with: [:], in: context)
+		var arrayInstance = arrayStructType.instantiate(with: [:], in: context)
 		let elementTypeParameter = arrayStructType.typeContext.typeParameters[0]
 		assert(elementTypeParameter.name == "Element", "didn't get correct type parameter")
 
@@ -813,7 +790,7 @@ struct InferenceVisitor: Visitor {
 			throw InferencerError.cannotInfer("No Dictionary found from stdlib")
 		}
 
-		let dictInstance = dictStructType.instantiate(with: [:], in: context)
+		var dictInstance = dictStructType.instantiate(with: [:], in: context)
 		let keyType = dictStructType.typeContext.typeParameters[0]
 		let valueType = dictStructType.typeContext.typeParameters[1]
 		assert(keyType.name == "Key", "didn't get correct Key type parameter, got \(keyType.name ?? "<none>")")

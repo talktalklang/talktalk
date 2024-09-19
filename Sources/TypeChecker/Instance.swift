@@ -17,7 +17,7 @@ public protocol Instantiatable: Equatable, Hashable {
 }
 
 public extension Instantiatable {
-	func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> Instance {
+	func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InstanceType {
 		let instance = Instance(
 			id: context.nextIdentifier(named: name),
 			type: self,
@@ -34,7 +34,16 @@ public extension Instantiatable {
 
 		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
 
-		return instance
+		return switch self {
+		case let type as StructType:
+			.struct(instance as! Instance<StructType>)
+		case let type as EnumType:
+			.enumType(instance as! Instance<EnumType>)
+		case let type as ProtocolType:
+			.protocol(instance as! Instance<ProtocolType>)
+		default:
+			fatalError("Unhandled type: \(self)")
+		}
 	}
 
 	var typeParameters: [TypeVariable] {
@@ -50,28 +59,28 @@ public extension Instantiatable {
 	}
 }
 
-public class Instance: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
+public class Instance<T: Instantiatable>: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	public static func == (lhs: Instance, rhs: Instance) -> Bool {
 		lhs.type.hashValue == rhs.type.hashValue && lhs.substitutions == rhs.substitutions
 	}
 
 	let id: Int
-	public let type: any Instantiatable
+	public let type: T
 	var substitutions: OrderedDictionary<TypeVariable, InferenceType>
 
-	public static func extract(from type: InferenceType) -> Instance? {
+	public static func extract(from type: InferenceType) -> Instance<T>? {
 		guard case let .instance(instance) = type else {
 			return nil
 		}
 
-		return instance
+		return instance.extract(T.self)
 	}
 
-	public static func synthesized(_ type: any Instantiatable) -> Instance {
+	public static func synthesized(_ type: T) -> Instance {
 		Instance(id: -9999, type: type, substitutions: [:])
 	}
 
-	init(id: Int, type: any Instantiatable, substitutions: OrderedDictionary<TypeVariable, InferenceType>) {
+	init(id: Int, type: T, substitutions: OrderedDictionary<TypeVariable, InferenceType>) {
 		self.id = id
 		self.type = type
 		self.substitutions = substitutions

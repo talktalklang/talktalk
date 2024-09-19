@@ -168,7 +168,7 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		guard case let .instance(instance) = context.applySubstitutions(to: returns) else {
+		guard case var .instance(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
 
