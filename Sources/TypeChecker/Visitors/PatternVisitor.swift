@@ -74,7 +74,10 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
-		try expr.callee.accept(inferenceVisitor, context)
+		guard case let .value(type) = try expr.callee.accept(self, context) else {
+			throw PatternError.invalid("variable cannot be callee")
+		}
+
 		let params = try inferenceVisitor.parameters(of: context.get(expr.callee).asType(in: context), in: context)
 
 		var args: [Pattern.Argument] = []
@@ -89,10 +92,10 @@ struct PatternVisitor: Visitor {
 			try context.addConstraint(.equality(context.get(arg), .type(param), at: arg.location))
 		}
 
-		return try .value(
+		return .value(
 			InferenceType.pattern(
 				Pattern(
-					type: context.get(expr.callee).asType(in: context),
+					type: type,
 					arguments: args
 				)
 			)

@@ -1026,13 +1026,8 @@ struct InferenceVisitor: Visitor {
 			throw InferencerError.parametersNotAvailable("Could not determine Element type of \(sequenceType)")
 		}
 
-		let pattern = try context.expecting(expectedElementType) {
+		try context.expecting(expectedElementType) {
 			try inferPattern(from: expr.element, in: context)
-		}
-
-		// Define the pattern locals inside the block
-		if case let .variable(name, type) = pattern {
-			context.defineVariable(named: name, as: type, at: expr.element.location)
 		}
 
 		let elementType = try context.get(expr.element)

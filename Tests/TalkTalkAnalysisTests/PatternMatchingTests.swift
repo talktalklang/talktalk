@@ -123,9 +123,7 @@ struct PatternMatchingTests: AnalysisTest {
 					name: "foo",
 					attachedTypes: [.base(.string)]
 				)),
-				arguments: [
-					.value(.pattern(Pattern(type: .base(.string), arguments: [.variable("a", .base(.string))])))
-				]
+				arguments: [.variable("a", .base(.string))]
 			)
 		))
 
@@ -137,9 +135,7 @@ struct PatternMatchingTests: AnalysisTest {
 					name: "bar",
 					attachedTypes: [.base(.int)]
 				)),
-				arguments: [
-					.value(.pattern(Pattern(type: .base(.int), arguments: [.variable("a", .base(.int))])))
-				]
+				arguments: [.variable("a", .base(.int))]
 			)
 		))
 	}
