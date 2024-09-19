@@ -68,16 +68,16 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
-class MatchContext {
-	let target: InferenceType
-	var current: any Syntax
-	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
-
-	init(target: InferenceType, current: any Syntax) {
-		self.target = target
-		self.current = current
-	}
-}
+//class MatchContext {
+//	let target: InferenceType
+//	var current: any Syntax
+//	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+//
+//	init(target: InferenceType, current: any Syntax) {
+//		self.target = target
+//		self.current = current
+//	}
+//}
 
 public class InferenceContext: CustomDebugStringConvertible {
 	// Stores the mappings of syntax nodes to inference types
@@ -123,7 +123,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	public var typeContext: TypeContext?
 
 	// Match target context, used for match statements
-	var matchContext: MatchContext?
+//	var matchContext: MatchContext?
 
 	// Instance-level context info like generic parameter bindings
 	var instanceContext: InstanceContext?
@@ -136,8 +136,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 		substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:],
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
-		expectation: InferenceType? = nil,
-		matchContext: MatchContext? = nil
+		expectation: InferenceType? = nil
+//		matchContext: MatchContext? = nil
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -148,7 +148,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
 		self.expectation = expectation
-		self.matchContext = matchContext
+//		self.matchContext = matchContext
 
 		log("New context with depth \(depth)", prefix: " * ")
 	}
@@ -282,19 +282,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext,
-			expectation: expectation,
-			matchContext: matchContext
-		)
-	}
-
-	func withMatchContext(_ matchContext: MatchContext) -> InferenceContext {
-		InferenceContext(
-			parent: self,
-			environment: environment.childEnvironment(),
-			constraints: constraints,
-			substitutions: substitutions,
-			typeContext: typeContext,
-			matchContext: matchContext
+			expectation: expectation
 		)
 	}
 
@@ -315,8 +303,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			substitutions: substitutions,
 			typeContext: typeContext,
 			instanceContext: instanceContext,
-			expectation: expectation,
-			matchContext: matchContext
+			expectation: expectation
 		)
 	}
 
@@ -327,8 +314,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext ?? TypeContext(name: name),
-			expectation: expectation,
-			matchContext: matchContext
+			expectation: expectation
 		)
 	}
 
@@ -346,8 +332,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext ?? TypeContext(name: type.description),
-			expectation: type,
-			matchContext: matchContext
+			expectation: type
 		)
 	}
 
@@ -501,11 +486,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 		with substitutions: OrderedDictionary<TypeVariable, InferenceType>,
 		count: Int = 0
 	) -> InferenceType {
-		if substitutions.isEmpty {
+		if substitutions.isEmpty && namedVariables.isEmpty {
 			return type
 		}
 
 		switch type {
+		case let .placeholder(typeVar):
+			return namedVariables[typeVar.name ?? ""] ?? .placeholder(typeVar)
 		case let .pattern(pattern):
 			return .pattern(
 				Pattern(

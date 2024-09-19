@@ -404,7 +404,7 @@ public struct OldFormatter: Visitor {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws -> String {
-		var result = "\(expr.caseToken.debugDescription) "
+		var result = "\(expr.caseToken.lexeme) "
 
 		if let pattern = expr.patternSyntax {
 			result += try pattern.accept(self, context) + ":"

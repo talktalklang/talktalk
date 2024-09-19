@@ -79,15 +79,13 @@ struct InferenceVisitor: Visitor {
 		return context
 	}
 
-	func parameters(of type: InferenceType, in context: InferenceContext, with substitutions: OrderedDictionary<TypeVariable, InferenceType>? = nil) throws -> [InferenceType] {
+	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceType] {
 		switch type {
 		case let .function(params, _):
 			params
 		case let .enumCase(enumCase):
-			if let substitutions, !substitutions.isEmpty {
-				enumCase.instantiate(in: context, with: substitutions).attachedTypes
-			} else {
-				enumCase.attachedTypes
+			enumCase.attachedTypes.map { type in
+				context.applySubstitutions(to: type)
 			}
 		default:
 			[]
@@ -194,7 +192,7 @@ struct InferenceVisitor: Visitor {
 		case "pointer":
 			type = .base(.pointer)
 		default:
-			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
 
 			switch found {
 			case let .instantiatable(structType):
@@ -387,8 +385,6 @@ struct InferenceVisitor: Visitor {
 			)
 		} else if let type = context.lookupPrimitive(named: expr.name) {
 			context.extend(expr, with: .type(.kind(type)))
-		} else if let expectation = context.expectation {
-			context.extend(expr, with: .type(expectation))
 		} else {
 			let typeVar = context.freshTypeVariable(expr.name)
 			context.definePlaceholder(named: expr.name, as: .placeholder(typeVar), at: expr.location)
@@ -525,12 +521,11 @@ struct InferenceVisitor: Visitor {
 			context[rec]
 		} else if let expectation = context.expectation {
 			.type(expectation)
-		} else if let matchContext = context.matchContext {
-			.type(matchContext.target)
 		} else {
 			nil
 		}
 
+		// Now that we have a receiver, look up the type we expect the member to be
 		switch receiver {
 		case let .type(.instantiatable(instanceType)):
 			guard let member = instanceType.member(named: expr.property, in: context)?.asType(in: context) else {
@@ -928,7 +923,7 @@ struct InferenceVisitor: Visitor {
 		for decl in expr.body.decls {
 			if let kase = decl as? EnumCaseDecl {
 				for type in kase.attachedTypes {
-					try type.accept(self, enumContext)
+					try context.extend(type, with: memberTypeFrom(expr: type, in: context))
 				}
 
 				let enumCase = try EnumCase(
@@ -959,18 +954,9 @@ struct InferenceVisitor: Visitor {
 
 	public func visit(_ expr: MatchStatementSyntax, _ context: Context) throws {
 		try expr.target.accept(self, context)
-
-		let matchContext = MatchContext(
-			target: context[expr.target]?.asType(in: context) ?? .typeVar(context.freshTypeVariable("\(expr.description)")),
-			current: expr
-		)
-
-		let context = context.withMatchContext(matchContext)
-
-		try inferPattern(from: expr.target, in: context)
+		let context = context.expecting(context[expr.target]?.asType(in: context) ?? .typeVar(context.freshTypeVariable("\(expr.description)")))
 
 		for kase in expr.cases {
-			matchContext.current = kase
 			try kase.accept(self, context)
 		}
 
@@ -978,6 +964,8 @@ struct InferenceVisitor: Visitor {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Context) throws {
+		let context = context.childContext()
+
 		if let patternSyntax = expr.patternSyntax {
 			try inferPattern(from: patternSyntax, in: context)
 		}
