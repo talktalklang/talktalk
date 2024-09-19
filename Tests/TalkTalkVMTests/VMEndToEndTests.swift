@@ -297,7 +297,7 @@ struct VMEndToEndTests: VMTest {
 					struct Person {
 						var age: int
 
-						init(age) {
+						init(age: int) {
 							self.age = age
 						}
 					}
@@ -350,7 +350,7 @@ struct VMEndToEndTests: VMTest {
 					struct Person {
 						var age: int
 
-						init(age) {
+						init(age: int) {
 							self.age = age
 						}
 					}

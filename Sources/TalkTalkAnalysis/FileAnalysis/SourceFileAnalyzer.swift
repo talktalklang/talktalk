@@ -313,6 +313,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let paramsAnalyzed = try cast(expr.params.accept(self, context), to: AnalyzedParamsExpr.self)
 		let bodyAnalyzed = try cast(expr.body.accept(self, context), to: AnalyzedBlockStmt.self)
 
+		var errors: [AnalysisError] = []
+
+		for param in paramsAnalyzed.paramsAnalyzed {
+			if param.type == nil {
+				errors.append(.init(kind: .unknownError("init parameters must have type declarations"), location: expr.location))
+			}
+		}
+
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(
@@ -324,7 +332,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
-			bodyAnalyzed: bodyAnalyzed
+			bodyAnalyzed: bodyAnalyzed,
+			analysisErrors: errors
 		)
 	}
 
