@@ -12,6 +12,7 @@ public enum InstanceType {
 	case `enumType`(Instance<EnumType>)
 
 	public static func synthesized<T: Instantiatable>(_ type: T) -> InstanceType {
+		// swiftlint:disable force_cast
 		switch type {
 		case is StructType:
 			return .struct(.synthesized(type as! StructType))
@@ -20,8 +21,11 @@ public enum InstanceType {
 		case is EnumType:
 			return .enumType(.synthesized(type as! EnumType))
 		default:
+			// swiftlint:disable fatal_error
 			fatalError("unable to synthesize instance type: \(type)")
+			// swiftlint:enable fatal_error
 		}
+		// swiftlint:enable force_cast
 	}
 
 	func relatedType(named name: String) -> InferenceType? {

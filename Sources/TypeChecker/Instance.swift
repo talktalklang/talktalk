@@ -34,6 +34,7 @@ public extension Instantiatable {
 
 		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
 
+		// swiftlint:disable force_cast fatal_error
 		return switch self {
 		case is StructType:
 			.struct(instance as! Instance<StructType>)
@@ -44,6 +45,7 @@ public extension Instantiatable {
 		default:
 			fatalError("Unhandled type: \(self)")
 		}
+		// swiftlint:enable force_cast fatal_error
 	}
 
 	var typeParameters: [TypeVariable] {
