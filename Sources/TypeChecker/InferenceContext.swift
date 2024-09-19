@@ -707,7 +707,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 		if verbose {
 			let context = context ?? self
-			print("\(context.depth) " + prefix + msg)
+			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth-1)))" + prefix + msg)
 		}
 	}
 }

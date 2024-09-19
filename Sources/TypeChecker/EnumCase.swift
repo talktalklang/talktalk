@@ -42,7 +42,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	func instantiate(in context: InferenceContext, with substitutions: OrderedDictionary<TypeVariable, InferenceType>) -> EnumCaseInstance {
 		EnumCaseInstance(enumCase: self, substitutions: attachedTypes.reduce(into: [:]) { res, type in
 			if case let .typeVar(typeVar) = type {
-				res[typeVar] = substitutions[typeVar] ?? .typeVar(context.freshTypeVariable(type.description))
+				res[typeVar] = context.applySubstitutions(to: type, with: substitutions)
 			}
 		})
 	}

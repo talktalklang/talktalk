@@ -1,4 +1,4 @@
-enum Optional<T> {
+enum Optional<Wrapped> {
 	case none
-	case some(T)
+	case some(Wrapped)
 }

@@ -255,7 +255,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 				Scheme(
 					name: "fact",
 					variables: [],
-					type: .function([.typeVar("n", 101)], .base(.int))
+					type: .function([.typeVar("n", 99)], .base(.int))
 				)
 			)
 		)

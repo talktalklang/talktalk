@@ -48,7 +48,7 @@ struct InferenceVisitor: Visitor {
 	public init() {}
 
 	func placeholdDecls(for syntax: [any Syntax], in context: InferenceContext) {
-		// Just to through the syntax here and create placeholders for decls if we don't know about them already
+		// Just go through the syntax here and create placeholders for decls if we don't know about them already
 		for decl in syntax where decl is Decl {
 			switch decl {
 			case let decl as EnumDecl:
@@ -80,15 +80,19 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceType] {
+		var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+
+		if case let .instance(instance) = context.expectation {
+			substitutions = instance.substitutions
+		}
+
 		switch type {
 		case let .function(params, _):
-			params
+			return params
 		case let .enumCase(enumCase):
-			enumCase.attachedTypes.map { type in
-				context.applySubstitutions(to: type)
-			}
+			return enumCase.instantiate(in: context, with: substitutions).attachedTypes
 		default:
-			[]
+			return []
 		}
 	}
 
@@ -116,7 +120,7 @@ struct InferenceVisitor: Visitor {
 		if let typeDecl = expr.typeDecl, expr.name?.lexeme != "init" {
 			try typeDecl.accept(self, context)
 			let inferredReturnType = returnType
-			let explicitReturnType = try memberTypeFrom(expr: typeDecl, in: context)
+			let explicitReturnType = try instanceTypeFrom(expr: typeDecl, in: context)
 			returnType = explicitReturnType
 			context.addConstraint(.equality(inferredReturnType, returnType, at: typeDecl.location))
 		}
@@ -143,7 +147,11 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func handleVarLet(_ expr: any VarLetDecl, _ context: InferenceContext) throws {
-		try expr.typeExpr?.accept(self, context)
+		if let typeExpr = expr.typeExpr {
+			let type = try instanceTypeFrom(expr: typeExpr, in: context)
+			context.extend(typeExpr, with: type)
+		}
+
 		try expr.value?.accept(self, context)
 
 		let typeExpr: InferenceResult? = if let typeExpr = expr.typeExpr { context[typeExpr] } else { nil }
@@ -162,7 +170,8 @@ struct InferenceVisitor: Visitor {
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]) \(type) == \(value!)", prefix: " @ ")
 			context.constraints.add(.equality(typeExpr!, value!, at: expr.location))
 		case let (typeExpr, nil) where typeExpr != nil:
-			type = try memberTypeFrom(expr: expr.typeExpr!, in: context)
+			type = try instanceTypeFrom(expr: expr.typeExpr!, in: context)
+
 			context.log("\(expr.description.components(separatedBy: .newlines)[0]), already has type specified: \(type)", prefix: " @ ")
 		case let (nil, value) where value != nil:
 			type = value!
@@ -180,7 +189,7 @@ struct InferenceVisitor: Visitor {
 
 	// Return a type from a type expression, suitable for an instance member. This can include things
 	// like generic parameter substitutions.
-	func memberTypeFrom(expr: any TypeExpr, in context: InferenceContext) throws -> InferenceResult {
+	func instanceTypeFrom(expr: any TypeExpr, in context: InferenceContext) throws -> InferenceResult {
 		let type: InferenceType
 		switch expr.identifier.lexeme {
 		case "int":
@@ -285,6 +294,29 @@ struct InferenceVisitor: Visitor {
 			default:
 				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
+		}
+
+		if expr.isOptional {
+			guard case let .instantiatable(optionalType as EnumType) = context.lookupVariable(named: "Optional") else {
+				// swiftlint:disable fatal_error
+				fatalError("Could not find builtin type Optional")
+				// swiftlint:enable fatal_error
+			}
+
+			// swiftlint:disable force_unwrapping
+			let t = optionalType.typeContext.typeParameters.first!
+			// swiftlint:enable force_unwrapping
+
+			return
+				.instance(
+					Instance(
+						id: context.nextIdentifier(named: "Optional"),
+						type: optionalType,
+						substitutions: [
+							t: type,
+						]
+					)
+				)
 		}
 
 		return type
@@ -471,7 +503,7 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: ParamSyntax, _ context: InferenceContext) throws {
 		let type: InferenceResult = if let typeExpr = expr.type {
-			try memberTypeFrom(expr: typeExpr, in: context)
+			try instanceTypeFrom(expr: typeExpr, in: context)
 		} else {
 			.type(.typeVar(context.freshTypeVariable(expr.name, file: #file, line: #line)))
 		}
@@ -923,7 +955,7 @@ struct InferenceVisitor: Visitor {
 		for decl in expr.body.decls {
 			if let kase = decl as? EnumCaseDecl {
 				for type in kase.attachedTypes {
-					try context.extend(type, with: memberTypeFrom(expr: type, in: context))
+					try context.extend(type, with: instanceTypeFrom(expr: type, in: enumContext))
 				}
 
 				let enumCase = try EnumCase(
