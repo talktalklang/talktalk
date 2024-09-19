@@ -30,6 +30,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	public var type: EnumType
 	public var name: String
 	public var attachedTypes: [InferenceType]
+	public var substitutions: [TypeVariable: InferenceType] = [:]
 
 	init(type: EnumType, name: String, attachedTypes: [InferenceType]) {
 		self.type = type

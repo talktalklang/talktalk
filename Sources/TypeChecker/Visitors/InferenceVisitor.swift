@@ -369,9 +369,16 @@ struct InferenceVisitor: Visitor {
 
 		let returns: InferenceType = if case let .enumCase(enumCase) = context.lookup(syntax: expr.callee) {
 			// If we determine the callee to be an enum case, then its type is actually the enum type.
-			InferenceType.instantiatable(enumCase.type)
+//			InferenceType.instantiatable(enumCase.type)
+			.instance(enumCase.type.instantiate(with: zip(enumCase.attachedTypes, args).reduce(into: [:]) { res, pair in
+				let (type, arg) = pair
+
+				if case let .typeVar(typeVar) = type {
+					res[typeVar] = arg.asType(in: context)
+				}
+			}, in: context))
 		} else {
-			InferenceType.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
+			.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
 		}
 
 		context.constraints.add(

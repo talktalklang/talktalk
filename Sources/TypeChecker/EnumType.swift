@@ -32,6 +32,10 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 			return enumType as? EnumType
 		}
 
+		if case let .type(.instance(instance)) = type {
+			return instance.type as? EnumType
+		}
+
 		return nil
 	}
 

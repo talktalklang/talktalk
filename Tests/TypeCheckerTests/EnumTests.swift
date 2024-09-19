@@ -149,7 +149,10 @@ struct EnumTests: TypeCheckerTest {
 		let arg = syntax[2].cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0].value
 
-		#expect(context[arg] == .type(.instantiatable(enumType)))
+		let instance = try #require(Instance.extract(from: context[arg]!.asType(in: context)))
+		#expect(enumType == instance.type as? EnumType)
+
+		#expect(context[arg] == .type(.instance(instance)))
 
 		#expect(enumType.cases == [
 			EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)]),
