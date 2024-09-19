@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-public enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
+public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	case scheme(Scheme), type(InferenceType)
 
 	public var description: String {
@@ -14,6 +14,15 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible {
 			"scheme(\(scheme))"
 		case let .type(inferenceType):
 			inferenceType.description
+		}
+	}
+
+	public var debugDescription: String {
+		switch self {
+		case let .scheme(scheme):
+			"scheme(\(scheme.debugDescription))"
+		case let .type(inferenceType):
+			inferenceType.debugDescription
 		}
 	}
 

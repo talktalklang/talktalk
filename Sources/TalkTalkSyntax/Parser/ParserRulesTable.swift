@@ -90,6 +90,8 @@ extension Token.Kind {
 		case .interpolationStart: .none
 		case .interpolationEnd: .none
 		case .comment: .none
+		case .for: .none
+		case .questionMark: .none
 		}
 	}
 }

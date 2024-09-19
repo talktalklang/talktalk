@@ -21,7 +21,7 @@ struct StructDeclAnalyzer: Analyzer {
 			return error(at: decl, "did not find struct type from \(decl.name)", environment: context, expectation: .none)
 		}
 
-		let structType = StructType(
+		let structType = AnalysisStructType(
 			id: decl.id,
 			name: decl.name,
 			properties: [:],
@@ -36,7 +36,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 			structType.add(
 				property: Property(
-					symbol: .property(context.moduleName, structType.name ?? "", name),
+					symbol: .property(context.moduleName, structType.name, name),
 					name: name,
 					inferenceType: type.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
@@ -53,7 +53,7 @@ struct StructDeclAnalyzer: Analyzer {
 			let location = decl.body.decls.first(where: { ($0 as? FuncExpr)?.name?.lexeme == name })?.semanticLocation
 
 			let symbol = context.symbolGenerator.method(
-				structType.name ?? "",
+				structType.name,
 				name,
 				parameters: params.map(\.description),
 				source: .internal
@@ -78,7 +78,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 			let location = decl.body.decls.first(where: { $0 is InitDecl })?.semanticLocation
 			let symbol = context.symbolGenerator.method(
-				structType.name ?? "",
+				structType.name,
 				name,
 				parameters: params.map(\.description),
 				source: .internal
@@ -103,26 +103,25 @@ struct StructDeclAnalyzer: Analyzer {
 					name: "init",
 					symbol: context.symbolGenerator.method(
 						context.moduleName,
-						structType.name ?? "",
+						structType.name,
 						parameters: structType.properties.keys.map(\.description),
 						source: .internal
 					),
 					params: structType.properties.values.map(\.inferenceType),
-					inferenceType: .function(structType.properties.values.map(\.inferenceType), .structType(type)),
+					inferenceType: .function(structType.properties.values.map(\.inferenceType), .instantiatable(.struct(type))),
 					location: decl.location,
-					returnTypeID: .structInstance(.synthesized(type)),
+					returnTypeID: .instance(.synthesized(type)),
 					isSynthetic: true
 				)
 			)
 		}
 
-		let lexicalScope = LexicalScope(scope: structType, expr: decl)
-		let bodyContext = context.addLexicalScope(lexicalScope)
+		let bodyContext = context.addLexicalScope(for: structType)
 
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				inferenceType: .structInstance(.synthesized(type)),
+				inferenceType: .instance(.synthesized(type)),
 				wrapped: VarExprSyntax(
 					id: -8,
 					token: .synthetic(.self),
@@ -133,7 +132,7 @@ struct StructDeclAnalyzer: Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-
+			type: .instance(.synthesized(type)),
 			isMutable: false
 		)
 
@@ -145,26 +144,32 @@ struct StructDeclAnalyzer: Analyzer {
 		}
 
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
-
-		// Do a second pass to try to fill in method returns
 		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
+
+		var errors: [AnalysisError] = []
+		for error in context.inferenceContext.errors {
+			errors.append(
+				.init(
+					kind: .inferenceError(error.kind),
+					location: error.location
+				)
+			)
+		}
 
 		let analyzed = try AnalyzedStructDecl(
 			symbol: symbol,
 			wrapped: cast(decl, to: StructDeclSyntax.self),
 			bodyAnalyzed: cast(bodyAnalyzed, to: AnalyzedDeclBlock.self),
 			structType: structType,
-			lexicalScope: lexicalScope,
 			inferenceType: inferenceType,
+			analysisErrors: errors,
 			environment: context
 		)
 
-		context.define(struct: decl.name, as: structType)
-		bodyContext.define(struct: decl.name, as: structType)
+		context.define(type: decl.name, as: structType)
+		bodyContext.define(type: decl.name, as: structType)
 
 		context.define(local: decl.name, as: analyzed, isMutable: false)
-
-		bodyContext.lexicalScope = lexicalScope
 
 		return analyzed
 	}

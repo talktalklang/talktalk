@@ -131,6 +131,7 @@ extension Parser {
 					id: nextID(),
 					identifier: .synthetic(.identifier, lexeme: "<missing>"),
 					genericParams: [],
+					isOptional: false,
 					location: [previous]
 				)
 			}()
@@ -446,7 +447,13 @@ extension Parser {
 			skip(.newline)
 			let genericParams = typeParameters()
 			skip(.newline)
-			return TypeExprSyntax(id: nextID(), identifier: lhs.token, genericParams: genericParams, location: endLocation(i))
+			return TypeExprSyntax(
+				id: nextID(),
+				identifier: lhs.token,
+				genericParams: genericParams,
+				isOptional: false,
+				location: endLocation(i)
+			)
 		}
 
 		return lhs
@@ -605,6 +612,7 @@ extension Parser {
 	mutating func typeExpr() -> TypeExprSyntax {
 		let typeID = consume(.identifier)
 		let i = startLocation(at: previous.unsafelyUnwrapped)
+		let isOptional = didMatch(.questionMark)
 
 		skip(.newline)
 		var typeParameters: [TypeExprSyntax] = []
@@ -625,6 +633,7 @@ extension Parser {
 			id: nextID(),
 			identifier: typeID ?? .synthetic(.error),
 			genericParams: typeParameters,
+			isOptional: isOptional,
 			location: endLocation(i),
 			errors: errors
 		)

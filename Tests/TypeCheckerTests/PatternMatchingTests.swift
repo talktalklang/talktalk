@@ -92,18 +92,81 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.patternSyntax! // .bar(let b)
 			.cast(CallExprSyntax.self)
 
+		let enumType = try EnumType.extract(from: context.get(syntax[0]))!
+
 		let foo = context.lookup(syntax: call1)
 		#expect(foo == .pattern(Pattern(
 			type: .enumCase(
-				EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)])
+				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
-			arguments: [.variable("a", .base(.string))]
+			arguments: [
+				.variable("a", .base(.string))
+			]
 		)))
 
 		let bar = context.lookup(syntax: call2)
 		#expect(bar == .pattern(Pattern(
 			type: .enumCase(
-				EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)])
+				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
+			),
+			arguments: [
+				.variable("b", .base(.int))
+			]
+		)))
+
+		let body = syntax[2].cast(MatchStatementSyntax.self)
+			.cases[0].body[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(VarExprSyntax.self)
+
+		#expect(body.name == "a")
+		#expect(context[body] == .type(.base(.string)))
+	}
+
+	@Test("Can typecheck a match (fn)", .disabled("waiting on match context removal")) func matchinFn() throws {
+		let syntax = try Parser.parse(
+			"""
+			enum Thing {
+				case foo(String)
+				case bar(int)
+			}
+
+			func m() { Thing.foo("sup") }
+
+			match m() {
+			case .foo(let a):
+				a
+			case .bar(let b):
+				b
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		let case1 = syntax[2].cast(MatchStatementSyntax.self)
+			.cases[0] // .foo(let a)...:
+			.patternSyntax! // .foo(let a)
+			.cast(CallExprSyntax.self)
+
+		let case2 = syntax[2].cast(MatchStatementSyntax.self)
+			.cases[1] // .bar(let b)...:
+			.patternSyntax! // .bar(let b)
+			.cast(CallExprSyntax.self)
+
+		let enumType = try EnumType.extract(from: context.get(syntax[0]))!
+
+		let foo = context.lookup(syntax: case1)
+		#expect(foo == .pattern(Pattern(
+			type: .enumCase(
+				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
+			),
+			arguments: [.variable("a", .base(.string))]
+		)))
+
+		let bar = context.lookup(syntax: case2)
+		#expect(bar == .pattern(Pattern(
+			type: .enumCase(
+				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
 			arguments: [.variable("b", .base(.int))]
 		)))
@@ -138,6 +201,9 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let call1 = syntax[2].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
 
+		let topType = try EnumType.extract(from: context.get(syntax[0]))!
+		let bottomType = try EnumType.extract(from: context.get(syntax[1]))!
+
 		// Let's just make sure we're testing the right thing
 		#expect(call1.description == ".bottom(.top(let a))")
 		#expect(context.errors.isEmpty)
@@ -146,22 +212,16 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let expected = InferenceType.pattern(Pattern(
 			type: .enumCase(
 				EnumCase(
-					typeName: "Bottom",
+					type: bottomType,
 					name: "bottom",
-					index: 0,
 					attachedTypes: [
-						.enumType(
-							.init(
-								name: "Top",
-								cases: [
-									.init(
-										typeName: "Top",
-										name: "top",
-										index: 0,
-										attachedTypes: [.base(.string)]
-									),
-								],
-								typeContext: .init()
+						.instance(
+							.enumType(
+								Instance<EnumType>(
+									id: 0,
+									type: topType,
+									substitutions: [:]
+								)
 							)
 						),
 					]
@@ -172,7 +232,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 					.pattern(
 						Pattern(
 							type: .enumCase(
-								EnumCase(typeName: "Top", name: "top", index: 0, attachedTypes: [.base(.string)])
+								EnumCase(type: topType, name: "top", attachedTypes: [.base(.string)])
 							),
 							arguments: [.variable("a", .base(.string))]
 						)
@@ -211,15 +271,15 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		#expect(context.errors == [])
 
-		let kaseArg = syntax[3]
+		let pattern = syntax[3]
 			.cast(MatchStatementSyntax.self).cases[1]
 			.cast(CaseStmtSyntax.self).patternSyntax!
+		let kaseArg = pattern
 			.cast(CallExprSyntax.self).args[1].value
 
 		let match = try context.get(kaseArg)
-		let kase = try #require(EnumCase.extract(from: match))
+		let kase = try #require(EnumType.extract(from: match))
 
-		#expect(kase.typeName == "B")
-		#expect(kase.name == "fizz")
+		#expect(kase.name == "B")
 	}
 }

@@ -5,82 +5,9 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 import Foundation
+import OrderedCollections
 
-public struct ProtocolType: Equatable, Hashable {
-	public let name: String
-}
-
-public class Instance: Equatable, Hashable, CustomStringConvertible {
-	public static func == (lhs: Instance, rhs: Instance) -> Bool {
-		lhs.type == rhs.type && lhs.substitutions == rhs.substitutions
-	}
-
-	let id: Int
-	public let type: StructType
-	var substitutions: [TypeVariable: InferenceType]
-
-	public static func extract(from type: InferenceType) -> Instance? {
-		if case let .structInstance(instance) = type {
-			return instance
-		}
-
-		return nil
-	}
-
-	public static func synthesized(_ type: StructType) -> Instance {
-		Instance(id: -9999, type: type, substitutions: [:])
-	}
-
-	init(id: Int, type: StructType, substitutions: [TypeVariable: InferenceType]) {
-		self.id = id
-		self.type = type
-		self.substitutions = substitutions
-	}
-
-	public func relatedType(named name: String) -> InferenceType? {
-		for substitution in substitutions.keys {
-			if substitution.name == name {
-				return substitutions[substitution]
-			}
-		}
-
-		return nil
-	}
-
-	func member(named name: String) -> InferenceType? {
-		guard let structMember = type.member(named: name) else {
-			return nil
-		}
-
-		var instanceMember: InferenceType
-		switch structMember {
-		case let .scheme(scheme):
-			// It's a method
-			let type = type.context.instantiate(scheme: scheme)
-			instanceMember = self.type.context.applySubstitutions(to: type, with: substitutions)
-		case let .type(inferenceType):
-			// It's a property
-			instanceMember = type.context.applySubstitutions(to: inferenceType, with: substitutions)
-		}
-
-		return instanceMember
-	}
-
-	public var description: String {
-		if substitutions.isEmpty {
-			"\(type.name)()#\(id)"
-		} else {
-			"\(type.name)<\(substitutions.keys.map(\.description).joined(separator: ", "))>()#\(id)"
-		}
-	}
-
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(type)
-		hasher.combine(substitutions)
-	}
-}
-
-public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible {
+public indirect enum InferenceType {
 	// Something we'll fill in later.
 	case typeVar(TypeVariable)
 
@@ -90,15 +17,14 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceType], InferenceType)
 
+	// Instances
+	case instance(InstanceType)
+
 	// Struct stuff
-	case structType(StructType)
-	case structInstance(Instance)
+	case instantiatable(InstantiatableType)
 
 	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)
-
-	// A protocol Type
-	case `protocol`(ProtocolType)
 
 	// Errors
 	case error(InferenceError)
@@ -107,12 +33,10 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 	case kind(InferenceType)
 
 	// Used for `self` in types that support it
-	case selfVar(StructType)
+	case selfVar(InferenceType)
 
 	// Enum types
-	case enumType(EnumType)
 	case enumCase(EnumCase)
-	case enumCaseInstance(EnumCaseInstance)
 
 	// Pattern matching (type, associated values)
 	case pattern(Pattern)
@@ -125,79 +49,5 @@ public indirect enum InferenceType: Equatable, Hashable, CustomStringConvertible
 
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
 		InferenceType.typeVar(TypeVariable(name, id))
-	}
-
-	public var debugDescription: String {
-		switch self {
-		case let .enumCaseInstance(instance):
-			"\(instance.enumCase)\(instance.substitutions)"
-		case let .protocol(protocolType):
-			"\(protocolType.name).Protocol"
-		case let .typeVar(typeVariable):
-			typeVariable.debugDescription
-		case let .base(primitive):
-			"\(primitive)"
-		case let .function(vars, inferenceType):
-			"function(\(vars.map(\.debugDescription).joined(separator: ", "))), returns(\(inferenceType))"
-		case let .error(error):
-			"error(\(error))"
-		case let .structType(structType):
-			structType.name + ".Type"
-		case let .kind(type):
-			"\(type).Kind"
-		case let .structInstance(instance):
-			instance.description
-		case .any:
-			"any"
-		case let .selfVar(type):
-			"\(type.description) (self)"
-		case let .placeholder(variable):
-			"\(variable) (placeholder)"
-		case let .enumType(type):
-			type.description
-		case let .enumCase(kase):
-			kase.description
-		case let .pattern(pattern):
-			"pattern: \(pattern)"
-		case .void:
-			"void"
-		}
-	}
-
-	public var description: String {
-		switch self {
-		case let .enumCaseInstance(instance):
-			"\(instance.enumCase)\(instance.substitutions)"
-		case let .protocol(protocolType):
-			"\(protocolType.name).Protocol"
-		case let .typeVar(typeVariable):
-			typeVariable.description
-		case let .base(primitive):
-			"\(primitive)"
-		case let .function(vars, inferenceType):
-			"function(\(vars.map(\.description).joined(separator: ", "))), returns(\(inferenceType))"
-		case let .error(error):
-			"error(\(error))"
-		case let .structType(structType):
-			structType.name + ".Type"
-		case let .kind(type):
-			"\(type).Kind"
-		case let .structInstance(instance):
-			instance.description
-		case .any:
-			"any"
-		case let .selfVar(type):
-			"\(type.description) (self)"
-		case let .placeholder(variable):
-			"\(variable) (placeholder)"
-		case let .enumType(type):
-			type.description
-		case let .enumCase(kase):
-			kase.description
-		case let .pattern(pattern):
-			"pattern: \(pattern)"
-		case .void:
-			"void"
-		}
 	}
 }

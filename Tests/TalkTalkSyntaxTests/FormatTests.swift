@@ -373,4 +373,26 @@ struct FormatTests {
 		"hello \("world")"
 		"""#)
 	}
+
+	@Test("Formats protocol") func protocols() throws {
+		let formatted = format(#"""
+		protocol  Greetable   {
+					// the name
+		  var   name: String 			// sup
+
+
+
+								func  foo( )  -> 			int
+					}
+		"""#)
+
+		#expect(formatted == #"""
+		protocol Greetable {
+			// the name
+			var name: String // sup
+
+			func foo -> int
+		}
+		"""#)
+	}
 }

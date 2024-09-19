@@ -7,6 +7,7 @@
 import Foundation
 import TalkTalkBytecode
 import TalkTalkSyntax
+import TypeChecker
 
 // Analyze the AST, trying to figure out types and also checking for errors
 public struct SourceFileAnalyzer: Visitor, Analyzer {
@@ -153,7 +154,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		if let binding = context.lookup(expr.name) {
 			var symbol: Symbol? = nil
 
-			if case let .structType(type) = binding.type {
+			if case let .instantiatable(.struct(type)) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.structs[type.name]?.symbol
 					guard symbol != nil else {
@@ -171,7 +172,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
-			} else if case let .enumType(type) = binding.type {
+			} else if case let .instantiatable(.enumType(type)) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.enums[type.name]?.symbol
 					guard symbol != nil else {
@@ -282,8 +283,12 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case let .base(type):
 			.primitive("\(type)")
-		case .structType:
+		case .instantiatable(.struct):
 			context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
+		case .instantiatable(.enumType):
+			context.symbolGenerator.enum(expr.identifier.lexeme, source: .internal)
+		case .instantiatable(.protocol):
+			context.symbolGenerator.protocol(expr.identifier.lexeme, source: .internal)
 		default:
 			context.symbolGenerator.generic("error", source: .internal)
 		}
@@ -308,10 +313,18 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let paramsAnalyzed = try cast(expr.params.accept(self, context), to: AnalyzedParamsExpr.self)
 		let bodyAnalyzed = try cast(expr.body.accept(self, context), to: AnalyzedBlockStmt.self)
 
+		var errors: [AnalysisError] = []
+
+		for param in paramsAnalyzed.paramsAnalyzed {
+			if param.type == nil {
+				errors.append(.init(kind: .unknownError("init parameters must have type declarations"), location: expr.location))
+			}
+		}
+
 		return AnalyzedInitDecl(
 			wrapped: expr.cast(InitDeclSyntax.self),
 			symbol: context.symbolGenerator.method(
-				lexicalScope.scope.name ?? "<no name>",
+				lexicalScope.type.name,
 				"init",
 				parameters: paramsAnalyzed.paramsAnalyzed.map(\.inferenceType.description),
 				source: .internal
@@ -319,7 +332,8 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
-			bodyAnalyzed: bodyAnalyzed
+			bodyAnalyzed: bodyAnalyzed,
+			analysisErrors: errors
 		)
 	}
 
@@ -417,8 +431,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		// Do a first pass over the body decls so we have a basic idea of what's available in
 		// this struct.
 		for decl in expr.decls {
-			guard let declAnalyzed = try decl.accept(self, context) as? any AnalyzedDecl else {
-				continue
+			let analyzed = try decl.accept(self, context)
+			guard let declAnalyzed = analyzed as? any AnalyzedDecl else {
+				throw AnalyzerError.unexpectedCast(expected: "any AnalyzedDecl", received: analyzed.description)
 			}
 
 			declsAnalyzed.append(declAnalyzed)
@@ -437,26 +452,34 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: VarDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
-		// not locals inside methods.
 		var symbol: Symbol?
 		var isGlobal = false
-		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+
+		// Note we use .lexicalScope instead of .getLexicalScope() here because we only want top level decls to count
+		// as properties. If we didn't do this then any locals defined inside methods could be created as properties.
+		if let lexicalScope = context.lexicalScope {
+			symbol = context.symbolGenerator.property(lexicalScope.type.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
+		let typeExpr = try expr.typeExpr?.accept(self, context)
+
 		context.define(local: expr.name, as: expr, isMutable: true, isGlobal: isGlobal)
+
+		var errors = errors(for: expr, in: context.inferenceContext)
+		if case let .error(err) = typeExpr?.typeAnalyzed {
+			errors.append(.init(kind: .typeNotFound(err.description), location: expr.location))
+		}
 
 		let decl = try AnalyzedVarDecl(
 			symbol: symbol,
 			// swiftlint:disable force_unwrapping
-			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			inferenceType: typeExpr?.inferenceType ?? (expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void),
 			// swiftlint:enable force_unwrapping
 			wrapped: expr,
-			analysisErrors: errors(for: expr, in: context.inferenceContext),
+			analysisErrors: errors,
 			valueAnalyzed: expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
@@ -465,12 +488,13 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: LetDeclSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
-		// We use `lexicalScope` here instead of `getLexicalScope` because we only want to generate symbols for properties,
-		// not locals inside methods.
 		var symbol: Symbol?
 		var isGlobal = false
-		if let scope = context.lexicalScope {
-			symbol = context.symbolGenerator.property(scope.scope.name ?? scope.expr.description, expr.name, source: .internal)
+
+		// Note we use .lexicalScope instead of .getLexicalScope() here because we only want top level decls to count
+		// as properties. If we didn't do this then any locals defined inside methods could be created as properties.
+		if let lexicalScope = context.lexicalScope {
+			symbol = context.symbolGenerator.property(lexicalScope.type.name, expr.name, source: .internal)
 		} else if context.isModuleScope {
 			isGlobal = true
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
@@ -563,34 +587,103 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		error(at: expr, "TODO", environment: context, expectation: .none)
-	}
-
-	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		error(at: expr, "TODO", environment: context, expectation: .none)
-	}
-
-	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		error(at: expr, "TODO", environment: context, expectation: .none)
-	}
-
-	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let analyzedBody = try cast(expr.body.accept(self, context), to: AnalyzedDeclBlock.self)
-
 		guard let type = context.inferenceContext.lookup(syntax: expr) else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
+
+		guard let body = try visit(expr.body, context) as? AnalyzedProtocolBodyDecl else {
+			return error(at: expr, "Invalid body type for \(expr)", environment: context)
+		}
+
+		return AnalyzedProtocolDecl(bodyAnalyzed: body, wrapped: expr, inferenceType: type, environment: context)
+	}
+
+	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		let decls = try expr.decls.map {
+			guard let decl = try $0.accept(self, context) as? any AnalyzedDecl else {
+				throw AnalyzerError.unexpectedCast(expected: "AnalyzedDecl", received: "\($0)")
+			}
+
+			return decl
+		}
+
+		return AnalyzedProtocolBodyDecl(wrapped: expr, declsAnalyzed: decls, inferenceType: type, environment: context)
+	}
+
+	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		return AnalyzedFuncSignatureDecl(wrapped: expr, inferenceType: type, environment: context)
+	}
+
+	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		guard let type = context.inferenceContext.lookup(syntax: expr),
+					case let .instantiatable(.enumType(enumType)) = type
+		else {
+			return error(at: expr, "Could not determine type of \(expr)", environment: context)
+		}
+
+		let analysisEnumType = AnalysisEnum(
+			name: expr.nameToken.lexeme,
+			methods: [:]
+		)
+
+		let bodyContext = context.addLexicalScope(for: analysisEnumType)
+
+		bodyContext.define(
+			local: "self",
+			as: AnalyzedVarExpr(
+				inferenceType: type,
+				wrapped: VarExprSyntax(
+					id: -8,
+					token: .synthetic(.self),
+					location: [.synthetic(.self)]
+				),
+				symbol: bodyContext.symbolGenerator.value("self", source: .internal),
+				environment: bodyContext,
+				analysisErrors: [],
+				isMutable: false
+			),
+			type: type,
+			isMutable: false
+		)
+
+		let analyzedBody = try cast(expr.body.accept(self, bodyContext), to: AnalyzedDeclBlock.self)
 
 		var cases: [AnalyzedEnumCaseDecl] = []
 		for decl in analyzedBody.declsAnalyzed {
 			if let decl = decl as? AnalyzedEnumCaseDecl {
 				cases.append(decl)
-			} else {}
+			} else {
+				_ = try decl.accept(self, bodyContext)
+				if let decl = decl as? FuncExpr,
+				   let name = decl.name?.lexeme,
+				   case let .function(params, returns) = context.inferenceContext.lookup(syntax: decl)
+				{
+					analysisEnumType.methods[name] = Method(
+						name: name,
+						symbol: context.symbolGenerator.method(enumType.name, name, parameters: params.map(\.description), source: .internal),
+						params: params,
+						inferenceType: .function(params, returns),
+						location: decl.location,
+						returnTypeID: returns
+					)
+				}
+			}
 		}
+
+		context.define(type: expr.nameToken.lexeme, as: analysisEnumType)
 
 		return AnalyzedEnumDecl(
 			wrapped: expr,
 			symbol: context.symbolGenerator.enum(expr.nameToken.lexeme, source: .internal),
+			analysisEnum: analysisEnumType,
 			casesAnalyzed: cases,
 			inferenceType: type,
 			environment: context,
@@ -607,7 +700,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return try AnalyzedEnumCaseDecl(
 			wrapped: expr,
-			enumName: enumCase.typeName,
+			enumName: enumCase.type.name,
 			attachedTypesAnalyzed: expr.attachedTypes.map { try cast($0.accept(self, context), to: AnalyzedTypeExpr.self) },
 			inferenceType: type,
 			environment: context
@@ -632,7 +725,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 		var errors: [AnalysisError] = []
 
-		if case let .enumType(type) = targetAnalyzed.inferenceType, !hasDefault {
+		if case let .instance(.enumType(instance)) = targetAnalyzed.inferenceType, !hasDefault {
+			let type = instance.type
+
 			// Check that all enum cases are specified
 			let specifiedCases: [String] = casesAnalyzed.compactMap {
 				guard case let .pattern(pattern) = $0.patternAnalyzed?.inferenceType else {
@@ -684,6 +779,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		// Case statements get their own scope
+		let context = context.add(namespace: nil)
+
 		if expr.patternSyntax == nil {
 			// It's an `else` clause
 			return try AnalyzedCaseStmt(
@@ -719,13 +817,6 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				return stmt
 			} else {
 				throw AnalyzerError.unexpectedCast(expected: "any AnalyzedStmt", received: "\(Swift.type(of: stmt))")
-			}
-		}
-
-		var variables: [String: InferenceType] = [:]
-		if case let .pattern(pattern) = context.inferenceContext.lookup(syntax: patternAnalyzed) {
-			for case let .variable(name, type) in pattern.arguments {
-				variables[name] = type
 			}
 		}
 
@@ -767,6 +858,11 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			inferenceType: type,
 			environment: context
 		)
+	}
+
+	public func visit(_ expr: ForStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+		return error(at: expr, "TODO", environment: context, expectation: .none)
 	}
 
 	// GENERATOR_INSERTION

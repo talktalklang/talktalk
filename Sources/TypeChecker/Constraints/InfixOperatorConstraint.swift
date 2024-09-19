@@ -20,11 +20,11 @@ struct InfixOperatorConstraint: Constraint {
 		let rhs = context.applySubstitutions(to: rhs)
 		let returns = context.applySubstitutions(to: .typeVar(returns))
 
-		return "InfixOperatorConstraint(lhs: \(lhs), rhs: \(rhs), op: \(op.rawValue), returns: \(returns))"
+		return "InfixOperatorConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), op: \(op.rawValue), returns: \(returns.debugDescription))"
 	}
 
 	var description: String {
-		"EqualityConstraint(lhs: \(lhs), rhs: \(rhs))"
+		"EqualityConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
 	}
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
@@ -56,9 +56,10 @@ struct InfixOperatorConstraint: Constraint {
 			context.unify(type, .base(.string), location)
 
 			return checkReturnType(type, expect: .base(.string), context: context)
-//		case (.base(.bool), .base(.bool), .andAnd),
-//		     (.base(.bool), .base(.bool), .pipePipe):
-//			return checkReturnType(.base(.bool))
+		case let (lhs, rhs, .equalEqual):
+			context.unify(.typeVar(returns), .base(.bool), location)
+			context.unify(lhs, rhs, location)
+			return .ok
 		default:
 			context.unify(lhs, .typeVar(returns), location)
 			context.unify(rhs, .typeVar(returns), location)

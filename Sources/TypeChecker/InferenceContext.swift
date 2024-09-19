@@ -12,27 +12,46 @@ import TalkTalkSyntax
 typealias VariableID = Int
 
 // If we're inside a type's body, we can save methods/properties in here
-class TypeContext {
+public class TypeContext: Equatable, Hashable {
+	public static func == (lhs: TypeContext, rhs: TypeContext) -> Bool {
+		lhs.hashValue == rhs.hashValue
+	}
+
+	public var name: String
 	var methods: OrderedDictionary<String, InferenceResult>
 	var initializers: OrderedDictionary<String, InferenceResult>
 	var properties: OrderedDictionary<String, InferenceResult>
 	var typeParameters: [TypeVariable]
+	var conformances: [ProtocolType] = []
 
 	init(
+		name: String,
 		methods: OrderedDictionary<String, InferenceResult> = [:],
 		initializers: OrderedDictionary<String, InferenceResult> = [:],
 		properties: OrderedDictionary<String, InferenceResult> = [:],
 		typeParameters: [TypeVariable] = []
 	) {
+		self.name = name
 		self.methods = methods
 		self.initializers = initializers
 		self.properties = properties
 		self.typeParameters = typeParameters
 	}
+
+	public func member(named name: String) -> InferenceResult? {
+		methods[name] ?? properties[name] ?? initializers[name]
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(methods.keys)
+		hasher.combine(initializers)
+		hasher.combine(properties)
+		hasher.combine(typeParameters)
+	}
 }
 
 class InstanceContext: CustomDebugStringConvertible {
-	var substitutions: [TypeVariable: InferenceType] = [:]
+	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 	var debugDescription: String {
 		"InstanceContext(\(substitutions))"
@@ -49,26 +68,26 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
-class MatchContext {
-	let target: InferenceType
-	var current: any Syntax
-	var substitutions: [TypeVariable: InferenceType] = [:]
-
-	init(target: InferenceType, current: any Syntax) {
-		self.target = target
-		self.current = current
-	}
-}
+//class MatchContext {
+//	let target: InferenceType
+//	var current: any Syntax
+//	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+//
+//	init(target: InferenceType, current: any Syntax) {
+//		self.target = target
+//		self.current = current
+//	}
+//}
 
 public class InferenceContext: CustomDebugStringConvertible {
 	// Stores the mappings of syntax nodes to inference types
 	var environment: Environment
 
 	// Names that we know at inference time
-	public private(set) var namedVariables: [String: InferenceType] = [:]
+	public private(set) var namedVariables: OrderedDictionary<String, InferenceType> = [:]
 
 	// Names that we're going to have to solve for later
-	private(set) var namedPlaceholders: [String: InferenceType] = [:]
+	private(set) var namedPlaceholders: OrderedDictionary<String, InferenceType> = [:]
 
 	// Does this context have a parent?
 	var parent: InferenceContext?
@@ -86,10 +105,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var constraints: Constraints
 
 	// Known substitutions due to unification
-	var substitutions: [TypeVariable: InferenceType] = [:]
+	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 	// Gives subexpressions a hint about what type they're expected to be.
-	var expectation: InferenceType?
+	var expectations: [InferenceType]
 
 	// For fresh variable generation
 	var nextID: VariableID = 0
@@ -101,10 +120,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var verbose: Bool = false
 
 	// Type-level context info like methods, properties, etc
-	var typeContext: TypeContext?
+	public var typeContext: TypeContext?
 
 	// Match target context, used for match statements
-	var matchContext: MatchContext?
+//	var matchContext: MatchContext?
 
 	// Instance-level context info like generic parameter bindings
 	var instanceContext: InstanceContext?
@@ -114,11 +133,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 		imports: [InferenceContext] = [],
 		environment: Environment,
 		constraints: Constraints,
-		substitutions: [TypeVariable: InferenceType] = [:],
+		substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:],
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
-		expectation: InferenceType? = nil,
-		matchContext: MatchContext? = nil
+		expectations: [InferenceType] = [],
+//		matchContext: MatchContext? = nil
+		file: String = #file,
+		line: UInt32 = #line
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
@@ -128,10 +149,14 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.substitutions = substitutions
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
-		self.expectation = expectation
-		self.matchContext = matchContext
+		self.expectations = expectations
+//		self.matchContext = matchContext
 
-		log("New context with depth \(depth)", prefix: " * ")
+		log("New context with depth \(depth) \(file):\(line)", prefix: " * ")
+	}
+
+	public func exists(syntax: any Syntax) -> Bool {
+		self[syntax] != nil
 	}
 
 	public func lookup(syntax: any Syntax) -> InferenceType? {
@@ -259,19 +284,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext,
-			expectation: expectation,
-			matchContext: matchContext
-		)
-	}
-
-	func withMatchContext(_ matchContext: MatchContext) -> InferenceContext {
-		InferenceContext(
-			parent: self,
-			environment: environment.childEnvironment(),
-			constraints: constraints,
-			substitutions: substitutions,
-			typeContext: typeContext,
-			matchContext: matchContext
+			expectations: expectations
 		)
 	}
 
@@ -292,21 +305,30 @@ public class InferenceContext: CustomDebugStringConvertible {
 			substitutions: substitutions,
 			typeContext: typeContext,
 			instanceContext: instanceContext,
-			expectation: expectation,
-			matchContext: matchContext
+			expectations: expectations
 		)
 	}
 
-	func childTypeContext() -> InferenceContext {
+	func childTypeContext(named name: String) -> InferenceContext {
 		InferenceContext(
 			parent: self,
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext(),
-			expectation: expectation,
-			matchContext: matchContext
+			typeContext: typeContext ?? TypeContext(name: name),
+			expectations: expectations
 		)
+	}
+
+	var expectation: InferenceType? {
+		expectations.last
+	}
+
+	@discardableResult func expecting<T>(_ type: InferenceType, perform: () throws -> T) rethrows -> T {
+		expectations.append(type)
+		let res = try perform()
+		_ = expectations.popLast()
+		return res
 	}
 
 	func expecting(_ type: InferenceType) -> InferenceContext {
@@ -315,9 +337,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			environment: environment,
 			constraints: constraints,
 			substitutions: substitutions,
-			typeContext: typeContext ?? TypeContext(),
-			expectation: type,
-			matchContext: matchContext
+			typeContext: typeContext ?? TypeContext(name: type.description),
+			expectations: expectations + [type]
 		)
 	}
 
@@ -468,14 +489,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func applySubstitutions(
 		to type: InferenceType,
-		with substitutions: [TypeVariable: InferenceType],
+		with substitutions: OrderedDictionary<TypeVariable, InferenceType>,
 		count: Int = 0
 	) -> InferenceType {
-		if substitutions.isEmpty {
+		if substitutions.isEmpty && namedVariables.isEmpty {
 			return type
 		}
 
 		switch type {
+//		case let .placeholder(typeVar):
+//			return namedVariables[typeVar.name ?? ""] ?? .placeholder(typeVar)
 		case let .pattern(pattern):
 			return .pattern(
 				Pattern(
@@ -496,35 +519,21 @@ public class InferenceContext: CustomDebugStringConvertible {
 				return applySubstitutions(to: .typeVar(child), with: substitutions, count: count + 1)
 			}
 
-			return substitutions[typeVariable] ?? type
+			return substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""] ?? type
 		case let .function(params, returning):
 			return .function(
 				params.map { applySubstitutions(to: $0, with: substitutions) },
 				applySubstitutions(to: returning, with: substitutions)
 			)
-		case let .structInstance(instance):
-//			for case let (key, .typeVar(val)) in substitutions {
-//				if instance.substitutions[val] != nil {
-//					instance.substitutions[val] = .typeVar(key)
-//				}
-//			}
-			return .structInstance(instance)
-		case let .enumType(type):
-			return .enumType(EnumType(
-				name: type.name,
-				cases: type.cases.map {
-					// swiftlint:disable force_unwrapping
-					EnumCase.extract(from: .type(applySubstitutions(to: .enumCase($0), with: substitutions)))!
-					// swiftlint:enable force_unwrapping
-				},
-				typeContext: type.typeContext
-			))
+		case let .instance(instance):
+			return .instance(instance)
+		case let .instantiatable(type):
+			return type.apply(substitutions: substitutions, in: self)
 		case let .enumCase(kase):
 			return .enumCase(
 				EnumCase(
-					typeName: kase.typeName,
+					type: kase.type,
 					name: kase.name,
-					index: kase.index,
 					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
 				)
 			)
@@ -542,7 +551,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		applySubstitutions(to: result.asType(in: self))
 	}
 
-	func applySubstitutions(to result: InferenceResult, with: [TypeVariable: InferenceType]) -> InferenceType {
+	func applySubstitutions(to result: InferenceResult, with: OrderedDictionary<TypeVariable, InferenceType>) -> InferenceType {
 		applySubstitutions(to: result.asType(in: self), with: with)
 	}
 
@@ -551,9 +560,13 @@ public class InferenceContext: CustomDebugStringConvertible {
 		let a = applySubstitutions(to: typeA)
 		let b = applySubstitutions(to: typeB)
 
-		log("Unifying \(typeA) <-> \(typeB)", prefix: " & ")
+		log("Unifying \(typeA.debugDescription) <-> \(typeB.debugDescription)", prefix: " & ")
 
 		switch (a, b) {
+		case let (.selfVar(type), .typeVar(typeVar)):
+			bind(typeVar: typeVar, to: type)
+		case let (.typeVar(typeVar), .selfVar(type)):
+			bind(typeVar: typeVar, to: type)
 		case let (.base(a), .base(b)) where a != b:
 			log("Cannot unify \(a) and \(b)", prefix: " ! ")
 			addError(
@@ -583,16 +596,34 @@ public class InferenceContext: CustomDebugStringConvertible {
 			bind(typeVar: a, to: b)
 		case let (.kind(a), .kind(.typeVar(b))):
 			bind(typeVar: b, to: a)
-		case let (.structType(a), .structType(b)) where a.name == b.name:
+
+		// MARK: Instantiable stuff
+		case let (.instantiatable(a), .instantiatable(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
-		case let (.structInstance(a), .structInstance(b)) where a.type.name == b.type.name:
+		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.enumType(type), .enumCase(kase)):
-			if type.name != kase.typeName {
+		case let (.selfVar(.instantiatable(selfVar)), .instance(instance)), let (.instance(instance), .selfVar(.instantiatable(selfVar))):
+			if selfVar.name == instance.type.name {
+				break
+			}
+
+		// MARK: Enum special cases
+		case let (.selfVar(.instantiatable(.enumType(a))), .enumCase(b)),
+			let (.enumCase(b), .selfVar(.instantiatable(.enumType(a)))):
+			if a == b.type {
+				break
+			}
+		case let (.enumCase(a), .enumCase(b)):
+			for (lhs, rhs) in zip(a.attachedTypes, b.attachedTypes) {
+				unify(lhs, rhs, location)
+			}
+		case let (.instantiatable(.enumType(type)), .enumCase(kase)),
+				let (.enumCase(kase), .instantiatable(.enumType(type))):
+			if kase.type != type {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),
@@ -600,17 +631,42 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.enumCase(kase), .enumType(type)):
-			if type.name != kase.typeName {
-				addError(
-					.init(
-						kind: .unificationError(typeA, typeB),
+		case let (.instantiatable(.enumType(type)), .instance(instance)),
+			let (.instance(instance), .instantiatable(.enumType(type))):
+			if case let enumType = instance.type as? EnumType, enumType == type {
+				break
+			}
+
+			addError(
+				.init(
+					kind: .unificationError(typeA, typeB),
+					location: location
+				)
+			)
+		// Handle case where we're trying to unify an enum case with a protocol
+		case let (.instance(instance), .enumCase(kase)),
+		     let (.enumCase(kase), .instance(instance)):
+			if let type = instance.type as? ProtocolType {
+				deferConstraint(
+					TypeConformanceConstraint(
+						type: .type(.instantiatable(.enumType(kase.type))),
+						conformsTo: .type(.instantiatable(.protocol(type))),
 						location: location
 					)
 				)
 			}
+		case let (.instance(lhs), .instance(rhs)):
+			if lhs.type is ProtocolType || rhs.type is ProtocolType {
+				break
+			}
+		case let (.pattern(pattern), rhs):
+			unify(pattern.type, rhs, location)
+		case let (lhs, .pattern(pattern)):
+			unify(lhs, pattern.type, location)
+		case (.void, .void):
+			() // This is chill
 		default:
-			if a != b, a != .any, b != .any {
+			if !(a <= b), a != .any, b != .any {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),
@@ -624,7 +680,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	// Turn this scheme into an actual type, using whatever environment we
 	// have at this moment
 	func instantiate(scheme: Scheme) -> InferenceType {
-		var localSubstitutions: [TypeVariable: InferenceType] = [:]
+		var localSubstitutions = substitutions
 
 		// Replace the scheme's variables with fresh type variables
 		for case let .typeVar(variable) in scheme.variables {
@@ -639,14 +695,14 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		return applySubstitutions(
 			to: scheme.type,
-			with: substitutions.merging(localSubstitutions, uniquingKeysWith: { $1 })
+			with: localSubstitutions
 		)
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 		if verbose {
 			let context = context ?? self
-			print("\(context.depth) " + prefix + msg)
+			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth-1)))" + prefix + msg)
 		}
 	}
 }

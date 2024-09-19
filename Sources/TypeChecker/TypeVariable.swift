@@ -13,6 +13,14 @@ public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, Custom
 		TypeVariable(named, id ?? named.hashValue)
 	}
 
+	public static func extract(from type: InferenceType) -> TypeVariable? {
+		guard case let .typeVar(typeVar) = type else {
+			return nil
+		}
+
+		return typeVar
+	}
+
 	init(_ name: String?, _ id: VariableID) {
 		self.id = id
 		self.name = name

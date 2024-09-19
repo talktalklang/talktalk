@@ -23,7 +23,7 @@ public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl, AnalyzedVarL
 	public var name: String { wrapped.name }
 	public var nameToken: Token { wrapped.nameToken }
 	public var token: Token { wrapped.token }
-	public var typeExpr: (any TypeExpr)? { wrapped.typeExpr }
+	public var typeExpr: TypeExprSyntax? { wrapped.typeExpr }
 	public var value: (any Expr)? { wrapped.value }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }

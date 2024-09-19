@@ -4,10 +4,6 @@ import TalkTalkSyntax
 
 public struct AnalyzedFuncSignatureDecl: FuncSignatureDecl, AnalyzedDecl {
 	public let wrapped: FuncSignatureDeclSyntax
-	public var funcTokenAnalyzed: Token
-	public var nameAnalyzed: Token
-	public var paramsAnalyzed: ParamsExprSyntax
-	public var returnDeclAnalyzed: TypeExpr
 
 	public var inferenceType: InferenceType
 	public var environment: Environment

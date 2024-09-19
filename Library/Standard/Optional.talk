@@ -1,0 +1,4 @@
+enum Optional<Wrapped> {
+	case none
+	case some(Wrapped)
+}

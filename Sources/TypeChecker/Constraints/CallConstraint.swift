@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/27/24.
 //
 
+import OrderedCollections
 import TalkTalkSyntax
 
 struct CallConstraint: Constraint {
@@ -19,11 +20,11 @@ struct CallConstraint: Constraint {
 		let args = args.map { context.applySubstitutions(to: $0.asType(in: context)) }.map(\.description).joined(separator: ", ")
 		let returns = context.applySubstitutions(to: returns)
 
-		return "CallConstraint(callee: \(callee), args: \(args), returns: \(returns))"
+		return "CallConstraint(callee: \(callee.debugDescription), args: \(args.debugDescription), returns: \(returns.debugDescription))"
 	}
 
 	var description: String {
-		"CallConstraint(callee: \(callee), args: \(args), returns: \(returns))"
+		"CallConstraint(callee: \(callee.debugDescription), args: \(args.debugDescription), returns: \(returns.debugDescription))"
 	}
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
@@ -34,7 +35,7 @@ struct CallConstraint: Constraint {
 		switch callee {
 		case let .function(params, fnReturns):
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
-		case let .structType(structType):
+		case let .instantiatable(.struct(structType)):
 			return solveStruct(structType: structType, in: context)
 		case let .enumCase(enumCase):
 			return solveEnumCase(enumCase: enumCase, in: context)
@@ -115,17 +116,21 @@ struct CallConstraint: Constraint {
 		return .ok
 	}
 
+	// Handle inits for structs
 	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
 		// Create a child context to evaluate args and params so we don't get leaks
 		let childContext = structType.context
-//		let childContext = structType.context.childTypeContext(withSelf: structType.context.typeContext!.selfVar)
 		let params: [InferenceType]
-		if let initializer = structType.member(named: "init") {
+
+		// Create a local substitutions map for this instance
+		var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+
+		// If we have an init, use the params from that init
+		if let initializer = structType.initializers["init"] {
 			switch initializer {
 			case let .scheme(scheme):
 				switch structType.context.instantiate(scheme: scheme) {
-				case let .function(fnParams, fnReturns):
-					context.unify(returns, fnReturns, location)
+				case let .function(fnParams, _):
 					params = fnParams
 				default:
 					params = []
@@ -136,9 +141,7 @@ struct CallConstraint: Constraint {
 				params = []
 			}
 		} else {
-			// We don't have an init so we need to synthesize one
-			var substitutions: [TypeVariable: InferenceType] = [:]
-
+			// We don't have an init so we need to synthesize one from the struct's properties
 			params = structType.properties.map { name, type in
 				if case let .type(.typeVar(typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
@@ -150,10 +153,10 @@ struct CallConstraint: Constraint {
 
 				return type.asType(in: structType.context)
 			}
-
-			let instance = structType.instantiate(with: substitutions, in: context)
-			context.unify(returns, .structInstance(instance), location)
 		}
+
+		let instance = structType.instantiate(with: substitutions, in: context)
+		context.unify(returns, .instance(instance), location)
 
 		if args.count != params.count {
 			return .error([
@@ -165,7 +168,7 @@ struct CallConstraint: Constraint {
 			])
 		}
 
-		guard case let .structInstance(instance) = context.applySubstitutions(to: returns) else {
+		guard case var .instance(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
 
@@ -185,13 +188,13 @@ struct CallConstraint: Constraint {
 				let type = arg.asType(in: childContext)
 				instance.substitutions[param] = type
 				childContext.unify(type, arg.asType(in: childContext), location)
-			case let .structType(structType):
-				var substitutions: [TypeVariable: InferenceType] = [:]
-				if case let .structInstance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
+			case let .instantiatable(structType):
+				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
+				if case let .instance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions
 				}
 
-				paramType = .structInstance(
+				paramType = .instance(
 					structType.instantiate(
 						with: substitutions,
 						in: context
@@ -211,7 +214,7 @@ struct CallConstraint: Constraint {
 		}
 
 		childContext.unify(
-			.structInstance(instance),
+			.instance(instance),
 			returns,
 			location
 		)
@@ -222,6 +225,13 @@ struct CallConstraint: Constraint {
 	}
 
 	func solveEnumCase(enumCase: EnumCase, in context: InferenceContext) -> ConstraintCheckResult {
+		// We need to unify the enum case attached types with args here
+
+		// The naive thing which is too global
+//		for (type, arg) in zip(enumCase.attachedTypes, args) {
+//			context.unify(type, arg.asType(in: context), location)
+//		}
+
 		context.unify(returns, .enumCase(enumCase), location)
 		return .ok
 	}

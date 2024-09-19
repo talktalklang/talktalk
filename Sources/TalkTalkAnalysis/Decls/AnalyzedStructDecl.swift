@@ -8,8 +8,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 	public let wrapped: StructDeclSyntax
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
-	public let structType: StructType
-	public let lexicalScope: LexicalScope
+	public let structType: AnalysisStructType
 
 	// AnalyzedDecl conformance
 	public var inferenceType: InferenceType
@@ -19,6 +18,7 @@ public struct AnalyzedStructDecl: StructDecl, AnalyzedDecl {
 		]
 	}
 
+	public var analysisErrors: [AnalysisError]
 	public var environment: Environment
 
 	// Delegate these to the wrapped node

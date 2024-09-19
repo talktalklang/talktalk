@@ -252,8 +252,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: StructDeclSyntax, _: Context) throws -> [RawSemanticToken] {
-		var result = [make(.keyword, from: expr.structToken)]
-		result.append(make(.type, from: expr.nameToken))
+		var result = [make(.keyword, from: expr.structToken), make(.type, from: expr.nameToken)]
 		try result.append(contentsOf: expr.body.accept(self, .struct))
 		return result
 	}
@@ -326,16 +325,16 @@ public struct SemanticTokensVisitor: Visitor {
 		return results
 	}
 
-	public func visit(_ expr: ProtocolDeclSyntax, _: Context) throws -> [RawSemanticToken] {
-		[make(.keyword, from: expr.keywordToken)]
+	public func visit(_ expr: ProtocolDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		try [make(.keyword, from: expr.keywordToken), make(.interface, from: expr.name)] + expr.body.accept(self, context)
 	}
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		try expr.decls.flatMap { try $0.accept(self, context) }
 	}
 
-	public func visit(_ expr: FuncSignatureDeclSyntax, _: Context) throws -> [RawSemanticToken] {
-		[make(.keyword, from: expr.funcToken)]
+	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		try [make(.keyword, from: expr.funcToken), make(.function, from: expr.name)] + expr.params.accept(self, context) + expr.returnDecl.accept(self, context)
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
@@ -349,7 +348,10 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		var result = [make(.keyword, from: expr.caseToken), make(.property, from: expr.nameToken)]
+		var result = [
+			make(.keyword, from: expr.caseToken),
+			make(.property, from: expr.nameToken),
+		]
 
 		for type in expr.attachedTypes {
 			try result.append(contentsOf: type.accept(self, context))
@@ -399,6 +401,13 @@ public struct SemanticTokensVisitor: Visitor {
 		}
 
 		return result
+	}
+
+	public func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		try [
+			make(.keyword, from: expr.forToken),
+			make(.keyword, from: expr.inToken),
+		] + expr.element.accept(self, context) + expr.sequence.accept(self, context) + expr.body.accept(self, context)
 	}
 
 	// GENERATOR_INSERTION

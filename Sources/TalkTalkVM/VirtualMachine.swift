@@ -538,7 +538,7 @@ public struct VirtualMachine {
 				return runtimeError("Cannot set struct")
 			case .getProperty:
 				// Get the slot of the member
-				let symbol = try readSymbol()
+				var symbol = try readSymbol()
 
 				// PropertyOptions let us see if this member is a method
 				let propertyOptions = try PropertyOptions(rawValue: readByte())
@@ -551,10 +551,14 @@ public struct VirtualMachine {
 					if propertyOptions.contains(.isMethod) {
 						// If it's a method, we create a boundMethod value, which consists of the method symbol
 						// and the instance ID.
-						let boundMethod = Value.boundMethod(instance, symbol)
+						let boundMethod = Value.boundStructMethod(instance, symbol)
 
 						stack.push(boundMethod)
 					} else {
+						if case let .property(nil, name) = symbol.kind {
+							symbol = .property(symbol.module, instance.type.name, name)
+						}
+
 						guard let value = instance.fields[symbol] else {
 							return runtimeError("uninitialized value in slot \(symbol) for \(instance)")
 						}
@@ -567,6 +571,13 @@ public struct VirtualMachine {
 					}
 
 					stack.push(.enumCase(kase))
+				case let .enumCase(enumCase):
+					if propertyOptions.contains(.isMethod) {
+						let boundMethod = Value.boundEnumMethod(enumCase, symbol)
+						stack.push(boundMethod)
+					} else {
+						return runtimeError("enums don't have properties")
+					}
 				default:
 					return runtimeError("Receiver is not an instance of a struct or enum")
 				}
@@ -647,7 +658,7 @@ public struct VirtualMachine {
 					stack.push(binding)
 				}
 			case .endInline:
-				var inlineFrame = try frames.pop()
+				let inlineFrame = try frames.pop()
 				guard inlineFrame.isInline else {
 					return runtimeError("Frame not inline!")
 				}
@@ -692,10 +703,12 @@ public struct VirtualMachine {
 			try call(chunkID: moduleFunction)
 		case let .struct(structValue):
 			try call(structValue: structValue)
-		case let .boundMethod(instance, symbol):
+		case let .boundStructMethod(instance, symbol):
 			try call(boundMethod: symbol, on: instance)
 		case let .enumCase(callee):
 			try bind(enum: callee)
+		case let .boundEnumMethod(enumCase, symbol):
+			try call(boundMethod: symbol, on: enumCase)
 		default:
 			throw VirtualMachineError.typeError("\(callee) is not callable")
 		}
@@ -713,14 +726,36 @@ public struct VirtualMachine {
 		)
 	}
 
-	// Call a method on an instance.
+	// Call a method on a struct instance.
 	// Takes the method offset, instance and type that defines the method.
 	private mutating func call(boundMethod: Symbol, on instance: Instance) throws {
+		var boundMethod = boundMethod
+
+		if case let .method(nil, name, params) = boundMethod.kind {
+			boundMethod = .init(module: boundMethod.module, kind: .method(instance.type.name, name, params))
+		}
+
 		guard let methodChunk = module.chunks[boundMethod] else {
 			throw VirtualMachineError.valueMissing("no method found \(boundMethod)")
 		}
 
 		try call(chunk: methodChunk, withSelf: .instance(instance))
+	}
+
+	// Call a method on a struct instance.
+	// Takes the method offset, instance and type that defines the method.
+	private mutating func call(boundMethod: Symbol, on enumCase: EnumCase) throws {
+		var boundMethod = boundMethod
+
+		if case let .method(nil, name, params) = boundMethod.kind {
+			boundMethod = .init(module: boundMethod.module, kind: .method(enumCase.type, name, params))
+		}
+
+		guard let methodChunk = module.chunks[boundMethod] else {
+			throw VirtualMachineError.valueMissing("no method found \(boundMethod)")
+		}
+
+		try call(chunk: methodChunk, withSelf: .enumCase(enumCase))
 	}
 
 	private mutating func call(structValue structType: Struct) throws {

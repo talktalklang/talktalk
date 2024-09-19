@@ -118,6 +118,7 @@ struct CompleterTests {
 
 		#expect(results.sorted() == [
 			Completion.Item(value: "Array", kind: .type),
+			Completion.Item(value: "ArrayIterator", kind: .type),
 		].sorted())
 	}
 }

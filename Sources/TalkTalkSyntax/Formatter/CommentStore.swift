@@ -6,6 +6,10 @@
 //
 
 extension Syntax {
+	var canHaveLeadingComment: Bool {
+		!(self is DeclBlock)
+	}
+
 	var canHaveTrailingComment: Bool {
 		self is Decl || self is Stmt
 	}
@@ -73,7 +77,7 @@ class CommentStore {
 		commentsBySyntax[syntax.id, default: .init()].isFirstChild = previous == nil
 
 		// It's before the node, make it a leading comment
-		if comment.line < syntax.location.start.line {
+		if comment.line < syntax.location.start.line, syntax.canHaveLeadingComment {
 			commentsBySyntax[syntax.id, default: .init()].leadingComments.append(comment)
 			comments.removeFirst()
 			return true

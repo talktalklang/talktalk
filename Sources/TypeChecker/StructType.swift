@@ -8,18 +8,18 @@ import Foundation
 import OrderedCollections
 import TalkTalkSyntax
 
-public struct StructType: Equatable, Hashable, CustomStringConvertible {
+public struct StructType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
 	public static func == (lhs: StructType, rhs: StructType) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
 
 	public let name: String
-	private(set) var context: InferenceContext
-	var typeBindings: [TypeVariable: InferenceType] = [:]
-	let typeContext: TypeContext
+	public private(set) var context: InferenceContext
+	public let typeContext: TypeContext
+	public var conformances: [ProtocolType] { typeContext.conformances }
 
 	public static func extractType(from result: InferenceResult?) -> StructType? {
-		if case let .type(.structType(structType)) = result {
+		if case let .type(.instantiatable(.struct(structType))) = result {
 			return structType
 		}
 
@@ -27,8 +27,8 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	public static func extractInstance(from result: InferenceResult?) -> StructType? {
-		if case let .type(.structInstance(instance)) = result {
-			return instance.type
+		if case let .type(.instance(instance)) = result {
+			return instance.type as? StructType
 		}
 
 		return nil
@@ -37,7 +37,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 	init(name: String, parentContext: InferenceContext) {
 		self.name = name
 
-		let context = parentContext.childTypeContext()
+		let context = parentContext.childTypeContext(named: name)
 
 		self.context = context
 
@@ -47,46 +47,28 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 			// swiftlint:enable fatal_error
 		}
 		self.typeContext = typeContext
-
-		context.defineVariable(named: "self", as: .selfVar(self), at: [.synthetic(.struct)])
 	}
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
-		hasher.combine(typeContext.initializers)
-		hasher.combine(typeContext.properties)
-		hasher.combine(typeContext.methods)
+		hasher.combine(typeContext.initializers.keys)
+		hasher.combine(typeContext.properties.keys)
+		hasher.combine(typeContext.methods.keys)
 	}
 
 	public var description: String {
 		"\(name)(\(properties.reduce(into: []) { res, pair in res.append("\(pair.key): \(pair.value)") }.joined(separator: ", ")))"
 	}
 
-	func instantiate(with substitutions: [TypeVariable: InferenceType], in context: InferenceContext) -> Instance {
-		let instance = Instance(
-			id: context.nextIdentifier(named: name),
-			type: self,
-			substitutions: typeContext.typeParameters.reduce(into: [:]) {
-				if let sub = substitutions[$1] {
-					$0[$1] = sub
-				} else if context.substitutions[$1] != nil {
-					$0[$1] = context.applySubstitutions(to: .typeVar($1))
-				} else {
-					$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
-				}
-			}
-		)
-
-		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
-
-		return instance
+	public func apply(substitutions _: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InferenceType {
+		.instantiatable(.struct(self))
 	}
 
 	public var initializers: OrderedDictionary<String, InferenceResult> {
 		typeContext.initializers
 	}
 
-	func member(named name: String) -> InferenceResult? {
+	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 			return .type(context.applySubstitutions(to: member.asType(in: context)))
 		}
@@ -98,13 +80,13 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible {
 		return nil
 	}
 
-	func method(named name: String) -> InferenceResult? {
-		if let member = methods[name] {
-			return .type(context.applySubstitutions(to: member.asType(in: context)))
-		}
-
-		return nil
-	}
+//	func method(named name: String) -> InferenceResult? {
+//		if let member = methods[name] {
+//			return .type(context.applySubstitutions(to: member.asType(in: context)))
+//		}
+//
+//		return nil
+//	}
 
 	public var properties: OrderedDictionary<String, InferenceResult> {
 		typeContext.properties

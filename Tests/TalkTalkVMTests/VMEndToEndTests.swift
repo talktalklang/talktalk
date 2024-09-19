@@ -14,6 +14,7 @@ import TalkTalkSyntax
 import TalkTalkVM
 import Testing
 
+@MainActor
 struct VMEndToEndTests: VMTest {
 	func runAsync(_ strings: String...) throws {
 		let module = try compile(strings)
@@ -296,7 +297,7 @@ struct VMEndToEndTests: VMTest {
 					struct Person {
 						var age: int
 
-						init(age) {
+						init(age: int) {
 							self.age = age
 						}
 					}
@@ -349,7 +350,7 @@ struct VMEndToEndTests: VMTest {
 					struct Person {
 						var age: int
 
-						init(age) {
+						init(age: int) {
 							self.age = age
 						}
 					}
@@ -471,8 +472,9 @@ struct VMEndToEndTests: VMTest {
 				print(a[i])
 				i += 1
 			}
-			"""
-			, output: TestOutput())
+			""",
+			output: TestOutput()
+		)
 	}
 
 	@Test("+=") func plusEquals() throws {

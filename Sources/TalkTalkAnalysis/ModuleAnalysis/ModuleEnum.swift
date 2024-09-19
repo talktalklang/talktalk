@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
+import OrderedCollections
 import TalkTalkBytecode
 import TalkTalkSyntax
 
@@ -14,7 +15,7 @@ public struct ModuleEnum: ModuleGlobal {
 	public let location: SourceLocation
 	public let typeID: InferenceType
 	public var source: ModuleSource
-	public var methods: [Method]
+	public var methods: OrderedDictionary<String, Method>
 
 	public var isImport: Bool {
 		if case .module = source {

@@ -46,6 +46,11 @@ struct EnumTests: TypeCheckerTest {
 			case .foo(let wrapped):
 				wrapped
 			}
+
+			match Thing.foo("sup") {
+			case .foo(let wrapped):
+				wrapped
+			}
 			"""
 		)
 
@@ -57,13 +62,23 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 1)
 
 		#expect(enumType.cases[0].attachedTypes.count == 1)
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 81)) // Make sure int doesn't leak to outer generic
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 100)) // Make sure int doesn't leak to outer generic
 
-		let wrappedVar = syntax[1].cast(MatchStatementSyntax.self)
+		let wrappedIntVar = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
 
-		#expect(context[wrappedVar] == .type(.base(.int)))
+		#expect(context[wrappedIntVar] == .type(.base(.int)))
+
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 100)) // Make sure we're still good here
+
+		let wrappedStringVar = syntax[2].cast(MatchStatementSyntax.self)
+			.cases[0].body[0]
+			.cast(ExprStmtSyntax.self).expr
+
+		#expect(context[wrappedStringVar] == .type(.base(.string)))
+
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 100)) // Make sure we're still good here
 	}
 
 	@Test("Can infer a case") func cases() throws {
@@ -128,16 +143,88 @@ struct EnumTests: TypeCheckerTest {
 		let context = try infer(syntax)
 
 		let result = try context.get(syntax[2])
-		let enumType = EnumType.extract(from: result)!
+		let enumType = Instance<EnumType>.extract(from: result.asType(in: context))!.type
 		#expect(enumType.name == "Thing")
 
 		let arg = syntax[2].cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0].value
 
+		let instance = try #require(Instance<EnumType>.extract(from: context[arg]!.asType(in: context)))
+		#expect(enumType == instance.type)
+
+		#expect(context[arg] == .type(.instance(.enumType(instance))))
+
 		#expect(enumType.cases == [
-			EnumCase(typeName: "Thing", name: "foo", index: 0, attachedTypes: [.base(.string)]),
-			EnumCase(typeName: "Thing", name: "bar", index: 1, attachedTypes: [.base(.int)]),
+			EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)]),
+			EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)]),
 		]
 		)
+	}
+
+	@Test("Can infer self") func enumSelf() throws {
+		let syntax = try Parser.parse(
+			"""
+			enum Thing {
+				case foo
+				case bar
+
+				func isFoo() {
+					self == .foo
+				}
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		let enumType = syntax[0].cast(EnumDeclSyntax.self)
+		let enumInferenceType = try EnumType.extract(from: context.get(enumType))!
+		let fn = enumType.body.decls[2].cast(FuncExprSyntax.self)
+		let binaryExpr = fn.body.stmts[0]
+			.cast(ExprStmtSyntax.self)
+			.expr.cast(BinaryExprSyntax.self)
+		let selfVar = binaryExpr.lhs.cast(VarExprSyntax.self)
+		let foo = binaryExpr.rhs.cast(MemberExprSyntax.self)
+
+		// Make sure we can infer `self`
+		let selfVarType = try context.get(selfVar)
+		#expect(selfVarType == InferenceResult.type(.selfVar(.instantiatable(.enumType(enumInferenceType)))))
+
+		// Make sure we can infer `.foo`
+		let fooType = try context.get(foo)
+		#expect(fooType == .type(.instantiatable(.enumType(enumInferenceType))))
+
+		// Make sure the method has the right type
+		let fnType = try context.applySubstitutions(to: context.get(fn))
+		#expect(fnType == .function([], .base(.bool)))
+	}
+
+	@Test("Can infer protocol conformance") func protocols() throws {
+		let syntax = try Parser.parse(
+			"""
+			protocol Greetable {
+				func fizz() -> String
+			}
+
+			enum Thing: Greetable {
+				case foo
+				case bar
+
+				func fizz() {
+					"buzz"
+				}
+			}
+
+			func greet(greetable: Greetable) {
+				greetable.fizz()
+			}
+
+			greet(Thing.foo)
+			"""
+		)
+
+		let context = try infer(syntax)
+		let ret = context[syntax[3]]!.asType(in: context)
+
+		#expect(ret == .base(.string))
 	}
 }

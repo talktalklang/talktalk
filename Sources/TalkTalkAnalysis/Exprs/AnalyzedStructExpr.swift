@@ -6,6 +6,7 @@
 //
 
 import TalkTalkSyntax
+import TypeChecker
 
 public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	public let inferenceType: InferenceType
@@ -13,7 +14,6 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
 	public let structType: StructType
-	public let lexicalScope: LexicalScope
 	public var analyzedChildren: [any AnalyzedSyntax] { [bodyAnalyzed] }
 	public let environment: Environment
 

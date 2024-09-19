@@ -49,9 +49,6 @@ public class Binding: Equatable, Hashable, Codable, CustomStringConvertible {
 }
 
 public enum Value: Equatable, Hashable, Codable {
-	// Just a value that goes on the stack
-	case reserved
-
 	case int(Int)
 
 	case bool(Bool)
@@ -97,8 +94,11 @@ public enum Value: Equatable, Hashable, Codable {
 	// The type of instance, the instance ID
 	case instance(Instance)
 
-	// The method slot, the type of instance
-	case boundMethod(Instance, Symbol)
+	// The type of instance, the method slot
+	case boundStructMethod(Instance, Symbol)
+
+	// The enum type, the method slot
+	case boundEnumMethod(EnumCase, Symbol)
 
 	case primitive(Primitive)
 
@@ -109,8 +109,6 @@ public enum Value: Equatable, Hashable, Codable {
 		case (_, .binding):
 			true
 		case (.binding, _):
-			true
-		case (.reserved, .reserved):
 			true
 		case let (.int(lhs), .int(rhs)):
 			lhs == rhs
@@ -142,7 +140,7 @@ public enum Value: Equatable, Hashable, Codable {
 			lhs == rhs
 		case let (.instance(lhs), .instance(rhs)):
 			lhs == rhs
-		case let (.boundMethod(lhsA, lhsB), .boundMethod(rhsA, rhsB)):
+		case let (.boundStructMethod(lhsA, lhsB), .boundStructMethod(rhsA, rhsB)):
 			lhsA == rhsA && lhsB == rhsB
 		case let (.primitive(lhs), .primitive(rhs)):
 			lhs == rhs
@@ -218,7 +216,7 @@ public enum Value: Equatable, Hashable, Codable {
 	}
 
 	public var boundMethodValue: (instance: Instance, symbol: Symbol)? {
-		guard case let .boundMethod(instance, symbol) = self else {
+		guard case let .boundStructMethod(instance, symbol) = self else {
 			return nil
 		}
 
@@ -242,8 +240,6 @@ extension Value: CustomStringConvertible {
 		switch self {
 		case let .string(string):
 			string.debugDescription
-		case .reserved:
-			"reserved"
 		case .byte:
 			"byte"
 		case let .int(int):
@@ -262,8 +258,10 @@ extension Value: CustomStringConvertible {
 			"\(type.name).Type"
 		case let .instance(instance):
 			"instance \(instance.type.name)"
-		case let .boundMethod(instance, slot):
+		case let .boundStructMethod(instance, slot):
 			"bound method \(instance), slot: \(slot)"
+		case let .boundEnumMethod(enumCase, slot):
+			"bound method \(enumCase), slot: \(slot)"
 		case .builtinStruct:
 			"builtin struct"
 		case let .pointer(pointer):

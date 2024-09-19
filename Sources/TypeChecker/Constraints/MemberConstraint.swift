@@ -11,6 +11,7 @@ struct MemberConstraint: Constraint {
 	let receiver: InferenceResult
 	let name: String
 	let type: InferenceResult
+	var isRetry: Bool
 
 	func result(in context: InferenceContext) -> String {
 		let receiver =
@@ -18,7 +19,7 @@ struct MemberConstraint: Constraint {
 
 		let type = context.applySubstitutions(to: type.asType(in: context))
 
-		return "MemberConstraint(receiver: \(receiver), name: \(name), type: \(type))"
+		return "MemberConstraint(receiver: \(receiver.debugDescription), name: \(name), type: \(type.debugDescription))"
 	}
 
 	func resolveReceiver(_ receiver: InferenceResult?) -> InferenceResult {
@@ -30,7 +31,7 @@ struct MemberConstraint: Constraint {
 	}
 
 	var description: String {
-		"MemberConstraint(receiver: \(receiver.description), name: \(name), type: \(type))"
+		"MemberConstraint(receiver: \(receiver.debugDescription), name: \(name), type: \(type.debugDescription))"
 	}
 
 	var location: SourceLocation
@@ -49,9 +50,9 @@ struct MemberConstraint: Constraint {
 		let resolvedType = context.applySubstitutions(to: type)
 
 		switch context.applySubstitutions(to: receiver) {
-		case let .structType(structType):
+		case let .instantiatable(type):
 			// It's a type parameter, try to unify it with a property
-			guard let member = structType.member(named: name) else {
+			guard let member = type.member(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
@@ -68,28 +69,16 @@ struct MemberConstraint: Constraint {
 				resolvedType,
 				location
 			)
-		case let .enumType(enumType):
-			guard let member = enumType.cases.first(where: { $0.name == name }) else {
-				return .error(
-					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
-				)
-			}
-
-			context.unify(
-				context.applySubstitutions(to: .enumCase(member)),
-				resolvedType,
-				location
-			)
-		case let .structInstance(instance):
+		case let .instance(instance):
 			// It's an instance member
-			guard var member = instance.member(named: name) else {
+			guard var member = instance.member(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
 			}
 
-			if case let .structType(structType) = member {
-				member = .structInstance(structType.instantiate(with: instance.substitutions, in: context))
+			if case let .instantiatable(type) = member {
+				member = .instance(type.instantiate(with: instance.substitutions, in: context))
 			}
 
 			context.unify(
@@ -97,15 +86,15 @@ struct MemberConstraint: Constraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
-		case let .selfVar(structType):
-			guard var member = structType.member(named: name) else {
+		case let .selfVar(.instantiatable(type)):
+			guard var member = type.typeContext.member(named: name) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)
 			}
 
-			if case let .structType(structType) = member.asType(in: context) {
-				member = .type(.structInstance(structType.instantiate(with: [:], in: context)))
+			if case let .type(.instantiatable(structType)) = member {
+				member = .type(.instance(structType.instantiate(with: [:], in: context)))
 			}
 
 			context.unify(
@@ -120,13 +109,19 @@ struct MemberConstraint: Constraint {
 				location
 			)
 		default:
-			return .error([
-				Diagnostic(
-					message: "Receiver not an instance. Got: \(receiver.debugDescription)",
-					severity: .error,
-					location: location
-				),
-			])
+			if isRetry {
+				return .error([
+					Diagnostic(
+						message: "Receiver not an instance. Got: \(receiver.debugDescription)",
+						severity: .error,
+						location: location
+					),
+				])
+			} else {
+				var deferred = self
+				deferred.isRetry = true
+				context.deferConstraint(deferred)
+			}
 		}
 
 		return .ok

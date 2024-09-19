@@ -7,6 +7,7 @@
 
 public protocol TypeExpr: Expr {
 	var identifier: Token { get }
+	var isOptional: Bool { get }
 	var genericParams: [TypeExprSyntax] { get }
 }
 
@@ -14,6 +15,7 @@ public struct TypeExprSyntax: TypeExpr {
 	public var id: SyntaxID
 	public var identifier: Token
 	public var genericParams: [TypeExprSyntax]
+	public var isOptional: Bool
 	public var location: SourceLocation
 	public var errors: [String] = []
 	public var children: [any Syntax] {

@@ -8,7 +8,7 @@
 public protocol VarLetDecl: Decl, Stmt {
 	var name: String { get }
 	var nameToken: Token { get }
-	var typeExpr: (any TypeExpr)? { get }
+	var typeExpr: TypeExprSyntax? { get }
 	var value: (any Expr)? { get }
 }
 

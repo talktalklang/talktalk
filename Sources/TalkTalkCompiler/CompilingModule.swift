@@ -51,7 +51,29 @@ public class CompilingModule {
 			if info.isBuiltin { continue }
 
 			switch symbol.kind {
-			case .function, .method:
+			case .protocol: ()
+			case .function:
+				if let chunk = compiledChunks[symbol] {
+					chunks[info.symbol] = StaticChunk(chunk: chunk)
+					continue
+				}
+
+				// Copy the external method into our chunks, using the slot we want
+				if case let .external(name) = info.source,
+				   let module = moduleEnvironment[name],
+				   let moduleInfo = module.symbols[symbol]
+				{
+					chunks[symbol] = module.chunks[moduleInfo.symbol]
+					continue
+				}
+
+				throw CompilerError.chunkMissing("could not find compiled chunk for: \(symbol.description)")
+			case let .method(typeName, _, _):
+				if typeName == nil {
+					// This is a protocol requirement, so its chunk will be supplied by whatever concrete type implements it.
+					continue
+				}
+
 				if let chunk = compiledChunks[symbol] {
 					chunks[info.symbol] = StaticChunk(chunk: chunk)
 					continue

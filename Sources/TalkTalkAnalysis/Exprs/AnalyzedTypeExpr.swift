@@ -20,6 +20,7 @@ public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
 	public var genericParams: [TypeExprSyntax] { wrapped.genericParams }
 	public var location: TalkTalkSyntax.SourceLocation { wrapped.location }
 	public var children: [any TalkTalkSyntax.Syntax] { wrapped.children }
+	public var isOptional: Bool { wrapped.isOptional }
 
 	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
 		try visitor.visit(wrapped, context)

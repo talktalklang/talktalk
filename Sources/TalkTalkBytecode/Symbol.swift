@@ -47,11 +47,16 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		// Enum
 		case `enum`(String)
 
-		// (Struct name, Method name, Param names, Offset)
-		case method(String, String, [String])
+		// Protocol name
+		case `protocol`(String)
 
-		// (Struct name, Property name, Offset)
-		case property(String, String)
+		// (Type name, Method name, Param names, Offset)
+		// If the type name is nil, that means that this came from a protocol
+		case method(String?, String, [String])
+
+		// (Type name, Property name, Offset)
+		// If the type name is nil, that means that this came from a protocol
+		case property(String?, String)
 
 		// (Type name)
 		case genericType(String)
@@ -77,11 +82,11 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		Symbol(module: module, kind: .struct(name))
 	}
 
-	public static func method(_ module: String, _ type: String, _ name: String, _ params: [String]) -> Symbol {
+	public static func method(_ module: String, _ type: String?, _ name: String, _ params: [String]) -> Symbol {
 		Symbol(module: module, kind: .method(type, name, params))
 	}
 
-	public static func property(_ module: String, _ type: String, _ name: String) -> Symbol {
+	public static func property(_ module: String, _ type: String?, _ name: String) -> Symbol {
 		Symbol(module: module, kind: .property(type, name))
 	}
 
@@ -95,10 +100,23 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		self.kind = kind
 	}
 
+	public var needsUnboxing: Bool {
+		switch kind {
+		case let .method(type, _, _):
+			type == nil
+		case let .property(type, _):
+			type == nil
+		default:
+			false
+		}
+	}
+
 	public var description: String {
 		switch kind {
 		case let .primitive(name):
 			"\(name)"
+		case let .protocol(name):
+			"$T\(module)$\(name)"
 		case let .function(name, params):
 			"$F\(module)$\(name)$\(params.joined(separator: "_"))"
 		case let .value(name):
@@ -106,9 +124,9 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		case let .struct(name):
 			"$S\(module)$\(name)"
 		case let .property(type, name):
-			"$P\(module)$\(type)$\(name)"
+			"$P\(module)$\(type ?? "_")$\(name)"
 		case let .method(type, name, params):
-			"$M\(module)$\(type)$\(name)$\(params.joined(separator: "_"))"
+			"$M\(module)$\(type ?? "_")$\(name)$\(params.joined(separator: "_"))"
 		case let .genericType(name):
 			"$G\(module)$\(name)"
 		case let .enum(name):

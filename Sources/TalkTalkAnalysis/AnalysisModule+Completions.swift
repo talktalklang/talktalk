@@ -92,7 +92,7 @@ public extension AnalysisModule {
 		for match in matches {
 			guard let match = match as? AnalyzedExprStmt,
 			      let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
-			      case let .structInstance(instance) = memberExpr.receiverAnalyzed.inferenceType
+			      case let .instance(instance) = memberExpr.receiverAnalyzed.inferenceType
 			else {
 				continue
 			}
@@ -137,7 +137,7 @@ public extension AnalysisModule {
 						let kind: Completion.Kind = switch binding.type {
 						case .function:
 							.function
-						case .structType:
+						case .instantiatable:
 							.type
 						default:
 							.variable

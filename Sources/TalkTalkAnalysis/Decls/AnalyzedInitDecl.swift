@@ -16,6 +16,7 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	public var environment: Environment
 	public var parametersAnalyzed: AnalyzedParamsExpr
 	public var bodyAnalyzed: AnalyzedBlockStmt
+	public var analysisErrors: [AnalysisError]
 	public var analyzedChildren: [any AnalyzedSyntax] {
 		[parametersAnalyzed, bodyAnalyzed]
 	}

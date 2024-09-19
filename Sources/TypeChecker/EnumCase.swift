@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
+import OrderedCollections
+
 public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 	let enumCase: EnumCase
 	let substitutions: [TypeVariable: InferenceType]
@@ -25,22 +27,21 @@ public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 }
 
 public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
-	public var typeName: String
+	public var type: EnumType
 	public var name: String
-	public let index: Int
 	public var attachedTypes: [InferenceType]
+	public var substitutions: [TypeVariable: InferenceType] = [:]
 
-	init(typeName: String, name: String, index: Int, attachedTypes: [InferenceType]) {
-		self.typeName = typeName
+	init(type: EnumType, name: String, attachedTypes: [InferenceType]) {
+		self.type = type
 		self.name = name
-		self.index = index
 		self.attachedTypes = attachedTypes
 	}
 
-	func instantiate(in context: InferenceContext, with substitutions: [TypeVariable: InferenceType]) -> EnumCaseInstance {
+	func instantiate(in context: InferenceContext, with substitutions: OrderedDictionary<TypeVariable, InferenceType>) -> EnumCaseInstance {
 		EnumCaseInstance(enumCase: self, substitutions: attachedTypes.reduce(into: [:]) { res, type in
 			if case let .typeVar(typeVar) = type {
-				res[typeVar] = substitutions[typeVar] ?? .typeVar(context.freshTypeVariable(type.description))
+				res[typeVar] = context.applySubstitutions(to: type, with: substitutions)
 			}
 		})
 	}
@@ -55,9 +56,9 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 
 	public var description: String {
 		if attachedTypes.isEmpty {
-			"\(name)[\(index)]"
+			"\(name)"
 		} else {
-			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))[\(index)]"
+			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))"
 		}
 	}
 }

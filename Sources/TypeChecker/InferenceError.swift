@@ -18,9 +18,12 @@ public enum InferenceErrorKind: Equatable, Hashable, CustomStringConvertible {
 	case subscriptNotAllowed(InferenceType)
 	case unificationError(InferenceType, InferenceType)
 	case invalidRedeclaration(String)
+	case diagnosticError(Diagnostic)
 
 	public var description: String {
 		switch self {
+		case let .diagnosticError(diagnostic):
+			diagnostic.message
 		case let .invalidRedeclaration(name):
 			"Variable already declared: \(name)"
 		case let .unificationError(a, b):

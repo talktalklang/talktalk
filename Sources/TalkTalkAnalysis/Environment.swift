@@ -13,7 +13,7 @@ import TypeChecker
 public class Environment {
 	private var parent: Environment?
 	private var locals: [String: Binding]
-	private var structTypes: [String: StructType] = [:]
+	private var types: [String: any LexicalScopeType] = [:]
 
 	let inferenceContext: InferenceContext
 
@@ -46,7 +46,7 @@ public class Environment {
 		self.capturedValues = []
 		self.importedModules = importedModules
 
-		if symbolGenerator.moduleName != "Standard" {
+		if symbolGenerator.moduleName != "Standard", isModuleScope {
 			do {
 				try importStdlib()
 			} catch {
@@ -103,9 +103,9 @@ public class Environment {
 		return environment
 	}
 
-	func addLexicalScope(_ scope: LexicalScope) -> Environment {
+	func addLexicalScope(for type: some LexicalScopeType) -> Environment {
 		let environment = Environment(inferenceContext: inferenceContext, symbolGenerator: symbolGenerator, parent: self)
-		environment.lexicalScope = scope
+		environment.lexicalScope = LexicalScope(type: type)
 		return environment
 	}
 
@@ -113,8 +113,8 @@ public class Environment {
 		importedModules.append(analysisModule)
 	}
 
-	public func define(struct name: String, as type: StructType) {
-		structTypes[name] = type
+	public func define(type name: String, as type: any LexicalScopeType) {
+		types[name] = type
 	}
 
 	public func define(parameter: String, as expr: any AnalyzedExpr) {
@@ -129,14 +129,15 @@ public class Environment {
 	public func define(
 		local: String,
 		as expr: any Syntax,
+		type: InferenceType? = nil,
 		isMutable: Bool,
 		isGlobal: Bool = false
 	) {
 		locals[local] = Binding(
 			name: local,
 			location: expr.location,
-			definition: Definition(location: expr.semanticLocation ?? expr.location, type: inferenceContext.lookup(syntax: expr) ?? .void),
-			type: inferenceContext.lookup(syntax: expr) ?? .void,
+			definition: Definition(location: expr.semanticLocation ?? expr.location, type: type ?? inferenceContext.lookup(syntax: expr) ?? .void),
+			type: type ?? inferenceContext.lookup(syntax: expr) ?? .void,
 			isGlobal: isGlobal,
 			isMutable: isMutable
 		)
@@ -231,67 +232,40 @@ public class Environment {
 	}
 
 	func importStdlib() throws {
-		_ = symbolGenerator.import(.struct("Standard", "Array"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "String"), from: "Standard")
-		_ = symbolGenerator.import(.struct("Standard", "Int"), from: "Standard")
+		let types = [
+			"Optional",
+			"Iterable",
+			"Iterator",
+			"Array",
+			"ArrayIterator",
+			"Dictionary",
+			"String",
+			"Int",
+		]
 
-		guard let arrayType = inferenceContext.namedVariables["Array"],
-		      let stringType = inferenceContext.namedVariables["String"],
-		      let intType = inferenceContext.namedVariables["Int"],
-		      let dictType = inferenceContext.namedVariables["Dictionary"]
-		else {
-			throw AnalyzerError.stdlibNotFound
-		}
+		for typeName in types {
+			_ = symbolGenerator.import(.struct("Standard", typeName), from: "Standard")
 
-		if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
-			for symbol in stdlib.symbols {
-				_ = symbolGenerator.import(symbol.key, from: "Standard")
+			guard let type = inferenceContext.namedVariables[typeName] else {
+				throw AnalyzerError.stdlibNotFound
 			}
 
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Array"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Array",
-					location: [.synthetic(.identifier)],
-					type: arrayType,
-					externalModule: stdlib
-				)
-			)
+			if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
+				for symbol in stdlib.symbols {
+					_ = symbolGenerator.import(symbol.key, from: "Standard")
+				}
 
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "String"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "String",
-					location: [.synthetic(.identifier)],
-					type: stringType,
-					externalModule: stdlib
+				importBinding(
+					as: symbolGenerator.import(.struct("Standard", typeName), from: "Standard"),
+					from: "Standard",
+					binding: .init(
+						name: typeName,
+						location: [.synthetic(.identifier)],
+						type: type,
+						externalModule: stdlib
+					)
 				)
-			)
-
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Int"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Int",
-					location: [.synthetic(.identifier)],
-					type: intType,
-					externalModule: stdlib
-				)
-			)
-
-			importBinding(
-				as: symbolGenerator.import(.struct("Standard", "Dictionary"), from: "Standard"),
-				from: "Standard",
-				binding: .init(
-					name: "Dictionary",
-					location: [.synthetic(.identifier)],
-					type: dictType,
-					externalModule: stdlib
-				)
-			)
+			}
 		}
 	}
 
@@ -319,12 +293,12 @@ public class Environment {
 		_ = symbolGenerator.import(symbol, from: moduleName)
 	}
 
-	public func lookupStruct(named name: String) throws -> StructType? {
-		if let type = structTypes[name] {
+	public func type(named name: String) throws -> (any LexicalScopeType)? {
+		if let type = types[name] {
 			return type
 		}
 
-		if let type = try parent?.lookupStruct(named: name) {
+		if let type = try parent?.type(named: name) {
 			return type
 		}
 
@@ -339,12 +313,24 @@ public class Environment {
 					from: module.name,
 					binding: binding
 				)
-				return StructType(
+				return AnalysisStructType(
 					id: structType.id,
 					name: name,
 					properties: structType.properties,
 					methods: structType.methods,
 					typeParameters: structType.typeParameters
+				)
+			}
+
+			if let enumType = module.enums[name] {
+				importBinding(
+					as: enumType.symbol,
+					from: module.name,
+					binding: binding
+				)
+				return AnalysisEnum(
+					name: name,
+					methods: enumType.methods
 				)
 			}
 		}

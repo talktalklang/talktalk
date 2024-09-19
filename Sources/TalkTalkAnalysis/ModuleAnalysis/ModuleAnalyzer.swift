@@ -15,6 +15,27 @@ public struct ModuleAnalyzer: Analyzer {
 		case moduleNotFound(String)
 	}
 
+	// swiftlint:disable force_try
+	nonisolated(unsafe) static let stdlib: AnalysisModule = try! ModuleAnalyzer(
+	// swiftlint:enable force_try
+		name: "Standard",
+		files: Library.standard.paths.map {
+			let parsed = try Parser.parse(
+				SourceFile(
+					path: $0,
+					text: String(
+						contentsOf: Library.standard.location.appending(path: $0),
+						encoding: .utf8
+					)
+				)
+			)
+
+			return ParsedSourceFile(path: $0, syntax: parsed)
+		},
+		moduleEnvironment: [:],
+		importedModules: []
+	).analyze()
+
 	public let name: String
 	public var files: [ParsedSourceFile]
 	public let environment: Environment
@@ -45,24 +66,7 @@ public struct ModuleAnalyzer: Analyzer {
 	}
 
 	public func importStandardLibrary() throws -> AnalysisModule {
-		try ModuleAnalyzer(
-			name: "Standard",
-			files: Library.standard.paths.map {
-				let parsed = try Parser.parse(
-					SourceFile(
-						path: $0,
-						text: String(
-							contentsOf: Library.standard.location.appending(path: $0),
-							encoding: .utf8
-						)
-					)
-				)
-
-				return ParsedSourceFile(path: $0, syntax: parsed)
-			},
-			moduleEnvironment: [:],
-			importedModules: []
-		).analyze()
+		ModuleAnalyzer.stdlib
 	}
 
 	public func analyze() throws -> AnalysisModule {
@@ -74,24 +78,7 @@ public struct ModuleAnalyzer: Analyzer {
 
 		var analysisModule = AnalysisModule(name: name, inferenceContext: inferencer.context, files: files)
 
-		for module in importedModules.sorted(by: { ($0.name == "Standard" ? 0 : 1) < ($1.name == "Standard" ? 0 : 1) }) {
-			if module.name == "Standard", name != "Standard" {
-				// Always make standard types available
-				for (name, structType) in module.structs {
-					analysisModule.structs[name] = ModuleStruct(
-						id: structType.id,
-						name: name,
-						symbol: structType.symbol,
-						location: structType.location,
-						typeID: structType.typeID,
-						source: .external(module),
-						properties: structType.properties,
-						methods: structType.methods,
-						typeParameters: structType.typeParameters
-					)
-				}
-			}
-
+		for module in importedModules {
 			environment.importModule(module)
 		}
 
@@ -255,7 +242,7 @@ public struct ModuleAnalyzer: Analyzer {
 				location: syntax.location,
 				typeID: analyzed.inferenceType,
 				source: .module,
-				methods: []
+				methods: [:]
 			)
 
 			environment.define(
@@ -339,9 +326,9 @@ public struct ModuleAnalyzer: Analyzer {
 				location: syntax.location,
 				typeID: analyzedStructDecl.inferenceType,
 				source: .module,
-				properties: analyzedStructDecl.lexicalScope.scope.properties,
-				methods: analyzedStructDecl.lexicalScope.scope.methods,
-				typeParameters: analyzedStructDecl.lexicalScope.scope.typeParameters
+				properties: analyzedStructDecl.structType.properties,
+				methods: analyzedStructDecl.structType.methods,
+				typeParameters: analyzedStructDecl.structType.typeParameters
 			)
 		default:
 			()

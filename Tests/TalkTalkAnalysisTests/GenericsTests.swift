@@ -35,7 +35,7 @@ struct GenericsTests {
 		let structType = TypeChecker.StructType.extractType(from: .type(decl.typeAnalyzed))
 		#expect(structType?.name == "Wrapper")
 
-		let type = try decl.environment.lookupStruct(named: "Wrapper")!
+		let type = try #require(decl.environment.type(named: "Wrapper")! as? AnalysisStructType)
 		#expect(type.typeParameters.count == 1)
 	}
 
@@ -52,7 +52,7 @@ struct GenericsTests {
 		let variable = try #require(ast as? AnalyzedVarExpr)
 		#expect(variable.name == "wrapper")
 
-		let instance = try #require(Instance.extract(from: variable.typeAnalyzed))
+		let instance = try #require(Instance<StructType>.extract(from: variable.typeAnalyzed))
 		#expect(instance.type.name == "Wrapper")
 
 		let unwrapped = instance.type.context.applySubstitutions(to: instance.relatedType(named: "Wrapped")!, with: instance.substitutions)
