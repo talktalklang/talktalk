@@ -108,7 +108,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 	// Gives subexpressions a hint about what type they're expected to be.
-	var expectation: InferenceType?
+	var expectations: [InferenceType]
 
 	// For fresh variable generation
 	var nextID: VariableID = 0
@@ -136,7 +136,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:],
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
-		expectation: InferenceType? = nil
+		expectations: [InferenceType] = []
 //		matchContext: MatchContext? = nil
 	) {
 		self.depth = (parent?.depth ?? 0) + 1
@@ -147,7 +147,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.substitutions = substitutions
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
-		self.expectation = expectation
+		self.expectations = expectations
 //		self.matchContext = matchContext
 
 		log("New context with depth \(depth)", prefix: " * ")
@@ -282,7 +282,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext,
-			expectation: expectation
+			expectations: expectations
 		)
 	}
 
@@ -303,7 +303,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			substitutions: substitutions,
 			typeContext: typeContext,
 			instanceContext: instanceContext,
-			expectation: expectation
+			expectations: expectations
 		)
 	}
 
@@ -314,15 +314,19 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext ?? TypeContext(name: name),
-			expectation: expectation
+			expectations: expectations
 		)
 	}
 
-	func expecting(_ type: InferenceType, perform: () throws -> Void) rethrows {
-		let oldExpecting = expectation
-		expectation = type
-		try perform()
-		expectation = oldExpecting
+	var expectation: InferenceType? {
+		expectations.last
+	}
+
+	@discardableResult func expecting<T>(_ type: InferenceType, perform: () throws -> T) rethrows -> T {
+		expectations.append(type)
+		let res = try perform()
+		_ = expectations.popLast()
+		return res
 	}
 
 	func expecting(_ type: InferenceType) -> InferenceContext {
@@ -332,7 +336,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			constraints: constraints,
 			substitutions: substitutions,
 			typeContext: typeContext ?? TypeContext(name: type.description),
-			expectation: type
+			expectations: expectations + [type]
 		)
 	}
 
@@ -705,9 +709,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth-1)))" + prefix + msg)
-		}
+//		}
 	}
 }

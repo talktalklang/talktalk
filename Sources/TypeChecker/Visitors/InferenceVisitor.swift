@@ -322,11 +322,13 @@ struct InferenceVisitor: Visitor {
 		return type
 	}
 
-	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws {
+	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws -> Pattern {
 		let patternVisitor = PatternVisitor(inferenceVisitor: self)
 		let pattern = try syntax.accept(patternVisitor, context)
 
 		context.extend(syntax, with: .type(.pattern(pattern)))
+
+		return pattern
 	}
 
 	// Visits
@@ -1020,7 +1022,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	public func visit(_ expr: ForStmtSyntax, _ context: Context) throws {
-		let bodyContext = context.childContext()
+		let context = context.childContext()
 
 		// Visit the sequence so we can get its type
 		try expr.sequence.accept(self, context)
@@ -1037,14 +1039,19 @@ struct InferenceVisitor: Visitor {
 			throw InferencerError.parametersNotAvailable("Could not determine Element type of \(sequenceType)")
 		}
 
-		try bodyContext.expecting(expectedElementType) {
-			try inferPattern(from: expr.element, in: bodyContext)
+		let pattern = try context.expecting(expectedElementType) {
+			try inferPattern(from: expr.element, in: context)
 		}
 
-		let elementType = try bodyContext.get(expr.element)
+		// Define the pattern locals inside the block
+		for case let .variable(name, type) in pattern.arguments {
+			context.defineVariable(named: name, as: type, at: expr.element.location)
+		}
+
+		let elementType = try context.get(expr.element)
 		context.constraints.add(.equality(.type(expectedElementType), elementType, at: expr.element.location))
 
-		try expr.body.accept(self, bodyContext)
+		try expr.body.accept(self, context)
 
 		context.extend(expr, with: .type(.void))
 	}

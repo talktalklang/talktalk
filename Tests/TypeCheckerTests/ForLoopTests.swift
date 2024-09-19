@@ -14,8 +14,8 @@ struct ForLoopTests: TypeCheckerTest {
 	@Test("Can typecheck a for loop") func basic() throws {
 		let syntax = try Parser.parse(
 			"""
-			for i in [1,2,3] {
-				print(i)
+			for iamthevalue in [1,2,3] {
+				print(iamthevalue)
 			}
 			"""
 		)
@@ -29,7 +29,7 @@ struct ForLoopTests: TypeCheckerTest {
 			.cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0]
 
-		#expect(context[i] == .type(.base(.int)))
+		#expect(context[i]?.debugDescription == InferenceResult.type(.base(.int)).debugDescription)
 	}
 
 	@Test("Errors when sequence isn't iterable") func notIterable() throws {

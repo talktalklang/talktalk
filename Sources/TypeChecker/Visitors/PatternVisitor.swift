@@ -180,6 +180,8 @@ struct PatternVisitor: Visitor {
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern {
 		let type = context.expectation ?? context[expr]?.asType(in: context) ?? .any
 
+		context.extend(expr, with: .type(type))
+
 		return Pattern(
 			type: type,
 			arguments: [
