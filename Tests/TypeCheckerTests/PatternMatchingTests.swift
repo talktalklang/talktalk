@@ -97,7 +97,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let foo = context.lookup(syntax: call1)
 		#expect(foo == .pattern(Pattern(
 			type: .enumCase(
-				EnumCase(type: enumType, name: "foo", index: 0, attachedTypes: [.base(.string)])
+				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
 			arguments: [
 				.value(.pattern(
@@ -112,7 +112,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let bar = context.lookup(syntax: call2)
 		#expect(bar == .pattern(Pattern(
 			type: .enumCase(
-				EnumCase(type: enumType, name: "bar", index: 1, attachedTypes: [.base(.int)])
+				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
 			arguments: [
 				.value(.pattern(
@@ -168,7 +168,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let foo = context.lookup(syntax: case1)
 		#expect(foo == .pattern(Pattern(
 			type: .enumCase(
-				EnumCase(type: enumType, name: "foo", index: 0, attachedTypes: [.base(.string)])
+				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
 			arguments: [.variable("a", .base(.string))]
 		)))
@@ -176,7 +176,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let bar = context.lookup(syntax: case2)
 		#expect(bar == .pattern(Pattern(
 			type: .enumCase(
-				EnumCase(type: enumType, name: "bar", index: 1, attachedTypes: [.base(.int)])
+				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
 			arguments: [.variable("b", .base(.int))]
 		)))
@@ -224,7 +224,6 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(
 					type: bottomType,
 					name: "bottom",
-					index: 0,
 					attachedTypes: [
 						.instance(
 							Instance(
@@ -241,7 +240,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 					.pattern(
 						Pattern(
 							type: .enumCase(
-								EnumCase(type: topType, name: "top", index: 0, attachedTypes: [.base(.string)])
+								EnumCase(type: topType, name: "top", attachedTypes: [.base(.string)])
 							),
 							arguments: [
 								.value(

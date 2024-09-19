@@ -953,7 +953,6 @@ struct InferenceVisitor: Visitor {
 
 		enumContext.defineVariable(named: "self", as: .selfVar(.instantiatable(enumType)), at: expr.location)
 
-		var index = 0
 		for decl in expr.body.decls {
 			if let kase = decl as? EnumCaseDecl {
 				for type in kase.attachedTypes {
@@ -963,13 +962,11 @@ struct InferenceVisitor: Visitor {
 				let enumCase = try EnumCase(
 					type: enumType,
 					name: kase.nameToken.lexeme,
-					index: index,
 					attachedTypes: kase.attachedTypes.map {
 						try context.get($0).asType(in: context)
 					}
 				)
 
-				index += 1
 				enumType.cases.append(enumCase)
 				context.extend(kase, with: .type(.enumCase(enumCase)))
 			} else {

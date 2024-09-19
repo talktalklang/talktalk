@@ -534,7 +534,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 				EnumCase(
 					type: kase.type,
 					name: kase.name,
-					index: kase.index,
 					attachedTypes: kase.attachedTypes.map { applySubstitutions(to: $0, with: substitutions) }
 				)
 			)

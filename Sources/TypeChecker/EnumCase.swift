@@ -29,13 +29,11 @@ public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	public var type: EnumType
 	public var name: String
-	public let index: Int
 	public var attachedTypes: [InferenceType]
 
-	init(type: EnumType, name: String, index: Int, attachedTypes: [InferenceType]) {
+	init(type: EnumType, name: String, attachedTypes: [InferenceType]) {
 		self.type = type
 		self.name = name
-		self.index = index
 		self.attachedTypes = attachedTypes
 	}
 
@@ -57,9 +55,9 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 
 	public var description: String {
 		if attachedTypes.isEmpty {
-			"\(name)[\(index)]"
+			"\(name)"
 		} else {
-			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))[\(index)]"
+			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))"
 		}
 	}
 }

@@ -152,8 +152,8 @@ struct EnumTests: TypeCheckerTest {
 		#expect(context[arg] == .type(.instantiatable(enumType)))
 
 		#expect(enumType.cases == [
-			EnumCase(type: enumType, name: "foo", index: 0, attachedTypes: [.base(.string)]),
-			EnumCase(type: enumType, name: "bar", index: 1, attachedTypes: [.base(.int)]),
+			EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)]),
+			EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)]),
 		]
 		)
 	}

@@ -121,10 +121,11 @@ struct PatternMatchingTests: AnalysisTest {
 				type: .enumCase(EnumCase(
 					type: enumType,
 					name: "foo",
-					index: 0,
 					attachedTypes: [.base(.string)]
 				)),
-				arguments: [.variable("a", .base(.string))]
+				arguments: [
+					.value(.pattern(Pattern(type: .base(.string), arguments: [.variable("a", .base(.string))])))
+				]
 			)
 		))
 
@@ -134,10 +135,11 @@ struct PatternMatchingTests: AnalysisTest {
 				type: .enumCase(EnumCase(
 					type: enumType,
 					name: "bar",
-					index: 1,
 					attachedTypes: [.base(.int)]
 				)),
-				arguments: [.variable("a", .base(.int))]
+				arguments: [
+					.value(.pattern(Pattern(type: .base(.int), arguments: [.variable("a", .base(.int))])))
+				]
 			)
 		))
 	}
