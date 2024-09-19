@@ -201,7 +201,7 @@ struct InferenceVisitor: Visitor {
 		case "pointer":
 			type = .base(.pointer)
 		default:
-			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .typeVar(context.freshTypeVariable(expr.identifier.lexeme))
+			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .placeholder(context.freshTypeVariable(expr.identifier.lexeme))
 
 			switch found {
 			case let .instantiatable(structType):
@@ -299,13 +299,19 @@ struct InferenceVisitor: Visitor {
 		return type
 	}
 
-	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws -> Pattern {
+	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws -> Pattern.Argument {
 		let patternVisitor = PatternVisitor(inferenceVisitor: self)
-		let pattern = try syntax.accept(patternVisitor, context)
+		let patternArg = try syntax.accept(patternVisitor, context)
 
-		context.extend(syntax, with: .type(.pattern(pattern)))
+		switch patternArg {
+		case let .value(type):
+			context.extend(syntax, with: .type(type))
+		case let .variable(name, type):
+			context.defineVariable(named: name, as: type, at: syntax.location)
+			context.extend(syntax, with: .type(type))
+		}
 
-		return pattern
+		return patternArg
 	}
 
 	// Visits
@@ -1025,7 +1031,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		// Define the pattern locals inside the block
-		for case let .variable(name, type) in pattern.arguments {
+		if case let .variable(name, type) = pattern {
 			context.defineVariable(named: name, as: type, at: expr.element.location)
 		}
 

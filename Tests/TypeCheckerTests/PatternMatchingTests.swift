@@ -100,12 +100,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
 			arguments: [
-				.value(.pattern(
-					Pattern(
-						type: .base(.string),
-						arguments: [.variable("a", .base(.string))]
-					)
-				))
+				.variable("a", .base(.string))
 			]
 		)))
 
@@ -115,12 +110,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
 			arguments: [
-				.value(.pattern(
-					Pattern(
-						type: .base(.int),
-						arguments: [.variable("b", .base(.int))]
-					)
-				))
+				.variable("b", .base(.int))
 			]
 		)))
 
@@ -244,13 +234,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 							type: .enumCase(
 								EnumCase(type: topType, name: "top", attachedTypes: [.base(.string)])
 							),
-							arguments: [
-								.value(
-									.pattern(
-										Pattern(type: .base(.string), arguments: [.variable("a", .base(.string))])
-									)
-								)
-							]
+							arguments: [.variable("a", .base(.string))]
 						)
 					)
 				),

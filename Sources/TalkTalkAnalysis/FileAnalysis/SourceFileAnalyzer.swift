@@ -455,15 +455,22 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol = context.symbolGenerator.value(expr.name, source: .internal)
 		}
 
+		let typeExpr = try expr.typeExpr?.accept(self, context)
+
 		context.define(local: expr.name, as: expr, isMutable: true, isGlobal: isGlobal)
+
+		var errors = errors(for: expr, in: context.inferenceContext)
+		if case let .error(err) = typeExpr?.typeAnalyzed {
+			errors.append(.init(kind: .typeNotFound(err.description), location: expr.location))
+		}
 
 		let decl = try AnalyzedVarDecl(
 			symbol: symbol,
 			// swiftlint:disable force_unwrapping
-			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			inferenceType: typeExpr?.inferenceType ?? (expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void),
 			// swiftlint:enable force_unwrapping
 			wrapped: expr,
-			analysisErrors: errors(for: expr, in: context.inferenceContext),
+			analysisErrors: errors,
 			valueAnalyzed: expr.value?.accept(self, context) as? any AnalyzedExpr,
 			environment: context
 		)
@@ -709,7 +716,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		}
 		var errors: [AnalysisError] = []
 
-		if case let .instantiatable(.enumType(type)) = targetAnalyzed.inferenceType, !hasDefault {
+		if case let .instance(.enumType(instance)) = targetAnalyzed.inferenceType, !hasDefault {
+			let type = instance.type
+
 			// Check that all enum cases are specified
 			let specifiedCases: [String] = casesAnalyzed.compactMap {
 				guard case let .pattern(pattern) = $0.patternAnalyzed?.inferenceType else {
@@ -761,6 +770,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: CaseStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		// Case statements get their own scope
+		let context = context.add(namespace: nil)
+
 		if expr.patternSyntax == nil {
 			// It's an `else` clause
 			return try AnalyzedCaseStmt(
@@ -796,13 +808,6 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				return stmt
 			} else {
 				throw AnalyzerError.unexpectedCast(expected: "any AnalyzedStmt", received: "\(Swift.type(of: stmt))")
-			}
-		}
-
-		var variables: [String: InferenceType] = [:]
-		if case let .pattern(pattern) = context.inferenceContext.lookup(syntax: patternAnalyzed) {
-			for case let .variable(name, type) in pattern.arguments {
-				variables[name] = type
 			}
 		}
 

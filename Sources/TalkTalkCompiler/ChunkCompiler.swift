@@ -8,6 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkSyntax
+import TypeChecker
 
 public class ChunkCompiler: AnalyzedVisitor {
 	public typealias Value = Void
