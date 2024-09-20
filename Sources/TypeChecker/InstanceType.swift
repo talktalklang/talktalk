@@ -7,6 +7,19 @@
 import OrderedCollections
 
 public enum InstanceType {
+	public func equals(_ rhs: InstanceType) -> Bool {
+		switch (self, rhs) {
+		case (.struct(let l), .struct(let r)):
+			return l.type == r.type && l.substitutions.keys == r.substitutions.keys
+		case (.enumType(let l), .enumType(let r)):
+			return l.type == r.type && l.substitutions.keys == r.substitutions.keys
+		case (.protocol(let l), .protocol(let r)):
+			return l.type == r.type && l.substitutions.keys == r.substitutions.keys
+		default:
+			return false
+		}
+	}
+
 	case `struct`(Instance<StructType>)
 	case `protocol`(Instance<ProtocolType>)
 	case `enumType`(Instance<EnumType>)

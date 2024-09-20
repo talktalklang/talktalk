@@ -1,5 +1,5 @@
 protocol Iterator<Element> {
-	func next() -> Element
+	func next() -> Element?
 }
 
 protocol Iterable<Element> {

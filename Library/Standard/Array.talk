@@ -7,10 +7,14 @@ struct ArrayIterator<Element>: Iterator {
 		self.array = array
 	}
 
-	func next() -> Element {
-		let value = self.array[self.current]
-		self.current = self.current + 1
-		return value
+	func next() -> Element? {
+		if self.current >= self.array.count {
+			let value = self.array[self.current]
+			self.current = self.current + 1
+			return Optional.some(value)
+		} else {
+			return Optional.none
+		}
 	}
 }
 

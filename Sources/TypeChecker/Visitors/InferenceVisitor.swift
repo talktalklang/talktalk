@@ -929,15 +929,13 @@ struct InferenceVisitor: Visitor {
 			return type
 		}
 
-		try decl.returnDecl.accept(self, context)
-		guard let returnType = context[decl.returnDecl]?.asType(in: context) else {
-			throw InferencerError.cannotInfer("Could not determine return type: \(decl.description)")
-		}
+		let returns = try instanceTypeFrom(expr: decl.returnDecl, in: context)
+		context.extend(decl.returnDecl, with: returns)
 
 		typeContext.methods[decl.name.lexeme] = .scheme(Scheme(
 			name: decl.name.lexeme,
 			variables: [],
-			type: .function(params, returnType)
+			type: .function(params, returns.asType(in: context))
 		))
 	}
 
