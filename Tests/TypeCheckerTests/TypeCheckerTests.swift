@@ -118,7 +118,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let syntax = try Parser.parse("var i = 123")
 		let context = try infer(syntax)
 
-		#expect(context.lookupVariable(named: "i") == .base(.int))
+		#expect(context.lookupVariable(named: "i") == .type(.base(.int)))
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
@@ -164,7 +164,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let syntax = try Parser.parse("let i = 123")
 		let context = try infer(syntax)
 
-		#expect(context.lookupVariable(named: "i") == .base(.int))
+		#expect(context.lookupVariable(named: "i") == .type(.base(.int)))
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[0]] == .type(.base(.int)))
@@ -255,7 +255,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 				Scheme(
 					name: "fact",
 					variables: [],
-					type: .function([.typeVar("n", 99)], .base(.int))
+					type: .function([.typeVar("n", 82)], .base(.int))
 				)
 			)
 		)

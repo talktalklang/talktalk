@@ -100,7 +100,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
 			arguments: [
-				.variable("a", .base(.string))
+				.variable("a", .type(.base(.string)))
 			]
 		)))
 
@@ -110,7 +110,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
 			arguments: [
-				.variable("b", .base(.int))
+				.variable("b", .type(.base(.int)))
 			]
 		)))
 
@@ -123,7 +123,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		#expect(context[body] == .type(.base(.string)))
 	}
 
-	@Test("Can typecheck a match (fn)", .disabled("waiting on match context removal")) func matchinFn() throws {
+	@Test("Can typecheck a match (fn)") func matchinFn() throws {
 		let syntax = try Parser.parse(
 			"""
 			enum Thing {
@@ -160,7 +160,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			type: .enumCase(
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
-			arguments: [.variable("a", .base(.string))]
+			arguments: [.variable("a", .type(.base(.string)))]
 		)))
 
 		let bar = context.lookup(syntax: case2)
@@ -168,7 +168,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			type: .enumCase(
 				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
-			arguments: [.variable("b", .base(.int))]
+			arguments: [.variable("b", .type(.base(.int)))]
 		)))
 
 		let body = syntax[2].cast(MatchStatementSyntax.self)
@@ -234,7 +234,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 							type: .enumCase(
 								EnumCase(type: topType, name: "top", attachedTypes: [.base(.string)])
 							),
-							arguments: [.variable("a", .base(.string))]
+							arguments: [.variable("a", .type(.base(.string)))]
 						)
 					)
 				),

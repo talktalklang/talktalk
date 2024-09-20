@@ -10,7 +10,7 @@ import TalkTalkSyntax
 
 public struct Pattern: Equatable, Hashable, CustomStringConvertible {
 	public enum Argument: Equatable, Hashable {
-		case value(InferenceType), variable(String, InferenceType)
+		case value(InferenceType), variable(String, InferenceResult)
 	}
 
 	// What is the overall type of this pattern
@@ -56,12 +56,12 @@ struct PatternVisitor: Visitor {
 
 	func unresolvedReceiver(_ expr: MemberExprSyntax, context: InferenceContext) throws -> Pattern.Argument {
 		switch context.expectation {
-		case let .instance(instance):
+		case let .type(.instance(instance)):
 			if let member = instance.member(named: expr.property, in: context) {
 				context.extend(expr, with: .type(member))
 				return .value(member)
 			}
-		case let .instantiatable(type):
+		case let .type(.instantiatable(type)):
 			if let member = type.member(named: expr.property, in: context) {
 				context.extend(expr, with: member)
 				return .value(member.asType(in: context))
@@ -176,9 +176,9 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
-		let type = context.expectation ?? context[expr]?.asType(in: context) ?? .any
+		let type = try context.expectation ?? context.get(expr)
 
-		context.extend(expr, with: .type(type))
+		context.extend(expr, with: type)
 
 		return .variable(expr.name, type)
 	}
@@ -194,13 +194,13 @@ struct PatternVisitor: Visitor {
 	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
 //		try context.defineVariable(named: expr.name, as: context.get(expr).asType(in: context), at: expr.location)
 
-		return try .variable(expr.name, context.get(expr).asType(in: context))
+		return try .variable(expr.name, context.get(expr))
 	}
 
 	func visit(_ expr: LetDeclSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
 //		try context.defineVariable(named: expr.name, as: context.get(expr).asType(in: context), at: expr.location)
 
-		return try .variable(expr.name, context.get(expr).asType(in: context))
+		return try .variable(expr.name, context.get(expr))
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {

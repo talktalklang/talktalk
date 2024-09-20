@@ -84,7 +84,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	var environment: Environment
 
 	// Names that we know at inference time
-	public private(set) var namedVariables: OrderedDictionary<String, InferenceType> = [:]
+	public private(set) var namedVariables: OrderedDictionary<String, InferenceResult> = [:]
 
 	// Names that we're going to have to solve for later
 	private(set) var namedPlaceholders: OrderedDictionary<String, InferenceType> = [:]
@@ -180,24 +180,28 @@ public class InferenceContext: CustomDebugStringConvertible {
 		namedPlaceholders[name] = type
 	}
 
-	func lookupPlaceholder(named name: String) -> InferenceType? {
+	func lookupPlaceholder(named name: String) -> InferenceResult? {
 		if let parent {
 			return parent.lookupPlaceholder(named: name)
 		}
 
-		return namedPlaceholders[name]
+		if let placeholder = namedPlaceholders[name] {
+			return .type(placeholder)
+		}
+
+		return nil
 	}
 
-	func defineVariable(named name: String, as type: InferenceType, at location: SourceLocation) {
-		if case let .placeholder(typeVar) = lookupPlaceholder(named: name) {
+	func defineVariable(named name: String, as type: InferenceResult, at location: SourceLocation) {
+		if case let .type(.placeholder(typeVar)) = lookupPlaceholder(named: name) {
 			log("Adding equality constraint for placeholder \(name)", prefix: " = ")
-			addConstraint(.equality(type, .placeholder(typeVar), at: location))
+			addConstraint(.equality(type, .type(.placeholder(typeVar)), at: location))
 		}
 
 		namedVariables[name] = type
 	}
 
-	func lookupVariable(named name: String) -> InferenceType? {
+	func lookupVariable(named name: String) -> InferenceResult? {
 		if let result = namedVariables[name] {
 			return result
 		}
@@ -207,7 +211,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
-			return builtin.type
+			return .type(builtin.type)
 		}
 
 		for imported in imports {
@@ -320,8 +324,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 		)
 	}
 
-	var expectation: InferenceType? {
-		expectations.last
+	var expectation: InferenceResult? {
+		if let expectation = expectations.last {
+			return .type(expectation)
+		}
+
+		return nil
 	}
 
 	@discardableResult func expecting<T>(_ type: InferenceType, perform: () throws -> T) rethrows -> T {
@@ -508,7 +516,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 						case let .value(type):
 							.value(applySubstitutions(to: type, with: substitutions))
 						case let .variable(name, type):
-							.variable(name, applySubstitutions(to: type, with: substitutions))
+							.variable(name, .type(applySubstitutions(to: type, with: substitutions)))
 						}
 					}
 				)
@@ -519,7 +527,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				return applySubstitutions(to: .typeVar(child), with: substitutions, count: count + 1)
 			}
 
-			return substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""] ?? type
+			return substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""]?.asType(in: self) ?? type
 		case let .function(params, returning):
 			return .function(
 				params.map { applySubstitutions(to: $0, with: substitutions) },
