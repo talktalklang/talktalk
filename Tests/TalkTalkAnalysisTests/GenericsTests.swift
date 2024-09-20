@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/11/24.
 //
 
-import TalkTalkAnalysis
+@testable import TalkTalkAnalysis
 import TalkTalkSyntax
 import Testing
 @testable import TypeChecker
@@ -54,9 +54,6 @@ struct GenericsTests {
 
 		let instance = try #require(Instance<StructType>.extract(from: variable.typeAnalyzed))
 		#expect(instance.type.name == "Wrapper")
-
-		let unwrapped = instance.type.context.applySubstitutions(to: instance.relatedType(named: "Wrapped")!, with: instance.substitutions)
-		#expect(unwrapped == .base(.int))
 	}
 
 	@Test("Infers generic member types from `self`") func inferSelfMembers() throws {

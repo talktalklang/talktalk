@@ -157,7 +157,7 @@ public class Environment {
 		}
 
 		result.append(contentsOf: inferenceContext.namedVariables.compactMap {
-			Binding(name: $0.key, location: [.synthetic(.identifier)], type: $0.value)
+			Binding(name: $0.key, location: [.synthetic(.identifier)], type: $0.value.asType(in: inferenceContext))
 		})
 
 		result.append(contentsOf: BuiltinFunction.list.map { $0.binding(in: self) })
@@ -261,7 +261,7 @@ public class Environment {
 					binding: .init(
 						name: typeName,
 						location: [.synthetic(.identifier)],
-						type: type,
+						type: type.asType(in: inferenceContext),
 						externalModule: stdlib
 					)
 				)
