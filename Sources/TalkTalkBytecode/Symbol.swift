@@ -50,9 +50,9 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		// Protocol name
 		case `protocol`(String)
 
-		// (Type name, Method name, Param names, Offset)
+		// (Type name, Method name, Param names, Return value)
 		// If the type name is nil, that means that this came from a protocol
-		case method(String?, String, [String])
+		case method(String?, String, [String], String)
 
 		// (Type name, Property name, Offset)
 		// If the type name is nil, that means that this came from a protocol
@@ -82,8 +82,8 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 		Symbol(module: module, kind: .struct(name))
 	}
 
-	public static func method(_ module: String, _ type: String?, _ name: String, _ params: [String]) -> Symbol {
-		Symbol(module: module, kind: .method(type, name, params))
+	public static func method(_ module: String, _ type: String?, _ name: String, _ params: [String], _ returns: String) -> Symbol {
+		Symbol(module: module, kind: .method(type, name, params, returns))
 	}
 
 	public static func property(_ module: String, _ type: String?, _ name: String) -> Symbol {

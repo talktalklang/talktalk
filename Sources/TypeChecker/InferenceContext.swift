@@ -427,6 +427,14 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return result
 	}
 
+	public func type(_ syntax: any Syntax) throws -> InferenceType {
+		guard let result = self[syntax] else {
+			throw InferencerError.typeNotInferred("Expected inferred type for \(syntax)")
+		}
+
+		return result.asType(in: self)
+	}
+
 	// Look up inference results for a particular syntax node
 	subscript(syntax: any Syntax) -> InferenceResult? {
 		get {

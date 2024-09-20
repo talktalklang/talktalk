@@ -111,7 +111,7 @@ public class SymbolGenerator {
 		make(.value(name), source: source, group: \.values)
 	}
 
-	public func function(_ name: String, parameters: [String], source: SymbolInfo.Source) -> Symbol {
+	public func function(_ name: String, parameters: [String], returns: String, source: SymbolInfo.Source) -> Symbol {
 		let symbol = make(.function(name, parameters), source: source, group: \.functions)
 
 		let symbolInfo = SymbolInfo(
@@ -133,8 +133,8 @@ public class SymbolGenerator {
 		return symbol
 	}
 
-	public func method(_ type: String?, _ name: String, parameters: [String], source: SymbolInfo.Source) -> Symbol {
-		make(.method(type, name, parameters), source: source, group: \.functions)
+	public func method(_ type: String?, _ name: String, parameters: [String], returns: String, source: SymbolInfo.Source) -> Symbol {
+		make(.method(type, name, parameters, returns), source: source, group: \.functions)
 	}
 
 	public func property(_ type: String?, _ name: String, source: SymbolInfo.Source) -> Symbol {
