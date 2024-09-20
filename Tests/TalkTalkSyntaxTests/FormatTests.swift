@@ -395,4 +395,20 @@ struct FormatTests {
 		}
 		"""#)
 	}
+
+	@Test("Formats for stmt") func forStmts() throws {
+		let formatted = format(#"""
+				for  a    in    [1,2,   	3]
+					{
+			a = 1 
+					b = 2 }
+		"""#)
+
+		#expect(formatted == #"""
+		for a in [1, 2, 3] {
+			a = 1
+			b = 2
+		}
+		"""#)
+	}
 }
