@@ -16,7 +16,7 @@ public struct ModuleAnalyzer: Analyzer {
 	}
 
 	// swiftlint:disable force_try
-	nonisolated(unsafe) static let stdlib: AnalysisModule = try! ModuleAnalyzer(
+	nonisolated(unsafe) public static let stdlib: AnalysisModule = try! ModuleAnalyzer(
 	// swiftlint:enable force_try
 		name: "Standard",
 		files: Library.standard.paths.map {
@@ -110,8 +110,10 @@ public struct ModuleAnalyzer: Analyzer {
 		//
 		// We also need to make sure the files are in the correct order.
 		analysisModule.analyzedFiles = try files.map {
-			let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal)
-			analysisModule.symbols[sym] = environment.symbolGenerator[sym]
+			if name != "Standard" {
+				let sym = environment.symbolGenerator.function($0.path, parameters: [], source: .internal)
+				analysisModule.symbols[sym] = environment.symbolGenerator[sym]
+			}
 
 			return try AnalyzedSourceFile(
 				path: $0.path,
@@ -182,7 +184,7 @@ public struct ModuleAnalyzer: Analyzer {
 					methods: enumType.methods
 				)
 			} else {
-				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(name)")
+				throw AnalyzerError.symbolNotFound("unhandled exported symbol: \(symbol)")
 			}
 		}
 	}

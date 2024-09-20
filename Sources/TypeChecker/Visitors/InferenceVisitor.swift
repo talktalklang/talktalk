@@ -156,7 +156,7 @@ struct InferenceVisitor: Visitor {
 					expr.params.params.map {
 						try childContext.get($0).asType(in: childContext)
 					},
-					childContext.applySubstitutions(to: returnType.asType(in: childContext))
+					returnType.asType(in: context)
 				)
 			)
 		)

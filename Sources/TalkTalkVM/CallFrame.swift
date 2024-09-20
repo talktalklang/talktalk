@@ -24,13 +24,15 @@ public class CallFrame {
 	var returnTo: UInt64
 	var locals: OrderedDictionary<String, Value> = [:]
 	var selfValue: Value?
+	let stackOffset: Int
 
 	var patternBindings: [Symbol: Value] = [:]
 
-	init(closure: Closure, returnTo: UInt64, selfValue: Value?) {
+	init(closure: Closure, returnTo: UInt64, selfValue: Value?, stackOffset: Int) {
 		self.closure = closure
 		self.returnTo = returnTo
 		self.selfValue = selfValue
+		self.stackOffset = stackOffset
 	}
 
 	public func updateCapture(_ symbol: Symbol, to location: Capture.Location) {

@@ -96,7 +96,8 @@ public struct VirtualMachine {
 		let frame = CallFrame(
 			closure: Closure(chunk: chunk, capturing: [:]),
 			returnTo: 0,
-			selfValue: nil
+			selfValue: nil,
+			stackOffset: stack.size
 		)
 
 		frames.push(frame)
@@ -171,6 +172,10 @@ public struct VirtualMachine {
 
 				try transferCaptures(in: calledFrame)
 
+				while stack.size > calledFrame.stackOffset + 1 {
+					try stack.pop()
+				}
+
 				// Return to where we called from
 				ip = calledFrame.returnTo
 			case .returnValue:
@@ -187,16 +192,22 @@ public struct VirtualMachine {
 						}
 					}
 
-					return .ok((try? stack.pop()) ?? .none, Date().timeIntervalSince(start))
+					let retVal = stack.size == 0 ? .none : try stack.pop()
+
+					return .ok(retVal, Date().timeIntervalSince(start))
 				}
 
 				// Remove the result from the stack temporarily while we clean it up
 				let result = try stack.pop()
 
+				while stack.size > calledFrame.stackOffset {
+					try stack.pop()
+				}
+
 				while calledFrame.isInline {
 					calledFrame = try frames.pop()
 				}
-
+				
 				try transferCaptures(in: calledFrame)
 
 				// Push the result back onto the stack
@@ -589,7 +600,7 @@ public struct VirtualMachine {
 			case .setProperty:
 				let symbol = try readSymbol()
 				let instance = try stack.pop()
-				let propertyValue = try stack.peek()
+				let propertyValue = try stack.pop()
 
 				guard let receiver = instance.instanceValue else {
 					return runtimeError("Receiver is not a struct: \(instance)")
@@ -599,7 +610,7 @@ public struct VirtualMachine {
 				receiver.fields[symbol] = propertyValue
 
 				// Put the updated instance back onto the stack
-				stack[stack.size - 1] = .instance(receiver)
+//				stack[stack.size - 1] = .instance(receiver)
 			case .jumpPlaceholder:
 				()
 			case .get:
@@ -741,7 +752,7 @@ public struct VirtualMachine {
 			throw VirtualMachineError.valueMissing("no method found \(boundMethod)")
 		}
 
-		try call(chunk: methodChunk, withSelf: .instance(instance))
+		try call(chunk: methodChunk, withSelf: .instance(instance), additionalOffset: 1)
 	}
 
 	// Call a method on a struct instance.
@@ -777,14 +788,15 @@ public struct VirtualMachine {
 		try call(chunk: initializer, withSelf: instance)
 	}
 
-	private mutating func call(chunk: StaticChunk, withSelf: Value? = nil) throws {
+	private mutating func call(chunk: StaticChunk, withSelf: Value? = nil, additionalOffset: Int = 0) throws {
 		let frame = CallFrame(
 			closure: .init(
 				chunk: chunk,
 				capturing: [:]
 			),
 			returnTo: ip,
-			selfValue: withSelf
+			selfValue: withSelf,
+			stackOffset: stack.size - additionalOffset
 		)
 
 		let args = try stack.pop(count: Int(chunk.arity))
@@ -804,7 +816,8 @@ public struct VirtualMachine {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			selfValue: currentFrame.selfValue
+			selfValue: currentFrame.selfValue,
+			stackOffset: stack.size
 		)
 
 		let args = try stack.pop(count: Int(closure.chunk.arity))
@@ -829,7 +842,8 @@ public struct VirtualMachine {
 		let frame = CallFrame(
 			closure: closure,
 			returnTo: ip,
-			selfValue: currentFrame.selfValue
+			selfValue: currentFrame.selfValue,
+			stackOffset: stack.size
 		)
 
 		frame.isInline = inline

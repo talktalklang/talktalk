@@ -11,7 +11,7 @@ import TalkTalkSyntax
 
 public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
 	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {
-		lhs.name == rhs.name && lhs.cases == rhs.cases
+		lhs.name == rhs.name && lhs.cases.map(\.name) == rhs.cases.map(\.name)
 	}
 
 	public var name: String

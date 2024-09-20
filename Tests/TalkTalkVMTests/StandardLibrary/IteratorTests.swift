@@ -11,19 +11,20 @@ import Testing
 struct IteratorTests: StandardLibraryTest {
 	@Test("Can iterate over arrays") func create() async throws {
 		let output = TestOutput()
-		let result = try await run(
+		_ = try await run(
 		#"""
-		let a = [1,2,3]
+		let a = ["a", "b", "c"]
 		for i in a {
 			print("!! \(i)")
 		}
 		"""#
-															 , verbosity: .verbose).get()
+		, output: output).get()
 
 		#expect(output.stdout == """
-		!! 1
-		!! 2
-		!! 3
+		!! a
+		!! b
+		!! c
+
 		""")
 	}
 }

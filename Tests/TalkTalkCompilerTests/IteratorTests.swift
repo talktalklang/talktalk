@@ -36,6 +36,7 @@ struct IteratorTests: CompilerTest {
 			.op(.setLocal, line: 0, .local(.value(module.name, "$iterator"))),
 
 			// Start the loop
+			.op(.getLocal, line: 0, .local(.value(module.name, "$iterator"))),
 			.op(.getProperty, line: 0, .getProperty(.method("Standard", nil, "next", []), options: .isMethod)),
 			.op(.call, line: 0),
 			// Stash the value
@@ -46,7 +47,10 @@ struct IteratorTests: CompilerTest {
 			.op(.notEqual, line: 0),
 
 			// If it returned nil, jump past the body
-			.op(.jumpUnless, line: 0, .jump(offset: 12)),
+			.op(.jumpUnless, line: 0, .jump(offset: 13)),
+
+			// Pop the bool condition result
+			.op(.pop, line: 0),
 
 			// Bind the value
 			.op(.getLocal, line: 0, .local(.value(module.name, "$current"))),
@@ -56,7 +60,7 @@ struct IteratorTests: CompilerTest {
 			.op(.getLocal, line: 1, .local(.value(module.name, "i"))),
 			.op(.getBuiltin, line: 1, .builtin(.function("[builtin]", "print", ["any"]))),
 			.op(.call, line: 1),
-			.op(.loop, line: 1, .loop(back: 23)),
+			.op(.loop, line: 1, .loop(back: 26)),
 
 			.op(.returnVoid, line: 0)
 		))

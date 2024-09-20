@@ -8,12 +8,12 @@ struct ArrayIterator<Element>: Iterator {
 	}
 
 	func next() -> Element? {
-		if self.current >= self.array.count {
+		if self.current < self.array.count {
 			let value = self.array[self.current]
 			self.current = self.current + 1
-			return Optional.some(value)
+			return Optional<Element>.some(value)
 		} else {
-			return Optional.none
+			return Optional<Element>.none
 		}
 	}
 }
@@ -71,4 +71,5 @@ struct Array<Element>: Iterable {
 		self.count = self.count + 1
 	}
 }
+
 

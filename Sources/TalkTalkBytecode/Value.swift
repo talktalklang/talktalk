@@ -144,6 +144,8 @@ public enum Value: Equatable, Hashable, Codable {
 			lhsA == rhsA && lhsB == rhsB
 		case let (.primitive(lhs), .primitive(rhs)):
 			lhs == rhs
+		case let (.none, .enumCase(kase)), let (.enumCase(kase), .none):
+			kase.type == "Optional" && kase.name == "none"
 		case (.none, .none):
 			true
 		default:

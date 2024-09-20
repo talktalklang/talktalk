@@ -5,8 +5,15 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
+import TalkTalkCore
+import TalkTalkSyntax
 import TalkTalkAnalysis
 import TalkTalkBytecode
+
+extension Module {
+	// swiftlint:disable force_try
+	public static let stdlib: Module = try! ModuleCompiler(name: "Standard", analysisModule: ModuleAnalyzer.stdlib).compile(mode: .module)
+}
 
 // The compiling module is used during compilation. It can then become a real Module once
 // we've sorted out all the intermediary stuff
@@ -40,7 +47,12 @@ public class CompilingModule {
 	public init(name: String, analysisModule: AnalysisModule, moduleEnvironment: [String: Module]) {
 		self.name = name
 		self.analysisModule = analysisModule
-		self.moduleEnvironment = moduleEnvironment
+
+		if moduleEnvironment["Standard"] == nil, name != "Standard" {
+			self.moduleEnvironment = moduleEnvironment.merging(["Standard": .stdlib], uniquingKeysWith: { $1 })
+		} else {
+			self.moduleEnvironment = moduleEnvironment
+		}
 	}
 
 	public func finalize(mode: CompilationMode) throws -> Module {

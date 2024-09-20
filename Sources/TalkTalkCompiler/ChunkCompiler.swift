@@ -211,7 +211,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		case let .string(string):
 			// Get the bytes
 			chunk.emit(
-				data: StaticData(kind: .string, bytes: string.utf8),
+				data: StaticData(kind: .string, bytes: [UInt8](string.utf8)),
 				line: expr.location.line
 			)
 		case .none:

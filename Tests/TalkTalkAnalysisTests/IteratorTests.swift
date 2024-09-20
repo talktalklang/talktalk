@@ -23,6 +23,6 @@ struct IteratorTests: AnalysisTest {
 
 		#expect(stmt.elementAnalyzed.cast(AnalyzedVarExpr.self).name == "i")
 		#expect(stmt.sequenceAnalyzed.cast(AnalyzedArrayLiteralExpr.self).exprsAnalyzed.count == 3)
-		#expect(stmt.iteratorSymbol == .method("AnalysisTest", "Array", "makeIterator", []))
+		#expect(stmt.iteratorSymbol == .method("Standard", "Array", "makeIterator", []))
 	}
 }
