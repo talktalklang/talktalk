@@ -663,6 +663,8 @@ public struct VirtualMachine {
 					return runtimeError("Frame not inline!")
 				}
 				ip = inlineFrame.returnTo
+			case .beginScope:
+				()
 			case .matchBegin:
 				let symbol = try readSymbol()
 				try call(chunkID: symbol, inline: true)

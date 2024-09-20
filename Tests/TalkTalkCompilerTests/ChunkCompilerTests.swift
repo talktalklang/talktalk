@@ -30,7 +30,20 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 	}
 
 	static func == (lhs: [Instruction], rhs: Instructions) -> Bool {
-		lhs == rhs.instructions
+		if lhs == rhs.instructions {
+			return true
+		}
+
+		for change in lhs.difference(from: rhs.instructions) {
+			switch change {
+			case let .remove(offset, oldElement, _):
+				Issue.record("removed \(oldElement)")
+			case let .insert(offset, newElement, _):
+				Issue.record("added \(newElement)")
+			}
+		}
+
+		return false
 	}
 
 	let expectations: [Expectation]

@@ -3,11 +3,14 @@ struct ArrayIterator<Element>: Iterator {
 	var array: Array<Element>
 
 	init(array: Array<Element>) {
+		self.current = 0
 		self.array = array
 	}
 
 	func next() -> Element {
-		self.array[self.current]
+		let value = self.array[self.current]
+		self.current = self.current + 1
+		return value
 	}
 }
 

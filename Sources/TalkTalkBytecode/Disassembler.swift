@@ -191,12 +191,9 @@ public struct Disassembler<Chunk: Disassemblable> {
 	}
 
 	mutating func initArrayInstruction(start: Int) throws -> Instruction {
-		let count = try chunk.code[current++].asByte()
-		for _ in 0 ..< count {
-			current++
-		}
+		let count = try Int(chunk.code[current++].asByte())
 
-		return Instruction(path: chunk.path, opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: Int(count)))
+		return Instruction(path: chunk.path, opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: count))
 	}
 
 	mutating func captureInstruction(opcode: Opcode, start: Int) throws -> Instruction {
