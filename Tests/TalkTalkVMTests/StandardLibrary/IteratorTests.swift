@@ -9,19 +9,22 @@ import Testing
 
 @MainActor
 struct IteratorTests: StandardLibraryTest {
-	@Test("Can iterate over arrays", .disabled("Waiting on optionals")) func create() async throws {
+	@Test("Can iterate over arrays") func create() async throws {
 		let output = TestOutput()
-		let result = try await run("""
-		let a = [1,2,3]
+		_ = try await run(
+		#"""
+		let a = ["a", "b", "c"]
 		for i in a {
-			print(a)
+			print("!! \(i)")
 		}
-		""").get()
+		"""#
+		, output: output).get()
 
 		#expect(output.stdout == """
-		1
-		2
-		3
+		!! a
+		!! b
+		!! c
+
 		""")
 	}
 }

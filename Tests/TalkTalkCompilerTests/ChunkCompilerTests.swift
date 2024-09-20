@@ -30,7 +30,20 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 	}
 
 	static func == (lhs: [Instruction], rhs: Instructions) -> Bool {
-		lhs == rhs.instructions
+		if lhs == rhs.instructions {
+			return true
+		}
+
+		for change in lhs.difference(from: rhs.instructions) {
+			switch change {
+			case let .remove(offset, oldElement, _):
+				Issue.record("removed \(oldElement)")
+			case let .insert(offset, newElement, _):
+				Issue.record("added \(newElement)")
+			}
+		}
+
+		return false
 	}
 
 	let expectations: [Expectation]
@@ -99,8 +112,8 @@ class CompilerTests: CompilerTest {
 		return try module.compile(file: AnalyzedSourceFile(path: "1.talk", syntax: analyzed))
 	}
 
-	func disassemble(_ chunk: Chunk) -> [Instruction] {
-		try! chunk.disassemble(in: module.finalize(mode: .executable))
+	func disassemble(_ chunk: Chunk) throws -> [Instruction] {
+		try chunk.disassemble(in: module.finalize(mode: .executable))
 	}
 
 	@Test("Empty program") func empty() throws {
@@ -257,12 +270,12 @@ class CompilerTests: CompilerTest {
 		let chunk = module.compiledChunks[.function("CompilerTests", "1.talk", [])]!
 		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__15", [])]!
 
-		#expect(disassemble(chunk) == Instructions(
+		try #expect(disassemble(chunk) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "_fn__15", arity: 0, depth: 0)),
 			.op(.returnVoid, line: 0, .simple)
 		))
 
-		#expect(disassemble(subchunk) == Instructions(
+		try #expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.returnValue, line: 1),
 			.op(.returnValue, line: 2)
@@ -276,7 +289,7 @@ class CompilerTests: CompilerTest {
 		}()
 		""")
 
-		#expect(disassemble(chunk) == Instructions(
+		try #expect(disassemble(chunk) == Instructions(
 			.op(.defClosure, line: 0, .closure(name: "_fn__16", arity: 0, depth: 0)),
 			.op(.call, line: 0, .simple),
 			.op(.returnVoid, line: 0, .simple)
@@ -299,7 +312,7 @@ class CompilerTests: CompilerTest {
 		)
 
 		let chunk = module.compiledChunks[.function("CompilerTests", "_fn__58", [])]!
-		#expect(disassemble(chunk) == Instructions(
+		try #expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 1, .constant(.int(10))),
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
 			.op(.defClosure, line: 3, .closure(name: "_fn__44", arity: 0, depth: 1)),
@@ -310,7 +323,7 @@ class CompilerTests: CompilerTest {
 		))
 
 		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__44", [])]!
-		#expect(disassemble(subchunk) == Instructions(
+		try #expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
 			.op(.setCapture, line: 4, .capture(name: "a", .stack(1))),
 			.op(.returnValue, line: 4),
@@ -331,7 +344,7 @@ class CompilerTests: CompilerTest {
 		}
 		""")
 
-		let result = disassemble(module.compiledChunks[.function("CompilerTests", "_fn__57", [])]!)
+		let result = try disassemble(module.compiledChunks[.function("CompilerTests", "_fn__57", [])]!)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
@@ -376,7 +389,7 @@ class CompilerTests: CompilerTest {
 
 		let chunk = module.compiledChunks[.function("CompilerTests", "_fn__65", [])]!
 
-		let result = disassemble(chunk)
+		let result = try disassemble(chunk)
 		let expected = Instructions(
 			.op(.constant, line: 1, .constant(.int(123))),
 			.op(.setLocal, line: 1, .local(.value("CompilerTests", "a"))),
@@ -405,7 +418,7 @@ class CompilerTests: CompilerTest {
 			.op(.returnValue, line: 5)
 		)
 
-		#expect(disassemble(subchunk) == subexpected)
+		try #expect(disassemble(subchunk) == subexpected)
 	}
 
 	@Test("Struct initializer") func structs() throws {
@@ -421,7 +434,7 @@ class CompilerTests: CompilerTest {
 		Person(age: 123)
 		""")
 
-		#expect(disassemble(chunk) == Instructions(
+		try #expect(disassemble(chunk) == Instructions(
 			.op(.constant, line: 8, .constant(.int(123))),
 			.op(.getStruct, line: 8, .struct(.struct("CompilerTests", "Person"))),
 			.op(.call, line: 8, .simple),
@@ -443,7 +456,7 @@ class CompilerTests: CompilerTest {
 		Person()
 		""")
 
-		#expect(disassemble(chunk) == Instructions(
+		try #expect(disassemble(chunk) == Instructions(
 			.op(.getStruct, line: 8, .struct(.struct("CompilerTests", "Person"))),
 			.op(.call, line: 8, .simple),
 			.op(.pop, line: 8, .simple),

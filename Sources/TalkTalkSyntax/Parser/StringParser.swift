@@ -78,10 +78,6 @@ struct StringParser<S: StringProtocol> {
 	}
 
 	mutating func parsed() throws -> String {
-		if input.count == 2 - endOffset {
-			return ""
-		}
-
 		var result = ""
 
 		while let char = next() {

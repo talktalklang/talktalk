@@ -201,6 +201,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 		namedVariables[name] = type
 	}
 
+	public func type(named name: String) -> InferenceType? {
+		switch lookupVariable(named: name) {
+		case let .type(.instantiatable(type)):
+			return .instantiatable(type)
+		default:
+			return nil
+		}
+	}
+
 	func lookupVariable(named name: String) -> InferenceResult? {
 		if let result = namedVariables[name] {
 			return result

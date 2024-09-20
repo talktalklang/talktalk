@@ -29,6 +29,8 @@ public extension InferenceType {
 			lhsParams <= rhsParams && lhsReturns <= rhsReturns
 		case let (lhs as any Instantiatable, .instantiatable(.protocol(protocolType))):
 			protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
+		case let (.instance(lhs), .instance(.protocol(rhs))):
+			rhs.type.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.instance(lhs), .instantiatable(.protocol(protocolType))):
 			protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.enumCase(lhs), .instantiatable(.protocol(protocolType))):

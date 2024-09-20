@@ -39,6 +39,8 @@ public struct AnalysisModule {
 	// This list of top level enums in this module
 	public var enums: [String: ModuleEnum] = [:]
 
+	public var protocols: [String: ModuleProtocol] = [:]
+
 	// A list of modules this module imports
 	public var imports: OrderedDictionary<String, ModuleGlobal> = [:]
 

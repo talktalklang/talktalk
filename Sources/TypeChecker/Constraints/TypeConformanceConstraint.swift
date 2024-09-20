@@ -86,7 +86,7 @@ struct TypeConformanceConstraint: Constraint {
 				missing += "\t\(requirement.name) \(requirement.type)\n"
 
 				if let maybe = type.member(named: requirement.name, in: context) {
-					missing += "\t- did you mean \(maybe)\n"
+					missing += "\t- did you mean \(requirement.name) \(maybe)\n"
 				}
 			}
 			return .error([

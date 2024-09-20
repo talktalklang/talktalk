@@ -624,7 +624,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		guard let type = context.inferenceContext.lookup(syntax: expr),
-					case let .instantiatable(.enumType(enumType)) = type
+		      case let .instantiatable(.enumType(enumType)) = type
 		else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
@@ -861,8 +861,39 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ForStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-		return error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let type = context.inferenceContext.lookup(syntax: expr) else {
+			return error(at: expr, "Could not find type for \(expr)", environment: context)
+		}
+
+		let iteratorSymbol: Symbol
+
+		switch context.inferenceContext.lookup(syntax: expr.sequence) {
+		case .base:
+			return error(at: expr, "todo, need to figure out how we want to handle base types", environment: context)
+		case let .instance(.struct(instance)):
+			iteratorSymbol = try context.type(named: instance.type.name)?.methods["makeIterator"]?.symbol ??
+				context.symbolGenerator.method(instance.type.name, "makeIterator", parameters: [], source: .internal)
+		case let .instance(.protocol(instance)):
+			iteratorSymbol = try context.type(named: instance.type.name)?.methods["makeIterator"]?.symbol ??
+				context.symbolGenerator.method(instance.type.name, "makeIterator", parameters: [], source: .internal)
+		case let .selfVar(.instantiatable(.struct(type))):
+			iteratorSymbol = try context.type(named: type.name)?.methods["makeIterator"]?.symbol ??
+				context.symbolGenerator.method(type.name, "makeIterator", parameters: [], source: .internal)
+		default:
+			return error(at: expr.sequence, "\(expr.sequence) is not iterable", environment: context)
+		}
+
+		let sequenceAnalyzed = try castToAnyAnalyzedExpr(expr.sequence.accept(self, context))
+
+		return try AnalyzedForStmt(
+			wrapped: expr,
+			elementAnalyzed: expr.element.accept(self, context),
+			sequenceAnalyzed: sequenceAnalyzed,
+			bodyAnalyzed: cast(expr.body.accept(self, context), to: AnalyzedBlockStmt.self),
+			iteratorSymbol: iteratorSymbol,
+			inferenceType: type,
+			environment: context
+		)
 	}
 
 	// GENERATOR_INSERTION

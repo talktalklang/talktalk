@@ -15,9 +15,9 @@ extension InferenceType: Equatable {
 		case let (.base(lhs), .base(rhs)):
 			lhs == rhs
 		case let (.instance(lhs), .instance(rhs)):
-			lhs == rhs
+			lhs.equals(rhs)
 		case let (.instantiatable(lhs), .instantiatable(rhs)):
-			lhs.hashValue == rhs.hashValue
+			lhs == rhs
 		case let (.placeholder(lhs), .placeholder(rhs)):
 			lhs == rhs
 		case let (.error(lhs), .error(rhs)):

@@ -22,7 +22,8 @@ extension StandardLibraryTest {
 		_ input: String,
 		analysisEnvironment: [String: AnalysisModule] = [:],
 		moduleEnvironment: [String: Module] = [:],
-		verbosity: Verbosity = .quiet
+		verbosity: Verbosity = .quiet,
+		output: any OutputBuffer = DefaultOutputBuffer()
 	) async throws -> VirtualMachine.ExecutionResult {
 		let files: [ParsedSourceFile] = [.tmp(input, "1.talk")]
 		let analyzer = try ModuleAnalyzer(
@@ -44,6 +45,6 @@ extension StandardLibraryTest {
 			moduleEnvironment: moduleEnvironment
 		).compile(mode: .executable)
 
-		return try VirtualMachine.run(module: module, verbosity: verbosity)
+		return try VirtualMachine.run(module: module, verbosity: verbosity, output: output)
 	}
 }

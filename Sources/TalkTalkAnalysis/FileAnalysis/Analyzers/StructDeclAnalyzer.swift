@@ -143,6 +143,8 @@ struct StructDeclAnalyzer: Analyzer {
 			structType.typeParameters[i].type = try cast(param.type.accept(visitor, environment), to: AnalyzedTypeExpr.self)
 		}
 
+		context.define(type: decl.name, as: structType)
+
 		let symbol = context.symbolGenerator.struct(decl.name, source: .internal)
 		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
 
@@ -166,7 +168,6 @@ struct StructDeclAnalyzer: Analyzer {
 			environment: context
 		)
 
-		context.define(type: decl.name, as: structType)
 		bodyContext.define(type: decl.name, as: structType)
 
 		context.define(local: decl.name, as: analyzed, isMutable: false)

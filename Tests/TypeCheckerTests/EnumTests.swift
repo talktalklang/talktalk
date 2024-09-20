@@ -62,7 +62,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 1)
 
 		#expect(enumType.cases[0].attachedTypes.count == 1)
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 83)) // Make sure int doesn't leak to outer generic
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 91)) // Make sure int doesn't leak to outer generic
 
 		let wrappedIntVar = syntax[1].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
@@ -70,7 +70,7 @@ struct EnumTests: TypeCheckerTest {
 
 		#expect(context[wrappedIntVar] == .type(.base(.int)))
 
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 83)) // Make sure we're still good here
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 91)) // Make sure we're still good here
 
 		let wrappedStringVar = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
@@ -78,7 +78,7 @@ struct EnumTests: TypeCheckerTest {
 
 		#expect(context[wrappedStringVar] == .type(.base(.string)))
 
-		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 83)) // Make sure we're still good here
+		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 91)) // Make sure we're still good here
 	}
 
 	@Test("Can infer a case") func cases() throws {

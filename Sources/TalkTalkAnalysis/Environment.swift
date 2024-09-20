@@ -243,29 +243,27 @@ public class Environment {
 			"Int",
 		]
 
-		for typeName in types {
-			_ = symbolGenerator.import(.struct("Standard", typeName), from: "Standard")
+		let stdlib = ModuleAnalyzer.stdlib
+		for symbol in stdlib.symbols {
+			_ = symbolGenerator.import(symbol.key, from: "Standard")
+		}
 
-			guard let type = inferenceContext.namedVariables[typeName] else {
-				throw AnalyzerError.stdlibNotFound
-			}
+		var moduleGlobals: [ModuleGlobal] = []
+		moduleGlobals.append(contentsOf: Array(stdlib.structs.values))
+		moduleGlobals.append(contentsOf: Array(stdlib.enums.values))
+		moduleGlobals.append(contentsOf: Array(stdlib.protocols.values))
 
-			if let stdlib = importedModules.first(where: { $0.name == "Standard" }) {
-				for symbol in stdlib.symbols {
-					_ = symbolGenerator.import(symbol.key, from: "Standard")
-				}
-
-				importBinding(
-					as: symbolGenerator.import(.struct("Standard", typeName), from: "Standard"),
-					from: "Standard",
-					binding: .init(
-						name: typeName,
-						location: [.synthetic(.identifier)],
-						type: type.asType(in: inferenceContext),
-						externalModule: stdlib
-					)
+		for type in moduleGlobals {
+			importBinding(
+				as: symbolGenerator.import(type.symbol, from: "Standard"),
+				from: "Standard",
+				binding: .init(
+					name: type.name,
+					location: type.location,
+					type: type.typeID,
+					externalModule: stdlib
 				)
-			}
+			)
 		}
 	}
 
@@ -302,7 +300,13 @@ public class Environment {
 			return type
 		}
 
-		guard let binding = lookup(name) else {
+		var binding = lookup(name)
+		if binding == nil, let type = inferenceContext.type(named: name) {
+			// Try to make a binding on the fly
+			binding = Binding(name: name, location: [.synthetic(.builtin)], type: type)
+		}
+
+		guard let binding else {
 			throw AnalyzerError.typeNotInferred("No binding found for name: \(name)")
 		}
 

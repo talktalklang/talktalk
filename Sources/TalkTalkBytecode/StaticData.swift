@@ -13,7 +13,7 @@ public struct StaticData: Codable, Hashable, Equatable, Sendable {
 	public let kind: Kind
 	public let bytes: ContiguousArray<Byte>
 
-	public init(kind: Kind, bytes: some Collection<Byte>) {
+	public init(kind: Kind, bytes: [Byte]) {
 		self.kind = kind
 		self.bytes = ContiguousArray(bytes)
 	}
