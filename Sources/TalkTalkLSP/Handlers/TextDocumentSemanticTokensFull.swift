@@ -121,8 +121,14 @@ public struct SemanticTokensVisitor: Visitor {
 		[]
 	}
 
-	public func visit(_: ParamSyntax, _: Context) throws -> [RawSemanticToken] {
-		[]
+	public func visit(_ syntax: ParamSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [make(.parameter, from: syntax.location.start)]
+
+		if let type = syntax.type {
+			try result.append(contentsOf: type.accept(self, context))
+		}
+
+		return result
 	}
 
 	public func visit(_: GenericParamsSyntax, _: Context) throws -> [RawSemanticToken] {
@@ -215,9 +221,9 @@ public struct SemanticTokensVisitor: Visitor {
 		return result
 	}
 
-	public func visit(_ expr: ParamsExprSyntax, _: Context) throws -> [RawSemanticToken] {
-		expr.params.map {
-			make(.parameter, from: $0.location.start)
+	public func visit(_ expr: ParamsExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		try expr.params.flatMap {
+			try $0.accept(self, context)
 		}
 	}
 
