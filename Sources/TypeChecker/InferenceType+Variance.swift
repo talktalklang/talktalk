@@ -6,13 +6,13 @@
 //
 
 extension [InferenceType] {
-	static func <= (lhs: [InferenceType], rhs: [InferenceType]) -> Bool {
-		if lhs.count != rhs.count {
+	func covariant(with rhs: [InferenceType], in context: InferenceContext) -> Bool {
+		if count != rhs.count {
 			return false
 		}
 
-		for (lhsElement, rhsElement) in zip(lhs, rhs) {
-			if !(lhsElement <= rhsElement) {
+		for (lhsElement, rhsElement) in zip(self, rhs) {
+			if !(lhsElement.covariant(with: rhsElement, in: context)) {
 				return false
 			}
 		}
@@ -23,20 +23,24 @@ extension [InferenceType] {
 
 // Variance helpers
 public extension InferenceType {
-	static func <= (lhs: InferenceType, rhs: InferenceType) -> Bool {
-		switch (lhs, rhs) {
+	func covariant(with rhs: InferenceType, in context: InferenceContext) -> Bool {
+		switch (self, rhs) {
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
-			lhsParams <= rhsParams && lhsReturns <= rhsReturns
+			return lhsParams.covariant(with: rhsParams, in: context) && lhsReturns.covariant(with: rhsReturns, in: context)
 		case let (lhs as any Instantiatable, .instantiatable(.protocol(protocolType))):
-			protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
+			return protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
 		case let (.instance(lhs), .instance(.protocol(rhs))):
-			rhs.type.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+			return rhs.type.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.instance(lhs), .instantiatable(.protocol(protocolType))):
-			protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.enumCase(lhs), .instantiatable(.protocol(protocolType))):
-			protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+		case let (.typeVar, rhs):
+			context.addConstraint(.equality(self, rhs, at: [.synthetic(.less)]))
+
+			return true
 		default:
-			lhs == rhs
+			return self == rhs
 		}
 	}
 }

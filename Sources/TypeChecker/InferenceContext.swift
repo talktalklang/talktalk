@@ -683,7 +683,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case (.void, .void):
 			() // This is chill
 		default:
-			if !(a <= b), a != .any, b != .any {
+			if !a.covariant(with: b, in: self), a != .any, b != .any {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),

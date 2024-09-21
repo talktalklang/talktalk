@@ -57,6 +57,25 @@ struct ProtocolTests {
 		], .base(.string)))
 	}
 
+	@Test("Types protocol method without type annotations") func protocolMethodSansTypes() throws {
+		let syntax = try Parser.parse(
+			"""
+			protocol Greetable {
+				func greet(name: String) -> String
+			}
+
+			struct Person: Greetable {
+				func greet(name) {
+					"hi " + name
+				}
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		#expect(context.errors.isEmpty)
+	}
+
 	@Test("Types protocol property") func protocolProperty() throws {
 		let syntax = try Parser.parse(
 			"""

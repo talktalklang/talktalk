@@ -1,0 +1,13 @@
+protocol Greetable {
+	func greet(name: String) -> String
+}
+
+struct Person: Greetable {
+	func greet(name) {
+		"Hello, \(name)!"
+	}
+}
+
+func greet(greetable: Greetable) {
+	print(greetable.greet("pat"))
+}

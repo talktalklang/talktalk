@@ -16,7 +16,7 @@ public struct ConformanceRequirement: Hashable {
 			return false
 		}
 
-		return member.asType(in: context) <= self.type
+		return member.asType(in: context).covariant(with: self.type, in: context)
 	}
 }
 
