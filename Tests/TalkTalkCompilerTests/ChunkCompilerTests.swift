@@ -36,9 +36,9 @@ struct Instructions: CustomStringConvertible, CustomTestStringConvertible {
 
 		for change in lhs.difference(from: rhs.instructions) {
 			switch change {
-			case let .remove(offset, oldElement, _):
+			case let .remove(_, oldElement, _):
 				Issue.record("removed \(oldElement)")
-			case let .insert(offset, newElement, _):
+			case let .insert(_, newElement, _):
 				Issue.record("added \(newElement)")
 			}
 		}
