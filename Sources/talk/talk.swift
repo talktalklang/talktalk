@@ -58,6 +58,7 @@ struct TalkCommand: TalkTalkCommand {
 			LSP.self,
 			Compile.self,
 			AnalysisPrinter.self,
+			HTML.self
 		]
 	)
 }
