@@ -5,7 +5,6 @@
 //  Created by Pat Nakajima on 8/16/24.
 //
 
-import Foundation
 import TalkTalkSyntax
 
 @resultBuilder struct StringBuilder {

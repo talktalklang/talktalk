@@ -4,7 +4,6 @@
 //
 //  Created by Pat Nakajima on 7/26/24.
 //
-import Foundation
 import TalkTalkBytecode
 import TalkTalkSyntax
 import TypeChecker

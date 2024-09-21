@@ -5,7 +5,6 @@
 //  Created by Pat Nakajima on 8/9/24.
 //
 
-import Foundation
 import TalkTalkBytecode
 
 public extension VirtualMachine {
@@ -18,7 +17,7 @@ public extension VirtualMachine {
 			case error(String)
 		}
 
-		case ok(Value, TimeInterval), error(String)
+		case ok(Value, Double), error(String)
 
 		public func error() -> String? {
 			switch self {
