@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 9/13/24.
 //
 
+import TalkTalkCore
 import TalkTalkSyntax
 import Testing
 

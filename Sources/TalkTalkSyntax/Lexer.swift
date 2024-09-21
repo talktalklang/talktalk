@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 7/22/24.
 //
-import Foundation
+import TalkTalkCore
 
 public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable, Codable {
 	public enum Kind: Sendable, Equatable, Hashable, Codable {
@@ -92,7 +92,6 @@ public struct Lexer {
 		if source.path.trimmingCharacters(in: .whitespacesAndNewlines) == "" {
 			#if DEBUG
 				print("empty source path is discouraged")
-				raise(SIGINT)
 			#endif
 		}
 	}

@@ -2,6 +2,7 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 let package = Package(
 	name: "TalkTalk",
@@ -79,8 +80,8 @@ let package = Package(
 		.target(
 			name: "TalkTalkCore",
 			dependencies: [],
-			resources: [
-				.copy("../../Library/Standard"),
+			swiftSettings: [
+				.define("WASM", .when(platforms: [.wasi])),
 			]
 		),
 		.target(
@@ -89,9 +90,6 @@ let package = Package(
 				"TalkTalkCore",
 				"TalkTalkSyntax",
 				.product(name: "OrderedCollections", package: "swift-collections"),
-			],
-			resources: [
-				.copy("../../Library/Standard"),
 			]
 		),
 		.target(
@@ -225,6 +223,14 @@ let package = Package(
 		),
 	]
 )
+
+#if !WASM
+for target in package.targets {
+	target.resources = [
+		.copy("../../Library/Standard"),
+ ]
+}
+#endif
 
 #if os(Linux)
 	package.dependencies.append(

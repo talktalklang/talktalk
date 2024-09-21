@@ -4,7 +4,6 @@
 //
 //  Created by Pat Nakajima on 8/14/24.
 //
-
 import Foundation
 
 public struct Library {
@@ -13,15 +12,13 @@ public struct Library {
 	// The name of this library
 	public let name: String
 
-	// Where its root is
-	public let location: URL
-
 	// A list of files. Can be order dependent.
-	public let paths: [String]
+	public let files: [SourceFile]
 }
 
 // Helpers
 public extension Library {
+	#if !WASM
 	static var libraryURL: URL {
 		if let bundlePath = ProcessInfo.processInfo.environment[talktalkLibraryEnvKey] {
 			if FileManager.default.fileExists(atPath: bundlePath), let url = URL(string: bundlePath) {
@@ -38,24 +35,41 @@ public extension Library {
 			// swiftlint:enable force_unwrapping
 		}
 	}
+	#endif
 
 	// This is the standard library. It's kind of a big deal.
 	static var standard: Library {
-		Library(
+		#if WASM
+		return Library(
 			name: "Standard",
-			location: libraryURL.appending(path: "Standard"),
-			paths: [
+			files: [
+				SourceFile(path: "Optional.talk", text: EmbeddedStandardLibrary.files["Optional.talk"]!),
+				SourceFile(path: "Iterable.talk", text: EmbeddedStandardLibrary.files["Iterable.talk"]!),
+				SourceFile(path: "Int.talk", text: EmbeddedStandardLibrary.files["Int.talk"]!),
+				SourceFile(path: "String.talk", text: EmbeddedStandardLibrary.files["String.talk"]!),
+				SourceFile(path: "Array.talk", text: EmbeddedStandardLibrary.files["Array.talk"]!),
+				SourceFile(path: "Dictionary.talk", text: EmbeddedStandardLibrary.files["Dictionary.talk"]!),
+			]
+		)
+		#else
+		return Library(
+			name: "Standard",
+			files: [
 				"Optional.talk",
 				"Iterable.talk",
 				"Int.talk",
 				"String.talk",
 				"Array.talk",
 				"Dictionary.talk",
-			]
+			].map {
+				// swiftlint:disable force_try
+				try! SourceFile(
+					path: libraryURL.appending(path: "Standard").appending(path: $0).path,
+					text: String(contentsOf: libraryURL.appending(path: "Standard").appending(path: $0), encoding: .utf8))
+				// swiftlint:enable force_try
+			}
 		)
-	}
-
-	static var replURL: URL {
-		libraryURL.appending(path: "REPL")
+		#endif
 	}
 }
+

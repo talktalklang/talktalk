@@ -8,6 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkSyntax
 import TypeChecker
+import TalkTalkCore
 
 actor Completer {
 	var source: SourceFile

@@ -9,6 +9,7 @@ import Foundation
 import TalkTalkAnalysis
 import TalkTalkSyntax
 import TypeChecker
+import TalkTalkCore
 
 struct TextDocumentSemanticTokensFull {
 	var request: Request

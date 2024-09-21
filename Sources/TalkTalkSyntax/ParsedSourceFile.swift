@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import Foundation
+import TalkTalkCore
 
 public struct ParsedSourceFile: Hashable, Equatable {
 	public static func == (lhs: ParsedSourceFile, rhs: ParsedSourceFile) -> Bool {

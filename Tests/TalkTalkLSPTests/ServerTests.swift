@@ -39,11 +39,7 @@ private extension Data {
 		let server = try await Server()
 
 		for request in requests {
-			let out = await OutputCapture.run {
-				await server.perform(request)
-			}
-
-			responses.append(Data(out.stdout.utf8))
+			await server.perform(request)
 		}
 
 		return responses.map { stripHeader(from: $0) }

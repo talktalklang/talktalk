@@ -8,6 +8,7 @@
 import ArgumentParser
 import TalkTalkLSP
 import TalkTalkSyntax
+import TalkTalkCore
 
 struct HTML: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

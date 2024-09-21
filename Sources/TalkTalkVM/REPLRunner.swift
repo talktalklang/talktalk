@@ -36,19 +36,7 @@ public class REPLRunner: Copyable {
 	static func compileStandardLibrary() throws -> (Module, AnalysisModule) {
 		let analysis = try ModuleAnalyzer(
 			name: "Standard",
-			files: Library.standard.paths.map {
-				let parsed = try Parser.parse(
-					SourceFile(
-						path: $0,
-						text: String(
-							contentsOf: Library.standard.location.appending(path: $0),
-							encoding: .utf8
-						)
-					)
-				)
-
-				return ParsedSourceFile(path: $0, syntax: parsed)
-			},
+			files: Library.standard.files.map { try Parser.parseFile($0) },
 			moduleEnvironment: [:],
 			importedModules: []
 		).analyze()
@@ -67,17 +55,25 @@ public class REPLRunner: Copyable {
 		let (stdlibModule, stdlibAnalysis) = try Self.compileStandardLibrary()
 
 		self.driver = Driver(
-			directories: [Library.replURL],
+			directories: [],
 			analyses: ["Standard": stdlibAnalysis],
 			modules: ["Standard": stdlibModule]
 		)
 
-		guard let result = try await driver.compile(mode: .module)["REPL"] else {
-			throw REPLError.initError("Could not load REPL library")
-		}
+		let analysisModule = try ModuleAnalyzer(
+			name: "REPL",
+			files: [],
+			moduleEnvironment: ["Standard": stdlibAnalysis],
+			importedModules: [stdlibAnalysis]
+		).analyze()
 
-		self.module = result.module
-		self.analysis = result.analysis
+		let moduleCompiler = ModuleCompiler(
+			name: "REPL",
+			analysisModule: analysisModule
+		)
+
+		self.module = try moduleCompiler.compile(mode: .executable)
+		self.analysis = analysisModule
 		self.inferencer = try Inferencer(imports: [])
 		self.environment = Environment(inferenceContext: inferencer.context, symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
@@ -110,7 +106,6 @@ public class REPLRunner: Copyable {
 		}
 
 		chunk.emit(opcode: .suspend, line: .zero)
-//		vm.module.main =
 		vm.chunk = StaticChunk(chunk: chunk)
 
 		return try vm.run()

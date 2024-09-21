@@ -8,6 +8,7 @@
 import ArgumentParser
 import Foundation
 import TalkTalkSyntax
+import TalkTalkCore
 
 enum ProgramInput {
 	case path(SourceFile), string(String), stdin
