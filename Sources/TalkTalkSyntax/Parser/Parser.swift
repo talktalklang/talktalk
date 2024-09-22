@@ -73,6 +73,31 @@ public struct Parser {
 		return SyntaxID(id: lastID, path: lexer.path)
 	}
 
+	mutating func synchronize() {
+		advance()
+
+		while !lexer.isAtEnd {
+			if previous.kind == .newline {
+				break
+			}
+
+			switch peek().kind {
+			case .struct,
+					.enum,
+					.func,
+					.var,
+					.let,
+					.if,
+					.while,
+					.for,
+					.return:
+				break
+			default:
+				advance()
+			}
+		}
+	}
+
 	public mutating func parse() -> [any Syntax] {
 		var results: [any Syntax] = []
 		skip(.newline)
@@ -80,7 +105,12 @@ public struct Parser {
 		while current.kind != .eof {
 			skip(.newline)
 
-			results.append(decl(context: .topLevel))
+			let decl = decl(context: .topLevel)
+			results.append(decl)
+
+			if decl is ParseErrorSyntax {
+				synchronize()
+			}
 
 			skip(.newline)
 		}
