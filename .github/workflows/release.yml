@@ -86,7 +86,7 @@ jobs:
     - name: Get the swift wasm toolchain
       run: |
         curl -L -o package.pkg https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a-macos_arm64.pkg
-        sudo installer -pkg package.pkg -target /Library/Developer/Toolchains/
+        sudo installer -pkg package.pkg -target /
     - name: Get the wasm tools
       run: brew install wabt binaryen
     - name: "Debug some stuff"
