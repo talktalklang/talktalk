@@ -44,7 +44,7 @@ public extension TalkTalkCommand {
 
 @main
 struct TalkCommand: TalkTalkCommand {
-	static let version = "talk v0.0.1"
+	static let version = "talk v\(TalkTalkVersion)"
 
 	static let configuration = CommandConfiguration(
 		commandName: "talk",
