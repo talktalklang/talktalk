@@ -34,9 +34,9 @@ struct HTMLHighlighter {
 		self.parsed = try Parser.parse(input)
 	}
 
-	func highlight() -> String {
+	func highlight() throws -> String {
 		let visitor = SemanticTokensVisitor()
-		var tokens = try! parsed.flatMap { try $0.accept(visitor, .topLevel) }
+		var tokens = try parsed.flatMap { try $0.accept(visitor, .topLevel) }
 
 		// Add in comment tokens since we lost those during parsing
 		for match in input.text.matches(of: #/(\/\/[^\n]*)\n/#) {

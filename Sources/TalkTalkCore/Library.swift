@@ -40,6 +40,7 @@ public extension Library {
 	// This is the standard library. It's kind of a big deal.
 	static var standard: Library {
 		#if WASM
+		// swiftlint:disable force_unwrapping
 		return Library(
 			name: "Standard",
 			files: [
@@ -51,6 +52,7 @@ public extension Library {
 				SourceFile(path: "Dictionary.talk", text: EmbeddedStandardLibrary.files["Dictionary.talk"]!),
 			]
 		)
+		// swiftlint:enable force_unwrapping
 		#else
 		return Library(
 			name: "Standard",
