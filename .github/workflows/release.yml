@@ -83,8 +83,10 @@ jobs:
         asset_content_type: application/zip
     - name: Save upload url for the wasm build
       run: echo "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
-    - name: Get the wasm toolchain
-      run: swift sdk install https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a-wasm32-unknown-wasi.artifactbundle.zip --checksum ac7318b8beee4870162292715654499127833b847af6b3d94c32e574579ea189
+    - name: Get the swift wasm toolchain
+      run: |
+        curl -L -o package.pkg https://github.com/swiftwasm/swift/releases/download/swift-wasm-5.10.0-RELEASE/swift-wasm-5.10.0-RELEASE-macos_arm64.pkg
+        sudo installer -pkg package.pkg -target /
     - name: Get the wasm tools
       run: brew install wabt binaryen
     - name: Build the wasm file
