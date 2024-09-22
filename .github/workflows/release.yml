@@ -13,11 +13,11 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-    - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        swift-version: "main-snapshot"
+    # - uses: khlopko/setup-swift@bfd61cbd14eeef55a27afc45138b61ced7174839
+    #   env:
+    #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #   with:
+    #     swift-version: "main-snapshot"
     - uses: actions/checkout@v4
     # - name: Install gon
     #   run: brew install Bearer/tap/gon
@@ -92,7 +92,7 @@ jobs:
     - name: "Debug some stuff"
       run: |
         echo "We expect to see a toolchain here?"
-        ls -lah /Library/Developer/Toolchains/
+        ls -lah /
 
         echo "What about here"
         ls -lah
