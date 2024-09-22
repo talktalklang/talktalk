@@ -21,7 +21,7 @@ struct HTML: TalkTalkCommand {
 	func run() async throws {
 		let source = try get(input: input)
 		let formatted = try HTMLHighlighter(input: source).highlight()
-		print(formatted)
+		print(formatted, terminator: "")
 	}
 }
 

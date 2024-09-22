@@ -21,6 +21,17 @@ struct HTMLHighlighterTests {
 		""")
 	}
 
+	@Test("Respects trailing newline") func trailingNewline() {
+		#expect(highlight("""
+		for i in [1, 2, 3] {
+			print(i)
+		}
+		""") == """
+		<span class="keyword">for</span> <span class="variable">i</span> <span class="keyword\">in</span> [<span class=\"number\">1</span>, <span class=\"number\">2</span>, <span class=\"number\">3</span>] {\n\t<span class=\"variable\">print</span>(<span class=\"variable\">i</span>)
+		}
+		""")
+	}
+
 	@Test("Highlights a keyword") func varA() {
 		#expect(highlight("var a") == """
 		<span class="keyword">var</span> a
