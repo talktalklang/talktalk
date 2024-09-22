@@ -5,6 +5,22 @@
 //  Created by Pat Nakajima on 9/18/24.
 //
 
+extension [InferenceResult] {
+	func covariant(with rhs: [InferenceResult], in context: InferenceContext) -> Bool {
+		if count != rhs.count {
+			return false
+		}
+
+		for (lhsElement, rhsElement) in zip(self, rhs) {
+			if !(lhsElement.covariant(with: rhsElement, in: context)) {
+				return false
+			}
+		}
+
+		return true
+	}
+}
+
 extension [InferenceType] {
 	func covariant(with rhs: [InferenceType], in context: InferenceContext) -> Bool {
 		if count != rhs.count {
@@ -36,7 +52,11 @@ public extension InferenceType {
 		case let (.enumCase(lhs), .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.typeVar, rhs):
-			context.addConstraint(.equality(self, rhs, at: [.synthetic(.less)]))
+			context.addConstraint(.equality(rhs, self, at: [.synthetic(.less)]))
+
+			return true
+		case let (lhs, .typeVar):
+			context.addConstraint(.equality(lhs, self, at: [.synthetic(.less)]))
 
 			return true
 		default:

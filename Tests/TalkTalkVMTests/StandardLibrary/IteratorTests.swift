@@ -27,4 +27,22 @@ struct IteratorTests: StandardLibraryTest {
 
 		""")
 	}
+
+	@Test("Can iterate over ints") func ints() async throws {
+		let output = TestOutput()
+		_ = try await run(
+		#"""
+		for i in [1, 2, 3] {
+			print(i)
+		}
+		"""#
+		, output: output).get()
+
+		#expect(output.stdout == """
+		1
+		2
+		3
+
+		""")
+	}
 }

@@ -3,9 +3,12 @@ talk.wasm: Sources/TalkTalkCore/embedded-stdlib.swift
 		--triple wasm32-unknown-wasi \
 		--product talk \
 		--static-swift-stdlib \
-		--configuration debug \
-		--scratch-path .build/wasm
-	cp .build/wasm32-unknown-wasi/debug/talk.wasm .
+		--configuration release \
+		--scratch-path .build/wasm \
+		-Xswiftc -Osize
+	cp .build/wasm/wasm32-unknown-wasi/release/talk.wasm .
+	wasm-strip talk.wasm
+	wasm-opt -o talk.wasm --enable-bulk-memory -Oz talk.wasm
 
 Sources/TalkTalkCore/embedded-stdlib.swift:
 	ruby Dev/embed-stdlib.rb > Sources/TalkTalkCore/embedded-stdlib.swift

@@ -200,7 +200,7 @@ public struct VirtualMachine {
 				// Remove the result from the stack temporarily while we clean it up
 				let result = try stack.pop()
 
-				while stack.size > calledFrame.stackOffset {
+				while stack.size > calledFrame.stackOffset + 1 {
 					try stack.pop()
 				}
 

@@ -58,11 +58,11 @@ struct ModuleAnalysisTests {
 
 		// First make sure we can get a super basic function with no dependencies
 		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
-		#expect(bar.typeID == .function([], .base(.int)))
+		#expect(bar.typeID == .function([], .type(.base(.int))))
 
 		// Next make sure we can get a function that calls another function that was defined after it
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		#expect(foo.typeID == .function([], .base(.int)))
+		#expect(foo.typeID == .function([], .type(.base(.int))))
 	}
 
 	@Test("Analyzes module global values") func globalValues() throws {
@@ -92,7 +92,7 @@ struct ModuleAnalysisTests {
 
 		// Next make sure we can type a function that uses a module global
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		#expect(foo.typeID == .function([], .base(.int)))
+		#expect(foo.typeID == .function([], .type(.base(.int))))
 	}
 
 	@Test("Analyzes module function imports") func importing() throws {
@@ -108,10 +108,10 @@ struct ModuleAnalysisTests {
 		// Make sure we're actually loading these
 		let foo = try #require(moduleA.moduleFunction(named: "foo"))
 		#expect(foo.name == "foo")
-		#expect(foo.typeID == .function([], .base(.int)))
+		#expect(foo.typeID == .function([], .type(.base(.int))))
 
 		let bar = try #require(moduleB.moduleFunction(named: "bar"))
-		#expect(bar.typeID == .function([], .base(.int)))
+		#expect(bar.typeID == .function([], .type(.base(.int))))
 	}
 
 	@Test("Analyzes module structs") func structProperties() throws {

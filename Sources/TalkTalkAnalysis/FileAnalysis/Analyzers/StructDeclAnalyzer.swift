@@ -45,8 +45,8 @@ struct StructDeclAnalyzer: Analyzer {
 			)
 		}
 
-		for (name, type) in type.methods {
-			guard case let .function(params, returns) = type.asType(in: context.inferenceContext) else {
+		for (name, method) in type.methods {
+			guard case let .function(params, returns) = method.asType(in: context.inferenceContext) else {
 				return error(at: decl, "invalid method", environment: context, expectation: .none)
 			}
 
@@ -63,10 +63,10 @@ struct StructDeclAnalyzer: Analyzer {
 				method: Method(
 					name: name,
 					symbol: symbol,
-					params: params,
-					inferenceType: type.asType(in: context.inferenceContext),
+					params: params.map { context.inferenceContext.apply($0) },
+					inferenceType: method.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
-					returnTypeID: returns
+					returnTypeID: context.inferenceContext.apply(returns)
 				)
 			)
 		}
@@ -88,10 +88,10 @@ struct StructDeclAnalyzer: Analyzer {
 				initializer: Method(
 					name: name,
 					symbol: symbol,
-					params: params,
+					params: params.map { context.inferenceContext.apply($0) },
 					inferenceType: type.asType(in: context.inferenceContext),
 					location: location ?? decl.location,
-					returnTypeID: returns
+					returnTypeID: context.inferenceContext.apply(returns)
 				)
 			)
 		}
@@ -108,7 +108,7 @@ struct StructDeclAnalyzer: Analyzer {
 						source: .internal
 					),
 					params: structType.properties.values.map(\.inferenceType),
-					inferenceType: .function(structType.properties.values.map(\.inferenceType), .instantiatable(.struct(type))),
+					inferenceType: .function(structType.properties.values.map { .type($0.inferenceType) }, .type(.instantiatable(.struct(type)))),
 					location: decl.location,
 					returnTypeID: .instance(.synthesized(type)),
 					isSynthetic: true

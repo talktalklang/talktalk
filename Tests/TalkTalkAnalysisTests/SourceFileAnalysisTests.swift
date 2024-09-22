@@ -78,7 +78,7 @@ struct AnalysisTests {
 			""")
 
 		#expect(
-			fn.typeAnalyzed == .function([.base(.int)], .base(.int))
+			fn.typeAnalyzed == .function([.type(.base(.int))], .type(.base(.int)))
 		)
 	}
 
@@ -117,7 +117,7 @@ struct AnalysisTests {
 			"""
 		).cast(AnalyzedExprStmt.self).exprAnalyzed
 
-		#expect(fn.typeAnalyzed == .function([.base(.int)], .base(.int)))
+		#expect(fn.typeAnalyzed == .function([.type(.base(.int))], .type(.base(.int))))
 	}
 
 	@Test("Types simple calls") func funcSimpleCalls() {
@@ -205,14 +205,22 @@ struct AnalysisTests {
 		#expect(param.name == "x")
 		#expect(param.typeAnalyzed == .base(.int))
 		#expect(
-			fn.typeAnalyzed == .function([.base(.int)], .function([.base(.int)], .base(.int)))
+			fn.typeAnalyzed == .function(
+				[.type(.base(.int))],
+					.type(
+						.function(
+							[.type(.base(.int))],
+							.type(.base(.int))
+					)
+				)
+			)
 		)
 		#expect(fn.environment.capturedValues.first?.name == "x")
 
 		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedFuncExpr.self)
-		#expect(nestedFn.typeAnalyzed == .function([.base(.int)], .base(.int)))
+		#expect(nestedFn.typeAnalyzed == .function([.type(.base(.int))], .type(.base(.int))))
 
 		#expect(nestedFn.environment.captures.count == 1)
 		let capture = try #require(nestedFn.environment.captures.first)
@@ -239,14 +247,14 @@ struct AnalysisTests {
 		let def = try #require(main[0].cast(AnalyzedLetDecl.self))
 		let makeCounter = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
 		#expect(makeCounter.environment.captures.count == 0)
-		#expect(makeCounter.typeAnalyzed == .function([], .function([], .base(.int))))
-		#expect(makeCounter.returnType == .function([], .base(.int)))
+		#expect(makeCounter.typeAnalyzed == .function([], .type(.function([], .type(.base(.int))))))
+		#expect(makeCounter.returnType == .function([], .type(.base(.int))))
 
 		let increment = try #require(makeCounter.bodyAnalyzed.stmtsAnalyzed.last)
 			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
 			.cast(AnalyzedFuncExpr.self)
 
-		#expect(increment.typeAnalyzed == .function([], .base(.int)))
+		#expect(increment.typeAnalyzed == .function([], .type(.base(.int))))
 		#expect(increment.environment.captures.count == 1)
 		#expect(increment.environment.captures[0].name == "count")
 	}
@@ -292,7 +300,7 @@ struct AnalysisTests {
 		#expect(type.methods["init"] != nil)
 
 		#expect(type.properties["age"]!.inferenceType == .base(.int))
-		#expect(type.methods["sup"]!.inferenceType == .function([], .base(.int)))
+		#expect(type.methods["sup"]!.inferenceType == .function([], .type(.base(.int))))
 	}
 
 	@Test("Types calling struct methods on self") func selfMethodCalls() throws {

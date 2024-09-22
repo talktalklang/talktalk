@@ -62,16 +62,15 @@ struct TypeCheckerTests: TypeCheckerTest {
 		#expect(scheme.name == nil)
 		#expect(scheme.variables.count == 1)
 
-		let typeVar = TypeVariable.extract(from: scheme.variables[0])!
-		let id = typeVar.id
+		let id = scheme.variables[0].id
 
 		guard case let .function(params, returns) = scheme.type else {
 			#expect(Bool(false), "scheme type is not a function")
 			return
 		}
 
-		#expect(params == [.typeVar("x", id)])
-		#expect(returns == .typeVar("x", id))
+		#expect(params == [.type(.typeVar("x", id))])
+		#expect(returns == .type(.typeVar("x", id)))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {
@@ -111,7 +110,10 @@ struct TypeCheckerTests: TypeCheckerTest {
 
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result.asType(in: context) == .function([.base(.int)], .base(.int)))
+		#expect(result.asType(in: context) == .function(
+			[.type(.base(.int))],
+			.type(.base(.int)))
+		)
 	}
 
 	@Test("Infers var with base type") func varWithBase() throws {
@@ -180,7 +182,10 @@ struct TypeCheckerTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let result = try #require(context[syntax[1]])
-		#expect(result.asType(in: context) == .function([.base(.int)], .base(.int)))
+		#expect(result.asType(in: context) == .function(
+			[.type(.base(.int))],
+			.type(.base(.int))
+		))
 	}
 
 	@Test("Infers var with function (it is generic)") func varFuncGeneric() throws {
@@ -254,8 +259,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [],
-					type: .function([.typeVar("n", 90)], .base(.int))
+					variables: [.new("n", 88)],
+					type: .function([.type(.typeVar("n", 88))], .type(.base(.int)))
 				)
 			)
 		)

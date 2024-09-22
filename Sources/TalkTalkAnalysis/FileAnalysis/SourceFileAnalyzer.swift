@@ -668,10 +668,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 					analysisEnumType.methods[name] = Method(
 						name: name,
 						symbol: context.symbolGenerator.method(enumType.name, name, parameters: params.map(\.description), source: .internal),
-						params: params,
+						params: params.map { context.inferenceContext.apply($0) },
 						inferenceType: .function(params, returns),
 						location: decl.location,
-						returnTypeID: returns
+						returnTypeID: context.inferenceContext.apply(returns)
 					)
 				}
 			}

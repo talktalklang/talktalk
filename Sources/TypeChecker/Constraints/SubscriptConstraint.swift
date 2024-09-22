@@ -32,17 +32,17 @@ struct SubscriptConstraint: Constraint {
 			case let .function(params, fnReturns):
 				// TODO: Validate params/args count
 				for (arg, param) in zip(args, params) {
-					context.unify(arg.asType(in: context), param, location)
+					context.unify(arg.asType(in: context), param.asType(in: context), location)
 				}
 
-				if case let .instantiatable(structType) = fnReturns {
+				if case let .type(.instantiatable(structType)) = fnReturns {
 					context.unify(
 						returns,
 						.instance(structType.instantiate(with: instance.substitutions, in: context)),
 						location
 					)
 				} else {
-					context.unify(returns, fnReturns, location)
+					context.unify(returns, fnReturns.asType(in: context), location)
 				}
 
 			default:

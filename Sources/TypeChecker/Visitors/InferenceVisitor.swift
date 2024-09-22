@@ -101,7 +101,7 @@ struct InferenceVisitor: Visitor {
 //		}
 //	}
 
-	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceType] {
+	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceResult] {
 		var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
 		if case let .type(.instance(instance)) = context.expectation {
@@ -112,7 +112,7 @@ struct InferenceVisitor: Visitor {
 		case let .function(params, _):
 			return params
 		case let .enumCase(enumCase):
-			return enumCase.instantiate(in: context, with: substitutions).attachedTypes
+			return enumCase.instantiate(in: context, with: substitutions).attachedTypes.map { .type($0) }
 		default:
 			return []
 		}
@@ -128,10 +128,10 @@ struct InferenceVisitor: Visitor {
 		}
 
 		let variables = expr.params.params.compactMap {
-			if let type = childContext[$0]?.asType(in: context),
-			   childContext.isFreeVariable(type)
-			{
-				return type
+			if let typeExpr = $0.type, let paramType = context[typeExpr], case let .type(.typeVar(variable)) = paramType {
+				return variable
+			} else if case let .type(.typeVar(variable)) = context[$0] {
+				return variable
 			}
 
 			return nil
@@ -153,9 +153,9 @@ struct InferenceVisitor: Visitor {
 				variables: variables,
 				type: .function(
 					expr.params.params.map {
-						try childContext.get($0).asType(in: childContext)
+						try childContext.get($0)
 					},
-					returnType.asType(in: context)
+					returnType
 				)
 			)
 		)
@@ -354,7 +354,7 @@ struct InferenceVisitor: Visitor {
 
 				return .instance(instantiatable.instantiate(with: [:], in: context))
 			case let .function(_, returns):
-				return returns
+				return context.applySubstitutions(to: returns)
 			case let .enumCase(enumCase):
 				// If we determine the callee to be an enum case, then its type is actually the enum type. We instantiate the
 				// enum type with substitutions coming from the args
@@ -380,7 +380,7 @@ struct InferenceVisitor: Visitor {
 		for (i, arg) in expr.args.enumerated() {
 			if params.count == expr.args.count {
 				// If we can match the arg with a param, try to expect it.
-				try visit(arg, context.expecting(params[i]))
+				try visit(arg, context.expecting(params[i].asType(in: context)))
 			} else {
 				try visit(arg, context)
 			}
@@ -391,7 +391,7 @@ struct InferenceVisitor: Visitor {
 		let returns: InferenceType = try returnType(for: context.get(expr.callee), in: context, args: args)
 
 		context.constraints.add(
-			.call(callee, args, returns: returns, at: expr.location)
+			.call(callee, args, returns: .type(returns), at: expr.location)
 		)
 
 		context.extend(expr, with: .type(returns))
@@ -743,7 +743,7 @@ struct InferenceVisitor: Visitor {
 			.call(
 				arrayType,
 				[],
-				returns: returns,
+				returns: .type(returns),
 				at: expr.location
 			)
 		)
@@ -768,7 +768,7 @@ struct InferenceVisitor: Visitor {
 				return
 			}
 
-			returns = getReturns
+			returns = getReturns.asType(in: context)
 		case let .instantiatable(structType):
 			guard let method = structType.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` method for \(structType)")
@@ -779,7 +779,7 @@ struct InferenceVisitor: Visitor {
 				return
 			}
 
-			returns = getReturns
+			returns = getReturns.asType(in: context)
 
 			context.addConstraint(
 				.call(method, args, returns: getReturns, at: expr.location)
@@ -790,7 +790,7 @@ struct InferenceVisitor: Visitor {
 			}
 
 			context.addConstraint(
-				.call(.type(method), args, returns: returns, at: expr.location)
+				.call(.type(method), args, returns: .type(returns), at: expr.location)
 			)
 		default:
 			let typeVar = context.freshTypeVariable("\(expr.description)")
@@ -837,7 +837,7 @@ struct InferenceVisitor: Visitor {
 			.call(
 				dictType,
 				[],
-				returns: returns,
+				returns: .type(returns),
 				at: expr.location
 			)
 		)
@@ -918,11 +918,17 @@ struct InferenceVisitor: Visitor {
 			throw InferencerError.cannotInfer("No type context to define func signature in")
 		}
 
+		var freeVariables: [TypeVariable] = []
+
 		let params = try decl.params.params.map {
 			try $0.accept(self, context)
 
-			guard let type = context[$0]?.asType(in: context) else {
+			guard let type = context[$0] else {
 				throw InferencerError.cannotInfer("Could not determine parameter type: \($0.description)")
+			}
+
+			if case let .type(.typeVar(variable)) = type {
+				freeVariables.append(variable)
 			}
 
 			return type
@@ -933,8 +939,8 @@ struct InferenceVisitor: Visitor {
 
 		typeContext.methods[decl.name.lexeme] = .scheme(Scheme(
 			name: decl.name.lexeme,
-			variables: [],
-			type: .function(params, returns.asType(in: context))
+			variables: freeVariables,
+			type: .function(params, returns)
 		))
 	}
 
