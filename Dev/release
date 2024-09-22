@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd .build/release
-zip -r -D ../../../TalkTalk.zip talk TalkTalk_TalkTalkCore.bundle
+zip -r -D ../../../TalkTalk_macos_arm64.zip talk TalkTalk_TalkTalkCore.bundle

@@ -4,11 +4,6 @@ on:
   push:
     tags:
       - "*"
-  # workflow_run:
-  #   workflows: ["Run Tests"]
-  #   branches: [main]
-  #   types: 
-  #     - completed
 
 permissions:
   contents: write
@@ -82,6 +77,33 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: ./TalkTalk.zip
-        asset_name: TalkTalk.zip
+        asset_path: ./TalkTalk_macos_arm64.zip
+        asset_name: TalkTalk_macos_arm64.zip
         asset_content_type: application/zip
+    - name: Save upload url for the wasm build
+      run: echo "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
+  wasm:
+    runs-on: macos-latest
+    steps:
+    - name: Get the wasm toolchain
+      run: swift sdk install https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a-wasm32-unknown-wasi.artifactbundle.zip --checksum ac7318b8beee4870162292715654499127833b847af6b3d94c32e574579ea189
+    - name: Get the wasm tools
+      run: brew install wabt binaryen
+    - uses: actions/checkout@v4
+    - name: Build the wasm file
+      run: make talk.wasm.gzip
+    - name: Get latest release upload URL
+      run: |
+        UPLOAD_URL=$(curl -s \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/releases/latest \
+          | jq -r .upload_url | sed -e "s/{?name,label}//")
+        echo "UPLOAD_URL=${UPLOAD_URL}" >> $GITHUB_ENV
+    - name: Upload wasm Release Asset
+      run: |
+        curl \
+          -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/wasm" \
+          --data-binary "@./talk.wasm.gzip" \
+          "${{ env.UPLOAD_URL }}?name=talk.wasm.gzip"

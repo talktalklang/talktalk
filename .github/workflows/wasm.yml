@@ -1,0 +1,22 @@
+# This workflow will build a Swift project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
+
+name: WASM
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - name: Get the wasm toolchain
+      run: swift sdk install https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a-wasm32-unknown-wasi.artifactbundle.zip --checksum ac7318b8beee4870162292715654499127833b847af6b3d94c32e574579ea189
+    - name: Get the wasm tools
+      run: brew install wabt binaryen
+    - uses: actions/checkout@v4
+    - name: Build the wasm file
+      run: make talk.wasm.gzip
+
+
