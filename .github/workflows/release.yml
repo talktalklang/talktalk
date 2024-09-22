@@ -83,28 +83,19 @@ jobs:
         asset_content_type: application/zip
     - name: Save upload url for the wasm build
       run: echo "${{ steps.create_release.outputs.upload_url }}" > upload_url.txt
-  wasm:
-    runs-on: macos-latest
-    steps:
     - name: Get the wasm toolchain
       run: swift sdk install https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2024-09-20-a-wasm32-unknown-wasi.artifactbundle.zip --checksum ac7318b8beee4870162292715654499127833b847af6b3d94c32e574579ea189
     - name: Get the wasm tools
       run: brew install wabt binaryen
-    - uses: actions/checkout@v4
     - name: Build the wasm file
       run: make talk.wasm.gzip
-    - name: Get latest release upload URL
-      run: |
-        UPLOAD_URL=$(curl -s \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/${{ github.repository }}/releases/latest \
-          | jq -r .upload_url | sed -e "s/{?name,label}//")
-        echo "UPLOAD_URL=${UPLOAD_URL}" >> $GITHUB_ENV
-    - name: Upload wasm Release Asset
-      run: |
-        curl \
-          -X POST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Content-Type: application/wasm" \
-          --data-binary "@./talk.wasm.gzip" \
-          "${{ env.UPLOAD_URL }}?name=talk.wasm.gzip"
+    - name: Upload Release Asset
+      id: upload-wasm-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./talk.wasm.gzip
+        asset_name: TalkTalk_wasm.gzip
+        asset_content_type: application/gzip
