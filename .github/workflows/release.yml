@@ -93,6 +93,9 @@ jobs:
       run: |
         echo "We expect to see a toolchain here?"
         ls -lah /Library/Developer/Toolchains/
+
+        echo "What about here"
+        ls -lah
     - name: Build the wasm file
       run: make talk.wasm.gzip
     # - name: Upload Release Asset
