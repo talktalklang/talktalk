@@ -101,3 +101,14 @@ jobs:
         asset_path: ./talk.wasm.gzip
         asset_name: TalkTalk_wasm.gzip
         asset_content_type: application/gzip
+  homebrew:
+    needs: build
+    name: Bump Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          homebrew-tap: talktalklang/talktalk-tap
+          download-url: https://github.com/talktalklang/talktalk/releases/download/${{ github.ref_name }}/TalkTalk_macos_arm64.zip
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
