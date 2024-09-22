@@ -89,13 +89,6 @@ jobs:
         sudo installer -pkg package.pkg -target /
     - name: Get the wasm tools
       run: brew install wabt binaryen
-    - name: "Debug some stuff"
-      run: |
-        echo "We expect to see a toolchain here?"
-        ls -lah /
-
-        echo "What about here"
-        ls -lah
     - name: Build the wasm file
       run: make talk.wasm.gzip
     - name: Upload Release Asset
