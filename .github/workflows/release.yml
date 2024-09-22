@@ -108,7 +108,7 @@ jobs:
     steps:
       - uses: mislav/bump-homebrew-formula-action@v3
         with:
-          homebrew-tap: talktalklang/talktalk-tap
+          homebrew-tap: talktalklang/homebrew-tap
           download-url: https://github.com/talktalklang/talktalk/releases/download/${{ github.ref_name }}/TalkTalk_macos_arm64.zip
         env:
           COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
