@@ -9,7 +9,7 @@ talk.wasm.gzip: Sources/TalkTalkCore/embedded-stdlib.swift
 	cp .build/wasm/wasm32-unknown-wasi/release/talk.wasm .
 	wasm-strip talk.wasm
 	wasm-opt -o talk.wasm --enable-bulk-memory -Oz talk.wasm
-	gzip -9 talk.wasm -S gzip
+	gzip -9 talk.wasm -S .gzip
 
 Sources/TalkTalkCore/embedded-stdlib.swift:
 	ruby Dev/embed-stdlib.rb > Sources/TalkTalkCore/embedded-stdlib.swift
