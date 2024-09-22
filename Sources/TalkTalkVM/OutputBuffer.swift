@@ -23,8 +23,10 @@ public struct DefaultOutputBuffer: OutputBuffer {
 		switch destination {
 		case .stdout:
 			try FileHandle.standardOutput.write(contentsOf: Data(data))
+			try FileHandle.standardOutput.synchronize()
 		case .stderr:
 			try FileHandle.standardError.write(contentsOf: Data(data))
+			try FileHandle.standardError.synchronize()
 		}
 	}
 }

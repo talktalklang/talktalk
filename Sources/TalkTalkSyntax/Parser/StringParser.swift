@@ -5,14 +5,12 @@
 //  Created by Pat Nakajima on 9/12/24.
 //
 
-import Foundation
-
 struct StringParser<S: StringProtocol> {
 	enum Context {
 		case normal, beforeInterpolation, afterInterpolation
 	}
 
-	enum StringError: Error, LocalizedError {
+	enum StringError: Error {
 		case invalidEscapeSequence(Character)
 
 		var errorDescription: String {

@@ -21,7 +21,7 @@ struct Dictionary<Key, Value> {
 		return entry.value
 	}
 
-	func set(index, value) {
+	func set(index: Key, value: Value) {
 		let entry = DictionaryEntry(key: index, value: value)
 		self.storage.append(entry)
 	}

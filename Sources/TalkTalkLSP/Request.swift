@@ -5,7 +5,6 @@
 //  Created by Pat Nakajima on 8/5/24.
 //
 
-import Foundation
 import TalkTalkBytecode
 
 struct MessageParams: Equatable {}

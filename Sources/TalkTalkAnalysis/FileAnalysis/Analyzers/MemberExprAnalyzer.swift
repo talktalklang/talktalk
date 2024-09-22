@@ -64,10 +64,10 @@ struct MemberExprAnalyzer: Analyzer {
 				Method(
 					name: propertyName,
 					symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
-					params: params,
+					params: params.map { context.inferenceContext.apply($0) },
 					inferenceType: .function(params, returns),
 					location: expr.location,
-					returnTypeID: returns
+					returnTypeID: context.inferenceContext.apply(returns)
 				)
 			default:
 				Property(

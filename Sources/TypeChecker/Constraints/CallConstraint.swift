@@ -11,7 +11,7 @@ import TalkTalkSyntax
 struct CallConstraint: Constraint {
 	let callee: InferenceResult
 	let args: [InferenceResult]
-	let returns: InferenceType
+	let returns: InferenceResult
 	let location: SourceLocation
 	let isRetry: Bool
 
@@ -77,7 +77,7 @@ struct CallConstraint: Constraint {
 		}
 	}
 
-	func solveFunction(params: [InferenceType], fnReturns: InferenceType, in context: InferenceContext) -> ConstraintCheckResult {
+	func solveFunction(params: [InferenceResult], fnReturns: InferenceResult, in context: InferenceContext) -> ConstraintCheckResult {
 		if args.count != params.count {
 			context.addError(.init(kind: .argumentError(expected: params.count, actual: args.count), location: location))
 
@@ -94,10 +94,10 @@ struct CallConstraint: Constraint {
 		let childContext = context.childContext()
 
 		for (arg, param) in zip(args, params) {
-			if arg.asType(in: context) != param {
+			if arg != param {
 				childContext.unify(
 					arg.asType(in: context),
-					param,
+					param.asType(in: context),
 					location
 				)
 			}
@@ -111,7 +111,7 @@ struct CallConstraint: Constraint {
 			)
 		}
 
-		context.unify(returns, childContext.applySubstitutions(to: returns), location)
+		context.unify(context.applySubstitutions(to: returns), childContext.applySubstitutions(to: returns), location)
 
 		return .ok
 	}
@@ -120,7 +120,7 @@ struct CallConstraint: Constraint {
 	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
 		// Create a child context to evaluate args and params so we don't get leaks
 		let childContext = structType.context
-		let params: [InferenceType]
+		let params: [InferenceResult]
 
 		// Create a local substitutions map for this instance
 		var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
@@ -148,15 +148,15 @@ struct CallConstraint: Constraint {
 				{
 					let fresh: InferenceType = context.freshTypeVariable(name, file: #file, line: #line)
 					substitutions[typeVar] = fresh
-					return fresh
+					return .type(fresh)
 				}
 
-				return type.asType(in: structType.context)
+				return type
 			}
 		}
 
 		let instance = structType.instantiate(with: substitutions, in: context)
-		context.unify(returns, .instance(instance), location)
+		context.unify(context.applySubstitutions(to: returns), .instance(instance), location)
 
 		if args.count != params.count {
 			return .error([
@@ -203,7 +203,7 @@ struct CallConstraint: Constraint {
 
 				instance.substitutions.merge(substitutions) { $1 }
 			default:
-				paramType = param
+				paramType = childContext.applySubstitutions(to: param)
 			}
 
 			context.unify(
@@ -215,11 +215,11 @@ struct CallConstraint: Constraint {
 
 		childContext.unify(
 			.instance(instance),
-			returns,
+			returns.asType(in: context),
 			location
 		)
 
-		context.unify(returns, childContext.applySubstitutions(to: returns), location)
+		context.unify(childContext.applySubstitutions(to: returns), childContext.applySubstitutions(to: returns), location)
 
 		return .ok
 	}
@@ -232,13 +232,13 @@ struct CallConstraint: Constraint {
 //			context.unify(type, arg.asType(in: context), location)
 //		}
 
-		context.unify(returns, .enumCase(enumCase), location)
+		context.unify(returns.asType(in: context), .enumCase(enumCase), location)
 		return .ok
 	}
 }
 
 extension Constraint where Self == CallConstraint {
-	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceType, at: SourceLocation, isRetry: Bool = false) -> CallConstraint {
+	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceResult, at: SourceLocation, isRetry: Bool = false) -> CallConstraint {
 		CallConstraint(callee: callee, args: args, returns: returns, location: at, isRetry: isRetry)
 	}
 }

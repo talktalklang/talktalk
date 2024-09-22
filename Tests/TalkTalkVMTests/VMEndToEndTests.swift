@@ -366,7 +366,7 @@ struct VMEndToEndTests: VMTest {
 					"""
 					import A
 
-					func() {
+					return func() {
 						let person = Person(age: 123)
 						return person.age
 					}()

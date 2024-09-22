@@ -19,19 +19,7 @@ public struct ModuleAnalyzer: Analyzer {
 	nonisolated(unsafe) public static let stdlib: AnalysisModule = try! ModuleAnalyzer(
 	// swiftlint:enable force_try
 		name: "Standard",
-		files: Library.standard.paths.map {
-			let parsed = try Parser.parse(
-				SourceFile(
-					path: $0,
-					text: String(
-						contentsOf: Library.standard.location.appending(path: $0),
-						encoding: .utf8
-					)
-				)
-			)
-
-			return ParsedSourceFile(path: $0, syntax: parsed)
-		},
+		files: Library.standard.files.map { try Parser.parseFile($0) },
 		moduleEnvironment: [:],
 		importedModules: []
 	).analyze()

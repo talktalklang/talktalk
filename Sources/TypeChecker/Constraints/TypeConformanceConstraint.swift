@@ -9,14 +9,19 @@ import TalkTalkSyntax
 
 public struct ConformanceRequirement: Hashable {
 	public let name: String
-	public let type: InferenceType
+	public let type: InferenceResult
 
 	func satisfied(by type: any Instantiatable, in context: InferenceContext) -> Bool {
 		guard let member = type.member(named: name, in: context) else {
 			return false
 		}
 
-		return member.asType(in: context).covariant(with: self.type, in: context)
+		// If we have a known base type, we can add a constraint on it so it gets resolved later
+		if case let .type(.base(base)) = self.type {
+			context.addConstraint(.equality(member, .type(.base(base)), at: [.synthetic(.less)]))
+		}
+
+		return member.covariant(with: self.type, in: context)
 	}
 }
 

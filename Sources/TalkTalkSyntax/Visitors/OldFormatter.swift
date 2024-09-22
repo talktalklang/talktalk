@@ -1,4 +1,4 @@
-import Foundation
+import TalkTalkCore
 
 public struct OldFormatter: Visitor {
 	public class Context {

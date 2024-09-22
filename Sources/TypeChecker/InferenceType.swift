@@ -15,7 +15,7 @@ public indirect enum InferenceType {
 	case base(Primitive)
 
 	// Function type. Also used for methods. The first type is args, the second is return type.
-	case function([InferenceType], InferenceType)
+	case function([InferenceResult], InferenceResult)
 
 	// Instances
 	case instance(InstanceType)

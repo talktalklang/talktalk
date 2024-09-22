@@ -5,7 +5,6 @@
 //  Created by Pat Nakajima on 7/11/24.
 //
 import ArgumentParser
-import Foundation
 import TalkTalkSyntax
 
 struct AST: TalkTalkCommand {

@@ -5,8 +5,6 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import Foundation
-
 public protocol InstructionMetadata: CustomStringConvertible, Hashable {
 	var length: Int { get }
 }

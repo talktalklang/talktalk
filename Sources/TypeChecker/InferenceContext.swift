@@ -68,7 +68,7 @@ class InstanceContext: CustomDebugStringConvertible {
 	}
 }
 
-//class MatchContext {
+// class MatchContext {
 //	let target: InferenceType
 //	var current: any Syntax
 //	var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
@@ -77,7 +77,7 @@ class InstanceContext: CustomDebugStringConvertible {
 //		self.target = target
 //		self.current = current
 //	}
-//}
+// }
 
 public class InferenceContext: CustomDebugStringConvertible {
 	// Stores the mappings of syntax nodes to inference types
@@ -408,20 +408,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 		parent?.extend(syntax, with: result)
 	}
 
-	func isFreeVariable(_ type: InferenceType) -> Bool {
-		if case let .typeVar(variable) = type {
-			// Check if the variable already has constraints assigned to it. If so
-			// then it's not free.
-			if constraintExists(forTypeVar: variable) {
-				return false
-			}
-
-			// Check if the variable exists in the context's substitution map
-			// If it's not in the substitution map, it's a free variable
-			return substitutions[variable] == nil
+	func isFreeVariable(_ variable: TypeVariable) -> Bool {
+		// Check if the variable already has constraints assigned to it. If so
+		// then it's not free.
+		if constraintExists(forTypeVar: variable) {
+			return false
 		}
 
-		return false
+		// Check if the variable exists in the context's substitution map
+		// If it's not in the substitution map, it's a free variable
+		return substitutions[variable] == nil
 	}
 
 	func trackReturns(_ block: () throws -> Void) throws -> [InferenceResult] {
@@ -539,8 +535,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""]?.asType(in: self) ?? type
 		case let .function(params, returning):
 			return .function(
-				params.map { applySubstitutions(to: $0, with: substitutions) },
-				applySubstitutions(to: returning, with: substitutions)
+				params.map { .type(applySubstitutions(to: $0, with: substitutions)) },
+				.type(applySubstitutions(to: returning, with: substitutions))
 			)
 		case let .instance(instance):
 			return .instance(instance)
@@ -562,6 +558,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 	func applySubstitutions(to type: InferenceType, withParents _: Bool = false) -> InferenceType {
 		let parentResult = parent?.applySubstitutions(to: type) ?? type
 		return applySubstitutions(to: parentResult, with: substitutions)
+	}
+
+	public func apply(_ type: InferenceResult) -> InferenceType {
+		applySubstitutions(to: type)
 	}
 
 	func applySubstitutions(to result: InferenceResult, withParents _: Bool = false) -> InferenceType {
@@ -607,8 +607,19 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let (_, .placeholder(v)) where .placeholder(v) != a:
 			bind(typeVar: v, to: a)
 		case let (.function(paramsA, returnA), .function(paramsB, returnB)):
-			zip(paramsA, paramsB).forEach { unify($0, $1, location) }
-			unify(returnA, returnB, location)
+			zip(paramsA, paramsB).forEach {
+				unify(
+					applySubstitutions(to: $0),
+					applySubstitutions(to: $1),
+					location
+				)
+			}
+
+			unify(
+				applySubstitutions(to: returnA),
+				applySubstitutions(to: returnB),
+				location
+			)
 		case let (.kind(.typeVar(a)), .kind(b)):
 			bind(typeVar: a, to: b)
 		case let (.kind(a), .kind(.typeVar(b))):
@@ -630,7 +641,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		// MARK: Enum special cases
 		case let (.selfVar(.instantiatable(.enumType(a))), .enumCase(b)),
-			let (.enumCase(b), .selfVar(.instantiatable(.enumType(a)))):
+		     let (.enumCase(b), .selfVar(.instantiatable(.enumType(a)))):
 			if a == b.type {
 				break
 			}
@@ -639,7 +650,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				unify(lhs, rhs, location)
 			}
 		case let (.instantiatable(.enumType(type)), .enumCase(kase)),
-				let (.enumCase(kase), .instantiatable(.enumType(type))):
+		     let (.enumCase(kase), .instantiatable(.enumType(type))):
 			if kase.type != type {
 				addError(
 					.init(
@@ -649,7 +660,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			}
 		case let (.instantiatable(.enumType(type)), .instance(instance)),
-			let (.instance(instance), .instantiatable(.enumType(type))):
+		     let (.instance(instance), .instantiatable(.enumType(type))):
 			if case let enumType = instance.type as? EnumType, enumType == type {
 				break
 			}
@@ -700,14 +711,18 @@ public class InferenceContext: CustomDebugStringConvertible {
 		var localSubstitutions = substitutions
 
 		// Replace the scheme's variables with fresh type variables
-		for case let .typeVar(variable) in scheme.variables {
-			localSubstitutions[variable] = substitutions[variable] ?? .typeVar(
-				freshTypeVariable(
+		for case let variable in scheme.variables {
+			if let type = substitutions[variable] {
+				localSubstitutions[variable] = type
+			} else {
+				let newVar: InferenceType = freshTypeVariable(
 					variable.name ?? "<unnamed>",
 					file: #file,
 					line: #line
 				)
-			)
+
+				localSubstitutions[variable] = newVar
+			}
 		}
 
 		return applySubstitutions(
@@ -718,8 +733,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 		if verbose {
-			let context = context ?? self
-			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth-1)))" + prefix + msg)
+		let context = context ?? self
+		print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
 		}
 	}
 }

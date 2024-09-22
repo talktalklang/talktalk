@@ -48,7 +48,7 @@ struct FuncExprAnalyzer: Analyzer {
 		}
 
 		let returns = if case let .function(_, fnReturns) = type {
-			fnReturns
+			context.inferenceContext.apply(fnReturns)
 		} else {
 			InferenceType.void
 		}

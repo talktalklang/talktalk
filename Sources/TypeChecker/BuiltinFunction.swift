@@ -32,9 +32,9 @@ public struct BuiltinFunction {
 			name: "print",
 			type: .function(
 				[
-					InferenceType.any,
+					.type(.any),
 				],
-				.void
+				.type(.void)
 			)
 		)
 	}
@@ -43,8 +43,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_allocate",
 			type: .function(
-				[.base(.int)],
-				.base(.pointer)
+				[.type(.base(.int))],
+				.type(.base(.pointer))
 			)
 		)
 	}
@@ -53,8 +53,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_free",
 			type: .function(
-				[.base(.pointer)],
-				.void
+				[.type(.base(.pointer))],
+				.type(.void)
 			)
 		)
 	}
@@ -65,8 +65,8 @@ public struct BuiltinFunction {
 		return BuiltinFunction(
 			name: "_deref",
 			type: .function(
-				[.base(.pointer)],
-				.typeVar(returns)
+				[.type(.base(.pointer))],
+				.type(.typeVar(returns))
 			)
 		)
 	}
@@ -76,10 +76,10 @@ public struct BuiltinFunction {
 			name: "_storePtr",
 			type: .function(
 				[
-					.base(.pointer),
-					.any,
+					.type(.base(.pointer)),
+					.type(.any),
 				],
-				.void
+				.type(.void)
 			)
 		)
 	}
@@ -88,8 +88,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_hash",
 			type: .function(
-				[.any],
-				.base(.int)
+				[.type(.any)],
+				.type(.base(.int))
 			)
 		)
 	}
@@ -100,14 +100,17 @@ public struct BuiltinFunction {
 		return BuiltinFunction(
 			name: "_cast",
 			type: .function(
-				[.any, .kind(.typeVar(typeVar))],
-				.typeVar(typeVar)
+				[
+					.type(.any),
+					.type(.kind(.typeVar(typeVar)))
+				],
+				.type(.typeVar(typeVar))
 			)
 		)
 	}
 
 	public var parameters: [String] {
-		guard case let .function(array, inferenceType) = type else {
+		guard case let .function(array, _) = type else {
 			return []
 		}
 

@@ -110,11 +110,11 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let structType = StructType.extractType(from: context[syntax[0]])!
 
-		guard case let .type(.function(_, returnType)) = structType.member(named: "sup", in: context) else {
+		guard case let .function(_, returnType) = structType.member(named: "sup", in: context)?.asType(in: context) else {
 			#expect(Bool(false)); return
 		}
 
-		#expect(returnType == .selfVar(.instantiatable(.struct(structType))))
+		#expect(returnType == .type(.selfVar(.instantiatable(.struct(structType)))))
 	}
 
 	@Test("Types instance methods") func instanceMethod() throws {
@@ -135,10 +135,10 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.member(named: "greet", in: context) == .type(.function([], .base(.string))))
+		#expect(structType.member(named: "greet", in: context)?.asType(in: context) == .function([], .type(.base(.string))))
 
 		let result1 = context[syntax[1]]
-		let expected1 = InferenceResult.type(.function([], .base(.string)))
+		let expected1 = InferenceResult.type(.function([], .type(.base(.string))))
 		#expect(result1 == expected1)
 
 		let result2 = context[syntax[2]]

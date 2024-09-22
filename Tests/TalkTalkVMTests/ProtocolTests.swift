@@ -29,25 +29,29 @@ struct ProtocolTests: VMTest {
 	}
 
 	@Test("Methods on structs") func methodsOnStructs() throws {
-		let result = try run(
-			"""
-			protocol Greetable { func name() -> String }
+		let output = TestOutput()
+		_ = try run(
+			#"""
+			protocol Greetable {
+				func greet(name: String) -> String
+			}
 
 			struct Person: Greetable {
-				func name() -> String {
-					"pat"
+				func greet(name) {
+					"Hello, \(name)!"
 				}
 			}
 
 			func greet(greetable: Greetable) {
-				"hi, " + greetable.name()
+				print(greetable.greet("pat"))
 			}
 
-			return greet(greetable: Person())
-			"""
-		)
+			greet(Person())
+			"""#
+		, output: output)
 
-		#expect(result == .string("hi, pat"))
+
+		#expect(output.stdout == "Hello, pat!\n")
 	}
 
 	@Test("Methods on enums") func methodsOnEnums() throws {

@@ -5,10 +5,10 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-import Foundation
 import TalkTalkAnalysis
 import TalkTalkSyntax
 import TypeChecker
+import TalkTalkCore
 
 struct TextDocumentSemanticTokensFull {
 	var request: Request

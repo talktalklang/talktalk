@@ -7,7 +7,7 @@
 
 public struct Scheme: Equatable, CustomStringConvertible, CustomDebugStringConvertible, Hashable {
 	public let name: String?
-	let variables: [InferenceType]
+	let variables: [TypeVariable]
 	let type: InferenceType
 
 	public var debugDescription: String {

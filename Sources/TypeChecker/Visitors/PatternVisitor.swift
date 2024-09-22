@@ -82,14 +82,14 @@ struct PatternVisitor: Visitor {
 
 		var args: [Pattern.Argument] = []
 		for (arg, param) in zip(expr.args, params) {
-			try context.expecting(param) {
+			try context.expecting(param.asType(in: context)) {
 				try arg.accept(inferenceVisitor, context)
 				try args.append(
 					arg.value.accept(self, context)
 				)
 			}
 
-			try context.addConstraint(.equality(context.get(arg), .type(param), at: arg.location))
+			try context.addConstraint(.equality(context.get(arg), param, at: arg.location))
 		}
 
 		return .value(

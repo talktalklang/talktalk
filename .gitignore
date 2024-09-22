@@ -13,3 +13,7 @@ Standard.tlkmodule
 Release/
 .vscode
 TalkTalk.zip
+
+# When we build for wasm, we can't load the stdlib the normal way
+Sources/TalkTalkCore/embedded-stdlib.swift
+*.wasm

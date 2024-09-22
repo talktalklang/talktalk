@@ -70,7 +70,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 
 	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
-			return .type(context.applySubstitutions(to: member.asType(in: context)))
+			return member
 		}
 
 		if let typeParam = typeContext.typeParameters.first(where: { $0.name == name }) {

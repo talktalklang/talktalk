@@ -5,8 +5,6 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
-import Foundation
-
 extension Parser {
 	// The key to our chris pratt parser.
 	mutating func parse(precedence: Precedence) -> any Expr {

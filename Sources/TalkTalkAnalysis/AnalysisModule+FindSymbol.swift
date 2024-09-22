@@ -4,8 +4,6 @@
 //
 //  Created by Pat Nakajima on 8/15/24.
 //
-import Foundation
-
 public extension AnalysisModule {
 	func findSymbol(line: Int, column: Int, path: String) -> (any AnalyzedSyntax)? {
 		var candidate: (any AnalyzedSyntax)?
