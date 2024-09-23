@@ -144,7 +144,8 @@ struct Stack<Element> {
 	@inline(__always)
 	mutating func push(_ element: Element) throws {
 		if size == capacity {
-			throw VirtualMachineError.stackError("Stack overflow")
+			self.storage = storage.resize(newSize: capacity * 2, oldSize: capacity)
+			self.capacity = capacity * 2
 		}
 
 		storage.withUnsafeMutablePointers {

@@ -18,28 +18,30 @@ struct Animal: Greetable {
 	var name: String
 }
 
-// TODO: it's be nice to infer array types based on first use?
-var people = [Person("Pat")]
-var animals  = [Animal("Pooch")]
+let count = 500
 
-print("building arrays")
+var j = 0
+	while j < count {
+	// TODO: it's be nice to infer array types based on first use?
+	var people = [Person("Pat")]
+	var animals  = [Animal("Pooch")]
 
-let count = 100
-var i = 0
-while i < count {
-	i = i + 1
-	people.append(Person(name: "Person \(i)"))
-	animals.append(Animal(name: "Animal \(i)"))
+	var i = 0
+	while i < count {
+		i = i + 1
+		people.append(Person(name: "Person \(i)"))
+		animals.append(Animal(name: "Animal \(i)"))
+	}
+
+	i = 0
+	while i < count {
+		let person = people[i]
+		let animal = animals[i]
+		person.greet(name: animal.name)
+		i = i + 1
+	}
+
+	print("all done with j \(j)")
+
+	j += 1
 }
-
-print("done building arrays")
-
-i = 0
-while i < count {
-	let person = people[i]
-	let animal = animals[i]
-	print(person.greet(name: animal.name))
-	i = i + 1
-}
-
-print("all done")
