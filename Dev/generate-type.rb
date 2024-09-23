@@ -34,7 +34,7 @@ def analyzedProps()
 end
 
 def write(path, contents)
-	if File.exists?(path)
+	if File.exist?(path)
 		puts("File already exists: #{path}")
 		return
 	end
