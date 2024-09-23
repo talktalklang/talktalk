@@ -57,16 +57,10 @@ public extension Syntax {
 
 	var description: String {
 		do {
-			switch self {
-			case let syntax as any Expr:
-				return try syntax.accept(OldFormatter(), OldFormatter.Context())
-			case let syntax as any Decl:
-				return try syntax.accept(OldFormatter(), OldFormatter.Context())
-			case let syntax as any Stmt:
-				return try syntax.accept(OldFormatter(), OldFormatter.Context())
-			default:
-				return "No description found for \(debugDescription)"
-			}
+			let visitor = FormatterVisitor(commentsStore: CommentStore(comments: []))
+			let context = FormatterVisitor.Context(kind: .topLevel)
+			let doc = try accept(visitor, context)
+			return Formatter.format(document: doc, width: 80)
 		} catch {
 			return "Error getting description: \(error)"
 		}

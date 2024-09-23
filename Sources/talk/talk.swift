@@ -52,13 +52,11 @@ struct TalkCommand: TalkTalkCommand {
 		version: version,
 		subcommands: [
 			Run.self,
-			AST.self,
 			Format.self,
 			REPL.self,
 			Interpret.self,
 			LSP.self,
 			Compile.self,
-			AnalysisPrinter.self,
 			HTML.self
 		]
 	)

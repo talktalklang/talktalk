@@ -31,7 +31,7 @@ public struct Formatter {
 					}
 				}
 
-				output += format(
+				output += Self.format(
 					document: .text(comment.lexeme),
 					width: width
 				)
@@ -54,7 +54,7 @@ public struct Formatter {
 
 			last = syntax
 
-			output += try format(
+			output += try Self.format(
 				document: syntax.accept(visitor, context),
 				width: width
 			)
@@ -63,7 +63,7 @@ public struct Formatter {
 		return output
 	}
 
-	func format(document: Doc, width: Int) -> String {
+	static func format(document: Doc, width: Int) -> String {
 		var output = ""
 		var queue: [(UInt8, Doc)] = [(0, document)]
 		var column = 0
@@ -94,7 +94,7 @@ public struct Formatter {
 			case let .group(groupedDoc):
 				let flat = flatten(groupedDoc)
 				// Use the current column position in the calculation
-				if fits(width - column, doc: flat) {
+				if Self.fits(width - column, doc: flat) {
 					queue.insert((indent, flat), at: 0)
 				} else {
 					queue.insert((indent, groupedDoc), at: 0)
@@ -112,7 +112,7 @@ public struct Formatter {
 		return false
 	}
 
-	func flatten(_ doc: Doc) -> Doc {
+	static func flatten(_ doc: Doc) -> Doc {
 		switch doc {
 		case .empty, .text:
 			doc
@@ -131,7 +131,7 @@ public struct Formatter {
 		}
 	}
 
-	func fits(_ remainingWidth: Int, doc: Doc) -> Bool {
+	static func fits(_ remainingWidth: Int, doc: Doc) -> Bool {
 		var width = remainingWidth
 		var queue: [Doc] = [doc]
 
