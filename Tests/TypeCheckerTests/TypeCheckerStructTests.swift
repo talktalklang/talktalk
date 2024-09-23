@@ -189,4 +189,38 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		#expect(context[syntax[1]] == .type(.base(.string)))
 	}
+
+	@Test("Type checks static var") func staticVar() throws {
+		let syntax = try Parser.parse(
+		"""
+		struct Person {
+			static var age: int
+		}
+
+		Person.age
+		"""
+		)
+
+		let context = try infer(syntax)
+
+		#expect(context[syntax[1]] == .type(.base(.int)))
+	}
+
+	@Test("Type checks static func") func staticFunc() throws {
+		let syntax = try Parser.parse(
+		"""
+		struct Person {
+			static func age() {
+				123
+			}
+		}
+
+		Person.age
+		"""
+		)
+
+		let context = try infer(syntax)
+
+		#expect(context[syntax[1]]?.asType(in: context) == .function([], .type(.base(.int))))
+	}
 }
