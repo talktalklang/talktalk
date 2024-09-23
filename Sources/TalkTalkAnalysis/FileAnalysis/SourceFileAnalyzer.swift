@@ -160,7 +160,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 						throw AnalyzerError.symbolNotFound("expected symbol for struct: \(type.name)")
 					}
 				} else {
-					symbol = context.symbolGenerator.struct(expr.name, source: .internal)
+					symbol = context.symbolGenerator.struct(type.name, source: .internal)
 				}
 			} else if case .function = binding.type {
 				if let module = binding.externalModule {

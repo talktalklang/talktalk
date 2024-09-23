@@ -35,7 +35,7 @@ private extension Data {
 	}
 
 	func responses(from requests: Request...) async throws -> [Data] {
-		var responses: [Data] = []
+		let responses: [Data] = []
 		var server = try Server()
 
 		for request in requests {

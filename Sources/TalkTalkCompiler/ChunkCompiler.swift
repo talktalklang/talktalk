@@ -426,22 +426,13 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedMemberExpr, _ chunk: Chunk) throws {
 		try expr.receiverAnalyzed.accept(self, chunk)
 
-		// Emit the property's slot
-		let symbol = if let property = expr.memberAnalyzed as? Property {
-			property.symbol
-		} else if let method = expr.memberAnalyzed as? Method {
-			method.symbol
-		} else {
-			throw CompilerError.unknownIdentifier("Member not found for \(expr.receiverAnalyzed.description): \(expr.memberAnalyzed)")
-		}
-
 		// Emit the getter
 		chunk.emit(opcode: .getProperty, line: expr.location.line)
-		chunk.emit(.symbol(symbol), line: expr.location.line)
+		chunk.emit(.symbol(expr.memberSymbol), line: expr.location.line)
 
 		// Emit the property's optionset
 		var options = PropertyOptions()
-		if expr.memberAnalyzed is Method {
+		if case .method = expr.memberSymbol.kind {
 			options.insert(.isMethod)
 		}
 
@@ -962,12 +953,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 			return variable
 		}
 
-		if let syntax = receiver as? AnalyzedMemberExpr,
-		   let property = syntax.memberAnalyzed as? Property
-		{
+		if let syntax = receiver as? AnalyzedMemberExpr	{
 			return Variable(
 				name: syntax.property,
-				code: .symbol(property.symbol),
+				code: .symbol(syntax.memberSymbol),
 				depth: scopeDepth,
 				getter: .getProperty,
 				setter: .setProperty
@@ -1219,7 +1208,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	private func synthesizeInit(for structType: AnalysisStructType) -> Chunk {
 		let params = Array(structType.properties.keys)
 		let symbol = Symbol.method(
-			module.name, structType.name ?? "<struct \(structType.id)>",
+			module.name, structType.name,
 			"init",
 			params
 		)

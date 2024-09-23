@@ -91,7 +91,7 @@ class CompilerTests: CompilerTest {
 
 	@discardableResult func compile(_ string: String) throws -> Chunk {
 		let parsed = try Parser.parse(.init(path: "chunkcompilertests.talk", text: string))
-		let inferencer = try Inferencer(imports: []).infer(parsed)
+		let inferencer = try Inferencer(moduleName: "CompilerTest", imports: []).infer(parsed)
 		let analyzed = try! SourceFileAnalyzer.analyze(
 			parsed,
 			in: Environment(

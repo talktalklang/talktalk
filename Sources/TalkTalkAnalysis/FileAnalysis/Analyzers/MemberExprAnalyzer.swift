@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/23/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 import TypeChecker
 
@@ -46,11 +47,13 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		let propertyName = expr.property
-		var member: (any Member)? = nil
+		var memberSymbol: Symbol? = nil
+		var analysisDefinition: Definition? = nil
 
 		// If we have an existing lexical scope, use that
-		if let scope = context.getLexicalScope() {
-			member = (scope.methods[propertyName] ?? scope.properties[propertyName])
+		if let scope = context.getLexicalScope(), let member: (any Member) = scope.methods[propertyName] ?? scope.properties[propertyName] {
+			memberSymbol = member.symbol
+			analysisDefinition = .init(location: member.location, type: member.inferenceType)
 		}
 
 		// If it's boxed, we create members
@@ -59,51 +62,96 @@ struct MemberExprAnalyzer: Analyzer {
 				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
 			}
 
-			member = switch type {
-			case let .function(params, returns):
-				Method(
-					name: propertyName,
-					symbol: context.symbolGenerator.method(nil, propertyName, parameters: params.map(\.description), source: .internal),
-					params: params.map { context.inferenceContext.apply($0) },
-					inferenceType: .function(params, returns),
-					location: expr.location,
-					returnTypeID: context.inferenceContext.apply(returns)
+			if case let .function(params, _) = type {
+				memberSymbol = Symbol(
+					module: instance.type.context.moduleName,
+					kind: .method(nil, expr.property, params.map(\.description))
 				)
-			default:
-				Property(
-					symbol: context.symbolGenerator.property(nil, propertyName, source: .internal),
-					name: propertyName,
-					// swiftlint:disable force_unwrapping
-					inferenceType: type,
-					// swiftlint:enable force_unwrapping
-					location: expr.location,
-					isMutable: false
+			} else {
+				memberSymbol = Symbol(
+					module: instance.type.context.moduleName,
+					kind: .property(nil, expr.property)
 				)
 			}
-		}
 
-		if member == nil, case let .instance(instance) = receiver.typeAnalyzed {
-			if let type = try context.type(named: instance.type.name) {
-				member = (type.methods[propertyName] ?? type.properties[propertyName])
+			if let type = try context.type(named: instance.type.name),
+			   let member: any Member = type.methods[expr.property] ?? type.properties[expr.property]
+			{
+				analysisDefinition = .init(location: member.location, type: member.inferenceType)
 			}
 		}
 
-		if member == nil, case let .enumCase(enumCase) = receiver.typeAnalyzed {
-			if let enumType = try context.type(named: enumCase.type.name) {
-				member = enumType.methods[propertyName]
+		if memberSymbol == nil,
+		   case let .instance(instance) = receiver.typeAnalyzed,
+		   let member = instance.member(named: expr.property, in: context.inferenceContext)
+		{
+			if case let .function(params, _) = member {
+				memberSymbol = Symbol(
+					module: instance.type.context.moduleName,
+					kind: .method(instance.type.name, expr.property, params.map(\.description))
+				)
+			} else {
+				memberSymbol = Symbol(
+					module: instance.type.context.moduleName,
+					kind: .property(instance.type.name, expr.property)
+				)
+			}
+
+			if let type = try context.type(named: instance.type.name),
+			   let member: any Member = type.methods[expr.property] ?? type.properties[expr.property]
+			{
+				analysisDefinition = .init(location: member.location, type: member.inferenceType)
 			}
 		}
 
-		guard let member else {
-			return try AnalyzedMemberExpr(
-				inferenceType: type ?? .any,
-				wrapped: expr.cast(MemberExprSyntax.self),
-				environment: context,
-				receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
-				memberAnalyzed: error(at: expr, "no member found", environment: context, expectation: .member),
-				analysisErrors: [],
-				isMutable: true
-			)
+		if memberSymbol == nil,
+			 case let .instantiatable(type) = receiver.typeAnalyzed,
+			 let member = type.member(named: expr.property, in: context.inferenceContext)
+		{
+			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
+				memberSymbol = Symbol(
+					module: type.context.moduleName,
+					kind: .method(type.name, expr.property, params.map(\.description))
+				)
+			} else {
+				memberSymbol = Symbol(
+					module: type.context.moduleName,
+					kind: .property(type.name, expr.property)
+				)
+			}
+
+			if let type = try context.type(named: type.name),
+				 let member: any Member = type.methods[expr.property] ?? type.properties[expr.property]
+			{
+				analysisDefinition = .init(location: member.location, type: member.inferenceType)
+			}
+		}
+
+		if memberSymbol == nil,
+		   case let .enumCase(enumCase) = receiver.typeAnalyzed,
+		   let member = enumCase.type.member(named: expr.property, in: context.inferenceContext)
+		{
+			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
+				memberSymbol = Symbol(
+					module: enumCase.type.context.moduleName,
+					kind: .method(enumCase.type.name, expr.property, params.map(\.description))
+				)
+			} else {
+				memberSymbol = Symbol(
+					module: enumCase.type.context.moduleName,
+					kind: .property(enumCase.type.name, expr.property)
+				)
+			}
+
+			if let type = try context.type(named: enumCase.type.name),
+			   let member: any Member = type.methods[expr.property] ?? type.properties[expr.property]
+			{
+				analysisDefinition = .init(location: member.location, type: member.inferenceType)
+			}
+		}
+
+		guard let memberSymbol else {
+			return error(at: expr, "could not determine member of \(expr.description)", environment: context)
 		}
 
 		return try AnalyzedMemberExpr(
@@ -111,9 +159,10 @@ struct MemberExprAnalyzer: Analyzer {
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
-			memberAnalyzed: member,
+			memberSymbol: memberSymbol,
 			analysisErrors: [],
-			isMutable: member.isMutable
+			analysisDefinition: analysisDefinition,
+			isMutable: false
 		)
 	}
 }

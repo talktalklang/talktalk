@@ -74,7 +74,7 @@ public class REPLRunner: Copyable {
 
 		self.module = try moduleCompiler.compile(mode: .executable)
 		self.analysis = analysisModule
-		self.inferencer = try Inferencer(imports: [])
+		self.inferencer = try Inferencer(moduleName: "REPL", imports: [])
 		self.environment = Environment(inferenceContext: inferencer.context, symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(

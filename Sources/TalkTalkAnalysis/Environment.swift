@@ -226,17 +226,6 @@ public class Environment {
 	}
 
 	func importStdlib() throws {
-		let types = [
-			"Optional",
-			"Iterable",
-			"Iterator",
-			"Array",
-			"ArrayIterator",
-			"Dictionary",
-			"String",
-			"Int",
-		]
-
 		let stdlib = ModuleAnalyzer.stdlib
 		for symbol in stdlib.symbols {
 			_ = symbolGenerator.import(symbol.key, from: "Standard")
@@ -294,23 +283,26 @@ public class Environment {
 			return type
 		}
 
-		var binding = lookup(name)
-		if binding == nil, let type = inferenceContext.type(named: name) {
-			// Try to make a binding on the fly
-			binding = Binding(name: name, location: [.synthetic(.builtin)], type: type)
-		}
-
-		guard let binding else {
-			throw AnalyzerError.typeNotInferred("No binding found for name: \(name)")
-		}
+//		if let type = inferenceContext.type(named: name) {
+//			// Try to make a binding on the fly
+//			let binding = Binding(name: name, location: [.synthetic(.builtin)], type: type)
+//		}
 
 		for module in lookupImportedModules() {
 			if let structType = module.structs[name] {
+				let binding = lookup(name) ?? Binding(
+					name: name,
+					location: structType.location,
+					type: structType.typeID,
+					externalModule: module
+				)
+
 				importBinding(
 					as: structType.symbol,
 					from: module.name,
 					binding: binding
 				)
+
 				return AnalysisStructType(
 					id: structType.id,
 					name: name,
@@ -321,6 +313,13 @@ public class Environment {
 			}
 
 			if let enumType = module.enums[name] {
+				let binding = lookup(name) ?? Binding(
+					name: name,
+					location: enumType.location,
+					type: enumType.typeID,
+					externalModule: module
+				)
+
 				importBinding(
 					as: enumType.symbol,
 					from: module.name,

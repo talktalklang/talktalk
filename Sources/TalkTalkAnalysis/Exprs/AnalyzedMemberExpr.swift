@@ -6,6 +6,7 @@
 //
 
 import TalkTalkSyntax
+import TalkTalkBytecode
 import TypeChecker
 
 public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
@@ -15,8 +16,9 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	public let environment: Environment
 
 	public let receiverAnalyzed: any AnalyzedExpr
-	public let memberAnalyzed: any Member
+	public let memberSymbol: Symbol
 	public let analysisErrors: [AnalysisError]
+	public let analysisDefinition: Definition?
 
 	public var receiver: (any Expr)? { wrapped.receiver }
 	public var property: String { wrapped.property }
@@ -32,6 +34,6 @@ public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {
 	}
 
 	public func definition() -> Definition? {
-		Definition(location: memberAnalyzed.location, type: memberAnalyzed.inferenceType)
+		analysisDefinition
 	}
 }

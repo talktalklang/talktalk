@@ -42,7 +42,7 @@ struct Run: TalkTalkCommand {
 			moduleEnvironment: [:]
 		).compile(mode: .executable)
 
-		if case .error = try VirtualMachine.run(module: module) {
+		if case .error = try VirtualMachine.run(module: module, verbosity: .verbose) {
 			throw ExitCode.failure
 		} else {
 			throw ExitCode.success

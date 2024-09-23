@@ -259,8 +259,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 			context[syntax[0]] == .scheme(
 				Scheme(
 					name: "fact",
-					variables: [.new("n", 88)],
-					type: .function([.type(.typeVar("n", 88))], .type(.base(.int)))
+					variables: [.new("n", 0)],
+					type: .function([.type(.typeVar("n", 0))], .type(.base(.int)))
 				)
 			)
 		)

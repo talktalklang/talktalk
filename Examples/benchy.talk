@@ -1,0 +1,45 @@
+protocol Greetable {
+	var name: String
+}
+
+protocol Greeter {
+	func greet(name: String) -> String
+}
+
+struct Person: Greeter, Greetable {
+	var name: String
+
+	func greet(name: String) -> String {
+		"Oh hi, \(name)"
+	}
+}
+
+struct Animal: Greetable {
+	var name: String
+}
+
+// TODO: it's be nice to infer array types based on first use?
+var people = [Person("Pat")]
+var animals  = [Animal("Pooch")]
+
+print("building arrays")
+
+let count = 100
+var i = 0
+while i < count {
+	i = i + 1
+	people.append(Person(name: "Person \(i)"))
+	animals.append(Animal(name: "Animal \(i)"))
+}
+
+print("done building arrays")
+
+i = 0
+while i < count {
+	let person = people[i]
+	let animal = animals[i]
+	print(person.greet(name: animal.name))
+	i = i + 1
+}
+
+print("all done")

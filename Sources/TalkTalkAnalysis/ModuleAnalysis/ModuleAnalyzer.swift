@@ -40,7 +40,7 @@ public struct ModuleAnalyzer: Analyzer {
 	) throws {
 		self.name = name
 		self.files = files
-		self.inferencer = try Inferencer(imports: moduleEnvironment.values.map(\.inferenceContext))
+		self.inferencer = try Inferencer(moduleName: name, imports: moduleEnvironment.values.map(\.inferenceContext))
 		self.environment = .topLevel(name, inferenceContext: inferencer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment

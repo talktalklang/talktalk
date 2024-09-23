@@ -14,21 +14,31 @@ public struct Inferencer {
 	let imports: [InferenceContext]
 	public let context: InferenceContext
 
-	public init(imports: [InferenceContext]) throws {
-		// Prepend the standard library
-		let stdlib = try Library.standard.files.flatMap {
+	public static var stdlib: InferenceContext {
+		let stdlib = try! Library.standard.files.flatMap {
 			return try Parser.parse($0)
+		}
+
+		let inferencer = try! Inferencer(moduleName: "Standard", imports: [])
+		return inferencer.infer(stdlib)
+	}
+
+	public init(moduleName: String, imports: [InferenceContext]) throws {
+		// Prepend the standard library
+		var imports = imports
+
+		if moduleName != "Standard" {
+			imports = [Self.stdlib] + imports
 		}
 
 		self.imports = imports
 		self.context = InferenceContext(
+			moduleName: moduleName,
 			parent: nil,
 			imports: imports,
 			environment: Environment(),
 			constraints: Constraints()
 		)
-
-		_ = visitor.infer(stdlib, with: context)
 	}
 
 	public func infer(_ syntax: [any Syntax]) -> InferenceContext {
@@ -989,6 +999,19 @@ struct InferenceVisitor: Visitor {
 				context.extend(kase, with: .type(.enumCase(enumCase)))
 			} else {
 				try decl.accept(self, enumContext)
+
+				switch try (decl, enumContext.get(decl)) {
+				case let (decl as FuncExpr, .scheme(scheme)):
+					guard let name = decl.name?.lexeme else {
+						throw InferencerError.cannotInfer("No name found for member \(decl.description)")
+					}
+
+					// It's a method
+					typeContext.methods[name] = .scheme(scheme)
+				default:
+					print("!! Unhandled struct body decl:")
+					print(decl.description)
+				}
 			}
 		}
 

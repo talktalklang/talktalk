@@ -9,11 +9,7 @@ import TalkTalkSyntax
 import Testing
 @testable import TypeChecker
 
-struct ProtocolTests {
-	func infer(_ expr: [any Syntax]) throws -> InferenceContext {
-		try Inferencer(imports: []).infer(expr).solve()
-	}
-
+struct ProtocolTests: TypeCheckerTest {
 	@Test("Types protocol decl") func protocolType() throws {
 		let syntax = try Parser.parse(
 			"""

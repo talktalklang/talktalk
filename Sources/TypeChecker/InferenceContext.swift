@@ -128,7 +128,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 	// Instance-level context info like generic parameter bindings
 	var instanceContext: InstanceContext?
 
+	public let moduleName: String
+
 	init(
+		moduleName: String,
 		parent: InferenceContext?,
 		imports: [InferenceContext] = [],
 		environment: Environment,
@@ -141,6 +144,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		file: String = #file,
 		line: UInt32 = #line
 	) {
+		self.moduleName = moduleName
 		self.depth = (parent?.depth ?? 0) + 1
 		self.parent = parent
 		self.imports = imports
@@ -292,6 +296,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func childContext() -> InferenceContext {
 		InferenceContext(
+			moduleName: moduleName,
 			parent: self,
 			environment: environment.childEnvironment(),
 			constraints: constraints,
@@ -312,6 +317,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		let instanceContext = InstanceContext()
 
 		return InferenceContext(
+			moduleName: moduleName,
 			parent: self,
 			environment: environment,
 			constraints: constraints,
@@ -324,6 +330,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func childTypeContext(named name: String) -> InferenceContext {
 		InferenceContext(
+			moduleName: moduleName,
 			parent: self,
 			environment: environment,
 			constraints: constraints,
@@ -350,6 +357,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func expecting(_ type: InferenceType) -> InferenceContext {
 		InferenceContext(
+			moduleName: moduleName,
 			parent: self,
 			environment: environment,
 			constraints: constraints,
