@@ -52,7 +52,7 @@ struct MemberConstraint: Constraint {
 		switch context.applySubstitutions(to: receiver) {
 		case let .instantiatable(type):
 			// It's a type parameter, try to unify it with a property
-			guard let member = type.member(named: name, in: context) else {
+			guard let member = type.staticMember(named: name, in: context) else {
 				return .error(
 					[Diagnostic(message: "No member \(name) for \(receiver)", severity: .error, location: location)]
 				)

@@ -48,6 +48,10 @@ public extension Instantiatable {
 		// swiftlint:enable force_cast fatal_error
 	}
 
+	func staticMember(named name: String) -> InferenceResult? {
+		typeContext.staticMethods[name] ?? typeContext.staticProperties[name]
+	}
+
 	var typeParameters: [TypeVariable] {
 		typeContext.typeParameters
 	}

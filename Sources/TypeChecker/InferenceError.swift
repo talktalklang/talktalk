@@ -38,8 +38,8 @@ public enum InferenceErrorKind: Equatable, Hashable, CustomStringConvertible {
 			"Expected \(expected) args, got \(actual)"
 		case let .typeError(string):
 			string.description
-		case let .memberNotFound(structType, string):
-			"\(structType) has no member `\(string)`"
+		case let .memberNotFound(type, string):
+			"\(type) has no member `\(string)`"
 		case let .missingConstraint(inferenceType):
 			"Constraint missing: \(inferenceType)"
 		case let .subscriptNotAllowed(inferenceType):

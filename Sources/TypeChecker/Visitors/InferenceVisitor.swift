@@ -575,7 +575,7 @@ struct InferenceVisitor: Visitor {
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws {
 		try expr.receiver?.accept(self, context)
-		let returns: InferenceType
+		let returns: InferenceResult
 
 		let receiver: InferenceResult? = if let rec = expr.receiver, let receiver = context[rec] {
 			receiver
@@ -588,34 +588,34 @@ struct InferenceVisitor: Visitor {
 		// Now that we have a receiver, look up the type we expect the member to be
 		switch receiver {
 		case let .type(.instantiatable(instanceType)):
-			guard let member = instanceType.member(named: expr.property, in: context)?.asType(in: context) else {
+			guard let member = instanceType.staticMember(named: expr.property, in: context) else {
 				context.addError(.memberNotFound(.instantiatable(instanceType), expr.property), to: expr)
 				return
 			}
 
 			returns = member
 		case let .type(.enumCase(enumCase)):
-			returns = .enumCase(enumCase)
+			returns = .type(.enumCase(enumCase))
 		case let .type(.instance(instance)) where instance.type is EnumType:
 			// swiftlint:disable force_unwrapping force_cast
 			let enumType = instance.type as! EnumType
-			returns = enumType.member(named: expr.property, in: context)!.asType(in: context)
+			returns = .type(enumType.member(named: expr.property, in: context)!.asType(in: context))
 		// swiftlint:enable force_unwrapping force_cast
 		default:
-			returns = .typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line))
+			returns = .type(.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line)))
 		}
 
 		context.constraints.add(
 			MemberConstraint(
 				receiver: receiver ?? .type(.typeVar(context.freshTypeVariable("RECEIVER" + expr.description))),
 				name: expr.property,
-				type: .type(returns),
+				type: returns,
 				isRetry: false,
 				location: expr.location
 			)
 		)
 
-		context.extend(expr, with: .type(returns))
+		context.extend(expr, with: returns)
 	}
 
 	func visit(_ expr: ReturnStmtSyntax, _ context: InferenceContext) throws {
@@ -714,10 +714,18 @@ struct InferenceVisitor: Visitor {
 				}
 
 				// It's a method
-				typeContext.methods[name] = .scheme(scheme)
+				if decl.isStatic {
+					typeContext.staticMethods[name] = .scheme(scheme)
+				} else {
+					typeContext.methods[name] = .scheme(scheme)
+				}
 			case let (decl as VarLetDecl, .type(type)):
 				// It's a property
-				typeContext.properties[decl.name] = .type(type)
+				if decl.isStatic {
+					typeContext.staticProperties[decl.name] = .type(type)
+				} else {
+					typeContext.properties[decl.name] = .type(type)
+				}
 			case let (_ as InitDecl, type):
 				typeContext.initializers["init"] = type
 			default:

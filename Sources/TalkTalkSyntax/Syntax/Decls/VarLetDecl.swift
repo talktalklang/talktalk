@@ -8,6 +8,7 @@
 public protocol VarLetDecl: Decl, Stmt {
 	var name: String { get }
 	var nameToken: Token { get }
+	var isStatic: Bool { get }
 	var typeExpr: TypeExprSyntax? { get }
 	var value: (any Expr)? { get }
 }

@@ -56,6 +56,18 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 		)))
 	}
 
+	func staticMember(named name: String) -> InferenceResult? {
+		if let kase = cases.first(where: { $0.name == name }) {
+			return .type(.enumCase(kase))
+		}
+
+		if let member = typeContext.staticMethods[name] ?? typeContext.staticProperties[name] {
+			return member
+		}
+
+		return nil
+	}
+
 	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
 		if let member = typeContext.member(named: name) {
 			return member

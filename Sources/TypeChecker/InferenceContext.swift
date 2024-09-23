@@ -18,6 +18,8 @@ public class TypeContext: Equatable, Hashable {
 	}
 
 	public var name: String
+	var staticMethods: OrderedDictionary<String, InferenceResult>
+	var staticProperties: OrderedDictionary<String, InferenceResult>
 	var methods: OrderedDictionary<String, InferenceResult>
 	var initializers: OrderedDictionary<String, InferenceResult>
 	var properties: OrderedDictionary<String, InferenceResult>
@@ -29,12 +31,16 @@ public class TypeContext: Equatable, Hashable {
 		methods: OrderedDictionary<String, InferenceResult> = [:],
 		initializers: OrderedDictionary<String, InferenceResult> = [:],
 		properties: OrderedDictionary<String, InferenceResult> = [:],
+		staticMethods: OrderedDictionary<String, InferenceResult> = [:],
+		staticProperties: OrderedDictionary<String, InferenceResult> = [:],
 		typeParameters: [TypeVariable] = []
 	) {
 		self.name = name
 		self.methods = methods
+		self.staticMethods = staticMethods
 		self.initializers = initializers
 		self.properties = properties
+		self.staticProperties = staticProperties
 		self.typeParameters = typeParameters
 	}
 
@@ -740,9 +746,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
-		}
+//		}
 	}
 }

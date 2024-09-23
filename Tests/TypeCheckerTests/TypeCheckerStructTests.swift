@@ -173,4 +173,20 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		#expect(context[syntax[3]] == .type(.base(.string)))
 	}
+
+	@Test("Type checks static let") func staticLet() throws {
+		let syntax = try Parser.parse(
+		"""
+		struct Person {
+			static let name: String
+		}
+
+		Person.name
+		"""
+		)
+
+		let context = try infer(syntax)
+
+		#expect(context[syntax[1]] == .type(.base(.string)))
+	}
 }
