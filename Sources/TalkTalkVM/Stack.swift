@@ -47,7 +47,7 @@ struct DebugStack<Element> {
 
 	@discardableResult mutating func pop() throws -> Element {
 		guard let last = storage.popLast() else {
-			throw VirtualMachineError.stackImbalance("Cannot pop empty stack")
+			throw VirtualMachineError.stackError("Cannot pop empty stack")
 		}
 
 		return last
@@ -55,7 +55,7 @@ struct DebugStack<Element> {
 
 	func peek(offset _: Int = 0) throws -> Element {
 		guard let last = storage.last else {
-			throw VirtualMachineError.stackImbalance("Cannot peek empty stack")
+			throw VirtualMachineError.stackError("Cannot peek empty stack")
 		}
 
 		return last
@@ -64,7 +64,7 @@ struct DebugStack<Element> {
 	mutating func pop(count: Int) throws -> [Element] {
 		try (0 ..< count).map { _ in
 			guard let last = storage.popLast() else {
-				throw VirtualMachineError.stackImbalance("Cannot pop \(count) from stack.")
+				throw VirtualMachineError.stackError("Cannot pop \(count) from stack.")
 			}
 
 			return last
@@ -99,10 +99,12 @@ struct Stack<Element> {
 		}
 	}
 
+	public var capacity: Int
 	private var storage: Storage
 	public var size: Int = 0
 
 	init(capacity: Int) {
+		self.capacity = capacity
 		self.storage = Storage.create(minimumCapacity: capacity) { _ in } as! Storage
 	}
 
@@ -140,7 +142,11 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
-	mutating func push(_ element: Element) {
+	mutating func push(_ element: Element) throws {
+		if size == capacity {
+			throw VirtualMachineError.stackError("Stack overflow")
+		}
+
 		storage.withUnsafeMutablePointers {
 			defer { size += 1 }
 			($1 + size).initialize(to: element)
@@ -150,7 +156,7 @@ struct Stack<Element> {
 	@inline(__always)
 	@discardableResult mutating func pop() throws -> Element {
 		if size == 0 {
-			throw VirtualMachineError.stackImbalance("Cannot pop empty stack")
+			throw VirtualMachineError.stackError("Cannot pop empty stack")
 		}
 
 		return storage.withUnsafeMutablePointers {
@@ -162,7 +168,7 @@ struct Stack<Element> {
 //	@inline(__always)
 	func peek(offset: Int = 0) throws -> Element {
 		if size - 1 - offset < 0 {
-			throw VirtualMachineError.stackImbalance("Cannot peek offset: \(offset)")
+			throw VirtualMachineError.stackError("Cannot peek offset: \(offset)")
 		}
 
 		return storage.withUnsafeMutablePointers {

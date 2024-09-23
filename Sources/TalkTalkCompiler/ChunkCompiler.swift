@@ -43,15 +43,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		self.locals = [.reserved(depth: scopeDepth)]
 	}
 
-	public func endScope(chunk: Chunk) {
-		for i in 0 ..< locals.count {
-			let local = locals[locals.count - i - 1]
-			if local.depth <= scopeDepth { break }
-
-			chunk.emit(opcode: .pop, line: 0)
-		}
-	}
-
 	// MARK: Visitor methods
 
 	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws {
@@ -300,9 +291,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Emit the init body
 		try visit(expr.bodyAnalyzed, chunk)
 
-		// End the scope, which pops locals
-		endScope(chunk: chunk)
-
 		// Add the instance to the top of the stack so it'll always be returned
 		chunk.emit(opcode: .getLocal, line: UInt32(expr.location.end.line))
 		chunk.emit(.symbol(.value(module.name, "self")), line: UInt32(expr.location.end.line))
@@ -345,9 +333,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		// Emit the function body
 		try functionCompiler.visit(expr.bodyAnalyzed, functionChunk)
-
-		// End the scope, which pops or captures locals
-		functionCompiler.endScope(chunk: functionChunk)
 
 		// We always want to emit a return at the end of a function. If the function's return value
 		// is void then we just emit returnVoid. Otherwise we emit returnValue which will grab the return
@@ -492,9 +477,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 				for expr in decl.bodyAnalyzed.stmtsAnalyzed {
 					try expr.accept(declCompiler, declChunk)
 				}
-
-				// End the scope, which pops locals
-				declCompiler.endScope(chunk: declChunk)
 
 				// Make sure the instance is at the top of the stack and return it
 				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
@@ -919,9 +901,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try expr.accept(declCompiler, declChunk)
 		}
 
-		// End the scope, which pops locals
-		declCompiler.endScope(chunk: declChunk)
-
 		let opcode: Opcode = switch decl.inferenceType {
 		case .function(_, .type(.void)):
 			.returnVoid
@@ -1246,8 +1225,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 			chunk.emit(opcode: .setProperty, line: 9999)
 			chunk.emit(.symbol(property.symbol), line: 9999)
 		}
-
-		compiler.endScope(chunk: chunk)
 
 		// Put `self` back on the stack so we always return this new instance
 		chunk.emit(opcode: .getLocal, line: 9999)

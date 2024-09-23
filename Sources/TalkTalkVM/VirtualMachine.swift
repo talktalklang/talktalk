@@ -90,8 +90,8 @@ public struct VirtualMachine {
 			throw VirtualMachineError.mainNotFound("no entrypoint found for module `\(module.name)`")
 		}
 
-		self.stack = Stack<Value>(capacity: 256)
-		self.frames = Stack<CallFrame>(capacity: 256)
+		self.stack = Stack<Value>(capacity: 2048)
+		self.frames = Stack<CallFrame>(capacity: 2048)
 
 		let frame = CallFrame(
 			closure: Closure(chunk: chunk, capturing: [:]),
@@ -100,7 +100,7 @@ public struct VirtualMachine {
 			stackOffset: stack.size
 		)
 
-		frames.push(frame)
+		try frames.push(frame)
 		self.currentFrame = frame
 		self.chunk = frame.closure.chunk
 		self.ip = 0
@@ -136,7 +136,7 @@ public struct VirtualMachine {
 						} else {
 							var line = ""
 							if let url = URL(string: "file://" + i.path),
-							   let filelines = try? String(contentsOf: url).components(separatedBy: .newlines)
+								 let filelines = try? String(contentsOf: url).components(separatedBy: .newlines)
 							{
 								line = filelines[Int(i.line)] + " "
 							}
@@ -207,11 +207,11 @@ public struct VirtualMachine {
 				while calledFrame.isInline {
 					calledFrame = try frames.pop()
 				}
-				
+
 				try transferCaptures(in: calledFrame)
 
 				// Push the result back onto the stack
-				stack.push(result)
+				try stack.push(result)
 
 				// Return to where we called from
 				ip = calledFrame.returnTo
@@ -219,13 +219,13 @@ public struct VirtualMachine {
 				return try .ok(stack.peek(), Date().timeIntervalSince(start))
 			case .constant:
 				let value = try readConstant()
-				stack.push(value)
+				try stack.push(value)
 			case .true:
-				stack.push(.bool(true))
+				try stack.push(.bool(true))
 			case .false:
-				stack.push(.bool(false))
+				try stack.push(.bool(false))
 			case .none:
-				stack.push(.none)
+				try stack.push(.none)
 			case .primitive:
 				let byte = try readByte()
 
@@ -233,11 +233,11 @@ public struct VirtualMachine {
 					throw VirtualMachineError.valueMissing("No primitive found for byte: \(byte)")
 				}
 
-				stack.push(.primitive(primitive))
+				try stack.push(.primitive(primitive))
 			case .negate:
 				let value = try stack.pop()
 				if let intValue = value.intValue {
-					stack.push(.int(-intValue))
+					try stack.push(.int(-intValue))
 				} else {
 					return runtimeError("Cannot negate \(value)")
 				}
@@ -247,14 +247,14 @@ public struct VirtualMachine {
 
 				switch (lhs, rhs) {
 				case let (.bool(lhs), .bool(rhs)):
-					stack.push(.bool(lhs && rhs))
+					try stack.push(.bool(lhs && rhs))
 				default:
 					return runtimeError("&& requires bool operands. got \(lhs) & \(rhs)")
 				}
 			case .not:
 				let value = try stack.pop()
 				if let bool = value.boolValue {
-					stack.push(.bool(!bool))
+					try stack.push(.bool(!bool))
 				}
 			case .match:
 				let pattern = try stack.pop()
@@ -262,7 +262,7 @@ public struct VirtualMachine {
 
 				func bind(_ pattern: Value, to target: Value) {
 					if case let .boundEnumCase(pattern) = pattern,
-					   case let .boundEnumCase(target) = target
+						 case let .boundEnumCase(target) = target
 					{
 						for (i, value) in pattern.values.enumerated() {
 							switch value {
@@ -280,27 +280,27 @@ public struct VirtualMachine {
 				}
 
 				bind(pattern, to: target)
-				stack.push(.bool(pattern == target))
+				try stack.push(.bool(pattern == target))
 			case .equal:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
-				stack.push(.bool(lhs == rhs))
+				try stack.push(.bool(lhs == rhs))
 			case .notEqual:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
-				stack.push(.bool(lhs != rhs))
+				try stack.push(.bool(lhs != rhs))
 			case .add:
 				let lhsValue = try stack.pop()
 				let rhsValue = try stack.pop()
 
 				switch (lhsValue, rhsValue) {
 				case let (.int(lhs), .int(rhs)):
-					stack.push(.int(lhs + rhs))
+					try stack.push(.int(lhs + rhs))
 				case let (.string(lhs), .string(rhs)):
-					stack.push(.string(lhs + rhs))
+					try stack.push(.string(lhs + rhs))
 				case let (.pointer(pointer), .int(rhs)):
-					stack.push(.pointer(pointer + rhs))
+					try stack.push(.pointer(pointer + rhs))
 				case let (.data(lhs), .data(rhs)):
 					let lhs = chunk.data[Int(lhs)]
 					let rhs = chunk.data[Int(rhs)]
@@ -316,7 +316,7 @@ public struct VirtualMachine {
 						heap.store(pointer: pointer + i, value: Value.byte(bytes[i]))
 					}
 
-					stack.push(.pointer(pointer))
+					try stack.push(.pointer(pointer))
 				default:
 					return runtimeError("Cannot add \(lhsValue) & \(rhsValue) operands")
 				}
@@ -325,17 +325,17 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot subtract \(lhs) & \(rhs) operands")
 				}
-				stack.push(.int(lhs - rhs))
+				try stack.push(.int(lhs - rhs))
 			case .divide:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot divide \(lhs) & \(rhs) operands")
 				}
@@ -344,63 +344,63 @@ public struct VirtualMachine {
 					return runtimeError("Cannot divide by zero.")
 				}
 
-				stack.push(.int(lhs / rhs))
+				try stack.push(.int(lhs / rhs))
 			case .multiply:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot multiply \(lhs) & \(rhs) operands")
 				}
-				stack.push(.int(lhs * rhs))
+				try stack.push(.int(lhs * rhs))
 			case .less:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
-				stack.push(.bool(lhs < rhs))
+				try stack.push(.bool(lhs < rhs))
 			case .greater:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
-				stack.push(.bool(lhs > rhs))
+				try stack.push(.bool(lhs > rhs))
 			case .lessEqual:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
-				stack.push(.bool(lhs <= rhs))
+				try stack.push(.bool(lhs <= rhs))
 			case .greaterEqual:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-				      let rhs = rhs.intValue
+							let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
-				stack.push(.bool(lhs >= rhs))
+				try stack.push(.bool(lhs >= rhs))
 			case .data:
 				let slot = try readByte()
 				let data = chunk.data[Int(slot)]
 				switch data.kind {
 				case .string:
-					stack.push(.string(String(data: Data(data.bytes), encoding: .utf8) ?? "<invalid string>"))
+					try stack.push(.string(String(data: Data(data.bytes), encoding: .utf8) ?? "<invalid string>"))
 				}
 			case .pop:
 				try stack.pop()
@@ -421,7 +421,7 @@ public struct VirtualMachine {
 						throw VirtualMachineError.valueMissing("did not find self for \(symbol)")
 					}
 
-					stack.push(selfValue)
+					try stack.push(selfValue)
 
 					continue
 				}
@@ -432,9 +432,9 @@ public struct VirtualMachine {
 
 				// Unwrap bindings if they have values
 				if case let .binding(binding) = local, let value = binding.value {
-					stack.push(value)
+					try stack.push(value)
 				} else {
-					stack.push(local)
+					try stack.push(local)
 				}
 			case .setLocal:
 				let symbol = try readSymbol()
@@ -450,13 +450,13 @@ public struct VirtualMachine {
 						throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in call frame stack")
 					}
 
-					stack.push(value)
+					try stack.push(value)
 				case let .heap(pointer):
 					guard let value = heap.dereference(pointer: pointer) else {
 						throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found on heap")
 					}
 
-					stack.push(value)
+					try stack.push(value)
 				default:
 					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in closure")
 				}
@@ -481,7 +481,7 @@ public struct VirtualMachine {
 				}
 
 				// Push the closure Value onto the stack
-				stack.push(.closure(symbol))
+				try stack.push(.closure(symbol))
 
 				currentFrame.define(symbol, as: .closure(symbol))
 
@@ -500,13 +500,13 @@ public struct VirtualMachine {
 			case .getModuleFunction:
 				let symbol = try readSymbol()
 				let moduleFunction = Value.moduleFunction(symbol)
-				stack.push(moduleFunction)
+				try stack.push(moduleFunction)
 			case .setModuleFunction:
 				return runtimeError("cannot set module functions")
 			case .getModuleValue:
 				let symbol = try readSymbol()
 				if let global = globalValues[symbol] {
-					stack.push(global)
+					try stack.push(global)
 				} else if let initializer = module.valueInitializers[symbol] {
 					// If we don't have the global already, we lazily initialize it by running its initializer
 					try call(chunk: initializer)
@@ -521,12 +521,12 @@ public struct VirtualMachine {
 				module.valueInitializers.removeValue(forKey: symbol)
 			case .getBuiltin:
 				let builtin = try readSymbol()
-				stack.push(.builtin(builtin))
+				try stack.push(.builtin(builtin))
 			case .setBuiltin:
 				return runtimeError("Cannot set built in")
 			case .getBuiltinStruct:
 				let slot = try readByte()
-				stack.push(.builtinStruct(.init(slot)))
+				try stack.push(.builtinStruct(.init(slot)))
 			case .setBuiltinStruct:
 				return runtimeError("Cannot set built in")
 			case .cast:
@@ -544,7 +544,7 @@ public struct VirtualMachine {
 					throw VirtualMachineError.valueMissing("no struct for value: \(symbol)")
 				}
 
-				stack.push(.struct(structType))
+				try stack.push(.struct(structType))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
 			case .getProperty:
@@ -564,7 +564,7 @@ public struct VirtualMachine {
 						// and the instance ID.
 						let boundMethod = Value.boundStructMethod(instance, symbol)
 
-						stack.push(boundMethod)
+						try stack.push(boundMethod)
 					} else {
 						if case let .property(nil, name) = symbol.kind {
 							symbol = .property(symbol.module, instance.type.name, name)
@@ -574,18 +574,18 @@ public struct VirtualMachine {
 							return runtimeError("uninitialized value in slot \(symbol) for \(instance)")
 						}
 
-						stack.push(value)
+						try stack.push(value)
 					}
 				case let .enum(enumType):
 					guard let kase = enumType.cases[symbol] else {
 						return runtimeError("enum \(enumType.name) has no member \(symbol)")
 					}
 
-					stack.push(.enumCase(kase))
+					try stack.push(.enumCase(kase))
 				case let .enumCase(enumCase):
 					if propertyOptions.contains(.isMethod) {
 						let boundMethod = Value.boundEnumMethod(enumCase, symbol)
-						stack.push(boundMethod)
+						try stack.push(boundMethod)
 					} else {
 						return runtimeError("enums don't have properties")
 					}
@@ -596,7 +596,7 @@ public struct VirtualMachine {
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
 
-				checkType(instance: lhs, type: rhs)
+				try checkType(instance: lhs, type: rhs)
 			case .setProperty:
 				let symbol = try readSymbol()
 				let instance = try stack.pop()
@@ -652,7 +652,7 @@ public struct VirtualMachine {
 					.property("Standard", "Array", "capacity"): .int(.init(capacity)),
 				])
 
-				stack.push(.instance(instance))
+				try stack.push(.instance(instance))
 			case .initDict:
 				guard let dictType = module.structs[.struct("Standard", "Dictionary")] else {
 					throw VirtualMachineError.valueMissing("No Dictionary type found")
@@ -662,11 +662,11 @@ public struct VirtualMachine {
 			case .binding:
 				let sym = try readSymbol()
 				if let binding = currentFrame.patternBindings[sym] {
-					stack.push(binding)
+					try stack.push(binding)
 				} else {
 					let binding: Value = .binding(.new())
 					currentFrame.patternBindings[sym] = binding
-					stack.push(binding)
+					try stack.push(binding)
 				}
 			case .endInline:
 				let inlineFrame = try frames.pop()
@@ -691,19 +691,19 @@ public struct VirtualMachine {
 					throw VirtualMachineError.valueMissing("No enum found for symbol: \(sym)")
 				}
 
-				stack.push(.enum(enumType))
+				try stack.push(.enum(enumType))
 			case .debugPrint:
 				_ = try readByte()
 			case .appendInterpolation:
 				let new = try stack.pop()
 				let old = try stack.pop()
-				stack.push(.string(inspect(old) + inspect(new)))
+				try stack.push(.string(inspect(old) + inspect(new)))
 			}
 		}
 	}
 
-	private mutating func checkType(instance: Value, type: Value) {
-		stack.push(.bool(instance.is(type)))
+	private mutating func checkType(instance: Value, type: Value) throws {
+		try stack.push(.bool(instance.is(type)))
 	}
 
 	private mutating func call(_ callee: Value) throws {
@@ -728,7 +728,7 @@ public struct VirtualMachine {
 	}
 
 	private mutating func bind(enum enumCase: EnumCase) throws {
-		try stack.push(
+		try try stack.push(
 			.boundEnumCase(
 				BoundEnumCase(
 					type: enumCase.type,
@@ -804,7 +804,7 @@ public struct VirtualMachine {
 			frame.define(chunk.locals[i], as: args[i])
 		}
 
-		frames.push(frame)
+		try frames.push(frame)
 	}
 
 	private mutating func call(closureID: Symbol) throws {
@@ -825,7 +825,7 @@ public struct VirtualMachine {
 			frame.define(closure.chunk.locals[i], as: args[i])
 		}
 
-		frames.push(frame)
+		try frames.push(frame)
 	}
 
 	private mutating func call(chunkID: Symbol, inline: Bool = false) throws {
@@ -853,7 +853,7 @@ public struct VirtualMachine {
 			frame.define(chunk.locals[i], as: args[i])
 		}
 
-		frames.push(frame)
+		try frames.push(frame)
 	}
 
 	private func inspect(_ value: Value) -> String {
@@ -876,7 +876,7 @@ public struct VirtualMachine {
 		case .function("_allocate", _):
 			if case let .int(count) = try stack.pop() { // Get the capacity
 				let pointer = heap.allocate(count: Int(count))
-				stack.push(.pointer(pointer))
+				try stack.push(.pointer(pointer))
 			}
 		case .function("_deref", _):
 			guard case let .pointer(pointer) = try stack.pop() else {
@@ -887,7 +887,7 @@ public struct VirtualMachine {
 				throw VirtualMachineError.valueMissing("no value found for pointer \(pointer)")
 			}
 
-			stack.push(value)
+			try stack.push(value)
 		case .function("_free", _):
 			try stack.pop()
 			() // TODO:
@@ -901,7 +901,7 @@ public struct VirtualMachine {
 			}
 		case .function("_hash", _):
 			let value = try stack.pop()
-			stack.push(.int(.init(value.hashValue)))
+			try stack.push(.int(.init(value.hashValue)))
 		case .function("_cast", _):
 			() // This is just for the analyzer
 		default:

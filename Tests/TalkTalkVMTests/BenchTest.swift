@@ -57,6 +57,7 @@ struct BenchTests: VMTest {
 		let output = TestOutput()
 		_ = try run(code, output: output)
 
-		#expect(output.stdout == (0..<100).map { "Oh hi, Animal \($0), it's me Person \($0)" }.joined(separator: "\n") + "\n")
+		let expected = "Oh hi, Pooch, it's me Pat" + "\n" + (1..<100).map { "Oh hi, Animal \($0), it's me Person \($0)" }.joined(separator: "\n") + "\n" + "all done\n"
+		#expect(output.stdout == expected)
 	}
 }

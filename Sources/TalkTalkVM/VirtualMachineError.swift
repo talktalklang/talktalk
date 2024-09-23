@@ -8,7 +8,7 @@
 import TalkTalkBytecode
 
 public enum VirtualMachineError: Error {
-	case stackImbalance(String)
+	case stackError(String)
 	case mainNotFound(String)
 	case valueMissing(String)
 	case unknownOpcode(Byte)
