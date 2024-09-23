@@ -63,8 +63,8 @@ public class Environment {
 		)
 	}
 
-	public func type(for syntax: any Syntax) -> InferenceType {
-		inferenceContext.lookup(syntax: syntax) ?? .any
+	public func type(for syntax: any Syntax, default type: InferenceType = .any) -> InferenceType {
+		inferenceContext.lookup(syntax: syntax) ?? type
 	}
 
 	public var moduleName: String {
@@ -121,7 +121,7 @@ public class Environment {
 		locals[parameter] = Binding(
 			name: parameter,
 			location: expr.location,
-			type: inferenceContext.lookup(syntax: expr) ?? .any,
+			type: type(for: expr),
 			isParameter: true
 		)
 	}
@@ -136,8 +136,8 @@ public class Environment {
 		locals[local] = Binding(
 			name: local,
 			location: expr.location,
-			definition: Definition(location: expr.semanticLocation ?? expr.location, type: type ?? inferenceContext.lookup(syntax: expr) ?? .void),
-			type: type ?? inferenceContext.lookup(syntax: expr) ?? .void,
+			definition: Definition(location: expr.semanticLocation ?? expr.location, type: type ?? self.type(for: expr, default: .void)),
+			type: type ?? self.type(for: expr, default: .void),
 			isGlobal: isGlobal,
 			isMutable: isMutable
 		)

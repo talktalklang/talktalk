@@ -51,7 +51,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		-> SourceFileAnalyzer.Value
 	{
 		AnalyzedIdentifierExpr(
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			wrapped: expr.cast(IdentifierExprSyntax.self),
 			environment: context
 		)
@@ -66,14 +66,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		case .bang:
 
 			return try AnalyzedUnaryExpr(
-				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+				inferenceType: context.type(for: expr),
 				exprAnalyzed: castToAnyAnalyzedExpr(exprAnalyzed),
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
 			)
 		case .minus:
 			return try AnalyzedUnaryExpr(
-				inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+				inferenceType: context.type(for: expr),
 				exprAnalyzed: castToAnyAnalyzedExpr(exprAnalyzed),
 				environment: context,
 				wrapped: expr.cast(UnaryExprSyntax.self)
@@ -133,14 +133,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: LiteralExprSyntax, _ context: Environment) throws
 		-> SourceFileAnalyzer.Value
 	{
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			print("Did not get type for \(expr.description)")
-			return AnalyzedLiteralExpr(
-				inferenceType: .any,
-				wrapped: expr.cast(LiteralExprSyntax.self),
-				environment: context
-			)
-		}
+		let type = context.type(for: expr)
 
 		return AnalyzedLiteralExpr(
 			inferenceType: type,
@@ -222,7 +215,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let rhs = try castToAnyAnalyzedExpr(expr.rhs.accept(self, env))
 
 		return try AnalyzedBinaryExpr(
-			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: env.type(for: expr),
 			wrapped: cast(expr, to: BinaryExprSyntax.self),
 			lhsAnalyzed: lhs,
 			rhsAnalyzed: rhs,
@@ -277,7 +270,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let symbol: Symbol = switch context.inferenceContext.lookup(syntax: expr) {
+		let symbol: Symbol = switch context.type(for: expr) {
 		case .typeVar:
 			context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case let .base(type):
@@ -295,7 +288,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedTypeExpr(
 			wrapped: expr.cast(TypeExprSyntax.self),
 			symbol: symbol,
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			environment: context
 		)
 	}
@@ -328,7 +321,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				parameters: paramsAnalyzed.paramsAnalyzed.map(\.inferenceType.mangled),
 				source: .internal
 			),
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			environment: context,
 			parametersAnalyzed: paramsAnalyzed,
 			bodyAnalyzed: bodyAnalyzed,
@@ -339,7 +332,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: ReturnStmtSyntax, _ env: Environment) throws -> SourceFileAnalyzer.Value {
 		let valueAnalyzed = try expr.value?.accept(self, env)
 		return AnalyzedReturnStmt(
-			inferenceType: env.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: env.type(for: expr),
 			environment: env,
 			wrapped: expr.cast(ReturnStmtSyntax.self),
 			valueAnalyzed: valueAnalyzed as? any AnalyzedExpr
@@ -354,7 +347,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			wrapped: expr.cast(ParamsExprSyntax.self),
 			paramsAnalyzed: expr.params.enumerated().map { _, param in
 				AnalyzedParam(
-					type: context.inferenceContext.lookup(syntax: param) ?? .any,
+					type: context.type(for: param),
 					wrapped: param.cast(ParamSyntax.self),
 					environment: context
 				)
@@ -390,7 +383,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return AnalyzedBlockStmt(
 			wrapped: stmt.cast(BlockStmtSyntax.self),
-			inferenceType: context.inferenceContext.lookup(syntax: stmt) ?? .any,
+			inferenceType: context.type(for: stmt),
 			stmtsAnalyzed: bodyAnalyzed,
 			environment: context
 		)
@@ -398,7 +391,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: ParamSyntax, _ context: Environment) throws -> SourceFileAnalyzer.Value {
 		AnalyzedParam(
-			type: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			type: context.type(for: expr),
 			wrapped: expr,
 			environment: context
 		)
@@ -408,7 +401,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		AnalyzedGenericParams(
 			wrapped: expr,
 			environment: context,
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			paramsAnalyzed: expr.params.map {
 				AnalyzedGenericParam(wrapped: $0)
 			}
@@ -475,7 +468,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let decl = try AnalyzedVarDecl(
 			symbol: symbol,
 			// swiftlint:disable force_unwrapping
-			inferenceType: typeExpr?.inferenceType ?? (expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void),
+			inferenceType: typeExpr?.inferenceType ?? (expr.value != nil ? context.type(for: expr.value!, default: .void) : .void),
 			// swiftlint:enable force_unwrapping
 			wrapped: expr,
 			analysisErrors: errors,
@@ -504,7 +497,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		let decl = try AnalyzedLetDecl(
 			symbol: symbol,
 			// swiftlint:disable force_unwrapping
-			inferenceType: expr.value != nil ? (context.inferenceContext.lookup(syntax: expr.value!) ?? .void) : .void,
+			inferenceType: expr.value != nil ? context.type(for: expr.value!) : .void,
 			// swiftlint:enable force_unwrapping
 			wrapped: expr,
 			analysisErrors: errors(for: expr, in: context.inferenceContext),
@@ -524,7 +517,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		return try AnalyzedIfStmt(
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			environment: context,
 			conditionAnalyzed: castToAnyAnalyzedExpr(expr.condition.accept(self, context)),
 			consequenceAnalyzed: castToAnyAnalyzedExpr(expr.consequence.accept(self, context)),
@@ -551,7 +544,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			environment: context,
 			exprsAnalyzed: cast(exprsAnalyzed, to: [any AnalyzedExpr].self),
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			analysisErrors: []
 		)
 	}
@@ -568,7 +561,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		return AnalyzedDictionaryLiteralExpr(
 			elementsAnalyzed: elementsAnalyzed,
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			environment: context
 		)
 	}
@@ -580,15 +573,13 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			keyAnalyzed: key,
 			valueAnalyzed: value,
 			wrapped: expr,
-			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
+			inferenceType: context.type(for: expr),
 			environment: context
 		)
 	}
 
 	public func visit(_ expr: ProtocolDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not determine type of \(expr)", environment: context)
-		}
+		let type = context.type(for: expr)
 
 		guard let body = try visit(expr.body, context) as? AnalyzedProtocolBodyDecl else {
 			return error(at: expr, "Invalid body type for \(expr)", environment: context)
@@ -598,9 +589,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ProtocolBodyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not determine type of \(expr)", environment: context)
-		}
+		let type = context.type(for: expr)
 
 		let decls = try expr.decls.map {
 			guard let decl = try $0.accept(self, context) as? any AnalyzedDecl else {
@@ -614,16 +603,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not determine type of \(expr)", environment: context)
-		}
+		let type = context.type(for: expr)
 
 		return AnalyzedFuncSignatureDecl(wrapped: expr, inferenceType: type, environment: context)
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr),
-		      case let .instantiatable(.enumType(enumType)) = type
+		let type = context.type(for: expr)
+		guard case let .instantiatable(.enumType(enumType)) = type
 		else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
@@ -663,7 +650,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				_ = try decl.accept(self, bodyContext)
 				if let decl = decl as? FuncExpr,
 				   let name = decl.name?.lexeme,
-				   case let .function(params, returns) = context.inferenceContext.lookup(syntax: decl)
+				   case let .function(params, returns) = context.type(for: decl)
 				{
 					analysisEnumType.methods[name] = Method(
 						name: name,
@@ -691,9 +678,9 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr),
-		      case let .enumCase(enumCase) = type
-		else {
+		let type = context.type(for: expr)
+
+		guard case let .enumCase(enumCase) = type else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
@@ -707,9 +694,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: MatchStatementSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
-		}
+		let type = context.type(for: expr)
 
 		var hasDefault = false
 		let targetAnalyzed = try castToAnyAnalyzedExpr(expr.target.accept(self, context))
@@ -801,13 +786,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			)
 		}
 
-		guard let type = context.inferenceContext.lookup(syntax: expr),
-		      let patternSyntax = expr.patternSyntax,
-		      let pattern = context.inferenceContext.lookup(syntax: patternSyntax)
-		else {
+		let type = context.type(for: expr)
+
+		guard let patternSyntax = expr.patternSyntax else {
 			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
 		}
 
+
+		let pattern = context.type(for: patternSyntax)
 		let patternAnalyzed = try castToAnyAnalyzedExpr(patternSyntax.accept(self, context))
 		let bodyAnalyzed = try expr.body.map {
 			let stmt = try $0.accept(self, context)
@@ -834,9 +820,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: InterpolatedStringExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not find type for \(expr)", environment: context)
-		}
+		let type = context.type(for: expr)
 
 		return try AnalyzedInterpolatedStringExpr(
 			wrapped: expr,
@@ -860,13 +844,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: ForStmtSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not find type for \(expr)", environment: context)
-		}
-
+		let type = context.type(for: expr)
 		let iteratorSymbol: Symbol
 
-		switch context.inferenceContext.lookup(syntax: expr.sequence) {
+		switch context.type(for: expr.sequence) {
 		case .base:
 			return error(at: expr, "todo, need to figure out how we want to handle base types", environment: context)
 		case let .instance(.struct(instance)):

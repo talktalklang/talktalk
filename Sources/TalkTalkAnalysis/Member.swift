@@ -14,4 +14,5 @@ public protocol Member {
 	var inferenceType: InferenceType { get }
 	var location: SourceLocation { get }
 	var isMutable: Bool { get }
+	var isStatic: Bool { get }
 }

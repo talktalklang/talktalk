@@ -16,4 +16,5 @@ public struct EnumMember: Member {
 	public var inferenceType: InferenceType
 	public var location: SourceLocation
 	public var isMutable: Bool
+	public var isStatic = true
 }

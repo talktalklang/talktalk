@@ -15,5 +15,5 @@ public struct Property: Member {
 	public let inferenceType: InferenceType
 	public let location: SourceLocation
 	public let isMutable: Bool
-	public var boundGenericParameters: [String: InferenceType] = [:]
+	public let isStatic: Bool
 }

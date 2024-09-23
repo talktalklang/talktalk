@@ -30,7 +30,7 @@ struct CallExprAnalyzer: Analyzer {
 		}
 
 		// How many arguments are expected to be passed to this call
-		let type = context.inferenceContext.lookup(syntax: expr)
+		let type = context.type(for: expr)
 
 		for error in context.inferenceContext.errors {
 			errors.append(
@@ -42,7 +42,7 @@ struct CallExprAnalyzer: Analyzer {
 		}
 
 		return try AnalyzedCallExpr(
-			inferenceType: type ?? .any,
+			inferenceType: type,
 			wrapped: expr.cast(CallExprSyntax.self),
 			calleeAnalyzed: castToAnyAnalyzedExpr(callee),
 			argsAnalyzed: args,

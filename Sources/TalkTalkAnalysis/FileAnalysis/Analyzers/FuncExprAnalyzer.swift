@@ -14,21 +14,18 @@ struct FuncExprAnalyzer: Analyzer {
 	var context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
-		guard let type = context.inferenceContext.lookup(syntax: expr) else {
-			return error(at: expr, "Could not determine type of \(expr)", environment: context)
-		}
-
+		let type = context.type(for: expr)
 		let symbol: Symbol = if let lexicalScope = context.lexicalScope {
 			context.symbolGenerator.method(
 				lexicalScope.type.name,
 				expr.autoname,
-				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.mangled ?? "_" },
+				parameters: expr.params.params.map { context.type(for: $0).mangled },
 				source: .internal
 			)
 		} else {
 			context.symbolGenerator.function(
 				expr.autoname,
-				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.mangled ?? "_" },
+				parameters: expr.params.params.map { context.type(for: $0).mangled },
 				source: .internal
 			)
 		}

@@ -22,7 +22,7 @@ public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 
 	public var message: String { wrapped.message }
 	public var expectation: ParseExpectation { wrapped.expectation }
-	public var boundGenericParameters: [String: InferenceType] = [:]
+	public var isStatic = false
 
 	public init(typeID: InferenceType, wrapped: ParseErrorSyntax, environment: Environment) {
 		self.inferenceType = typeID

@@ -17,6 +17,7 @@ public struct Method: Member {
 	public let returnTypeID: InferenceType
 	public let isMutable: Bool
 	public let isSynthetic: Bool
+	public let isStatic: Bool
 	public var boundGenericParameters: [String: InferenceType] = [:]
 
 	public init(
@@ -27,7 +28,8 @@ public struct Method: Member {
 		location: SourceLocation,
 		returnTypeID: InferenceType,
 		isMutable: Bool = false,
-		isSynthetic: Bool = false
+		isSynthetic: Bool = false,
+		isStatic: Bool = false
 	) {
 		self.name = name
 		self.symbol = symbol
@@ -37,5 +39,6 @@ public struct Method: Member {
 		self.returnTypeID = returnTypeID
 		self.isMutable = isMutable
 		self.isSynthetic = isSynthetic
+		self.isStatic = isStatic
 	}
 }
