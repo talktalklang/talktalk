@@ -51,7 +51,9 @@ jobs:
       run: |
         latest_tag=$(git describe --tags --abbrev=0)
         next_tag=$(echo $latest_tag | awk -F. -v OFS=. '{$NF++;print}')
+        short_sha=$(echo "${GITHUB_SHA}" | cut -c1-7)
         echo "::set-output name=next_tag::$next_tag"
+        echo "::set-output name=short_sha::$short_sha"
 
     - name: Create Pre-Release
       id: create_release
@@ -59,10 +61,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "${{ steps.get_next_tag.outputs.next_tag }}-rc${{ github.sha::0:7 }}"
-        release_name: "${{ steps.get_next_tag.outputs.next_tag }}-rc${{ github.sha::0:7 }}"
+        tag_name: "${{ steps.get_next_tag.outputs.next_tag }}-rc${{ steps.get_next_tag.outputs.short_sha }}"
+        release_name: "${{ steps.get_next_tag.outputs.next_tag }}-rc${{ steps.get_next_tag.outputs.short_sha }}"
         body: |
-          Automated pre-release v${{ steps.get_next_tag.outputs.next_tag }}-rc${{ github.sha::0:7 }}
+          Automated pre-release v${{ steps.get_next_tag.outputs.next_tag }}-rc${{ steps.get_next_tag.outputs.short_sha }}
         draft: false
         prerelease: true
 
