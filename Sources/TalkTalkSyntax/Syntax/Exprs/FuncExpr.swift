@@ -10,13 +10,13 @@ public protocol FuncExpr: Expr {
 	var params: ParamsExpr { get }
 	var body: BlockStmtSyntax { get }
 	var typeDecl: (any TypeExpr)? { get }
-	var i: Int { get }
 	var name: Token? { get }
+	var isStatic: Bool { get }
 }
 
 public extension FuncExpr {
 	var autoname: String {
-		name?.lexeme ?? "_fn_\(params.params.map(\.name).joined(separator: "_"))_\(i)"
+		name?.lexeme ?? "_fn_\(params.params.map(\.name).joined(separator: "_"))_\(id.id)"
 	}
 }
 
@@ -26,18 +26,18 @@ public struct FuncExprSyntax: FuncExpr, Decl {
 	public let typeDecl: (any TypeExpr)?
 	public let params: ParamsExpr
 	public let body: BlockStmtSyntax
-	public let i: Int
+	public let isStatic: Bool
 	public let name: Token?
 	public let location: SourceLocation
 	public var children: [any Syntax] { [params, body] }
 
-	public init(id: SyntaxID, funcToken: Token, params: ParamsExpr, typeDecl: (any TypeExpr)?, body: BlockStmtSyntax, i: Int, name: Token? = nil, location: SourceLocation) {
+	public init(id: SyntaxID, funcToken: Token, params: ParamsExpr, typeDecl: (any TypeExpr)?, body: BlockStmtSyntax, isStatic: Bool, name: Token? = nil, location: SourceLocation) {
 		self.id = id
 		self.funcToken = funcToken
 		self.params = params
 		self.typeDecl = typeDecl
 		self.body = body
-		self.i = i
+		self.isStatic = isStatic
 		self.name = name // ??
 		self.location = location
 	}

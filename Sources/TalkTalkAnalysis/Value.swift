@@ -31,7 +31,7 @@ public enum Value: Equatable {
 				return false
 			}
 
-			return closure.funcExpr.i == rhs.funcExpr.i
+			return closure.funcExpr.id == rhs.funcExpr.id
 		}
 	}
 

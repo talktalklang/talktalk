@@ -92,6 +92,7 @@ extension Token.Kind {
 		case .comment: .none
 		case .for: .none
 		case .questionMark: .none
+		case .static: .none
 		}
 	}
 }

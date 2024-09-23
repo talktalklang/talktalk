@@ -11,9 +11,9 @@ public enum DeclContext {
 	var allowed: Set<Token.Kind> {
 		switch self {
 		case .struct:
-			[.enum, .struct, .protocol, .func, .initialize, .var, .let]
+			[.enum, .struct, .protocol, .func, .initialize, .var, .let, .static]
 		case .enum:
-			[.enum, .struct, .protocol, .func, .case]
+			[.enum, .struct, .protocol, .func, .case, .static]
 		case .topLevel:
 			[.enum, .struct, .protocol, .func, .var, .let]
 		case .argument:

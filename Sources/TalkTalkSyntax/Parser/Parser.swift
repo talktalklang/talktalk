@@ -144,8 +144,14 @@ public struct Parser {
 			return protocolDecl()
 		}
 
+		if didMatch(.static), context.allowed.contains(.static) {
+			consume(.func)
+
+			return funcExpr(isStatic: true)
+		}
+
 		if didMatch(.func), context.allowed.contains(.func) {
-			return funcExpr()
+			return funcExpr(isStatic: false)
 		}
 
 		if didMatch(.case), context.allowed.contains(.case) {

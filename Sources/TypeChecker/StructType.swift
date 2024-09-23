@@ -37,10 +37,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 	init(name: String, parentContext: InferenceContext) {
 		self.name = name
 
-		
-
 		let context = parentContext.childTypeContext(named: name)
-
 		self.context = context
 
 		guard let typeContext = context.typeContext else {

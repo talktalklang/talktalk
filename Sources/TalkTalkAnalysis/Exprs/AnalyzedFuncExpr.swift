@@ -27,7 +27,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 	public var params: ParamsExpr { wrapped.params }
 	public var typeDecl: (any TypeExpr)? { wrapped.typeDecl }
 	public var body: BlockStmtSyntax { wrapped.body }
-	public var i: Int { wrapped.i }
+	public var isStatic: Bool { wrapped.isStatic }
 
 	public init(
 		symbol: Symbol,

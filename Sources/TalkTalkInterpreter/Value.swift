@@ -66,7 +66,7 @@ public indirect enum Value: Equatable, Comparable {
 		case let (.bool(lhs), .bool(rhs)):
 			lhs == rhs
 		case let (.fn(lhs), .fn(rhs)):
-			lhs.funcExpr.i == rhs.funcExpr.i
+			lhs.funcExpr.id == rhs.funcExpr.id
 		default:
 			false
 		}

@@ -94,10 +94,6 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	public let kind: Kind
 
 	public init(module: String, kind: Kind) {
-		if module == "Standard", kind == .struct("array") {
-print()
-		}
-
 		self.module = module
 		self.kind = kind
 	}
