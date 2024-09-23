@@ -145,9 +145,17 @@ public struct Parser {
 		}
 
 		if didMatch(.static), context.allowed.contains(.static) {
-			consume(.func)
+			if check(.func), didConsume(.func) {
+				return funcExpr(isStatic: true)
+			}
 
-			return funcExpr(isStatic: true)
+			if check(.var), didConsume(.var) {
+				return letVarDecl(.var, isStatic: true)
+			}
+
+			if check(.let), didConsume(.let) {
+				return letVarDecl(.let, isStatic: true)
+			}
 		}
 
 		if didMatch(.func), context.allowed.contains(.func) {
@@ -163,11 +171,11 @@ public struct Parser {
 		}
 
 		if didMatch(.var), context.allowed.contains(.var) {
-			return letVarDecl(.var)
+			return letVarDecl(.var, isStatic: false)
 		}
 
 		if didMatch(.let), context.allowed.contains(.let) {
-			return letVarDecl(.let)
+			return letVarDecl(.let, isStatic: false)
 		}
 
 		if context == .argument {
@@ -208,15 +216,15 @@ public struct Parser {
 		}
 
 		if didMatch(.var) {
-			return letVarDecl(.var)
+			return letVarDecl(.var, isStatic: false)
+		}
+
+		if didMatch(.let) {
+			return letVarDecl(.let, isStatic: false)
 		}
 
 		if didMatch(.return) {
 			return returning(false)
-		}
-
-		if didMatch(.let) {
-			return letVarDecl(.let)
 		}
 
 		// At this level, we want an ExprStmt, not just a normal expr

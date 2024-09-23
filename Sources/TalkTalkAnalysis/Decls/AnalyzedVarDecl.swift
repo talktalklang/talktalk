@@ -23,6 +23,7 @@ public struct AnalyzedVarDecl: AnalyzedExpr, AnalyzedDecl, VarDecl, AnalyzedVarL
 	public var token: Token { wrapped.token }
 	public var name: String { wrapped.name }
 	public var nameToken: Token { wrapped.nameToken }
+	public var isStatic: Bool { wrapped.isStatic }
 	public var typeExpr: TypeExprSyntax? { wrapped.typeExpr }
 	public var value: (any Expr)? { wrapped.value }
 	public var location: SourceLocation { wrapped.location }

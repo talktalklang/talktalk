@@ -9,6 +9,7 @@ public protocol LetDecl: Decl, VarLetDecl {
 	var token: Token { get }
 	var name: String { get }
 	var nameToken: Token { get }
+	var isStatic: Bool { get }
 	var typeExpr: TypeExprSyntax? { get }
 	var value: (any Expr)? { get }
 }
@@ -18,6 +19,7 @@ public struct LetDeclSyntax: LetDecl {
 	public var token: Token
 	public var name: String
 	public var nameToken: Token
+	public var isStatic: Bool
 	public var typeExpr: TypeExprSyntax?
 	public var value: (any Expr)?
 
