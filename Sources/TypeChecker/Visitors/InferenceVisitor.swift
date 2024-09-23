@@ -15,12 +15,14 @@ public struct Inferencer {
 	public let context: InferenceContext
 
 	public static var stdlib: InferenceContext {
+		// swiftlint:disable force_try
 		let stdlib = try! Library.standard.files.flatMap {
 			return try Parser.parse($0)
 		}
 
 		let inferencer = try! Inferencer(moduleName: "Standard", imports: [])
 		return inferencer.infer(stdlib)
+		// swiftlint:enable force_try
 	}
 
 	public init(moduleName: String, imports: [InferenceContext]) throws {
