@@ -150,16 +150,12 @@ struct MemberExprAnalyzer: Analyzer {
 			}
 		}
 
-		guard let memberSymbol else {
-			return error(at: expr, "could not determine member of \(expr.description)", environment: context)
-		}
-
 		return try AnalyzedMemberExpr(
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
-			memberSymbol: memberSymbol,
+			memberSymbol: memberSymbol ?? .primitive("could not find member"),
 			analysisErrors: [],
 			analysisDefinition: analysisDefinition,
 			isMutable: false
