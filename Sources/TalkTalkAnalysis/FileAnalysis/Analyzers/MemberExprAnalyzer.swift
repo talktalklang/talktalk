@@ -106,7 +106,7 @@ struct MemberExprAnalyzer: Analyzer {
 
 		if memberSymbol == nil,
 		   case let .instantiatable(type) = receiver.typeAnalyzed,
-		   let member = type.member(named: expr.property, in: context.inferenceContext)
+			 let member = type.staticMember(named: expr.property, in: context.inferenceContext)
 		{
 			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
 				memberSymbol = Symbol(
@@ -149,6 +149,8 @@ struct MemberExprAnalyzer: Analyzer {
 				analysisDefinition = .init(location: member.location, type: member.inferenceType)
 			}
 		}
+
+
 
 		return try AnalyzedMemberExpr(
 			inferenceType: type ?? .any,
