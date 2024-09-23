@@ -34,13 +34,13 @@ struct ProtocolTests: CompilerTest {
 			.op(.data, line: 12, .data(.init(kind: .string, bytes: [Byte]("pat".utf8)))),
 			.op(.getStruct, line: 12, .struct(.struct("E2E", "Person"))),
 			.op(.call, line: 12),
-			.op(.getModuleFunction, line: 12, .moduleFunction(.function("E2E", "greet", ["Greetable()#0"]))),
+			.op(.getModuleFunction, line: 12, .moduleFunction(.function("E2E", "greet", ["IGreetable"]))),
 			.op(.call, line: 12),
 			.op(.pop, line: 12),
 			.op(.returnVoid, line: 0)
 		))
 
-		let fn = try #require(module.chunks[.function("E2E", "greet", ["Greetable()#0"])])
+		let fn = try #require(module.chunks[.function("E2E", "greet", ["IGreetable"])])
 		try #expect(fn.disassemble(in: module) == Instructions(
 			.op(.getLocal, line: 9, .local(.value("E2E", "greetable"))),
 			.op(.getProperty, line: 9, .getProperty(.property("E2E", nil, "name"), options: [])),
@@ -77,13 +77,13 @@ struct ProtocolTests: CompilerTest {
 			.op(.defClosure, line: 10, .closure(name: "greet", arity: 1, depth: 0)),
 			.op(.getStruct, line: 14, .struct(.struct("E2E", "Person"))),
 			.op(.call, line: 14),
-			.op(.getModuleFunction, line: 14, .moduleFunction(.function("E2E", "greet", ["Greetable()#0"]))),
+			.op(.getModuleFunction, line: 14, .moduleFunction(.function("E2E", "greet", ["IGreetable"]))),
 			.op(.call, line: 14),
 			.op(.pop, line: 14),
 			.op(.returnVoid, line: 0)
 		))
 
-		let fn = try #require(module.chunks[.function("E2E", "greet", ["Greetable()#0"])])
+		let fn = try #require(module.chunks[.function("E2E", "greet", ["IGreetable"])])
 		try #expect(fn.disassemble(in: module) == Instructions(
 			.op(.getLocal, line: 11, .local(.value("E2E", "greetable"))),
 			.op(.getProperty, line: 11, .getProperty(.method("E2E", nil, "name", []), options: .isMethod)),

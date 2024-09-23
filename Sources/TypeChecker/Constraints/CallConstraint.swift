@@ -94,12 +94,11 @@ struct CallConstraint: Constraint {
 		let childContext = context.childContext()
 
 		for (arg, param) in zip(args, params) {
+			let arg = context.applySubstitutions(to: arg)
+			let param = context.applySubstitutions(to: param)
+
 			if arg != param {
-				childContext.unify(
-					arg.asType(in: context),
-					param.asType(in: context),
-					location
-				)
+				childContext.unify(arg, param, location)
 			}
 		}
 

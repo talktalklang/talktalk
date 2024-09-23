@@ -32,7 +32,7 @@ public struct AnalyzedParam: Param, AnalyzedExpr, Typed {
 	}
 
 	public var debugDescription: String {
-		"\(name): \(inferenceType.description)"
+		"\(name): \(inferenceType.debugDescription)"
 	}
 }
 

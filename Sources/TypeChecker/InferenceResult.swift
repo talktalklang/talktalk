@@ -8,6 +8,15 @@
 public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	case scheme(Scheme), type(InferenceType)
 
+	public var mangled: String {
+		switch self {
+		case let .scheme(scheme):
+			"scheme(\(scheme.type.mangled))"
+		case let .type(inferenceType):
+			inferenceType.mangled
+		}
+	}
+
 	public var description: String {
 		switch self {
 		case let .scheme(scheme):

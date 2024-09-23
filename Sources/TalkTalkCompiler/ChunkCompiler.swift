@@ -451,7 +451,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map {
-					module.analysisModule.inferenceContext.lookup(syntax: $0)?.description ?? "_"
+					module.analysisModule.inferenceContext.lookup(syntax: $0)?.mangled ?? "_"
 				})
 
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
@@ -874,7 +874,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		let symbol = Symbol.method(module.name, type, declName, decl.params.params.map {
-			module.analysisModule.inferenceContext.lookup(syntax: $0)?.description ?? "_"
+			module.analysisModule.inferenceContext.lookup(syntax: $0)?.mangled ?? "_"
 		})
 
 		let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)

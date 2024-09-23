@@ -325,7 +325,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			symbol: context.symbolGenerator.method(
 				lexicalScope.type.name,
 				"init",
-				parameters: paramsAnalyzed.paramsAnalyzed.map(\.inferenceType.description),
+				parameters: paramsAnalyzed.paramsAnalyzed.map(\.inferenceType.mangled),
 				source: .internal
 			),
 			inferenceType: context.inferenceContext.lookup(syntax: expr) ?? .any,
@@ -667,7 +667,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				{
 					analysisEnumType.methods[name] = Method(
 						name: name,
-						symbol: context.symbolGenerator.method(enumType.name, name, parameters: params.map(\.description), source: .internal),
+						symbol: context.symbolGenerator.method(enumType.name, name, parameters: params.map(\.mangled), source: .internal),
 						params: params.map { context.inferenceContext.apply($0) },
 						inferenceType: .function(params, returns),
 						location: decl.location,

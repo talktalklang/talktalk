@@ -13,6 +13,14 @@ struct MemberConstraint: Constraint {
 	let type: InferenceResult
 	var isRetry: Bool
 
+	init(receiver: InferenceResult, name: String, type: InferenceResult, isRetry: Bool, location: SourceLocation) {
+		self.receiver = receiver
+		self.name = name
+		self.type = type
+		self.isRetry = isRetry
+		self.location = location
+	}
+
 	func result(in context: InferenceContext) -> String {
 		let receiver =
 			receiver.asType(in: context)
@@ -93,7 +101,7 @@ struct MemberConstraint: Constraint {
 				)
 			}
 
-			if case let .type(.instantiatable(structType)) = member {
+			if case let .instantiatable(structType) = context.applySubstitutions(to: member) {
 				member = .type(.instance(structType.instantiate(with: [:], in: context)))
 			}
 

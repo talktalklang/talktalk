@@ -65,7 +65,7 @@ struct MemberExprAnalyzer: Analyzer {
 			if case let .function(params, _) = type {
 				memberSymbol = Symbol(
 					module: instance.type.context.moduleName,
-					kind: .method(nil, expr.property, params.map(\.description))
+					kind: .method(nil, expr.property, params.map(\.mangled))
 				)
 			} else {
 				memberSymbol = Symbol(
@@ -88,7 +88,7 @@ struct MemberExprAnalyzer: Analyzer {
 			if case let .function(params, _) = member {
 				memberSymbol = Symbol(
 					module: instance.type.context.moduleName,
-					kind: .method(instance.type.name, expr.property, params.map(\.description))
+					kind: .method(instance.type.name, expr.property, params.map(\.mangled))
 				)
 			} else {
 				memberSymbol = Symbol(
@@ -111,7 +111,7 @@ struct MemberExprAnalyzer: Analyzer {
 			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
 				memberSymbol = Symbol(
 					module: type.context.moduleName,
-					kind: .method(type.name, expr.property, params.map(\.description))
+					kind: .method(type.name, expr.property, params.map(\.mangled))
 				)
 			} else {
 				memberSymbol = Symbol(
@@ -134,7 +134,7 @@ struct MemberExprAnalyzer: Analyzer {
 			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
 				memberSymbol = Symbol(
 					module: enumCase.type.context.moduleName,
-					kind: .method(enumCase.type.name, expr.property, params.map(\.description))
+					kind: .method(enumCase.type.name, expr.property, params.map(\.mangled))
 				)
 			} else {
 				memberSymbol = Symbol(

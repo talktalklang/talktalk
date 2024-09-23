@@ -250,7 +250,7 @@ struct InferenceVisitor: Visitor {
 			case let .type(.typeVar(typeVar)):
 				type = .typeVar(typeVar)
 			case let .type(.placeholder(placeholder)):
-				type = .placeholder(placeholder)
+				type = .instancePlaceholder(placeholder)
 			default:
 				throw InferencerError.cannotInfer("cannot use \(found) as type expression")
 			}
@@ -412,6 +412,10 @@ struct InferenceVisitor: Visitor {
 	func visit(_ expr: DefExprSyntax, _ context: InferenceContext) throws {
 		try expr.receiver.accept(self, context)
 		try expr.value.accept(self, context)
+
+		if case .type(.placeholder(.new("Array", 6))) = try context.get(expr.value) {
+			print()
+		}
 
 		try context.constraints.add(
 			.equality(context.get(expr.receiver), context.get(expr.value), at: expr.location)
@@ -904,10 +908,10 @@ struct InferenceVisitor: Visitor {
 		}
 
 		context.constraints.add(
-			EqualityConstraint(
-				lhs: .type(.instantiatable(.protocol(protocolType))),
-				rhs: protocolTypeVar,
-				location: expr.location
+			.equality(
+				.type(.instantiatable(.protocol(protocolType))),
+				protocolTypeVar,
+				at: expr.location
 			)
 		)
 

@@ -22,13 +22,13 @@ struct FuncExprAnalyzer: Analyzer {
 			context.symbolGenerator.method(
 				lexicalScope.type.name,
 				expr.autoname,
-				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
+				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.mangled ?? "_" },
 				source: .internal
 			)
 		} else {
 			context.symbolGenerator.function(
 				expr.autoname,
-				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.description ?? "_" },
+				parameters: expr.params.params.map { context.inferenceContext.lookup(syntax: $0)?.mangled ?? "_" },
 				source: .internal
 			)
 		}

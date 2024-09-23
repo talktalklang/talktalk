@@ -26,6 +26,9 @@ public indirect enum InferenceType {
 	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)
 
+	// When we expect an instance of a type but can't establish one yet
+	case instancePlaceholder(TypeVariable)
+
 	// Errors
 	case error(InferenceError)
 

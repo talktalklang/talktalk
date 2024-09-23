@@ -58,7 +58,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 		if attachedTypes.isEmpty {
 			"\(name)"
 		} else {
-			"\(name)(\(attachedTypes.map(\.description).joined(separator: ", ")))"
+			"\(name)(\(attachedTypes.map(\.mangled).joined(separator: ", ")))"
 		}
 	}
 }

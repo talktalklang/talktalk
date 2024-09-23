@@ -55,7 +55,7 @@ struct StructDeclAnalyzer: Analyzer {
 			let symbol = context.symbolGenerator.method(
 				structType.name,
 				name,
-				parameters: params.map(\.description),
+				parameters: params.map(\.mangled),
 				source: .internal
 			)
 
@@ -80,7 +80,7 @@ struct StructDeclAnalyzer: Analyzer {
 			let symbol = context.symbolGenerator.method(
 				structType.name,
 				name,
-				parameters: params.map(\.description),
+				parameters: params.map(\.mangled),
 				source: .internal
 			)
 
@@ -104,7 +104,7 @@ struct StructDeclAnalyzer: Analyzer {
 					symbol: context.symbolGenerator.method(
 						context.moduleName,
 						structType.name,
-						parameters: structType.properties.keys.map(\.description),
+						parameters: structType.properties.values.map(\.inferenceType.mangled),
 						source: .internal
 					),
 					params: structType.properties.values.map(\.inferenceType),

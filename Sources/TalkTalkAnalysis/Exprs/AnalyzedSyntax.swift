@@ -74,9 +74,9 @@ public extension AnalyzedSyntax {
 
 	var debugDescription: String {
 		if analysisErrors.isEmpty {
-			"\(Self.self)(ln: \(location.line), type: \(inferenceType.description))"
+			"\(Self.self)(ln: \(location.line), type: \(inferenceType.debugDescription))"
 		} else {
-			"\(Self.self)(lns: \(location.line), type: \(inferenceType.description), errors: \(analysisErrors))"
+			"\(Self.self)(lns: \(location.line), type: \(inferenceType.debugDescription), errors: \(analysisErrors))"
 		}
 	}
 }

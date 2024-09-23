@@ -178,6 +178,10 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return .error(.init(kind: .undefinedVariable(typeVariable.name ?? "<none>"), location: syntax.location))
 		}
 
+		if case let .instancePlaceholder(typeVariable) = result {
+			return .error(.init(kind: .undefinedVariable(typeVariable.name ?? "<none>"), location: syntax.location))
+		}
+
 		return result
 	}
 
@@ -540,6 +544,19 @@ public class InferenceContext: CustomDebugStringConvertible {
 					}
 				)
 			)
+		case let .instancePlaceholder(typeVariable):
+			// Reach down recursively as long as we can to try to find the result
+			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
+				return applySubstitutions(to: .typeVar(child), with: substitutions, count: count + 1)
+			}
+
+			let type = substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""]?.asType(in: self) ?? type
+
+			if case let .instantiatable(instantiatableType) = type {
+				return .instance(instantiatableType.instantiate(with: substitutions, in: self))
+			}
+
+			return type
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if case let .typeVar(child) = substitutions[typeVariable], count < 100 {
@@ -549,7 +566,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""]?.asType(in: self) ?? type
 		case let .function(params, returning):
 			return .function(
-				params.map { .type(applySubstitutions(to: $0, with: substitutions)) },
+				params.map {
+					let applied = applySubstitutions(to: $0, with: substitutions)
+
+					if case let .instantiatable(instantiatableType) = applied {
+						return .type(.instance(instantiatableType.instantiate(with: substitutions, in: self)))
+					}
+
+					return .type(applied)
+				},
 				.type(applySubstitutions(to: returning, with: substitutions))
 			)
 		case let .instance(instance):
@@ -746,9 +771,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-//		if verbose {
+		if verbose {
 			let context = context ?? self
 			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
-//		}
+		}
 	}
 }

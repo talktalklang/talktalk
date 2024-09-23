@@ -12,6 +12,9 @@ struct EqualityConstraint: Constraint {
 	let rhs: InferenceResult
 	let location: SourceLocation
 
+	let file: String
+	let line: UInt32
+
 	func result(in context: InferenceContext) -> String {
 		let lhs = context.applySubstitutions(to: lhs.asType(in: context))
 		let rhs = context.applySubstitutions(to: rhs.asType(in: context))
@@ -42,6 +45,10 @@ struct EqualityConstraint: Constraint {
 			return .ok
 		}
 
+		if case .instantiatable = rhs {
+			print()
+		}
+
 		context.unify(lhs, rhs, location)
 
 		return .ok
@@ -52,16 +59,20 @@ extension Constraint where Self == EqualityConstraint {
 	static func equality(
 		_ lhs: InferenceResult,
 		_ rhs: InferenceResult,
-		at location: SourceLocation
+		at location: SourceLocation,
+		file: String = #file,
+		line: UInt32 = #line
 	) -> EqualityConstraint {
-		EqualityConstraint(lhs: lhs, rhs: rhs, location: location)
+		return EqualityConstraint(lhs: lhs, rhs: rhs, location: location, file: file, line: line)
 	}
 
 	static func equality(
 		_ lhs: InferenceType,
 		_ rhs: InferenceType,
-		at location: SourceLocation
+		at location: SourceLocation,
+		file: String = #file,
+		line: UInt32 = #line
 	) -> EqualityConstraint {
-		EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
+		return EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location, file: file, line: line)
 	}
 }
