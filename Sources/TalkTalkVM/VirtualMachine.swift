@@ -728,7 +728,7 @@ public struct VirtualMachine {
 	}
 
 	private mutating func bind(enum enumCase: EnumCase) throws {
-		try try stack.push(
+		try stack.push(
 			.boundEnumCase(
 				BoundEnumCase(
 					type: enumCase.type,
