@@ -4,7 +4,7 @@ protocol Greetable {
 
 struct Person: Greetable {
 	func greet(name) {
-		"Hello, \(name)!"
+		return "Hello, \(name)!"
 	}
 }
 

@@ -99,15 +99,15 @@ public extension AnalysisModule {
 				continue
 			}
 
-			for prop in instance.type.properties {
-				if prop.key.starts(with: memberExpr.property) {
-					result.insert(.init(value: prop.key, kind: .property))
+			for prop in instance.type.properties.keys {
+				if prop.starts(with: memberExpr.property), !prop.starts(with: "_") {
+					result.insert(.init(value: prop, kind: .property))
 				}
 			}
 
-			for prop in instance.type.methods {
-				if prop.key.starts(with: memberExpr.property), prop.key != "init" {
-					result.insert(.init(value: prop.key, kind: .method))
+			for prop in instance.type.methods.keys {
+				if prop.starts(with: memberExpr.property), prop != "init", !prop.starts(with: "_") {
+					result.insert(.init(value: prop, kind: .method))
 				}
 			}
 		}
