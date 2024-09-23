@@ -8,7 +8,7 @@
 extension InferenceType: CustomDebugStringConvertible {
 	public var mangled: String {
 		switch self {
-		case .typeVar(let typeVariable):
+		case .typeVar:
 			"T"
 		case .base(let primitive):
 			primitive.description
@@ -26,7 +26,7 @@ extension InferenceType: CustomDebugStringConvertible {
 			"ERROR: \(inferenceError.description)"
 		case .kind(let inferenceType):
 			"K(\(inferenceType.mangled)"
-		case .selfVar(let inferenceType):
+		case .selfVar:
 			"self"
 		case .enumCase(let enumCase):
 			enumCase.name
