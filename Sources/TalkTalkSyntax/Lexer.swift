@@ -81,7 +81,7 @@ public struct Lexer {
 
 	// Comment handling (disabled by default)
 	var preserveComments: Bool
-	var comments: [Token] = []
+	public var comments: [Token] = []
 
 	public init(_ source: SourceFile, preserveComments: Bool = false) {
 		self.path = source.path

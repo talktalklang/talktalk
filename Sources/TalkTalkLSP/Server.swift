@@ -14,7 +14,7 @@ import TalkTalkDriver
 import TalkTalkSyntax
 import TypeChecker
 
-public actor Server {
+public struct Server {
 	// We read json, we write json
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
@@ -23,8 +23,6 @@ public actor Server {
 	let stdout = FileHandle.standardOutput
 
 	// Keep track of requests in progress
-	var queue: [Request] = []
-	var worker: Task<Void, Never>?
 	var cancelled: Set<RequestID> = []
 
 	// Keep track of our files
@@ -33,7 +31,7 @@ public actor Server {
 	var analyzer: ModuleAnalyzer
 	var analysis: AnalysisModule
 
-	init() async throws {
+	init() throws {
 		Log.info("Compiled stdlib")
 
 		self.analyzer = try ModuleAnalyzer(
@@ -50,19 +48,15 @@ public actor Server {
 		analysis.analyzedFiles.map(\.path)
 	}
 
-	func completions(for request: Completion.Request) -> [Completion.Item] {
-		analysis.completions(for: request).sorted()
-	}
-
 	func getSource(_ uri: String) -> SourceDocument? {
 		sources[uri]
 	}
 
-	func setSource(uri: String, to document: SourceDocument) async {
+	mutating func setSource(uri: String, to document: SourceDocument) {
 		sources[uri] = document
 
 		do {
-			analysis = try await analyzer.addFile(
+			analysis = try analyzer.addFile(
 				ParsedSourceFile(
 					path: document.uri,
 					syntax: Parser.parse(
@@ -76,43 +70,18 @@ public actor Server {
 		}
 	}
 
-	nonisolated func enqueue(_ request: Request) {
-		Task {
-			await _enqueue(request)
-			await work()
+	mutating func enqueue(_ request: Request) {
+		if let id = request.id, cancelled.contains(id) {
+			Log.info("skipping canceled job (\(id))", color: .default)
+			cancelled.remove(id)
+			return
 		}
+
+		self.perform(request)
 	}
 
-	func work() {
-		if worker != nil { return }
-
-		worker = Task {
-			while !queue.isEmpty {
-				await Task.yield()
-
-				Log.info("queue depth is \(queue.count), (\(cancelled.count) cancelled)")
-				let next = queue.removeFirst()
-
-				if let id = next.id, cancelled.contains(id) {
-					Log.info("skipping canceled job (\(id))")
-					cancelled.remove(id)
-					continue
-				}
-
-				await self.perform(next)
-			}
-
-			self.worker = nil
-			Log.info("done processing jobs")
-		}
-	}
-
-	func _enqueue(_ request: Request) {
-		queue.append(request)
-	}
-
-	func diagnostics(for uri: String? = nil) async throws -> [Diagnostic] {
-		await analyze()
+	mutating func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
+		analyze()
 
 		let errorResult = try analysis.collectErrors(for: uri)
 
@@ -123,8 +92,8 @@ public actor Server {
 		}
 	}
 
-	func perform(_ request: Request) async {
-		Log.info("-> \(request.method)")
+	mutating func perform(_ request: Request) {
+		Log.info("-> \(request.method)", color: .magenta)
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -139,19 +108,119 @@ public actor Server {
 			}
 			cancelled.insert(params.id)
 		case .textDocumentDefinition:
-			await TextDocumentDefinition(request: request).handle(self)
+			guard let params = request.params as? TextDocumentDefinitionRequest else {
+				Log.error("Could not parse TextDocumentDefinitionRequest params")
+				return
+			}
+
+			Log.info("files: \(analyzedFilePaths)")
+
+			if let match = findDefinition(
+				from: params.position,
+				path: params.textDocument.uri
+			) {
+				respond(
+					to: request.id,
+					with: Location(
+						uri: match.location.path,
+						range: Range(
+							start: Position(line: match.location.start.line, character: match.location.start.column),
+							end: Position(line: match.location.start.line, character: match.location.start.column + match.location.start.length)
+						)
+					)
+				)
+			}
 		case .textDocumentDidOpen:
-			await TextDocumentDidOpen(request: request).handle(self)
+			guard let params = request.params as? TextDocumentDidOpenRequest else {
+				Log.error("Could not parse TextDocumentDidOpenRequest params")
+				return
+			}
+
+			setSource(uri: params.textDocument.uri, to: .init(textDocument: params.textDocument))
 		case .textDocumentDidChange:
-			await TextDocumentDidChange(request: request).handle(self)
+			guard let params = request.params as? TextDocumentDidChangeRequest else {
+				Log.error("Could not parse TextDocumentDidChangeRequest params")
+				return
+			}
+
+			var source = if let source = sources[params.textDocument.uri] {
+				source
+			} else {
+				SourceDocument(
+					version: params.textDocument.version,
+					uri: params.textDocument.uri,
+					text: params.contentChanges[0].text
+				)
+			}
+
+			source.update(text: params.contentChanges[0].text)
+			setSource(uri: params.textDocument.uri, to: source)
+			analyze()
+
+			sources[params.textDocument.uri] = source
 		case .textDocumentCompletion:
-			await TextDocumentCompletion(request: request).handle(self)
+			guard let params = request.params as? TextDocumentCompletionRequest else {
+				Log.error("Could not parse text document completion request params")
+				return
+			}
+
+			Log.info("handling completion request at \(params.position), trigger: \(params.context)", color: .magenta)
+
+			let trigger: Completion.Trigger? = if let char = params.context.triggerCharacter {
+				.character(char)
+			} else {
+				nil
+			}
+
+			let completionRequest = Completion.Request(
+				documentURI: params.textDocument.uri,
+				line: params.position.line,
+				column: params.position.character,
+				trigger: trigger
+			)
+
+			Log.info("completion request: \(completionRequest)", color: .magenta)
+
+			let completions = analysis.completions(for: completionRequest)//.sorted()
+
+			Log.info("! got completions: \(completions)", color: .magenta)
+
+			let completionList = CompletionList(isIncomplete: true, items: completions.map {
+				Log.info("we've got a completion: \($0)", color: .magenta)
+
+				let kind: CompletionItemKind = switch $0.kind {
+				case .function: .function
+				case .method: .method
+				case .property: .property
+				case .type: .struct
+				case .variable: .variable
+				}
+
+				return .init(label: $0.value, kind: kind)
+			})
+
+			respond(to: request.id, with: completionList)
+			Log.info("<- Finished completion request", color: .magenta)
 		case .textDocumentFormatting:
-			await TextDocumentFormatting(request: request).handle(self)
+			respond(to: request.id, with: TextDocumentFormatting(request: request).format(sources))
 		case .textDocumentDiagnostic:
-			await TextDocumentDiagnostic(request: request).handle(self)
+			guard let params = request.params as? TextDocumentDiagnosticRequest else {
+				Log.error("Could not parse TextDocumentDiagnosticRequest params")
+				return
+			}
+
+			Log.info("requesting diagnostics for \(params.textDocument.uri)")
+
+			do {
+				let diagnostics = try diagnostics(for: params.textDocument.uri)
+				Log.info("Diagnostic count: \(diagnostics.count)")
+				let report = FullDocumentDiagnosticReport(items: diagnostics)
+				respond(to: request.id, with: report)
+			} catch {
+				Log.error("Error generating diagnostics: \(error)")
+			}
 		case .textDocumentSemanticTokensFull:
-			await TextDocumentSemanticTokensFull(request: request).handle(self)
+			respond(to: request.id, with: TextDocumentSemanticTokensFull(request: request).handle(sources))
 		case .workspaceSemanticTokensRefresh:
 			()
 		case .textDocumentPublishDiagnostics:
@@ -162,7 +231,7 @@ public actor Server {
 		}
 	}
 
-	func analyze() async {
+	mutating func analyze() {
 		do {
 			Log.info("Compiled stdlib")
 
@@ -179,7 +248,7 @@ public actor Server {
 		}
 	}
 
-	func findDefinition(from position: Position, path: String) -> Definition? {
+	mutating func findDefinition(from position: Position, path: String) -> Definition? {
 		do {
 			analysis = try analyzer.analyze()
 		} catch {

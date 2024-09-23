@@ -8,8 +8,8 @@
 import Foundation
 
 public enum Log {
-	public static func info(_ message: String) {
-		log("[info] \(message, color: .cyan)")
+	public static func info(_ message: String, color: ASCIIColor = .cyan) {
+		log("[info] \(message, color: color)")
 	}
 
 	public static func error(_ message: String) {
@@ -39,7 +39,7 @@ public enum Log {
 	}
 }
 
-enum ASCIIColor: String {
+public enum ASCIIColor: String {
 	case black = "\u{001B}[0;30m"
 	case red = "\u{001B}[0;31m"
 	case green = "\u{001B}[0;32m"

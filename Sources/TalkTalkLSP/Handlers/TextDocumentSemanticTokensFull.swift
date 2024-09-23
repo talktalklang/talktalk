@@ -13,50 +13,40 @@ import TalkTalkCore
 struct TextDocumentSemanticTokensFull {
 	var request: Request
 
-	func handle(_ server: Server) async {
+	func handle(_ sources: [String: SourceDocument]) -> TextDocumentSemanticTokens? {
 		guard let params = request.params as? TextDocumentSemanticTokensFullRequest else {
 			Log.error("Could not parse TextDocumentSemanticTokensFullRequest params")
-			return
-		}
-
-		guard let source = await server.sources[params.textDocument.uri] else {
-			Log.error("no source for \(params.textDocument.uri)")
-			return
+			return nil
 		}
 
 		var tokens: [RawSemanticToken]
+		var text = params.textDocument.text
+
+		if text == nil {
+			text = sources[params.textDocument.uri]?.text ?? ""
+		}
+
+		guard let text else {
+			Log.error("could not find text to highlight")
+			return nil
+		}
 
 		do {
 			// TODO: use module environment
-			let parsed = try await Parser.parse(SourceFile(path: params.textDocument.uri, text: source.text), allowErrors: true)
+			let lexer = Lexer(SourceFile(path: params.textDocument.uri, text: text), preserveComments: true)
+			var parser = Parser(lexer)
+			let parsed = parser.parse()
 			let visitor = SemanticTokensVisitor()
 			tokens = try parsed.flatMap { parsed in try parsed.accept(visitor, .topLevel) }
-			Log.info("Parsed \(tokens.count) tokens")
+			tokens.append(contentsOf: parser.comments.map { visitor.make(.comment, from: $0) })
 		} catch {
 			Log.error("error parsing semantic tokens: \(error)")
-			return
+			return nil
 		}
 
-		// Add in comment tokens since we lost those during parsing
-		for (line, text) in await source.text.components(separatedBy: .newlines).enumerated() {
-			if let index = text.firstIndex(of: "/"),
-			   text[text.index(index, offsetBy: 1)] == "/"
-			{
-				tokens.append(.init(
-					lexeme: "<comment>",
-					line: line,
-					position: index.utf16Offset(in: text),
-					startChar: index.utf16Offset(in: text),
-					length: text.count - index.utf16Offset(in: text),
-					tokenType: .comment,
-					modifiers: []
-				))
-			}
-		}
 
 		let relativeTokens = RelativeSemanticToken.generate(from: tokens)
-		let response = TextDocumentSemanticTokens(data: Array(relativeTokens.map(\.serialized).joined()))
-		await server.respond(to: request.id, with: response)
+		return TextDocumentSemanticTokens(data: Array(relativeTokens.map(\.serialized).joined()))
 	}
 }
 

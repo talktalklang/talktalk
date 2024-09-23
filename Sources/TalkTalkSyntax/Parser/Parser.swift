@@ -68,6 +68,10 @@ public struct Parser {
 		self.errors = lexer.errors
 	}
 
+	public var comments: [Token] {
+		lexer.comments
+	}
+
 	mutating func nextID() -> SyntaxID {
 		defer { lastID += 1 }
 		return SyntaxID(id: lastID, path: lexer.path)

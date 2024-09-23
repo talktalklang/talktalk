@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/17/24.
 //
 
+import TalkTalkCore
+
 public struct Completion: Sendable {
 	public enum Trigger: Sendable {
 		case character(String)

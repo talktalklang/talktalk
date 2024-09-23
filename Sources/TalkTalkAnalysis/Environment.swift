@@ -149,12 +149,6 @@ public class Environment {
 
 	public func allBindings() -> [Binding] {
 		var result = Array(locals.values)
-		var parent = parent
-
-		while let nextParent = parent {
-			result.append(contentsOf: nextParent.allBindings())
-			parent = nextParent
-		}
 
 		result.append(contentsOf: inferenceContext.namedVariables.compactMap {
 			Binding(name: $0.key, location: [.synthetic(.identifier)], type: $0.value.asType(in: inferenceContext))

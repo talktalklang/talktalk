@@ -1,6 +1,7 @@
 import Foundation
+import TalkTalkCore
 
-actor LSPRequestParser {
+struct LSPRequestParser {
 	enum State {
 		case contentLength, length, split, body(Int)
 	}
@@ -21,7 +22,7 @@ actor LSPRequestParser {
 		self.server = server
 	}
 
-	func parse(data: Data) async {
+	mutating func parse(data: Data) async {
 		buffer.append(contentsOf: data)
 
 		while let byte = await next() {
@@ -38,7 +39,7 @@ actor LSPRequestParser {
 		}
 	}
 
-	func contentLength(byte: UInt8) {
+	mutating func contentLength(byte: UInt8) {
 		if current == contentLengthArray.count + 1 {
 			// We're done parsing the content length part, move on to the length part
 			state = .length
@@ -53,7 +54,7 @@ actor LSPRequestParser {
 		}
 	}
 
-	func length(byte: UInt8) {
+	mutating func length(byte: UInt8) {
 		if Character(UnicodeScalar(byte)).isNumber {
 			currentLength.append(byte)
 		} else if byte == cr {
@@ -65,7 +66,7 @@ actor LSPRequestParser {
 	}
 
 	// We need to listen for \n\r\n because the first \r was handled in length
-	func split(byte: UInt8) async {
+	mutating func split(byte: UInt8) async {
 		if current == 3 {
 			// swiftlint:disable force_unwrapping
 			let contentLength = Int(String(data: Data(currentLength), encoding: .ascii)!)!
@@ -90,7 +91,7 @@ actor LSPRequestParser {
 		}
 	}
 
-	func body(byte: UInt8, contentLength: Int) async {
+	mutating func body(byte: UInt8, contentLength: Int) async {
 		if currentBody.count == contentLength {
 			await complete()
 			current = 1
@@ -99,7 +100,7 @@ actor LSPRequestParser {
 		}
 	}
 
-	func next() async -> UInt8? {
+	mutating func next() async -> UInt8? {
 		if buffer.isEmpty {
 			await complete()
 			return nil
@@ -112,7 +113,7 @@ actor LSPRequestParser {
 		return buffer.removeFirst()
 	}
 
-	func complete() async {
+	mutating func complete() async {
 		guard case let .body(contentLength) = state, currentBody.count == contentLength else {
 			return
 		}
@@ -126,8 +127,7 @@ actor LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			Log.info("Finished parsing request: \(request.method)")
-			server.enqueue(request)
+			self.server.enqueue(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")
@@ -157,7 +157,7 @@ struct Handler {
 	mutating func handle(data: Data) async {
 		if data.isEmpty {
 			emptyResponseCount += 1
-			Log.info("incrementing empty response count. now: \(emptyResponseCount)")
+			Log.info("Incrementing empty response count. now: \(emptyResponseCount)")
 
 			if emptyResponseCount > 10 {
 				Log.error("got 10 empty responses, shutting down")

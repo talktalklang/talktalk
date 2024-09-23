@@ -6,17 +6,17 @@
 //
 
 import Foundation
+import TalkTalkCore
 
-public actor LSP {
+public struct LSP {
 	var server: Server
-	var serverTask: Task<Void, Never>?
 
 	public init() async throws {
-		self.server = try await Server()
+		self.server = try Server()
 	}
 
 	public func start() async {
-		Log.info("starting talktalk lsp")
+		Log.info("Starting talktalk LSP")
 
 		let file = FileHandle.standardInput
 		var handler = Handler(server: server)

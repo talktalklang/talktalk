@@ -7,6 +7,7 @@
 
 import ArgumentParser
 import TalkTalkLSP
+import TalkTalkCore
 
 struct LSP: TalkTalkCommand {
 	static let configuration = CommandConfiguration(
@@ -14,7 +15,6 @@ struct LSP: TalkTalkCommand {
 	)
 
 	func run() async throws {
-		Log.info("talk lsp called")
 		try await TalkTalkLSP.LSP().start()
 	}
 }
