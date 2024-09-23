@@ -33,7 +33,5 @@ struct PatternCompiler {
 		}
 	}
 
-	func compileVarLet(syntax: any AnalyzedVarLetDecl) throws {
-		
-	}
+	func compileVarLet(syntax _: any AnalyzedVarLetDecl) throws {}
 }

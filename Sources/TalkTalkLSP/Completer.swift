@@ -6,9 +6,9 @@
 //
 
 import TalkTalkAnalysis
+import TalkTalkCore
 import TalkTalkSyntax
 import TypeChecker
-import TalkTalkCore
 
 actor Completer {
 	var source: SourceFile

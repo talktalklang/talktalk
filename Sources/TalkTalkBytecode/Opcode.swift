@@ -85,7 +85,7 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 
 	     // For operations that should have their own scope but allow returning from
 	     // their parent, like match statement bodies
-			 beginScope,
+	     beginScope,
 	     endInline,
 
 	     // Enum stuff

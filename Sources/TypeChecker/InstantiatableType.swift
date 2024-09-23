@@ -13,77 +13,77 @@ public enum InstantiatableType: Hashable {
 
 	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType.apply(substitutions: substitutions, in: context)
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType.apply(substitutions: substitutions, in: context)
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType.apply(substitutions: substitutions, in: context)
 		}
 	}
 
 	public var context: InferenceContext {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType.context
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType.context
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType.context
 		}
 	}
 
 	public var typeContext: TypeContext {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType.typeContext
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType.typeContext
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType.typeContext
 		}
 	}
 
 	public func extract() -> any Instantiatable {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType
 		}
 	}
 
-	public func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InstanceType {
+	public func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InstanceType {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType.instantiate(with: substitutions, in: structType.context)
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType.instantiate(with: substitutions, in: enumType.context)
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType.instantiate(with: substitutions, in: protocolType.context)
 		}
 	}
 
 	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType.member(named: name, in: context)
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType.member(named: name, in: context)
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType.member(named: name, in: context)
 		}
 	}
 
 	public var name: String {
 		switch self {
-		case .struct(let structType):
+		case let .struct(structType):
 			structType.name
-		case .enumType(let enumType):
+		case let .enumType(enumType):
 			enumType.name
-		case .protocol(let protocolType):
+		case let .protocol(protocolType):
 			protocolType.name
 		}
 	}

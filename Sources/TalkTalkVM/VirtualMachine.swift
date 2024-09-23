@@ -136,7 +136,7 @@ public struct VirtualMachine {
 						} else {
 							var line = ""
 							if let url = URL(string: "file://" + i.path),
-								 let filelines = try? String(contentsOf: url).components(separatedBy: .newlines)
+							   let filelines = try? String(contentsOf: url).components(separatedBy: .newlines)
 							{
 								line = filelines[Int(i.line)] + " "
 							}
@@ -262,7 +262,7 @@ public struct VirtualMachine {
 
 				func bind(_ pattern: Value, to target: Value) {
 					if case let .boundEnumCase(pattern) = pattern,
-						 case let .boundEnumCase(target) = target
+					   case let .boundEnumCase(target) = target
 					{
 						for (i, value) in pattern.values.enumerated() {
 							switch value {
@@ -325,7 +325,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot subtract \(lhs) & \(rhs) operands")
 				}
@@ -335,7 +335,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot divide \(lhs) & \(rhs) operands")
 				}
@@ -350,7 +350,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot multiply \(lhs) & \(rhs) operands")
 				}
@@ -360,7 +360,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -370,7 +370,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -380,7 +380,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -390,7 +390,7 @@ public struct VirtualMachine {
 				let rhs = try stack.pop()
 
 				guard let lhs = lhs.intValue,
-							let rhs = rhs.intValue
+				      let rhs = rhs.intValue
 				else {
 					return runtimeError("Cannot compare \(lhs) & \(rhs) operands")
 				}
@@ -608,8 +608,7 @@ public struct VirtualMachine {
 
 				// Set the property
 				receiver.fields[symbol] = propertyValue
-
-				// Put the updated instance back onto the stack
+			// Put the updated instance back onto the stack
 //				stack[stack.size - 1] = .instance(receiver)
 			case .jumpPlaceholder:
 				()

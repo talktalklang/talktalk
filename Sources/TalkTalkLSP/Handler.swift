@@ -127,7 +127,7 @@ struct LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			self.server.enqueue(request)
+			server.enqueue(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")

@@ -6,9 +6,9 @@
 //
 
 import TalkTalkAnalysis
+import TalkTalkCore
 import TalkTalkSyntax
 import TypeChecker
-import TalkTalkCore
 
 struct TextDocumentSemanticTokensFull {
 	var request: Request
@@ -43,7 +43,6 @@ struct TextDocumentSemanticTokensFull {
 			Log.error("error parsing semantic tokens: \(error)")
 			return nil
 		}
-
 
 		let relativeTokens = RelativeSemanticToken.generate(from: tokens)
 		return TextDocumentSemanticTokens(data: Array(relativeTokens.map(\.serialized).joined()))

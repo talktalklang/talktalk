@@ -16,8 +16,8 @@ public struct ModuleAnalyzer: Analyzer {
 	}
 
 	// swiftlint:disable force_try
-	nonisolated(unsafe) public static let stdlib: AnalysisModule = try! ModuleAnalyzer(
-	// swiftlint:enable force_try
+	public nonisolated(unsafe) static let stdlib: AnalysisModule = try! ModuleAnalyzer(
+		// swiftlint:enable force_try
 		name: "Standard",
 		files: Library.standard.files.map { try Parser.parseFile($0) },
 		moduleEnvironment: [:],

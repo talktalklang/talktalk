@@ -10,11 +10,11 @@ import Testing
 struct IteratorTests: CompilerTest {
 	@Test("Basic iterable") func iterable() throws {
 		let module = try compile(
-		"""
-		for i in [1, 2, 3, 4] {
-			print(i)
-		}
-		"""
+			"""
+			for i in [1, 2, 3, 4] {
+				print(i)
+			}
+			"""
 		)
 
 		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(

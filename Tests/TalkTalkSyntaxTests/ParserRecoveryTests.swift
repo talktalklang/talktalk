@@ -14,8 +14,8 @@ struct ParserRecoveryTests {
 			"""
 			var 123
 			print("hi")
-			"""
-			, allowErrors: true
+			""",
+			allowErrors: true
 		)[1]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self)
@@ -29,8 +29,8 @@ struct ParserRecoveryTests {
 			for a
 
 			print("hi")
-			"""
-			, allowErrors: true
+			""",
+			allowErrors: true
 		)[1]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self)

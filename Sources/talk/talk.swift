@@ -7,8 +7,8 @@
 
 import ArgumentParser
 import Foundation
-import TalkTalkSyntax
 import TalkTalkCore
+import TalkTalkSyntax
 
 enum ProgramInput {
 	case path(SourceFile), string(String), stdin
@@ -57,7 +57,7 @@ struct TalkCommand: TalkTalkCommand {
 			Interpret.self,
 			LSP.self,
 			Compile.self,
-			HTML.self
+			HTML.self,
 		]
 	)
 }

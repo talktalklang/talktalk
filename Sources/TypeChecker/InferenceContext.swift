@@ -208,9 +208,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	public func type(named name: String) -> InferenceType? {
 		switch lookupVariable(named: name) {
 		case let .type(.instantiatable(type)):
-			return .instantiatable(type)
+			.instantiatable(type)
 		default:
-			return nil
+			nil
 		}
 	}
 
@@ -513,7 +513,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		with substitutions: OrderedDictionary<TypeVariable, InferenceType>,
 		count: Int = 0
 	) -> InferenceType {
-		if substitutions.isEmpty && namedVariables.isEmpty {
+		if substitutions.isEmpty, namedVariables.isEmpty {
 			return type
 		}
 
@@ -741,8 +741,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 		if verbose {
-		let context = context ?? self
-		print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
+			let context = context ?? self
+			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
 		}
 	}
 }

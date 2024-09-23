@@ -9,30 +9,30 @@ import OrderedCollections
 public enum InstanceType {
 	public func equals(_ rhs: InstanceType) -> Bool {
 		switch (self, rhs) {
-		case (.struct(let l), .struct(let r)):
-			return l.type == r.type && l.substitutions.keys == r.substitutions.keys
-		case (.enumType(let l), .enumType(let r)):
-			return l.type == r.type && l.substitutions.keys == r.substitutions.keys
-		case (.protocol(let l), .protocol(let r)):
-			return l.type == r.type && l.substitutions.keys == r.substitutions.keys
+		case let (.struct(l), .struct(r)):
+			l.type == r.type && l.substitutions.keys == r.substitutions.keys
+		case let (.enumType(l), .enumType(r)):
+			l.type == r.type && l.substitutions.keys == r.substitutions.keys
+		case let (.protocol(l), .protocol(r)):
+			l.type == r.type && l.substitutions.keys == r.substitutions.keys
 		default:
-			return false
+			false
 		}
 	}
 
 	case `struct`(Instance<StructType>)
 	case `protocol`(Instance<ProtocolType>)
-	case `enumType`(Instance<EnumType>)
+	case enumType(Instance<EnumType>)
 
-	public static func synthesized<T: Instantiatable>(_ type: T) -> InstanceType {
+	public static func synthesized(_ type: some Instantiatable) -> InstanceType {
 		// swiftlint:disable force_cast
 		switch type {
 		case is StructType:
-			return .struct(.synthesized(type as! StructType))
+			.struct(.synthesized(type as! StructType))
 		case is ProtocolType:
-			return .protocol(.synthesized(type as! ProtocolType))
+			.protocol(.synthesized(type as! ProtocolType))
 		case is EnumType:
-			return .enumType(.synthesized(type as! EnumType))
+			.enumType(.synthesized(type as! EnumType))
 		default:
 			// swiftlint:disable fatal_error
 			fatalError("unable to synthesize instance type: \(type)")
@@ -43,68 +43,68 @@ public enum InstanceType {
 
 	func relatedType(named name: String) -> InferenceType? {
 		switch self {
-		case .struct(let instance):
-			return instance.relatedType(named: name)
-		case .protocol(let instance):
-			return instance.relatedType(named: name)
-		case .enumType(let instance):
-			return instance.relatedType(named: name)
+		case let .struct(instance):
+			instance.relatedType(named: name)
+		case let .protocol(instance):
+			instance.relatedType(named: name)
+		case let .enumType(instance):
+			instance.relatedType(named: name)
 		}
 	}
 
 	var substitutions: OrderedDictionary<TypeVariable, InferenceType> {
 		get {
 			switch self {
-			case .struct(let instance):
-				return instance.substitutions
-			case .protocol(let instance):
-				return instance.substitutions
-			case .enumType(let instance):
-				return instance.substitutions
+			case let .struct(instance):
+				instance.substitutions
+			case let .protocol(instance):
+				instance.substitutions
+			case let .enumType(instance):
+				instance.substitutions
 			}
 		}
 
 		set {
 			switch self {
-			case .struct(let instance):
+			case let .struct(instance):
 				instance.substitutions = newValue
-			case .protocol(let instance):
+			case let .protocol(instance):
 				instance.substitutions = newValue
-			case .enumType(let instance):
+			case let .enumType(instance):
 				instance.substitutions = newValue
 			}
 		}
 	}
 
-	func extract<T: Instantiatable>(_ type: T.Type) -> Instance<T>? {
+	func extract<T: Instantiatable>(_: T.Type) -> Instance<T>? {
 		switch self {
-		case .struct(let instance):
-			return instance as? Instance<T>
-		case .protocol(let instance):
-			return instance as? Instance<T>
-		case .enumType(let instance):
-			return instance as? Instance<T>
+		case let .struct(instance):
+			instance as? Instance<T>
+		case let .protocol(instance):
+			instance as? Instance<T>
+		case let .enumType(instance):
+			instance as? Instance<T>
 		}
 	}
 
 	public func member(named name: String, in context: InferenceContext) -> InferenceType? {
 		switch self {
-		case .struct(let instance):
-			return instance.member(named: name, in: context)
-		case .protocol(let instance):
-			return instance.member(named: name, in: context)
-		case .enumType(let instance):
-			return instance.member(named: name, in: context)
+		case let .struct(instance):
+			instance.member(named: name, in: context)
+		case let .protocol(instance):
+			instance.member(named: name, in: context)
+		case let .enumType(instance):
+			instance.member(named: name, in: context)
 		}
 	}
 
 	public var type: any Instantiatable {
 		switch self {
-		case .struct(let instance):
+		case let .struct(instance):
 			instance.type
-		case .protocol(let instance):
+		case let .protocol(instance):
 			instance.type
-		case .enumType(let instance):
+		case let .enumType(instance):
 			instance.type
 		}
 	}
@@ -113,11 +113,11 @@ public enum InstanceType {
 extension InstanceType: CustomStringConvertible {
 	public var description: String {
 		switch self {
-		case .struct(let instance):
+		case let .struct(instance):
 			instance.description
-		case .protocol(let instance):
+		case let .protocol(instance):
 			instance.description
-		case .enumType(let instance):
+		case let .enumType(instance):
 			instance.description
 		}
 	}

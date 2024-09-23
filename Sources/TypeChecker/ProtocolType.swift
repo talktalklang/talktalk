@@ -39,7 +39,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 		.instantiatable(.protocol(self))
 	}
 
-	public func requirements(in context: InferenceContext) -> Set<ConformanceRequirement> {
+	public func requirements(in _: InferenceContext) -> Set<ConformanceRequirement> {
 		var result: Set<ConformanceRequirement> = []
 
 		for (name, type) in typeContext.methods {
@@ -61,7 +61,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 		return nil
 	}
 
-	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 //			return .type(context.applySubstitutions(to: member.asType(in: context)))
 			return member

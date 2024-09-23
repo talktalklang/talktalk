@@ -102,7 +102,7 @@ public struct BuiltinFunction {
 			type: .function(
 				[
 					.type(.any),
-					.type(.kind(.typeVar(typeVar)))
+					.type(.kind(.typeVar(typeVar))),
 				],
 				.type(.typeVar(typeVar))
 			)

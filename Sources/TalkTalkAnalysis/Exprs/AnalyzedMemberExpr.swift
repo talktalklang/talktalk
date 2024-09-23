@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalkSyntax
 import TalkTalkBytecode
+import TalkTalkSyntax
 import TypeChecker
 
 public struct AnalyzedMemberExpr: AnalyzedExpr, MemberExpr {

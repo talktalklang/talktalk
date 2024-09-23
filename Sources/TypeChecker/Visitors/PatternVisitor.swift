@@ -35,7 +35,7 @@ public enum PatternError: Error, CustomStringConvertible, LocalizedError {
 
 	public var errorDescription: String? {
 		switch self {
-		case .invalid(let string):
+		case let .invalid(string):
 			string
 		}
 	}
@@ -194,13 +194,13 @@ struct PatternVisitor: Visitor {
 	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
 //		try context.defineVariable(named: expr.name, as: context.get(expr).asType(in: context), at: expr.location)
 
-		return try .variable(expr.name, context.get(expr))
+		try .variable(expr.name, context.get(expr))
 	}
 
 	func visit(_ expr: LetDeclSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
 //		try context.defineVariable(named: expr.name, as: context.get(expr).asType(in: context), at: expr.location)
 
-		return try .variable(expr.name, context.get(expr))
+		try .variable(expr.name, context.get(expr))
 	}
 
 	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {

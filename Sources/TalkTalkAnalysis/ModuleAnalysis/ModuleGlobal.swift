@@ -4,8 +4,8 @@
 //
 //  Created by Pat Nakajima on 8/8/24.
 //
-import TalkTalkSyntax
 import TalkTalkBytecode
+import TalkTalkSyntax
 
 public enum ModuleSource {
 	case module, external(AnalysisModule)

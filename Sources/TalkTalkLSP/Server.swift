@@ -6,10 +6,10 @@
 //
 
 import Foundation
-import TalkTalkCore
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
+import TalkTalkCore
 import TalkTalkDriver
 import TalkTalkSyntax
 import TypeChecker
@@ -77,7 +77,7 @@ public struct Server {
 			return
 		}
 
-		self.perform(request)
+		perform(request)
 	}
 
 	mutating func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
@@ -181,7 +181,7 @@ public struct Server {
 
 			Log.info("completion request: \(completionRequest)", color: .magenta)
 
-			let completions = analysis.completions(for: completionRequest)//.sorted()
+			let completions = analysis.completions(for: completionRequest) // .sorted()
 
 			Log.info("! got completions: \(completions)", color: .magenta)
 

@@ -47,9 +47,9 @@ struct ProtocolTests: VMTest {
 			}
 
 			greet(Person())
-			"""#
-		, output: output)
-
+			"""#,
+			output: output
+		)
 
 		#expect(output.stdout == "Hello, pat!\n")
 	}

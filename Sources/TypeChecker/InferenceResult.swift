@@ -38,13 +38,13 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 	func covariant(with rhs: InferenceResult, in context: InferenceContext) -> Bool {
 		switch (self, rhs) {
 		case let (.scheme(lhs), .scheme(rhs)):
-			return lhs.type.covariant(with: rhs.type, in: context)
+			lhs.type.covariant(with: rhs.type, in: context)
 		case let (.type(lhs), .type(rhs)):
-			return lhs.covariant(with: rhs, in: context)
+			lhs.covariant(with: rhs, in: context)
 		case let (.type(lhs), .scheme(rhs)):
-			return lhs.covariant(with: rhs.type, in: context)
+			lhs.covariant(with: rhs.type, in: context)
 		case let (.scheme(lhs), .type(rhs)):
-			return lhs.type.covariant(with: rhs, in: context)
+			lhs.type.covariant(with: rhs, in: context)
 		}
 	}
 

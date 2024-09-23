@@ -326,31 +326,31 @@ public struct Interpreter: AnalyzedVisitor {
 	}
 
 	public func visit(_: AnalyzedEnumDecl, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	public func visit(_: AnalyzedEnumCaseDecl, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	public func visit(_: AnalyzedMatchStatement, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	public func visit(_: AnalyzedCaseStmt, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	public func visit(_: AnalyzedEnumMemberExpr, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	public func visit(_: AnalyzedInterpolatedStringExpr, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	public func visit(_: AnalyzedForStmt, _: Scope) throws -> Value {
-		return .none
+		.none
 	}
 
 	// GENERATOR_INSERTION

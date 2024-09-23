@@ -17,7 +17,7 @@ public struct Inferencer {
 	public static var stdlib: InferenceContext {
 		// swiftlint:disable force_try
 		let stdlib = try! Library.standard.files.flatMap {
-			return try Parser.parse($0)
+			try Parser.parse($0)
 		}
 
 		let inferencer = try! Inferencer(moduleName: "Standard", imports: [])

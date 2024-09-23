@@ -6,8 +6,8 @@
 //
 
 import ArgumentParser
-import TalkTalkLSP
 import TalkTalkCore
+import TalkTalkLSP
 
 struct LSP: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

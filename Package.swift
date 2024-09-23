@@ -1,8 +1,8 @@
 // swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
-import PackageDescription
 import Foundation
+import PackageDescription
 
 let package = Package(
 	name: "TalkTalk",
@@ -225,11 +225,11 @@ let package = Package(
 )
 
 #if !WASM
-for target in package.targets {
-	target.resources = [
-		.copy("../../Library/Standard"),
- ]
-}
+	for target in package.targets {
+		target.resources = [
+			.copy("../../Library/Standard"),
+		]
+	}
 #endif
 
 #if os(Linux)

@@ -100,7 +100,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
 			arguments: [
-				.variable("a", .type(.base(.string)))
+				.variable("a", .type(.base(.string))),
 			]
 		)))
 
@@ -110,7 +110,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
 			arguments: [
-				.variable("b", .type(.base(.int)))
+				.variable("b", .type(.base(.int))),
 			]
 		)))
 

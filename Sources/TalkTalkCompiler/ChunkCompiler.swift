@@ -932,7 +932,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			return variable
 		}
 
-		if let syntax = receiver as? AnalyzedMemberExpr	{
+		if let syntax = receiver as? AnalyzedMemberExpr {
 			return Variable(
 				name: syntax.property,
 				code: .symbol(syntax.memberSymbol),

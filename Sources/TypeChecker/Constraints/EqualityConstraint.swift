@@ -54,7 +54,7 @@ extension Constraint where Self == EqualityConstraint {
 		_ rhs: InferenceResult,
 		at location: SourceLocation
 	) -> EqualityConstraint {
-		return EqualityConstraint(lhs: lhs, rhs: rhs, location: location)
+		EqualityConstraint(lhs: lhs, rhs: rhs, location: location)
 	}
 
 	static func equality(
@@ -62,6 +62,6 @@ extension Constraint where Self == EqualityConstraint {
 		_ rhs: InferenceType,
 		at location: SourceLocation
 	) -> EqualityConstraint {
-		return EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
+		EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location)
 	}
 }

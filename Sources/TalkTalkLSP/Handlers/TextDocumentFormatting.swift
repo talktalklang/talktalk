@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import TalkTalkSyntax
 import TalkTalkCore
+import TalkTalkSyntax
 
 struct TextDocumentFormatting {
 	var request: Request

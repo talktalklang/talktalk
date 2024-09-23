@@ -112,7 +112,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let result = try #require(context[expr[0]])
 		#expect(result.asType(in: context) == .function(
 			[.type(.base(.int))],
-			.type(.base(.int)))
+			.type(.base(.int))
+		)
 		)
 	}
 

@@ -207,10 +207,10 @@ struct AnalysisTests {
 		#expect(
 			fn.typeAnalyzed == .function(
 				[.type(.base(.int))],
-					.type(
-						.function(
-							[.type(.base(.int))],
-							.type(.base(.int))
+				.type(
+					.function(
+						[.type(.base(.int))],
+						.type(.base(.int))
 					)
 				)
 			)

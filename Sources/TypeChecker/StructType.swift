@@ -67,7 +67,7 @@ public struct StructType: Equatable, Hashable, CustomStringConvertible, Instanti
 		typeContext.initializers
 	}
 
-	public func member(named name: String, in context: InferenceContext) -> InferenceResult? {
+	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
 		if let member = properties[name] ?? methods[name] {
 			return member
 		}

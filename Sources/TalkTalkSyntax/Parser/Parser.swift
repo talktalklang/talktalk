@@ -87,14 +87,14 @@ public struct Parser {
 
 			switch peek().kind {
 			case .struct,
-					.enum,
-					.func,
-					.var,
-					.let,
-					.if,
-					.while,
-					.for,
-					.return:
+			     .enum,
+			     .func,
+			     .var,
+			     .let,
+			     .if,
+			     .while,
+			     .for,
+			     .return:
 				break
 			default:
 				advance()

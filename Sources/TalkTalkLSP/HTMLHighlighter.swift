@@ -45,13 +45,13 @@ public struct HTMLHighlighter {
 		for token in tokens.sorted(by: { $0.position < $1.position }) {
 			let start = output.index(output.startIndex, offsetBy: token.position + offset)
 			let end = output.index(start, offsetBy: token.length)
-			let text = output[start..<end]
+			let text = output[start ..< end]
 			let prefix = "<span class=\"\(token.tokenType.rawValue)\">"
 			let suffix = "</span>"
 
 			offset += prefix.count + suffix.count
 
-			output.replaceSubrange(start..<end, with: prefix + text + suffix)
+			output.replaceSubrange(start ..< end, with: prefix + text + suffix)
 		}
 
 		return output

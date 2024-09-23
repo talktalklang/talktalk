@@ -5,14 +5,14 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkCore
-import TalkTalkSyntax
 import TalkTalkAnalysis
 import TalkTalkBytecode
+import TalkTalkCore
+import TalkTalkSyntax
 
-extension Module {
+public extension Module {
 	// swiftlint:disable force_try
-	public static let stdlib: Module = try! ModuleCompiler(name: "Standard", analysisModule: ModuleAnalyzer.stdlib).compile(mode: .module)
+	static let stdlib: Module = try! ModuleCompiler(name: "Standard", analysisModule: ModuleAnalyzer.stdlib).compile(mode: .module)
 }
 
 // The compiling module is used during compilation. It can then become a real Module once
