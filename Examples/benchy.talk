@@ -3,14 +3,14 @@ protocol Greetable {
 }
 
 protocol Greeter {
-	func greet(name: String) -> String
+	func greet(greetable: Greetable) -> String
 }
 
 struct Person: Greeter, Greetable {
 	var name: String
 
-	func greet(name: String) -> String {
-		"Oh hi, \(name)"
+	func greet(greetable: Greetable) -> String {
+		"Oh hi, \(greetable.name)"
 	}
 }
 
@@ -19,6 +19,7 @@ struct Animal: Greetable {
 }
 
 let count = 100
+var greetings: Array<String> = []
 
 var j = 0
 	while j < count {
@@ -37,11 +38,9 @@ var j = 0
 	while i < count {
 		let person = people[i]
 		let animal = animals[i]
-		person.greet(name: animal.name)
+		greetings.append(person.greet(name: animal))
 		i = i + 1
 	}
-
-	print("all done with j \(j)")
 
 	j += 1
 }

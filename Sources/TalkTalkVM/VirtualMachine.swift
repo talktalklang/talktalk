@@ -172,8 +172,8 @@ public struct VirtualMachine {
 
 				try transferCaptures(in: calledFrame)
 
-				while stack.size > calledFrame.stackOffset + 1 {
-					try stack.pop()
+				if (stack.size - 1) - calledFrame.stackOffset > 0 {
+					try stack.drop(count: (stack.size - 1) - calledFrame.stackOffset)
 				}
 
 				// Return to where we called from
@@ -200,8 +200,8 @@ public struct VirtualMachine {
 				// Remove the result from the stack temporarily while we clean it up
 				let result = try stack.pop()
 
-				while stack.size > calledFrame.stackOffset + 1 {
-					try stack.pop()
+				if (stack.size - 1) - calledFrame.stackOffset > 0 {
+					try stack.drop(count: (stack.size - 1) - calledFrame.stackOffset)
 				}
 
 				while calledFrame.isInline {

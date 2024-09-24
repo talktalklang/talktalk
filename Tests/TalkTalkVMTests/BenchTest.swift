@@ -8,7 +8,7 @@
 import Testing
 
 struct BenchTests: VMTest {
-	@Test("Basic", .disabled("Only used for bench marking")) func basic() throws {
+	@Test("Basic") func basic() throws {
 		let code = #"""
 		protocol Greetable {
 			var name: String
@@ -30,7 +30,7 @@ struct BenchTests: VMTest {
 			var name: String
 		}
 
-		let count = 500
+		let count = 100
 
 		var j = 0
 			while j < count {

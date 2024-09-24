@@ -183,6 +183,18 @@ struct Stack<Element> {
 	}
 
 	@inline(__always)
+	mutating func drop(count: Int) throws {
+		if count <= 0 { return }
+
+		if count >= size {
+			size = 0
+			return
+		}
+
+		size -= count
+	}
+
+	@inline(__always)
 	func last(count: Int) throws -> [Element] {
 		try (0 ..< size).map { i in try peek(offset: count - i) }
 	}
