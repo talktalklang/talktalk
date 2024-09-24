@@ -18,7 +18,7 @@ struct Animal: Greetable {
 	var name: String
 }
 
-let count = 500
+let count = 100
 
 var j = 0
 	while j < count {
