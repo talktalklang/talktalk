@@ -203,7 +203,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 			opcode: opcode,
 			offset: start,
 			line: chunk.lines[start],
-			metadata: .capture(name: capture.name, capture.location)
+			metadata: .capture(capture.symbol, capture.location)
 		)
 	}
 

@@ -325,7 +325,7 @@ class CompilerTests: CompilerTest {
 		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__9", [])]!
 		try #expect(disassemble(subchunk) == Instructions(
 			.op(.constant, line: 4, .constant(.int(20))),
-			.op(.setCapture, line: 4, .capture(name: "a", .stack(1))),
+			.op(.setCapture, line: 4, .capture(.value("CompilerTests", "a"), .stack(1))),
 			.op(.returnValue, line: 4),
 			.op(.returnVoid, line: 5) // func return
 		))
@@ -366,9 +366,9 @@ class CompilerTests: CompilerTest {
 
 		let subchunk = module.compiledChunks[.function("CompilerTests", "_fn__11", [])]!
 		let subexpected = Instructions(
-			.op(.getCapture, line: 4, .capture(name: "a", .stack(1))),
+			.op(.getCapture, line: 4, .capture(.value("CompilerTests", "a"), .stack(1))),
 			.op(.pop, line: 4, .simple),
-			.op(.getCapture, line: 5, .capture(name: "b", .stack(1))),
+			.op(.getCapture, line: 5, .capture(.value("CompilerTests", "b"), .stack(1))),
 			.op(.pop, line: 5, .simple),
 			.op(.returnValue, line: 6, .simple)
 		)
@@ -409,7 +409,7 @@ class CompilerTests: CompilerTest {
 			// Get 'b' to add to a
 			.op(.getLocal, line: 4, .local(.value("CompilerTests", "b"))),
 			// Get 'a' from upvalue
-			.op(.getCapture, line: 4, .capture(name: "a", .stack(1))),
+			.op(.getCapture, line: 4, .capture(.value("CompilerTests", "a"), .stack(1))),
 
 			// Do the addition
 			.op(.add, line: 4),

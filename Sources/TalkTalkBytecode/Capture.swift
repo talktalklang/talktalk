@@ -10,12 +10,10 @@ public struct Capture: Codable, Sendable, Equatable, Hashable {
 		case stack(Int), heap(Heap.Pointer)
 	}
 
-	public let name: String
 	public let symbol: Symbol
 	public let location: Location
 
-	public init(name: String, symbol: Symbol, location: Location) {
-		self.name = name
+	public init(symbol: Symbol, location: Location) {
 		self.symbol = symbol
 		self.location = location
 	}

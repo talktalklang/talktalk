@@ -1074,7 +1074,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	func addCapture(_ symbol: Symbol, name: String, depth: Int) -> Capture {
-		let capture = Capture(name: name, symbol: symbol, location: .stack(depth))
+		let capture = Capture(symbol: symbol, location: .stack(depth))
 		captures.insert(capture)
 		return capture
 	}

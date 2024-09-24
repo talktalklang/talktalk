@@ -447,18 +447,18 @@ public struct VirtualMachine {
 					let frame = try frames.peek(offset: depth)
 
 					guard let value = frame.lookup(capture.symbol) else {
-						throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in call frame stack")
+						throw VirtualMachineError.valueMissing("Capture named `\(capture.symbol)` not found in call frame stack")
 					}
 
 					try stack.push(value)
 				case let .heap(pointer):
 					guard let value = heap.dereference(pointer: pointer) else {
-						throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found on heap")
+						throw VirtualMachineError.valueMissing("Capture named `\(capture.symbol)` not found on heap")
 					}
 
 					try stack.push(value)
 				default:
-					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in closure")
+					throw VirtualMachineError.valueMissing("Capture named `\(capture.symbol)` not found in closure")
 				}
 			case .setCapture:
 				let capture = try readCapture()
@@ -469,7 +469,7 @@ public struct VirtualMachine {
 				case let .heap(pointer):
 					try heap.store(pointer: pointer, value: stack.peek())
 				default:
-					throw VirtualMachineError.valueMissing("Capture named `\(capture.name)` not found in closure")
+					throw VirtualMachineError.valueMissing("Capture named `\(capture.symbol)` not found in closure")
 				}
 			case .defClosure:
 				// Read which subchunk this closure points to
