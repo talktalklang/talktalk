@@ -413,10 +413,6 @@ struct InferenceVisitor: Visitor {
 		try expr.receiver.accept(self, context)
 		try expr.value.accept(self, context)
 
-		if case .type(.placeholder(.new("Array", 6))) = try context.get(expr.value) {
-			print()
-		}
-
 		try context.constraints.add(
 			.equality(context.get(expr.receiver), context.get(expr.value), at: expr.location)
 		)

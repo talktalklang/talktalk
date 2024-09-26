@@ -45,10 +45,6 @@ struct EqualityConstraint: Constraint {
 			return .ok
 		}
 
-		if case .instantiatable = rhs {
-			print()
-		}
-
 		context.unify(lhs, rhs, location)
 
 		return .ok
