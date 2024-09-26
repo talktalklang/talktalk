@@ -547,6 +547,17 @@ public struct VirtualMachine {
 				try stack.push(.struct(structType))
 			case .setStruct:
 				return runtimeError("Cannot set struct")
+			case .invokeMethod:
+				let receiver = try stack.pop()
+				let method = try readSymbol()
+
+				if case let .instance(instance) = receiver {
+					try call(boundMethod: method, on: instance)
+				} else if case let .enumCase(enumCase) = receiver {
+					try call(boundMethod: method, on: enumCase)
+				} else {
+					return runtimeError("invalid receiver for method invocation: \(receiver), method: \(method)")
+				}
 			case .getProperty:
 				// Get the slot of the member
 				var symbol = try readSymbol()

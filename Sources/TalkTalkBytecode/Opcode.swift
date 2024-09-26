@@ -40,6 +40,8 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     getStruct, setStruct,
 	     getProperty, setProperty,
 
+			 invokeMethod,
+
 	     // Type casting
 	     cast, `is`, primitive,
 

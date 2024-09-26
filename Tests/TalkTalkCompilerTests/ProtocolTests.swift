@@ -86,8 +86,7 @@ struct ProtocolTests: CompilerTest {
 		let fn = try #require(module.chunks[.function("E2E", "greet", ["IGreetable"])])
 		try #expect(fn.disassemble(in: module) == Instructions(
 			.op(.getLocal, line: 11, .local(.value("E2E", "greetable"))),
-			.op(.getProperty, line: 11, .getProperty(.method("E2E", nil, "name", []), options: .isMethod)),
-			.op(.call, line: 11),
+			.op(.invokeMethod, line: 11, .invokeMethod(.method("E2E", nil, "name", []))),
 			.op(.data, line: 11, .data(.init(kind: .string, bytes: [Byte]("hi ".utf8)))),
 			.op(.add, line: 11),
 			.op(.returnValue, line: 11),

@@ -555,6 +555,7 @@ struct VMEndToEndTests: VMTest {
 		2
 		sup
 
-		""")
+		"""
+		)
 	}
 }

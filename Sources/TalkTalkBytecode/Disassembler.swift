@@ -113,6 +113,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		switch opcode {
+		case .invokeMethod:
+			return try variableInstruction(opcode: .invokeMethod, start: index, type: .invokeMethod)
 		case .data:
 			return try dataInstruction(start: index)
 		case .binding:

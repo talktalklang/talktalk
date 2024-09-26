@@ -137,11 +137,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try arg.expr.accept(self, chunk)
 		}
 
-		// Put the callee on the stack. This gets popped first. Then we can go and grab the args.
-		try expr.calleeAnalyzed.accept(self, chunk)
+		// If we're calling a method, we can use the invokeMethod opcode as a shortcut
+		if let callee = expr.calleeAnalyzed as? AnalyzedMemberExpr {
+			// Put the receiver on the stack
+			try callee.receiverAnalyzed.accept(self, chunk)
 
-		// Call the callee
-		chunk.emit(opcode: .call, line: expr.location.line)
+			chunk.emit(.opcode(.invokeMethod), line: expr.location.line)
+
+			// Put the method on the stack
+			chunk.emit(.symbol(callee.memberSymbol), line: expr.location.line)
+		} else {
+			// Put the callee on the stack. This gets popped first. Then we can go and grab the args.
+			try expr.calleeAnalyzed.accept(self, chunk)
+
+			// Call the callee
+			chunk.emit(opcode: .call, line: expr.location.line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {

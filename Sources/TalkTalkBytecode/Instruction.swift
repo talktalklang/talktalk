@@ -248,7 +248,7 @@ public extension InstructionMetadata where Self == GetPropertyMetadata {
 
 public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
-		case local, global, builtin, `struct`, property, moduleFunction, `enum`, matchBegin
+		case local, global, builtin, `struct`, property, moduleFunction, `enum`, matchBegin, invokeMethod
 	}
 
 	public var length: Int = 2
@@ -292,6 +292,10 @@ public extension InstructionMetadata where Self == VariableMetadata {
 
 	static func `enum`(_ symbol: Symbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .enum)
+	}
+
+	static func invokeMethod(_ symbol: Symbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .invokeMethod)
 	}
 }
 
