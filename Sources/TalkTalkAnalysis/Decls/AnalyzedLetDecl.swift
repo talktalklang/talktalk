@@ -28,6 +28,7 @@ public struct AnalyzedLetDecl: AnalyzedExpr, AnalyzedDecl, LetDecl, AnalyzedVarL
 	public var value: (any Expr)? { wrapped.value }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var modifiers: [Token] { wrapped.modifiers }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(wrapped, scope)

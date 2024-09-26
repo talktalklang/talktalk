@@ -1,0 +1,3 @@
+struct Person {
+	static let foo = "123"
+}

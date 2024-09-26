@@ -88,7 +88,7 @@ public extension Parser {
 		)
 	}
 
-	mutating func letVarDecl(_ kind: Token.Kind, isStatic: Bool) -> any Decl {
+	mutating func letVarDecl(_ kind: Token.Kind, isStatic: Bool, modifiers: [Token] = []) -> any Decl {
 		let token = previous.unsafelyUnwrapped
 
 		let i = startLocation(at: previous)
@@ -114,6 +114,7 @@ public extension Parser {
 				name: nameToken.lexeme,
 				nameToken: nameToken,
 				isStatic: isStatic,
+				modifiers: modifiers,
 				typeExpr: typeExpr,
 				value: value,
 				location: endLocation(i)
@@ -125,6 +126,7 @@ public extension Parser {
 				name: nameToken.lexeme,
 				nameToken: nameToken,
 				isStatic: isStatic,
+				modifiers: modifiers,
 				typeExpr: typeExpr,
 				value: value,
 				location: endLocation(i)

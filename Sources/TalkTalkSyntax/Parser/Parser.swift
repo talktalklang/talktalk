@@ -144,17 +144,17 @@ public struct Parser {
 			return protocolDecl()
 		}
 
-		if didMatch(.static), context.allowed.contains(.static) {
+		if let staticKeyword = match(.static), context.allowed.contains(.static) {
 			if check(.func), didConsume(.func) {
-				return funcExpr(isStatic: true)
+				return funcExpr(isStatic: true, modifiers: [staticKeyword])
 			}
 
 			if check(.var), didConsume(.var) {
-				return letVarDecl(.var, isStatic: true)
+				return letVarDecl(.var, isStatic: true, modifiers: [staticKeyword])
 			}
 
 			if check(.let), didConsume(.let) {
-				return letVarDecl(.let, isStatic: true)
+				return letVarDecl(.let, isStatic: true, modifiers: [staticKeyword])
 			}
 		}
 

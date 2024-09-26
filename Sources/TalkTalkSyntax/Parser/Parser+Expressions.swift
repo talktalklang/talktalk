@@ -145,7 +145,7 @@ extension Parser {
 		)
 	}
 
-	mutating func funcExpr(isStatic: Bool) -> any Expr {
+	mutating func funcExpr(isStatic: Bool, modifiers: [Token] = []) -> any Expr {
 		let funcToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
@@ -172,6 +172,7 @@ extension Parser {
 
 		let funcExpr = FuncExprSyntax(
 			id: nextID(),
+			modifierTokens: modifiers,
 			funcToken: funcToken,
 			params: params,
 			typeDecl: typeDecl,
@@ -293,7 +294,7 @@ extension Parser {
 		}
 
 		if didMatch(.func) {
-			return funcExpr(isStatic: true)
+			return funcExpr(isStatic: true, modifiers: [])
 		}
 
 		return ParseErrorSyntax(location: [previous], message: "Unknown literal: \(previous as Any)", expectation: .none)

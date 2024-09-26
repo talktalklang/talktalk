@@ -20,6 +20,7 @@ public struct VarDeclSyntax: VarDecl {
 	public var name: String
 	public var nameToken: Token
 	public var isStatic: Bool
+	public var modifiers: [Token]
 	public var typeExpr: TypeExprSyntax?
 	public var value: (any Expr)?
 

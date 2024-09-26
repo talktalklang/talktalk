@@ -182,7 +182,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: FuncExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		var results = [make(.keyword, from: expr.funcToken)]
+		var results = [make(.keyword, from: expr.funcToken)] + expr.modifierTokens.map { make(.keyword, from: $0) }
 
 		if let name = expr.name {
 			results.append(make(context == .struct ? .method : .function, from: name))
@@ -262,7 +262,7 @@ public struct SemanticTokensVisitor: Visitor {
 	public func visit(_ expr: VarDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.token),
-		]
+		] + expr.modifiers.map { make(.keyword, from: $0) }
 
 		if let value = expr.value {
 			try result.append(contentsOf: value.accept(self, context))
@@ -274,7 +274,7 @@ public struct SemanticTokensVisitor: Visitor {
 	public func visit(_ expr: LetDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		var result = [
 			make(.keyword, from: expr.token),
-		]
+		] + expr.modifiers.map { make(.keyword, from: $0) }
 
 		if let value = expr.value {
 			try result.append(contentsOf: value.accept(self, context))
