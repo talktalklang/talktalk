@@ -549,14 +549,14 @@ struct VMEndToEndTests: VMTest {
 		_ = try run(source, output: output)
 
 		#expect(output.stdout == """
-		0
-		1
-		1
-		2
-		2
-		sup
+			0
+			1
+			1
+			2
+			2
+			sup
 
-		"""
+			"""
 		)
 	}
 }

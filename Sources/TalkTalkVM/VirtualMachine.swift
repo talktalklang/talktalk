@@ -75,7 +75,7 @@ public struct VirtualMachine {
 		)
 
 		try frames.push(frame)
-		
+
 		self.currentFrame = frame
 		self.chunk = frame.closure.chunk
 		self.ip = 0
@@ -84,7 +84,7 @@ public struct VirtualMachine {
 	private mutating func restoreCurrentFrame(returnTo: UInt64) throws {
 		// Return to where we called from
 		#if DEBUG
-		log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+			log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
 		#endif
 
 		if frames.size == 0 { return }
@@ -94,7 +94,7 @@ public struct VirtualMachine {
 		ip = returnTo
 
 		#if DEBUG
-		log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+			log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
 		#endif
 	}
 
@@ -405,7 +405,7 @@ public struct VirtualMachine {
 			case .getLocal:
 				let symbol = try readSymbol()
 
-				if "self" == symbol.name {
+				if symbol.name == "self" {
 					guard let selfValue = currentFrame.selfValue else {
 						throw VirtualMachineError.valueMissing("did not find self for \(symbol)")
 					}

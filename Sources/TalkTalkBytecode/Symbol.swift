@@ -155,23 +155,23 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	public func asStatic() -> StaticSymbol {
 		switch kind {
 		case let .value(name):
-			return .init(id: description, module: module, name: name, params: nil)
+			.init(id: description, module: module, name: name, params: nil)
 		case let .function(name, _):
-			return .init(id: description, module: module, name: name, params: nil)
+			.init(id: description, module: module, name: name, params: nil)
 		case let .method(type, name, params):
 			if type == nil {
-				return .init(id: description, module: module, name: name, params: params)
+				.init(id: description, module: module, name: name, params: params)
 			} else {
-				return .init(id: description, module: module, name: name, params: nil)
+				.init(id: description, module: module, name: name, params: nil)
 			}
 		case let .property(type, name):
 			if type == nil {
-				return .init(id: description, module: module, name: name, params: [])
+				.init(id: description, module: module, name: name, params: [])
 			} else {
-				return .init(id: description, module: module, name: name, params: nil)
+				.init(id: description, module: module, name: name, params: nil)
 			}
 		default:
-			return .init(id: description, module: module, name: nil, params: nil)
+			.init(id: description, module: module, name: nil, params: nil)
 		}
 	}
 

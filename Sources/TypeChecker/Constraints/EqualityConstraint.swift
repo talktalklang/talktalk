@@ -59,7 +59,7 @@ extension Constraint where Self == EqualityConstraint {
 		file: String = #file,
 		line: UInt32 = #line
 	) -> EqualityConstraint {
-		return EqualityConstraint(lhs: lhs, rhs: rhs, location: location, file: file, line: line)
+		EqualityConstraint(lhs: lhs, rhs: rhs, location: location, file: file, line: line)
 	}
 
 	static func equality(
@@ -69,6 +69,6 @@ extension Constraint where Self == EqualityConstraint {
 		file: String = #file,
 		line: UInt32 = #line
 	) -> EqualityConstraint {
-		return EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location, file: file, line: line)
+		EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location, file: file, line: line)
 	}
 }

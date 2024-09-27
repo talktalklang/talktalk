@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/24/24.
 //
 
-import TalkTalkSyntax
 import TalkTalkBytecode
+import TalkTalkSyntax
 
 struct SubscriptExprAnalyzer: Analyzer {
 	let expr: any SubscriptExpr
@@ -23,7 +23,7 @@ struct SubscriptExprAnalyzer: Analyzer {
 
 		let getSymbol: Symbol
 		switch receiver.inferenceType {
-		case .instance(let instanceType):
+		case let .instance(instanceType):
 			let type = instanceType.type
 			getSymbol = .method(type.context.moduleName, type.name, "get", args.map(\.inferenceType.mangled))
 		default:

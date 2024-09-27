@@ -66,14 +66,14 @@ public enum InstantiatableType: Hashable {
 		}
 	}
 
-	public func staticMember(named name: String, in context: InferenceContext) -> InferenceResult? {
+	public func staticMember(named name: String, in _: InferenceContext) -> InferenceResult? {
 		switch self {
 		case let .struct(structType):
-			return structType.staticMember(named: name)
+			structType.staticMember(named: name)
 		case let .enumType(enumType):
-			return enumType.staticMember(named: name)
+			enumType.staticMember(named: name)
 		case let .protocol(protocolType):
-			return protocolType.staticMember(named: name)
+			protocolType.staticMember(named: name)
 		}
 	}
 

@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 9/6/24.
 //
 
-import Testing
 import TalkTalkBytecode
+import Testing
 
 struct EnumTests: CompilerTest {
 	@Test("Basic enum") func basic() throws {

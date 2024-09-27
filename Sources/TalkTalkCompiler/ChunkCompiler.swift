@@ -1086,7 +1086,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return try parent.resolveCapture(named: name, depth: depth + 1)
 	}
 
-	func addCapture(_ symbol: StaticSymbol, name: String, depth: Int) -> Capture {
+	func addCapture(_ symbol: StaticSymbol, name _: String, depth: Int) -> Capture {
 		let capture = Capture(symbol: symbol, location: .stack(depth))
 		captures.insert(capture)
 		return capture
