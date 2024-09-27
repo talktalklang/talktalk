@@ -10,7 +10,11 @@ public enum Code: Codable, Equatable, Sendable {
 		case invalidCode(Code, String)
 	}
 
-	case byte(Byte), opcode(Opcode), symbol(Symbol), capture(Capture)
+//	public static func symbol(_ symbol: Symbol) -> Code {
+//		.symbol(symbol.asStatic())
+//	}
+
+	case byte(Byte), opcode(Opcode), symbol(StaticSymbol), capture(Capture)
 
 	public func asByte() throws -> Byte {
 		guard case let .byte(byte) = self else {
@@ -28,7 +32,7 @@ public enum Code: Codable, Equatable, Sendable {
 		return opcode
 	}
 
-	public func asSymbol() throws -> Symbol {
+	public func asSymbol() throws -> StaticSymbol {
 		guard case let .symbol(symbol) = self else {
 			throw InvalidCodeError.invalidCode(self, "expected symbol, got \(self)")
 		}

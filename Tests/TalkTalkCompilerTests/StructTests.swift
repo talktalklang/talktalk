@@ -72,7 +72,7 @@ struct StructTests: CompilerTest {
 			.op(.constant, line: 6, .constant(.int(123))),
 			.op(.getStruct, line: 6, .struct(.struct("E2E", "Person"))),
 			.op(.call, line: 6, .simple),
-			.op(.getProperty, line: 6, .getProperty(.property("E2E", "Person", "age"), options: [])),
+			.op(.getProperty, line: 6, .getProperty(.property("E2E", "Person", "age"))),
 			.op(.pop, line: 6, .simple),
 			.op(.returnVoid, line: 0, .simple)
 		))
@@ -118,7 +118,7 @@ struct StructTests: CompilerTest {
 
 		try #expect(main.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 4, .struct(.struct("E2E", "Person"))),
-			.op(.getProperty, line: 4, .getProperty(.property("E2E", "Person", "age"), options: [])),
+			.op(.getProperty, line: 4, .getProperty(.property("E2E", "Person", "age"))),
 			.op(.pop, line: 4, .simple),
 			.op(.returnVoid, line: 0, .simple)
 		))
@@ -137,7 +137,7 @@ struct StructTests: CompilerTest {
 
 		try #expect(main.disassemble(in: module) == Instructions(
 			.op(.getStruct, line: 4, .struct(.struct("E2E", "Person"))),
-			.op(.getProperty, line: 4, .getProperty(.property("E2E", "Person", "age"), options: [])),
+			.op(.getProperty, line: 4, .getProperty(.property("E2E", "Person", "age"))),
 			.op(.pop, line: 4, .simple),
 			.op(.returnVoid, line: 0, .simple)
 		))

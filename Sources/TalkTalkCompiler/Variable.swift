@@ -17,7 +17,7 @@ public struct Variable {
 	static func reserved(depth: Int) -> Variable {
 		Variable(
 			name: "__reserved__",
-			code: .symbol(.value("__reserved__", "self")),
+			code: .symbol(StaticSymbol.value("__reserved__", "self")),
 			depth: depth,
 			getter: .getLocal,
 			setter: .setLocal

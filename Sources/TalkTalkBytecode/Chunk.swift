@@ -40,10 +40,10 @@ public final class Chunk {
 	public var captures: Set<Capture> = []
 
 	// How many upvalues does this chunk refer to
-	public var capturedLocals: Set<Symbol> = []
+	public var capturedLocals: Set<StaticSymbol> = []
 
 	// For debugging names used in this chunk
-	public var locals: [Symbol] = []
+	public var locals: [StaticSymbol] = []
 
 	public init(name: String, symbol: Symbol, path: String) {
 		self.name = name
@@ -114,7 +114,7 @@ public final class Chunk {
 		write(code, line: line)
 	}
 
-	public func emitClosure(subchunk: Symbol, line: UInt32) {
+	public func emitClosure(subchunk: StaticSymbol, line: UInt32) {
 		// Emit the opcode to define a closure
 		write(.defClosure, line: line)
 		write(.symbol(subchunk), line: line)

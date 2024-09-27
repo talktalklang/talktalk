@@ -25,7 +25,7 @@ public final class StaticChunk: Equatable, Codable {
 	public let arity: Byte
 
 	// Which of this chunk's locals are captured by a child fn.
-	public let capturedLocals: Set<Symbol>
+	public let capturedLocals: Set<StaticSymbol>
 
 	// Which of this chunk's locals are captured from a parent
 	public let capturing: Set<Capture>
@@ -37,7 +37,7 @@ public final class StaticChunk: Equatable, Codable {
 		public var name: String
 		public var lines: [UInt32]
 		public var debugLogs: [String]
-		public var locals: [Symbol]
+		public var locals: [StaticSymbol]
 		public var depth: Byte
 		public var path: String
 	}

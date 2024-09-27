@@ -40,7 +40,7 @@ import Testing
 			.op(.constant, line: 0, .constant(.int(321))),
 			.op(.constant, line: 0, .constant(.int(654))),
 			.op(.initDict, line: 0),
-			.op(.getProperty, line: 0, .getProperty(.method("Standard", "Dictionary", "get", ["index"]), options: .isMethod)),
+			.op(.getProperty, line: 0, .getProperty(Symbol.method("Standard", "Dictionary", "get", ["index"]).asStatic())),
 			.op(.call, line: 0),
 			.op(.pop, line: 0),
 			.op(.returnValue, line: 0)
@@ -60,7 +60,7 @@ import Testing
 			.op(.constant, line: 0, .constant(.int(321))),
 			.op(.constant, line: 0, .constant(.int(654))),
 			.op(.initDict, line: 0),
-			.op(.getProperty, line: 0, .getProperty(.method("Standard", "Dictionary", "get", ["index"]), options: .isMethod)),
+			.op(.getProperty, line: 0, .getProperty(Symbol.method("Standard", "Dictionary", "get", ["index"]).asStatic())),
 			.op(.call, line: 0),
 			.op(.pop, line: 0),
 			.op(.returnValue, line: 0)

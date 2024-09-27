@@ -6,6 +6,7 @@
 //
 
 import Testing
+import TalkTalkBytecode
 
 struct EnumTests: CompilerTest {
 	@Test("Basic enum") func basic() throws {
@@ -21,8 +22,8 @@ struct EnumTests: CompilerTest {
 
 		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
 			.op(.constant, line: 5, .constant(.int(123))),
-			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
-			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.getEnum, line: 5, .enum(Symbol.enum(module.name, "Thing").asStatic())),
+			.op(.getProperty, line: 5, .getProperty(Symbol.property(module.name, "Thing", "foo").asStatic())),
 			.op(.call, line: 5),
 			.op(.pop, line: 5),
 			.op(.returnVoid, line: 0)

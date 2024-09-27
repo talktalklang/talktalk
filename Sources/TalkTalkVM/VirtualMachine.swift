@@ -41,9 +41,9 @@ public struct VirtualMachine {
 	var heap = Heap()
 
 	// Closure storage
-	var closures: [Symbol: Closure] = [:]
+	var closures: [StaticSymbol: Closure] = [:]
 
-	var globalValues: [Symbol: Value] = [:]
+	var globalValues: [StaticSymbol: Value] = [:]
 
 	// Upvalue linked list
 	public static func run(module: Module, verbosity: Verbosity = .quiet, output: any OutputBuffer = DefaultOutputBuffer()) throws -> ExecutionResult {
@@ -83,14 +83,19 @@ public struct VirtualMachine {
 
 	private mutating func restoreCurrentFrame(returnTo: UInt64) throws {
 		// Return to where we called from
+		#if DEBUG
 		log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+		#endif
 
 		if frames.size == 0 { return }
 
 		currentFrame = try frames.peek()
 		chunk = currentFrame.closure.chunk
 		ip = returnTo
+
+		#if DEBUG
 		log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+		#endif
 	}
 
 	public mutating func run() throws -> ExecutionResult {
@@ -400,7 +405,7 @@ public struct VirtualMachine {
 			case .getLocal:
 				let symbol = try readSymbol()
 
-				if case .value("self") = symbol.kind {
+				if "self" == symbol.name {
 					guard let selfValue = currentFrame.selfValue else {
 						throw VirtualMachineError.valueMissing("did not find self for \(symbol)")
 					}
@@ -469,7 +474,7 @@ public struct VirtualMachine {
 
 				currentFrame.define(symbol, as: .closure(symbol))
 
-				let capturing: [Symbol: Capture.Location] = subchunk.capturing.reduce(into: [:]) { res, capture in
+				let capturing: [StaticSymbol: Capture.Location] = subchunk.capturing.reduce(into: [:]) { res, capture in
 					res[capture.symbol] = capture.location
 				}
 
@@ -542,50 +547,51 @@ public struct VirtualMachine {
 				} else {
 					return runtimeError("invalid receiver for method invocation: \(receiver), method: \(method)")
 				}
-			case .getProperty:
+			case .getMethod:
 				// Get the slot of the member
 				var symbol = try readSymbol()
-
-				// PropertyOptions let us see if this member is a method
-				let propertyOptions = try PropertyOptions(rawValue: readByte())
 
 				// Pop the receiver off the stack
 				let receiver = try stack.pop()
 
 				switch receiver {
 				case let .instance(instance):
-					if propertyOptions.contains(.isMethod) {
-						// If it's a method, we create a boundMethod value, which consists of the method symbol
-						// and the instance ID.
-						let boundMethod = Value.boundStructMethod(instance, symbol)
-
-						try stack.push(boundMethod)
-					} else {
-						if case let .property(nil, name) = symbol.kind {
-							symbol = .property(symbol.module, instance.type.name, name)
-						}
-
-						guard let value = instance.fields[symbol] else {
-							return runtimeError("uninitialized value in slot \(symbol) for \(instance)")
-						}
-
-						try stack.push(value)
-					}
-				case let .enum(enumType):
-					guard let kase = enumType.cases[symbol] else {
-						return runtimeError("enum \(enumType.name) has no member \(symbol)")
-					}
-
-					try stack.push(.enumCase(kase))
-				case let .enumCase(enumCase):
-					if propertyOptions.contains(.isMethod) {
-						let boundMethod = Value.boundEnumMethod(enumCase, symbol)
-						try stack.push(boundMethod)
-					} else {
-						return runtimeError("enums don't have properties")
-					}
+					try stack.push(.boundStructMethod(instance, symbol))
+				case let .enumCase(value):
+					try stack.push(.boundEnumMethod(value, symbol))
 				default:
-					return runtimeError("Receiver is not an instance of a struct or enum")
+					return runtimeError("Receiver is not an instance")
+				}
+			case .getProperty:
+				// Get the slot of the member
+				var symbol = try readSymbol()
+
+				// Pop the receiver off the stack
+				let receiver = try stack.pop()
+
+				switch receiver {
+				case let .instance(instance):
+					if symbol.params != nil, let name = symbol.name {
+						symbol = .property(symbol.module, instance.type.name, name)
+					}
+
+					guard let value = instance.fields[symbol] else {
+						return runtimeError("uninitialized value in slot \(symbol) for \(instance)")
+					}
+
+					try stack.push(value)
+				case let .enum(value):
+					if symbol.params != nil {
+						symbol = .property(symbol.module, value.name, symbol.name!)
+					}
+
+					guard let value = value.cases[symbol] else {
+						return runtimeError("uninitialized value in slot \(symbol) for \(value)")
+					}
+
+					try stack.push(.enumCase(value))
+				default:
+					return runtimeError("Receiver is not an instance")
 				}
 			case .is:
 				let lhs = try stack.pop()
@@ -613,15 +619,10 @@ public struct VirtualMachine {
 					return runtimeError("Receiver is not a struct: \(instance)")
 				}
 
-				// TODO: Make this user-implementable
-				guard let getSlot = module.chunks.first(where: {
-					$0.key.description.contains("\(receiver.type.name)$get$")
-				}) else {
-					throw VirtualMachineError.valueMissing("No get method for receiver: \(receiver)")
-				}
+				let method = try readSymbol()
 
 				try call(
-					boundMethod: getSlot.key,
+					boundMethod: method,
 					on: receiver
 				)
 			case .initArray:
@@ -631,7 +632,7 @@ public struct VirtualMachine {
 				// which means we never actually get more capacity.
 				let capacity = max(count, 1)
 
-				guard let arrayType = module.structs[.struct("Standard", "Array")] else {
+				guard let arrayType = module.structs[Symbol.struct("Standard", "Array").asStatic()] else {
 					throw VirtualMachineError.valueMissing("No Array type found")
 				}
 
@@ -641,14 +642,14 @@ public struct VirtualMachine {
 				}
 
 				let instance = Instance(type: arrayType, fields: [
-					.property("Standard", "Array", "_storage"): .pointer(pointer),
-					.property("Standard", "Array", "count"): .int(.init(count)),
-					.property("Standard", "Array", "capacity"): .int(.init(capacity)),
+					Symbol.property("Standard", "Array", "_storage").asStatic(): .pointer(pointer),
+					Symbol.property("Standard", "Array", "count").asStatic(): .int(.init(count)),
+					Symbol.property("Standard", "Array", "capacity").asStatic(): .int(.init(capacity)),
 				])
 
 				try stack.push(.instance(instance))
 			case .initDict:
-				guard let dictType = module.structs[.struct("Standard", "Dictionary")] else {
+				guard let dictType = module.structs[Symbol.struct("Standard", "Dictionary").asStatic()] else {
 					throw VirtualMachineError.valueMissing("No Dictionary type found")
 				}
 
@@ -692,6 +693,8 @@ public struct VirtualMachine {
 				let new = try stack.pop()
 				let old = try stack.pop()
 				try stack.push(.string(inspect(old) + inspect(new)))
+			case .noop:
+				()
 			}
 		}
 	}
@@ -743,11 +746,11 @@ public struct VirtualMachine {
 
 	// Call a method on a struct instance.
 	// Takes the method offset, instance and type that defines the method.
-	private mutating func call(boundMethod: Symbol, on instance: Instance) throws {
+	private mutating func call(boundMethod: StaticSymbol, on instance: Instance) throws {
 		var boundMethod = boundMethod
 
-		if case let .method(nil, name, params) = boundMethod.kind {
-			boundMethod = .init(module: boundMethod.module, kind: .method(instance.type.name, name, params))
+		if let name = boundMethod.name, let params = boundMethod.params {
+			boundMethod = Symbol(module: boundMethod.module, kind: .method(instance.type.name, name, params)).asStatic()
 		}
 
 		guard let methodChunk = module.chunks[boundMethod] else {
@@ -759,11 +762,11 @@ public struct VirtualMachine {
 
 	// Call a method on a struct instance.
 	// Takes the method offset, instance and type that defines the method.
-	private mutating func call(boundMethod: Symbol, on enumCase: EnumCase) throws {
+	private mutating func call(boundMethod: StaticSymbol, on enumCase: EnumCase) throws {
 		var boundMethod = boundMethod
 
-		if case let .method(nil, name, params) = boundMethod.kind {
-			boundMethod = .init(module: boundMethod.module, kind: .method(enumCase.type, name, params))
+		if let name = boundMethod.name, let params = boundMethod.params {
+			boundMethod = Symbol(module: boundMethod.module, kind: .method(enumCase.type, name, params)).asStatic()
 		}
 
 		guard let methodChunk = module.chunks[boundMethod] else {
@@ -809,7 +812,7 @@ public struct VirtualMachine {
 		try pushFrame(frame)
 	}
 
-	private mutating func call(closureID: Symbol) throws {
+	private mutating func call(closureID: StaticSymbol) throws {
 		// Find the called chunk from the closure id
 		guard let closure = closures[closureID] else {
 			throw VirtualMachineError.valueMissing("No closure with id \(closureID)")
@@ -830,12 +833,12 @@ public struct VirtualMachine {
 		try pushFrame(frame)
 	}
 
-	private mutating func call(chunkID: Symbol, inline: Bool = false) throws {
+	private mutating func call(chunkID: StaticSymbol, inline: Bool = false) throws {
 		guard let chunk = module.chunks[chunkID] else {
 			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(chunkID)")
 		}
 
-		let capturing: [Symbol: Capture.Location] = chunk.capturing.reduce(into: [:]) { res, capture in
+		let capturing: [StaticSymbol: Capture.Location] = chunk.capturing.reduce(into: [:]) { res, capture in
 			res[capture.symbol] = capture.location
 		}
 
@@ -869,18 +872,18 @@ public struct VirtualMachine {
 		}
 	}
 
-	private mutating func call(builtin: Symbol) throws {
-		switch builtin.kind {
-		case .function("print", _):
+	private mutating func call(builtin: StaticSymbol) throws {
+		switch builtin.name {
+		case "print":
 			let value = try stack.pop()
 			let string = inspect(value) + "\n"
 			try output.write([Byte](Data(string.utf8)), to: .stdout)
-		case .function("_allocate", _):
+		case "_allocate":
 			if case let .int(count) = try stack.pop() { // Get the capacity
 				let pointer = heap.allocate(count: Int(count))
 				try stack.push(.pointer(pointer))
 			}
-		case .function("_deref", _):
+		case "_deref":
 			guard case let .pointer(pointer) = try stack.pop() else {
 				throw VirtualMachineError.typeError("cannot dereference non-pointer")
 			}
@@ -890,10 +893,10 @@ public struct VirtualMachine {
 			}
 
 			try stack.push(value)
-		case .function("_free", _):
+		case "_free":
 			try stack.pop()
 			() // TODO:
-		case .function("_storePtr", _):
+		case "_storePtr":
 			let value = try stack.pop()
 			let pointer = try stack.pop()
 			if case let .pointer(pointer) = pointer {
@@ -901,10 +904,10 @@ public struct VirtualMachine {
 			} else {
 				throw VirtualMachineError.typeError("expected pointer, got \(pointer)")
 			}
-		case .function("_hash", _):
+		case "_hash":
 			let value = try stack.pop()
 			try stack.push(.int(.init(value.hashValue)))
-		case .function("_cast", _):
+		case "_cast":
 			() // This is just for the analyzer
 		default:
 			throw VirtualMachineError.valueMissing("unknown builtin: \(builtin)")
@@ -950,7 +953,7 @@ public struct VirtualMachine {
 		return try chunk.code[Int(ip)].asCapture()
 	}
 
-	private mutating func readSymbol() throws -> Symbol {
+	private mutating func readSymbol() throws -> StaticSymbol {
 		defer { ip += 1 }
 		return try chunk.code[Int(ip)].asSymbol()
 	}

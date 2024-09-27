@@ -61,9 +61,9 @@ public struct Enum: Equatable, Sendable, Codable, Hashable {
 	public let name: String
 
 	// What are the cases of this enum
-	public let cases: [Symbol: EnumCase]
+	public let cases: [StaticSymbol: EnumCase]
 
-	public init(name: String, cases: [Symbol: EnumCase]) {
+	public init(name: String, cases: [StaticSymbol: EnumCase]) {
 		self.name = name
 		self.cases = cases
 	}
@@ -77,13 +77,13 @@ public struct Module: Equatable, @unchecked Sendable {
 	public var main: StaticChunk?
 
 	// The list of chunks in this module
-	public var chunks: [Symbol: StaticChunk] = [:]
+	public var chunks: [StaticSymbol: StaticChunk] = [:]
 
 	// The list of top level structs in this module
-	public var structs: [Symbol: Struct] = [:]
+	public var structs: [StaticSymbol: Struct] = [:]
 
 	// The list of top level enums in this module
-	public var enums: [Symbol: Enum] = [:]
+	public var enums: [StaticSymbol: Enum] = [:]
 
 	// A list of symbols this module exports
 	public var symbols: OrderedDictionary<Symbol, SymbolInfo>
@@ -93,7 +93,7 @@ public struct Module: Equatable, @unchecked Sendable {
 
 	// If a global value hasn't been used yet, its initializer goes into
 	// here so it can be initialized lazily
-	public var valueInitializers: [Symbol: StaticChunk] = [:]
+	public var valueInitializers: [StaticSymbol: StaticChunk] = [:]
 
 	public init(name: String, main: StaticChunk? = nil, symbols: OrderedDictionary<Symbol, SymbolInfo>) {
 		self.name = name
@@ -102,6 +102,6 @@ public struct Module: Equatable, @unchecked Sendable {
 	}
 
 	public mutating func add(chunk: StaticChunk) {
-		chunks[chunk.symbol] = chunk
+		chunks[chunk.symbol.asStatic()] = chunk
 	}
 }

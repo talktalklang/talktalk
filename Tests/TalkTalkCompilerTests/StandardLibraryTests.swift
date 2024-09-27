@@ -46,7 +46,7 @@ struct StandardLibraryTests: CompilerTest {
 			.op(.getModuleValue, line: 1, .global(.value("E2E", "a"))),
 			.op(.invokeMethod, line: 1, .invokeMethod(.method("Standard", "Array", "append", ["T"]))),
 			.op(.getModuleValue, line: 2, .global(.value("E2E", "a"))),
-			.op(.getProperty, line: 2, .getProperty(.property("Standard", "Array", "count"), options: [])),
+			.op(.getProperty, line: 2, .getProperty(.property("Standard", "Array", "count"))),
 			.op(.returnValue, line: 2),
 			.op(.returnVoid, line: 0)
 		))

@@ -10,10 +10,10 @@ public struct Capture: Codable, Sendable, Equatable, Hashable {
 		case stack(Int), heap(Heap.Pointer)
 	}
 
-	public let symbol: Symbol
+	public let symbol: StaticSymbol
 	public let location: Location
 
-	public init(symbol: Symbol, location: Location) {
+	public init(symbol: StaticSymbol, location: Location) {
 		self.symbol = symbol
 		self.location = location
 	}

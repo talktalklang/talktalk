@@ -11,9 +11,9 @@ public class Instance: Equatable, Hashable, Codable, @unchecked Sendable {
 	}
 
 	public let type: Struct
-	public var fields: [Symbol: Value]
+	public var fields: [StaticSymbol: Value]
 
-	public init(type: Struct, fields: [Symbol: Value]) {
+	public init(type: Struct, fields: [StaticSymbol: Value]) {
 		self.type = type
 		self.fields = fields
 	}
@@ -66,16 +66,16 @@ public enum Value: Equatable, Hashable, Codable {
 	case pointer(Heap.Pointer)
 
 	// The index of the closure
-	case closure(Symbol)
+	case closure(StaticSymbol)
 
 	// The index of the builtin function
-	case builtin(Symbol)
+	case builtin(StaticSymbol)
 
 	// The index of the builtin struct
 	case builtinStruct(Int)
 
 	// The index of the module function in its lookup table
-	case moduleFunction(Symbol)
+	case moduleFunction(StaticSymbol)
 
 	// The index of the struct in the module
 	case `struct`(Struct)
@@ -95,10 +95,10 @@ public enum Value: Equatable, Hashable, Codable {
 	case instance(Instance)
 
 	// The type of instance, the method slot
-	case boundStructMethod(Instance, Symbol)
+	case boundStructMethod(Instance, StaticSymbol)
 
 	// The enum type, the method slot
-	case boundEnumMethod(EnumCase, Symbol)
+	case boundEnumMethod(EnumCase, StaticSymbol)
 
 	case primitive(Primitive)
 
@@ -177,7 +177,7 @@ public enum Value: Equatable, Hashable, Codable {
 		return data
 	}
 
-	public var closureValue: Symbol? {
+	public var closureValue: StaticSymbol? {
 		guard case let .closure(result) = self else {
 			return nil
 		}
@@ -185,7 +185,7 @@ public enum Value: Equatable, Hashable, Codable {
 		return result
 	}
 
-	public var builtinValue: Symbol? {
+	public var builtinValue: StaticSymbol? {
 		guard case let .builtin(result) = self else {
 			return nil
 		}
@@ -193,7 +193,7 @@ public enum Value: Equatable, Hashable, Codable {
 		return result
 	}
 
-	public var moduleFunctionValue: Symbol? {
+	public var moduleFunctionValue: StaticSymbol? {
 		guard case let .moduleFunction(result) = self else {
 			return nil
 		}
@@ -217,7 +217,7 @@ public enum Value: Equatable, Hashable, Codable {
 		return instance
 	}
 
-	public var boundMethodValue: (instance: Instance, symbol: Symbol)? {
+	public var boundMethodValue: (instance: Instance, symbol: StaticSymbol)? {
 		guard case let .boundStructMethod(instance, symbol) = self else {
 			return nil
 		}
