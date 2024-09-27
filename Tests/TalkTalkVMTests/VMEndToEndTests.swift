@@ -112,8 +112,9 @@ struct VMEndToEndTests: VMTest {
 
 		return i + 1
 		"""
-		#expect(
-			try run(source) == .int(124))
+
+		let result = try run(source)
+		#expect(result == .int(124))
 	}
 
 	@Test("Func arguments") func funcArgs() throws {

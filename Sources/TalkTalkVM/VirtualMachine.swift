@@ -734,6 +734,8 @@ public struct VirtualMachine {
 	}
 
 	private mutating func pushFrame(_ frame: CallFrame) throws {
+		try frames.push(frame)
+
 		ip = 0
 		currentFrame = frame
 		chunk = frame.closure.chunk
