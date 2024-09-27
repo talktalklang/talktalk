@@ -663,11 +663,11 @@ public struct VirtualMachine {
 					try stack.push(binding)
 				}
 			case .endInline:
-				let inlineFrame = try frames.pop()
-				guard inlineFrame.isInline else {
-					return runtimeError("Frame not inline!")
+				let frame = try frames.peek()
+				if frame.isInline {
+					try frames.pop()
+					try restoreCurrentFrame(returnTo: frame.returnTo)
 				}
-				ip = inlineFrame.returnTo
 			case .beginScope:
 				()
 			case .matchBegin:
@@ -1014,6 +1014,8 @@ public struct VirtualMachine {
 	}
 
 	private func log(_ string: String) {
-		FileHandle.standardError.write(Data((string + "\n").utf8))
+		if verbosity != .quiet {
+			FileHandle.standardError.write(Data((string + "\n").utf8))
+		}
 	}
 }
