@@ -29,33 +29,7 @@ public struct VirtualMachine {
 	var chunk: StaticChunk
 
 	// The frames stack
-	var frames: Stack<CallFrame> {
-		willSet {
-			#if DEBUG
-				if frames.size != newValue.size, frames.size > 0, verbosity != .quiet {
-					log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
-				}
-			#endif
-		}
-
-		didSet {
-			ip = 0
-			if frames.isEmpty { return }
-
-			do {
-				currentFrame = try frames.peek()
-				chunk = currentFrame.closure.chunk
-
-				#if DEBUG
-					if frames.size != oldValue.size, frames.size > 0, verbosity != .quiet {
-						log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
-					}
-				#endif
-			} catch {
-				print("Frames in invalid state! \(error)")
-			}
-		}
-	}
+	var frames: Stack<CallFrame>
 
 	// The current call frame
 	var currentFrame: CallFrame
@@ -101,9 +75,22 @@ public struct VirtualMachine {
 		)
 
 		try frames.push(frame)
+		
 		self.currentFrame = frame
 		self.chunk = frame.closure.chunk
 		self.ip = 0
+	}
+
+	private mutating func restoreCurrentFrame(returnTo: UInt64) throws {
+		// Return to where we called from
+		log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
+
+		if frames.size == 0 { return }
+
+		currentFrame = try frames.peek()
+		chunk = currentFrame.closure.chunk
+		ip = returnTo
+		log("       -> \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
 	}
 
 	public mutating func run() throws -> ExecutionResult {
@@ -151,10 +138,11 @@ public struct VirtualMachine {
 			switch opcode {
 			case .returnVoid:
 				var calledFrame = try frames.pop()
-
 				while calledFrame.isInline {
 					calledFrame = try frames.pop()
 				}
+
+				try restoreCurrentFrame(returnTo: calledFrame.returnTo)
 
 				// If there are no frames left, we're done.
 				if frames.size == 0 {
@@ -175,9 +163,6 @@ public struct VirtualMachine {
 				while stack.size > calledFrame.stackOffset + 1 {
 					try stack.pop()
 				}
-
-				// Return to where we called from
-				ip = calledFrame.returnTo
 			case .returnValue:
 				var calledFrame = try frames.pop()
 
@@ -208,13 +193,12 @@ public struct VirtualMachine {
 					calledFrame = try frames.pop()
 				}
 
+				try restoreCurrentFrame(returnTo: calledFrame.returnTo)
+
 				try transferCaptures(in: calledFrame)
 
 				// Push the result back onto the stack
 				try stack.push(result)
-
-				// Return to where we called from
-				ip = calledFrame.returnTo
 			case .suspend:
 				return try .ok(stack.peek(), Date().timeIntervalSince(start))
 			case .constant:
@@ -749,6 +733,12 @@ public struct VirtualMachine {
 		)
 	}
 
+	private mutating func pushFrame(_ frame: CallFrame) throws {
+		ip = 0
+		currentFrame = frame
+		chunk = frame.closure.chunk
+	}
+
 	// Call a method on a struct instance.
 	// Takes the method offset, instance and type that defines the method.
 	private mutating func call(boundMethod: Symbol, on instance: Instance) throws {
@@ -814,7 +804,7 @@ public struct VirtualMachine {
 			frame.define(chunk.locals[i], as: args[i])
 		}
 
-		try frames.push(frame)
+		try pushFrame(frame)
 	}
 
 	private mutating func call(closureID: Symbol) throws {
@@ -835,7 +825,7 @@ public struct VirtualMachine {
 			frame.define(closure.chunk.locals[i], as: args[i])
 		}
 
-		try frames.push(frame)
+		try pushFrame(frame)
 	}
 
 	private mutating func call(chunkID: Symbol, inline: Bool = false) throws {
@@ -863,7 +853,7 @@ public struct VirtualMachine {
 			frame.define(chunk.locals[i], as: args[i])
 		}
 
-		try frames.push(frame)
+		try pushFrame(frame)
 	}
 
 	private func inspect(_ value: Value) -> String {
