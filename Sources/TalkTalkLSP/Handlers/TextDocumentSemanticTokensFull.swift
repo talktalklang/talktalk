@@ -406,8 +406,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: LogicalExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		try expr.lhs.accept(self, context) + expr.rhs.accept(self, context)
 	}
 
 	// GENERATOR_INSERTION

@@ -6,3 +6,8 @@ var a = 123
 a += 345
 
 print(a)
+
+let b = false
+let c = true
+
+let d = b && c

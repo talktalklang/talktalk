@@ -549,7 +549,7 @@ public struct VirtualMachine {
 				}
 			case .getMethod:
 				// Get the slot of the member
-				var symbol = try readSymbol()
+				let symbol = try readSymbol()
 
 				// Pop the receiver off the stack
 				let receiver = try stack.pop()
