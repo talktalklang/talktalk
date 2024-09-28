@@ -253,6 +253,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			case .minus: .subtract
 			case .star: .multiply
 			case .slash: .divide
+			case .percent: .modulo
 			case .is: .is
 			}
 

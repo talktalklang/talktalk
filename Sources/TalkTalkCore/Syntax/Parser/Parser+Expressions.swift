@@ -614,6 +614,7 @@ extension Parser {
 		case .greater: .greater
 		case .greaterEqual: .greaterEqual
 		case .is: .is
+		case .percent: .percent
 		default:
 			// swiftlint:disable fatal_error
 			fatalError("unreachable")

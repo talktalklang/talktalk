@@ -123,6 +123,8 @@ public struct Interpreter: AnalyzedVisitor {
 			return lhs.times(rhs)
 		case .slash:
 			return lhs.div(rhs)
+		case .percent:
+			return lhs.mod(rhs)
 		case .is:
 			return .bool(lhs.type == rhs)
 		}

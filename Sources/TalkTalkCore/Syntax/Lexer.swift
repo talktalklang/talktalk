@@ -13,7 +13,7 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     leftBracket, rightBracket,
 		     semicolon, symbol, plus, equals, comma, bang,
 		     colon, dot, less, greater, minus, star, slash, questionMark,
-		     and, pipe
+		     and, pipe, percent
 
 		// Multiple char tokens
 		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow,
@@ -146,6 +146,7 @@ public struct Lexer {
 		case ".": make(.dot)
 		case ";": make(.semicolon)
 		case "-": minus()
+		case "%": make(.percent)
 		case "<": make(match("=") ? .lessEqual : .less)
 		case ">": make(match("=") ? .greaterEqual : .greater)
 		case "?": make(.questionMark)

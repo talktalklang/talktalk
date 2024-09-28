@@ -16,6 +16,7 @@ public enum BinaryOperator: String {
 	     minus = "-",
 	     star = "*",
 	     slash = "/",
+			 percent = "%",
 	     `is`
 }
 

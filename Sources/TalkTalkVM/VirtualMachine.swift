@@ -318,6 +318,16 @@ public struct VirtualMachine {
 					return runtimeError("Cannot subtract \(lhs) & \(rhs) operands")
 				}
 				try stack.push(.int(lhs - rhs))
+			case .modulo:
+				let lhs = try stack.pop()
+				let rhs = try stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
+				else {
+					return runtimeError("Cannot modulo \(lhs) & \(rhs) operands")
+				}
+				try stack.push(.int(lhs % rhs))
 			case .divide:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()

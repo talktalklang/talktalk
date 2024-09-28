@@ -194,4 +194,13 @@ public indirect enum Value: Equatable, Comparable {
 			return .error("Cannot divide \(other) by \(self)")
 		}
 	}
+
+	public func mod(_ other: Value) -> Value {
+		switch (self, other) {
+		case let (.int(lhs), .int(rhs)):
+			return .int(lhs % rhs)
+		default:
+			return .error("Cannot mod \(other) and \(self)")
+		}
+	}
 }
