@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct Method: Member {
 	public let name: String

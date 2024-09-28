@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct FuncExprAnalyzer: Analyzer {
 	var expr: any FuncExpr

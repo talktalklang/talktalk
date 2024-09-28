@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public protocol AnalyzedVarLetDecl: AnalyzedDecl, VarLetDecl {
 	var symbol: Symbol? { get }

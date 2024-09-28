@@ -17,10 +17,6 @@ let package = Package(
 			targets: ["TalkTalkBytecode"]
 		),
 		.library(
-			name: "TalkTalkSyntax",
-			targets: ["TalkTalkSyntax"]
-		),
-		.library(
 			name: "TypeChecker",
 			targets: ["TypeChecker"]
 		),
@@ -52,7 +48,6 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCore",
 				"TalkTalkLSP",
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkDriver",
 				"TalkTalkInterpreter",
@@ -62,16 +57,9 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "TalkTalkSyntax",
-			dependencies: [
-				"TalkTalkCore",
-			]
-		),
-		.target(
 			name: "TalkTalkAnalysis",
 			dependencies: [
 				"TalkTalkCore",
-				"TalkTalkSyntax",
 				"TalkTalkBytecode",
 				"TypeChecker",
 				.product(name: "OrderedCollections", package: "swift-collections"),
@@ -88,7 +76,6 @@ let package = Package(
 			name: "TypeChecker",
 			dependencies: [
 				"TalkTalkCore",
-				"TalkTalkSyntax",
 				.product(name: "OrderedCollections", package: "swift-collections"),
 			]
 		),
@@ -99,7 +86,7 @@ let package = Package(
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkDriver",
-				"TalkTalkSyntax",
+				"TalkTalkCore",
 				"TypeChecker",
 			]
 		),
@@ -107,7 +94,6 @@ let package = Package(
 			name: "TalkTalkCompiler",
 			dependencies: [
 				"TalkTalkCore",
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				.product(name: "OrderedCollections", package: "swift-collections"),
@@ -117,7 +103,6 @@ let package = Package(
 			name: "TalkTalkDriver",
 			dependencies: [
 				"TalkTalkCore",
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkCompiler",
 				"TalkTalkBytecode",
@@ -128,7 +113,6 @@ let package = Package(
 			name: "TalkTalkVM",
 			dependencies: [
 				"TalkTalkCompiler",
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				"TalkTalkDriver",
@@ -139,7 +123,6 @@ let package = Package(
 		.target(
 			name: "TalkTalkInterpreter",
 			dependencies: [
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 				"TalkTalkBytecode",
 				"TypeChecker",
@@ -159,7 +142,6 @@ let package = Package(
 				"TalkTalkDriver",
 				"TalkTalkBytecode",
 				"TalkTalkAnalysis",
-				"TalkTalkSyntax",
 				"TalkTalkCompiler",
 			]
 		),
@@ -167,7 +149,6 @@ let package = Package(
 			name: "TalkTalkBytecodeTests",
 			dependencies: [
 				"TalkTalkBytecode",
-				"TalkTalkSyntax",
 				"TalkTalkCompiler",
 				"TalkTalkAnalysis",
 			]
@@ -178,14 +159,12 @@ let package = Package(
 				"TalkTalkLSP",
 				"TalkTalkBytecode",
 				"TalkTalkAnalysis",
-				"TalkTalkSyntax",
 			]
 		),
 		.testTarget(
 			name: "TalkTalkCompilerTests",
 			dependencies: [
 				"TalkTalkCompiler",
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 			]
 		),
@@ -196,7 +175,6 @@ let package = Package(
 				"TalkTalkDriver",
 				"TalkTalkVM",
 				"TalkTalkCompiler",
-				"TalkTalkSyntax",
 				"TalkTalkAnalysis",
 			]
 		),
@@ -208,17 +186,17 @@ let package = Package(
 		),
 		.testTarget(
 			name: "TalkTalkAnalysisTests",
-			dependencies: ["TalkTalkAnalysis", "TalkTalkSyntax"]
+			dependencies: ["TalkTalkAnalysis", "TalkTalkCore"]
 		),
 		.testTarget(
 			name: "TalkTalkSyntaxTests",
-			dependencies: ["TalkTalkSyntax"]
+			dependencies: ["TalkTalkCore"]
 		),
 		.testTarget(
 			name: "TypeCheckerTests",
 			dependencies: [
 				"TypeChecker",
-				"TalkTalkSyntax",
+				"TalkTalkCore",
 			]
 		),
 	]

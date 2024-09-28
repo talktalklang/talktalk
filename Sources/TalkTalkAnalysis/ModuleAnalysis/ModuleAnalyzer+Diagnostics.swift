@@ -4,7 +4,7 @@
 //
 //  Created by Pat Nakajima on 8/16/24.
 //
-import TalkTalkSyntax
+import TalkTalkCore
 
 public extension AnalysisModule {
 	struct ErrorResults {

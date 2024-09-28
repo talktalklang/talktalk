@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct Pattern: Equatable, Hashable, CustomStringConvertible {
 	public enum Argument: Equatable, Hashable {

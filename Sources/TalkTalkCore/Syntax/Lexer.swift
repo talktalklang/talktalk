@@ -4,7 +4,6 @@
 //
 //  Created by Pat Nakajima on 7/22/24.
 //
-import TalkTalkCore
 
 public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable, Codable {
 	public enum Kind: Sendable, Equatable, Hashable, Codable {

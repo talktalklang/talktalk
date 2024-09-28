@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	public let wrapped: InitDeclSyntax
@@ -31,7 +31,7 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(wrapped, context)
 	}
 }

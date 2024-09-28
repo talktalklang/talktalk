@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/23/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct CallExprAnalyzer: Analyzer {
 	enum CallExprError: Error, @unchecked Sendable {

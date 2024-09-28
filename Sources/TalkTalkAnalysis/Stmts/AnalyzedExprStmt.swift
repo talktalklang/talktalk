@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/12/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, AnalyzedStmt {
 	public enum ExitBehavior {
@@ -28,7 +28,7 @@ public struct AnalyzedExprStmt: ExprStmt, AnalyzedSyntax, AnalyzedDecl, Analyzed
 		try visitor.visit(self, scope)
 	}
 
-	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(wrapped, context)
 	}
 }

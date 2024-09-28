@@ -7,7 +7,7 @@
 
 import TalkTalkAnalysis
 @testable import TalkTalkLSP
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 
 @MainActor

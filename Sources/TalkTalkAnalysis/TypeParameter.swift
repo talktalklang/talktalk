@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/11/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct TypeParameter {
 	let name: String

@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedArgument: AnalyzedSyntax {
 	public var inferenceType: InferenceType { expr.inferenceType }

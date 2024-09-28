@@ -7,7 +7,6 @@
 
 import OrderedCollections
 import TalkTalkCore
-import TalkTalkSyntax
 
 public struct Inferencer {
 	let visitor = InferenceVisitor()

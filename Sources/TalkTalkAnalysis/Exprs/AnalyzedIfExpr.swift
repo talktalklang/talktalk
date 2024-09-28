@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedIfExpr: AnalyzedExpr, IfExpr {
 	public let inferenceType: InferenceType

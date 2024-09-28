@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/26/24.
 //
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 // Analyze the AST, trying to figure out types and also checking for errors

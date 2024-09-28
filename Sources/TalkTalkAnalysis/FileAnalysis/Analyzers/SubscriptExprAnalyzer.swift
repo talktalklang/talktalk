@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct SubscriptExprAnalyzer: Analyzer {
 	let expr: any SubscriptExpr

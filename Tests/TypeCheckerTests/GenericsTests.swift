@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 @testable import TypeChecker
 

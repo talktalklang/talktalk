@@ -6,7 +6,7 @@
 //
 
 import TalkTalkAnalysis
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 import TypeChecker
 

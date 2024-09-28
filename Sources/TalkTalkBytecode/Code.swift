@@ -10,12 +10,9 @@ public enum Code: Codable, Equatable, Sendable {
 		case invalidCode(Code, String)
 	}
 
-//	public static func symbol(_ symbol: Symbol) -> Code {
-//		.symbol(symbol.asStatic())
-//	}
-
 	case byte(Byte), opcode(Opcode), symbol(StaticSymbol), capture(Capture)
 
+	@inline(__always)
 	public func asByte() throws -> Byte {
 		guard case let .byte(byte) = self else {
 			throw InvalidCodeError.invalidCode(self, "expected byte")
@@ -24,6 +21,7 @@ public enum Code: Codable, Equatable, Sendable {
 		return byte
 	}
 
+	@inline(__always)
 	public func asOpcode() throws -> Opcode {
 		guard case let .opcode(opcode) = self else {
 			throw InvalidCodeError.invalidCode(self, "expected opcode")
@@ -32,6 +30,7 @@ public enum Code: Codable, Equatable, Sendable {
 		return opcode
 	}
 
+	@inline(__always)
 	public func asSymbol() throws -> StaticSymbol {
 		guard case let .symbol(symbol) = self else {
 			throw InvalidCodeError.invalidCode(self, "expected symbol, got \(self)")
@@ -40,6 +39,7 @@ public enum Code: Codable, Equatable, Sendable {
 		return symbol
 	}
 
+	@inline(__always)
 	public func asCapture() throws -> Capture {
 		guard case let .capture(capture) = self else {
 			throw InvalidCodeError.invalidCode(self, "expected capture")

@@ -18,17 +18,17 @@ struct Closure {
 	}
 }
 
-public class CallFrame {
+class CallFrame {
 	var isInline: Bool = false
 	var closure: Closure
-	var returnTo: UInt64
+	var returnTo: Int
 	var locals: [String: Value] = [:]
 	var selfValue: Value?
 	let stackOffset: Int
 
 	var patternBindings: [StaticSymbol: Value] = [:]
 
-	init(closure: Closure, returnTo: UInt64, selfValue: Value?, stackOffset: Int) {
+	init(closure: Closure, returnTo: Int, selfValue: Value?, stackOffset: Int) {
 		self.closure = closure
 		self.returnTo = returnTo
 		self.selfValue = selfValue

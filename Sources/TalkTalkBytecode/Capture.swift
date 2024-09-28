@@ -7,7 +7,7 @@
 
 public struct Capture: Codable, Sendable, Equatable, Hashable {
 	public enum Location: Codable, Sendable, Equatable, Hashable {
-		case stack(Int), heap(Heap.Pointer)
+		case stack(Int), heap(Int, Int)
 	}
 
 	public let symbol: StaticSymbol

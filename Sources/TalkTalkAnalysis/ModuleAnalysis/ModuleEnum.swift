@@ -7,7 +7,7 @@
 
 import OrderedCollections
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct ModuleEnum: ModuleGlobal {
 	public let name: String

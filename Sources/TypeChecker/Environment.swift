@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 class Environment {
 	var types: [SyntaxID: InferenceResult] = [:]

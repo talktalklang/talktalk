@@ -8,8 +8,7 @@
 import ArgumentParser
 import TalkTalkAnalysis
 import TalkTalkCompiler
-import TalkTalkDriver
-import TalkTalkSyntax
+import TalkTalkCore
 import TalkTalkVM
 
 struct Run: TalkTalkCommand {

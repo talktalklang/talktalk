@@ -6,7 +6,7 @@
 //
 
 import OrderedCollections
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public protocol LexicalScopeType {

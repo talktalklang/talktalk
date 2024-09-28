@@ -8,7 +8,6 @@
 import ArgumentParser
 import Foundation
 import TalkTalkDriver
-import TalkTalkSyntax
 
 struct ModuleCompile: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

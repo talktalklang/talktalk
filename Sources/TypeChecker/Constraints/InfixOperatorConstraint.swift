@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct InfixOperatorConstraint: Constraint {
 	let op: BinaryOperator

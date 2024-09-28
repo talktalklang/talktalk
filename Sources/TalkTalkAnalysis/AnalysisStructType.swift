@@ -7,7 +7,7 @@
 
 import OrderedCollections
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public class AnalysisStructType: LexicalScopeType {
 	public let id: SyntaxID

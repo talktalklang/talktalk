@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/22/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public protocol AnalyzedExpr: Expr, AnalyzedSyntax, Typed {
 	var analyzedChildren: [any AnalyzedSyntax] { get }

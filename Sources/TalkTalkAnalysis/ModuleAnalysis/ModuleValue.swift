@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct ModuleValue: ModuleGlobal {
 	public let name: String

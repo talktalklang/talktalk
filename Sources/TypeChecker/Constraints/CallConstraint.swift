@@ -6,7 +6,7 @@
 //
 
 import OrderedCollections
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct CallConstraint: Constraint {
 	let callee: InferenceResult

@@ -10,8 +10,7 @@ import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkCore
-import TalkTalkDriver
-import TalkTalkSyntax
+import TalkTalkCore
 import TalkTalkVM
 
 @MainActor

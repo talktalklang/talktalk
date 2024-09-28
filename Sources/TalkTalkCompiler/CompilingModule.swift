@@ -8,7 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 
 public extension Module {
 	// swiftlint:disable force_try

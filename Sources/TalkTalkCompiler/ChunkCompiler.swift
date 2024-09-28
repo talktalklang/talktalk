@@ -7,7 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public class ChunkCompiler: AnalyzedVisitor {

@@ -7,7 +7,7 @@
 
 import Foundation
 import OrderedCollections
-import TalkTalkSyntax
+import TalkTalkCore
 
 typealias VariableID = Int
 

@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/30/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public typealias InferenceType = TypeChecker.InferenceType

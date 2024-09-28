@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 9/12/24.
 //
 
-@testable import TalkTalkSyntax
+@testable import TalkTalkCore
 import Testing
 
 struct StringTests {

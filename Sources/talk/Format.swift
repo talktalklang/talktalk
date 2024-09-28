@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/11/24.
 //
 import ArgumentParser
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct Format: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

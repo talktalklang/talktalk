@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/5/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct Range: Codable, Sendable, Hashable {
 	public let start: Position
@@ -43,7 +43,7 @@ public struct Position: Codable, Sendable, Hashable, Comparable {
 	}
 }
 
-public extension TalkTalkSyntax.SourceLocation {
+public extension SourceLocation {
 	func contains(_ position: Position) -> Bool {
 		position.line >= start.line && position.line <= end.line
 	}

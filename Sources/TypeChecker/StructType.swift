@@ -6,7 +6,7 @@
 //
 import Foundation
 import OrderedCollections
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct StructType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
 	public static func == (lhs: StructType, rhs: StructType) -> Bool {

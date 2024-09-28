@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/29/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct BuiltinFunction {
 	public let name: String

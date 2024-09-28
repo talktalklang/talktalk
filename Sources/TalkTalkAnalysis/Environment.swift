@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 // An Environment represents the type environment for some scope

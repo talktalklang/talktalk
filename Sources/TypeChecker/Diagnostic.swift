@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/27/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct Diagnostic: Equatable, Hashable {
 	enum Severity: Equatable {

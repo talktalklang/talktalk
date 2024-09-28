@@ -7,7 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 
 struct AnalysisErrorTests: AnalysisTest {

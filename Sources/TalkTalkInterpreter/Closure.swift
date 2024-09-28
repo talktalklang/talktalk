@@ -6,7 +6,7 @@
 //
 
 import TalkTalkAnalysis
-import TalkTalkSyntax
+import TalkTalkCore
 
 public class Closure {
 	let funcExpr: AnalyzedFuncExpr

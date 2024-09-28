@@ -6,7 +6,6 @@
 //
 
 import ArgumentParser
-import TalkTalkSyntax
 
 struct Compile: TalkTalkCommand {
 	static let configuration = CommandConfiguration(

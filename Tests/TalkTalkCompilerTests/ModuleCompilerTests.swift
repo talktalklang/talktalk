@@ -8,7 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 
 extension [Instruction]: @retroactive CustomTestStringConvertible {

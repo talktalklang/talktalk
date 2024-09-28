@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/30/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 extension BuiltinFunction {

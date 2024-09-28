@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/31/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedReturnStmt: AnalyzedStmt, ReturnStmt {
 	public let inferenceType: InferenceType

@@ -7,7 +7,7 @@
 
 import OrderedCollections
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct ModuleProtocol: ModuleGlobal {
 	public let id: SyntaxID

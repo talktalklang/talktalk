@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 struct MemberExprAnalyzer: Analyzer {

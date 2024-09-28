@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/24/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public struct AnalyzedParam: Param, AnalyzedExpr, Typed {

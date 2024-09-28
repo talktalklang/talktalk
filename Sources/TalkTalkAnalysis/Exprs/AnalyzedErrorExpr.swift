@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedErrorSyntax: AnalyzedExpr, ParseError, Member {
 	public var expr: any Syntax { wrapped }

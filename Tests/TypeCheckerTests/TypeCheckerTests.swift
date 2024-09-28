@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 @testable import TypeChecker
 

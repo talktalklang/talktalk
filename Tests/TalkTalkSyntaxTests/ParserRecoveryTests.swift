@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 9/22/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 
 struct ParserRecoveryTests {

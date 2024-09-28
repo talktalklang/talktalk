@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/26/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 // Used for being able to handle func and init decls with the same code
 protocol FuncLike: Syntax {
@@ -21,7 +21,7 @@ extension InitDeclSyntax: FuncLike {
 		nil
 	}
 
-	var name: TalkTalkSyntax.Token? {
+	var name: Token? {
 		nil
 	}
 }

@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedVarExpr: AnalyzedExpr, AnalyzedDecl, VarExpr {
 	public let inferenceType: InferenceType

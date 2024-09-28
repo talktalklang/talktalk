@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import TalkTalkCore
 
 struct SourceLocationStack {
 	var locations: [Token] = []

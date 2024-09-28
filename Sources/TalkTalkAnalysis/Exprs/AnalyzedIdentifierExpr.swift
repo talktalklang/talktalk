@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/6/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedIdentifierExpr: AnalyzedExpr, IdentifierExpr {
 	public let inferenceType: InferenceType
@@ -19,7 +19,7 @@ public struct AnalyzedIdentifierExpr: AnalyzedExpr, IdentifierExpr {
 	public var name: String { wrapped.name }
 	public let environment: Environment
 
-	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
+	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(wrapped, scope)
 	}
 }

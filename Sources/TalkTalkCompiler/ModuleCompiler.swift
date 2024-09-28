@@ -8,7 +8,7 @@
 import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public typealias BuiltinFunction = TypeChecker.BuiltinFunction

@@ -7,7 +7,7 @@
 
 import OrderedCollections
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 // Module structs are type level structs that can be shared across
 // module boundaries.

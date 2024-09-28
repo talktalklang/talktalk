@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/27/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct MemberConstraint: Constraint {
 	let receiver: InferenceResult

@@ -7,7 +7,7 @@
 
 import Foundation
 import OrderedCollections
-import TalkTalkSyntax
+import TalkTalkCore
 
 public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
 	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {

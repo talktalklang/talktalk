@@ -6,7 +6,7 @@
 //
 
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 import Testing
 
 struct FormatTests {

@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
 	public let wrapped: TypeExprSyntax
@@ -16,13 +16,13 @@ public struct AnalyzedTypeExpr: TypeExpr, AnalyzedExpr {
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }
 	public var environment: Environment
 
-	public var identifier: TalkTalkSyntax.Token { wrapped.identifier }
+	public var identifier: Token { wrapped.identifier }
 	public var genericParams: [TypeExprSyntax] { wrapped.genericParams }
-	public var location: TalkTalkSyntax.SourceLocation { wrapped.location }
-	public var children: [any TalkTalkSyntax.Syntax] { wrapped.children }
+	public var location: SourceLocation { wrapped.location }
+	public var children: [any Syntax] { wrapped.children }
 	public var isOptional: Bool { wrapped.isOptional }
 
-	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: TalkTalkSyntax.Visitor {
+	public func accept<V>(_ visitor: V, _ context: V.Context) throws -> V.Value where V: Visitor {
 		try visitor.visit(wrapped, context)
 	}
 

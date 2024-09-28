@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/10/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public enum AnalyzerError: Error {

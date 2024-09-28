@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/8/24.
 //
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 
 public enum ModuleSource {
 	case module, external(AnalysisModule)

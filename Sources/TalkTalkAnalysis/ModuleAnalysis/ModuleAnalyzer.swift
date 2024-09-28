@@ -7,7 +7,7 @@
 
 import TalkTalkBytecode
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public struct ModuleAnalyzer: Analyzer {

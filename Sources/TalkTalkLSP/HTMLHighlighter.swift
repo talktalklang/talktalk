@@ -6,7 +6,7 @@
 //
 
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct HTMLHighlighter {
 	let input: SourceFile

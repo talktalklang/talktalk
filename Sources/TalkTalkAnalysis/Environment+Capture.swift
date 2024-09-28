@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/7/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public extension Environment {

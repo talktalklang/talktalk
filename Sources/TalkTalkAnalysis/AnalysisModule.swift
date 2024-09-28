@@ -7,7 +7,7 @@
 
 import OrderedCollections
 import TalkTalkBytecode
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public struct AnalysisModule {

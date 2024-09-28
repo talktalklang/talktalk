@@ -8,7 +8,7 @@
 import Testing
 
 struct BenchTests: VMTest {
-	@Test("Basic", .disabled()) func basic() throws {
+	@Test("Basic") func basic() throws {
 		let code = #"""
 		protocol Greetable {
 			var name: String

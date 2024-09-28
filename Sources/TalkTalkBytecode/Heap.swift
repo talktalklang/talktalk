@@ -14,14 +14,14 @@ public final class Heap {
 		}
 
 		public static func + (lhs: Pointer, rhs: Int) -> Pointer {
-			Pointer(blockID: lhs.base, offset: lhs.offset + rhs)
+			Pointer(base: lhs.base, offset: lhs.offset + rhs)
 		}
 
-		let base: Int
-		let offset: Int
+		public let base: Int
+		public let offset: Int
 
-		init(blockID: Int, offset: Int) {
-			self.base = blockID
+		public init(base: Int, offset: Int) {
+			self.base = base
 			self.offset = offset
 		}
 
@@ -56,7 +56,7 @@ public final class Heap {
 		let current = storage.count
 		let block = Heap.Block(address: current, capacity: .init(count))
 		storage.append(block)
-		return Pointer(blockID: current, offset: 0)
+		return Pointer(base: current, offset: 0)
 	}
 
 	public func size(of block: Int) -> Int {

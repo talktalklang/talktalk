@@ -9,7 +9,7 @@ import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkCore
-import TalkTalkSyntax
+import TalkTalkCore
 import TalkTalkVM
 import Testing
 

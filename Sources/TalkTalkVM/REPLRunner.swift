@@ -10,7 +10,7 @@ import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkCore
 import TalkTalkDriver
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 public enum REPLError: Error {
@@ -106,7 +106,7 @@ public class REPLRunner: Copyable {
 		}
 
 		chunk.emit(opcode: .suspend, line: .zero)
-		vm.chunk = StaticChunk(chunk: chunk)
+		vm.set(chunk: StaticChunk(chunk: chunk))
 
 		return try vm.run()
 	}

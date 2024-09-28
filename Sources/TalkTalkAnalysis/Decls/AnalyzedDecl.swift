@@ -5,6 +5,6 @@
 //  Created by Pat Nakajima on 7/30/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public protocol AnalyzedDecl: Decl, AnalyzedExpr {}

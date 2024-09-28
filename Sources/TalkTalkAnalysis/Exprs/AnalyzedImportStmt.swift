@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/30/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public struct AnalyzedImportStmt: ImportStmt, AnalyzedStmt {
 	public var analyzedChildren: [any AnalyzedSyntax] { [] }

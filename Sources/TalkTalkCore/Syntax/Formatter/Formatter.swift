@@ -4,7 +4,6 @@
 //
 //  Created by Pat Nakajima on 9/13/24.
 //
-import TalkTalkCore
 
 public struct Formatter {
 	let input: SourceFile

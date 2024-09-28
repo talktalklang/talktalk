@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/27/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 struct VariableConstraint: Constraint {
 	let typeVar: InferenceType

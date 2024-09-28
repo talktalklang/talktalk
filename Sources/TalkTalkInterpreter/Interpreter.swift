@@ -6,7 +6,7 @@
 //
 
 import TalkTalkAnalysis
-import TalkTalkSyntax
+import TalkTalkCore
 import TypeChecker
 
 // swiftlint:disable fatal_error force_unwrapping force_try force_cast

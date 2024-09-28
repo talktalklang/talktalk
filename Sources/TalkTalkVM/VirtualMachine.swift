@@ -23,29 +23,28 @@ public struct VirtualMachine {
 	// Where should output go? (Defaults to stdout/stderr)
 	var output: any OutputBuffer
 
-	var ip: UInt64
+	private var ip: Int
 
 	// The chunk that's being run
-	var chunk: StaticChunk
+	private var chunk: StaticChunk
 
 	// The frames stack
-	var frames: Stack<CallFrame>
+	private var frames: Stack<CallFrame>
 
 	// The current call frame
-	var currentFrame: CallFrame
+	private var currentFrame: CallFrame
 
 	// The stack
-	var stack: Stack<Value>
+	private var stack: Stack<Value>
 
 	// A fake heap
-	var heap = Heap()
+	private var heap = Heap()
 
 	// Closure storage
-	var closures: [StaticSymbol: Closure] = [:]
+	private var closures: [StaticSymbol: Closure] = [:]
 
-	var globalValues: [StaticSymbol: Value] = [:]
+	private var globalValues: [StaticSymbol: Value] = [:]
 
-	// Upvalue linked list
 	public static func run(module: Module, verbosity: Verbosity = .quiet, output: any OutputBuffer = DefaultOutputBuffer()) throws -> ExecutionResult {
 		var vm = try VirtualMachine(module: module, verbosity: verbosity, output: output)
 		return try vm.run()
@@ -81,7 +80,7 @@ public struct VirtualMachine {
 		self.ip = 0
 	}
 
-	private mutating func restoreCurrentFrame(returnTo: UInt64) throws {
+	private mutating func restoreCurrentFrame(returnTo: Int) throws {
 		// Return to where we called from
 		#if DEBUG
 			log("       <- \(chunk.name), depth: \(chunk.depth) locals: \(chunk.locals)")
@@ -105,7 +104,7 @@ public struct VirtualMachine {
 			#if DEBUG
 				func dumpInstruction() throws -> Instruction? {
 					var disassembler = Disassembler(chunk: chunk, module: module)
-					disassembler.current = Int(ip)
+					disassembler.current = ip
 					if let instruction = try disassembler.next() {
 						dumpStack()
 						dumpLocals()
@@ -440,8 +439,8 @@ public struct VirtualMachine {
 					}
 
 					try stack.push(value)
-				case let .heap(pointer):
-					guard let value = heap.dereference(pointer: pointer) else {
+				case let .heap(base, offset):
+					guard let value = heap.dereference(pointer: .init(base: base, offset: offset)) else {
 						throw VirtualMachineError.valueMissing("Capture named `\(capture.symbol)` not found on heap")
 					}
 
@@ -455,8 +454,8 @@ public struct VirtualMachine {
 				switch currentFrame.closure.capturing[capture.symbol] {
 				case let .stack(depth):
 					try frames[frames.size - depth - 1].define(capture.symbol, as: stack.peek())
-				case let .heap(pointer):
-					try heap.store(pointer: pointer, value: stack.peek())
+				case let .heap(base, offset):
+					try heap.store(pointer: .init(base: base, offset: offset), value: stack.peek())
 				default:
 					throw VirtualMachineError.valueMissing("Capture named `\(capture.symbol)` not found in closure")
 				}
@@ -699,6 +698,10 @@ public struct VirtualMachine {
 		}
 	}
 
+	public mutating func set(chunk: StaticChunk) {
+		self.chunk = chunk
+	}
+
 	private mutating func checkType(instance: Value, type: Value) throws {
 		try stack.push(.bool(instance.is(type)))
 	}
@@ -736,6 +739,7 @@ public struct VirtualMachine {
 		)
 	}
 
+	@inline(__always)
 	private mutating func pushFrame(_ frame: CallFrame) throws {
 		try frames.push(frame)
 
@@ -746,6 +750,7 @@ public struct VirtualMachine {
 
 	// Call a method on a struct instance.
 	// Takes the method offset, instance and type that defines the method.
+	@inline(__always)
 	private mutating func call(boundMethod: StaticSymbol, on instance: Instance) throws {
 		var boundMethod = boundMethod
 
@@ -762,6 +767,7 @@ public struct VirtualMachine {
 
 	// Call a method on a struct instance.
 	// Takes the method offset, instance and type that defines the method.
+	@inline(__always)
 	private mutating func call(boundMethod: StaticSymbol, on enumCase: EnumCase) throws {
 		var boundMethod = boundMethod
 
@@ -776,6 +782,7 @@ public struct VirtualMachine {
 		try call(chunk: methodChunk, withSelf: .enumCase(enumCase))
 	}
 
+	@inline(__always)
 	private mutating func call(structValue structType: Struct) throws {
 		// Create the instance Value
 		let instance = Value.instance(
@@ -793,6 +800,7 @@ public struct VirtualMachine {
 		try call(chunk: initializer, withSelf: instance)
 	}
 
+	@inline(__always)
 	private mutating func call(chunk: StaticChunk, withSelf: Value? = nil, additionalOffset: Int = 0) throws {
 		let frame = CallFrame(
 			closure: .init(
@@ -812,6 +820,7 @@ public struct VirtualMachine {
 		try pushFrame(frame)
 	}
 
+	@inline(__always)
 	private mutating func call(closureID: StaticSymbol) throws {
 		// Find the called chunk from the closure id
 		guard let closure = closures[closureID] else {
@@ -833,6 +842,7 @@ public struct VirtualMachine {
 		try pushFrame(frame)
 	}
 
+	@inline(__always)
 	private mutating func call(chunkID: StaticSymbol, inline: Bool = false) throws {
 		guard let chunk = module.chunks[chunkID] else {
 			throw VirtualMachineError.valueMissing("No chunk found for symbol: \(chunkID)")
@@ -914,6 +924,7 @@ public struct VirtualMachine {
 		}
 	}
 
+	@inline(__always)
 	private mutating func transferCaptures(in calledFrame: CallFrame) throws {
 		let capturedLocals = calledFrame.closure.chunk.capturedLocals
 		// Take locals from the popped frame, put them on the heap, then update captures to
@@ -928,39 +939,45 @@ public struct VirtualMachine {
 			heap.store(pointer: pointer, value: value)
 
 			for (sym, _) in closures {
-				closures[sym]?.capturing[local] = .heap(pointer)
+				closures[sym]?.capturing[local] = .heap(pointer.base, pointer.offset)
 			}
 		}
 	}
 
+	@inline(__always)
 	private mutating func readConstant() throws -> Value {
 		let value = try chunk.constants[Int(readByte())]
 		return value
 	}
 
+	@inline(__always)
 	private mutating func readByte() throws -> Byte {
 		defer { ip += 1 }
 		return try chunk.code[Int(ip)].asByte()
 	}
 
+	@inline(__always)
 	private mutating func readOpcode() throws -> Opcode {
 		defer { ip += 1 }
 		return try chunk.code[Int(ip)].asOpcode()
 	}
 
+	@inline(__always)
 	private mutating func readCapture() throws -> Capture {
 		defer { ip += 1 }
 		return try chunk.code[Int(ip)].asCapture()
 	}
 
+	@inline(__always)
 	private mutating func readSymbol() throws -> StaticSymbol {
 		defer { ip += 1 }
-		return try chunk.code[Int(ip)].asSymbol()
+		return try chunk.code[ip].asSymbol()
 	}
 
-	private mutating func readUInt16() throws -> UInt64 {
-		var jump = try UInt64(readByte() << 8)
-		jump |= try UInt64(readByte())
+	@inline(__always)
+	private mutating func readUInt16() throws -> Int {
+		var jump = try Int(readByte() << 8)
+		jump |= try Int(readByte())
 		return jump
 	}
 

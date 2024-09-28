@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 9/1/24.
 //
 
-import TalkTalkSyntax
+import TalkTalkCore
 
 public enum InferenceErrorKind: Equatable, Hashable, CustomStringConvertible {
 	case undefinedVariable(String)
