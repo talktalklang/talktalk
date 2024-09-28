@@ -36,6 +36,19 @@ public struct StaticSymbol: Hashable, Codable, Equatable, Sendable {
 	public let module: String
 	public let name: String?
 	public let params: [String]?
+	public let hashValue: Int
+
+	init(id: String, module: String, name: String?, params: [String]?) {
+		self.id = id
+		self.module = module
+		self.name = name
+		self.params = params
+		self.hashValue = id.hashValue
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(hashValue)
+	}
 
 	// Helpers
 

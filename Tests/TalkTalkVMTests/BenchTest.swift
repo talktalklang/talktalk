@@ -30,7 +30,7 @@ struct BenchTests: VMTest {
 			var name: String
 		}
 
-		let count = 200
+		let count = 300
 
 		var j = 0
 			while j < count {

@@ -1110,7 +1110,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	private func resolveCapture(named name: String, depth: Int = 0) throws -> Capture? {
 		guard let parent else { return nil }
 
-		if case let .symbol(local) = parent.resolveLocal(named: name) {
+		if let local = try parent.resolveLocal(named: name)?.asSymbol() {
 			parent.capturedLocals.insert(local)
 
 			return addCapture(local, name: name, depth: depth + 1)

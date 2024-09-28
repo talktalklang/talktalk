@@ -5,46 +5,50 @@
 //  Created by Pat Nakajima on 9/8/24.
 //
 
-public enum Code: Codable, Equatable, Sendable {
+public struct Code: Codable, Equatable, Sendable {
 	public enum InvalidCodeError: Error {
 		case invalidCode(Code, String)
 	}
 
-	case byte(Byte), opcode(Opcode), symbol(StaticSymbol), capture(Capture)
+	var byteValue: Byte?
+	var opcodeValue: Opcode?
+	var symbolValue: StaticSymbol?
+	var captureValue: Capture?
+
+	public static func byte(_ byte: Byte) -> Code {
+		Code(byteValue: byte)
+	}
+
+	public static func opcode(_ opcode: Opcode) -> Code {
+		Code(opcodeValue: opcode)
+	}
+
+	public static func symbol(_ symbol: StaticSymbol) -> Code {
+		Code(symbolValue: symbol)
+	}
+
+	public static func capture(_ capture: Capture) -> Code {
+		Code(captureValue: capture)
+	}
+
 
 	@inline(__always)
 	public func asByte() throws -> Byte {
-		guard case let .byte(byte) = self else {
-			throw InvalidCodeError.invalidCode(self, "expected byte")
-		}
-
-		return byte
+		byteValue!
 	}
 
 	@inline(__always)
 	public func asOpcode() throws -> Opcode {
-		guard case let .opcode(opcode) = self else {
-			throw InvalidCodeError.invalidCode(self, "expected opcode")
-		}
-
-		return opcode
+		opcodeValue!
 	}
 
 	@inline(__always)
 	public func asSymbol() throws -> StaticSymbol {
-		guard case let .symbol(symbol) = self else {
-			throw InvalidCodeError.invalidCode(self, "expected symbol, got \(self)")
-		}
-
-		return symbol
+		symbolValue!
 	}
 
 	@inline(__always)
 	public func asCapture() throws -> Capture {
-		guard case let .capture(capture) = self else {
-			throw InvalidCodeError.invalidCode(self, "expected capture")
-		}
-
-		return capture
+		captureValue!
 	}
 }

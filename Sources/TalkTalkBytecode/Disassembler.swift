@@ -107,9 +107,9 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		let index = current++
-		let byte = chunk.code[index]
-		guard case let .opcode(opcode) = byte else {
-			throw DisassemblerError.unknownOpcode(byte)
+		let code = chunk.code[index]
+		guard let opcode = code.opcodeValue else {
+			throw DisassemblerError.unknownOpcode(code)
 		}
 
 		switch opcode {

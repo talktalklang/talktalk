@@ -22,13 +22,14 @@ class CallFrame {
 	var isInline: Bool = false
 	var closure: Closure
 	var returnTo: Int
-	var locals: [String: Value] = [:]
+	var locals: [String: Value]
 	var selfValue: Value?
 	let stackOffset: Int
 
 	var patternBindings: [StaticSymbol: Value] = [:]
 
 	init(closure: Closure, returnTo: Int, selfValue: Value?, stackOffset: Int) {
+		self.locals = Dictionary(minimumCapacity: closure.chunk.locals.count)
 		self.closure = closure
 		self.returnTo = returnTo
 		self.selfValue = selfValue
