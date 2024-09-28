@@ -428,12 +428,11 @@ extension Parser {
 
 		let lhs = VarExprSyntax(id: nextID(), token: token, location: endLocation(i))
 
-		if check(.equals), canAssign {
+		if let token = match(.assignments), canAssign {
 			let i = startLocation(at: lhs.token)
-			consume(.equals)
 			let rhs = parse(precedence: .assignment)
-			return DefExprSyntax(id: nextID(), receiver: lhs, value: rhs, location: endLocation(i))
-		} else if check(.equals) {
+			return DefExprSyntax(id: nextID(), receiver: lhs, value: rhs, op: token, location: endLocation(i))
+		} else if check(.assignments) {
 			return ParseErrorSyntax(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
@@ -481,10 +480,10 @@ extension Parser {
 
 		let args = argumentList(terminator: .rightBracket)
 
-		if didMatch(.equals), canAssign {
+		if let op = match(.assignments), canAssign {
 			let assignee = SubscriptExprSyntax(id: nextID(), receiver: lhs, args: args, location: endLocation(i))
 			let value = parse(precedence: .assignment)
-			return DefExprSyntax(id: nextID(), receiver: assignee, value: value, location: [assignee.location.start, value.location.end])
+			return DefExprSyntax(id: nextID(), receiver: assignee, value: value, op: op, location: [assignee.location.start, value.location.end])
 		} else if didMatch(.equals) {
 			return error(at: current, .cannotAssign, expectation: .none)
 		} else {
@@ -527,8 +526,7 @@ extension Parser {
 			)
 		}
 
-		if check(.equals), canAssign {
-			consume(.equals)
+		if let op = match(.assignments), canAssign {
 			let rhs = parse(precedence: .assignment)
 			let member = MemberExprSyntax(
 				id: nextID(),
@@ -537,8 +535,8 @@ extension Parser {
 				propertyToken: member,
 				location: [member]
 			)
-			return DefExprSyntax(id: nextID(), receiver: member, value: rhs, location: endLocation(i))
-		} else if check(.equals) {
+			return DefExprSyntax(id: nextID(), receiver: member, value: rhs, op: op, location: endLocation(i))
+		} else if check(.assignments) {
 			return ParseErrorSyntax(location: endLocation(i), message: "Can't assign", expectation: .none)
 		}
 
@@ -568,7 +566,7 @@ extension Parser {
 			BinaryExprSyntax(id: nextID(), lhs: lhs, rhs: add, op: .minus, location: add.location)
 		}
 
-		return DefExprSyntax(id: nextID(), receiver: lhs, value: binaryExpr, location: endLocation(i))
+		return DefExprSyntax(id: nextID(), receiver: lhs, value: binaryExpr, op: op, location: endLocation(i))
 	}
 
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {

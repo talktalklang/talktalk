@@ -50,7 +50,6 @@ extension Token.Kind {
 		     .greater: .init(nil, { $0.binary($1, $2) }, .comparison)
 		case .dot: .init({ $0.dot($1) }, { $0.member($1, $2) }, .call)
 		case .is: .init(nil, { $0.binary($1, $2) }, .call)
-		case .plusEquals, .minusEquals: .init(nil, { $0.incDecOp($1, $2) }, .call)
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
 		case .struct: .init({ $0.structExpr($1) }, nil, .none)
@@ -93,6 +92,8 @@ extension Token.Kind {
 		case .for: .none
 		case .questionMark: .none
 		case .static: .none
+		case .plusEquals: .none
+		case .minusEquals: .none
 		}
 	}
 }

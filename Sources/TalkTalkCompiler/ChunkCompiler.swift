@@ -156,8 +156,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {
-		// Put the value onto the stack
-		try expr.valueAnalyzed.accept(self, chunk)
+		if expr.op.kind == .equals {
+			// It's a straight up assignment so just put the value onto the stack
+			try expr.valueAnalyzed.accept(self, chunk)
+		} else {
+			// It's a compound assignment, so we need to do what we need to with both sides
+			try expr.valueAnalyzed.accept(self, chunk)
+			try expr.receiverAnalyzed.accept(self, chunk)
+			switch expr.op.kind {
+			case .plusEquals:
+				chunk.emit(opcode: .add, line: expr.location.line)
+			case .minusEquals:
+				chunk.emit(opcode: .subtract, line: expr.location.line)
+			default:
+				throw CompilerError.unreachable
+			}
+		}
 
 		if expr.receiver is SubscriptExprSyntax {
 			throw CompilerError.typeError("Setting via subscripts doesn't work yet.")
@@ -181,10 +195,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		chunk.emit(opcode: variable.setter, line: expr.location.line)
 		chunk.emit(variable.code, line: expr.location.line)
-
-//		if variable.setter == .setUpvalue {
-//			chunk.emit(opcode: .pop, line: expr.location.line)
-//		}
 	}
 
 	public func visit(_ expr: AnalyzedErrorSyntax, _: Chunk) throws {

@@ -20,6 +20,7 @@ public struct AnalyzedDefExpr: AnalyzedExpr, DefExpr {
 	public var valueAnalyzed: any AnalyzedExpr
 	public var analyzedChildren: [any AnalyzedSyntax] { [receiverAnalyzed, valueAnalyzed] }
 	public let environment: Environment
+	public var op: Token { wrapped.op }
 
 	public func accept<V: Visitor>(_ visitor: V, _ scope: V.Context) throws -> V.Value {
 		try visitor.visit(wrapped, scope)

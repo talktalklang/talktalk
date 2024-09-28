@@ -494,12 +494,12 @@ struct VMEndToEndTests: VMTest {
 		let result = try run(
 			"""
 			var a = 20
-			a -= 10
+			a -= 5
 			return a
 			"""
 		)
 
-		#expect(result == .int(10))
+		#expect(result == .int(15))
 	}
 
 	@Test("Random stuff (this was erroring)") func randomStuff() throws {

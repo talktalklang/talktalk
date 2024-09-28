@@ -36,7 +36,7 @@ struct FormatterVisitor: Visitor {
 		let lhs = try expr.receiver.accept(self, context)
 		let rhs = try expr.value.accept(self, context)
 
-		return comments.leading <> lhs <+> text("=") <+> rhs <> comments.trailing
+		return comments.leading <> lhs <+> text(expr.op.lexeme) <+> rhs <> comments.trailing
 	}
 
 	func visit(_ expr: IdentifierExprSyntax, _ context: Context) throws -> Doc {

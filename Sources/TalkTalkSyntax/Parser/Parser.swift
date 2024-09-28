@@ -368,6 +368,10 @@ public struct Parser {
 		return false
 	}
 
+	func check(_ kinds: Set<Token.Kind>) -> Bool {
+		kinds.contains(peek().kind)
+	}
+
 	func check(_ kinds: Token.Kind...) -> Bool {
 		kinds.contains(peek().kind)
 	}
@@ -388,6 +392,18 @@ public struct Parser {
 		}
 
 		return false
+	}
+
+	mutating func match(_ kind: Set<Token.Kind>) -> Token? {
+		checkForInfiniteLoop()
+
+		if kind.contains(peek().kind) {
+			defer { advance() }
+
+			return peek()
+		}
+
+		return nil
 	}
 
 	mutating func match(_ kind: Token.Kind) -> Token? {
@@ -450,4 +466,12 @@ public struct Parser {
 			end: previousBeforeNewline ?? previous
 		)
 	}
+}
+
+extension Set<Token.Kind> {
+	static let assignments: Set<Token.Kind> = [
+		.equals,
+		.plusEquals,
+		.minusEquals
+	]
 }
