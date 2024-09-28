@@ -361,7 +361,7 @@ struct FormatterVisitor: Visitor {
 				<> text(">")
 		}
 
-		result = try result <+> expr.body.accept(self, context) <> .line
+		result = try result <+> expr.body.accept(self, context)
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
 

@@ -1,3 +1,8 @@
 struct Person {
-	static let foo = "123"
+	let foo = "123"
 }
+
+var a = 123
+a += 345
+
+print(a)
