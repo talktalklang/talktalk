@@ -22,7 +22,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 
 		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(9, 0.talk)", [])
 
-		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[matchSymbol.asStatic()]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
 			.op(.true, line: 0),
 			.op(.false, line: 1),
@@ -51,7 +51,7 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		))
 
 		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
-			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),
+			.op(.matchBegin, line: 0, .variable(matchSymbol.asStatic(), .matchBegin)),
 			.op(.returnVoid, line: 0)
 		))
 	}
@@ -70,11 +70,11 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(8, 0.talk)", [])
 
 		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
-			.op(.matchBegin, line: 0, .variable(matchSymbol, .matchBegin)),
+			.op(.matchBegin, line: 0, .variable(matchSymbol.asStatic(), .matchBegin)),
 			.op(.returnVoid, line: 0)
 		))
 
-		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[matchSymbol.asStatic()]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
 			.op(.true, line: 0),
 			.op(.false, line: 1),
@@ -122,33 +122,33 @@ struct PatternMatchingCompilerTests: CompilerTest {
 		let matchSymbol = Symbol.function(module.name, "match#SyntaxID(25, 0.talk)", [])
 
 		try #expect(module.chunks[.function(module.name, "0.talk", [])]!.disassemble(in: module) == Instructions(
-			.op(.matchBegin, line: 5, .variable(matchSymbol, .matchBegin)),
+			.op(.matchBegin, line: 5, .variable(matchSymbol.asStatic(), .matchBegin)),
 			.op(.returnVoid, line: 0)
 		))
 
-		try #expect(module.chunks[matchSymbol]!.disassemble(in: module) == Instructions(
+		try #expect(module.chunks[matchSymbol.asStatic()]!.disassemble(in: module) == Instructions(
 			// Emit the first pattern
 			.op(.constant, line: 5, .constant(.int(123))),
 			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
-			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"))),
 			.op(.call, line: 5),
 			.op(.binding, line: 6, .binding(.value(module.name, "a"))),
 			.op(.getEnum, line: 6, .enum(.enum(module.name, "Thing"))),
-			.op(.getProperty, line: 6, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.getProperty, line: 6, .getProperty(.property(module.name, "Thing", "foo"))),
 			.op(.call, line: 6),
 
 			.op(.match, line: 6),
-			.op(.matchCase, line: 6, .jump(offset: 22)),
+			.op(.matchCase, line: 6, .jump(offset: 20)),
 			.op(.pop, line: 6),
 
 			// Emit the second pattern
 			.op(.constant, line: 5, .constant(.int(123))),
 			.op(.getEnum, line: 5, .enum(.enum(module.name, "Thing"))),
-			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"), options: [])),
+			.op(.getProperty, line: 5, .getProperty(.property(module.name, "Thing", "foo"))),
 			.op(.call, line: 5),
 			.op(.binding, line: 8, .binding(.value(module.name, "b"))),
 			.op(.getEnum, line: 8, .enum(.enum(module.name, "Thing"))),
-			.op(.getProperty, line: 8, .getProperty(.property(module.name, "Thing", "bar"), options: [])),
+			.op(.getProperty, line: 8, .getProperty(.property(module.name, "Thing", "bar"))),
 			.op(.call, line: 8),
 
 			.op(.match, line: 8),

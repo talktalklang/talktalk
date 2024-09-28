@@ -15,8 +15,8 @@ public protocol Disassemblable {
 	var lines: [UInt32] { get }
 	var constants: [Value] { get }
 	var arity: Byte { get }
-	var locals: [Symbol] { get }
-	var capturedLocals: Set<Symbol> { get }
+	var locals: [StaticSymbol] { get }
+	var capturedLocals: Set<StaticSymbol> { get }
 	var depth: Byte { get }
 	var path: String { get }
 }
@@ -27,11 +27,11 @@ public extension Disassemblable {
 			var stubModule = Module(name: "Stub", symbols: [:])
 			stubModule.chunks = if let chunk = self as? Chunk {
 				[
-					chunk.symbol: StaticChunk(chunk: chunk),
+					chunk.symbol.asStatic(): StaticChunk(chunk: chunk),
 				]
 			} else if let chunk = self as? StaticChunk {
 				[
-					chunk.symbol: chunk,
+					chunk.symbol.asStatic(): chunk,
 				]
 			} else {
 				[:]
@@ -62,7 +62,7 @@ extension StaticChunk: Disassemblable {
 		debugInfo.debugLogs
 	}
 
-	public var locals: [Symbol] {
+	public var locals: [StaticSymbol] {
 		debugInfo.locals
 	}
 
@@ -78,7 +78,7 @@ extension StaticChunk: Disassemblable {
 extension Chunk: Disassemblable {}
 
 public enum DisassemblerError: Error {
-	case unknownOpcode(Code), chunkNotFound(Symbol)
+	case unknownOpcode(Code), chunkNotFound(StaticSymbol)
 }
 
 public struct Disassembler<Chunk: Disassemblable> {
@@ -113,6 +113,10 @@ public struct Disassembler<Chunk: Disassemblable> {
 		}
 
 		switch opcode {
+		case .get:
+			return try variableInstruction(opcode: .get, start: index, type: .get)
+		case .invokeMethod:
+			return try variableInstruction(opcode: .invokeMethod, start: index, type: .invokeMethod)
 		case .data:
 			return try dataInstruction(start: index)
 		case .binding:
@@ -135,7 +139,7 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return try variableInstruction(opcode: opcode, start: index, type: .global)
 		case .getStruct, .setStruct:
 			return try variableInstruction(opcode: opcode, start: index, type: .struct)
-		case .getProperty:
+		case .getProperty, .getMethod:
 			return try getPropertyInstruction(opcode: opcode, start: index, type: .property)
 		case .setProperty:
 			return try variableInstruction(opcode: opcode, start: index, type: .property)
@@ -251,11 +255,9 @@ public struct Disassembler<Chunk: Disassemblable> {
 
 	mutating func getPropertyInstruction(opcode: Opcode, start: Int, type _: VariableMetadata.VariableType) throws -> Instruction {
 		let symbol = try chunk.code[current++].asSymbol()
-		let options = try chunk.code[current++].asByte()
 
 		let metadata = GetPropertyMetadata(
-			symbol: symbol,
-			options: PropertyOptions(rawValue: options)
+			symbol: symbol
 		)
 
 		return Instruction(path: chunk.path, opcode: opcode, offset: start, line: chunk.lines[start], metadata: metadata)

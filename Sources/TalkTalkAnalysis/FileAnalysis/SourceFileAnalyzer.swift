@@ -792,7 +792,6 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			return error(at: expr, "Could not determine type of match case: \(expr)", environment: context)
 		}
 
-
 		let pattern = context.type(for: patternSyntax)
 		let patternAnalyzed = try castToAnyAnalyzedExpr(patternSyntax.accept(self, context))
 		let bodyAnalyzed = try expr.body.map {

@@ -88,7 +88,7 @@ public extension InstructionMetadata where Self == DebugLogMetadata {
 }
 
 public struct BindingMetadata: InstructionMetadata {
-	let symbol: Symbol
+	let symbol: StaticSymbol
 	public var length: Int {
 		2
 	}
@@ -99,7 +99,7 @@ public struct BindingMetadata: InstructionMetadata {
 }
 
 public extension InstructionMetadata where Self == BindingMetadata {
-	static func binding(_ symbol: Symbol) -> BindingMetadata {
+	static func binding(_ symbol: StaticSymbol) -> BindingMetadata {
 		BindingMetadata(symbol: symbol)
 	}
 }
@@ -231,29 +231,28 @@ public extension InstructionMetadata where Self == LoopMetadata {
 }
 
 public struct GetPropertyMetadata: InstructionMetadata {
-	let symbol: Symbol
-	let options: PropertyOptions
-	public var length: Int = 3
+	let symbol: StaticSymbol
+	public var length: Int = 2
 
 	public var description: String {
-		"symbol: \(symbol), options: \(options)"
+		"symbol: \(symbol)"
 	}
 }
 
 public extension InstructionMetadata where Self == GetPropertyMetadata {
-	static func getProperty(_ symbol: Symbol, options: PropertyOptions) -> GetPropertyMetadata {
-		GetPropertyMetadata(symbol: symbol, options: options)
+	static func getProperty(_ symbol: StaticSymbol) -> GetPropertyMetadata {
+		GetPropertyMetadata(symbol: symbol)
 	}
 }
 
 public struct VariableMetadata: InstructionMetadata {
 	public enum VariableType {
-		case local, global, builtin, `struct`, property, moduleFunction, `enum`, matchBegin
+		case local, global, builtin, `struct`, property, moduleFunction, `enum`, matchBegin, invokeMethod, get
 	}
 
 	public var length: Int = 2
 
-	public let symbol: Symbol
+	public let symbol: StaticSymbol
 	public let type: VariableType
 
 	public var description: String {
@@ -262,36 +261,44 @@ public struct VariableMetadata: InstructionMetadata {
 }
 
 public extension InstructionMetadata where Self == VariableMetadata {
-	static func variable(_ symbol: Symbol, _ type: VariableMetadata.VariableType) -> VariableMetadata {
+	static func variable(_ symbol: StaticSymbol, _ type: VariableMetadata.VariableType) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: type)
 	}
 
-	static func local(_ symbol: Symbol) -> VariableMetadata {
+	static func local(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .local)
 	}
 
-	static func global(_ symbol: Symbol) -> VariableMetadata {
+	static func global(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .global)
 	}
 
-	static func builtin(_ symbol: Symbol) -> VariableMetadata {
+	static func builtin(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .builtin)
 	}
 
-	static func `struct`(_ symbol: Symbol) -> VariableMetadata {
+	static func `struct`(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .struct)
 	}
 
-	static func property(_ symbol: Symbol) -> VariableMetadata {
+	static func property(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .property)
 	}
 
-	static func moduleFunction(_ symbol: Symbol) -> VariableMetadata {
+	static func moduleFunction(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .moduleFunction)
 	}
 
-	static func `enum`(_ symbol: Symbol) -> VariableMetadata {
+	static func `enum`(_ symbol: StaticSymbol) -> VariableMetadata {
 		VariableMetadata(symbol: symbol, type: .enum)
+	}
+
+	static func invokeMethod(_ symbol: StaticSymbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .invokeMethod)
+	}
+
+	static func get(_ symbol: StaticSymbol) -> VariableMetadata {
+		VariableMetadata(symbol: symbol, type: .get)
 	}
 }
 
@@ -332,7 +339,7 @@ public extension InstructionMetadata where Self == CallMetadata {
 }
 
 public struct CaptureMetadata: InstructionMetadata {
-	public let symbol: Symbol
+	public let symbol: StaticSymbol
 	public let location: Capture.Location
 	public var length: Int = 2
 
@@ -342,7 +349,7 @@ public struct CaptureMetadata: InstructionMetadata {
 }
 
 public extension InstructionMetadata where Self == CaptureMetadata {
-	static func capture(_ symbol: Symbol, _ location: Capture.Location) -> CaptureMetadata {
+	static func capture(_ symbol: StaticSymbol, _ location: Capture.Location) -> CaptureMetadata {
 		CaptureMetadata(symbol: symbol, location: location)
 	}
 }

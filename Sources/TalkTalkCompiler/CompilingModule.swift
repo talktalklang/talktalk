@@ -39,7 +39,7 @@ public class CompilingModule {
 	var structMethods: [Symbol: [Symbol: Chunk]] = [:]
 
 	// Top level enums for this module
-	var enums: [Symbol: Enum] = [:]
+	var enums: [StaticSymbol: Enum] = [:]
 
 	// The available modules for import
 	let moduleEnvironment: [String: Module]
@@ -56,8 +56,8 @@ public class CompilingModule {
 	}
 
 	public func finalize(mode: CompilationMode) throws -> Module {
-		var chunks: [Symbol: StaticChunk] = [:]
-		var moduleStructs: [Symbol: Struct] = [:]
+		var chunks: [StaticSymbol: StaticChunk] = [:]
+		var moduleStructs: [StaticSymbol: Struct] = [:]
 
 		for (symbol, info) in analysisModule.symbols {
 			if info.isBuiltin { continue }
@@ -66,7 +66,7 @@ public class CompilingModule {
 			case .protocol: ()
 			case .function:
 				if let chunk = compiledChunks[symbol] {
-					chunks[info.symbol] = StaticChunk(chunk: chunk)
+					chunks[info.symbol.asStatic()] = StaticChunk(chunk: chunk)
 					continue
 				}
 
@@ -75,7 +75,7 @@ public class CompilingModule {
 				   let module = moduleEnvironment[name],
 				   let moduleInfo = module.symbols[symbol]
 				{
-					chunks[symbol] = module.chunks[moduleInfo.symbol]
+					chunks[symbol.asStatic()] = module.chunks[moduleInfo.symbol.asStatic()]
 					continue
 				}
 
@@ -87,7 +87,7 @@ public class CompilingModule {
 				}
 
 				if let chunk = compiledChunks[symbol] {
-					chunks[info.symbol] = StaticChunk(chunk: chunk)
+					chunks[info.symbol.asStatic()] = StaticChunk(chunk: chunk)
 					continue
 				}
 
@@ -96,7 +96,7 @@ public class CompilingModule {
 				   let module = moduleEnvironment[name],
 				   let moduleInfo = module.symbols[symbol]
 				{
-					chunks[symbol] = module.chunks[moduleInfo.symbol]
+					chunks[symbol.asStatic()] = module.chunks[moduleInfo.symbol.asStatic()]
 					continue
 				}
 
@@ -108,11 +108,11 @@ public class CompilingModule {
 						continue
 					}
 
-					moduleStructs[info.symbol] = module.structs[symbol]
+					moduleStructs[info.symbol.asStatic()] = module.structs[symbol.asStatic()]
 
 					// Import the struct's methods as well.
 					for (sym, chunk) in module.chunks {
-						if case let .method(name, _, _) = sym.kind, name == structName {
+						if case let .method(name, _, _) = chunk.symbol.kind, name == structName {
 							chunks[sym] = chunk
 						}
 					}
@@ -121,10 +121,10 @@ public class CompilingModule {
 						throw CompilerError.unknownIdentifier("could not find struct for: \(symbol.description)")
 					}
 
-					moduleStructs[info.symbol] = structType
+					moduleStructs[info.symbol.asStatic()] = structType
 
 					for method in structType.methods {
-						chunks[method.symbol] = method
+						chunks[method.symbol.asStatic()] = method
 					}
 				}
 			case .enum:
@@ -136,13 +136,13 @@ public class CompilingModule {
 						continue
 					}
 
-					enums[info.symbol] = module.enums[moduleInfo.symbol]
+					enums[info.symbol.asStatic()] = module.enums[moduleInfo.symbol.asStatic()]
 				case .internal:
-					guard let enumType = enums[info.symbol] else {
+					guard let enumType = enums[info.symbol.asStatic()] else {
 						throw CompilerError.unknownIdentifier("could not find enum for: \(symbol.description)")
 					}
 
-					enums[info.symbol] = enumType
+					enums[info.symbol.asStatic()] = enumType
 				}
 			case .value(_), .primitive, .genericType(_), .property:
 				()
@@ -153,8 +153,8 @@ public class CompilingModule {
 
 		// Copy over any other chunks that might be missing
 		for (symbol, chunk) in compiledChunks {
-			if chunks[symbol] == nil {
-				chunks[symbol] = StaticChunk(chunk: chunk)
+			if chunks[symbol.asStatic()] == nil {
+				chunks[symbol.asStatic()] = StaticChunk(chunk: chunk)
 			}
 		}
 
@@ -172,7 +172,7 @@ public class CompilingModule {
 				module.main = existingMain.value
 			} else {
 				let synthesized = try synthesizeMain()
-				module.chunks[synthesized.symbol] = StaticChunk(chunk: synthesized)
+				module.chunks[synthesized.symbol.asStatic()] = StaticChunk(chunk: synthesized)
 				module.main = StaticChunk(chunk: synthesized)
 			}
 		}
@@ -183,7 +183,7 @@ public class CompilingModule {
 				throw CompilerError.unknownIdentifier("No symbol found for \(name)")
 			}
 
-			module.valueInitializers[symbol.symbol] = StaticChunk(chunk: chunk)
+			module.valueInitializers[symbol.symbol.asStatic()] = StaticChunk(chunk: chunk)
 		}
 
 		return module
@@ -251,7 +251,7 @@ public class CompilingModule {
 			}
 
 			main.emit(.opcode(.callChunkID), line: UInt32(offset))
-			main.emit(.symbol(fileChunk.symbol), line: UInt32(offset))
+			main.emit(.symbol(fileChunk.symbol.asStatic()), line: UInt32(offset))
 		}
 
 		main.emit(.opcode(.returnValue), line: UInt32(fileChunks.count))

@@ -31,6 +31,39 @@ public struct SymbolInfo: Equatable, Codable {
 	}
 }
 
+public struct StaticSymbol: Hashable, Codable, Equatable, Sendable {
+	public let id: String
+	public let module: String
+	public let name: String?
+	public let params: [String]?
+
+	// Helpers
+
+	public static func function(_ module: String, _ name: String, _ params: [String]) -> StaticSymbol {
+		Symbol.function(module, name, params).asStatic()
+	}
+
+	public static func method(_ module: String, _ type: String?, _ name: String, _ params: [String]) -> StaticSymbol {
+		Symbol.method(module, type, name, params).asStatic()
+	}
+
+	public static func value(_ module: String, _ name: String) -> StaticSymbol {
+		Symbol.value(module, name).asStatic()
+	}
+
+	public static func `enum`(_ module: String, _ name: String) -> StaticSymbol {
+		Symbol.enum(module, name).asStatic()
+	}
+
+	public static func `struct`(_ module: String, _ name: String) -> StaticSymbol {
+		Symbol.struct(module, name).asStatic()
+	}
+
+	public static func property(_ module: String, _ type: String?, _ name: String) -> StaticSymbol {
+		Symbol.property(module, type, name).asStatic()
+	}
+}
+
 public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 	public enum Kind: Hashable, Codable, Sendable {
 		case primitive(String)
@@ -92,25 +125,12 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 
 	public let module: String
 	public let kind: Kind
+	public let description: String
 
 	public init(module: String, kind: Kind) {
 		self.module = module
 		self.kind = kind
-	}
-
-	public var needsUnboxing: Bool {
-		switch kind {
-		case let .method(type, _, _):
-			type == nil
-		case let .property(type, _):
-			type == nil
-		default:
-			false
-		}
-	}
-
-	public var description: String {
-		switch kind {
+		self.description = switch kind {
 		case let .primitive(name):
 			"\(name)"
 		case let .protocol(name):
@@ -129,6 +149,44 @@ public struct Symbol: Hashable, Codable, CustomStringConvertible, Sendable {
 			"$G\(module)$\(name)"
 		case let .enum(name):
 			"$E\(module)$\(name)"
+		}
+	}
+
+	public func asStatic() -> StaticSymbol {
+		switch kind {
+		case let .value(name):
+			.init(id: description, module: module, name: name, params: nil)
+		case let .function(name, _):
+			.init(id: description, module: module, name: name, params: nil)
+		case let .method(type, name, params):
+			if type == nil {
+				.init(id: description, module: module, name: name, params: params)
+			} else {
+				.init(id: description, module: module, name: name, params: nil)
+			}
+		case let .property(type, name):
+			if type == nil {
+				.init(id: description, module: module, name: name, params: [])
+			} else {
+				.init(id: description, module: module, name: name, params: nil)
+			}
+		default:
+			.init(id: description, module: module, name: nil, params: nil)
+		}
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(description)
+	}
+
+	public var needsUnboxing: Bool {
+		switch kind {
+		case let .method(type, _, _):
+			type == nil
+		case let .property(type, _):
+			type == nil
+		default:
+			false
 		}
 	}
 }

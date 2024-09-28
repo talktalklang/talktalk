@@ -29,7 +29,7 @@ struct IteratorTests: CompilerTest {
 			.op(.initArray, line: 0, .array(count: 4)),
 
 			// Emit the code to get the iterator from the sequence
-			.op(.getProperty, line: 0, .getProperty(.method("Standard", "Array", "makeIterator", []), options: .isMethod)),
+			.op(.getMethod, line: 0, .getProperty(.method("Standard", "Array", "makeIterator", []))),
 			.op(.call, line: 0),
 
 			// Stash the iterator in a local
@@ -37,7 +37,7 @@ struct IteratorTests: CompilerTest {
 
 			// Start the loop
 			.op(.getLocal, line: 0, .local(.value(module.name, "$iterator"))),
-			.op(.getProperty, line: 0, .getProperty(.method("Standard", nil, "next", []), options: .isMethod)),
+			.op(.getMethod, line: 0, .getProperty(.method("Standard", nil, "next", []))),
 			.op(.call, line: 0),
 			// Stash the value
 			.op(.setLocal, line: 0, .local(.value(module.name, "$current"))),
@@ -60,7 +60,7 @@ struct IteratorTests: CompilerTest {
 			.op(.getLocal, line: 1, .local(.value(module.name, "i"))),
 			.op(.getBuiltin, line: 1, .builtin(.function("[builtin]", "print", ["any"]))),
 			.op(.call, line: 1),
-			.op(.loop, line: 1, .loop(back: 26)),
+			.op(.loop, line: 1, .loop(back: 25)),
 
 			.op(.returnVoid, line: 0)
 		))

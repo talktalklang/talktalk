@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 8/24/24.
 //
 
+import TalkTalkBytecode
 import TalkTalkSyntax
 
 struct SubscriptExprAnalyzer: Analyzer {
@@ -20,9 +21,19 @@ struct SubscriptExprAnalyzer: Analyzer {
 			throw AnalyzerError.typeNotInferred("\(expr.description)")
 		}
 
+		let getSymbol: Symbol
+		switch receiver.inferenceType {
+		case let .instance(instanceType):
+			let type = instanceType.type
+			getSymbol = .method(type.context.moduleName, type.name, "get", args.map(\.inferenceType.mangled))
+		default:
+			return error(at: expr, "Could not determine get() method for \(receiver.inferenceType)", environment: context)
+		}
+
 		return try AnalyzedSubscriptExpr(
 			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
 			argsAnalyzed: args,
+			getSymbol: getSymbol,
 			wrapped: cast(expr, to: SubscriptExprSyntax.self),
 			inferenceType: inferenceType,
 			environment: context,

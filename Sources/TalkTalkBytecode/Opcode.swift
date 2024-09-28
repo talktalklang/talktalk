@@ -14,6 +14,8 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     not,
 	     and,
 
+	     noop,
+
 	     // Callables
 	     call, callChunkID,
 
@@ -39,6 +41,9 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     // Structs
 	     getStruct, setStruct,
 	     getProperty, setProperty,
+	     getMethod,
+
+	     invokeMethod,
 
 	     // Type casting
 	     cast, `is`, primitive,

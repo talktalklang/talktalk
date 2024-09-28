@@ -176,13 +176,13 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 	@Test("Type checks static let") func staticLet() throws {
 		let syntax = try Parser.parse(
-		"""
-		struct Person {
-			static let name: String
-		}
+			"""
+			struct Person {
+				static let name: String
+			}
 
-		Person.name
-		"""
+			Person.name
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -192,13 +192,13 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 	@Test("Type checks static var") func staticVar() throws {
 		let syntax = try Parser.parse(
-		"""
-		struct Person {
-			static var age: int
-		}
+			"""
+			struct Person {
+				static var age: int
+			}
 
-		Person.age
-		"""
+			Person.age
+			"""
 		)
 
 		let context = try infer(syntax)
@@ -208,15 +208,15 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 	@Test("Type checks static func") func staticFunc() throws {
 		let syntax = try Parser.parse(
-		"""
-		struct Person {
-			static func age() {
-				123
+			"""
+			struct Person {
+				static func age() {
+					123
+				}
 			}
-		}
 
-		Person.age
-		"""
+			Person.age
+			"""
 		)
 
 		let context = try infer(syntax)

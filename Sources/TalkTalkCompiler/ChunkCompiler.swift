@@ -28,7 +28,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public var captures: Set<Capture> = []
 
 	// Tracks which locals have been captured by children
-	public var capturedLocals: Set<Symbol> = []
+	public var capturedLocals: Set<StaticSymbol> = []
 
 	// Track which locals have been created in this scope
 	public var localsCount = 1
@@ -137,11 +137,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try arg.expr.accept(self, chunk)
 		}
 
-		// Put the callee on the stack. This gets popped first. Then we can go and grab the args.
-		try expr.calleeAnalyzed.accept(self, chunk)
+		// If we're calling a method, we can use the invokeMethod opcode as a shortcut
+		if let callee = expr.calleeAnalyzed as? AnalyzedMemberExpr {
+			// Put the receiver on the stack
+			try callee.receiverAnalyzed.accept(self, chunk)
 
-		// Call the callee
-		chunk.emit(opcode: .call, line: expr.location.line)
+			chunk.emit(.opcode(.invokeMethod), line: expr.location.line)
+
+			// Put the method on the stack
+			chunk.emit(.symbol(callee.memberSymbol.asStatic()), line: expr.location.line)
+		} else {
+			// Put the callee on the stack. This gets popped first. Then we can go and grab the args.
+			try expr.calleeAnalyzed.accept(self, chunk)
+
+			// Call the callee
+			chunk.emit(opcode: .call, line: expr.location.line)
+		}
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {
@@ -359,7 +370,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		_ = try module.addChunk(functionChunk)
-		chunk.emitClosure(subchunk: expr.symbol, line: line)
+		chunk.emitClosure(subchunk: expr.symbol.asStatic(), line: line)
 	}
 
 	public func visit(_ expr: AnalyzedBlockStmt, _ chunk: Chunk) throws {
@@ -412,16 +423,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try expr.receiverAnalyzed.accept(self, chunk)
 
 		// Emit the getter
-		chunk.emit(opcode: .getProperty, line: expr.location.line)
-		chunk.emit(.symbol(expr.memberSymbol), line: expr.location.line)
-
-		// Emit the property's optionset
-		var options = PropertyOptions()
-		if case .method = expr.memberSymbol.kind {
-			options.insert(.isMethod)
+		let getter = if case .function = expr.inferenceType {
+			Opcode.getMethod
+		} else {
+			Opcode.getProperty
 		}
 
-		chunk.emit(.byte(options.rawValue), line: expr.location.line)
+		chunk.emit(opcode: getter, line: expr.location.line)
+		chunk.emit(.symbol(expr.memberSymbol.asStatic()), line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedDeclBlock, _ chunk: Chunk) throws {
@@ -433,7 +442,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedTypeExpr, _ chunk: Chunk) throws {
 		if let symbol = resolveStruct(named: expr.symbol) {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
-			chunk.emit(.symbol(symbol), line: expr.location.line)
+			chunk.emit(.symbol(symbol.asStatic()), line: expr.location.line)
 		} else {
 			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
 		}
@@ -488,7 +497,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				module.compiledChunks[analysisMethod.symbol] = declChunk
-				structType.initializer = analysisMethod.symbol
+				structType.initializer = analysisMethod.symbol.asStatic()
 			case let decl as AnalyzedFuncExpr:
 				guard let analysisMethod = expr.structType.methods[decl.autoname] else {
 					throw CompilerError.analysisError("Missing analyzer method for \(name).\(decl.autoname)")
@@ -507,7 +516,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		if initializer.isSynthetic {
-			structType.initializer = initializer.symbol
+			structType.initializer = initializer.symbol.asStatic()
 			let chunk = synthesizeInit(for: expr.structType)
 			module.compiledChunks[initializer.symbol] = chunk
 		}
@@ -619,6 +628,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the receiver at the top of the stack
 		try expr.receiverAnalyzed.accept(self, chunk)
 		chunk.emit(opcode: .get, line: expr.location.line)
+		chunk.emit(.symbol(expr.getSymbol.asStatic()), line: expr.location.line)
 	}
 
 	public func visit(_: AnalyzedDictionaryLiteralExpr, _: Chunk) throws {
@@ -677,7 +687,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			try compile(type: expr.nameToken.lexeme, method: decl, in: chunk, symbol: analysisMethod.symbol)
 		}
 
-		module.enums[expr.symbol] = enumType
+		module.enums[expr.symbol.asStatic()] = enumType
 	}
 
 	public func visit(_ expr: AnalyzedEnumCaseDecl, _ chunk: Chunk) throws {
@@ -707,7 +717,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let matchCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1, parent: self)
 
 		chunk.emit(opcode: .matchBegin, line: expr.location.line)
-		chunk.emit(.symbol(matchSymbol), line: expr.location.line)
+		chunk.emit(.symbol(matchSymbol.asStatic()), line: expr.location.line)
 
 		var caseJumps: [Int] = []
 		var endJumps: [Int] = []
@@ -767,7 +777,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(.symbol(.enum(module.name, enumCase.type.name)), line: expr.location.line)
 		chunk.emit(.opcode(.getProperty), line: expr.location.line)
 		chunk.emit(.symbol(.property(module.name, enumCase.type.name, enumCase.name)), line: expr.location.line)
-		chunk.emit(.byte(0), line: expr.location.line) // Emit empty property options
 	}
 
 	public func visit(_ expr: AnalyzedInterpolatedStringExpr, _ chunk: Chunk) throws {
@@ -807,9 +816,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		let sequenceLine = stmt.sequenceAnalyzed.location.line
 
 		// Emit the iterator
-		chunk.emit(.opcode(.getProperty), line: sequenceLine)
-		chunk.emit(.symbol(stmt.iteratorSymbol), line: sequenceLine)
-		chunk.emit(.byte(PropertyOptions.isMethod.rawValue), line: sequenceLine)
+		chunk.emit(.opcode(.getMethod), line: sequenceLine)
+		chunk.emit(.symbol(stmt.iteratorSymbol.asStatic()), line: sequenceLine)
 		chunk.emit(.opcode(.call), line: sequenceLine)
 
 		// Save the iterator
@@ -822,11 +830,10 @@ public class ChunkCompiler: AnalyzedVisitor {
 		chunk.emit(opcode: .getLocal, line: sequenceLine)
 		chunk.emit(.symbol(.value(module.name, "$iterator")), line: sequenceLine)
 		// Get the iterator's next() method (TODO: could we cache this? should we?)
-		chunk.emit(opcode: .getProperty, line: sequenceLine)
+		chunk.emit(opcode: .getMethod, line: sequenceLine)
 		// This assumes that the next() method will always be from the same module which may
 		// not be true but let's just go with it for now.
 		chunk.emit(.symbol(.method(stmt.iteratorSymbol.module, nil, "next", [])), line: sequenceLine)
-		chunk.emit(.byte(PropertyOptions.isMethod.rawValue), line: sequenceLine)
 
 		// Call the next method on the iterator
 		chunk.emit(.opcode(.call), line: sequenceLine)
@@ -933,12 +940,18 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		if let syntax = receiver as? AnalyzedMemberExpr {
+			let (getter, setter): (Opcode, Opcode) = if case .function = syntax.inferenceType {
+				(.getMethod, .noop)
+			} else {
+				(.getProperty, .setProperty)
+			}
+
 			return Variable(
 				name: syntax.property,
-				code: .symbol(syntax.memberSymbol),
+				code: .symbol(syntax.memberSymbol.asStatic()),
 				depth: scopeDepth,
-				getter: .getProperty,
-				setter: .setProperty
+				getter: getter,
+				setter: setter
 			)
 		}
 
@@ -979,7 +992,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let symbol = resolveEnum(named: varName) {
 			return Variable(
 				name: varName,
-				code: .symbol(symbol),
+				code: .symbol(symbol.asStatic()),
 				depth: scopeDepth,
 				getter: .getEnum,
 				setter: .getEnum
@@ -989,7 +1002,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let symbol = resolveModuleFunction(named: varName) {
 			return Variable(
 				name: varName,
-				code: .symbol(symbol),
+				code: .symbol(symbol.asStatic()),
 				depth: scopeDepth,
 				getter: .getModuleFunction,
 				setter: .setModuleFunction
@@ -999,7 +1012,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let symbol = resolveModuleValue(named: varName) {
 			return Variable(
 				name: varName,
-				code: .symbol(symbol),
+				code: .symbol(symbol.asStatic()),
 				depth: scopeDepth,
 				getter: .getModuleValue,
 				setter: .setModuleValue
@@ -1009,7 +1022,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let symbol, case .struct = symbol.kind {
 			return Variable(
 				name: varName,
-				code: .symbol(symbol),
+				code: .symbol(symbol.asStatic()),
 				depth: scopeDepth,
 				getter: .getStruct,
 				setter: .setStruct
@@ -1073,7 +1086,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		return try parent.resolveCapture(named: name, depth: depth + 1)
 	}
 
-	func addCapture(_ symbol: Symbol, name: String, depth: Int) -> Capture {
+	func addCapture(_ symbol: StaticSymbol, name _: String, depth: Int) -> Capture {
 		let capture = Capture(symbol: symbol, location: .stack(depth))
 		captures.insert(capture)
 		return capture
@@ -1164,7 +1177,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			setter: .setLocal
 		)
 
-		chunk.locals.append(.value(module.name, name))
+		chunk.locals.append(Symbol.value(module.name, name).asStatic())
 		compiler.locals.append(variable)
 		return variable
 	}
@@ -1223,7 +1236,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 			// Set the property on self
 			chunk.emit(opcode: .setProperty, line: 9999)
-			chunk.emit(.symbol(property.symbol), line: 9999)
+			chunk.emit(.symbol(property.symbol.asStatic()), line: 9999)
 		}
 
 		// Put `self` back on the stack so we always return this new instance
