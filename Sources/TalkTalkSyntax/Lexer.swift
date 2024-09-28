@@ -14,12 +14,12 @@ public struct Token: CustomDebugStringConvertible, Sendable, Equatable, Hashable
 		     leftBracket, rightBracket,
 		     semicolon, symbol, plus, equals, comma, bang,
 		     colon, dot, less, greater, minus, star, slash, questionMark,
-				 and, pipe
+		     and, pipe
 
 		// Multiple char tokens
 		case int, float, identifier, equalEqual, bangEqual, lessEqual, greaterEqual, string, forwardArrow,
 		     plusEquals, minusEquals,
-				 andAnd, pipePipe
+		     andAnd, pipePipe
 
 		// String interpolation
 		case interpolationStart, interpolationEnd

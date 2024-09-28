@@ -353,8 +353,8 @@ public struct Interpreter: AnalyzedVisitor {
 		.none
 	}
 
-	public func visit(_ expr: AnalyzedLogicalExpr, _ context: Scope) throws -> Value {
-		return .none
+	public func visit(_: AnalyzedLogicalExpr, _: Scope) throws -> Value {
+		.none
 	}
 
 	// GENERATOR_INSERTION

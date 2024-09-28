@@ -52,7 +52,6 @@ extension Token.Kind {
 		case .is: .init(nil, { $0.binary($1, $2) }, .call)
 		case .andAnd: .init(nil, { $0.and($1, $2) }, .and)
 		case .pipePipe: .init(nil, { $0.or($1, $2) }, .or)
-
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
 		case .struct: .init({ $0.structExpr($1) }, nil, .none)

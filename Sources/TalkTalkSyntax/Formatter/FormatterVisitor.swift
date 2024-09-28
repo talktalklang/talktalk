@@ -525,9 +525,9 @@ struct FormatterVisitor: Visitor {
 		return try comments.leading
 			<> group(
 				expr.lhs.accept(self, context)
-				<+> text(expr.op.lexeme)
-				<+> expr.rhs.accept(self, context)
-				<> comments.dangling <> comments.trailing
+					<+> text(expr.op.lexeme)
+					<+> expr.rhs.accept(self, context)
+					<> comments.dangling <> comments.trailing
 			)
 	}
 

@@ -472,6 +472,6 @@ extension Set<Token.Kind> {
 	static let assignments: Set<Token.Kind> = [
 		.equals,
 		.plusEquals,
-		.minusEquals
+		.minusEquals,
 	]
 }

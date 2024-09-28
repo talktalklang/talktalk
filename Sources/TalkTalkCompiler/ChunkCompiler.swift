@@ -884,7 +884,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedLogicalExpr, _ chunk: Chunk) throws {
 		try expr.lhsAnalyzed.accept(self, chunk)
 
-
 		switch expr.op.kind {
 		case .andAnd:
 			let jump = chunk.emit(jump: .jumpUnless, line: expr.location.line)
@@ -903,10 +902,8 @@ public class ChunkCompiler: AnalyzedVisitor {
 		default:
 			throw CompilerError.typeError("cannot use \(expr.op.kind) as a logical operator")
 		}
-
-
-		
 	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

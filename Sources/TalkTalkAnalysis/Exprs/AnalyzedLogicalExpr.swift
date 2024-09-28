@@ -3,7 +3,7 @@
 import TalkTalkSyntax
 
 public struct AnalyzedLogicalExpr: LogicalExpr, AnalyzedExpr {
-  public let wrapped: LogicalExprSyntax
+	public let wrapped: LogicalExprSyntax
 	public var lhsAnalyzed: any AnalyzedExpr
 	public var rhsAnalyzed: any AnalyzedExpr
 

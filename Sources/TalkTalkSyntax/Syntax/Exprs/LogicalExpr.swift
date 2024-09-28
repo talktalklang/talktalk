@@ -9,8 +9,8 @@ public struct LogicalExprSyntax: LogicalExpr {
 	public var rhs: any Expr
 	public var op: Token
 
-  // A unique identifier
-  public var id: SyntaxID
+	// A unique identifier
+	public var id: SyntaxID
 
 	// Where does this syntax live
 	public var location: SourceLocation
