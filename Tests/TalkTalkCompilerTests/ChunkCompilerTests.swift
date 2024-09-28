@@ -420,4 +420,29 @@ class CompilerTests: CompilerTest {
 
 		try #expect(disassemble(subchunk) == subexpected)
 	}
+
+	@Test("Logical AND") func logicalAnd() throws {
+		let chunk = try compile("false && true")
+		try #expect(disassemble(chunk) == Instructions(
+			.op(.false, line: 0),
+			.op(.jumpUnless, line: 0, .jump(offset: 2)),
+			.op(.pop, line: 0),
+			.op(.true, line: 0),
+			.op(.pop, line: 0),
+			.op(.returnVoid, line: 0)
+		))
+	}
+
+	@Test("Logical OR") func logicalOr() throws {
+		let chunk = try compile("false || true")
+		try #expect(disassemble(chunk) == Instructions(
+			.op(.false, line: 0),
+			.op(.jumpUnless, line: 0, .jump(offset: 3)),
+			.op(.jump, line: 0, .jump(offset: 2)),
+			.op(.pop, line: 0),
+			.op(.true, line: 0),
+			.op(.pop, line: 0),
+			.op(.returnVoid, line: 0)
+		))
+	}
 }

@@ -293,7 +293,6 @@ struct FormatTests {
 				print("yoyo")
 			}
 		}
-
 		""")
 	}
 
@@ -317,7 +316,6 @@ struct FormatTests {
 				self.bar = "oh hi"
 			}
 		}
-
 		""")
 	}
 

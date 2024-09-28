@@ -353,6 +353,10 @@ public struct Interpreter: AnalyzedVisitor {
 		.none
 	}
 
+	public func visit(_ expr: AnalyzedLogicalExpr, _ context: Scope) throws -> Value {
+		return .none
+	}
+
 	// GENERATOR_INSERTION
 
 	private func lastResult(of exprs: [any AnalyzedSyntax], in context: Scope) throws -> Value {

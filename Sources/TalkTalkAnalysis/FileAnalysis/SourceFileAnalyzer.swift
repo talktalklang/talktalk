@@ -875,5 +875,18 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		)
 	}
 
+	public func visit(_ expr: LogicalExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		let lhs = try expr.lhs.accept(self, context)
+		let rhs = try expr.rhs.accept(self, context)
+
+		return try AnalyzedLogicalExpr(
+			wrapped: expr,
+			lhsAnalyzed: castToAnyAnalyzedExpr(lhs),
+			rhsAnalyzed: castToAnyAnalyzedExpr(rhs),
+			inferenceType: context.type(for: expr),
+			environment: context
+		)
+	}
+
 	// GENERATOR_INSERTION
 }

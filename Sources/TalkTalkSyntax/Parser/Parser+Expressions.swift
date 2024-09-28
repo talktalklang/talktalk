@@ -569,6 +569,34 @@ extension Parser {
 		return DefExprSyntax(id: nextID(), receiver: lhs, value: binaryExpr, op: op, location: endLocation(i))
 	}
 
+	mutating func and(_: Bool, _ lhs: any Expr) -> any Expr {
+		let i = startLocation(at: lhs.location.start)
+		skip(.newline)
+
+		advance()
+		// swiftlint:disable force_unwrapping
+		let op = previous!
+		// swiftlint:enable force_unwrapping
+
+		let rhs = expr()
+
+		return LogicalExprSyntax(lhs: lhs, rhs: rhs, op: op, id: nextID(), location: endLocation(i))
+	}
+
+	mutating func or(_: Bool, _ lhs: any Expr) -> any Expr {
+		let i = startLocation(at: lhs.location.start)
+		skip(.newline)
+
+		advance()
+		// swiftlint:disable force_unwrapping
+		let op = previous!
+		// swiftlint:enable force_unwrapping
+
+		let rhs = expr()
+
+		return LogicalExprSyntax(lhs: lhs, rhs: rhs, op: op, id: nextID(), location: endLocation(i))
+	}
+
 	mutating func binary(_: Bool, _ lhs: any Expr) -> any Expr {
 		let i = startLocation(at: lhs.location.start)
 

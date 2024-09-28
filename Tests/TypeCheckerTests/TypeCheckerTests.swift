@@ -269,4 +269,32 @@ struct TypeCheckerTests: TypeCheckerTest {
 		// Make sure we know what the call return type is
 		#expect(context[syntax[1]] == .type(.base(.int)))
 	}
+
+	@Test("Types logical AND") func logicalAnd() async throws {
+		let syntax = try Parser.parse("true && false")
+		let context = try infer(syntax)
+		#expect(context[syntax[0]] == .type(.base(.bool)))
+	}
+
+	@Test("Errors when logical AND operand isn't bool") func logicalAndError() async throws {
+		let context1 = try infer(Parser.parse("123 && false"), expectedErrors: 1)
+		#expect(context1.errors.count == 1)
+
+		let context2 = try infer(Parser.parse("false && 123"), expectedErrors: 1)
+		#expect(context2.errors.count == 1)
+	}
+
+	@Test("Types logical OR") func logicalOr() async throws {
+		let syntax = try Parser.parse("true || false")
+		let context = try infer(syntax)
+		#expect(context[syntax[0]] == .type(.base(.bool)))
+	}
+
+	@Test("Errors when logical OR operand isn't bool") func logicalOrError() async throws {
+		let context1 = try infer(Parser.parse("123 || false"), expectedErrors: 1)
+		#expect(context1.errors.count == 1)
+
+		let context2 = try infer(Parser.parse("false || 123"), expectedErrors: 1)
+		#expect(context2.errors.count == 1)
+	}
 }

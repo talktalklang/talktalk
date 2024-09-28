@@ -418,4 +418,19 @@ struct AnalysisTests {
 		#expect(interpolated.segmentsAnalyzed[1].asExpr!.exprAnalyzed.cast(AnalyzedLiteralExpr.self).value == .bool(true))
 		#expect(interpolated.segmentsAnalyzed[2].asString! == " bar")
 	}
+
+	@Test("Can analyze logical and") func logicalAnd() throws {
+		let ast = ast(
+			#"""
+			true && false
+			"""#
+		)
+
+		let interpolated = ast
+			.cast(AnalyzedExprStmt.self).exprAnalyzed
+			.cast(AnalyzedLogicalExpr.self)
+
+		#expect(interpolated.lhsAnalyzed.cast(AnalyzedLiteralExpr.self).value == .bool(true))
+		#expect(interpolated.rhsAnalyzed.cast(AnalyzedLiteralExpr.self).value == .bool(false))
+	}
 }

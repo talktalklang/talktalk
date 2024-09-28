@@ -881,6 +881,32 @@ public class ChunkCompiler: AnalyzedVisitor {
 		try chunk.patchJump(jump)
 	}
 
+	public func visit(_ expr: AnalyzedLogicalExpr, _ chunk: Chunk) throws {
+		try expr.lhsAnalyzed.accept(self, chunk)
+
+
+		switch expr.op.kind {
+		case .andAnd:
+			let jump = chunk.emit(jump: .jumpUnless, line: expr.location.line)
+			chunk.emit(.opcode(.pop), line: expr.location.line)
+			try expr.rhsAnalyzed.accept(self, chunk)
+			try chunk.patchJump(jump)
+		case .pipePipe:
+			let elseJump = chunk.emit(jump: .jumpUnless, line: expr.location.line)
+			let endJump = chunk.emit(jump: .jump, line: expr.location.line)
+
+			try chunk.patchJump(elseJump)
+			chunk.emit(.opcode(.pop), line: expr.location.line)
+
+			try expr.rhsAnalyzed.accept(self, chunk)
+			try chunk.patchJump(endJump)
+		default:
+			throw CompilerError.typeError("cannot use \(expr.op.kind) as a logical operator")
+		}
+
+
+		
+	}
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

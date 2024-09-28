@@ -559,4 +559,64 @@ struct VMEndToEndTests: VMTest {
 			"""
 		)
 	}
+
+	@Test("Logical AND") func logicalAnd() throws {
+		let source = """
+		func lhs() {
+			print("yup")
+			return false
+		}
+		func rhs() {
+			print("nope")
+			return true
+		}
+
+		return lhs() && rhs()
+		"""
+
+		let output = TestOutput()
+		let result = try run(source, output: output)
+		#expect(result == .bool(false))
+		#expect(output.stdout == "yup\n")
+	}
+
+	@Test("Logical OR") func logicalOr() throws {
+		let source = """
+		func lhs() {
+			print("yup")
+			return false
+		}
+		func rhs() {
+			print("yes")
+			return true
+		}
+
+		return lhs() || rhs()
+		"""
+
+		let output = TestOutput()
+		let result = try run(source, output: output)
+		#expect(result == .bool(true))
+		#expect(output.stdout == "yup\nyes\n")
+	}
+
+	@Test("Logical OR short circuit") func logicalOrShort() throws {
+		let source = """
+		func lhs() {
+			print("yup")
+			return true
+		}
+		func rhs() {
+			print("nope")
+			return false
+		}
+
+		return lhs() || rhs()
+		"""
+
+		let output = TestOutput()
+		let result = try run(source, output: output)
+		#expect(result == .bool(true))
+		#expect(output.stdout == "yup\n")
+	}
 }

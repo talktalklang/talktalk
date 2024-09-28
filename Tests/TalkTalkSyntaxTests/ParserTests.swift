@@ -477,4 +477,26 @@ struct TalkTalkParserTests {
 		#expect(lhs.receiver?.as(VarExprSyntax.self)?.name == "self")
 		#expect(rhs.value == .int(2))
 	}
+
+	@Test("Parses logical AND") func logicalAnd() throws {
+		let ast = parse("foo && bar")[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(LogicalExprSyntax.self)
+
+		#expect(ast.lhs.cast(VarExprSyntax.self).name == "foo")
+		#expect(ast.rhs.cast(VarExprSyntax.self).name == "bar")
+		#expect(ast.op.kind == .andAnd)
+	}
+
+	@Test("Parses logical OR") func logicalOr() throws {
+		let ast = parse("""
+		foo || bar
+		""")[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(LogicalExprSyntax.self)
+
+		#expect(ast.lhs.cast(VarExprSyntax.self).name == "foo")
+		#expect(ast.rhs.cast(VarExprSyntax.self).name == "bar")
+		#expect(ast.op.kind == .pipePipe)
+	}
 }

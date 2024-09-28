@@ -51,5 +51,6 @@ public protocol Visitor {
 	func visit(_ expr: EnumMemberExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: InterpolatedStringExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: ForStmtSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: LogicalExprSyntax, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }
