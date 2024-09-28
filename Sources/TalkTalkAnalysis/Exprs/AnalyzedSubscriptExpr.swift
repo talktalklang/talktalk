@@ -6,7 +6,8 @@ import TalkTalkCore
 public struct AnalyzedSubscriptExpr: SubscriptExpr, AnalyzedExpr {
 	public var receiverAnalyzed: any AnalyzedExpr
 	public var argsAnalyzed: [AnalyzedArgument]
-	public let getSymbol: Symbol
+	public let getSymbol: Symbol?
+	public let setSymbol: Symbol?
 
 	public let wrapped: SubscriptExprSyntax
 

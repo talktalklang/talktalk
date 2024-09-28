@@ -80,9 +80,9 @@ struct TypeCheckerTests: TypeCheckerTest {
 		#expect(result == .type(.base(.int)))
 	}
 
-	@Test("Errors binary expr with int and string", .disabled()) func binaryIntAndStringError() throws {
+	@Test("Errors binary expr with int and string") func binaryIntAndStringError() throws {
 		let expr = try Parser.parse(#"10 + "nope""#)
-		let context = try infer(expr)
+		let context = try infer(expr, expectedErrors: 2)
 		let result = try #require(context[expr[0]])
 		#expect(result == .type(
 			.error(

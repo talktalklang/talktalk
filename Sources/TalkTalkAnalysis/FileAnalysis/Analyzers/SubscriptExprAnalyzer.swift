@@ -21,11 +21,17 @@ struct SubscriptExprAnalyzer: Analyzer {
 			throw AnalyzerError.typeNotInferred("\(expr.description)")
 		}
 
-		let getSymbol: Symbol
+		var getSymbol: Symbol? = nil
+		var setSymbol: Symbol? = nil
 		switch receiver.inferenceType {
-		case let .instance(instanceType):
-			let type = instanceType.type
-			getSymbol = .method(type.context.moduleName, type.name, "get", args.map(\.inferenceType.mangled))
+		case let .instance(instance):
+			if case let .function(params, _) = instance.genericMethod(named: "get") {
+				getSymbol = .method(instance.type.context.moduleName, instance.type.name, "get", params.map(\.mangled))
+			}
+
+			if case let .function(params, _) = instance.genericMethod(named: "set") {
+				setSymbol = .method(instance.type.context.moduleName, instance.type.name, "set", params.map(\.mangled))
+			}
 		default:
 			return error(at: expr, "Could not determine get() method for \(receiver.inferenceType)", environment: context)
 		}
@@ -34,6 +40,7 @@ struct SubscriptExprAnalyzer: Analyzer {
 			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
 			argsAnalyzed: args,
 			getSymbol: getSymbol,
+			setSymbol: setSymbol,
 			wrapped: cast(expr, to: SubscriptExprSyntax.self),
 			inferenceType: inferenceType,
 			environment: context,

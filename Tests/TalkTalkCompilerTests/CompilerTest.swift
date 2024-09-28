@@ -14,6 +14,12 @@ import Testing
 
 protocol CompilerTest {}
 
+extension StaticSymbol: CustomStringConvertible {
+	public var description: String {
+		id
+	}
+}
+
 extension CompilerTest {
 	func analyze(_ string: String) async throws -> AnalysisModule {
 		let analyzer = try ModuleAnalyzer(

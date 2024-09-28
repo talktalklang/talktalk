@@ -151,6 +151,8 @@ public struct Disassembler<Chunk: Disassemblable> {
 			return try variableInstruction(opcode: opcode, start: index, type: .enum)
 		case .initArray:
 			return try initArrayInstruction(start: index)
+		case .initDict:
+			return try initDictInstruction(start: index)
 		case .debugPrint:
 			return try debugPrintInstruction(start: index)
 		default:
@@ -198,6 +200,12 @@ public struct Disassembler<Chunk: Disassemblable> {
 		let count = try Int(chunk.code[current++].asByte())
 
 		return Instruction(path: chunk.path, opcode: .initArray, offset: start, line: chunk.lines[start], metadata: InitArrayMetadata(elementCount: count))
+	}
+
+	mutating func initDictInstruction(start: Int) throws -> Instruction {
+		let count = try Int(chunk.code[current++].asByte())
+
+		return Instruction(path: chunk.path, opcode: .initDict, offset: start, line: chunk.lines[start], metadata: InitDictionaryMetadata(elementCount: count))
 	}
 
 	mutating func captureInstruction(opcode: Opcode, start: Int) throws -> Instruction {

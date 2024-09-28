@@ -648,11 +648,44 @@ public struct VirtualMachine {
 
 				try stack.push(.instance(instance))
 			case .initDict:
+				guard let arrayType = module.structs[Symbol.struct("Standard", "Array").asStatic()] else {
+					throw VirtualMachineError.valueMissing("No Array type found")
+				}
+
 				guard let dictType = module.structs[Symbol.struct("Standard", "Dictionary").asStatic()] else {
 					throw VirtualMachineError.valueMissing("No Dictionary type found")
 				}
 
-				try call(structValue: dictType)
+				guard let entryType = module.structs[Symbol.struct("Standard", "DictionaryEntry").asStatic()] else {
+					throw VirtualMachineError.valueMissing("No DictionaryEntry type found")
+				}
+
+				let count = try readByte()
+				let capacity = max(count, 1)
+				let entriesArrayPointer = heap.allocate(count: Int(capacity))
+
+				for i in 0 ..< Int(count) {
+					let key = try stack.pop()
+					let value = try stack.pop()
+					let instance = Instance(type: entryType, fields: [
+						Symbol.property("Standard", "DictionaryEntry", "key").asStatic(): key,
+						Symbol.property("Standard", "DictionaryEntry", "value").asStatic(): value,
+					])
+
+					heap.store(pointer: entriesArrayPointer + i, value: .instance(instance))
+				}
+
+				let entriesArray = Instance(type: arrayType, fields: [
+					Symbol.property("Standard", "Array", "_storage").asStatic(): .pointer(entriesArrayPointer),
+					Symbol.property("Standard", "Array", "count").asStatic(): .int(.init(count)),
+					Symbol.property("Standard", "Array", "capacity").asStatic(): .int(.init(capacity)),
+				])
+
+				let dictInstance = Instance(type: dictType, fields: [
+					Symbol.property("Standard", "Dictionary", "storage").asStatic(): .instance(entriesArray),
+				])
+
+				try stack.push(.instance(dictInstance))
 			case .binding:
 				let sym = try readSymbol()
 				if let binding = currentFrame.patternBindings[sym] {

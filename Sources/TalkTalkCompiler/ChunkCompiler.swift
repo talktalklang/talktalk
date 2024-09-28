@@ -45,17 +45,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// MARK: Visitor methods
 
-	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws {
-		// Put the element values of this array onto the stack. We reverse it because the VM
-		// builds up the array by popping values off
-		for element in expr.exprsAnalyzed.reversed() {
-			try element.accept(self, chunk)
-		}
-
-		chunk.emit(opcode: .initArray, line: expr.location.line)
-		chunk.emit(.byte(Byte(expr.exprsAnalyzed.count)), line: expr.location.line)
-	}
-
 	public func visit(_: AnalyzedIdentifierExpr, _: Chunk) throws {
 		// This gets handled by VarExpr
 	}
@@ -173,8 +162,14 @@ public class ChunkCompiler: AnalyzedVisitor {
 			}
 		}
 
-		if expr.receiver is SubscriptExprSyntax {
-			throw CompilerError.typeError("Setting via subscripts doesn't work yet.")
+		if let receiver = expr.receiverAnalyzed as? AnalyzedSubscriptExpr {
+			guard let setSymbol = receiver.setSymbol else {
+				throw CompilerError.unknownIdentifier("No method `set` for \(receiver.description)")
+			}
+
+			chunk.emit(.opcode(.invokeMethod), line: expr.receiver.location.line)
+			chunk.emit(.symbol(setSymbol.asStatic()), line: expr.receiver.location.line)
+			return
 		}
 
 		let variable = try resolveVariable(
@@ -629,6 +624,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_: AnalyzedStructExpr, _: Chunk) throws {}
 
+	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws {
+		// Put the element values of this array onto the stack. We reverse it because the VM
+		// builds up the array by popping values off
+		for element in expr.exprsAnalyzed.reversed() {
+			try element.accept(self, chunk)
+		}
+
+		chunk.emit(opcode: .initArray, line: expr.location.line)
+		chunk.emit(.byte(Byte(expr.exprsAnalyzed.count)), line: expr.location.line)
+	}
+
 	public func visit(_ expr: AnalyzedSubscriptExpr, _ chunk: Chunk) throws {
 		// Emit the args
 		for arg in expr.argsAnalyzed {
@@ -638,22 +644,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the receiver at the top of the stack
 		try expr.receiverAnalyzed.accept(self, chunk)
 		chunk.emit(opcode: .get, line: expr.location.line)
-		chunk.emit(.symbol(expr.getSymbol.asStatic()), line: expr.location.line)
+
+		guard let getSymbol = expr.getSymbol else {
+			throw CompilerError.unknownIdentifier("no method `get` for \(expr.receiver)")
+		}
+
+		chunk.emit(.symbol(getSymbol.asStatic()), line: expr.location.line)
 	}
 
-	public func visit(_: AnalyzedDictionaryLiteralExpr, _: Chunk) throws {
+	public func visit(_ expr: AnalyzedDictionaryLiteralExpr, _ chunk: Chunk) throws {
 		// Store the values
-//		for element in expr.elementsAnalyzed {
-//			try visit(element, chunk)
-//		}
+		for element in expr.elementsAnalyzed.reversed() {
+			try element.accept(self, chunk)
+		}
 
-//		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
-//		chunk.emit(opcode: .getStruct, line: expr.location.line)
-//		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
-//		chunk.emit(opcode: .call, line: expr.location.line)
-
-		// Emit the count so we can init enough storage
-//		chunk.emit(byte: Byte(expr.elements.count), line: expr.location.line)
+		chunk.emit(opcode: .initDict, line: expr.location.line)
+		chunk.emit(.byte(Byte(expr.elements.count)), line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedDictionaryElementExpr, _ chunk: Chunk) throws {

@@ -98,6 +98,28 @@ public enum InstanceType {
 		}
 	}
 
+	// Returns a method with no substitutions applied
+	public func genericMethod(named name: String) -> InferenceType? {
+		let result = switch self {
+		case let .struct(instance):
+			instance.type.methods[name]
+		case let .protocol(instance):
+			instance.type.methods[name]
+		case let .enumType(instance):
+			instance.type.methods[name]
+		}
+
+		guard let result else { return nil }
+
+		switch result {
+		case let .type(type):
+			return type
+		case let .scheme(scheme):
+			return scheme.type
+		}
+	}
+
+
 	public var type: any Instantiatable {
 		switch self {
 		case let .struct(instance):
