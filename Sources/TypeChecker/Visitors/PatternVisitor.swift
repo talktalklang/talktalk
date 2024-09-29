@@ -66,6 +66,16 @@ struct PatternVisitor: Visitor {
 				context.extend(expr, with: member)
 				return .value(member.asType(in: context))
 			}
+		case let .type(.optional(type)):
+			if expr.property == "some" {
+				context.extend(expr, with: .type(type))
+				return .value(type)
+			}
+
+			if expr.property == "none" {
+				context.extend(expr, with: .type(.void))
+				return .value(.void)
+			}
 		default:
 			()
 		}
@@ -78,7 +88,12 @@ struct PatternVisitor: Visitor {
 			throw PatternError.invalid("variable cannot be callee")
 		}
 
-		let params = try inferenceVisitor.parameters(of: context.get(expr.callee).asType(in: context), in: context)
+		let params: [InferenceResult]
+		if case let .type(.optional(type)) = context.expectation, expr.callee.as(MemberExprSyntax.self)?.property == "some" {
+			params = [.type(type)]
+		} else {
+			params = try inferenceVisitor.parameters(of: context.get(expr.callee).asType(in: context), in: context)
+		}
 
 		var args: [Pattern.Argument] = []
 		for (arg, param) in zip(expr.args, params) {

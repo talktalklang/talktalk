@@ -55,8 +55,8 @@ struct FormatterVisitor: Visitor {
 			.text("\(bool)")
 		case let .string(string):
 			.text(#"""# + StringParser.escape(string) + #"""#)
-		case .none:
-			.text("none")
+		case .nil:
+			.text("nil")
 		}
 
 		return comments.leading <> value <> comments.dangling <> comments.trailing

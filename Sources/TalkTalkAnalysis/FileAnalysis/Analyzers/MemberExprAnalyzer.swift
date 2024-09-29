@@ -150,6 +150,10 @@ struct MemberExprAnalyzer: Analyzer {
 			}
 		}
 
+		if case .optional = receiver.inferenceType, ["some", "none"].contains(propertyName) {
+			memberSymbol = .property("Standard", "Optional", propertyName)
+		}
+
 		return try AnalyzedMemberExpr(
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),

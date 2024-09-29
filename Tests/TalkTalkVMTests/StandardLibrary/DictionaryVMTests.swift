@@ -21,8 +21,19 @@ struct DictionaryVMTests: StandardLibraryTest {
 		return a["foo"]
 		"""
 
-		let result = try await run(source, verbosity: .verbose).get()
+		let result = try await run(source).get()
 
 		#expect(result == .string("bar"))
+	}
+
+	@Test("Returns nil when the value isn't there") func notThere() async throws {
+		let source = """
+		var a = ["foo": "bar"]
+		return a["fizz"]
+		"""
+
+		let result = try await run(source).get()
+
+		#expect(result == .none)
 	}
 }

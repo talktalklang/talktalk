@@ -37,6 +37,10 @@ struct Array<Element>: Iterable {
 		return _deref(self._storage + index)
 	}
 
+	func set(index: int, value: Element) {
+		_storePtr(self._storage + index, value)
+	}
+
 	func resize() {
 		var newCapacity = self.capacity * 2
 		var newStorage = _allocate(newCapacity)

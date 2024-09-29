@@ -30,6 +30,8 @@ extension InferenceType: Equatable {
 			lhs == rhs
 		case let (.pattern(lhs), .pattern(rhs)):
 			lhs == rhs
+		case let (.optional(lhs), .optional(rhs)):
+			lhs == rhs
 		case (.any, .any):
 			true
 		case (.void, .void):

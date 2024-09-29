@@ -20,6 +20,7 @@ public struct BuiltinFunction {
 			._storePtr,
 			._hash,
 			._cast,
+			._crash
 		]
 	}
 
@@ -105,6 +106,18 @@ public struct BuiltinFunction {
 					.type(.kind(.typeVar(typeVar))),
 				],
 				.type(.typeVar(typeVar))
+			)
+		)
+	}
+
+	public static var _crash: BuiltinFunction {
+		return BuiltinFunction(
+			name: "_crash",
+			type: .function(
+				[
+					.type(.base(.string)),
+				],
+				.type(.void)
 			)
 		)
 	}

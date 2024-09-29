@@ -233,6 +233,8 @@ struct InferenceVisitor: Visitor {
 			type = .base(.bool)
 		case "pointer":
 			type = .base(.pointer)
+		case "Optional":
+			return try .type(.optional(instanceTypeFrom(expr: expr.genericParams[0], in: context).asType(in: context)))
 		default:
 			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .type(.placeholder(context.freshTypeVariable(expr.identifier.lexeme)))
 
@@ -256,19 +258,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			guard case let .type(.instantiatable(.enumType(optionalType))) = context.lookupVariable(named: "Optional") else {
-				// swiftlint:disable fatal_error
-				fatalError("Could not find builtin type Optional")
-				// swiftlint:enable fatal_error
-			}
-
-			// swiftlint:disable force_unwrapping
-			let t = optionalType.typeContext.typeParameters.first!
-			// swiftlint:enable force_unwrapping
-
-			return .type(
-				.instance(optionalType.instantiate(with: [t: type], in: context))
-			)
+			return .type(.optional(type))
 		}
 
 		return .type(type)
@@ -287,6 +277,8 @@ struct InferenceVisitor: Visitor {
 			type = .base(.bool)
 		case "pointer":
 			type = .base(.pointer)
+		case "Optional":
+			return try .optional(typeFrom(expr: expr.genericParams[0], in: context))
 		default:
 			let found: InferenceResult
 
@@ -316,17 +308,7 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			guard case let .type(.instantiatable(.enumType(optionalType))) = context.lookupVariable(named: "Optional") else {
-				// swiftlint:disable fatal_error
-				fatalError("Could not find builtin type Optional")
-				// swiftlint:enable fatal_error
-			}
-
-			// swiftlint:disable force_unwrapping
-			let t = optionalType.typeContext.typeParameters.first!
-			// swiftlint:enable force_unwrapping
-
-			return .instance(optionalType.instantiate(with: [t: type], in: context))
+			return .optional(type)
 		}
 
 		return type
@@ -431,8 +413,8 @@ struct InferenceVisitor: Visitor {
 			context.extend(expr, with: .type(.base(.bool)))
 		case .string:
 			context.extend(expr, with: .type(.base(.string)))
-		case .none:
-			context.extend(expr, with: .type(.base(.nope)))
+		case .nil:
+			context.extend(expr, with: .type(.base(.none)))
 		}
 	}
 
@@ -597,9 +579,14 @@ struct InferenceVisitor: Visitor {
 			returns = .type(.enumCase(enumCase))
 		case let .type(.instance(instance)) where instance.type is EnumType:
 			// swiftlint:disable force_unwrapping force_cast
-			let enumType = instance.type as! EnumType
-			returns = .type(enumType.member(named: expr.property, in: context)!.asType(in: context))
+			if let enumType = instance.type as? EnumType {
+				returns = .type(enumType.member(named: expr.property, in: context)!.asType(in: context))
+			} else {
+				fatalError("could not get enum type \(instance.type)")
+			}
 		// swiftlint:enable force_unwrapping force_cast
+		case let .type(.optional(type)):
+			returns = .type(.optional(type))
 		default:
 			returns = .type(.typeVar(context.freshTypeVariable(expr.description, file: #file, line: #line)))
 		}
@@ -775,7 +762,6 @@ struct InferenceVisitor: Visitor {
 		let args = try expr.args.map { try $0.accept(self, context); return try context.get($0) }
 		var returns = try returnType(for: context.get(expr.receiver), in: context, args: args)
 
-		// TODO: Why doesn't we get a consistent result here?
 		switch context[expr.receiver]?.asType(in: context) {
 		case let .selfVar(.instantiatable(type)):
 			guard let method = type.typeContext.methods["get"] else {

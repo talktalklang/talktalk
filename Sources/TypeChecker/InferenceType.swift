@@ -44,6 +44,9 @@ public indirect enum InferenceType {
 	// Pattern matching (type, associated values)
 	case pattern(Pattern)
 
+	// Optionals are easier as their own type
+	case optional(InferenceType)
+
 	// When we can't figure it out or don't care
 	case any
 

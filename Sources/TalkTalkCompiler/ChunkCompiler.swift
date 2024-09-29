@@ -145,32 +145,24 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {
-		if expr.op.kind == .equals {
-			// It's a straight up assignment so just put the value onto the stack
-			try expr.valueAnalyzed.accept(self, chunk)
-		} else {
-			// It's a compound assignment, so we need to do what we need to with both sides
-			try expr.valueAnalyzed.accept(self, chunk)
-			try expr.receiverAnalyzed.accept(self, chunk)
-			switch expr.op.kind {
-			case .plusEquals:
-				chunk.emit(opcode: .add, line: expr.location.line)
-			case .minusEquals:
-				chunk.emit(opcode: .subtract, line: expr.location.line)
-			default:
-				throw CompilerError.unreachable
-			}
-		}
-
 		if let receiver = expr.receiverAnalyzed as? AnalyzedSubscriptExpr {
 			guard let setSymbol = receiver.setSymbol else {
 				throw CompilerError.unknownIdentifier("No method `set` for \(receiver.description)")
 			}
 
+			try emitDefValue(expr, in: chunk)
+			for arg in receiver.argsAnalyzed {
+				try arg.expr.accept(self, chunk)
+			}
+
+			try receiver.receiverAnalyzed.accept(self, chunk)
+
 			chunk.emit(.opcode(.invokeMethod), line: expr.receiver.location.line)
 			chunk.emit(.symbol(setSymbol.asStatic()), line: expr.receiver.location.line)
 			return
 		}
+
+		try emitDefValue(expr, in: chunk)
 
 		let variable = try resolveVariable(
 			receiver: expr.receiverAnalyzed,
@@ -221,7 +213,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				data: StaticData(kind: .string, bytes: [UInt8](string.utf8)),
 				line: expr.location.line
 			)
-		case .none:
+		case .nil:
 			chunk.emit(opcode: .none, line: expr.location.line)
 		}
 	}
@@ -449,6 +441,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let symbol = resolveStruct(named: expr.symbol) {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(.symbol(symbol.asStatic()), line: expr.location.line)
+		} else if expr.identifier.lexeme == "Optional" {
+			chunk.emit(opcode: .getEnum, line: expr.location.line)
+			chunk.emit(.symbol(.enum("Standard", "Optional")), line: expr.location.line)
 		} else {
 			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
 		}
@@ -960,6 +955,25 @@ public class ChunkCompiler: AnalyzedVisitor {
 		module.compiledChunks[symbol] = declChunk
 	}
 
+	func emitDefValue(_ expr: AnalyzedDefExpr, in chunk: Chunk) throws {
+		if expr.op.kind == .equals {
+			// It's a straight up assignment so just put the value onto the stack
+			try expr.valueAnalyzed.accept(self, chunk)
+		} else {
+			// It's a compound assignment, so we need to do what we need to with both sides
+			try expr.valueAnalyzed.accept(self, chunk)
+			try expr.receiverAnalyzed.accept(self, chunk)
+			switch expr.op.kind {
+			case .plusEquals:
+				chunk.emit(opcode: .add, line: expr.location.line)
+			case .minusEquals:
+				chunk.emit(opcode: .subtract, line: expr.location.line)
+			default:
+				throw CompilerError.unreachable
+			}
+		}
+	}
+
 	// Lookup the variable by name. If we've got it in our locals, just return the slot
 	// for that variable. If we don't, search parent chunks to see if they've got it. If
 	// they do, we've got an upvalue.
@@ -1092,27 +1106,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		return nil
 	}
-
-//	// Search parent chunks for the variable
-//	private func resolveUpvalue(named name: String, chunk: Chunk) -> Symbol? {
-//		guard let parent else { return nil }
-//
-//		// If our immediate parent has the variable, we return an upvalue.
-//		if let local = parent.resolveLocal(named: name) {
-//			// Since it's in the immediate parent, we mark the upvalue as captured.
-//			parent.captures.append(name)
-//			return addUpvalue(local, isLocal: true, name: name, chunk: chunk)
-//		}
-//
-//		// Check for upvalues in the parent. We don't need to mark the upvalue where it's found
-//		// as captured since the immediate child of the owning scope will handle that in its
-//		// resolveUpvalue call.
-//		if let local = parent.resolveUpvalue(named: name, chunk: chunk) {
-//			return addUpvalue(local, isLocal: false, name: name, chunk: chunk)
-//		}
-//
-//		return nil
-//	}
 
 	private func resolveCapture(named name: String, depth: Int = 0) throws -> Capture? {
 		guard let parent else { return nil }

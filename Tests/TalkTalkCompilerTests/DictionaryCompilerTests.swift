@@ -75,6 +75,8 @@ struct DictionaryCompilerTests: CompilerTest {
 
 			// Subscript arg
 			.op(.constant, line: 1, .constant(.int(789))),
+			.op(.constant, line: 1, .constant(.int(123))),
+			.op(.getModuleValue, line: 1, .global(.value("E2E", "a"))),
 			.op(.invokeMethod, line: 1, .invokeMethod(.method("Standard", "Dictionary", "set", ["T", "T"]))),
 
 			.op(.returnVoid, line: 0)

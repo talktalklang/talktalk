@@ -16,9 +16,18 @@ struct Dictionary<Key, Value> {
 		self.storage = Array<DictionaryEntry<Key, Value>>()
 	}
 
-	func get(key: Key) -> Value {
-		var entry = self.storage[0]
-		return entry.value
+	func get(key: Key) -> Optional<Value> {
+		let hash = _hash(key)
+		let mod = hash % self.storage.count
+
+		// TODO: This doesn't manage collisions
+		var entry = self.storage[mod]
+
+		if entry.key == key {
+			return entry.value
+		} else {
+			return nil
+		}
 	}
 
 	func set(key: Key, value: Value) {

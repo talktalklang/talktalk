@@ -27,10 +27,7 @@ struct OptionalsTest: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let optionalType = context[syntax[1]]!
-		let optional = Instance<EnumType>.extract(from: optionalType.asType(in: context))!
-
-		#expect(optional.type.name == "Optional")
-		#expect(optional.substitutions.count == 1)
+		#expect(optionalType == .type(.optional(.base(.int))))
 
 		let unwrapped = syntax[2]
 			.cast(MatchStatementSyntax.self).cases[0].body[0]
@@ -38,5 +35,28 @@ struct OptionalsTest: TypeCheckerTest {
 			.cast(VarExprSyntax.self)
 
 		#expect(context[unwrapped] == .type(.base(.int)))
+	}
+
+	@Test("Returning value") func returningValue() throws {
+		let syntax = try Parser.parse(
+			"""
+			func maybe(on: bool) -> int? {
+				if on {
+					return 123
+				} else {
+					return none
+				}
+			}
+
+			maybe(true)
+			"""
+		)
+
+		let context = try infer(syntax)
+		let optionalType = context[syntax[1]]!
+	}
+
+	@Test("Returning none") func returningNone() throws {
+
 	}
 }

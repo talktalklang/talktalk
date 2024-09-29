@@ -528,8 +528,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
-//		case let .placeholder(typeVar):
-//			return namedVariables[typeVar.name ?? ""] ?? .placeholder(typeVar)
+		case let .optional(type):
+			return .optional(applySubstitutions(to: type, with: substitutions))
 		case let .pattern(pattern):
 			return .pattern(
 				Pattern(
@@ -730,6 +730,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			unify(pattern.type, rhs, location)
 		case let (lhs, .pattern(pattern)):
 			unify(lhs, pattern.type, location)
+		case let (.optional(lhs), rhs), let (lhs, .optional(rhs)):
+			unify(lhs, rhs, location)
 		case (.void, .void):
 			() // This is chill
 		default:

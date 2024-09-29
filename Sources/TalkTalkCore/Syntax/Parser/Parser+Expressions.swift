@@ -259,6 +259,10 @@ extension Parser {
 			return LiteralExprSyntax(id: nextID(), value: .bool(false), location: [previous])
 		}
 
+		if didMatch(.nil) {
+			return LiteralExprSyntax(id: nextID(), value: .nil, location: [previous])
+		}
+
 		if didMatch(.string) {
 			if previous.lexeme.count == 2 {
 				// It's an empty string, no need to parse

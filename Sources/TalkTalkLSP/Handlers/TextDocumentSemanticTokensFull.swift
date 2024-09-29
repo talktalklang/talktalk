@@ -134,8 +134,8 @@ public struct SemanticTokensVisitor: Visitor {
 			kind = .keyword
 		case .string:
 			kind = .string
-		case .none:
-			return []
+		case .nil:
+			kind = .keyword
 		}
 
 		return [

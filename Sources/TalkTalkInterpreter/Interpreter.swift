@@ -160,7 +160,7 @@ public struct Interpreter: AnalyzedVisitor {
 			.int(int)
 		case let .string(string):
 			.string(string)
-		case .none:
+		case .nil:
 			.none
 		}
 	}

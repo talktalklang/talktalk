@@ -156,6 +156,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let enumType = try EnumType.extract(from: context.get(syntax[0]))!
 
 		let foo = context.lookup(syntax: case1)
+
 		#expect(foo == .pattern(Pattern(
 			type: .enumCase(
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])

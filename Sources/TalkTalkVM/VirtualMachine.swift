@@ -675,8 +675,8 @@ public struct VirtualMachine {
 				let entriesArrayPointer = heap.allocate(count: Int(capacity))
 
 				for i in 0 ..< Int(count) {
-					let key = try stack.pop()
 					let value = try stack.pop()
+					let key = try stack.pop()
 					let instance = Instance(type: entryType, fields: [
 						Symbol.property("Standard", "DictionaryEntry", "key").asStatic(): key,
 						Symbol.property("Standard", "DictionaryEntry", "value").asStatic(): value,
