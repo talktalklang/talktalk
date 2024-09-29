@@ -45,17 +45,25 @@ extension Parser {
 	}
 
 	mutating func grouping(_: Bool) -> any Expr {
+		skip(.newline)
+
+		let i = startLocation()
+
 		guard consume(.leftParen) != nil else {
 			return error(at: current, .unexpectedToken(expected: .leftParen, got: current), expectation: .none)
 		}
 
+		skip(.newline)
 		let expr = parse(precedence: .assignment)
+		skip(.newline)
 
 		guard consume(.rightParen) != nil else {
 			return error(at: current, .unexpectedToken(expected: .rightParen, got: current), expectation: .none)
 		}
 
-		return expr
+		skip(.newline)
+
+		return GroupedExprSyntax(expr: expr, id: nextID(), location: endLocation(i))
 	}
 
 	// MARK: Nonary/Unary ops

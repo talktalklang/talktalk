@@ -359,6 +359,10 @@ public struct Interpreter: AnalyzedVisitor {
 		.none
 	}
 
+	public func visit(_ expr: AnalyzedGroupedExpr, _ context: Scope) throws -> Value {
+		return try expr.exprAnalyzed.accept(self, context)
+	}
+
 	// GENERATOR_INSERTION
 
 	private func lastResult(of exprs: [any AnalyzedSyntax], in context: Scope) throws -> Value {

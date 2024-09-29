@@ -364,5 +364,9 @@ struct PatternVisitor: Visitor {
 		throw PatternError.invalid(expr.description)
 	}
 
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> Pattern.Argument {
+		throw PatternError.invalid(expr.description)
+	}
+
 	// GENERATOR_INSERTION
 }

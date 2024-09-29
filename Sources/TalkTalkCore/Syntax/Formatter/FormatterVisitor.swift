@@ -545,6 +545,12 @@ struct FormatterVisitor: Visitor {
 			)
 	}
 
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: expr, context: context)
+
+		return try comments.leading <> group(text("(") <> expr.expr.accept(self, context) <> text(")")) <> comments.dangling <> comments.trailing
+	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

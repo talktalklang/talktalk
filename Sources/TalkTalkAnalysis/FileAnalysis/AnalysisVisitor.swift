@@ -52,5 +52,6 @@ public protocol AnalyzedVisitor {
 	func visit(_ expr: AnalyzedInterpolatedStringExpr, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedForStmt, _ context: Context) throws -> Value
 	func visit(_ expr: AnalyzedLogicalExpr, _ context: Context) throws -> Value
+	func visit(_ expr: AnalyzedGroupedExpr, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

@@ -923,5 +923,14 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		)
 	}
 
+	public func visit(_ expr: GroupedExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		try AnalyzedGroupedExpr(
+			wrapped: expr,
+			exprAnalyzed: castToAnyAnalyzedExpr(expr.expr.accept(self, context), in: context),
+			inferenceType: context.type(for: expr),
+			environment: context
+		)
+	}
+
 	// GENERATOR_INSERTION
 }

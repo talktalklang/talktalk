@@ -416,5 +416,9 @@ public struct SemanticTokensVisitor: Visitor {
 		try expr.lhs.accept(self, context) + expr.rhs.accept(self, context)
 	}
 
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		return try expr.expr.accept(self, context)
+	}
+
 	// GENERATOR_INSERTION
 }

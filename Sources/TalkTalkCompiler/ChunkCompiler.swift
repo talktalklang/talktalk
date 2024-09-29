@@ -906,6 +906,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
+	public func visit(_ expr: AnalyzedGroupedExpr, _ chunk: Chunk) throws {
+		try expr.exprAnalyzed.accept(self, chunk)
+	}
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

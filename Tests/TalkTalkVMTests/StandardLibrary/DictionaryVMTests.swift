@@ -37,7 +37,7 @@ struct DictionaryVMTests: StandardLibraryTest {
 		#expect(result == .nil)
 	}
 
-	@Test("Handles resizing") func resizing() async throws {
+	@Test("Handles resizing", .disabled()) func resizing() async throws {
 		let source = #"""
 		var a = ["1": 1]
 

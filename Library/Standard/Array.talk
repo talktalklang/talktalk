@@ -58,7 +58,7 @@ struct Array<Element>: Iterable {
 	}
 
 	func append(item) {
-		if self.count + 1 > self.capacity {
+		if (self.count + 1) > self.capacity {
 			self.resize()
 		}
 
@@ -67,7 +67,7 @@ struct Array<Element>: Iterable {
 	}
 
 	func test() {
-		if self.count + 1 > self.capacity {
+		if (self.count + 1) > self.capacity {
 			self.resize()
 		}
 

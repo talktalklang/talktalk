@@ -112,7 +112,10 @@ struct TalkTalkParserTests {
 	}
 
 	@Test("Grouped expr") func grouped() {
-		let ast = parse("(123)")[0].cast(ExprStmtSyntax.self).expr as! LiteralExprSyntax
+		let ast = parse("(123)")[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(GroupedExprSyntax.self).expr
+			.cast(LiteralExprSyntax.self)
 		#expect(ast.value == .int(123))
 	}
 
@@ -127,7 +130,11 @@ struct TalkTalkParserTests {
 		let defExpr = ast[0].cast(ExprStmtSyntax.self).expr.cast(DefExprSyntax.self)
 		#expect(defExpr.receiver.description == "self.foo")
 		#expect(defExpr.value.description == "hello + 1")
-		#expect(ast[1].cast(ExprStmtSyntax.self).expr.cast(BinaryExprSyntax.self).description == "hello + 1")
+		#expect(ast[1]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(GroupedExprSyntax.self).expr
+			.cast(BinaryExprSyntax.self).description == "hello + 1"
+		)
 		#expect(ast.count == 2)
 	}
 

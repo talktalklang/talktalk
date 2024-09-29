@@ -1095,6 +1095,11 @@ struct InferenceVisitor: Visitor {
 		context.extend(expr, with: .type(.base(.bool)))
 	}
 
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws {
+		try expr.expr.accept(self, context)
+		try context.extend(expr, with: context.get(expr.expr))
+	}
+
 	// GENERATOR_INSERTION
 
 	func genericParameter(for type: InferenceType, named name: String, in context: InferenceContext) -> InferenceType? {
