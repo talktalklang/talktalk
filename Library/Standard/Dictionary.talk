@@ -12,7 +12,7 @@ struct DictionaryEntry<K, V> {
 struct Dictionary<Key, Value> {
 	var storage: Array<DictionaryEntry<Key, Value>>
 
-	init() {
+			init() {
 		self.storage = Array<DictionaryEntry<Key, Value>>()
 	}
 

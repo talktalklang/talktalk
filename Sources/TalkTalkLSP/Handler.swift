@@ -1,7 +1,8 @@
 import Foundation
 import TalkTalkCore
 
-struct LSPRequestParser {
+@MainActor
+class LSPRequestParser {
 	enum State {
 		case contentLength, length, split, body(Int)
 	}
@@ -22,24 +23,24 @@ struct LSPRequestParser {
 		self.server = server
 	}
 
-	mutating func parse(data: Data) async {
+	func parse(data: Data) {
 		buffer.append(contentsOf: data)
 
-		while let byte = await next() {
+		while let byte = next() {
 			switch state {
 			case .contentLength:
 				contentLength(byte: byte)
 			case .length:
 				length(byte: byte)
 			case .split:
-				await split(byte: byte)
+				split(byte: byte)
 			case let .body(contentLength):
-				await body(byte: byte, contentLength: contentLength)
+				body(byte: byte, contentLength: contentLength)
 			}
 		}
 	}
 
-	mutating func contentLength(byte: UInt8) {
+	func contentLength(byte: UInt8) {
 		if current == contentLengthArray.count + 1 {
 			// We're done parsing the content length part, move on to the length part
 			state = .length
@@ -54,7 +55,7 @@ struct LSPRequestParser {
 		}
 	}
 
-	mutating func length(byte: UInt8) {
+	func length(byte: UInt8) {
 		if Character(UnicodeScalar(byte)).isNumber {
 			currentLength.append(byte)
 		} else if byte == cr {
@@ -66,14 +67,14 @@ struct LSPRequestParser {
 	}
 
 	// We need to listen for \n\r\n because the first \r was handled in length
-	mutating func split(byte: UInt8) async {
+	func split(byte: UInt8) {
 		if current == 3 {
 			// swiftlint:disable force_unwrapping
 			let contentLength = Int(String(data: Data(currentLength), encoding: .ascii)!)!
 			// swiftlint:enable force_unwrapping
 			state = .body(contentLength)
 			current = -1
-			await body(byte: byte, contentLength: contentLength)
+			body(byte: byte, contentLength: contentLength)
 			return
 		}
 
@@ -91,18 +92,18 @@ struct LSPRequestParser {
 		}
 	}
 
-	mutating func body(byte: UInt8, contentLength: Int) async {
+	func body(byte: UInt8, contentLength: Int) {
 		if currentBody.count == contentLength {
-			await complete()
+			complete()
 			current = 1
 		} else {
 			currentBody.append(byte)
 		}
 	}
 
-	mutating func next() async -> UInt8? {
+	func next() -> UInt8? {
 		if buffer.isEmpty {
-			await complete()
+			complete()
 			return nil
 		}
 
@@ -113,7 +114,7 @@ struct LSPRequestParser {
 		return buffer.removeFirst()
 	}
 
-	mutating func complete() async {
+	func complete() {
 		guard case let .body(contentLength) = state, currentBody.count == contentLength else {
 			return
 		}
@@ -127,7 +128,8 @@ struct LSPRequestParser {
 			currentLength = []
 			state = .contentLength
 
-			server.enqueue(request)
+			Log.info("Enqueue request: \(request.method)", color: .yellow)
+			try server.enqueue(request)
 		} catch {
 			Log.error("error parsing json: \(error)")
 			Log.error("--")
@@ -136,6 +138,7 @@ struct LSPRequestParser {
 	}
 }
 
+@MainActor
 struct Handler {
 	// We read json, we write json
 	let decoder = JSONDecoder()
@@ -154,7 +157,7 @@ struct Handler {
 		self.parser = LSPRequestParser(server: server)
 	}
 
-	mutating func handle(data: Data) async {
+	mutating func handle(data: Data) {
 		if data.isEmpty {
 			emptyResponseCount += 1
 			Log.info("Incrementing empty response count. now: \(emptyResponseCount)")
@@ -170,6 +173,7 @@ struct Handler {
 		emptyResponseCount = 0
 
 		Log.info("parsing \(data.count) bytes")
-		await parser.parse(data: data)
+		Log.info(String(data: data, encoding: .utf8) ?? "<could not parse>")
+		parser.parse(data: data)
 	}
 }

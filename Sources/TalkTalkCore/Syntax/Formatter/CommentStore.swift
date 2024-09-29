@@ -112,7 +112,7 @@ class CommentStore {
 	}
 
 	func get(for syntax: any Syntax, context: FormatterVisitor.Context) -> CommentSet {
-		while let comment = comments.first {
+		while let comment = comments.first, syntax.location.contains(SourceLocation(path: comment.path, start: comment, end: comment)) {
 			_ = handle(comment: comment, syntax: syntax, previous: context.lastNode)
 		}
 

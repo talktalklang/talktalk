@@ -10,10 +10,10 @@ import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkCore
-import TalkTalkCore
 import TypeChecker
 
-public struct Server {
+@MainActor
+public class Server {
 	// We read json, we write json
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
@@ -31,7 +31,7 @@ public struct Server {
 	var analysis: AnalysisModule
 
 	init() throws {
-		Log.info("Compiled stdlib")
+		Log.info("Server initialized")
 
 		self.analyzer = try ModuleAnalyzer(
 			name: "LSP",
@@ -51,35 +51,33 @@ public struct Server {
 		sources[uri]
 	}
 
-	mutating func setSource(uri: String, to document: SourceDocument) {
+	func setSource(uri: String, to document: SourceDocument) throws {
 		sources[uri] = document
 
-		do {
-			analysis = try analyzer.addFile(
-				ParsedSourceFile(
-					path: document.uri,
-					syntax: Parser.parse(
-						SourceFile(path: document.uri, text: document.text),
-						allowErrors: true
-					)
+		let analysis = try analyzer.addFile(
+			ParsedSourceFile(
+				path: document.uri,
+				syntax: Parser.parse(
+					SourceFile(path: document.uri, text: document.text),
+					allowErrors: true
 				)
 			)
-		} catch {
-			Log.error("error adding file to analyzer: \(error)")
-		}
+		)
+
+		self.analysis = analysis
 	}
 
-	mutating func enqueue(_ request: Request) {
+	func enqueue(_ request: Request) throws {
 		if let id = request.id, cancelled.contains(id) {
 			Log.info("skipping canceled job (\(id))", color: .default)
 			cancelled.remove(id)
 			return
 		}
 
-		perform(request)
+		try perform(request)
 	}
 
-	mutating func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
+	func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
 		analyze()
 
 		let errorResult = try analysis.collectErrors(for: uri)
@@ -91,8 +89,9 @@ public struct Server {
 		}
 	}
 
-	mutating func perform(_ request: Request) {
+	func perform(_ request: Request) throws {
 		Log.info("-> \(request.method)", color: .magenta)
+
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -135,7 +134,7 @@ public struct Server {
 				return
 			}
 
-			setSource(uri: params.textDocument.uri, to: .init(textDocument: params.textDocument))
+			try setSource(uri: params.textDocument.uri, to: .init(textDocument: params.textDocument))
 		case .textDocumentDidChange:
 			guard let params = request.params as? TextDocumentDidChangeRequest else {
 				Log.error("Could not parse TextDocumentDidChangeRequest params")
@@ -153,8 +152,7 @@ public struct Server {
 			}
 
 			source.update(text: params.contentChanges[0].text)
-			setSource(uri: params.textDocument.uri, to: source)
-			analyze()
+			try setSource(uri: params.textDocument.uri, to: source)
 
 			sources[params.textDocument.uri] = source
 		case .textDocumentCompletion:
@@ -219,7 +217,7 @@ public struct Server {
 				Log.error("Error generating diagnostics: \(error)")
 			}
 		case .textDocumentSemanticTokensFull:
-			respond(to: request.id, with: TextDocumentSemanticTokensFull(request: request).handle(sources))
+			try respond(to: request.id, with: TextDocumentSemanticTokensFull(request: request).handle(sources))
 		case .workspaceSemanticTokensRefresh:
 			()
 		case .textDocumentPublishDiagnostics:
@@ -230,24 +228,16 @@ public struct Server {
 		}
 	}
 
-	mutating func analyze() {
+	func analyze() {
 		do {
-			Log.info("Compiled stdlib")
-
-			analyzer = try ModuleAnalyzer(
-				name: "LSP",
-				files: analyzer.files,
-				moduleEnvironment: [:],
-				importedModules: []
-			)
-
+			Log.info("Analyzing LSP module...")
 			analysis = try analyzer.analyze()
 		} catch {
 			Log.error("Error analyzing: \(error)")
 		}
 	}
 
-	mutating func findDefinition(from position: Position, path: String) -> Definition? {
+	func findDefinition(from position: Position, path: String) -> Definition? {
 		do {
 			analysis = try analyzer.analyze()
 		} catch {

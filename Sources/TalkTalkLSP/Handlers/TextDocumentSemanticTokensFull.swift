@@ -9,11 +9,12 @@ import TalkTalkAnalysis
 import TalkTalkCore
 import TalkTalkCore
 import TypeChecker
+import Foundation
 
 struct TextDocumentSemanticTokensFull {
 	var request: Request
 
-	func handle(_ sources: [String: SourceDocument]) -> TextDocumentSemanticTokens? {
+	func handle(_ sources: [String: SourceDocument]) throws -> TextDocumentSemanticTokens? {
 		guard let params = request.params as? TextDocumentSemanticTokensFullRequest else {
 			Log.error("Could not parse TextDocumentSemanticTokensFullRequest params")
 			return nil
@@ -23,7 +24,13 @@ struct TextDocumentSemanticTokensFull {
 		var text = params.textDocument.text
 
 		if text == nil {
-			text = sources[params.textDocument.uri]?.text ?? ""
+			// swiftlint:disable force_unwrapping
+			text = sources[params.textDocument.uri]?.text
+			// swiftlint:enable force_unwrapping
+		}
+
+		if text == nil, let url = URL(string: params.textDocument.uri) {
+			text = try String(contentsOf: url, encoding: .utf8)
 		}
 
 		guard let text else {

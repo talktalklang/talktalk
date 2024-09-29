@@ -23,7 +23,7 @@ public struct StructDeclSyntax: StructDecl {
 
 	// Useful for just traversing the whole tree
 	public var children: [any Syntax] {
-		[body]
+		[body] + typeParameters + conformances
 	}
 
 	// Let this node be visited by visitors

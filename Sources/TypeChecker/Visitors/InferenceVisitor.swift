@@ -13,7 +13,7 @@ public struct Inferencer {
 	let imports: [InferenceContext]
 	public let context: InferenceContext
 
-	public static var stdlib: InferenceContext {
+	nonisolated(unsafe) public static let stdlib: InferenceContext = {
 		// swiftlint:disable force_try
 		let stdlib = try! Library.standard.files.flatMap {
 			try Parser.parse($0)
@@ -22,7 +22,7 @@ public struct Inferencer {
 		let inferencer = try! Inferencer(moduleName: "Standard", imports: [])
 		return inferencer.infer(stdlib)
 		// swiftlint:enable force_try
-	}
+	}()
 
 	public init(moduleName: String, imports: [InferenceContext]) throws {
 		// Prepend the standard library

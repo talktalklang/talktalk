@@ -39,7 +39,7 @@ private extension Data {
 		var server = try Server()
 
 		for request in requests {
-			server.perform(request)
+			await server.perform(request)
 		}
 
 		return responses.map { stripHeader(from: $0) }

@@ -70,6 +70,7 @@ public struct Formatter {
 
 		while !queue.isEmpty {
 			let (indent, currentDoc) = queue.removeFirst()
+
 			switch currentDoc {
 			case .empty:
 				continue

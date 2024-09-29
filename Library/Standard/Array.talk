@@ -1,4 +1,4 @@
-struct ArrayIterator<Element>: Iterator {
+struct ArrayIterator<Element> {
 	var current: int
 	var array: Array<Element>
 
@@ -7,7 +7,7 @@ struct ArrayIterator<Element>: Iterator {
 		self.array = array
 	}
 
-	func next() -> Element? {
+	func next() -> Element {
 		if self.current < self.array.count {
 			let value = self.array[self.current]
 			self.current = self.current + 1
@@ -18,7 +18,7 @@ struct ArrayIterator<Element>: Iterator {
 	}
 }
 
-struct Array<Element>: Iterable {
+struct Array<Element> {
 	var _storage: pointer
 	var count: int
 	var capacity: int
@@ -37,7 +37,7 @@ struct Array<Element>: Iterable {
 		return _deref(self._storage + index)
 	}
 
-	func set(index: int, value: Element) {
+	func set(index: int,value: Element) {
 		_storePtr(self._storage + index, value)
 	}
 
@@ -58,7 +58,7 @@ struct Array<Element>: Iterable {
 	}
 
 	func append(item) {
-		if (self.count + 1) > self.capacity {
+		if self.count + 1 > self.capacity {
 			self.resize()
 		}
 
@@ -67,7 +67,7 @@ struct Array<Element>: Iterable {
 	}
 
 	func test() {
-		if (self.count + 1) > self.capacity {
+		if self.count + 1 > self.capacity {
 			self.resize()
 		}
 
@@ -75,4 +75,3 @@ struct Array<Element>: Iterable {
 		self.count = self.count + 1
 	}
 }
-

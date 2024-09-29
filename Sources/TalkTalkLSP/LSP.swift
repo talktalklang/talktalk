@@ -8,6 +8,7 @@
 import Foundation
 import TalkTalkCore
 
+@MainActor
 public struct LSP {
 	var server: Server
 
@@ -15,7 +16,7 @@ public struct LSP {
 		self.server = try Server()
 	}
 
-	public func start() async {
+	public func start() {
 		Log.info("Starting talktalk LSP")
 
 		let file = FileHandle.standardInput
@@ -23,7 +24,7 @@ public struct LSP {
 
 		while true {
 			let data = file.availableData
-			await handler.handle(data: data)
+			handler.handle(data: data)
 		}
 	}
 }
