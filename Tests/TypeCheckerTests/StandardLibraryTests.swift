@@ -82,8 +82,6 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[1]])
 
-		print()
-
 		#expect(result == .type(.optional(.base(.int))))
 	}
 }

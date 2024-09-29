@@ -44,8 +44,8 @@ public struct Parser {
 
 	public var errors: [SyntaxError] = []
 
-	public static func parseFile(_ sourceFile: SourceFile) throws -> ParsedSourceFile {
-		try ParsedSourceFile(path: sourceFile.path, syntax: parse(sourceFile))
+	public static func parseFile(_ sourceFile: SourceFile, allowErrors: Bool = false) throws -> ParsedSourceFile {
+		try ParsedSourceFile(path: sourceFile.path, syntax: parse(sourceFile, allowErrors: allowErrors))
 	}
 
 	public static func parse(_ source: SourceFile, allowErrors: Bool = false, preserveComments: Bool = false) throws -> [any Syntax] {

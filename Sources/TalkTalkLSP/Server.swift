@@ -27,44 +27,23 @@ public class Server {
 	// Keep track of our files
 	var sources: [String: SourceDocument] = [:]
 
-	var analyzer: ModuleAnalyzer
-	var analysis: AnalysisModule
+	// Saved diagnostics
+	var diagnostics: [Diagnostic] = []
 
 	init() throws {
 		Log.info("Server initialized")
-
-		self.analyzer = try ModuleAnalyzer(
-			name: "LSP",
-			files: [],
-			moduleEnvironment: [:],
-			importedModules: []
-		)
-
-		self.analysis = try analyzer.analyze()
 	}
 
 	var analyzedFilePaths: [String] {
-		analysis.analyzedFiles.map(\.path)
-	}
-
-	func getSource(_ uri: String) -> SourceDocument? {
-		sources[uri]
+		sources.keys.sorted()
 	}
 
 	func setSource(uri: String, to document: SourceDocument) throws {
 		sources[uri] = document
 
-		let analysis = try analyzer.addFile(
-			ParsedSourceFile(
-				path: document.uri,
-				syntax: Parser.parse(
-					SourceFile(path: document.uri, text: document.text),
-					allowErrors: true
-				)
-			)
-		)
+		let analysis = analyze()
 
-		self.analysis = analysis
+		self.diagnostics = try analysis.collectErrors(for: uri).file.map { $0.diagnostic() }
 	}
 
 	func enqueue(_ request: Request) throws {
@@ -75,18 +54,6 @@ public class Server {
 		}
 
 		try perform(request)
-	}
-
-	func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
-		analyze()
-
-		let errorResult = try analysis.collectErrors(for: uri)
-
-		Log.info("error result, \(errorResult.count) total, \(errorResult.file.count) file")
-
-		return errorResult.file.map {
-			$0.diagnostic()
-		}
 	}
 
 	func perform(_ request: Request) throws {
@@ -155,6 +122,9 @@ public class Server {
 			try setSource(uri: params.textDocument.uri, to: source)
 
 			sources[params.textDocument.uri] = source
+
+			Log.info("textDocumentDidChange", color: .magenta)
+			Log.info(source.text, color: .magenta)
 		case .textDocumentCompletion:
 			guard let params = request.params as? TextDocumentCompletionRequest else {
 				Log.error("Could not parse text document completion request params")
@@ -178,7 +148,7 @@ public class Server {
 
 			Log.info("completion request: \(completionRequest)", color: .magenta)
 
-			let completions = analysis.completions(for: completionRequest) // .sorted()
+			let completions = analyze().completions(for: completionRequest) // .sorted()
 
 			Log.info("! got completions: \(completions)", color: .magenta)
 
@@ -206,16 +176,9 @@ public class Server {
 				return
 			}
 
-			Log.info("requesting diagnostics for \(params.textDocument.uri)")
-
-			do {
-				let diagnostics = try diagnostics(for: params.textDocument.uri)
-				Log.info("Diagnostic count: \(diagnostics.count)")
-				let report = FullDocumentDiagnosticReport(items: diagnostics)
-				respond(to: request.id, with: report)
-			} catch {
-				Log.error("Error generating diagnostics: \(error)")
-			}
+			Log.info("Diagnostic count: \(diagnostics.count)")
+			let report = FullDocumentDiagnosticReport(items: diagnostics)
+			respond(to: request.id, with: report)
 		case .textDocumentSemanticTokensFull:
 			try respond(to: request.id, with: TextDocumentSemanticTokensFull(request: request).handle(sources))
 		case .workspaceSemanticTokensRefresh:
@@ -228,22 +191,26 @@ public class Server {
 		}
 	}
 
-	func analyze() {
+	func analyze() -> AnalysisModule {
 		do {
 			Log.info("Analyzing LSP module...")
-			analysis = try analyzer.analyze()
+
+			let analyzer = try ModuleAnalyzer(
+				name: "LSP",
+				files: sources.values.map { try Parser.parseFile(.init(path: $0.uri, text: $0.text), allowErrors: true) },
+				moduleEnvironment: [:],
+				importedModules: []
+			)
+
+			return try analyzer.analyze()
 		} catch {
 			Log.error("Error analyzing: \(error)")
+			return AnalysisModule.empty("LSP")
 		}
 	}
 
 	func findDefinition(from position: Position, path: String) -> Definition? {
-		do {
-			analysis = try analyzer.analyze()
-		} catch {
-			Log.error("Error finding definition: \(error)")
-			return nil
-		}
+		let analysis = analyze()
 
 		Log.info("findDefinition: path: \(path) position: \(position)")
 

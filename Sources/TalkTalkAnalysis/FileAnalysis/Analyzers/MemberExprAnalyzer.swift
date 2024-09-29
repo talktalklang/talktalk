@@ -21,8 +21,12 @@ struct MemberExprAnalyzer: Analyzer {
 		if case let .enumCase(enumCase) = type,
 		   let kase = enumCase.type.cases.enumerated().first(where: { $0.element.name == expr.property })
 		{
-			return try AnalyzedEnumMemberExpr(
-				wrapped: cast(expr, to: MemberExprSyntax.self),
+			guard let expr = expr as? MemberExprSyntax else {
+				return error(at: expr, "Could not cast \(expr) to MemberExprSyntax", environment: context)
+			}
+
+			return AnalyzedEnumMemberExpr(
+				wrapped: expr,
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.element.attachedTypes,
 				inferenceType: .enumCase(kase.element),
@@ -33,8 +37,12 @@ struct MemberExprAnalyzer: Analyzer {
 		if case let .instantiatable(.enumType(enumType)) = type,
 		   let kase = enumType.cases.first(where: { $0.name == expr.property })
 		{
-			return try AnalyzedEnumMemberExpr(
-				wrapped: cast(expr, to: MemberExprSyntax.self),
+			guard let expr = expr as? MemberExprSyntax else {
+				return error(at: expr, "Could not cast \(expr) to MemberExprSyntax", environment: context)
+			}
+
+			return AnalyzedEnumMemberExpr(
+				wrapped: expr,
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.attachedTypes,
 				inferenceType: .enumCase(kase),
@@ -158,7 +166,7 @@ struct MemberExprAnalyzer: Analyzer {
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
-			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
+			receiverAnalyzed: castToAnyAnalyzedExpr(receiver, in: context),
 			memberSymbol: memberSymbol ?? .primitive("could not find member"),
 			analysisErrors: [],
 			analysisDefinition: analysisDefinition,

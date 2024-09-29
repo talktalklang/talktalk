@@ -140,7 +140,12 @@ struct StructDeclAnalyzer: Analyzer {
 			// Go through and actually analyze the type params
 			let environment = bodyContext.add(namespace: nil)
 			environment.isInTypeParameters = true
-			structType.typeParameters[i].type = try cast(param.type.accept(visitor, environment), to: AnalyzedTypeExpr.self)
+
+			guard let expr = try param.type.accept(visitor, environment) as? AnalyzedTypeExpr else {
+				return error(at: param.type, "Could not cast \(param.type) to AnalyzedTypeExpr", environment: context)
+			}
+
+			structType.typeParameters[i].type = expr
 		}
 
 		context.define(type: decl.name, as: structType)
@@ -158,10 +163,18 @@ struct StructDeclAnalyzer: Analyzer {
 			)
 		}
 
-		let analyzed = try AnalyzedStructDecl(
+		guard let decl = decl as? StructDeclSyntax else {
+			return error(at: decl, "Could not cast \(decl) to StructDeclSyntax", environment: context)
+		}
+
+		guard let bodyAnalyzed = bodyAnalyzed as? AnalyzedDeclBlock else {
+			return error(at: decl, "Could not cast \(bodyAnalyzed) to AnalyzedDeclBlock", environment: context)
+		}
+
+		let analyzed = AnalyzedStructDecl(
 			symbol: symbol,
-			wrapped: cast(decl, to: StructDeclSyntax.self),
-			bodyAnalyzed: cast(bodyAnalyzed, to: AnalyzedDeclBlock.self),
+			wrapped: decl,
+			bodyAnalyzed: bodyAnalyzed,
 			structType: structType,
 			inferenceType: inferenceType,
 			analysisErrors: errors,

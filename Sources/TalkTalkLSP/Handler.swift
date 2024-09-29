@@ -131,7 +131,7 @@ class LSPRequestParser {
 			Log.info("Enqueue request: \(request.method)", color: .yellow)
 			try server.enqueue(request)
 		} catch {
-			Log.error("error parsing json: \(error)")
+			Log.error("error handling: \(error)")
 			Log.error("--")
 			Log.error(String(data: data, encoding: .utf8) ?? "<invalid string>")
 		}

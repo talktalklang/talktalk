@@ -181,7 +181,7 @@ struct ModuleAnalysisTests {
 				123
 			}
 			"""
-		)
+		).1
 
 		#expect(analysisModule.name == "A")
 		#expect(analysisModule.moduleFunctions.count == 3)

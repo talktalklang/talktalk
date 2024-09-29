@@ -36,10 +36,10 @@ private extension Data {
 
 	func responses(from requests: Request...) async throws -> [Data] {
 		let responses: [Data] = []
-		var server = try Server()
+		let server = try await Server()
 
 		for request in requests {
-			await server.perform(request)
+			try await server.perform(request)
 		}
 
 		return responses.map { stripHeader(from: $0) }
@@ -59,8 +59,8 @@ private extension Data {
 		let data1 = data[0 ..< 32]
 		let data2 = data[32 ..< data.count]
 
-		let server = try Server()
-		var handler = Handler(server: server)
+		let server = try await Server()
+		var handler = await Handler(server: server)
 
 		await handler.handle(data: data1)
 		await handler.handle(data: data2)

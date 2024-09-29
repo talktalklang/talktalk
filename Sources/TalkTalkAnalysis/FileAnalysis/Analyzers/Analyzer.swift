@@ -11,27 +11,11 @@ import TypeChecker
 public protocol Analyzer {}
 
 extension Analyzer {
-	func castToAnyAnalyzedExpr(_ syntax: any Syntax) throws -> any AnalyzedExpr {
+	func castToAnyAnalyzedExpr(_ syntax: any Syntax, in context: Environment) throws -> any AnalyzedExpr {
 		if let syntax = syntax as? any AnalyzedExpr {
 			return syntax
 		} else {
-			throw AnalyzerError.unexpectedCast(expected: "any AnalyzedExpr", received: "\(syntax)")
-		}
-	}
-
-	func cast<T>(_ syntax: any Syntax, to _: T.Type) throws -> T {
-		if let syntax = syntax as? T {
-			return syntax
-		} else {
-			throw AnalyzerError.unexpectedCast(expected: "\(T.self)", received: "\(syntax)")
-		}
-	}
-
-	func cast<T>(_ syntax: [any Syntax], to _: T.Type) throws -> T {
-		if let syntax = syntax as? T {
-			return syntax
-		} else {
-			throw AnalyzerError.unexpectedCast(expected: "\(T.self)", received: "\(syntax)")
+			return error(at: syntax, "Could not cast \(syntax) to any AnalyzedExpr", environment: context)
 		}
 	}
 
@@ -61,6 +45,10 @@ extension Analyzer {
 			}
 		}
 		return errors
+	}
+
+	func castError<T>(at syntax: any Syntax, type: T.Type, in context: Environment) -> AnalyzedErrorSyntax {
+		return error(at: syntax, "Could not cast \(syntax) to \(T.self)", environment: context)
 	}
 
 	func error(

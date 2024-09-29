@@ -112,8 +112,16 @@ class CommentStore {
 	}
 
 	func get(for syntax: any Syntax, context: FormatterVisitor.Context) -> CommentSet {
-		while let comment = comments.first, syntax.location.contains(SourceLocation(path: comment.path, start: comment, end: comment)) {
-			_ = handle(comment: comment, syntax: syntax, previous: context.lastNode)
+		var lastComment: Token?
+
+		while let comment = comments.first {
+			let didHandle = handle(comment: comment, syntax: syntax, previous: context.lastNode)
+
+			if !didHandle, lastComment == comment {
+				break
+			}
+
+			lastComment = comment
 		}
 
 		return commentsBySyntax[syntax.id, default: .init()]

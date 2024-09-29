@@ -178,7 +178,7 @@ struct FormatterVisitor: Visitor {
 		let comments = commentsStore.get(for: expr, context: context)
 
 		return try comments.leading
-			<> .group(join(expr.params.map { try $0.accept(self, context) }, with: text(",")))
+			<> .group(join(expr.params.map { try $0.accept(self, context) }, with: text(", ")))
 			<> comments.dangling
 			<> comments.trailing
 	}
@@ -200,7 +200,7 @@ struct FormatterVisitor: Visitor {
 
 		return try comments.leading <> .group(
 			text("<")
-				<> join(expr.params.map { try $0.type.accept(self, context) }, with: text(","))
+				<> join(expr.params.map { try $0.type.accept(self, context) }, with: text(", "))
 				<> text(">")
 				<> comments.dangling <> comments.trailing
 		)

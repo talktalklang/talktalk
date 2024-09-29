@@ -53,6 +53,24 @@ struct FormatTests {
 		""")
 	}
 
+	@Test("Basic leading comment on first decl") func firstDecl() throws {
+		let formatted = format(
+			"""
+				// hello
+			func foo {}
+
+				func bar{}
+			"""
+		)
+
+		#expect(formatted == """
+		// hello
+		func foo() {}
+
+		func bar() {}
+		""")
+	}
+
 	@Test("Basic trailing comment") func trailingComment() throws {
 		let formatted = format(
 			"""

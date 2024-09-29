@@ -1,19 +1,19 @@
 // TODO: It'd be nice if this struct could be nested in Dictionary
-struct DictionaryEntry<K, V> {
+struct DictionaryEntry<K,V> {
 	var key: K
 	var value: V
 
-	init(key: K, value: V) {
+	init(key: K,value: V) {
 		self.key = key
 		self.value = value
 	}
 }
 
-struct Dictionary<Key, Value> {
-	var storage: Array<DictionaryEntry<Key, Value>>
+struct Dictionary<Key,Value> {
+	var storage: Array<DictionaryEntry<Key,Value>>
 
-			init() {
-		self.storage = Array<DictionaryEntry<Key, Value>>()
+	init() {
+		self.storage = Array<DictionaryEntry<Key,Value>>()
 	}
 
 	func get(key: Key) -> Optional<Value> {
@@ -30,9 +30,8 @@ struct Dictionary<Key, Value> {
 		}
 	}
 
-	func set(key: Key, value: Value) {
+	func set(key: Key,value: Value) {
 		let entry = DictionaryEntry(key: key, value: value)
-
 
 		self.storage.append(entry)
 	}
@@ -42,4 +41,3 @@ struct Dictionary<Key, Value> {
 		return hashValue
 	}
 }
-

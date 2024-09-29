@@ -9,13 +9,15 @@ import TalkTalkBytecode
 import TalkTalkCore
 
 struct SubscriptExprAnalyzer: Analyzer {
-	let expr: any SubscriptExpr
+	let expr: SubscriptExprSyntax
 	let visitor: SourceFileAnalyzer
 	let context: Environment
 
 	func analyze() throws -> any AnalyzedSyntax {
 		let receiver = try expr.receiver.accept(visitor, context)
-		let args = try cast(expr.args.map { try $0.accept(visitor, context) }, to: [AnalyzedArgument].self)
+		guard let args = try expr.args.map({ try $0.accept(visitor, context) }) as? [AnalyzedArgument] else {
+			return castError(at: expr, type: [AnalyzedArgument].self, in: context)
+		}
 
 		guard let inferenceType = context.inferenceContext.lookup(syntax: expr) else {
 			throw AnalyzerError.typeNotInferred("\(expr.description)")
@@ -37,11 +39,11 @@ struct SubscriptExprAnalyzer: Analyzer {
 		}
 
 		return try AnalyzedSubscriptExpr(
-			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
+			receiverAnalyzed: castToAnyAnalyzedExpr(receiver, in: context),
 			argsAnalyzed: args,
 			getSymbol: getSymbol,
 			setSymbol: setSymbol,
-			wrapped: cast(expr, to: SubscriptExprSyntax.self),
+			wrapped: expr,
 			inferenceType: inferenceType,
 			environment: context,
 			analysisErrors: []

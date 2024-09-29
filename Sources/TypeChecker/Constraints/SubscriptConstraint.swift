@@ -46,10 +46,10 @@ struct SubscriptConstraint: Constraint {
 				}
 
 			default:
-				print()
+				()
 			}
 		default:
-			print()
+			()
 		}
 
 		return .ok

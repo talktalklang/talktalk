@@ -223,7 +223,9 @@ public struct ModuleAnalyzer: Analyzer {
 
 		switch syntax {
 		case let syntax as EnumDecl:
-			let analyzed = try cast(syntax.accept(visitor, environment), to: AnalyzedEnumDecl.self)
+			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedEnumDecl else {
+				fatalError("wtf")
+			}
 
 			let symbol = analyzed.symbol
 			result[analyzed.nameToken.lexeme] = ModuleEnum(
@@ -241,7 +243,9 @@ public struct ModuleAnalyzer: Analyzer {
 				isMutable: false
 			)
 		case let syntax as VarDecl:
-			let analyzed = try cast(visitor.visit(syntax.cast(VarDeclSyntax.self), environment), to: AnalyzedVarDecl.self)
+			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedVarDecl else {
+				fatalError("wtf")
+			}
 
 			guard let symbol = analyzed.symbol else {
 				throw AnalyzerError.symbolNotFound("expected symbol for: \(syntax)")
@@ -256,7 +260,9 @@ public struct ModuleAnalyzer: Analyzer {
 				isMutable: true
 			)
 		case let syntax as LetDecl:
-			let analyzed = try cast(visitor.visit(syntax.cast(LetDeclSyntax.self), environment), to: AnalyzedLetDecl.self)
+			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedLetDecl else {
+				fatalError("wtf")
+			}
 
 			guard let symbol = analyzed.symbol else {
 				throw AnalyzerError.symbolNotFound("expected symbol for: \(syntax)")
@@ -273,7 +279,10 @@ public struct ModuleAnalyzer: Analyzer {
 		case let syntax as FuncExpr:
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
-				let analyzed = try cast(visitor.visit(syntax.cast(FuncExprSyntax.self), environment), to: AnalyzedFuncExpr.self)
+				guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedFuncExpr else {
+					fatalError("wtf")
+				}
+
 				result[name.lexeme] = ModuleFunction(
 					name: name.lexeme,
 					symbol: analyzed.symbol,
@@ -284,7 +293,9 @@ public struct ModuleAnalyzer: Analyzer {
 			}
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
-			let analyzed = try cast(visitor.visit(syntax.cast(DefExprSyntax.self), environment), to: AnalyzedDefExpr.self)
+			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedDefExpr else {
+				fatalError("wtf")
+			}
 
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
 				guard let symbol = syntax.symbol else {
@@ -307,7 +318,10 @@ public struct ModuleAnalyzer: Analyzer {
 
 			environment.inferenceContext.import(module.inferenceContext)
 		case let syntax as StructDecl:
-			let analyzedStructDecl = try cast(visitor.visit(syntax.cast(StructDeclSyntax.self), environment), to: AnalyzedStructDecl.self)
+			guard let analyzedStructDecl = try syntax.accept(visitor, environment) as? AnalyzedStructDecl else {
+				fatalError("wtf")
+			}
+
 			let name = analyzedStructDecl.name
 			result[name] = ModuleStruct(
 				id: analyzedStructDecl.id,
