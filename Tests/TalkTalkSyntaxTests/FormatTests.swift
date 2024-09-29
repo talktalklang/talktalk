@@ -23,6 +23,14 @@ struct FormatTests {
 		#expect(formatted == "1 + 2")
 	}
 
+	@Test("Preserves parens") func preservesParens() throws {
+		let formatted = format("""
+		4 * ( 1 +   2)
+		""")
+
+		#expect(formatted == "4 * (1 + 2)")
+	}
+
 	@Test("Basic comment with nothing else") func basicComment() throws {
 		let formatted = format(
 			"""

@@ -25,7 +25,7 @@ struct ArrayTests: StandardLibraryTest {
 		return a.count
 		"""
 
-		let result = try await run(source).get()
+		let result = try await run(source, verbosity: .verbose).get()
 
 		#expect(result == .int(1))
 	}
