@@ -3,7 +3,7 @@ struct DictionaryEntry<K,V> {
 	var key: K
 	var value: V
 
-	init(key: K,value: V) {
+	init(key: K, value: V) {
 		self.key = key
 		self.value = value
 	}
@@ -17,11 +17,8 @@ struct Dictionary<Key,Value> {
 	}
 
 	func get(key: Key) -> Optional<Value> {
-		let hash = _hash(key)
-		let mod = hash % self.storage.count
-
 		// TODO: This doesn't manage collisions
-		var entry = self.storage[mod]
+		var entry = self.storage[self.index(forKey: key)]
 
 		if entry.key == key {
 			return entry.value
@@ -30,14 +27,17 @@ struct Dictionary<Key,Value> {
 		}
 	}
 
-	func set(key: Key,value: Value) {
+	func set(key: Key, value: Value) {
 		let entry = DictionaryEntry(key: key, value: value)
 
 		self.storage.append(entry)
 	}
 
 	func index(forKey: Key) -> int {
-		let hashValue = _hash(forKey)
-		return hashValue
+		let hash = _hash(forKey)
+		let mod = hash % self.storage.count
+
+
+		return mod
 	}
 }

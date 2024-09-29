@@ -224,7 +224,7 @@ public struct ModuleAnalyzer: Analyzer {
 		switch syntax {
 		case let syntax as EnumDecl:
 			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedEnumDecl else {
-				fatalError("wtf")
+				break
 			}
 
 			let symbol = analyzed.symbol
@@ -244,7 +244,7 @@ public struct ModuleAnalyzer: Analyzer {
 			)
 		case let syntax as VarDecl:
 			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedVarDecl else {
-				fatalError("wtf")
+				break
 			}
 
 			guard let symbol = analyzed.symbol else {
@@ -261,7 +261,7 @@ public struct ModuleAnalyzer: Analyzer {
 			)
 		case let syntax as LetDecl:
 			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedLetDecl else {
-				fatalError("wtf")
+				break
 			}
 
 			guard let symbol = analyzed.symbol else {
@@ -280,7 +280,7 @@ public struct ModuleAnalyzer: Analyzer {
 			// Named functions get added as globals at the top level
 			if let name = syntax.name {
 				guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedFuncExpr else {
-					fatalError("wtf")
+					break
 				}
 
 				result[name.lexeme] = ModuleFunction(
@@ -294,7 +294,7 @@ public struct ModuleAnalyzer: Analyzer {
 		case let syntax as DefExpr:
 			// Def exprs also get added as globals at the top level
 			guard let analyzed = try syntax.accept(visitor, environment) as? AnalyzedDefExpr else {
-				fatalError("wtf")
+				break
 			}
 
 			if let syntax = analyzed.receiverAnalyzed as? AnalyzedVarExpr {
@@ -319,7 +319,7 @@ public struct ModuleAnalyzer: Analyzer {
 			environment.inferenceContext.import(module.inferenceContext)
 		case let syntax as StructDecl:
 			guard let analyzedStructDecl = try syntax.accept(visitor, environment) as? AnalyzedStructDecl else {
-				fatalError("wtf")
+				break
 			}
 
 			let name = analyzedStructDecl.name
