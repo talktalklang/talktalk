@@ -159,7 +159,7 @@ public struct VirtualMachine {
 						}
 					}
 
-					return .ok(.none, Date().timeIntervalSince(start))
+					return .ok(.`nil`, Date().timeIntervalSince(start))
 				}
 
 				try transferCaptures(in: calledFrame)
@@ -181,7 +181,7 @@ public struct VirtualMachine {
 						}
 					}
 
-					let retVal = stack.size == 0 ? .none : try stack.pop()
+					let retVal = stack.size == 0 ? .`nil` : try stack.pop()
 
 					return .ok(retVal, Date().timeIntervalSince(start))
 				}
@@ -213,7 +213,7 @@ public struct VirtualMachine {
 			case .false:
 				try stack.push(.bool(false))
 			case .none:
-				try stack.push(.none)
+				try stack.push(.`nil`)
 			case .primitive:
 				let byte = try readByte()
 
@@ -590,8 +590,8 @@ public struct VirtualMachine {
 
 					try stack.push(value)
 				case let .enum(value):
-					if symbol.params != nil {
-						symbol = .property(symbol.module, value.name, symbol.name!)
+					if symbol.params != nil, let name = symbol.name {
+						symbol = .property(symbol.module, value.name, name)
 					}
 
 					guard let value = value.cases[symbol] else {

@@ -34,6 +34,24 @@ struct DictionaryVMTests: StandardLibraryTest {
 
 		let result = try await run(source).get()
 
-		#expect(result == .none)
+		#expect(result == .nil)
+	}
+
+	@Test("Handles resizing") func resizing() async throws {
+		let source = #"""
+		var a = ["1": 1]
+
+		var i = 2
+		while i < 10 {
+			a["\(i)"] = i
+			i += 1
+		}
+
+		return a["9"]
+		"""#
+
+		let result = try await run(source).get()
+
+		#expect(result == .int(9))
 	}
 }

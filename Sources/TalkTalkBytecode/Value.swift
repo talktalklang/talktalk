@@ -102,7 +102,7 @@ public enum Value: Equatable, Hashable, Codable {
 
 	case primitive(Primitive)
 
-	case none
+	case `nil`
 
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch (lhs, rhs) {
@@ -144,9 +144,9 @@ public enum Value: Equatable, Hashable, Codable {
 			lhsA == rhsA && lhsB == rhsB
 		case let (.primitive(lhs), .primitive(rhs)):
 			lhs == rhs
-		case let (.none, .enumCase(kase)), let (.enumCase(kase), .none):
+		case let (.`nil`, .enumCase(kase)), let (.enumCase(kase), .`nil`):
 			kase.type == "Optional" && kase.name == "none"
-		case (.none, .none):
+		case (.`nil`, .`nil`):
 			true
 		default:
 			false
@@ -278,7 +278,7 @@ extension Value: CustomStringConvertible {
 			"\(enumCase.type).\(enumCase.name)(\(enumCase.values))"
 		case let .binding(i):
 			"binding#\(i)"
-		case .none:
+		case .`nil`:
 			"none"
 		}
 	}
