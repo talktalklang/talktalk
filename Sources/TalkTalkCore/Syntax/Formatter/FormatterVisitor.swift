@@ -312,15 +312,25 @@ struct FormatterVisitor: Visitor {
 		let comments = commentsStore.get(for: expr, context: context)
 
 		if expr.genericParams.isEmpty {
-			return text(expr.identifier.lexeme)
+			var result = text(expr.identifier.lexeme)
+
+			if expr.isOptional {
+				result = result <> text("?")
+			}
+
+			return result
 		}
 
-		let result = try text(expr.identifier.lexeme)
+		var result = try text(expr.identifier.lexeme)
 			<> group(
 				text("<")
 					<> join(expr.genericParams.map { try $0.accept(self, context) }, with: text(","))
 					<> text(">")
 			)
+
+		if expr.isOptional {
+			result = result <> text("?")
+		}
 
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
@@ -353,6 +363,10 @@ struct FormatterVisitor: Visitor {
 		let comments = commentsStore.get(for: expr, context: context)
 
 		var result = text("struct") <+> text(expr.name)
+
+		if !expr.conformances.isEmpty {
+			result = try result <> text(":") <+> join(expr.conformances.map({ try $0.accept(self, context) }), with: text(", "))
+		}
 
 		if !expr.typeParameters.isEmpty {
 			result = try result

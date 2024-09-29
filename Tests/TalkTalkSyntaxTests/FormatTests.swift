@@ -413,6 +413,46 @@ struct FormatTests {
 		"""#)
 	}
 
+	@Test("Formats optionals") func optionals() throws {
+		let formatted = format(#"""
+		struct  Greetable   {
+					// the name
+			var   name: String? 			// sup
+
+
+
+								func  foo( )  -> 			int? {
+					123
+				}
+					}
+		"""#)
+
+		#expect(formatted == #"""
+		struct Greetable {
+			// the name
+			var name: String? // sup
+
+			func foo() -> int? {
+				123
+			}
+		}
+		"""#)
+	}
+
+	@Test("Formats conformance") func conformance() throws {
+		let formatted = format(#"""
+		struct Person :  Greetable  , Helloable {
+
+					}
+		"""#)
+
+		#expect(formatted == #"""
+		struct Person: Greetable, Helloable {
+
+		}
+		"""#)
+	}
+
 	@Test("Formats for stmt") func forStmts() throws {
 		let formatted = format(#"""
 				for  a    in    [1,2,   	3]

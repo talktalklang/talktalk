@@ -1,4 +1,4 @@
-struct ArrayIterator<Element> {
+struct ArrayIterator<Element>: Iterator {
 	var current: int
 	var array: Array<Element>
 
@@ -7,7 +7,7 @@ struct ArrayIterator<Element> {
 		self.array = array
 	}
 
-	func next() -> Element {
+	func next() -> Element? {
 		if self.current < self.array.count {
 			let value = self.array[self.current]
 			self.current = self.current + 1
@@ -18,7 +18,7 @@ struct ArrayIterator<Element> {
 	}
 }
 
-struct Array<Element> {
+struct Array<Element>: Iterable {
 	var _storage: pointer
 	var count: int
 	var capacity: int
