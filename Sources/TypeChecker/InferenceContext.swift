@@ -616,10 +616,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 		let a = applySubstitutions(to: typeA)
 		let b = applySubstitutions(to: typeB)
 
-		if a == b {
-			return
-		}
-
 		log("Unifying \(typeA.debugDescription) <-> \(typeB.debugDescription)", prefix: " & ")
 
 		switch (a, b) {
