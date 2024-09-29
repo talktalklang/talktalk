@@ -75,7 +75,7 @@ extension Parser {
 		let op = previous.unsafelyUnwrapped
 		let expr = parse(precedence: .unary)
 
-		return UnaryExprSyntax(id: nextID(), op: op.kind, expr: expr, location: endLocation(i))
+		return UnaryExprSyntax(id: nextID(), op: op, expr: expr, location: endLocation(i))
 	}
 
 	mutating func ifExpr(_: Bool) -> any Expr {
@@ -650,13 +650,14 @@ extension Parser {
 	mutating func typeExpr() -> TypeExprSyntax {
 		let typeID = consume(.identifier)
 		let i = startLocation(at: previous.unsafelyUnwrapped)
-		let isOptional = didMatch(.questionMark)
+		var isOptional = didMatch(.questionMark)
 
 		skip(.newline)
 		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
 			skip(.newline)
 			typeParameters = self.typeParameters()
+			isOptional = didMatch(.questionMark)
 			skip(.newline)
 		}
 

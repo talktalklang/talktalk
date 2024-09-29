@@ -23,10 +23,10 @@ struct Array<Element>: Iterable {
 	var count: int
 	var capacity: int
 
-	init() {
-		self.count = 0
-		self.capacity = 4
-		self._storage = _allocate(4)
+	init(count: int, capacity: int) {
+		self.count = count
+		self.capacity = capacity
+		self._storage = _allocate(capacity)
 	}
 
 	func makeIterator() -> ArrayIterator<Element> {
@@ -37,7 +37,7 @@ struct Array<Element>: Iterable {
 		return _deref(self._storage + index)
 	}
 
-	func set(index: int,value: Element) {
+	func set(index: int, value: Element) {
 		_storePtr(self._storage + index, value)
 	}
 

@@ -58,12 +58,6 @@ struct MemberExprAnalyzer: Analyzer {
 		var memberSymbol: Symbol? = nil
 		var analysisDefinition: Definition? = nil
 
-		// If we have an existing lexical scope, use that
-		if let scope = context.getLexicalScope(), let member: (any Member) = scope.methods[propertyName] ?? scope.properties[propertyName] {
-			memberSymbol = member.symbol
-			analysisDefinition = .init(location: member.location, type: member.inferenceType)
-		}
-
 		// If it's boxed, we create members
 		if case let .instance(instance) = receiver.typeAnalyzed, instance.type is ProtocolType {
 			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
@@ -158,8 +152,14 @@ struct MemberExprAnalyzer: Analyzer {
 			}
 		}
 
-		if case .optional = receiver.inferenceType, ["some", "none"].contains(propertyName) {
+		if memberSymbol == nil, case .optional = receiver.inferenceType, ["some", "none"].contains(propertyName) {
 			memberSymbol = .property("Standard", "Optional", propertyName)
+		}
+
+		// If we have an existing lexical scope, use that
+		if memberSymbol == nil, let scope = context.getLexicalScope(), let member: (any Member) = scope.methods[propertyName] ?? scope.properties[propertyName] {
+			memberSymbol = member.symbol
+			analysisDefinition = .init(location: member.location, type: member.inferenceType)
 		}
 
 		return try AnalyzedMemberExpr(

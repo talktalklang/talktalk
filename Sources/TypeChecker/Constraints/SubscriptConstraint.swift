@@ -29,10 +29,18 @@ struct SubscriptConstraint: Constraint {
 			}
 
 			switch context.applySubstitutions(to: getMethod, with: instance.substitutions) {
-			case let .function(params, fnReturns):
+			case .function(let params, var fnReturns):
 				// TODO: Validate params/args count
 				for (arg, param) in zip(args, params) {
 					context.unify(arg.asType(in: context), param.asType(in: context), location)
+				}
+
+				if case let .type(.instantiatable(instantiatableType)) = fnReturns {
+					fnReturns = .type(.instance(instantiatableType.instantiate(with: instance.substitutions, in: context)))
+				}
+
+				if case let .type(.optional(.instantiatable(instantiatableType))) = fnReturns {
+					fnReturns = .type(.optional(.instance(instantiatableType.instantiate(with: instance.substitutions, in: context))))
 				}
 
 				if case let .type(.instantiatable(structType)) = fnReturns {

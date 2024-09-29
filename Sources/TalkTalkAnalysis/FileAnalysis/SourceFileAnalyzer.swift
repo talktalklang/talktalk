@@ -62,7 +62,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	{
 		let exprAnalyzed = try expr.expr.accept(self, context)
 
-		switch expr.op {
+		switch expr.op.kind {
 		case .bang:
 
 			return try AnalyzedUnaryExpr(

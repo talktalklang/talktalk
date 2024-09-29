@@ -670,7 +670,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			break
 		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
-			for (subA, subB) in zip(a.substitutions, b.substitutions) {
+			for (subA, subB) in zip(a.substitutions, b.substitutions) where subA != subB {
 				unify(subA.value, subB.value, location)
 			}
 		case let (.selfVar(.instantiatable(selfVar)), .instance(instance)), let (.instance(instance), .selfVar(.instantiatable(selfVar))):
@@ -730,12 +730,14 @@ public class InferenceContext: CustomDebugStringConvertible {
 			unify(pattern.type, rhs, location)
 		case let (lhs, .pattern(pattern)):
 			unify(lhs, pattern.type, location)
+		case let (.optional(lhs), .optional(rhs)):
+			unifyOptionals(lhs, rhs, location)
 		case let (.optional(lhs), rhs), let (lhs, .optional(rhs)):
-			unify(lhs, rhs, location)
+			unifyOptionals(lhs, rhs, location)
 		case (.void, .void):
 			() // This is chill
 		default:
-			if !a.covariant(with: b, in: self), a != .any, b != .any {
+			if !a.covariant(with: b, in: self), a != .any, b != .any, a != .base(.none), b != .base(.none) {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),
@@ -743,6 +745,21 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
+		}
+	}
+
+	func unifyOptionals(_ lhs: InferenceType, _ rhs: InferenceType, _ location: SourceLocation, depth: Int = 0) {
+		switch (lhs, rhs) {
+		case let (.optional(lhs), rhs) where !rhs.isOptional:
+			unify(lhs, rhs, location)
+		case let (lhs, .optional(rhs)) where !lhs.isOptional:
+			unify(lhs, rhs, location)
+		case let (.optional(lhs), .optional(rhs)):
+			if depth < 100 {
+				unifyOptionals(lhs, rhs, location, depth: depth + 1)
+			}
+		default:
+			()
 		}
 	}
 

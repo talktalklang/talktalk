@@ -71,7 +71,7 @@ struct FormatterVisitor: Visitor {
 	func visit(_ expr: UnaryExprSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
 
-		let op = text("\(expr.op)")
+		let op = text("\(expr.op.lexeme)")
 		let expr = try expr.expr.accept(self, context)
 
 		return comments.leading <> group(op <> expr) <> comments.dangling <> comments.trailing

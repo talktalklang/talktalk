@@ -6,13 +6,13 @@
 //
 
 public protocol UnaryExpr: Expr {
-	var op: Token.Kind { get }
+	var op: Token { get }
 	var expr: any Expr { get }
 }
 
 public struct UnaryExprSyntax: UnaryExpr {
 	public var id: SyntaxID
-	public let op: Token.Kind
+	public let op: Token
 	public let expr: any Expr
 	public var location: SourceLocation
 	public var children: [any Syntax] { [expr] }

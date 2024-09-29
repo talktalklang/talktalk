@@ -53,6 +53,14 @@ public indirect enum InferenceType {
 	// The absence of a type
 	case void
 
+	var isOptional: Bool {
+		if case .optional = self {
+			return true
+		}
+
+		return false
+	}
+
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
 		InferenceType.typeVar(TypeVariable(name, id))
 	}

@@ -399,6 +399,29 @@ struct FormatTests {
 		"""#)
 	}
 
+	@Test("Formats binary expr in a method") func binaryExpr() {
+		let formatted = format(#"""
+		struct Person {
+			func foo(key: Key, value: Value) {
+				if self.count 	 >= (   self.capacity * 80 ) { // Load
+					self.resize()
+				}
+			}
+		}
+		"""#)
+
+		#expect(formatted == #"""
+		struct Person {
+			func foo(key: Key, value: Value) {
+				if self.count >= (self.capacity * 80) {
+					// Load
+					self.resize()
+				}
+			}
+		}
+		"""#)
+	}
+
 	@Test("Formats protocol") func protocols() throws {
 		let formatted = format(#"""
 		protocol  Greetable   {

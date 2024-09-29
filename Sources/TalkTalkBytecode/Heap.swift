@@ -68,7 +68,15 @@ public final class Heap {
 	}
 
 	public func dereference(pointer: Pointer) -> Value? {
-		storage[pointer.base].storage[pointer.offset]
+		if !storage.indices.contains(pointer.base) {
+			return nil
+		}
+
+		if !storage[pointer.base].storage.indices.contains(pointer.offset) {
+			return nil
+		}
+
+		return storage[pointer.base].storage[pointer.offset]
 	}
 
 	public func store(pointer: Pointer, value: Value) {

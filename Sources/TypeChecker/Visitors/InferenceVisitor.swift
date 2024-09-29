@@ -694,30 +694,35 @@ struct InferenceVisitor: Visitor {
 		for decl in expr.body.decls {
 			try decl.accept(self, structContext)
 
-			switch try (decl, structContext.get(decl)) {
-			case let (decl as FuncExpr, .scheme(scheme)):
-				guard let name = decl.name?.lexeme else {
-					throw InferencerError.cannotInfer("No name found for member \(decl.description)")
-				}
+			do {
+				switch try (decl, structContext.get(decl)) {
+				case let (decl as FuncExpr, .scheme(scheme)):
+					guard let name = decl.name?.lexeme else {
+						throw InferencerError.cannotInfer("No name found for member \(decl.description)")
+					}
 
-				// It's a method
-				if decl.isStatic {
-					typeContext.staticMethods[name] = .scheme(scheme)
-				} else {
-					typeContext.methods[name] = .scheme(scheme)
+					// It's a method
+					if decl.isStatic {
+						typeContext.staticMethods[name] = .scheme(scheme)
+					} else {
+						typeContext.methods[name] = .scheme(scheme)
+					}
+				case let (decl as VarLetDecl, .type(type)):
+					// It's a property
+					if decl.isStatic {
+						typeContext.staticProperties[decl.name] = .type(type)
+					} else {
+						typeContext.properties[decl.name] = .type(type)
+					}
+				case let (_ as InitDecl, type):
+					typeContext.initializers["init"] = type
+				default:
+					print("!! Unhandled struct body decl:")
+					print(decl.description)
 				}
-			case let (decl as VarLetDecl, .type(type)):
-				// It's a property
-				if decl.isStatic {
-					typeContext.staticProperties[decl.name] = .type(type)
-				} else {
-					typeContext.properties[decl.name] = .type(type)
-				}
-			case let (_ as InitDecl, type):
-				typeContext.initializers["init"] = type
-			default:
-				print("!! Unhandled struct body decl:")
-				print(decl.description)
+			} catch {
+				print("!! Error in struct body decl:")
+				print(error)
 			}
 		}
 
@@ -749,7 +754,7 @@ struct InferenceVisitor: Visitor {
 		context.addConstraint(
 			.call(
 				arrayType,
-				[],
+				[.type(.base(.int)), .type(.base(.int))],
 				returns: .type(returns),
 				at: expr.location
 			)
@@ -1112,6 +1117,8 @@ struct InferenceVisitor: Visitor {
 			if let typeVar = enumCase.type.typeContext.typeParameters.first(where: { $0.name == name }) {
 				return .typeVar(typeVar)
 			}
+		case .typeVar:
+			return type
 		default:
 			()
 		}

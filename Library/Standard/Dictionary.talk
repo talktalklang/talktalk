@@ -10,34 +10,90 @@ struct DictionaryEntry<K,V> {
 }
 
 struct Dictionary<Key,Value> {
-	var storage: Array<DictionaryEntry<Key,Value>>
+	var storage: Array<DictionaryEntry<Key,Value>?>
+	var count: int
+	var capacity: int
 
 	init() {
-		self.storage = Array<DictionaryEntry<Key,Value>>()
+		self.storage = Array<DictionaryEntry<Key,Value>?>(count: 0, capacity: 1)
+		self.count = 0
+		self.capacity = 1
 	}
 
-	func get(key: Key) -> Optional<Value> {
-		// TODO: This doesn't manage collisions
-		var entry = self.storage[self.index(forKey: key)]
+	func get(key: Key) -> Value? {
+		let index = self.findIndex(key: key)
+		let entry = self.storage[index]
 
-		if entry.key == key {
-			return entry.value
-		} else {
+		match entry {
+		case .some(let entry):
+			if entry.key == key {
+				return entry.value
+			} else {
+				return nil
+			}
+		case .none:
 			return nil
 		}
 	}
 
 	func set(key: Key, value: Value) {
-		let entry = DictionaryEntry(key: key, value: value)
+		if self.count >= ((self.capacity * 80) / 100) {
+			self._resize()
+		}
 
-		self.storage.append(entry)
+		let entry = DictionaryEntry(key: key, value: value)
+		var index = self.findIndex(key: key)
+
+		if self.storage[index] == nil {
+			self.count += 1
+		}
+
+		self.storage[index] = entry
+	}
+
+	func findIndex(key: Key) -> int {
+		var i = 0
+		var index = self.index(forKey: key)
+
+		while i < self.capacity {
+			let entry = self.storage[index]
+			if (entry != nil) && entry.key == key {
+				return index
+			}
+
+			index = (index + 1) % self.capacity
+			i += 1
+		}
+
+		return index
 	}
 
 	func index(forKey: Key) -> int {
-		let hash = _hash(forKey)
-		let mod = hash % self.storage.count
+		var slot = _hash(forKey) % self.count
 
+		if slot < 0 {
+			slot = -slot
+		}
 
-		return mod
+		return slot
+	}
+
+	func _resize() {
+		var newStorage = Array<DictionaryEntry<Key, Value>>(count: self.count, capacity: self.capacity * 2)
+
+		var i = 0
+		while i < self.storage.capacity {
+			let entry = self.storage[i]
+
+			if entry != nil {
+				let newIndex = self.findIndex(key: entry.key)
+				newStorage[newIndex] = entry
+			}
+
+			i += 1
+		}
+
+		self.capacity = newStorage.capacity
+		self.storage = newStorage
 	}
 }

@@ -122,7 +122,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// Put the function args on the stack
-		for arg in expr.argsAnalyzed {
+		for arg in expr.argsAnalyzed.reversed() {
 			try arg.expr.accept(self, chunk)
 		}
 
@@ -191,7 +191,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedUnaryExpr, _ chunk: Chunk) throws {
 		try expr.exprAnalyzed.accept(self, chunk)
 
-		switch expr.op {
+		switch expr.op.kind {
 		case .bang:
 			chunk.emit(opcode: .not, line: expr.location.line)
 		case .minus:

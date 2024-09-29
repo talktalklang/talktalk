@@ -671,7 +671,7 @@ public struct VirtualMachine {
 				}
 
 				let count = try readByte()
-				let capacity = max(count, 1)
+				let capacity = max(count, 1) * 2
 				let entriesArrayPointer = heap.allocate(count: Int(capacity))
 
 				for i in 0 ..< Int(count) {
@@ -693,6 +693,8 @@ public struct VirtualMachine {
 
 				let dictInstance = Instance(type: dictType, fields: [
 					Symbol.property("Standard", "Dictionary", "storage").asStatic(): .instance(entriesArray),
+					Symbol.property("Standard", "Dictionary", "count").asStatic(): .int(Int(count)),
+					Symbol.property("Standard", "Dictionary", "capacity").asStatic(): .int(Int(capacity)),
 				])
 
 				try stack.push(.instance(dictInstance))
@@ -942,7 +944,8 @@ public struct VirtualMachine {
 			}
 
 			guard let value = heap.dereference(pointer: pointer) else {
-				throw VirtualMachineError.valueMissing("no value found for pointer \(pointer)")
+				try stack.push(.nil)
+				return
 			}
 
 			try stack.push(value)
@@ -950,8 +953,8 @@ public struct VirtualMachine {
 			try stack.pop()
 			() // TODO:
 		case "_storePtr":
-			let value = try stack.pop()
 			let pointer = try stack.pop()
+			let value = try stack.pop()
 			if case let .pointer(pointer) = pointer {
 				heap.store(pointer: pointer, value: value)
 			} else {

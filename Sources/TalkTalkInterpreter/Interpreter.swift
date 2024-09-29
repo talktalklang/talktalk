@@ -76,7 +76,7 @@ public struct Interpreter: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedUnaryExpr, _ context: Scope) throws -> Value {
-		switch expr.op {
+		switch expr.op.kind {
 		case .bang:
 			try expr.exprAnalyzed.accept(self, context).negate()
 		case .minus:

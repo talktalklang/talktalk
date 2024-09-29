@@ -458,13 +458,13 @@ struct TalkTalkParserTests {
 
 	@Test("Parses bang") func bang() throws {
 		let expr = try #require(parse("!hello")[0].cast(ExprStmtSyntax.self).expr as? UnaryExpr)
-		#expect(expr.op == .bang)
+		#expect(expr.op.kind == .bang)
 		#expect(expr.expr.cast(VarExprSyntax.self).name == "hello")
 	}
 
 	@Test("Parses negative") func negative() throws {
 		let expr = try #require(parse("-123")[0].cast(ExprStmtSyntax.self).expr as? UnaryExpr)
-		#expect(expr.op == .minus)
+		#expect(expr.op.kind == .minus)
 		#expect(expr.expr.cast(LiteralExprSyntax.self).value == .int(123))
 	}
 

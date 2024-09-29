@@ -77,7 +77,16 @@ struct PatternVisitor: Visitor {
 				return .value(.void)
 			}
 		default:
-			()
+			if let expectation = context.expectation {
+				let typeVar = context.freshTypeVariable(".\(expr.property)")
+				context.addConstraint(
+					MemberConstraint(receiver: expectation, name: expr.property, type: .type(.typeVar(typeVar)), isRetry: false, location: expr.location)
+				)
+
+				context.extend(expr, with: .type(.typeVar(typeVar)))
+
+				return .value(.typeVar(typeVar))
+			}
 		}
 
 		throw InferencerError.cannotInfer("could not resolve receiver of \(expr.description)")
