@@ -50,7 +50,6 @@ let package = Package(
 				"TalkTalkLSP",
 				"TalkTalkAnalysis",
 				"TalkTalkDriver",
-				"TalkTalkInterpreter",
 				"TalkTalkVM",
 				"TypeChecker",
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -77,12 +76,6 @@ let package = Package(
 			dependencies: [
 				"TalkTalkCore",
 				.product(name: "OrderedCollections", package: "swift-collections"),
-			]
-		),
-		.target(
-			name: "Inference",
-			dependencies: [
-				"TalkTalkCore",
 			]
 		),
 		.target(
@@ -124,14 +117,6 @@ let package = Package(
 				"TalkTalkDriver",
 				"TalkTalkCore",
 				.product(name: "OrderedCollections", package: "swift-collections"),
-			]
-		),
-		.target(
-			name: "TalkTalkInterpreter",
-			dependencies: [
-				"TalkTalkAnalysis",
-				"TalkTalkBytecode",
-				"TypeChecker",
 			]
 		),
 		.target(
@@ -182,18 +167,6 @@ let package = Package(
 				"TalkTalkVM",
 				"TalkTalkCompiler",
 				"TalkTalkAnalysis",
-			]
-		),
-		.testTarget(
-			name: "TalkTalkInterpreterTests",
-			dependencies: [
-				"TalkTalkInterpreter",
-			]
-		),
-		.testTarget(
-			name: "InferenceTests",
-			dependencies: [
-				"Inference",
 			]
 		),
 		.testTarget(
