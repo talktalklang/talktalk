@@ -657,6 +657,7 @@ struct InferenceVisitor: Visitor {
 		try expr.consequence.accept(self, childContext)
 
 		try expr.alternative?.accept(self, context)
+
 		context.extend(expr, with: .type(.void))
 	}
 
@@ -1130,8 +1131,13 @@ struct InferenceVisitor: Visitor {
 		}
 
 		let typeVar = context.freshTypeVariable(expr.name.lexeme)
+
 		context.defineVariable(named: expr.name.lexeme, as: .type(.typeVar(typeVar)), at: expr.location)
-		context.addConstraint(UnwrapConstraint(typeVar: .typeVar(typeVar), location: expr.location))
+		context.addConstraint(UnwrapConstraint(typeVar: .typeVar(typeVar), wrapped: variable, location: expr.location))
+
+		context.extend(expr, with: .type(.pattern(.init(type: .void, arguments: [
+			.variable(expr.name.lexeme, .type(.typeVar(typeVar)))
+		]))))
 	}
 
 	// GENERATOR_INSERTION

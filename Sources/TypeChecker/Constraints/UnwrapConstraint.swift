@@ -8,6 +8,7 @@ import TalkTalkCore
 
 struct UnwrapConstraint: Constraint {
 	let typeVar: InferenceType
+	let wrapped: InferenceResult
 	let location: SourceLocation
 	var isRetry: Bool = false
 
@@ -23,8 +24,24 @@ struct UnwrapConstraint: Constraint {
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let type = context.applySubstitutions(to: typeVar)
 
+		if case let .instance(.enumType(instance)) = context.applySubstitutions(to: wrapped),
+			 instance.type.name == "Optional",
+			 let wrapped = instance.substitutions.values.first,
+			 case let .typeVar(typeVariable) = type {
+			if case let .instantiatable(instantiatableType) = wrapped {
+				let wrappedInstance = instantiatableType.instantiate(with: instance.substitutions, in: context)
+//				context.bind(typeVar: typeVariable, to: .instance(wrappedInstance))
+//				context.unify(.instance(wrappedInstance), typeVar, location)
+			} else {
+//				context.unify(wrapped, typeVar, location)
+//				context.bind(typeVar: typeVariable, to: wrapped)
+			}
+
+			return .ok
+		}
+
 		if case .typeVar = type, !isRetry {
-			context.deferConstraint(UnwrapConstraint(typeVar: type, location: location, isRetry: true))
+			context.deferConstraint(UnwrapConstraint(typeVar: type, wrapped: wrapped, location: location, isRetry: true))
 			return .ok
 		} else {
 			return .error([

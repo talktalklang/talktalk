@@ -19,11 +19,11 @@ struct EqualityConstraint: Constraint {
 		let lhs = context.applySubstitutions(to: lhs.asType(in: context))
 		let rhs = context.applySubstitutions(to: rhs.asType(in: context))
 
-		return "EqualityConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
+		return "EqualityConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), location: \(location)"
 	}
 
 	var description: String {
-		"EqualityConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
+		"EqualityConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), location: \(location))"
 	}
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {

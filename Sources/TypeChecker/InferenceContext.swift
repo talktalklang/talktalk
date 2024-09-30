@@ -670,7 +670,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			break
 		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
-			for (subA, subB) in zip(a.substitutions, b.substitutions) where subA != subB {
+			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
 		case let (.selfVar(.instantiatable(selfVar)), .instance(instance)), let (.instance(instance), .selfVar(.instantiatable(selfVar))):

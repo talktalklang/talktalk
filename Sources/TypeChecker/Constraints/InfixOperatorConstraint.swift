@@ -24,7 +24,7 @@ struct InfixOperatorConstraint: Constraint {
 	}
 
 	var description: String {
-		"EqualityConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
+		"InfixOperatorConstraint(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), op: \(op.rawValue), returns: \(returns.debugDescription))"
 	}
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
