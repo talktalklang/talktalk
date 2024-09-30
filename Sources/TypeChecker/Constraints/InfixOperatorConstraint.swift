@@ -56,9 +56,6 @@ struct InfixOperatorConstraint: Constraint {
 			context.unify(type, .base(.string), location)
 
 			return checkReturnType(type, expect: .base(.string), context: context)
-		case (.base(.none), .optional(_), .equalEqual), (.optional(_), .base(.none), .equalEqual),
-				 (.base(.none), .optional(_), .bangEqual), (.optional(_), .base(.none), .bangEqual):
-			return .ok
 		case let (lhs, rhs, .equalEqual):
 			context.unify(.typeVar(returns), .base(.bool), location)
 			context.unify(lhs, rhs, location)

@@ -13,7 +13,7 @@ public struct Inferencer {
 	let imports: [InferenceContext]
 	public let context: InferenceContext
 
-	nonisolated(unsafe) public static let stdlib: InferenceContext = {
+	public nonisolated(unsafe) static let stdlib: InferenceContext = {
 		// swiftlint:disable force_try
 		let stdlib = try! Library.standard.files.flatMap {
 			try Parser.parse($0)
@@ -234,8 +234,6 @@ struct InferenceVisitor: Visitor {
 			type = .base(.bool)
 		case "pointer":
 			type = .base(.pointer)
-		case "Optional":
-			return try .type(.optional(instanceTypeFrom(expr: expr.genericParams[0], in: context).asType(in: context)))
 		default:
 			let found = context.lookupVariable(named: expr.identifier.lexeme) ?? context.lookupPlaceholder(named: expr.identifier.lexeme) ?? .type(.placeholder(context.freshTypeVariable(expr.identifier.lexeme)))
 
@@ -259,7 +257,17 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			return .type(.optional(type))
+			guard case let .type(.instantiatable(.enumType(optionalType))) = context.lookupVariable(named: "Optional") else {
+				// swiftlint:disable fatal_error
+				fatalError("Could not find builtin type Optional")
+				// swiftlint:enable fatal_error
+			}
+
+			// swiftlint:disable force_unwrapping
+			let t = optionalType.typeContext.typeParameters.first!
+			// swiftlint:enable force_unwrapping
+
+			return .type(.instance(optionalType.instantiate(with: [t: type], in: context)))
 		}
 
 		return .type(type)
@@ -278,8 +286,6 @@ struct InferenceVisitor: Visitor {
 			type = .base(.bool)
 		case "pointer":
 			type = .base(.pointer)
-		case "Optional":
-			return try .optional(typeFrom(expr: expr.genericParams[0], in: context))
 		default:
 			let found: InferenceResult
 
@@ -309,7 +315,17 @@ struct InferenceVisitor: Visitor {
 		}
 
 		if expr.isOptional {
-			return .optional(type)
+			guard case let .type(.instantiatable(.enumType(optionalType))) = context.lookupVariable(named: "Optional") else {
+				// swiftlint:disable fatal_error
+				fatalError("Could not find builtin type Optional")
+				// swiftlint:enable fatal_error
+			}
+
+			// swiftlint:disable force_unwrapping
+			let t = optionalType.typeContext.typeParameters.first!
+			// swiftlint:enable force_unwrapping
+
+			return .instance(optionalType.instantiate(with: [t: type], in: context))
 		}
 
 		return type
@@ -578,8 +594,6 @@ struct InferenceVisitor: Visitor {
 			returns = member
 		case let .type(.enumCase(enumCase)):
 			returns = .type(.enumCase(enumCase))
-		case let .type(.optional(type)):
-			returns = .type(.optional(type))
 		case let .type(.instance(instance)) where instance.type is EnumType:
 			// swiftlint:disable force_unwrapping force_cast
 			if let enumType = instance.type as? EnumType, let member = enumType.member(named: expr.property, in: context) {
@@ -1109,19 +1123,15 @@ struct InferenceVisitor: Visitor {
 		try context.extend(expr, with: context.get(expr.expr))
 	}
 
-	public func visit(_ expr: LetPatternSyntax, _ context: InferenceContext) throws -> Void {
+	public func visit(_ expr: LetPatternSyntax, _ context: InferenceContext) throws {
 		guard let variable = context.lookupVariable(named: expr.name.lexeme) else {
 			context.addError(.typeError("could not find variable named \(expr.name.lexeme)"), to: expr)
 			return
 		}
 
-		if case let .type(.optional(type)) = variable {
-			context.defineVariable(named: expr.name.lexeme, as: .type(type), at: expr.location)
-		} else {
-			let typeVar = context.freshTypeVariable(expr.name.lexeme)
-			context.defineVariable(named: expr.name.lexeme, as: .type(.typeVar(typeVar)), at: expr.location)
-			context.addConstraint(UnwrapConstraint(typeVar: .typeVar(typeVar), location: expr.location))
-		}
+		let typeVar = context.freshTypeVariable(expr.name.lexeme)
+		context.defineVariable(named: expr.name.lexeme, as: .type(.typeVar(typeVar)), at: expr.location)
+		context.addConstraint(UnwrapConstraint(typeVar: .typeVar(typeVar), location: expr.location))
 	}
 
 	// GENERATOR_INSERTION

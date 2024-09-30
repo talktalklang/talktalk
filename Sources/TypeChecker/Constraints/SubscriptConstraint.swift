@@ -39,10 +39,6 @@ struct SubscriptConstraint: Constraint {
 					fnReturns = .type(.instance(instantiatableType.instantiate(with: instance.substitutions, in: context)))
 				}
 
-				if case let .type(.optional(.instantiatable(instantiatableType))) = fnReturns {
-					fnReturns = .type(.optional(.instance(instantiatableType.instantiate(with: instance.substitutions, in: context))))
-				}
-
 				if case let .type(.instantiatable(structType)) = fnReturns {
 					context.unify(
 						returns,

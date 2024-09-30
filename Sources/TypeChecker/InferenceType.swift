@@ -8,6 +8,13 @@ import Foundation
 import OrderedCollections
 
 public indirect enum InferenceType {
+	public static func optional(_ type: InferenceType) -> InferenceType {
+		let enumType = EnumType.extract(from: .type(Inferencer.stdlib.type(named: "Optional")!))!
+		let wrapped = enumType.typeContext.typeParameters.first!
+		let instance = enumType.instantiate(with: [wrapped: type], in: .init(moduleName: "Standard", parent: nil, environment: .init(), constraints: .init()))
+		return .instance(instance)
+	}
+
 	// Something we'll fill in later.
 	case typeVar(TypeVariable)
 
@@ -44,22 +51,11 @@ public indirect enum InferenceType {
 	// Pattern matching (type, associated values)
 	case pattern(Pattern)
 
-	// Optionals are easier as their own type
-	case optional(InferenceType)
-
 	// When we can't figure it out or don't care
 	case any
 
 	// The absence of a type
 	case void
-
-	var isOptional: Bool {
-		if case .optional = self {
-			return true
-		}
-
-		return false
-	}
 
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
 		InferenceType.typeVar(TypeVariable(name, id))

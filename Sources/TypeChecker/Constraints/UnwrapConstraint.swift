@@ -23,10 +23,7 @@ struct UnwrapConstraint: Constraint {
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let type = context.applySubstitutions(to: typeVar)
 
-		if case let .optional(type) = type {
-			context.unify(typeVar, type, location)
-			return .ok
-		} else if case .typeVar = type, !isRetry {
+		if case .typeVar = type, !isRetry {
 			context.deferConstraint(UnwrapConstraint(typeVar: type, location: location, isRetry: true))
 			return .ok
 		} else {

@@ -43,8 +43,6 @@ public extension InferenceType {
 		switch (self, rhs) {
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
 			return lhsParams.covariant(with: rhsParams, in: context) && lhsReturns.covariant(with: rhsReturns, in: context)
-		case let (.optional(lhs), rhs), let (rhs, .optional(lhs)):
-			return lhs.covariant(with: rhs, in: context)
 		case let (lhs as any Instantiatable, .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
 		case let (.instance(lhs), .instance(.protocol(rhs))):

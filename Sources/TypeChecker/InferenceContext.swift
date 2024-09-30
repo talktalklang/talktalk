@@ -530,8 +530,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
-		case let .optional(type):
-			return .optional(applySubstitutions(to: type, with: substitutions))
 		case let .pattern(pattern):
 			return .pattern(
 				Pattern(
@@ -732,12 +730,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 			unify(pattern.type, rhs, location)
 		case let (lhs, .pattern(pattern)):
 			unify(lhs, pattern.type, location)
-		case let (.optional(lhs), .optional(rhs)):
-			unifyOptionals(lhs, rhs, location)
-		case let (.optional(lhs), rhs), let (lhs, .optional(rhs)):
-			unifyOptionals(lhs, rhs, location)
 		case (.void, .void):
 			() // This is chill
+		case let (.instance(.enumType(instance)), wrapped) where instance.type.name == "Optional",
+				 let (wrapped, .instance(.enumType(instance))) where instance.type.name == "Optional":
+			let wrappedTypeVar = instance.substitutions.keys.first!
+			instance.substitutions[wrappedTypeVar] = wrapped
 		default:
 			if !a.covariant(with: b, in: self), a != .any, b != .any, a != .base(.none), b != .base(.none) {
 				addError(
@@ -747,22 +745,6 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		}
-	}
-
-	func unifyOptionals(_ lhs: InferenceType, _ rhs: InferenceType, _ location: SourceLocation, depth: Int = 0) {
-		log("Unifying optionals \(lhs.debugDescription) <> \(rhs.debugDescription)", prefix: " ? ")
-		switch (lhs, rhs) {
-		case let (.optional(lhs), rhs) where !rhs.isOptional:
-			unify(lhs, rhs, location)
-		case let (lhs, .optional(rhs)) where !lhs.isOptional:
-			unify(lhs, rhs, location)
-		case let (.optional(lhs), .optional(rhs)):
-			if depth < 100 {
-				unifyOptionals(lhs, rhs, location, depth: depth + 1)
-			}
-		default:
-			()
 		}
 	}
 
@@ -793,9 +775,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-//		if verbose {
+		if verbose {
 			let context = context ?? self
 			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
-//		}
+		}
 	}
 }

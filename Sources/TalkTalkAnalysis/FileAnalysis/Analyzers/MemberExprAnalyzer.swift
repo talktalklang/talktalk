@@ -152,10 +152,6 @@ struct MemberExprAnalyzer: Analyzer {
 			}
 		}
 
-		if memberSymbol == nil, case .optional = receiver.inferenceType, ["some", "none"].contains(propertyName) {
-			memberSymbol = .property("Standard", "Optional", propertyName)
-		}
-
 		// If we have an existing lexical scope, use that
 		if memberSymbol == nil, let scope = context.getLexicalScope(), let member: (any Member) = scope.methods[propertyName] ?? scope.properties[propertyName] {
 			memberSymbol = member.symbol

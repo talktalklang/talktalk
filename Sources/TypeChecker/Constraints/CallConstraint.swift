@@ -52,13 +52,6 @@ struct CallConstraint: Constraint {
 				context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
 				return .ok
 			}
-		case let .optional(type):
-			if args.count != 1 {
-				return .error([.init(message: "Wth is \(type)(\(args.count))", severity: .error, location: location)])
-			}
-
-			context.unify(type, context.applySubstitutions(to: args[0]), location)
-			return .ok
 		case let .error(error):
 			if case let .undefinedVariable(name) = error.kind {
 				if isRetry {
