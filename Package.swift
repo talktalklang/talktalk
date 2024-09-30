@@ -80,6 +80,12 @@ let package = Package(
 			]
 		),
 		.target(
+			name: "Inference",
+			dependencies: [
+				"TalkTalkCore",
+			]
+		),
+		.target(
 			name: "TalkTalkLSP",
 			dependencies: [
 				"TalkTalkBytecode",
@@ -182,6 +188,12 @@ let package = Package(
 			name: "TalkTalkInterpreterTests",
 			dependencies: [
 				"TalkTalkInterpreter",
+			]
+		),
+		.testTarget(
+			name: "InferenceTests",
+			dependencies: [
+				"Inference",
 			]
 		),
 		.testTarget(
