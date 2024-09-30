@@ -3,7 +3,7 @@
 public protocol IfStmt: Stmt {
 	// Insert IfStmt specific fields here
 	var ifToken: Token { get }
-	var condition: any Expr { get }
+	var condition: any Syntax { get }
 	var consequence: any BlockStmt { get }
 	var elseToken: Token? { get }
 	var alternative: (any BlockStmt)? { get }
@@ -12,7 +12,7 @@ public protocol IfStmt: Stmt {
 public struct IfStmtSyntax: IfStmt {
 	public var id: SyntaxID
 	public var ifToken: Token
-	public var condition: any Expr
+	public var condition: any Syntax
 	public var consequence: any BlockStmt
 	public var elseToken: Token?
 	public var alternative: (any BlockStmt)?

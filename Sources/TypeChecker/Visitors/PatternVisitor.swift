@@ -105,7 +105,7 @@ struct PatternVisitor: Visitor {
 		}
 
 		var args: [Pattern.Argument] = []
-		for (arg, param) in zip(expr.args, params) {
+		for (param, arg) in zip(params, expr.args) {
 			try context.expecting(param.asType(in: context)) {
 				try arg.accept(inferenceVisitor, context)
 				try args.append(
@@ -115,6 +115,14 @@ struct PatternVisitor: Visitor {
 
 			try context.addConstraint(.equality(context.get(arg), param, at: arg.location))
 		}
+
+		try context.addConstraint(ParamsConstraint(callee: context.get(expr.callee), args: expr.args.map {
+			if context[$0] == nil {
+				try $0.accept(inferenceVisitor, context)
+			}
+
+			return try context.get($0)
+		}, location: expr.location, isRetry: false))
 
 		return .value(
 			InferenceType.pattern(
@@ -374,6 +382,10 @@ struct PatternVisitor: Visitor {
 	}
 
 	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> Pattern.Argument {
+		throw PatternError.invalid(expr.description)
+	}
+
+	public func visit(_ expr: LetPatternSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 

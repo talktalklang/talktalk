@@ -24,7 +24,7 @@ public struct Inferencer {
 		// swiftlint:enable force_try
 	}()
 
-	public init(moduleName: String, imports: [InferenceContext]) throws {
+	public init(moduleName: String, imports: [InferenceContext], verbose: Bool = false) throws {
 		// Prepend the standard library
 		var imports = imports
 
@@ -38,7 +38,8 @@ public struct Inferencer {
 			parent: nil,
 			imports: imports,
 			environment: Environment(),
-			constraints: Constraints()
+			constraints: Constraints(),
+			verbose: verbose
 		)
 	}
 
@@ -636,8 +637,11 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: IfStmtSyntax, _ context: InferenceContext) throws {
-		try expr.condition.accept(self, context)
-		try expr.consequence.accept(self, context)
+		let childContext = context.childContext()
+
+		try expr.condition.accept(self, childContext)
+		try expr.consequence.accept(self, childContext)
+
 		try expr.alternative?.accept(self, context)
 		context.extend(expr, with: .type(.void))
 	}
@@ -1103,6 +1107,21 @@ struct InferenceVisitor: Visitor {
 	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws {
 		try expr.expr.accept(self, context)
 		try context.extend(expr, with: context.get(expr.expr))
+	}
+
+	public func visit(_ expr: LetPatternSyntax, _ context: InferenceContext) throws -> Void {
+		guard let variable = context.lookupVariable(named: expr.name.lexeme) else {
+			context.addError(.typeError("could not find variable named \(expr.name.lexeme)"), to: expr)
+			return
+		}
+
+		if case let .type(.optional(type)) = variable {
+			context.defineVariable(named: expr.name.lexeme, as: .type(type), at: expr.location)
+		} else {
+			let typeVar = context.freshTypeVariable(expr.name.lexeme)
+			context.defineVariable(named: expr.name.lexeme, as: .type(.typeVar(typeVar)), at: expr.location)
+			context.addConstraint(UnwrapConstraint(typeVar: .typeVar(typeVar), location: expr.location))
+		}
 	}
 
 	// GENERATOR_INSERTION

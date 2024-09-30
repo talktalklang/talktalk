@@ -551,6 +551,11 @@ struct FormatterVisitor: Visitor {
 		return try comments.leading <> group(text("(") <> expr.expr.accept(self, context) <> text(")")) <> comments.dangling <> comments.trailing
 	}
 
+	public func visit(_ expr: LetPatternSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: expr, context: context)
+		return comments.leading <> text("let") <+> text(expr.name.lexeme) <> comments.dangling <> comments.trailing
+	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

@@ -146,6 +146,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
 		expectations: [InferenceType] = [],
+		verbose: Bool = false,
 //		matchContext: MatchContext? = nil
 		file: String = #file,
 		line: UInt32 = #line
@@ -160,6 +161,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
 		self.expectations = expectations
+		self.verbose = verbose
 //		self.matchContext = matchContext
 
 		log("New context with depth \(depth) \(file):\(line)", prefix: " * ")
@@ -749,6 +751,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func unifyOptionals(_ lhs: InferenceType, _ rhs: InferenceType, _ location: SourceLocation, depth: Int = 0) {
+		log("Unifying optionals \(lhs.debugDescription) <> \(rhs.debugDescription)", prefix: " ? ")
 		switch (lhs, rhs) {
 		case let (.optional(lhs), rhs) where !rhs.isOptional:
 			unify(lhs, rhs, location)
@@ -790,9 +793,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+//		if verbose {
 			let context = context ?? self
 			print("\(context.depth) \(String(repeating: "\t", count: max(0, context.depth - 1)))" + prefix + msg)
-		}
+//		}
 	}
 }

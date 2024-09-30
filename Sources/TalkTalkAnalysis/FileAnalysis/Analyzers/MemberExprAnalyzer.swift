@@ -162,12 +162,16 @@ struct MemberExprAnalyzer: Analyzer {
 			analysisDefinition = .init(location: member.location, type: member.inferenceType)
 		}
 
+		guard let memberSymbol else {
+			return error(at: expr, "Could not find member `\(expr.property)` for type `\(receiver.typeAnalyzed)", environment: context)
+		}
+
 		return try AnalyzedMemberExpr(
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
 			receiverAnalyzed: castToAnyAnalyzedExpr(receiver, in: context),
-			memberSymbol: memberSymbol ?? .primitive("could not find member"),
+			memberSymbol: memberSymbol,
 			analysisErrors: [],
 			analysisDefinition: analysisDefinition,
 			isMutable: false

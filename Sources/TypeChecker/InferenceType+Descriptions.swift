@@ -66,7 +66,7 @@ extension InferenceType: CustomDebugStringConvertible {
 		case let .selfVar(type):
 			"\(type) (self)"
 		case let .placeholder(variable):
-			"\(variable) (placeholder)"
+			"\(variable.debugDescription) (placeholder)"
 		case let .enumCase(kase):
 			kase.description
 		case let .pattern(pattern):

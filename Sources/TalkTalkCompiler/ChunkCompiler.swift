@@ -909,6 +909,11 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedGroupedExpr, _ chunk: Chunk) throws {
 		try expr.exprAnalyzed.accept(self, chunk)
 	}
+
+	public func visit(_ expr: AnalyzedLetPattern, _ context: Chunk) throws -> Void {
+		fatalError()
+	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers

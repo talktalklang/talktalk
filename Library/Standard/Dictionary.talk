@@ -24,16 +24,11 @@ struct Dictionary<Key,Value> {
 		let index = self.findIndex(key: key)
 		let entry = self.storage[index]
 
-		match entry {
-		case .some(let entry):
-			if entry.key == key {
-				return entry.value
-			} else {
-				return nil
-			}
-		case .none:
-			return nil
+		if let entry {
+			return entry.value
 		}
+
+		return nil
 	}
 
 	func set(key: Key, value: Value) {
@@ -85,7 +80,7 @@ struct Dictionary<Key,Value> {
 		while i < self.storage.capacity {
 			let entry = self.storage[i]
 
-			if entry != nil {
+			if let entry {
 				let newIndex = self.findIndex(key: entry.key)
 				newStorage[newIndex] = entry
 			}

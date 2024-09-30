@@ -420,5 +420,11 @@ public struct SemanticTokensVisitor: Visitor {
 		return try expr.expr.accept(self, context)
 	}
 
+	public func visit(_ expr: LetPatternSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		[
+			make(.keyword, from: expr.letToken)
+		]
+	}
+
 	// GENERATOR_INSERTION
 }

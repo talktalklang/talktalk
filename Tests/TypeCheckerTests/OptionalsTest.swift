@@ -59,4 +59,54 @@ struct OptionalsTest: TypeCheckerTest {
 	@Test("Returning none") func returningNone() throws {
 
 	}
+
+	@Test("Can match subscripts") func subs() throws {
+		let syntax = try Parser.parse(
+			"""
+			let a: Array<String?> = ["foo"]
+			let b = a[2]
+
+			match b {
+			case .some(let val):
+				return val
+			case .none:
+				return nil
+			}
+			"""
+		)
+
+		let context = try infer(syntax)
+		let valSyntax = syntax[2]
+			.cast(MatchStatementSyntax.self).cases[0].body[0]
+			.cast(ReturnStmtSyntax.self).value!
+			.cast(VarExprSyntax.self)
+
+		#expect(context[valSyntax] == .type(.base(.string)))
+	}
+
+	@Test("Can let unwrap") func letUnwrap() throws {
+		let syntax = try Parser.parse(
+			"""
+			var foo: Array<int?> = []
+			var bar = foo[1]
+
+			bar
+
+			if let bar {
+				bar
+			}
+			"""
+		)
+
+		let context = try infer(syntax, verbose: true)
+
+		#expect(context[syntax[2]] == .type(.optional(.base(.int))))
+
+		let varExpr = syntax[3]
+			.cast(IfStmtSyntax.self).consequence.stmts[0]
+			.cast(ExprStmtSyntax.self).expr
+			.cast(VarExprSyntax.self)
+		
+		#expect(context[varExpr] == .type(.base(.int)))
+	}
 }

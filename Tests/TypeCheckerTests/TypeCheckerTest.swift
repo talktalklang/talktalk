@@ -14,10 +14,11 @@ extension TypeCheckerTest {
 	func infer(
 		_ expr: [any Syntax],
 		imports: [InferenceContext] = [],
+		verbose: Bool = false,
 		expectedErrors: Int = 0,
 		sourceLocation _: Testing.SourceLocation = #_sourceLocation
 	) throws -> InferenceContext {
-		let inferencer = try Inferencer(moduleName: "TypeCheckerTests", imports: imports)
+		let inferencer = try Inferencer(moduleName: "TypeCheckerTests", imports: imports, verbose: verbose)
 		let context = inferencer.infer(expr).solve().solveDeferred()
 
 		#expect(context.errors.count == expectedErrors, "expected \(expectedErrors) errors. got \(context.errors.count): \(context.errors)")

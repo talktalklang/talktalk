@@ -535,7 +535,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			wrapped: expr,
 			inferenceType: context.type(for: expr),
 			environment: context,
-			conditionAnalyzed: castToAnyAnalyzedExpr(expr.condition.accept(self, context), in: context),
+			conditionAnalyzed: expr.condition.accept(self, context),
 			consequenceAnalyzed: castToAnyAnalyzedExpr(expr.consequence.accept(self, context), in: context),
 			alternativeAnalyzed: alternativeAnalyzed
 		)
@@ -928,6 +928,15 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			wrapped: expr,
 			exprAnalyzed: castToAnyAnalyzedExpr(expr.expr.accept(self, context), in: context),
 			inferenceType: context.type(for: expr),
+			environment: context
+		)
+	}
+
+	public func visit(_ expr: LetPatternSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		return AnalyzedLetPattern(
+			wrapped: expr,
+			inferenceType: .void,
+			analyzedChildren: [],
 			environment: context
 		)
 	}
