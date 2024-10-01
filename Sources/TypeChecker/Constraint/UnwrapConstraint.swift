@@ -6,7 +6,7 @@
 //
 import TalkTalkCore
 
-struct UnwrapConstraint: Constraint {
+struct UnwrapConstraint: InferenceConstraint {
 	let typeVar: InferenceType
 	let wrapped: InferenceResult
 	let location: SourceLocation

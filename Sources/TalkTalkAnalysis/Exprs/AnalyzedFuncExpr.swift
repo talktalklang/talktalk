@@ -24,7 +24,7 @@ public struct AnalyzedFuncExpr: AnalyzedExpr, FuncExpr, Decl, AnalyzedDecl {
 
 	public var name: Token?
 	public var funcToken: Token { wrapped.funcToken }
-	public var params: ParamsExpr { wrapped.params }
+	public var params: ParamsExprSyntax { wrapped.params }
 	public var typeDecl: (any TypeExpr)? { wrapped.typeDecl }
 	public var body: BlockStmtSyntax { wrapped.body }
 	public var isStatic: Bool { wrapped.isStatic }

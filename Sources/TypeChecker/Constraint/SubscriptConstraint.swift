@@ -7,7 +7,7 @@
 
 import TalkTalkCore
 
-struct SubscriptConstraint: Constraint {
+struct SubscriptConstraint: InferenceConstraint {
 	let receiver: InferenceResult
 	let args: [InferenceResult]
 	let returns: InferenceType

@@ -7,7 +7,7 @@
 
 import TalkTalkCore
 
-struct InfixOperatorConstraint: Constraint {
+struct InfixOperatorConstraint: InferenceConstraint {
 	let op: BinaryOperator
 	let lhs: InferenceType
 	let rhs: InferenceType

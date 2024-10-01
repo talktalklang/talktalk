@@ -10,7 +10,7 @@ enum ConstraintCheckResult {
 	case ok, error([Diagnostic])
 }
 
-protocol Constraint: CustomStringConvertible {
+protocol InferenceConstraint: CustomStringConvertible {
 	// Where in the original source was this constraint added
 	var location: SourceLocation { get }
 
@@ -25,7 +25,7 @@ protocol Constraint: CustomStringConvertible {
 	var expectations: [PartialKeyPath<Self>: InferenceType] { get }
 }
 
-extension Constraint {
+extension InferenceConstraint {
 	var expectations: [PartialKeyPath<Self>: InferenceType] {
 		[:]
 	}

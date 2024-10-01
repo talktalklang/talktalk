@@ -23,7 +23,7 @@ public struct AnalyzedParam: Param, AnalyzedExpr, Typed {
 	public let environment: Environment
 
 	public let inferenceType: InferenceType
-	public var type: (any TypeExpr)? { wrapped.type }
+	public var type: TypeExprSyntax? { wrapped.type }
 
 	public init(type: InferenceType, wrapped: ParamSyntax, environment: Environment) {
 		self.wrapped = wrapped
@@ -59,7 +59,7 @@ public struct AnalyzedParamsExpr: AnalyzedExpr, ParamsExpr {
 	public var paramsAnalyzed: [AnalyzedParam]
 	public var environment: Environment
 
-	public var params: [any Param] { wrapped.params }
+	public var params: [ParamSyntax] { wrapped.params }
 	public var isVarArg = false
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: Visitor {

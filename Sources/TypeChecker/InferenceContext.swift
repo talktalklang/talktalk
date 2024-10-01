@@ -260,7 +260,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return constraints.exists(forTypeVar: typeVar)
 	}
 
-	func constraintExists<T: Constraint>(for type: T.Type, where block: (T) -> Bool) -> Bool {
+	func constraintExists<T: InferenceConstraint>(for type: T.Type, where block: (T) -> Bool) -> Bool {
 		if let parent {
 			return parent.constraintExists(for: type, where: block)
 		}
@@ -268,7 +268,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return constraints.exists(for: type, where: block)
 	}
 
-	func addConstraint(_ constraint: any Constraint) {
+	func addConstraint(_ constraint: any InferenceConstraint) {
 		if let parent {
 			parent.addConstraint(constraint)
 			return
@@ -277,7 +277,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		constraints.add(constraint)
 	}
 
-	func deferConstraint(_ constraint: any Constraint) {
+	func deferConstraint(_ constraint: any InferenceConstraint) {
 		if let parent {
 			parent.deferConstraint(constraint)
 			return

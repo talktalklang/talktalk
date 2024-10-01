@@ -9,7 +9,7 @@
 import TalkTalkCore
 
 // When we have args and a callee we don't know, we can unify here
-struct ParamsConstraint: Constraint {
+struct ParamsConstraint: InferenceConstraint {
 	let callee: InferenceResult
 	let args: [InferenceResult]
 	let location: SourceLocation

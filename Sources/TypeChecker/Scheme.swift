@@ -9,6 +9,14 @@ public struct Scheme: Equatable, CustomStringConvertible, CustomDebugStringConve
 	public let name: String?
 	let variables: [TypeVariable]
 	let type: InferenceType
+	let substitutions: [TypeVariable: InferenceType]
+
+	init(name: String?, variables: [TypeVariable], type: InferenceType, substitutions: [TypeVariable : InferenceType] = [:]) {
+		self.name = name
+		self.variables = variables
+		self.type = type
+		self.substitutions = substitutions
+	}
 
 	public var debugDescription: String {
 		if let name {

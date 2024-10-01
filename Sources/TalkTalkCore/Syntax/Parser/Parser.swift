@@ -149,11 +149,19 @@ public struct Parser {
 			}
 
 			if check(.var), didConsume(.var) {
-				return letVarDecl(.var, isStatic: true, modifiers: [staticKeyword])
+				if context == .struct {
+					return propertyDecl(previous, isStatic: true, modifiers: [staticKeyword])
+				} else {
+					return letVarDecl(.var, isStatic: true, modifiers: [staticKeyword])
+				}
 			}
 
 			if check(.let), didConsume(.let) {
-				return letVarDecl(.let, isStatic: true, modifiers: [staticKeyword])
+				if context == .struct {
+					return propertyDecl(previous, isStatic: true, modifiers: [staticKeyword])
+				} else {
+					return letVarDecl(.let, isStatic: true, modifiers: [staticKeyword])
+				}
 			}
 		}
 
@@ -170,11 +178,19 @@ public struct Parser {
 		}
 
 		if didMatch(.var), context.allowed.contains(.var) {
-			return letVarDecl(.var, isStatic: false)
+			if context == .struct {
+				return propertyDecl(previous, isStatic: false, modifiers: [])
+			} else {
+				return letVarDecl(.var, isStatic: false)
+			}
 		}
 
 		if didMatch(.let), context.allowed.contains(.let) {
-			return letVarDecl(.let, isStatic: false)
+			if context == .struct {
+				return propertyDecl(previous, isStatic: false, modifiers: [])
+			} else {
+				return letVarDecl(.let, isStatic: false)
+			}
 		}
 
 		if context == .argument {

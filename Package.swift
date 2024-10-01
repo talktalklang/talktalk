@@ -3,6 +3,7 @@
 
 import Foundation
 import PackageDescription
+import CompilerPluginSupport
 
 let package = Package(
 	name: "TalkTalk",
@@ -189,9 +190,11 @@ let package = Package(
 
 #if !WASM
 	for target in package.targets {
-		target.resources = [
-			.copy("../../Library/Standard"),
-		]
+		if target.name == "TalkTalkCore" {
+			target.resources = [
+				.copy("../../Library/Standard"),
+			]
+		}
 	}
 #endif
 

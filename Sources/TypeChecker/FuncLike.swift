@@ -9,7 +9,7 @@ import TalkTalkCore
 
 // Used for being able to handle func and init decls with the same code
 protocol FuncLike: Syntax {
-	var params: ParamsExpr { get }
+	var params: ParamsExprSyntax { get }
 	var body: BlockStmtSyntax { get }
 	var typeDecl: (any TypeExpr)? { get }
 	var name: Token? { get }

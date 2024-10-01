@@ -7,7 +7,7 @@
 
 import TalkTalkCore
 
-struct VariableConstraint: Constraint {
+struct VariableConstraint: InferenceConstraint {
 	let typeVar: InferenceType
 	let value: InferenceResult
 	let location: SourceLocation

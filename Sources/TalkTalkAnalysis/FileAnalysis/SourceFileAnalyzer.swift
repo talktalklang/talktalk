@@ -941,5 +941,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		)
 	}
 
+	public func visit(_ expr: PropertyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
+		#warning("TODO")
+    return error(at: expr, "TODO", environment: context, expectation: .none)
+	}
+
 	// GENERATOR_INSERTION
 }

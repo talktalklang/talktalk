@@ -8,6 +8,15 @@
 public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	case scheme(Scheme), type(InferenceType)
 
+	func instantiate(in context: Context) -> InferenceType {
+		switch self {
+		case .scheme(let scheme):
+			context.instantiate(scheme)
+		case .type(let inferenceType):
+			inferenceType
+		}
+	}
+
 	public var mangled: String {
 		switch self {
 		case let .scheme(scheme):

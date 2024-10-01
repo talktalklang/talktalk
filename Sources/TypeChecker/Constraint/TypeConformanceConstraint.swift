@@ -25,7 +25,7 @@ public struct ConformanceRequirement: Hashable {
 	}
 }
 
-struct TypeConformanceConstraint: Constraint {
+struct TypeConformanceConstraint: InferenceConstraint {
 	let type: InferenceResult
 	let conformsTo: InferenceResult
 

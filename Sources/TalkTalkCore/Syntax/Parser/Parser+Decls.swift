@@ -155,6 +155,39 @@ public extension Parser {
 		)
 	}
 
+	mutating func propertyDecl(_ keyword: Token, isStatic: Bool, modifiers: [Token]) -> any Decl {
+		let keyword = previous!
+		let i = startLocation(at: keyword)
+
+		guard let name = consume(.identifier) else {
+			return error(at: current, expected(.identifier))
+		}
+
+		let typeAnnotation: TypeExprSyntax?
+		if didMatch(.colon) {
+			typeAnnotation = typeExpr()
+		} else {
+			typeAnnotation = nil
+		}
+
+		let defaultValue: (any Expr)?
+		if didMatch(.equals) {
+			defaultValue = expr()
+		} else {
+			defaultValue = nil
+		}
+
+		return PropertyDeclSyntax(
+			introducer: keyword,
+			name: name,
+			typeAnnotation: typeAnnotation,
+			defaultValue: defaultValue,
+			isStatic: isStatic,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
 	mutating func declBlock(context: DeclContext) -> DeclBlockSyntax {
 		consume(.leftBrace)
 		skip(.newline)

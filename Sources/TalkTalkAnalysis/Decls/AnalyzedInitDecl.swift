@@ -22,7 +22,7 @@ public struct AnalyzedInitDecl: AnalyzedDecl, InitDecl {
 	}
 
 	public var initToken: Token { wrapped.initToken }
-	public var params: any ParamsExpr { wrapped.params }
+	public var params: ParamsExprSyntax { wrapped.params }
 	public var body: BlockStmtSyntax { wrapped.body }
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }

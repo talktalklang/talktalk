@@ -8,7 +8,7 @@
 import OrderedCollections
 import TalkTalkCore
 
-struct CallConstraint: Constraint {
+struct CallConstraint: InferenceConstraint {
 	let callee: InferenceResult
 	let args: [InferenceResult]
 	let returns: InferenceResult
@@ -236,7 +236,7 @@ struct CallConstraint: Constraint {
 	}
 }
 
-extension Constraint where Self == CallConstraint {
+extension InferenceConstraint where Self == CallConstraint {
 	static func call(_ callee: InferenceResult, _ args: [InferenceResult], returns: InferenceResult, at: SourceLocation, isRetry: Bool = false) -> CallConstraint {
 		CallConstraint(callee: callee, args: args, returns: returns, location: at, isRetry: isRetry)
 	}

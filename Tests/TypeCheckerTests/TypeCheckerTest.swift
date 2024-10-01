@@ -11,6 +11,18 @@ import Testing
 
 protocol TypeCheckerTest {}
 extension TypeCheckerTest {
+	func solve(
+		_ syntax: [any Syntax],
+		imports: [InferenceContext] = [],
+		expectedDiagnostics: Int = 0,
+		verbose: Bool = false,
+		sourceLocation _: Testing.SourceLocation = #_sourceLocation
+	) throws -> Context {
+		let context = try ContextVisitor.visit(syntax).solve()
+		#expect(context.diagnostics.count == expectedDiagnostics, "expected \(expectedDiagnostics) diagnostics. got \(context.diagnostics.count): \(context.diagnostics)")
+		return context
+	}
+
 	func infer(
 		_ expr: [any Syntax],
 		imports: [InferenceContext] = [],

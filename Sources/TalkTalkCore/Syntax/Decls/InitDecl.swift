@@ -7,14 +7,14 @@
 
 public protocol InitDecl: Decl {
 	var initToken: Token { get }
-	var params: ParamsExpr { get }
+	var params: ParamsExprSyntax { get }
 	var body: BlockStmtSyntax { get }
 }
 
 public struct InitDeclSyntax: InitDecl {
 	public var id: SyntaxID
 	public var initToken: Token
-	public var params: ParamsExpr
+	public var params: ParamsExprSyntax
 	public var body: BlockStmtSyntax
 
 	public var location: SourceLocation

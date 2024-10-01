@@ -7,11 +7,11 @@
 
 public protocol Param: Expr {
 	var name: String { get }
-	var type: (any TypeExpr)? { get }
+	var type: TypeExprSyntax? { get }
 }
 
 public protocol ParamsExpr: Expr {
-	var params: [any Param] { get }
+	var params: [ParamSyntax] { get }
 }
 
 public extension ParamsExpr {
@@ -37,11 +37,11 @@ public struct ParamSyntax: Param {
 
 	public var id: SyntaxID
 	public let name: String
-	public let type: (any TypeExpr)?
+	public let type: TypeExprSyntax?
 	public var location: SourceLocation
 	public var children: [any Syntax] { [] }
 
-	public init(id: SyntaxID, name: String, type: (any TypeExpr)? = nil, location: SourceLocation) {
+	public init(id: SyntaxID, name: String, type: TypeExprSyntax? = nil, location: SourceLocation) {
 		self.id = id
 		self.name = name
 		self.type = type
@@ -51,11 +51,11 @@ public struct ParamSyntax: Param {
 
 public struct ParamsExprSyntax: ParamsExpr {
 	public var id: SyntaxID
-	public var params: [any Param]
+	public var params: [ParamSyntax]
 	public let location: SourceLocation
 	public var children: [any Syntax] { params }
 
-	public init(id: SyntaxID, params: [any Param], location: SourceLocation) {
+	public init(id: SyntaxID, params: [ParamSyntax], location: SourceLocation) {
 		self.id = id
 		self.params = params
 		self.location = location

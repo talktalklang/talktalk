@@ -54,5 +54,6 @@ public protocol Visitor {
 	func visit(_ expr: LogicalExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> Value
 	func visit(_ expr: LetPatternSyntax, _ context: Context) throws -> Value
+	func visit(_ expr: PropertyDeclSyntax, _ context: Context) throws -> Value
 	// GENERATOR_INSERTION
 }

@@ -7,7 +7,7 @@
 
 import TalkTalkCore
 
-struct MemberConstraint: Constraint {
+struct MemberConstraint: InferenceConstraint {
 	let receiver: InferenceResult
 	let name: String
 	let type: InferenceResult

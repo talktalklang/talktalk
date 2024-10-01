@@ -7,7 +7,7 @@
 
 import TalkTalkCore
 
-struct EqualityConstraint: Constraint {
+struct EqualityConstraint: InferenceConstraint {
 	let lhs: InferenceResult
 	let rhs: InferenceResult
 	let location: SourceLocation
@@ -51,7 +51,7 @@ struct EqualityConstraint: Constraint {
 	}
 }
 
-extension Constraint where Self == EqualityConstraint {
+extension InferenceConstraint where Self == EqualityConstraint {
 	static func equality(
 		_ lhs: InferenceResult,
 		_ rhs: InferenceResult,

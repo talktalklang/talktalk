@@ -30,75 +30,66 @@ struct AnyTypeVar {
 struct TypeCheckerTests: TypeCheckerTest {
 	@Test("Infers int literal") func intLiteral() throws {
 		let expr = try Parser.parse("123")
-		let context = try infer(expr)
+		let context = try ContextVisitor.visit(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.base(.int)))
+		#expect(result == .base(.int))
 	}
 
 	@Test("Infers string literal") func stringLiteral() throws {
 		let expr = try Parser.parse(#""hello world""#)
-		let context = try infer(expr)
+		let context = try ContextVisitor.visit(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.base(.string)))
+		#expect(result == .base(.string))
 	}
 
 	@Test("Infers bool literal") func boolLiteral() throws {
 		let expr = try Parser.parse("true")
-		let context = try infer(expr)
+		let context = try ContextVisitor.visit(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.base(.bool)))
+		#expect(result == .base(.bool))
 	}
 
 	@Test("Infers identity function") func identityFunction() throws {
 		let expr = try Parser.parse("func(x) { x }")
-		let context = try infer(expr)
+		let context = try ContextVisitor.visit(expr)
+
 		let result = try #require(context[expr[0]])
 
-		guard case let .scheme(scheme) = result else {
-			#expect(Bool(false), "Result is not a scheme")
-			return
-		}
-
-		#expect(scheme.name == nil)
-		#expect(scheme.variables.count == 1)
-
-		let id = scheme.variables[0].id
-
-		guard case let .function(params, returns) = scheme.type else {
+		guard case let .function(params, returns) = result else {
 			#expect(Bool(false), "scheme type is not a function")
 			return
 		}
 
-		#expect(params == [.type(.typeVar("x", id))])
-		#expect(returns == .type(.typeVar("x", id)))
+		#expect(params == [.type(.typeVar("x", 0))])
+		#expect(returns == .type(.typeVar("x", 0)))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {
 		let expr = try Parser.parse("10 + 20")
-		let context = try infer(expr)
+		let context = try ContextVisitor.visit(expr).solve()
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.base(.int)))
+		#expect(result == .base(.int))
 	}
 
 	@Test("Errors binary expr with int and string") func binaryIntAndStringError() throws {
 		let expr = try Parser.parse(#"10 + "nope""#)
-		let context = try infer(expr, expectedErrors: 2)
+		let context = try ContextVisitor.visit(expr).solve()
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(
-			.error(
-				.init(
-					kind: .constraintError("Infix operator + can't be used with operands int and string"),
-					location: expr[0].location
-				)
-			)
-		))
+
+		#expect(context.diagnostics.count == 1)
+
+		#expect(context.diagnostics[0].severity == .error)
+		#expect(context.diagnostics[0].message == "Infix operator + can't be used with operands int and string")
+		#expect(context.diagnostics[0].location == expr[0].location)
+
+		#expect(result == .any)
 	}
 
 	@Test("Infers binary expr with strings") func binaryStrings() throws {
 		let expr = try Parser.parse(#""hello " + "world""#)
-		let context = try infer(expr)
+		let context = try ContextVisitor.visit(expr).solve()
 		let result = try #require(context[expr[0]])
-		#expect(result == .type(.base(.string)))
+		#expect(result == .base(.string))
 	}
 
 	@Test("Infers function with binary expr with ints") func binaryIntFunction() throws {
@@ -108,30 +99,27 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(expr)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
-		#expect(result.asType(in: context) == .function(
-			[.type(.base(.int))],
-			.type(.base(.int))
-		)
-		)
+
+		#expect(result == .function([.type(.base(.int))], .type(.base(.int))))
 	}
 
 	@Test("Infers var with base type") func varWithBase() throws {
-		let syntax = try Parser.parse("var i = 123")
-		let context = try infer(syntax)
+		let syntax = try Parser.parse("var i = 123 ; i")
+		let context = try solve(syntax)
 
-		#expect(context.lookupVariable(named: "i") == .type(.base(.int)))
+		#expect(context.type(named: "i") == .type(.base(.int)))
 
 		// Ensure substitutions are applied on lookup
-		#expect(context[syntax[0]] == .type(.base(.int)))
+		#expect(context[syntax[1]] == .base(.int))
 	}
 
 	@Test("Errors on var reassignment") func varReassignment() throws {
 		let syntax = try Parser.parse("var i = 123 ; var i = 456")
-		let context = try infer(syntax, expectedErrors: 1)
+		let context = try solve(syntax, expectedDiagnostics: 1)
 
-		#expect(context.errors.count == 1)
+		#expect(context.diagnostics.count == 1)
 	}
 
 	@Test("Infers func calls") func calls() throws {
@@ -142,10 +130,10 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let result = try #require(context[syntax[1]])
 
-		#expect(result == .type(.base(.int)))
+		#expect(result == .base(.int))
 	}
 
 	@Test("Infers deferred func calls") func deferredCalls() throws {
@@ -157,20 +145,20 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let result = try #require(context[syntax[2]])
 
-		#expect(result == .type(.base(.int)))
+		#expect(result == .base(.int))
 	}
 
 	@Test("Infers let with base type") func letWithBase() throws {
-		let syntax = try Parser.parse("let i = 123")
-		let context = try infer(syntax)
+		let syntax = try Parser.parse("let i = 123 ; i")
+		let context = try solve(syntax)
 
-		#expect(context.lookupVariable(named: "i") == .type(.base(.int)))
+		#expect(context.type(named: "i") == .type(.base(.int)))
 
 		// Ensure substitutions are applied on lookup
-		#expect(context[syntax[0]] == .type(.base(.int)))
+		#expect(context[syntax[1]] == .base(.int))
 	}
 
 	@Test("Infers named function") func namedFunction() throws {
@@ -181,9 +169,9 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let result = try #require(context[syntax[1]])
-		#expect(result.asType(in: context) == .function(
+		#expect(result == .function(
 			[.type(.base(.int))],
 			.type(.base(.int))
 		))
@@ -196,13 +184,13 @@ struct TypeCheckerTests: TypeCheckerTest {
 		i(123)
 		""")
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
 		// Ensure identity function getting passed a string returns a string
-		#expect(context[syntax[1]] == .type(.base(.string)))
+		#expect(context[syntax[1]] == .base(.string))
 
 		// Ensure identity function getting passed an int returns an int
-		#expect(context[syntax[2]] == .type(.base(.int)))
+		#expect(context[syntax[2]] == .base(.int))
 	}
 
 	@Test("Variables don't leak out of scope") func scopeLeak() throws {
