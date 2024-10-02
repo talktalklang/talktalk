@@ -391,17 +391,6 @@ struct AnalysisTests {
 		#expect(varDecl.analysisErrors.count == 1)
 	}
 
-	@Test("Can cast") func cast() throws {
-		let ast = ast(
-			"""
-			var a = "sup"
-			_cast(a, int)
-			"""
-		)
-
-		#expect(ast.cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed == .base(.int))
-	}
-
 	@Test("Can analyze interpolated strings") func interpolatedStrings() throws {
 		let ast = ast(
 			#"""

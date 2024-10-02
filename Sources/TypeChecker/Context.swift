@@ -121,19 +121,21 @@ class Context {
 		return TypeVariable(name, id)
 	}
 
-	func type(named name: String, includeParents: Bool = true) -> InferenceResult? {
-		// Handle builtin types
-		switch name {
-		case "int":
-			return .type(.base(.int))
-		case "String":
-			return .type(.base(.string))
-		case "bool":
-			return .type(.base(.bool))
-		case "pointer":
-			return .type(.base(.pointer))
-		default:
-			()
+	func type(named name: String, includeParents: Bool = true, includeBuiltins: Bool = true) -> InferenceResult? {
+		if includeBuiltins {
+			// Handle builtin types
+			switch name {
+			case "int":
+				return .type(.base(.int))
+			case "String":
+				return .type(.base(.string))
+			case "bool":
+				return .type(.base(.bool))
+			case "pointer":
+				return .type(.base(.pointer))
+			default:
+				()
+			}
 		}
 
 		if let builtin = BuiltinFunction.map[name] {

@@ -56,7 +56,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func handleVarLet(_ syntax: VarLetDecl, context: Context) throws -> InferenceResult {
-		if let existing = context.type(named: syntax.name, includeParents: false) {
+		if let existing = context.type(named: syntax.name, includeParents: false, includeBuiltins: false) {
 			context.error("Variable \(syntax.name) is already defined as \(existing)", at: syntax.location)
 		}
 
@@ -71,6 +71,9 @@ struct ContextVisitor: Visitor {
 		case let (nil, .some(value)):
 			type = value
 		case let (.some(typeExpr), nil):
+			type = typeExpr
+		case let (.some(typeExpr), .some(.type(.typeVar(typeVariable)))):
+			context.addConstraint(Constraints.Equality(context: context, lhs: typeExpr, rhs: .type(.typeVar(typeVariable)), location: syntax.location))
 			type = typeExpr
 		case let (.some(typeExpr), .some(value)):
 			if typeExpr != value {

@@ -19,7 +19,6 @@ public struct BuiltinFunction {
 			"_deref": ._deref,
 			"_storePtr": ._storePtr,
 			"_hash": ._hash,
-			"_cast": ._cast,
 			"_crash": ._crash
 		]
 	}
@@ -32,7 +31,6 @@ public struct BuiltinFunction {
 			._deref,
 			._storePtr,
 			._hash,
-			._cast,
 			._crash
 		]
 	}
@@ -104,21 +102,6 @@ public struct BuiltinFunction {
 			type: .function(
 				[.type(.any)],
 				.type(.base(.int))
-			)
-		)
-	}
-
-	public static var _cast: BuiltinFunction {
-		let typeVar = TypeVariable.new("_cast")
-
-		return BuiltinFunction(
-			name: "_cast",
-			type: .function(
-				[
-					.type(.any),
-					.type(.kind(.typeVar(typeVar))),
-				],
-				.type(.typeVar(typeVar))
 			)
 		)
 	}

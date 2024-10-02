@@ -963,8 +963,6 @@ public struct VirtualMachine {
 		case "_hash":
 			let value = try stack.pop()
 			try stack.push(.int(.init(value.hashValue)))
-		case "_cast":
-			() // This is just for the analyzer
 		default:
 			throw VirtualMachineError.valueMissing("unknown builtin: \(builtin)")
 		}
