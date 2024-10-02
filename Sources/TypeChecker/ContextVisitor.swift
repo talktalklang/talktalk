@@ -89,20 +89,12 @@ struct ContextVisitor: Visitor {
 	// MARK: Visits
 
 	func visit(_ syntax: CallExprSyntax, _ context: Context) throws -> InferenceResult {
-		// We instantiate here because each call should get its own variables. If we tried to instantiate in a constraint, it's too late.
-		let callee = try syntax.callee.accept(self, context).instantiate(in: context)
-
+		let callee = try syntax.callee.accept(self, context)
 		let args = try syntax.args.map { try $0.accept(self, context) }
-
-		let returns = switch callee {
-		case .function(_, let returns):
-			returns
-		default:
-			throw TypeError.typeError("Expected callable type, got \(callee)")
-		}
+		let returns: InferenceResult = .type(.typeVar(context.freshTypeVariable(syntax.description)))
 
 		context.addConstraint(
-			Constraints.Call(context: context, callee: .type(callee), args: args, result: returns, location: syntax.location)
+			Constraints.Call(context: context, callee: callee, args: args, result: returns, location: syntax.location)
 		)
 
 		context.define(syntax, as: returns)
@@ -143,7 +135,8 @@ struct ContextVisitor: Visitor {
 			return result
 		}
 
-		throw TypeError.undefinedVariable(syntax.name)
+		context.error("Undefined variable: `\(syntax.name)`", at: syntax.location)
+		return .type(.any)
 	}
 
 	func visit(_ syntax: UnaryExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -188,8 +181,13 @@ struct ContextVisitor: Visitor {
 		_ = try visit(syntax.params, childContext)
 		let body = try syntax.body.accept(self, childContext)
 
+		var annotatedReturn: InferenceResult? = nil
+		if let typeDecl = syntax.typeDecl {
+			annotatedReturn = try typeDecl.accept(self, context)
+		}
+
 		// TODO: Make sure these agree
-		let returns = childContext.explicitReturns.last ?? body
+		let returns = annotatedReturn ?? childContext.explicitReturns.last ?? body
 
 		var typeVariables: [TypeVariable] = []
 		let params: [InferenceType] = try syntax.params.params.map {
@@ -204,16 +202,16 @@ struct ContextVisitor: Visitor {
 			return type
 		}
 
+		// If the return type is a type variable, hoist it into the context so we can use it for the definition
+		if case let .type(.typeVar(returns)) = returns {
+			typeVariables.append(returns)
+		}
+
 		let result: InferenceResult
 		if typeVariables.isEmpty {
 			result = .type(.function(params.map { .type($0) }, returns))
 		} else {
 			result = .scheme(Scheme(name: syntax.name?.lexeme, variables: typeVariables, type: .function(params.map { .type($0) }, returns)))
-		}
-
-		// If the return type is a type variable, hoist it into the context so we can use it for the definition
-		if case let .type(.typeVar(returns)) = returns {
-			typeVariables.append(returns)
 		}
 
 		// Hoist unknown params into this context for the function definition
@@ -287,7 +285,14 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: ReturnStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		if let returns = try syntax.value?.accept(self, context) {
+			context.explicitReturns.append(returns)
+			context.define(syntax, as: returns)
+			return returns
+		} else {
+			context.define(syntax, as: .type(.void))
+			return .type(.void)
+		}
 	}
 
 	func visit(_ syntax: InitDeclSyntax, _ context: Context) throws -> InferenceResult {
@@ -299,7 +304,12 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: TypeExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		if let type = context.type(named: syntax.identifier.lexeme) {
+			return type
+		} else {
+			context.error("Type not found: \(syntax.identifier.lexeme)", at: syntax.location)
+			return .type(.any)
+		}
 	}
 
 	func visit(_ syntax: ExprStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -309,7 +319,11 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: IfStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		_ = try syntax.condition.accept(self, context)
+		_ = try syntax.consequence.accept(self, context)
+		_ = try syntax.alternative?.accept(self, context)
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
@@ -373,7 +387,13 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: LogicalExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let lhs = try syntax.lhs.accept(self, context)
+		let rhs = try syntax.rhs.accept(self, context)
+
+		context.addConstraint(Constraints.Equality(context: context, lhs: lhs, rhs: rhs, location: syntax.location))
+
+		context.define(syntax, as: .type(.base(.bool)))
+		return .type(.base(.bool))
 	}
 
 	func visit(_ syntax: GroupedExprSyntax, _ context: Context) throws -> InferenceResult {

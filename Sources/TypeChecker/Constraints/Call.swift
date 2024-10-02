@@ -29,21 +29,16 @@ extension Constraints {
 		}
 
 		func solve() {
-			let callee = context.applySubstitutions(to: callee)
+			let (_callee, freeVars) = callee.instantiate(in: context)
+			let callee = context.applySubstitutions(to: .type(_callee))
 
 			switch callee {
 			case .function(let params, let returns):
 				for (arg, param) in zip(args, params) {
-					context.unify(param, arg)
-
-					if case let .type(.typeVar(param)) = param {
-						for child in context.children where child.variables.contains(param.id) {
-							child.unify(.type(.typeVar(param)), arg)
-						}
-					}
+					context.unify(freeVars[param] ?? param, arg, location)
 				}
 
-				context.unify(returns, result)
+				context.unify(freeVars[returns] ?? returns, result, location)
 			default:
 				if retries > 1 {
 					context.error("\(callee) not callable", at: location)

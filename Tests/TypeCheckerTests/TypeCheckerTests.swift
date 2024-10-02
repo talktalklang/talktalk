@@ -60,8 +60,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 			return
 		}
 
-		#expect(params == [.type(.typeVar("x", 1))])
-		#expect(returns == .type(.typeVar("x", 1)))
+		#expect(params == [.type(.typeVar("x", 0))])
+		#expect(returns == .type(.typeVar("x", 0)))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {
@@ -99,7 +99,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(expr, verbose: true)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 
 		#expect(result == .function([.type(.base(.int))], .type(.base(.int))))
@@ -130,7 +130,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		let result = try #require(context[syntax[1]])
 
 		#expect(result == .base(.int))
@@ -169,7 +169,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		let result = try #require(context[syntax[1]])
 		#expect(result == .function(
 			[.type(.base(.int))],
@@ -201,18 +201,9 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context[syntax[0]] == .type(.base(.int)))
-
-		// This test fails
-		#expect(context.lookup(syntax: syntax[1]) ==
-			.error(
-				.init(
-					kind: .undefinedVariable("x"),
-					location: syntax[1].location
-				)
-
-			))
+		let context = try solve(syntax, expectedDiagnostics: 1)
+		#expect(context[syntax[0]] == .base(.int))
+		#expect(context.diagnostics[0].message == "Undefined variable: `x`")
 	}
 
 	@Test("Types function return annotations") func funcReturnAnnotations() throws {
@@ -222,8 +213,10 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context[syntax[0]] == .type(.base(.string)))
+		// Allowing a diagnostic here because we're passing an int where a pointer is wanted and that's
+		// not really the point of this test
+		let context = try solve(syntax, expectedDiagnostics: 1)
+		#expect(context[syntax[0]] == .base(.string))
 	}
 
 	@Test("Types factorial (recursion test)") func factorial() async throws {
@@ -241,48 +234,42 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
 		// Make sure we've got the function typed properly
 		#expect(
-			context[syntax[0]] == .scheme(
-				Scheme(
-					name: "fact",
-					variables: [.new("n", 0)],
-					type: .function([.type(.typeVar("n", 0))], .type(.base(.int)))
-				)
-			)
+			context[syntax[0]] == .function([.type(.base(.int))], .type(.base(.int)))
 		)
 
 		// Make sure we know what the call return type is
-		#expect(context[syntax[1]] == .type(.base(.int)))
+		#expect(context[syntax[1]] == .base(.int))
 	}
 
 	@Test("Types logical AND") func logicalAnd() async throws {
 		let syntax = try Parser.parse("true && false")
-		let context = try infer(syntax)
-		#expect(context[syntax[0]] == .type(.base(.bool)))
+		let context = try solve(syntax)
+		#expect(context[syntax[0]] == .base(.bool))
 	}
 
 	@Test("Errors when logical AND operand isn't bool") func logicalAndError() async throws {
-		let context1 = try infer(Parser.parse("123 && false"), expectedErrors: 1)
-		#expect(context1.errors.count == 1)
+		let context1 = try solve(Parser.parse("123 && false"), expectedDiagnostics: 1)
+		#expect(context1.diagnostics.count == 1)
 
-		let context2 = try infer(Parser.parse("false && 123"), expectedErrors: 1)
-		#expect(context2.errors.count == 1)
+		let context2 = try solve(Parser.parse("false && 123"), expectedDiagnostics: 1)
+		#expect(context2.diagnostics.count == 1)
 	}
 
 	@Test("Types logical OR") func logicalOr() async throws {
 		let syntax = try Parser.parse("true || false")
-		let context = try infer(syntax)
-		#expect(context[syntax[0]] == .type(.base(.bool)))
+		let context = try solve(syntax)
+		#expect(context[syntax[0]] == .base(.bool))
 	}
 
 	@Test("Errors when logical OR operand isn't bool") func logicalOrError() async throws {
-		let context1 = try infer(Parser.parse("123 || false"), expectedErrors: 1)
-		#expect(context1.errors.count == 1)
+		let context1 = try solve(Parser.parse("123 || false"), expectedDiagnostics: 1)
+		#expect(context1.diagnostics.count == 1)
 
-		let context2 = try infer(Parser.parse("false || 123"), expectedErrors: 1)
-		#expect(context2.errors.count == 1)
+		let context2 = try solve(Parser.parse("false || 123"), expectedDiagnostics: 1)
+		#expect(context2.diagnostics.count == 1)
 	}
 }

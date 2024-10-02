@@ -11,6 +11,19 @@ public struct BuiltinFunction {
 	public let name: String
 	public let type: InferenceType
 
+	public static var map: [String: BuiltinFunction] {
+		[
+			"print": .print,
+			"_allocate": ._allocate,
+			"_free": ._free,
+			"_deref": ._deref,
+			"_storePtr": ._storePtr,
+			"_hash": ._hash,
+			"_cast": ._cast,
+			"_crash": ._crash
+		]
+	}
+
 	public static var list: [BuiltinFunction] {
 		[
 			.print,

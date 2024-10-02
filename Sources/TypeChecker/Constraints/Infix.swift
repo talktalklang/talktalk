@@ -38,38 +38,41 @@ extension Constraints {
 			case (.base(.pointer), .base(.int), .plus),
 				(.base(.pointer), .base(.int), .minus):
 
-				context.unify(.type(.typeVar(result)), .type(.base(.pointer)))
+				context.unify(.type(.typeVar(result)), .type(.base(.pointer)), location)
 			case (.base(.int), .base(.int), .plus),
 					 (.base(.int), .base(.int), .minus),
 					 (.base(.int), .base(.int), .star),
 					 (.base(.int), .base(.int), .slash):
 
-				context.unify(.type(.typeVar(result)), .type(.base(.int)))
+				context.unify(.type(.typeVar(result)), .type(.base(.int)), location)
 			case let (.base(.int), .typeVar(variable), .plus),
 				let (.base(.int), .typeVar(variable), .minus),
 				let (.base(.int), .typeVar(variable), .star),
 				let (.base(.int), .typeVar(variable), .slash),
+				let (.base(.int), .typeVar(variable), .less),
+				let (.base(.int), .typeVar(variable), .lessEqual),
+				let (.base(.int), .typeVar(variable), .greater),
+				let (.base(.int), .typeVar(variable), .greaterEqual),
 				let (.typeVar(variable), .base(.int), .plus),
 				let (.typeVar(variable), .base(.int), .minus),
 				let (.typeVar(variable), .base(.int), .star),
-				let (.typeVar(variable), .base(.int), .slash):
+				let (.typeVar(variable), .base(.int), .slash),
+				let (.typeVar(variable), .base(.int), .less),
+				let (.typeVar(variable), .base(.int), .lessEqual),
+				let (.typeVar(variable), .base(.int), .greater),
+				let (.typeVar(variable), .base(.int), .greaterEqual):
 
-				context.unify(.type(.typeVar(variable)), .type(.base(.int)))
-				context.unify(.type(.typeVar(result)), .type(.base(.int)))
+				context.unify(.type(.typeVar(variable)), .type(.base(.int)), location)
+				context.unify(.type(.typeVar(result)), .type(.base(.int)), location)
 			case (.base(.string), (.base(.string)), .plus):
-				context.unify(.type(.typeVar(result)), .type(.base(.string)))
+				context.unify(.type(.typeVar(result)), .type(.base(.string)), location)
 			case let (.typeVar(lhs), .typeVar(rhs), _):
-				if retries < 1 {
-					context.log("Retrying \(before)", prefix: " ↻ ")
-					context.retry(self)
-				} else {
-					// Just say that it's the same as the result and hope for the best
-					context.unify(.type(.typeVar(lhs)), .type(.typeVar(result)))
-					context.unify(.type(.typeVar(rhs)), .type(.typeVar(result)))
-				}
+				// Just say that it's the same as the result and hope for the best
+				context.unify(.type(.typeVar(lhs)), .type(.typeVar(result)), location)
+				context.unify(.type(.typeVar(rhs)), .type(.typeVar(result)), location)
 			default:
 				context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
-				context.unify(.type(.any), .type(.typeVar(result)))
+				context.unify(.type(.any), .type(.typeVar(result)), location)
 			}
 		}
 	}

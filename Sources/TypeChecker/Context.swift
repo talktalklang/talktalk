@@ -122,6 +122,25 @@ class Context {
 	}
 
 	func type(named name: String, includeParents: Bool = true) -> InferenceResult? {
+		// Handle builtin types
+		switch name {
+		case "int":
+			return .type(.base(.int))
+		case "String":
+			return .type(.base(.string))
+		case "bool":
+			return .type(.base(.bool))
+		case "pointer":
+			return .type(.base(.pointer))
+		default:
+			()
+		}
+
+		if let builtin = BuiltinFunction.map[name] {
+			return .type(builtin.type)
+		}
+
+		// See if we have it in this context
 		if let result = names[name] {
 			return result
 		}
@@ -162,7 +181,7 @@ class Context {
 		environment[syntax.id] = result
 	}
 
-	func unify(_ lhs: InferenceResult, _ rhs: InferenceResult) {
+	func unify(_ lhs: InferenceResult, _ rhs: InferenceResult, _ location: SourceLocation) {
 		let lhs = applySubstitutions(to: lhs)
 		let rhs = applySubstitutions(to: rhs)
 
@@ -180,6 +199,8 @@ class Context {
 			bind(typeVar, to: type)
 		case let (.placeholder(typeVar), type), let (type, .placeholder(typeVar)):
 			substitutions[typeVar] = .type(type)
+		case let (.base(lhs), .base(rhs)) where lhs != rhs:
+			self.error("Cannot unify \(lhs) and \(rhs)", at: location)
 		default:
 			()
 		}
@@ -219,17 +240,16 @@ class Context {
 
 	func applySubstitutions(to type: InferenceResult, with substitutions: [TypeVariable: InferenceResult], count: Int = 0, file: String = #file, line: UInt32 = #line) -> InferenceType {
 		let result: InferenceResult = (parent?.applySubstitutions(to: type)).flatMap { .type($0) } ?? type
-		let type = result.instantiate(in: self, file: file, line: line)
+		let (type, _) = result.instantiate(in: self, file: file, line: line)
 
 		switch type {
 		case .typeVar(let typeVariable), .placeholder(let typeVariable):
 			// Reach down recursively as long as we can to try to find the result
-			if count < 100, case let .type(.typeVar(child)) = substitutions[typeVariable] {
+			if count < 100, case let .type(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
-			// TODO: This is almost definitely wrong. We don't want to always look into children I don't think...
-			return substitutions[typeVariable]?.instantiate(in: self) ?? type
+			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).0 ?? type
 		case .function(let params, let returns):
 			return .function(
 				params.map {
@@ -258,25 +278,30 @@ class Context {
 		return type
 	}
 
-	func instantiate(_ scheme: Scheme, file: String = #file, line: UInt32 = #line) -> InferenceType {
+	func instantiate(_ scheme: Scheme, file: String = #file, line: UInt32 = #line) -> (InferenceType, [InferenceResult: InferenceResult]) {
 		var substitutions: [TypeVariable: InferenceResult] = [:]
+		var replacements: [InferenceResult: InferenceResult] = [:]
 
 		// Replace the scheme's variables with fresh type variables
 		for case let variable in scheme.variables {
-			if let type = substitutions[variable] {
+			if let type = self.substitutions[variable] {
 				substitutions[variable] = type
 			} else {
-				let newVar: InferenceResult = .type(
+				let newVar = freshTypeVariable(variable.name ?? "<unnamed>", file: file, line: line)
+
+				replacements[.type(.typeVar(variable))] = .type(.typeVar(newVar))
+				substitutions[variable] = .type(
 					.typeVar(
-						freshTypeVariable(variable.name ?? "<unnamed>", file: file, line: line)
+						newVar
 					)
 				)
-
-				substitutions[variable] = newVar
 			}
 		}
 
-		return applySubstitutions(to: .type(scheme.type), with: substitutions)
+		return (
+			applySubstitutions(to: .type(scheme.type), with: substitutions),
+			replacements
+		)
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
