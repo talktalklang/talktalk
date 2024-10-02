@@ -27,7 +27,8 @@ class Context {
 
 	// Constraints added to this context
 	var constraints: [any Constraint] = []
-	var retries: [any Constraint] = []
+
+	var hoistedToParent: Set<TypeVariable> = []
 
 	// Map of known types
 	var environment: [SyntaxID: InferenceResult] = [:]
@@ -50,10 +51,11 @@ class Context {
 	// A set of type variables introduced in this context
 	var variables: Set<VariableID> = []
 
-	init(parent: Context? = nil, imports: [Context] = []) {
+	init(parent: Context? = nil, imports: [Context] = [], verbose: Bool = false) {
 		self.parent = parent
 		self.children = []
 		self.imports = imports
+		self.verbose = verbose
 	}
 
 	func error(_ message: String, at location: SourceLocation) {
@@ -73,13 +75,8 @@ class Context {
 			_ = child.solve()
 		}
 
-		for constraint in constraints {
-			log("\(constraint.before)", prefix: "-> ")
-			constraint.solve()
-			log("\(constraint.after)", prefix: "<- ")
-		}
-
-		for constraint in retries {
+		while !constraints.isEmpty {
+			let constraint = constraints.removeFirst()
 			log("\(constraint.before)", prefix: "-> ")
 			constraint.solve()
 			log("\(constraint.after)", prefix: "<- ")
@@ -96,12 +93,12 @@ class Context {
 
 		var constraint = constraint
 		constraint.retries += 1
-		retries.append(constraint)
+		constraints.append(constraint)
 	}
 
-	subscript(_ syntax: any Syntax) -> InferenceType? {
+	subscript(_ syntax: any Syntax, file: String = #file, line: UInt32 = #line) -> InferenceType? {
 		if let result = environment[syntax.id] {
-			return applySubstitutions(to: result)
+			return applySubstitutions(to: result, file: file, line: line)
 		} else {
 			return nil
 		}
@@ -152,10 +149,10 @@ class Context {
 
 	func define(_ name: String, as result: InferenceResult) {
 		if case let .type(.placeholder(typeVar)) = names[name] {
-			log("Defining placeholder `\(name)` as \(result)", prefix: " “ ")
+			log("Defining placeholder `\(name)` as \(result.debugDescription)", prefix: " “ ")
 			substitutions[typeVar] = result
 		} else {
-			log("Defining `\(name)` as \(result)", prefix: " “ ")
+			log("Defining `\(name)` as \(result.debugDescription)", prefix: " “ ")
 		}
 
 		names[name] = result
@@ -169,16 +166,29 @@ class Context {
 		let lhs = applySubstitutions(to: lhs)
 		let rhs = applySubstitutions(to: rhs)
 
+		if lhs == rhs {
+			return
+		}
+
 		log("Unifying \(lhs) & \(rhs)", prefix: " & ")
 
 		switch (lhs, rhs) {
+		case let (.typeVar(lhs), .typeVar(rhs)):
+			bind(lhs, to: .typeVar(rhs))
+			bind(rhs, to: .typeVar(lhs))
 		case let (.typeVar(typeVar), type), let (type, .typeVar(typeVar)):
-			substitutions[typeVar] = .type(type)
+			bind(typeVar, to: type)
 		case let (.placeholder(typeVar), type), let (type, .placeholder(typeVar)):
 			substitutions[typeVar] = .type(type)
 		default:
 			()
 		}
+	}
+
+	func bind(_ typeVariable: TypeVariable, to type: InferenceType) {
+		parent?.bind(typeVariable, to: type)
+
+		substitutions[typeVariable] = .type(type)
 	}
 
 	func findParentSubstitution(for typeVariable: TypeVariable) -> InferenceResult? {
@@ -203,13 +213,13 @@ class Context {
 		return nil
 	}
 
-	func applySubstitutions(to type: InferenceResult) -> InferenceType {
-		applySubstitutions(to: type, with: substitutions)
+	func applySubstitutions(to type: InferenceResult, file: String = #file, line: UInt32 = #line) -> InferenceType {
+		applySubstitutions(to: type, with: substitutions, file: file, line: line)
 	}
 
-	func applySubstitutions(to type: InferenceResult, with substitutions: [TypeVariable: InferenceResult], count: Int = 0) -> InferenceType {
+	func applySubstitutions(to type: InferenceResult, with substitutions: [TypeVariable: InferenceResult], count: Int = 0, file: String = #file, line: UInt32 = #line) -> InferenceType {
 		let result: InferenceResult = (parent?.applySubstitutions(to: type)).flatMap { .type($0) } ?? type
-		let type = result.instantiate(in: self)
+		let type = result.instantiate(in: self, file: file, line: line)
 
 		switch type {
 		case .typeVar(let typeVariable), .placeholder(let typeVariable):
@@ -218,7 +228,8 @@ class Context {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
-			return findParentSubstitution(for: typeVariable)?.instantiate(in: self) ?? findChildSubstitution(for: typeVariable)?.instantiate(in: self) ?? type
+			// TODO: This is almost definitely wrong. We don't want to always look into children I don't think...
+			return substitutions[typeVariable]?.instantiate(in: self) ?? type
 		case .function(let params, let returns):
 			return .function(
 				params.map {
@@ -229,8 +240,6 @@ class Context {
 		case .instance(_):
 			()
 		case .instantiatable(_):
-			()
-		case .placeholder(_):
 			()
 		case .instancePlaceholder(_):
 			()
@@ -249,29 +258,29 @@ class Context {
 		return type
 	}
 
-	func instantiate(_ scheme: Scheme) -> InferenceType {
-		var localSubstitutions: [TypeVariable: InferenceResult] = [:]
+	func instantiate(_ scheme: Scheme, file: String = #file, line: UInt32 = #line) -> InferenceType {
+		var substitutions: [TypeVariable: InferenceResult] = [:]
 
 		// Replace the scheme's variables with fresh type variables
 		for case let variable in scheme.variables {
 			if let type = substitutions[variable] {
-				localSubstitutions[variable] = type
+				substitutions[variable] = type
 			} else {
 				let newVar: InferenceResult = .type(
 					.typeVar(
-						freshTypeVariable(variable.name ?? "<unnamed>")
+						freshTypeVariable(variable.name ?? "<unnamed>", file: file, line: line)
 					)
 				)
 
-				localSubstitutions[variable] = newVar
+				substitutions[variable] = newVar
 			}
 		}
 
-		return applySubstitutions(to: .type(scheme.type), with: localSubstitutions)
+		return applySubstitutions(to: .type(scheme.type), with: substitutions)
 	}
 
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
-		if verbose {
+		if isVerbose() {
 			var depth = 0
 			var nextParent = self.parent
 			while let parent = nextParent {
@@ -281,5 +290,9 @@ class Context {
 
 			print("\(depth) \(String(repeating: "\t", count: max(0, depth - 1)))" + prefix + msg)
 		}
+	}
+
+	func isVerbose() -> Bool {
+		verbose || parent?.isVerbose() ?? false
 	}
 }

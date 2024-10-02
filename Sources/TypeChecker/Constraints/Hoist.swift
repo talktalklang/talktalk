@@ -11,7 +11,7 @@ extension Constraints {
 	// The Hoist constraint lets a context pull types from child contexts
 	struct Hoist: Constraint {
 		let context: Context
-		let childContext: Context
+		let parent: Context
 		let variables: [TypeVariable]
 		let location: SourceLocation
 		var retries: Int = 0
@@ -26,8 +26,8 @@ extension Constraints {
 
 		func solve() {
 			for typeVariable in variables {
-				context.log("Hoisting \(typeVariable.debugDescription)", prefix: " ^ ")
-				context.substitutions[typeVariable] = childContext.substitutions[typeVariable]
+				context.log("Hoisting \(typeVariable.debugDescription) -> \(context.applySubstitutions(to: .type(.typeVar(typeVariable))))", prefix: " ^ ")
+				parent.substitutions[typeVariable] = context.substitutions[typeVariable]
 			}
 		}
 	}

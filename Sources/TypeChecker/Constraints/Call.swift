@@ -12,7 +12,7 @@ extension Constraints {
 		let context: Context
 		let callee: InferenceResult
 		let args: [InferenceResult]
-		let result: TypeVariable
+		let result: InferenceResult
 		let location: SourceLocation
 		var retries: Int = 0
 
@@ -23,7 +23,7 @@ extension Constraints {
 		var after: String {
 			let callee = context.applySubstitutions(to: callee)
 			let args = args.map { context.applySubstitutions(to: $0) }
-			let result = context.applySubstitutions(to: .type(.typeVar(result)))
+			let result = context.applySubstitutions(to: result)
 
 			return "Call(callee: \(callee.debugDescription), args: \(args.debugDescription), result: \(result.debugDescription))"
 		}
@@ -34,7 +34,6 @@ extension Constraints {
 			switch callee {
 			case .function(let params, let returns):
 				for (arg, param) in zip(args, params) {
-
 					context.unify(param, arg)
 
 					if case let .type(.typeVar(param)) = param {
@@ -44,9 +43,9 @@ extension Constraints {
 					}
 				}
 
-				context.unify(returns, .type(.typeVar(result)))
+				context.unify(returns, result)
 			default:
-				if retries > 0 {
+				if retries > 1 {
 					context.error("\(callee) not callable", at: location)
 				} else {
 					context.retry(self)

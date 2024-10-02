@@ -58,22 +58,19 @@ extension Constraints {
 				context.unify(.type(.typeVar(result)), .type(.base(.int)))
 			case (.base(.string), (.base(.string)), .plus):
 				context.unify(.type(.typeVar(result)), .type(.base(.string)))
-			case (.typeVar(_), .typeVar(_), _):
-				fallthrough
-			default:
-				if retries > 0 {
-					context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
-					context.unify(.type(.any), .type(.typeVar(result)))
-				} else {
+			case let (.typeVar(lhs), .typeVar(rhs), _):
+				if retries < 1 {
+					context.log("Retrying \(before)", prefix: " ↻ ")
 					context.retry(self)
+				} else {
+					// Just say that it's the same as the result and hope for the best
+					context.unify(.type(.typeVar(lhs)), .type(.typeVar(result)))
+					context.unify(.type(.typeVar(rhs)), .type(.typeVar(result)))
 				}
+			default:
+				context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
+				context.unify(.type(.any), .type(.typeVar(result)))
 			}
-
-			let lhsAfter = context.applySubstitutions(to: .type(lhs))
-			let rhsAfter = context.applySubstitutions(to: .type(rhs))
-			let resultAfter = context.applySubstitutions(to: .type(.typeVar(result)))
-
-			context.log("\(lhsAfter.debugDescription) \(op.rawValue) \(rhsAfter.debugDescription) -> \(resultAfter.debugDescription)", prefix: " ~ ")
 		}
 	}
 }

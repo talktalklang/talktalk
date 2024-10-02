@@ -18,7 +18,7 @@ extension TypeCheckerTest {
 		verbose: Bool = false,
 		sourceLocation _: Testing.SourceLocation = #_sourceLocation
 	) throws -> Context {
-		let context = try ContextVisitor.visit(syntax).solve()
+		let context = try ContextVisitor.visit(syntax, verbose: verbose).solve()
 		#expect(context.diagnostics.count == expectedDiagnostics, "expected \(expectedDiagnostics) diagnostics. got \(context.diagnostics.count): \(context.diagnostics)")
 		return context
 	}

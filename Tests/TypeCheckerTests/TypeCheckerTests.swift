@@ -60,20 +60,20 @@ struct TypeCheckerTests: TypeCheckerTest {
 			return
 		}
 
-		#expect(params == [.type(.typeVar("x", 0))])
-		#expect(returns == .type(.typeVar("x", 0)))
+		#expect(params == [.type(.typeVar("x", 1))])
+		#expect(returns == .type(.typeVar("x", 1)))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {
 		let expr = try Parser.parse("10 + 20")
-		let context = try ContextVisitor.visit(expr).solve()
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 		#expect(result == .base(.int))
 	}
 
 	@Test("Errors binary expr with int and string") func binaryIntAndStringError() throws {
 		let expr = try Parser.parse(#"10 + "nope""#)
-		let context = try ContextVisitor.visit(expr).solve()
+		let context = try solve(expr, expectedDiagnostics: 1)
 		let result = try #require(context[expr[0]])
 
 		#expect(context.diagnostics.count == 1)
@@ -99,7 +99,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(expr)
+		let context = try solve(expr, verbose: true)
 		let result = try #require(context[expr[0]])
 
 		#expect(result == .function([.type(.base(.int))], .type(.base(.int))))
@@ -130,7 +130,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax)
+		let context = try solve(syntax, verbose: true)
 		let result = try #require(context[syntax[1]])
 
 		#expect(result == .base(.int))
@@ -169,7 +169,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax)
+		let context = try solve(syntax, verbose: true)
 		let result = try #require(context[syntax[1]])
 		#expect(result == .function(
 			[.type(.base(.int))],

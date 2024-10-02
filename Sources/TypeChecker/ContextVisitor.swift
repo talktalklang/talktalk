@@ -8,14 +8,15 @@ import TalkTalkCore
 
 enum TypeError: Error {
 	case undefinedVariable(String)
+	case typeError(String)
 }
 
 struct ContextVisitor: Visitor {
 	typealias Context = TypeChecker.Context
 	typealias Value = InferenceResult
 
-	static func visit(_ syntax: [any Syntax], imports: [Context] = []) throws -> Context {
-		let context = Context(imports: imports)
+	static func visit(_ syntax: [any Syntax], imports: [Context] = [], verbose: Bool = false) throws -> Context {
+		let context = Context(imports: imports, verbose: verbose)
 		let visitor = ContextVisitor()
 
 		// Do a breadth first traversal to find names
@@ -88,17 +89,25 @@ struct ContextVisitor: Visitor {
 	// MARK: Visits
 
 	func visit(_ syntax: CallExprSyntax, _ context: Context) throws -> InferenceResult {
-		let callee = try syntax.callee.accept(self, context)
+		// We instantiate here because each call should get its own variables. If we tried to instantiate in a constraint, it's too late.
+		let callee = try syntax.callee.accept(self, context).instantiate(in: context)
+
 		let args = try syntax.args.map { try $0.accept(self, context) }
-		let returns = context.freshTypeVariable(syntax.description)
+
+		let returns = switch callee {
+		case .function(_, let returns):
+			returns
+		default:
+			throw TypeError.typeError("Expected callable type, got \(callee)")
+		}
 
 		context.addConstraint(
-			Constraints.Call(context: context, callee: callee, args: args, result: returns, location: syntax.location)
+			Constraints.Call(context: context, callee: .type(callee), args: args, result: returns, location: syntax.location)
 		)
 
-		context.define(syntax, as: .type(.typeVar(returns)))
+		context.define(syntax, as: returns)
 
-		return .type(.typeVar(returns))
+		return returns
 	}
 
 	func visit(_ syntax: DefExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -130,6 +139,7 @@ struct ContextVisitor: Visitor {
 
 	func visit(_ syntax: VarExprSyntax, _ context: Context) throws -> InferenceResult {
 		if let result = context.type(named: syntax.name) {
+			context.define(syntax, as: result)
 			return result
 		}
 
@@ -181,8 +191,6 @@ struct ContextVisitor: Visitor {
 		// TODO: Make sure these agree
 		let returns = childContext.explicitReturns.last ?? body
 
-		context.define(syntax, as: returns)
-
 		var typeVariables: [TypeVariable] = []
 		let params: [InferenceType] = try syntax.params.params.map {
 			guard let type = childContext[$0] else {
@@ -196,7 +204,12 @@ struct ContextVisitor: Visitor {
 			return type
 		}
 
-		let result: InferenceResult = .type(.function(params.map { .type($0) }, returns))
+		let result: InferenceResult
+		if typeVariables.isEmpty {
+			result = .type(.function(params.map { .type($0) }, returns))
+		} else {
+			result = .scheme(Scheme(name: syntax.name?.lexeme, variables: typeVariables, type: .function(params.map { .type($0) }, returns)))
+		}
 
 		// If the return type is a type variable, hoist it into the context so we can use it for the definition
 		if case let .type(.typeVar(returns)) = returns {
@@ -204,7 +217,9 @@ struct ContextVisitor: Visitor {
 		}
 
 		// Hoist unknown params into this context for the function definition
-		context.addConstraint(Constraints.Hoist(context: context, childContext: childContext, variables: typeVariables, location: syntax.location))
+		for typeVar in typeVariables {
+			childContext.hoistedToParent.insert(typeVar)
+		}
 
 		if let name = syntax.name?.lexeme {
 			context.define(name, as: result)
