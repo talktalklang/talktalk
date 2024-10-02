@@ -8,6 +8,8 @@
 extension InferenceType: CustomDebugStringConvertible {
 	public var mangled: String {
 		switch self {
+		case .self:
+			"self"
 		case .instance(let instance):
 			"I\(instance.type.name)"
 		case .typeVar:
@@ -45,6 +47,8 @@ extension InferenceType: CustomDebugStringConvertible {
 
 	public var debugDescription: String {
 		switch self {
+		case .self(let type):
+			"self (\(type))"
 		case .instance(let instance):
 			"Instance \(instance.type.name)"
 		case let .instancePlaceholder(typeVar):
@@ -82,6 +86,8 @@ extension InferenceType: CustomDebugStringConvertible {
 
 	var description: String {
 		switch self {
+		case .self:
+			"self"
 		case .instance(let instance):
 			"Instance \(instance.type.name)"
 		case let .instancePlaceholder(typeVar):

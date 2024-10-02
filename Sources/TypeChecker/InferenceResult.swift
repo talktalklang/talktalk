@@ -8,10 +8,10 @@
 public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	case scheme(Scheme), type(InferenceType)
 
-	func instantiate(in context: Context, file: String = #file, line: UInt32 = #line) -> (InferenceType, [InferenceResult: InferenceResult]) {
+	func instantiate(in context: Context, with substitutions: [TypeVariable: InferenceResult] = [:], file: String = #file, line: UInt32 = #line) -> (InferenceType, [TypeVariable: InferenceResult]) {
 		switch self {
 		case .scheme(let scheme):
-			context.instantiate(scheme, file: file, line: line)
+			context.instantiate(scheme, with: substitutions, file: file, line: line)
 		case .type(let inferenceType):
 			(inferenceType, [:])
 		}

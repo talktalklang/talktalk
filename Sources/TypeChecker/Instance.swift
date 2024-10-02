@@ -5,14 +5,26 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
-public protocol Instance {
+public protocol Instance: MemberOwner {
 	associatedtype Kind: Instantiatable
 
 	var type: Kind { get }
+	var substitutions: [TypeVariable: InferenceResult] { get }
 }
 
-public struct StructInstance: Instance {
+public struct StructInstance: Instance, MemberOwner {
+	public var name: String { type.name }
+
 	public let type: StructType
+	public let substitutions: [TypeVariable: InferenceResult]
+
+	public func member(named name: String) -> InferenceResult? {
+		type.member(named: name)
+	}
+
+	public func add(member: InferenceResult, named name: String) throws {
+
+	}
 }
 
 public extension Instance where Self == StructInstance {
@@ -24,7 +36,7 @@ public extension Instance where Self == StructInstance {
 		return instance
 	}
 
-	static func `struct`(_ structType: StructType) -> StructInstance {
-		StructInstance(type: structType)
+	static func `struct`(_ structType: StructType, substitutions: [TypeVariable: InferenceResult]) -> StructInstance {
+		StructInstance(type: structType, substitutions: substitutions)
 	}
 }

@@ -21,6 +21,9 @@ public indirect enum InferenceType {
 	// Primitives, like int or string
 	case base(Primitive)
 
+	// self?
+	case `self`(any MemberOwner)
+
 	// Instances
 	case instance(any Instance)
 

@@ -46,16 +46,24 @@ extension Constraints {
 			}
 		}
 
-		private func solveFunction(callee: InferenceType, freeVars: [InferenceResult: InferenceResult], params: [InferenceResult], returns: InferenceResult) {
+		private func solveFunction(callee: InferenceType, freeVars: [TypeVariable: InferenceResult], params: [InferenceResult], returns: InferenceResult) {
 			for (arg, param) in zip(args, params) {
-				context.unify(freeVars[param] ?? param, arg, location)
+				if case let .type(.typeVar(typeVar)) = param {
+					context.unify(freeVars[typeVar] ?? param, arg, location)
+				} else {
+					context.unify(param, arg, location)
+				}
 			}
 
-			context.unify(freeVars[returns] ?? returns, result, location)
+			if case let .type(.typeVar(typeVar)) = returns {
+				context.unify(freeVars[typeVar] ?? returns, result, location)
+			} else {
+				context.unify(returns, result, location)
+			}
 		}
 
-		private func solveStruct(type: StructType, freeVars: [InferenceResult: InferenceResult]) {
-			let instance = StructInstance(type: type)
+		private func solveStruct(type: StructType, freeVars: [TypeVariable: InferenceResult]) {
+			let instance = StructInstance(type: type, substitutions: freeVars)
 			context.unify(.type(.instance(instance)), result, location)
 		}
 	}

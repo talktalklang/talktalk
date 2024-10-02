@@ -67,8 +67,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context[syntax[1]] == .type(.base(.string)))
+		let context = try solve(syntax)
+		#expect(context[syntax[1]] == .base(.string))
 	}
 
 	@Test("Types self member access") func selfMember() throws {
@@ -90,8 +90,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context[syntax[1]] == .type(.base(.string)))
+		let context = try solve(syntax, verbose: true)
+		#expect(context[syntax[1]] == .base(.string))
 	}
 
 	@Test("Types self return") func selfReturn() throws {

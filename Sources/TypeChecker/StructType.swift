@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
-protocol MemberOwner {
+public protocol MemberOwner {
 	var name: String { get }
 
 	func member(named name: String) -> InferenceResult?
@@ -27,6 +27,10 @@ public class StructType: MemberOwner, Instantiatable {
 		}
 
 		return type
+	}
+
+	public func instantiate(with substitutions: [TypeVariable: InferenceResult]) -> any Instance {
+		StructInstance.struct(self, substitutions: substitutions)
 	}
 
 	public func add(member: InferenceResult, named name: String) throws {

@@ -283,9 +283,9 @@ class Context {
 		return type
 	}
 
-	func instantiate(_ scheme: Scheme, file: String = #file, line: UInt32 = #line) -> (InferenceType, [InferenceResult: InferenceResult]) {
-		var substitutions: [TypeVariable: InferenceResult] = [:]
-		var replacements: [InferenceResult: InferenceResult] = [:]
+	func instantiate(_ scheme: Scheme, with substitutions: [TypeVariable: InferenceResult] = [:], file: String = #file, line: UInt32 = #line) -> (InferenceType, [TypeVariable: InferenceResult]) {
+		var substitutions: [TypeVariable: InferenceResult] = substitutions
+		var replacements: [TypeVariable: InferenceResult] = [:]
 
 		// Replace the scheme's variables with fresh type variables
 		for case let variable in scheme.variables {
@@ -294,7 +294,7 @@ class Context {
 			} else {
 				let newVar = freshTypeVariable(variable.name ?? "<unnamed>", file: file, line: line)
 
-				replacements[.type(.typeVar(variable))] = .type(.typeVar(newVar))
+				replacements[variable] = .type(.typeVar(newVar))
 				substitutions[variable] = .type(
 					.typeVar(
 						newVar

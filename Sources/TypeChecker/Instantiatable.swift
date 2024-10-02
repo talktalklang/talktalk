@@ -7,4 +7,6 @@
 
 public protocol Instantiatable {
 	var name: String { get }
+
+	func instantiate(with substitutions: [TypeVariable: InferenceResult]) -> any Instance
 }

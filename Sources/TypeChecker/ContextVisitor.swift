@@ -55,6 +55,59 @@ struct ContextVisitor: Visitor {
 		}
 	}
 
+	func handleFuncLike(_ syntax: any FuncLike, context: Context) throws -> InferenceResult {
+		let childContext = context.addChild()
+
+		_ = try visit(syntax.params, childContext)
+		let body = try syntax.body.accept(self, childContext)
+
+		var annotatedReturn: InferenceResult? = nil
+		if let typeDecl = syntax.typeDecl {
+			annotatedReturn = try typeDecl.accept(self, context)
+		}
+
+		// TODO: Make sure these agree
+		let returns = annotatedReturn ?? childContext.explicitReturns.last ?? body
+
+		var typeVariables: [TypeVariable] = []
+		let params: [InferenceType] = try syntax.params.params.map {
+			guard let type = childContext[$0] else {
+				throw TypeError.undefinedVariable($0.name)
+			}
+
+			if case let .typeVar(typeVar) = type {
+				typeVariables.append(typeVar)
+			}
+
+			return type
+		}
+
+		// If the return type is a type variable, hoist it into the context so we can use it for the definition
+		if case let .type(.typeVar(returns)) = returns {
+			typeVariables.append(returns)
+		}
+
+		let result: InferenceResult
+		if typeVariables.isEmpty {
+			result = .type(.function(params.map { .type($0) }, returns))
+		} else {
+			result = .scheme(Scheme(name: syntax.name?.lexeme, variables: typeVariables, type: .function(params.map { .type($0) }, returns)))
+		}
+
+		// Hoist unknown params into this context for the function definition
+		for typeVar in typeVariables {
+			childContext.hoistedToParent.insert(typeVar)
+		}
+
+		if let name = syntax.name?.lexeme {
+			context.define(name, as: result)
+			childContext.define(name, as: result)
+		}
+
+		context.define(syntax, as: result)
+		return result
+	}
+
 	func handleVarLet(_ syntax: VarLetDecl, context: Context) throws -> InferenceResult {
 		if let existing = context.type(named: syntax.name, includeParents: false, includeBuiltins: false) {
 			context.error("Variable \(syntax.name) is already defined as \(existing)", at: syntax.location)
@@ -106,7 +159,12 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: DefExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let receiver = try syntax.receiver.accept(self, context)
+		let value = try syntax.value.accept(self, context)
+
+		context.addConstraint(Constraints.Equality(context: context, lhs: receiver, rhs: value, location: syntax.location))
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: IdentifierExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -179,56 +237,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: FuncExprSyntax, _ context: Context) throws -> InferenceResult {
-		let childContext = context.addChild()
-
-		_ = try visit(syntax.params, childContext)
-		let body = try syntax.body.accept(self, childContext)
-
-		var annotatedReturn: InferenceResult? = nil
-		if let typeDecl = syntax.typeDecl {
-			annotatedReturn = try typeDecl.accept(self, context)
-		}
-
-		// TODO: Make sure these agree
-		let returns = annotatedReturn ?? childContext.explicitReturns.last ?? body
-
-		var typeVariables: [TypeVariable] = []
-		let params: [InferenceType] = try syntax.params.params.map {
-			guard let type = childContext[$0] else {
-				throw TypeError.undefinedVariable($0.name)
-			}
-
-			if case let .typeVar(typeVar) = type {
-				typeVariables.append(typeVar)
-			}
-
-			return type
-		}
-
-		// If the return type is a type variable, hoist it into the context so we can use it for the definition
-		if case let .type(.typeVar(returns)) = returns {
-			typeVariables.append(returns)
-		}
-
-		let result: InferenceResult
-		if typeVariables.isEmpty {
-			result = .type(.function(params.map { .type($0) }, returns))
-		} else {
-			result = .scheme(Scheme(name: syntax.name?.lexeme, variables: typeVariables, type: .function(params.map { .type($0) }, returns)))
-		}
-
-		// Hoist unknown params into this context for the function definition
-		for typeVar in typeVariables {
-			childContext.hoistedToParent.insert(typeVar)
-		}
-
-		if let name = syntax.name?.lexeme {
-			context.define(name, as: result)
-			childContext.define(name, as: result)
-		}
-
-		context.define(syntax, as: result)
-		return result
+		try handleFuncLike(syntax, context: context)
 	}
 
 	func visit(_ syntax: ParamsExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -284,7 +293,20 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: MemberExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let receiver = try syntax.receiver?.accept(self, context)
+		let result = context.freshTypeVariable("\(syntax.receiver?.description ?? "").\(syntax.property)")
+
+		context.addConstraint(
+			Constraints.Member(
+				receiver: receiver,
+				memberName: syntax.property,
+				result: result,
+				context: context,
+				location: syntax.location
+			)
+		)
+
+		return .type(.typeVar(result))
 	}
 
 	func visit(_ syntax: ReturnStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -299,7 +321,17 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: InitDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		guard let lexicalScope = context.lexicalScope else {
+			context.error("Initializer must be a function", at: syntax.location)
+			return .type(.any)
+		}
+
+		let result = try handleFuncLike(syntax, context: context)
+		try lexicalScope.add(member: result, named: "init")
+
+		context.define(syntax, as: .type(.void))
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: ImportStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -332,6 +364,8 @@ struct ContextVisitor: Visitor {
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let structType = StructType(name: syntax.name)
 		let structContext = context.addChild(lexicalScope: structType)
+
+		structContext.define("self", as: .type(.self(structType)))
 
 		for decl in syntax.body.decls {
 			_ = try decl.accept(self, structContext)
