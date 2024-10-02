@@ -291,7 +291,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))
+		let structType = TypeChecker.StructTypeV1.extractType(from: .type(s.typeAnalyzed))
 		#expect(structType?.name == "Person")
 
 		let stype = try s.environment.type(named: "Person")
@@ -326,7 +326,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		let structType = try #require(TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed)))
+		let structType = try #require(TypeChecker.StructTypeV1.extractType(from: .type(s.typeAnalyzed)))
 
 		#expect(structType.name == "Person")
 
@@ -371,7 +371,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		let type = try #require(try! s.environment.type(named: "Person"))
 
-		let structType = TypeChecker.StructType.extractType(from: .type(s.typeAnalyzed))!
+		let structType = TypeChecker.StructTypeV1.extractType(from: .type(s.typeAnalyzed))!
 		let sup = type.methods["sup"]!.returnTypeID
 
 		#expect(sup == .selfVar(.instantiatable(.struct(structType))))

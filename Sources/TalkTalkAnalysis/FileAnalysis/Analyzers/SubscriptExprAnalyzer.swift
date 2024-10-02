@@ -26,7 +26,7 @@ struct SubscriptExprAnalyzer: Analyzer {
 		var getSymbol: Symbol? = nil
 		var setSymbol: Symbol? = nil
 		switch receiver.inferenceType {
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			if case let .function(params, _) = instance.genericMethod(named: "get") {
 				getSymbol = .method(instance.type.context.moduleName, instance.type.name, "get", params.map(\.mangled))
 			}

@@ -24,7 +24,7 @@ struct UnwrapConstraint: InferenceConstraint {
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let type = context.applySubstitutions(to: typeVar)
 
-		if case let .instance(.enumType(instance)) = context.applySubstitutions(to: wrapped),
+		if case let .instanceV1(.enumType(instance)) = context.applySubstitutions(to: wrapped),
 			 instance.type.name == "Optional",
 			 let wrapped = instance.substitutions.values.first,
 			 case let .typeVar(typeVariable) = type {

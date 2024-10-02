@@ -16,7 +16,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 	func analyze() throws -> any AnalyzedSyntax {
 		let inferenceType = context.type(for: decl)
-		guard let type = TypeChecker.StructType.extractType(from: .type(inferenceType))
+		guard let type = TypeChecker.StructTypeV1.extractType(from: .type(inferenceType))
 		else {
 			return error(at: decl, "did not find struct type from \(decl.name), got \(inferenceType)", environment: context, expectation: .none)
 		}
@@ -110,7 +110,7 @@ struct StructDeclAnalyzer: Analyzer {
 					params: structType.properties.values.map(\.inferenceType),
 					inferenceType: .function(structType.properties.values.map { .type($0.inferenceType) }, .type(.instantiatable(.struct(type)))),
 					location: decl.location,
-					returnTypeID: .instance(.synthesized(type)),
+					returnTypeID: .instanceV1(.synthesized(type)),
 					isSynthetic: true
 				)
 			)
@@ -121,7 +121,7 @@ struct StructDeclAnalyzer: Analyzer {
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				inferenceType: .instance(.synthesized(type)),
+				inferenceType: .instanceV1(.synthesized(type)),
 				wrapped: VarExprSyntax(
 					id: -8,
 					token: .synthetic(.self),
@@ -132,7 +132,7 @@ struct StructDeclAnalyzer: Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-			type: .instance(.synthesized(type)),
+			type: .instanceV1(.synthesized(type)),
 			isMutable: false
 		)
 

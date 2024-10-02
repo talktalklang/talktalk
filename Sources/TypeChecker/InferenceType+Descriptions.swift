@@ -8,13 +8,15 @@
 extension InferenceType: CustomDebugStringConvertible {
 	public var mangled: String {
 		switch self {
+		case .instance(let instance):
+			"I\(instance.type.name)"
 		case .typeVar:
 			"T"
 		case let .base(primitive):
 			primitive.description
 		case let .function(params, returns):
 			params.map { $0.asType?.mangled ?? "" }.joined(separator: "_") + (returns.asType?.mangled ?? "")
-		case let .instance(instanceType):
+		case let .instanceV1(instanceType):
 			"I" + instanceType.type.name
 		case let .instantiatable(instantiatableType):
 			instantiatableType.name + instantiatableType.typeContext.typeParameters.map { $0.name ?? "_" }.joined(separator: "_")
@@ -36,14 +38,18 @@ extension InferenceType: CustomDebugStringConvertible {
 			"any"
 		case .void:
 			"void"
+		case let .struct(type):
+			"\(type.name)"
 		}
 	}
 
 	public var debugDescription: String {
 		switch self {
+		case .instance(let instance):
+			"Instance \(instance.type.name)"
 		case let .instancePlaceholder(typeVar):
 			"instance placeholder \(typeVar.debugDescription)"
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			"\(instance.debugDescription)"
 		case let .typeVar(typeVariable):
 			typeVariable.debugDescription
@@ -69,14 +75,18 @@ extension InferenceType: CustomDebugStringConvertible {
 			"pattern: \(pattern)"
 		case .void:
 			"void"
+		case let .struct(type):
+			"\(type.name)"
 		}
 	}
 
 	var description: String {
 		switch self {
+		case .instance(let instance):
+			"Instance \(instance.type.name)"
 		case let .instancePlaceholder(typeVar):
 			"instance placeholder \(typeVar)"
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			"\(instance.description)"
 		case let .typeVar(typeVariable):
 			typeVariable.description
@@ -102,6 +112,8 @@ extension InferenceType: CustomDebugStringConvertible {
 			"pattern: \(pattern)"
 		case .void:
 			"void"
+		case let .struct(type):
+			"\(type.name)"
 		}
 	}
 }

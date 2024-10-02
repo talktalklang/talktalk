@@ -116,7 +116,7 @@ struct InferenceVisitor: Visitor {
 	func parameters(of type: InferenceType, in context: InferenceContext) throws -> [InferenceResult] {
 		var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
 
-		if case let .type(.instance(instance)) = context.expectation {
+		if case let .type(.instanceV1(instance)) = context.expectation {
 			substitutions = instance.substitutions
 		}
 
@@ -246,7 +246,7 @@ struct InferenceVisitor: Visitor {
 					substitutions[typeParam] = context[paramSyntax]?.asType(in: context)
 				}
 
-				type = .instance(structType.instantiate(with: substitutions, in: context))
+				type = .instanceV1(structType.instantiate(with: substitutions, in: context))
 			case let .type(.typeVar(typeVar)):
 				type = .typeVar(typeVar)
 			case let .type(.placeholder(placeholder)):
@@ -267,7 +267,7 @@ struct InferenceVisitor: Visitor {
 			let t = optionalType.typeContext.typeParameters.first!
 			// swiftlint:enable force_unwrapping
 
-			return .type(.instance(optionalType.instantiate(with: [t: type], in: context)))
+			return .type(.instanceV1(optionalType.instantiate(with: [t: type], in: context)))
 		}
 
 		return .type(type)
@@ -325,7 +325,7 @@ struct InferenceVisitor: Visitor {
 			let t = optionalType.typeContext.typeParameters.first!
 			// swiftlint:enable force_unwrapping
 
-			return .instance(optionalType.instantiate(with: [t: type], in: context))
+			return .instanceV1(optionalType.instantiate(with: [t: type], in: context))
 		}
 
 		return type
@@ -362,13 +362,13 @@ struct InferenceVisitor: Visitor {
 					substitutions[type] = arg.asType(in: instantiatable.context)
 				}
 
-				return .instance(instantiatable.instantiate(with: [:], in: context))
+				return .instanceV1(instantiatable.instantiate(with: [:], in: context))
 			case let .function(_, returns):
 				return context.applySubstitutions(to: returns)
 			case let .enumCase(enumCase):
 				// If we determine the callee to be an enum case, then its type is actually the enum type. We instantiate the
 				// enum type with substitutions coming from the args
-				return .instance(enumCase.type.instantiate(with: zip(enumCase.attachedTypes, args).reduce(into: [:]) { res, pair in
+				return .instanceV1(enumCase.type.instantiate(with: zip(enumCase.attachedTypes, args).reduce(into: [:]) { res, pair in
 					let (type, arg) = pair
 
 					if case let .typeVar(typeVar) = type {
@@ -594,7 +594,7 @@ struct InferenceVisitor: Visitor {
 			returns = member
 		case let .type(.enumCase(enumCase)):
 			returns = .type(.enumCase(enumCase))
-		case let .type(.instance(instance)) where instance.type is EnumType:
+		case let .type(.instanceV1(instance)) where instance.type is EnumType:
 			// swiftlint:disable force_unwrapping force_cast
 			if let enumType = instance.type as? EnumType, let member = enumType.member(named: expr.property, in: context) {
 				returns = .type(member.asType(in: context))
@@ -662,7 +662,7 @@ struct InferenceVisitor: Visitor {
 	}
 
 	func visit(_ expr: StructDeclSyntax, _ context: InferenceContext) throws {
-		let structType = StructType(
+		let structType = StructTypeV1(
 			name: expr.name,
 			parentContext: context
 		)
@@ -755,7 +755,7 @@ struct InferenceVisitor: Visitor {
 			throw InferencerError.cannotInfer("No Array type found from stdlib")
 		}
 
-		guard let arrayStructType = StructType.extractType(from: arrayType) else {
+		guard let arrayStructType = StructTypeV1.extractType(from: arrayType) else {
 			throw InferencerError.cannotInfer("Could not get Array struct type")
 		}
 
@@ -768,7 +768,7 @@ struct InferenceVisitor: Visitor {
 			arrayInstance.substitutions[elementTypeParameter] = elementType
 		}
 
-		let returns = InferenceType.instance(arrayInstance)
+		let returns = InferenceType.instanceV1(arrayInstance)
 
 		context.addConstraint(
 			.call(
@@ -814,7 +814,7 @@ struct InferenceVisitor: Visitor {
 			context.addConstraint(
 				.call(method, args, returns: getReturns, at: expr.location)
 			)
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			guard let method = instance.member(named: "get", in: context) else {
 				throw InferencerError.cannotInfer("No `get` meethod for \(instance)")
 			}
@@ -845,7 +845,7 @@ struct InferenceVisitor: Visitor {
 			try elem.accept(self, context)
 		}
 		guard let dictType = context.lookupVariable(named: "Dictionary"),
-		      let dictStructType = StructType.extractType(from: dictType)
+		      let dictStructType = StructTypeV1.extractType(from: dictType)
 		else {
 			throw InferencerError.cannotInfer("No Dictionary found from stdlib")
 		}
@@ -861,7 +861,7 @@ struct InferenceVisitor: Visitor {
 			dictInstance.substitutions[valueType] = try context.get(element.value).asType(in: context)
 		}
 
-		let returns = InferenceType.instance(dictInstance)
+		let returns = InferenceType.instanceV1(dictInstance)
 
 		context.addConstraint(
 			.call(
@@ -1150,7 +1150,7 @@ struct InferenceVisitor: Visitor {
 		switch type {
 		case let .instantiatable(structType):
 			return structType.context.lookupVariable(named: name)?.asType(in: context)
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			return instance.relatedType(named: name) ?? instance.type.context.lookupVariable(named: name)?.asType(in: context)
 		case let .enumCase(enumCase):
 			if let typeVar = enumCase.type.typeContext.typeParameters.first(where: { $0.name == name }) {

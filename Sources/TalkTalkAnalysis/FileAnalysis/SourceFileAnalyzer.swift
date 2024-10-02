@@ -740,7 +740,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		var errors: [AnalysisError] = []
 
-		if case let .instance(.enumType(instance)) = targetAnalyzed.inferenceType, !hasDefault {
+		if case let .instanceV1(.enumType(instance)) = targetAnalyzed.inferenceType, !hasDefault {
 			let type = instance.type
 
 			// Check that all enum cases are specified
@@ -880,10 +880,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		switch context.type(for: expr.sequence) {
 		case .base:
 			return error(at: expr, "todo, need to figure out how we want to handle base types", environment: context)
-		case let .instance(.struct(instance)):
+		case let .instanceV1(.struct(instance)):
 			iteratorSymbol = try context.type(named: instance.type.name)?.methods["makeIterator"]?.symbol ??
 				context.symbolGenerator.method(instance.type.name, "makeIterator", parameters: [], source: .internal)
-		case let .instance(.protocol(instance)):
+		case let .instanceV1(.protocol(instance)):
 			iteratorSymbol = try context.type(named: instance.type.name)?.methods["makeIterator"]?.symbol ??
 				context.symbolGenerator.method(instance.type.name, "makeIterator", parameters: [], source: .internal)
 		case let .selfVar(.instantiatable(.struct(type))):

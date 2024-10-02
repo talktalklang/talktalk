@@ -20,7 +20,7 @@ struct DictionaryTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let dict = try context.get(syntax[0])
-		let dictInstance = Instance<StructType>.extract(from: dict.asType(in: context))!
+		let dictInstance = InstanceV1<StructTypeV1>.extract(from: dict.asType(in: context))!
 		#expect(dictInstance.type.name == "Dictionary")
 		#expect(dictInstance.relatedType(named: "Key") == .base(.string))
 		#expect(dictInstance.relatedType(named: "Value") == .base(.int))

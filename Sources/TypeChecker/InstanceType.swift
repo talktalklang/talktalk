@@ -20,15 +20,15 @@ public enum InstanceType {
 		}
 	}
 
-	case `struct`(Instance<StructType>)
-	case `protocol`(Instance<ProtocolType>)
-	case enumType(Instance<EnumType>)
+	case `struct`(InstanceV1<StructTypeV1>)
+	case `protocol`(InstanceV1<ProtocolType>)
+	case enumType(InstanceV1<EnumType>)
 
-	public static func synthesized(_ type: some Instantiatable) -> InstanceType {
+	public static func synthesized(_ type: some InstantiatableV1) -> InstanceType {
 		// swiftlint:disable force_cast
 		switch type {
-		case is StructType:
-			.struct(.synthesized(type as! StructType))
+		case is StructTypeV1:
+			.struct(.synthesized(type as! StructTypeV1))
 		case is ProtocolType:
 			.protocol(.synthesized(type as! ProtocolType))
 		case is EnumType:
@@ -76,14 +76,14 @@ public enum InstanceType {
 		}
 	}
 
-	func extract<T: Instantiatable>(_: T.Type) -> Instance<T>? {
+	func extract<T: InstantiatableV1>(_: T.Type) -> InstanceV1<T>? {
 		switch self {
 		case let .struct(instance):
-			instance as? Instance<T>
+			instance as? InstanceV1<T>
 		case let .protocol(instance):
-			instance as? Instance<T>
+			instance as? InstanceV1<T>
 		case let .enumType(instance):
-			instance as? Instance<T>
+			instance as? InstanceV1<T>
 		}
 	}
 
@@ -120,7 +120,7 @@ public enum InstanceType {
 	}
 
 
-	public var type: any Instantiatable {
+	public var type: any InstantiatableV1 {
 		switch self {
 		case let .struct(instance):
 			instance.type

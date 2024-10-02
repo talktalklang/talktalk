@@ -216,9 +216,9 @@ struct PatternMatchingTests: TypeCheckerTest {
 					type: bottomType,
 					name: "bottom",
 					attachedTypes: [
-						.instance(
+						.instanceV1(
 							.enumType(
-								Instance<EnumType>(
+								InstanceV1<EnumType>(
 									id: 0,
 									type: topType,
 									substitutions: [:]

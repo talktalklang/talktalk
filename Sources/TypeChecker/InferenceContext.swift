@@ -553,7 +553,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			let type = substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""]?.asType(in: self) ?? type
 
 			if case let .instantiatable(instantiatableType) = type {
-				return .instance(instantiatableType.instantiate(with: substitutions, in: self))
+				return .instanceV1(instantiatableType.instantiate(with: substitutions, in: self))
 			}
 
 			return type
@@ -570,15 +570,15 @@ public class InferenceContext: CustomDebugStringConvertible {
 					let applied = applySubstitutions(to: $0, with: substitutions)
 
 					if case let .instantiatable(instantiatableType) = applied {
-						return .type(.instance(instantiatableType.instantiate(with: substitutions, in: self)))
+						return .type(.instanceV1(instantiatableType.instantiate(with: substitutions, in: self)))
 					}
 
 					return .type(applied)
 				},
 				.type(applySubstitutions(to: returning, with: substitutions))
 			)
-		case let .instance(instance):
-			return .instance(instance)
+		case let .instanceV1(instance):
+			return .instanceV1(instance)
 		case let .instantiatable(type):
 			return type.apply(substitutions: substitutions, in: self)
 		case let .enumCase(kase):
@@ -668,12 +668,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let (.instantiatable(a), .instantiatable(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
-		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
+		case let (.instanceV1(a), .instanceV1(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.selfVar(.instantiatable(selfVar)), .instance(instance)), let (.instance(instance), .selfVar(.instantiatable(selfVar))):
+		case let (.selfVar(.instantiatable(selfVar)), .instanceV1(instance)), let (.instanceV1(instance), .selfVar(.instantiatable(selfVar))):
 			if selfVar.name == instance.type.name {
 				break
 			}
@@ -698,8 +698,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.instantiatable(.enumType(type)), .instance(instance)),
-		     let (.instance(instance), .instantiatable(.enumType(type))):
+		case let (.instantiatable(.enumType(type)), .instanceV1(instance)),
+		     let (.instanceV1(instance), .instantiatable(.enumType(type))):
 			if case let enumType = instance.type as? EnumType, enumType == type {
 				break
 			}
@@ -711,8 +711,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			)
 		// Handle case where we're trying to unify an enum case with a protocol
-		case let (.instance(instance), .enumCase(kase)),
-		     let (.enumCase(kase), .instance(instance)):
+		case let (.instanceV1(instance), .enumCase(kase)),
+		     let (.enumCase(kase), .instanceV1(instance)):
 			if let type = instance.type as? ProtocolType {
 				deferConstraint(
 					TypeConformanceConstraint(
@@ -722,7 +722,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.instance(lhs), .instance(rhs)):
+		case let (.instanceV1(lhs), .instanceV1(rhs)):
 			if lhs.type is ProtocolType || rhs.type is ProtocolType {
 				break
 			}
@@ -732,8 +732,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			unify(lhs, pattern.type, location)
 		case (.void, .void):
 			() // This is chill
-		case let (.instance(.enumType(instance)), wrapped) where instance.type.name == "Optional",
-				 let (wrapped, .instance(.enumType(instance))) where instance.type.name == "Optional":
+		case let (.instanceV1(.enumType(instance)), wrapped) where instance.type.name == "Optional",
+				 let (wrapped, .instanceV1(.enumType(instance))) where instance.type.name == "Optional":
 			let wrappedTypeVar = instance.substitutions.keys.first!
 			instance.substitutions[wrappedTypeVar] = wrapped
 		default:

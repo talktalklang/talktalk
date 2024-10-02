@@ -49,7 +49,7 @@ struct ProtocolTests: TypeCheckerTest {
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([
-			.type(.instance(.protocol(Instance(id: 0, type: protocolType, substitutions: [:])))),
+			.type(.instanceV1(.protocol(InstanceV1(id: 0, type: protocolType, substitutions: [:])))),
 		], .type(.base(.string))))
 	}
 
@@ -71,7 +71,7 @@ struct ProtocolTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		#expect(context.errors.isEmpty)
 
-		let structType = StructType.extractType(from: context[syntax[1]])!
+		let structType = StructTypeV1.extractType(from: context[syntax[1]])!
 		let greetMethod = structType.methods["greet"]!
 
 		guard case let .function(params, returns) = greetMethod.asType(in: context) else {
@@ -122,7 +122,7 @@ struct ProtocolTests: TypeCheckerTest {
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([
-			.type(.instance(.protocol(Instance(id: 0, type: protocolType, substitutions: [:])))),
+			.type(.instanceV1(.protocol(InstanceV1(id: 0, type: protocolType, substitutions: [:])))),
 		], .type(.base(.string))))
 	}
 }

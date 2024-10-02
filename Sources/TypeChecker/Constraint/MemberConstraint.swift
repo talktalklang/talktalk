@@ -77,7 +77,7 @@ struct MemberConstraint: InferenceConstraint {
 				resolvedType,
 				location
 			)
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			// It's an instance member
 			guard var member = instance.member(named: name, in: context) else {
 				return .error(
@@ -86,7 +86,7 @@ struct MemberConstraint: InferenceConstraint {
 			}
 
 			if case let .instantiatable(type) = member {
-				member = .instance(type.instantiate(with: instance.substitutions, in: context))
+				member = .instanceV1(type.instantiate(with: instance.substitutions, in: context))
 			}
 
 			context.unify(
@@ -102,7 +102,7 @@ struct MemberConstraint: InferenceConstraint {
 			}
 
 			if case let .instantiatable(structType) = context.applySubstitutions(to: member) {
-				member = .type(.instance(structType.instantiate(with: [:], in: context)))
+				member = .type(.instanceV1(structType.instantiate(with: [:], in: context)))
 			}
 
 			context.unify(

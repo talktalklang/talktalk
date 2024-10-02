@@ -12,7 +12,7 @@ public indirect enum InferenceType {
 		let enumType = EnumType.extract(from: .type(Inferencer.stdlib.type(named: "Optional")!))!
 		let wrapped = enumType.typeContext.typeParameters.first!
 		let instance = enumType.instantiate(with: [wrapped: type], in: .init(moduleName: "Standard", parent: nil, environment: .init(), constraints: .init()))
-		return .instance(instance)
+		return .instanceV1(instance)
 	}
 
 	// Something we'll fill in later.
@@ -21,14 +21,14 @@ public indirect enum InferenceType {
 	// Primitives, like int or string
 	case base(Primitive)
 
+	// Instances
+	case instance(any Instance)
+
+	// Structs
+	case `struct`(StructType)
+
 	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceResult], InferenceResult)
-
-	// Instances
-	case instance(InstanceType)
-
-	// Struct stuff
-	case instantiatable(InstantiatableType)
 
 	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)
@@ -45,9 +45,6 @@ public indirect enum InferenceType {
 	// Used for `self` in types that support it
 	case selfVar(InferenceType)
 
-	// Enum types
-	case enumCase(EnumCase)
-
 	// Pattern matching (type, associated values)
 	case pattern(Pattern)
 
@@ -56,6 +53,18 @@ public indirect enum InferenceType {
 
 	// The absence of a type
 	case void
+
+	// Instances (Deprecated)
+	@available(*, deprecated, message: "I think we don't want this anymore.")
+	case instanceV1(InstanceType)
+
+	// Struct stuff
+	@available(*, deprecated, message: "I think we don't want this anymore.")
+	case instantiatable(InstantiatableType)
+
+	// Enum types
+	@available(*, deprecated, message: "I think we don't want this anymore.")
+	case enumCase(EnumCase)
 
 	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
 		InferenceType.typeVar(TypeVariable(name, id))

@@ -116,7 +116,7 @@ struct CallConstraint: InferenceConstraint {
 	}
 
 	// Handle inits for structs
-	func solveStruct(structType: StructType, in context: InferenceContext) -> ConstraintCheckResult {
+	func solveStruct(structType: StructTypeV1, in context: InferenceContext) -> ConstraintCheckResult {
 		// Create a child context to evaluate args and params so we don't get leaks
 		let childContext = structType.context
 		let params: [InferenceResult]
@@ -155,7 +155,7 @@ struct CallConstraint: InferenceConstraint {
 		}
 
 		let instance = structType.instantiate(with: substitutions, in: context)
-		context.unify(context.applySubstitutions(to: returns), .instance(instance), location)
+		context.unify(context.applySubstitutions(to: returns), .instanceV1(instance), location)
 
 		if args.count != params.count {
 			return .error([
@@ -167,7 +167,7 @@ struct CallConstraint: InferenceConstraint {
 			])
 		}
 
-		guard case var .instance(instance) = context.applySubstitutions(to: returns) else {
+		guard case var .instanceV1(instance) = context.applySubstitutions(to: returns) else {
 			return .error([.init(message: "did not get instance, got: \(returns)", severity: .error, location: location)])
 		}
 
@@ -189,11 +189,11 @@ struct CallConstraint: InferenceConstraint {
 				childContext.unify(type, arg.asType(in: childContext), location)
 			case let .instantiatable(structType):
 				var substitutions: OrderedDictionary<TypeVariable, InferenceType> = [:]
-				if case let .instance(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
+				if case let .instanceV1(instance) = context.applySubstitutions(to: arg.asType(in: context)) {
 					substitutions = instance.substitutions
 				}
 
-				paramType = .instance(
+				paramType = .instanceV1(
 					structType.instantiate(
 						with: substitutions,
 						in: context
@@ -213,7 +213,7 @@ struct CallConstraint: InferenceConstraint {
 		}
 
 		childContext.unify(
-			.instance(instance),
+			.instanceV1(instance),
 			returns.asType(in: context),
 			location
 		)

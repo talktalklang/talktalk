@@ -16,7 +16,7 @@ struct ContextVisitor: Visitor {
 	typealias Value = InferenceResult
 
 	static func visit(_ syntax: [any Syntax], imports: [Context] = [], verbose: Bool = false) throws -> Context {
-		let context = Context(imports: imports, verbose: verbose)
+		let context = Context(lexicalScope: nil, imports: imports, verbose: verbose)
 		let visitor = ContextVisitor()
 
 		// Do a breadth first traversal to find names
@@ -330,7 +330,23 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let structType = StructType(name: syntax.name)
+		let structContext = context.addChild(lexicalScope: structType)
+
+		for decl in syntax.body.decls {
+			_ = try decl.accept(self, structContext)
+		}
+
+		// We use a Scheme for structs because they can contain generic type variables
+		let result = InferenceResult.scheme(
+			Scheme(name: syntax.name, variables: [], type: .struct(structType))
+		)
+
+		// Define the struct by name
+		context.define(syntax.name, as: result)
+		context.define(syntax, as: result)
+
+		return result
 	}
 
 	func visit(_ syntax: ArrayLiteralExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -408,6 +424,29 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: PropertyDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		guard let lexicalScope = context.lexicalScope else {
+			context.error("Could not find lexical scope for property: `\(syntax.name)`", at: syntax.location)
+			return .type(.any)
+		}
+
+		let name = syntax.name.lexeme
+
+		let annotatedType = try syntax.typeAnnotation.flatMap {
+			try $0.accept(self, context)
+		}
+
+		let valueType = try syntax.defaultValue.flatMap {
+			try $0.accept(self, context)
+		}
+
+		if let annotatedType, let valueType {
+			// If we've got both an annotated type and a default value, make sure they match
+			context.addConstraint(Constraints.Equality(context: context, lhs: annotatedType, rhs: valueType, location: syntax.location))
+		}
+
+		let result = annotatedType ?? valueType ?? .type(.typeVar(context.freshTypeVariable("\(lexicalScope.name).\(syntax.name)")))
+		try lexicalScope.add(member: result, named: name)
+
+		return .type(.void)
 	}
 }

@@ -21,7 +21,7 @@ struct SubscriptConstraint: InferenceConstraint {
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		let receiver = context.applySubstitutions(to: receiver)
 		switch receiver {
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			guard let getMethod = instance.type.member(named: "get", in: context) else {
 				return .error([
 					Diagnostic(message: "\(instance.type.name) has no get method", severity: .error, location: location),
@@ -36,13 +36,13 @@ struct SubscriptConstraint: InferenceConstraint {
 				}
 
 				if case let .type(.instantiatable(instantiatableType)) = fnReturns {
-					fnReturns = .type(.instance(instantiatableType.instantiate(with: instance.substitutions, in: context)))
+					fnReturns = .type(.instanceV1(instantiatableType.instantiate(with: instance.substitutions, in: context)))
 				}
 
 				if case let .type(.instantiatable(structType)) = fnReturns {
 					context.unify(
 						returns,
-						.instance(structType.instantiate(with: instance.substitutions, in: context)),
+						.instanceV1(structType.instantiate(with: instance.substitutions, in: context)),
 						location
 					)
 				} else {

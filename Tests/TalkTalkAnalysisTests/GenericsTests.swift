@@ -32,7 +32,7 @@ struct GenericsTests {
 
 		#expect(decl.name == "Wrapper")
 
-		let structType = TypeChecker.StructType.extractType(from: .type(decl.typeAnalyzed))
+		let structType = TypeChecker.StructTypeV1.extractType(from: .type(decl.typeAnalyzed))
 		#expect(structType?.name == "Wrapper")
 
 		let type = try #require(decl.environment.type(named: "Wrapper")! as? AnalysisStructType)
@@ -52,7 +52,7 @@ struct GenericsTests {
 		let variable = try #require(ast as? AnalyzedVarExpr)
 		#expect(variable.name == "wrapper")
 
-		let instance = try #require(Instance<StructType>.extract(from: variable.typeAnalyzed))
+		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: variable.typeAnalyzed))
 		#expect(instance.type.name == "Wrapper")
 	}
 

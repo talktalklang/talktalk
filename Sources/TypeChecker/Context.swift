@@ -51,11 +51,14 @@ class Context {
 	// A set of type variables introduced in this context
 	var variables: Set<VariableID> = []
 
-	init(parent: Context? = nil, imports: [Context] = [], verbose: Bool = false) {
+	let lexicalScope: (any MemberOwner)?
+
+	init(parent: Context? = nil, lexicalScope: (any MemberOwner)?, imports: [Context] = [], verbose: Bool = false) {
 		self.parent = parent
 		self.children = []
 		self.imports = imports
 		self.verbose = verbose
+		self.lexicalScope = lexicalScope
 	}
 
 	func error(_ message: String, at location: SourceLocation) {
@@ -154,8 +157,8 @@ class Context {
 		return nil
 	}
 
-	func addChild() -> Context {
-		let child = Context(parent: self)
+	func addChild(lexicalScope: (any MemberOwner)? = nil) -> Context {
+		let child = Context(parent: self, lexicalScope: lexicalScope)
 		children.append(child)
 		return child
 	}
@@ -259,7 +262,7 @@ class Context {
 				},
 				.type(applySubstitutions(to: returns, with: substitutions))
 			)
-		case .instance(_):
+		case .instanceV1(_):
 			()
 		case .instantiatable(_):
 			()

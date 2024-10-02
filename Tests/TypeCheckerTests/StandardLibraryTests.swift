@@ -15,7 +15,7 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
 
-		let instance = try #require(Instance<StructType>.extract(from: result.asType(in: context)))
+		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: result.asType(in: context)))
 		#expect(instance.type.name == "Array")
 	}
 
@@ -57,7 +57,7 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[2]])
 
-		let instance = Instance<StructType>.extract(from: result.asType(in: context))
+		let instance = InstanceV1<StructTypeV1>.extract(from: result.asType(in: context))
 		#expect(instance?.type.name == "Inner", "didn't get instance type, got \(result)")
 
 //		#expect(result == .type(.base(.string)))
@@ -70,7 +70,7 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
 
-		let instance = try #require(Instance<StructType>.extract(from: result.asType(in: context)))
+		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: result.asType(in: context)))
 		#expect(instance.type.name == "Dictionary")
 	}
 

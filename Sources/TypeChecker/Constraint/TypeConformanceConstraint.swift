@@ -11,7 +11,7 @@ public struct ConformanceRequirement: Hashable {
 	public let name: String
 	public let type: InferenceResult
 
-	func satisfied(by type: any Instantiatable, in context: InferenceContext) -> Bool {
+	func satisfied(by type: any InstantiatableV1, in context: InferenceContext) -> Bool {
 		guard let member = type.member(named: name, in: context) else {
 			return false
 		}
@@ -52,7 +52,7 @@ struct TypeConformanceConstraint: InferenceConstraint {
 		switch type {
 		case let .instantiatable(type):
 			return checkConformance(of: type.extract(), to: protocolType, in: type.context)
-		case let .instance(instance):
+		case let .instanceV1(instance):
 			return checkConformance(of: instance.type, to: protocolType, in: instance.type.context)
 		case let .enumCase(enumCase):
 			return checkConformance(of: enumCase.type, to: protocolType, in: context)
@@ -65,7 +65,7 @@ struct TypeConformanceConstraint: InferenceConstraint {
 		])
 	}
 
-	func checkConformance(of type: any Instantiatable, to protocolType: ProtocolType, in context: InferenceContext) -> ConstraintCheckResult {
+	func checkConformance(of type: any InstantiatableV1, to protocolType: ProtocolType, in context: InferenceContext) -> ConstraintCheckResult {
 		for typeRequirement in protocolType.typeContext.typeParameters {
 			// Unify struct's generic types with protocol type requirements
 			if let typeParam = type.typeParameters.first(where: {

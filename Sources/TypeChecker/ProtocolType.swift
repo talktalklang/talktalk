@@ -7,7 +7,7 @@
 
 import OrderedCollections
 
-public struct ProtocolType: Equatable, Hashable, Instantiatable {
+public struct ProtocolType: Equatable, Hashable, InstantiatableV1 {
 	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
@@ -23,7 +23,7 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 		hasher.combine(typeContext.methods)
 	}
 
-	public func missingConformanceRequirements(for type: any Instantiatable, in context: InferenceContext) -> Set<ConformanceRequirement> {
+	public func missingConformanceRequirements(for type: any InstantiatableV1, in context: InferenceContext) -> Set<ConformanceRequirement> {
 		var missingRequirements: Set<ConformanceRequirement> = []
 
 		for requirement in requirements(in: context) {

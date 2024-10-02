@@ -34,11 +34,9 @@ extension Constraints {
 
 			switch callee {
 			case .function(let params, let returns):
-				for (arg, param) in zip(args, params) {
-					context.unify(freeVars[param] ?? param, arg, location)
-				}
-
-				context.unify(freeVars[returns] ?? returns, result, location)
+				solveFunction(callee: callee, freeVars: freeVars, params: params, returns: returns)
+			case .struct(let type):
+				solveStruct(type: type, freeVars: freeVars)
 			default:
 				if retries > 1 {
 					context.error("\(callee) not callable", at: location)
@@ -46,6 +44,19 @@ extension Constraints {
 					context.retry(self)
 				}
 			}
+		}
+
+		private func solveFunction(callee: InferenceType, freeVars: [InferenceResult: InferenceResult], params: [InferenceResult], returns: InferenceResult) {
+			for (arg, param) in zip(args, params) {
+				context.unify(freeVars[param] ?? param, arg, location)
+			}
+
+			context.unify(freeVars[returns] ?? returns, result, location)
+		}
+
+		private func solveStruct(type: StructType, freeVars: [InferenceResult: InferenceResult]) {
+			let instance = StructInstance(type: type)
+			context.unify(.type(.instance(instance)), result, location)
 		}
 	}
 }

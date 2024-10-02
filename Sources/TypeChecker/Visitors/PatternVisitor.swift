@@ -56,7 +56,7 @@ struct PatternVisitor: Visitor {
 
 	func unresolvedReceiver(_ expr: MemberExprSyntax, context: InferenceContext) throws -> Pattern.Argument {
 		switch context.expectation {
-		case let .type(.instance(instance)):
+		case let .type(.instanceV1(instance)):
 			if let member = instance.member(named: expr.property, in: context) {
 				context.extend(expr, with: .type(member))
 				return .value(member)

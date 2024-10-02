@@ -9,7 +9,7 @@ import Foundation
 import OrderedCollections
 import TalkTalkCore
 
-public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiatable {
+public class EnumType: Equatable, Hashable, CustomStringConvertible, InstantiatableV1 {
 	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {
 		lhs.name == rhs.name && lhs.cases.map(\.name) == rhs.cases.map(\.name)
 	}
@@ -32,7 +32,7 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 			return enumType
 		}
 
-		if case let .type(.instance(instance)) = type {
+		if case let .type(.instanceV1(instance)) = type {
 			return instance.type as? EnumType
 		}
 

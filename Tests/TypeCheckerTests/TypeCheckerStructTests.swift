@@ -18,8 +18,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
+		let context = try solve(syntax)
+		let structType = try #require(StructType.extract(from: context[syntax[0]]!))
 		#expect(structType.name == "Person")
 	}
 
@@ -31,9 +31,9 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let instance = try #require(StructType.extractInstance(from: context[syntax[1]]))
-		#expect(instance.name == "Person")
+		let context = try solve(syntax)
+		let instance = try #require(StructInstance.extract(from: context[syntax[1]]!))
+		#expect(instance.type.name == "Person")
 	}
 
 	@Test("Types instance properties with base types") func instanceProperty() throws {
@@ -46,10 +46,10 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
-		#expect(structType.member(named: "name", in: context) == .type(.base(.string)))
-		#expect(structType.member(named: "age", in: context) == .type(.base(.int)))
+		let context = try solve(syntax)
+		let structType = try #require(StructType.extract(from: context[syntax[0]]!))
+		#expect(structType.member(named: "name") == .type(.base(.string)))
+		#expect(structType.member(named: "age") == .type(.base(.int)))
 	}
 
 	@Test("Types custom init") func customInit() throws {
@@ -108,7 +108,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let structType = StructType.extractType(from: context[syntax[0]])!
+		let structType = StructTypeV1.extractType(from: context[syntax[0]])!
 
 		guard case let .function(_, returnType) = structType.member(named: "sup", in: context)?.asType(in: context) else {
 			#expect(Bool(false)); return
@@ -134,7 +134,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try infer(syntax)
-		let structType = try #require(StructType.extractType(from: context[syntax[0]]))
+		let structType = try #require(StructTypeV1.extractType(from: context[syntax[0]]))
 		#expect(structType.member(named: "greet", in: context)?.asType(in: context) == .function([], .type(.base(.string))))
 
 		let result1 = context[syntax[1]]

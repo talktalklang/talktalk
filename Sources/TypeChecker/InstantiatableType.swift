@@ -7,7 +7,7 @@
 import OrderedCollections
 
 public enum InstantiatableType: Hashable {
-	case `struct`(StructType)
+	case `struct`(StructTypeV1)
 	case enumType(EnumType)
 	case `protocol`(ProtocolType)
 
@@ -44,7 +44,7 @@ public enum InstantiatableType: Hashable {
 		}
 	}
 
-	public func extract() -> any Instantiatable {
+	public func extract() -> any InstantiatableV1 {
 		switch self {
 		case let .struct(structType):
 			structType
