@@ -9,7 +9,7 @@ public protocol FuncExpr: Expr {
 	var funcToken: Token { get }
 	var params: ParamsExprSyntax { get }
 	var body: BlockStmtSyntax { get }
-	var typeDecl: (any TypeExpr)? { get }
+	var typeDecl: TypeExprSyntax? { get }
 	var name: Token? { get }
 	var isStatic: Bool { get }
 }
@@ -24,15 +24,22 @@ public struct FuncExprSyntax: FuncExpr, Decl {
 	public var id: SyntaxID
 	public let modifierTokens: [Token]
 	public let funcToken: Token
-	public let typeDecl: (any TypeExpr)?
+	public let typeDecl: TypeExprSyntax?
 	public let params: ParamsExprSyntax
 	public let body: BlockStmtSyntax
 	public let isStatic: Bool
 	public let name: Token?
 	public let location: SourceLocation
-	public var children: [any Syntax] { [params, body] }
+	public var children: [any Syntax] {
+		if let typeDecl {
+			[params, body, typeDecl]
+		} else {
+			[params, body]
+		}
 
-	public init(id: SyntaxID, modifierTokens: [Token], funcToken: Token, params: ParamsExprSyntax, typeDecl: (any TypeExpr)?, body: BlockStmtSyntax, isStatic: Bool, name: Token? = nil, location: SourceLocation) {
+	}
+
+	public init(id: SyntaxID, modifierTokens: [Token], funcToken: Token, params: ParamsExprSyntax, typeDecl: TypeExprSyntax?, body: BlockStmtSyntax, isStatic: Bool, name: Token? = nil, location: SourceLocation) {
 		self.id = id
 		self.modifierTokens = modifierTokens
 		self.funcToken = funcToken

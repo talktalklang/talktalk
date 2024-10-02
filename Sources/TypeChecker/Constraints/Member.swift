@@ -18,22 +18,30 @@ extension Constraints {
 		var location: SourceLocation
 
 		func solve() {
-			guard let instantiatedReceiver = receiver?.instantiate(in: context) else {
+			guard let receiver = receiver?.instantiate(in: context) else {
 				return
 			}
 
-			switch instantiatedReceiver {
-			case let (.self(type), freeVariables):
-				let member = type.member(named: memberName)
-				let instantiated = member?.instantiate(in: context, with: freeVariables)
+			switch (receiver.type, receiver.variables) {
+			case let (.struct(type), variables):
+				let member = type.staticMember(named: memberName)
+				let instantiated = member?.instantiate(in: context, with: variables)
 
 				if let instantiated {
-					context.unify(.type(instantiated.0), .type(.typeVar(result)), location)
+					context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
+				}
+			case let (.self(type), variables):
+				let member = type.member(named: memberName)
+				let instantiated = member?.instantiate(in: context, with: variables)
+
+				if let instantiated {
+					context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
 				}
 			case let (.typeVar(typeVar), _):
 				let type = context.applySubstitutions(to: .type(.typeVar(typeVar)))
-				if let memberResult = type.member(named: memberName) {
-					context.unify(memberResult, .type(.typeVar(result)), location)
+
+				if let memberResult = type.member(named: memberName)?.instantiate(in: context, with: receiver.variables) {
+					context.unify(asInstance(memberResult), .type(.typeVar(result)), location)
 				} else {
 					print()
 				}
@@ -48,6 +56,15 @@ extension Constraints {
 
 		var after: String {
 			"Member(receiver: \(receiver?.description ?? ""), memberName: \(memberName))"
+		}
+
+		func asInstance(_ result: InstantiatedResult) -> InferenceResult {
+			if case let .struct(structType) = result.type {
+				let instance = structType.instantiate(with: result.variables)
+				return .type(.instance(instance.wrapped))
+			} else {
+				return .type(result.type)
+			}
 		}
 	}
 }

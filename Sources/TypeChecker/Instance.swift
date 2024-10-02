@@ -5,38 +5,57 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
-public protocol Instance: MemberOwner {
-	associatedtype Kind: Instantiatable
+public enum InstanceWrapper {
+	case `struct`(Instance<StructType>)
 
-	var type: Kind { get }
-	var substitutions: [TypeVariable: InferenceResult] { get }
+	func instance<T: Instantiatable & MemberOwner>(ofType: T.Type) -> Instance<T>? {
+		switch self {
+		case .struct(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
+		}
+
+		return nil
+	}
+
+	var type: any Instantiatable {
+		switch self {
+		case .struct(let instance):
+			return instance.type
+		}
+	}
 }
 
-public struct StructInstance: Instance, MemberOwner {
+public struct Instance<Kind: Instantiatable & MemberOwner>: MemberOwner {
+	public var type: Kind
+	public var substitutions: [TypeVariable: InferenceResult]
 	public var name: String { type.name }
 
-	public let type: StructType
-	public let substitutions: [TypeVariable: InferenceResult]
+	static func extract(from type: InferenceType) -> Instance<Kind>? {
+		guard case let .instance(wrapper) = type else {
+			return nil
+		}
+
+		return wrapper.instance(ofType: Kind.self)
+	}
+
+	public var wrapped: InstanceWrapper {
+		switch self {
+		case let instance as Instance<StructType>:
+			.struct(instance)
+		default:
+			fatalError("Unexpected InstanceWrapper: \(self)")
+		}
+	}
 
 	public func member(named name: String) -> InferenceResult? {
 		type.member(named: name)
 	}
 
-	public func add(member: InferenceResult, named name: String) throws {
-
-	}
-}
-
-public extension Instance where Self == StructInstance {
-	static func extract(from type: InferenceType) -> StructInstance? {
-		guard case let .instance(instance as StructInstance) = type else {
-			return nil
-		}
-
-		return instance
+	public func staticMember(named name: String) -> InferenceResult? {
+		nil
 	}
 
-	static func `struct`(_ structType: StructType, substitutions: [TypeVariable: InferenceResult]) -> StructInstance {
-		StructInstance(type: structType, substitutions: substitutions)
-	}
+	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {}
 }

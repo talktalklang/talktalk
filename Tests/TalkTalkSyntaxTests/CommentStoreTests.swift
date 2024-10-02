@@ -72,7 +72,7 @@ struct CommentStoreTests {
 
 		let block = ast[0].cast(FuncExprSyntax.self).body
 		let set = store.get(for: block, context: .init(kind: .topLevel))
-
+print()
 		#expect(set.danglingComments == [
 			comments[0],
 		])
@@ -87,8 +87,8 @@ struct CommentStoreTests {
 		let a = 123	// This is dangling
 		""")
 
-		let literal = ast[0].cast(LetDeclSyntax.self).value!.cast(LiteralExprSyntax.self)
-		let set = store.get(for: literal, context: .init(kind: .topLevel))
+		let decl = ast[0].cast(LetDeclSyntax.self)
+		let set = store.get(for: decl, context: .init(kind: .topLevel))
 
 		#expect(set.danglingComments == [
 			comments[0],

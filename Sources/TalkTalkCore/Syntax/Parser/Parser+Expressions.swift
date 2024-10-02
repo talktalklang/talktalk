@@ -169,7 +169,7 @@ extension Parser {
 
 		skip(.newline)
 
-		let typeDecl: (any TypeExpr)? = if didMatch(.forwardArrow) {
+		let typeDecl: TypeExprSyntax? = if didMatch(.forwardArrow) {
 			// We've got a type decl
 			typeExpr()
 		} else {

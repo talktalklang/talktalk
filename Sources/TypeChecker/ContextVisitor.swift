@@ -327,7 +327,7 @@ struct ContextVisitor: Visitor {
 		}
 
 		let result = try handleFuncLike(syntax, context: context)
-		try lexicalScope.add(member: result, named: "init")
+		try lexicalScope.add(member: result, named: "init", isStatic: false)
 
 		context.define(syntax, as: .type(.void))
 
@@ -457,6 +457,19 @@ struct ContextVisitor: Visitor {
 		fatalError("WIP")
 	}
 
+	func visit(_ syntax: MethodDeclSyntax, _ context: Context) throws -> InferenceResult {
+		guard let lexicalScope = context.lexicalScope else {
+			context.error("Could not find lexical scope for method: `\(syntax.nameToken.lexeme)`", at: syntax.location)
+			return .type(.any)
+		}
+
+		let result = try handleFuncLike(syntax, context: context)
+		let name = syntax.nameToken.lexeme
+		try lexicalScope.add(member: result, named: name, isStatic: syntax.isStatic)
+
+		return .type(.void)
+	}
+
 	func visit(_ syntax: PropertyDeclSyntax, _ context: Context) throws -> InferenceResult {
 		guard let lexicalScope = context.lexicalScope else {
 			context.error("Could not find lexical scope for property: `\(syntax.name)`", at: syntax.location)
@@ -479,7 +492,7 @@ struct ContextVisitor: Visitor {
 		}
 
 		let result = annotatedType ?? valueType ?? .type(.typeVar(context.freshTypeVariable("\(lexicalScope.name).\(syntax.name)")))
-		try lexicalScope.add(member: result, named: name)
+		try lexicalScope.add(member: result, named: name, isStatic: syntax.isStatic)
 
 		return .type(.void)
 	}

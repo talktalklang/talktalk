@@ -8,6 +8,12 @@
 extension InferenceType: Equatable {
 	public static func == (lhs: InferenceType, rhs: InferenceType) -> Bool {
 		switch (lhs, rhs) {
+		case let (.self(lhs), .self(rhs)):
+			lhs.equals(rhs)
+		case let (.struct(lhs), .struct(rhs)):
+			lhs == rhs
+		case let (.instance(lhs), .instance(rhs)):
+			lhs.type.name == rhs.type.name
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
 			lhsParams == rhsParams && lhsReturns == rhsReturns
 		case let (.typeVar(lhs), .typeVar(rhs)):

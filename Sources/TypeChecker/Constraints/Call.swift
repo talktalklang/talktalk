@@ -29,14 +29,14 @@ extension Constraints {
 		}
 
 		func solve() {
-			let (_callee, freeVars) = callee.instantiate(in: context)
-			let callee = context.applySubstitutions(to: .type(_callee))
+			let result = callee.instantiate(in: context)
+			let callee = context.applySubstitutions(to: .type(result.type))
 
 			switch callee {
 			case .function(let params, let returns):
-				solveFunction(callee: callee, freeVars: freeVars, params: params, returns: returns)
+				solveFunction(callee: callee, freeVars: result.variables, params: params, returns: returns)
 			case .struct(let type):
-				solveStruct(type: type, freeVars: freeVars)
+				solveStruct(type: type, freeVars: result.variables)
 			default:
 				if retries > 1 {
 					context.error("\(callee) not callable", at: location)
@@ -63,8 +63,8 @@ extension Constraints {
 		}
 
 		private func solveStruct(type: StructType, freeVars: [TypeVariable: InferenceResult]) {
-			let instance = StructInstance(type: type, substitutions: freeVars)
-			context.unify(.type(.instance(instance)), result, location)
+			let instance = Instance(type: type, substitutions: freeVars)
+			context.unify(.type(.instance(.struct(instance))), result, location)
 		}
 	}
 }

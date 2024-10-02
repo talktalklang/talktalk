@@ -20,6 +20,10 @@ public enum DeclContext {
 			[.var, .func, .let]
 		}
 	}
+
+	var isLexicalScopeBody: Bool {
+		[.enum, .struct].contains(self)
+	}
 }
 
 public extension Parser {
@@ -83,6 +87,47 @@ public extension Parser {
 			caseToken: token,
 			nameToken: nameToken,
 			attachedTypes: typeExprs,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
+	mutating func methodDecl(isStatic: Bool, modifiers: [Token] = []) -> any Decl {
+		let funcToken = previous.unsafelyUnwrapped
+		let i = startLocation(at: previous)
+
+		skip(.newline)
+
+		// Grab the name if there is one
+		guard let name = consume(.identifier) else {
+			return error(at: current, expected(.identifier))
+		}
+
+		skip(.newline)
+		consume(.leftParen)
+		skip(.newline)
+
+		// Parse parameter list
+		let params = parameterList()
+
+		skip(.newline)
+
+		let typeAnnotation: TypeExprSyntax? = if didMatch(.forwardArrow) {
+			typeExpr()
+		} else {
+			nil
+		}
+
+		let body = blockStmt(false)
+
+		return MethodDeclSyntax(
+			funcToken: funcToken,
+			modifiers: modifiers,
+			nameToken: name,
+			params: params,
+			returns: typeAnnotation,
+			body: body,
+			isStatic: isStatic,
 			id: nextID(),
 			location: endLocation(i)
 		)

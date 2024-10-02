@@ -11,13 +11,22 @@ import TalkTalkCore
 protocol FuncLike: Syntax {
 	var params: ParamsExprSyntax { get }
 	var body: BlockStmtSyntax { get }
-	var typeDecl: (any TypeExpr)? { get }
+	var typeDecl: TypeExprSyntax? { get }
 	var name: Token? { get }
 }
 
 extension FuncExprSyntax: FuncLike {}
+extension MethodDeclSyntax: FuncLike {
+	var typeDecl: TypeExprSyntax? {
+		returns
+	}
+
+	var name: Token? {
+		nameToken
+	}
+}
 extension InitDeclSyntax: FuncLike {
-	var typeDecl: (any TypeExpr)? {
+	var typeDecl: TypeExprSyntax? {
 		nil
 	}
 

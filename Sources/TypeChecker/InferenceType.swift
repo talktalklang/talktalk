@@ -25,7 +25,7 @@ public indirect enum InferenceType {
 	case `self`(any MemberOwner)
 
 	// Instances
-	case instance(any Instance)
+	case instance(InstanceWrapper)
 
 	// Structs
 	case `struct`(StructType)

@@ -32,7 +32,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try solve(syntax)
-		let instance = try #require(StructInstance.extract(from: context[syntax[1]]!))
+		let instance = try #require(Instance<StructType>.extract(from: context[syntax[1]]!))
 		#expect(instance.type.name == "Person")
 	}
 
@@ -90,7 +90,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		#expect(context[syntax[1]] == .base(.string))
 	}
 
@@ -107,14 +107,10 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let structType = StructTypeV1.extractType(from: context[syntax[0]])!
+		let context = try solve(syntax)
+		let structType = StructType.extract(from: context[syntax[0]]!)!
 
-		guard case let .function(_, returnType) = structType.member(named: "sup", in: context)?.asType(in: context) else {
-			#expect(Bool(false)); return
-		}
-
-		#expect(returnType == .type(.selfVar(.instantiatable(.struct(structType)))))
+		#expect(context[syntax[1]] == .self(structType))
 	}
 
 	@Test("Types instance methods") func instanceMethod() throws {
@@ -133,17 +129,15 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let structType = try #require(StructTypeV1.extractType(from: context[syntax[0]]))
-		#expect(structType.member(named: "greet", in: context)?.asType(in: context) == .function([], .type(.base(.string))))
+		let context = try solve(syntax)
+		let structType = try #require(StructType.extract(from: context[syntax[0]]!))
+		#expect(structType.member(named: "greet")?.instantiate(in: context).type == .function([], .type(.base(.string))))
 
 		let result1 = context[syntax[1]]
-		let expected1 = InferenceResult.type(.function([], .type(.base(.string))))
-		#expect(result1 == expected1)
+		#expect(result1 == .function([], .type(.base(.string))))
 
 		let result2 = context[syntax[2]]
-		let expected2 = InferenceResult.type(.base(.string))
-		#expect(result2 == expected2)
+		#expect(result2 == .base(.string))
 	}
 
 	@Test("Type checks chained property access") func chaining() throws {
@@ -170,8 +164,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context[syntax[3]] == .type(.base(.string)))
+		let context = try solve(syntax)
+		#expect(context[syntax[3]] == .base(.string))
 	}
 
 	@Test("Type checks static let") func staticLet() throws {
@@ -185,9 +179,9 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
-		#expect(context[syntax[1]] == .type(.base(.string)))
+		#expect(context[syntax[1]] == .base(.string))
 	}
 
 	@Test("Type checks static var") func staticVar() throws {
@@ -201,9 +195,9 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
-		#expect(context[syntax[1]] == .type(.base(.int)))
+		#expect(context[syntax[1]] == .base(.int))
 	}
 
 	@Test("Type checks static func") func staticFunc() throws {
@@ -219,8 +213,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
-		#expect(context[syntax[1]]?.asType(in: context) == .function([], .type(.base(.int))))
+		#expect(context[syntax[1]] == .function([], .type(.base(.int))))
 	}
 }

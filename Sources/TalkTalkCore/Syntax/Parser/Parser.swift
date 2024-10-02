@@ -145,7 +145,7 @@ public struct Parser {
 
 		if let staticKeyword = match(.static), context.allowed.contains(.static) {
 			if check(.func), didConsume(.func) {
-				return funcExpr(isStatic: true, modifiers: [staticKeyword])
+				return methodDecl(isStatic: true, modifiers: [staticKeyword])
 			}
 
 			if check(.var), didConsume(.var) {
@@ -166,7 +166,11 @@ public struct Parser {
 		}
 
 		if didMatch(.func), context.allowed.contains(.func) {
-			return funcExpr(isStatic: false)
+			if context.isLexicalScopeBody {
+				return methodDecl(isStatic: false)
+			} else {
+				return funcExpr(isStatic: false)
+			}
 		}
 
 		if didMatch(.case), context.allowed.contains(.case) {

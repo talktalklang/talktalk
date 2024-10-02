@@ -131,6 +131,20 @@ struct StructTests {
 		#expect(property.typeAnnotation?.identifier.lexeme == "Foo")
 	}
 
+	@Test("Can parse a method") func method() throws {
+		let parsed = try Parser.parse(
+			"""
+			struct Basic {
+				func hello() {}
+			}
+			"""
+		)
+
+		let structDef = try #require(parsed[0] as? StructDecl)
+		let method = structDef.body.decls[0].cast(MethodDeclSyntax.self)
+		#expect(method.nameToken.lexeme == "hello")
+	}
+
 	@Test("Can parse a static method") func staticMethod() throws {
 		let parsed = try Parser.parse(
 			"""
@@ -141,8 +155,8 @@ struct StructTests {
 		)
 
 		let structDef = try #require(parsed[0] as? StructDecl)
-		let method = structDef.body.decls[0].cast(FuncExprSyntax.self)
-		#expect(method.name?.lexeme == "hello")
+		let method = structDef.body.decls[0].cast(MethodDeclSyntax.self)
+		#expect(method.nameToken.lexeme == "hello")
 		#expect(method.isStatic)
 	}
 

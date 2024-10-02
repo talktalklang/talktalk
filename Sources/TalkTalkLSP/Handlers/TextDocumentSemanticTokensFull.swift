@@ -431,5 +431,10 @@ public struct SemanticTokensVisitor: Visitor {
 		return []
 	}
 
+	public func visit(_ expr: MethodDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		#warning("TODO")
+		return []
+	}
+
 	// GENERATOR_INSERTION
 }

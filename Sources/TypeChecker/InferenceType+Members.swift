@@ -9,7 +9,7 @@ extension InferenceType {
 	func member(named name: String) -> InferenceResult? {
 		switch self {
 		case let .instance(instance):
-			return instance.member(named: name)
+			return instance.type.member(named: name)
 		default:
 			return nil
 		}

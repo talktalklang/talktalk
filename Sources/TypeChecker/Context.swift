@@ -244,17 +244,17 @@ class Context {
 	}
 
 	func applySubstitutions(to type: InferenceResult, with substitutions: [TypeVariable: InferenceResult], count: Int = 0, file: String = #file, line: UInt32 = #line) -> InferenceType {
-		let result: InferenceResult = (parent?.applySubstitutions(to: type)).flatMap { .type($0) } ?? type
-		let (type, _) = result.instantiate(in: self, file: file, line: line)
+		let type: InferenceResult = (parent?.applySubstitutions(to: type)).flatMap { .type($0) } ?? type
+		let result = type.instantiate(in: self, file: file, line: line)
 
-		switch type {
+		switch result.type {
 		case .typeVar(let typeVariable), .placeholder(let typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if count < 100, case let .type(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
-			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).0 ?? type
+			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? result.type
 		case .function(let params, let returns):
 			return .function(
 				params.map {
@@ -277,10 +277,10 @@ class Context {
 		case .pattern(_):
 			()
 		default:
-			return type
+			return result.type
 		}
 
-		return type
+		return result.type
 	}
 
 	func instantiate(_ scheme: Scheme, with substitutions: [TypeVariable: InferenceResult] = [:], file: String = #file, line: UInt32 = #line) -> (InferenceType, [TypeVariable: InferenceResult]) {

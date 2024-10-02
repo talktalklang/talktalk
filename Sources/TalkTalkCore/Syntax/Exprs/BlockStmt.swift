@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 7/28/24.
 //
 
-public protocol BlockStmt: Expr {
+public protocol BlockStmt: Stmt, Expr {
 	var stmts: [any Stmt] { get }
 }
 
