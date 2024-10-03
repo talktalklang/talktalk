@@ -172,7 +172,13 @@ struct ContextVisitor: Visitor {
 		let receiver = try syntax.receiver.accept(self, context)
 		let value = try syntax.value.accept(self, context)
 
-		context.addConstraint(Constraints.Equality(context: context, lhs: receiver, rhs: value, location: syntax.location))
+		context.addConstraint(
+			Constraints.Equality(
+				context: context,
+				lhs: receiver,
+				rhs: value,location: syntax.location
+			)
+		)
 
 		return .type(.void)
 	}
@@ -350,7 +356,20 @@ struct ContextVisitor: Visitor {
 
 	func visit(_ syntax: TypeExprSyntax, _ context: Context) throws -> InferenceResult {
 		if let type = context.type(named: syntax.identifier.lexeme) {
-			return type
+			guard case let .scheme(scheme) = type else {
+				return type
+			}
+
+			var substitutions: Substitutions = [:]
+			for (typeParam, param) in zip(scheme.variables, syntax.genericParams) {
+				let paramType = try param.accept(self, context)
+				substitutions[typeParam] = paramType.instantiate(in: context).type
+//				context.addConstraint(
+//					Constraints.Equality(context: context, lhs: .type(.typeVar(typeParam)), rhs: paramType, location: param.location)
+//				)
+			}
+
+			return .type(context.instantiate(scheme, with: substitutions).0)
 		} else {
 			context.error("Type not found: \(syntax.identifier.lexeme)", at: syntax.location)
 			return .type(.any)
@@ -497,12 +516,30 @@ struct ContextVisitor: Visitor {
 
 		let name = syntax.name.lexeme
 
-		let annotatedType = try syntax.typeAnnotation.flatMap {
-			for typeParam in $0.genericParams {
-				print("we need to bind stuff here. This happens in instanceTypeFrom() in InferenceVisitor")
+		let annotatedType: InferenceResult? = try syntax.typeAnnotation.flatMap {
+			// Get the type of the property, this needs to be recursive.
+			let type = try visit($0, context)
+
+			var subsitutions: Substitutions = [:]
+			if case let .scheme(scheme) = type {
+				for (schemeVariable, paramSyntax) in zip(scheme.variables, $0.genericParams) {
+					let typeArgument = try visit(paramSyntax, context)
+
+//					context.addConstraint(
+//						Constraints.Equality(context: context, lhs: .type(.typeVar(schemeVariable)), rhs: typeArgument, location: paramSyntax.location)
+//					)
+
+					subsitutions[schemeVariable] = typeArgument.instantiate(in: context).type
+				}
 			}
 
-			return try visit($0, context)
+			// If it's an instance, we want to make the member be an instance
+			var result = type.instantiate(in: context, with: subsitutions).type
+			if case let .struct(type) = result {
+				result = .instance(.struct(type.instantiate(with: subsitutions)))
+			}
+
+			return .type(result)
 		}
 
 		let valueType = try syntax.defaultValue.flatMap {

@@ -80,9 +80,9 @@ extension Constraints {
 
 					if case let .typeVar(variable) = param {
 						param = freeVars[variable] ?? instance.substitutions[variable] ?? param
-					}
 
-					try context.unify(param, arg, location)
+						try context.bind(variable, to: arg)
+					}
 				}
 			}
 
@@ -98,9 +98,9 @@ extension Constraints {
 		}
 
 		private func initializer(for type: StructType, freeVars: [TypeVariable: InferenceType]) -> InstantiatedResult {
-			if let initializer = type.member(named: "init")?.instantiate(in: context, with: freeVars) {
+			if case let .scheme(scheme) = type.member(named: "init") {
 				// We've got an init defined, just use that
-				return initializer
+				return InstantiatedResult(type: scheme.type, variables: freeVars)
 			}
 
 			// Need to synthesize an init
@@ -118,7 +118,9 @@ extension Constraints {
 			}
 
 			let instance = type.instantiate(with: freeVars)
-			return .init(type: .function(params, .type(.instance(instance.wrapped))), variables: freeVars)
+			let initializer = InstantiatedResult(type: .function(params, .type(.instance(instance.wrapped))), variables: freeVars)
+
+			return initializer
 		}
 	}
 }

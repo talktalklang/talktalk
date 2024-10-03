@@ -175,7 +175,9 @@ class Context {
 		names[name] ?? parent?.variable(named: name)
 	}
 
-	func addConstraint(_ constraint: any Constraint) {
+	func addConstraint(_ constraint: any Constraint, file: String = #file, line: UInt32 = #line) {
+		log("\(constraint.before) \(file):\(line)", prefix: " ⊢ ")
+
 		constraints.append(constraint)
 	}
 
@@ -220,9 +222,9 @@ class Context {
 	}
 
 	func bind(_ typeVariable: TypeVariable, to type: InferenceType) throws {
-		if typeVariable.isGeneric {
-			return
-		}
+//		if typeVariable.isGeneric {
+//			return
+//		}
 
 		// TODO: Do we need this?
 		try parent?.bind(typeVariable, to: type)
@@ -318,12 +320,6 @@ class Context {
 
 	func instantiate(_ scheme: Scheme, with substitutions: [TypeVariable: InferenceType] = [:], file: String = #file, line: UInt32 = #line) -> (InferenceType, [TypeVariable: InferenceType]) {
 		var substitutions: [TypeVariable: InferenceType] = substitutions
-
-//		if case let .struct(type) = scheme.type {
-//			for typeParameter in type.typeParameters.values {
-//				substitutions[typeParameter] = .type(.typeVar(freshTypeVariable(typeParameter.name ?? "<unnamed>", file: file, line: line)))
-//			}
-//		}
 
 		// Replace the scheme's variables with fresh type variables
 		for case let variable in scheme.variables {

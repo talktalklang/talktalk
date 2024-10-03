@@ -17,13 +17,13 @@ extension Constraints {
 		var retries: Int = 0
 
 		var before: String {
-			"Equality(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
+			"Equality(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), location: \(location))"
 		}
 
 		var after: String {
 			let lhs = context.applySubstitutions(to: lhs)
 			let rhs = context.applySubstitutions(to: rhs)
-			return "Equality(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
+			return "Equality(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), location: \(location))"
 		}
 
 		func solve() throws {

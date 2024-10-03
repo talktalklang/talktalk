@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
+public typealias Substitutions = [TypeVariable: InferenceType]
+
 public struct InstantiatedResult {
 	let type: InferenceType
 	let variables: [TypeVariable: InferenceType]

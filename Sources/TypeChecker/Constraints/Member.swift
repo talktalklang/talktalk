@@ -22,7 +22,11 @@ extension Constraints {
 				return
 			}
 
-			switch (receiver.type, receiver.variables) {
+			try solve(receiver: receiver.type, variables: receiver.variables)
+		}
+
+		func solve(receiver: InferenceType, variables: Substitutions, depth: Int = 0) throws {
+			switch (receiver, variables) {
 			case let (.struct(type), variables):
 				let member = type.staticMember(named: memberName)
 				let instantiated = member?.instantiate(in: context, with: variables)
@@ -47,22 +51,30 @@ extension Constraints {
 			case let (.typeVar(typeVar), variables):
 				let receiver = context.applySubstitutions(to: .typeVar(typeVar), with: variables.asResults)
 
-				let variables = if case let .instance(wrapper) = receiver {
-					wrapper.substitutions.merging(variables) { $1 }
-				} else {
-					variables
+				if depth < 10 {
+					try solve(receiver: receiver, variables: variables, depth: depth + 1)
 				}
 
-				if let memberResult = receiver.member(named: memberName)?.instantiate(in: context, with: variables) {
-					try context.unify(asInstance(memberResult, with: variables), .typeVar(result), location)
-				} else {
-					print()
+				if retries < 1 {
+					context.retry(self)
 				}
+
+//				let variables = if case let .instance(wrapper) = receiver {
+//					wrapper.substitutions.merging(variables) { $1 }
+//				} else {
+//					variables
+//				}
+
+//				if let memberResult = receiver.member(named: memberName)?.instantiate(in: context, with: variables) {
+//					try context.unify(asInstance(memberResult, with: variables), .typeVar(result), location)
+//				} else {
+//					print()
+//				}
 			default:
 				try context.error("TODO", at: location)
 			}
 		}
-		
+
 		var before: String {
 			"Member(receiver: \(receiver?.debugDescription ?? ""), memberName: \(memberName))"
 		}
