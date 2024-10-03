@@ -499,7 +499,7 @@ struct ContextVisitor: Visitor {
 
 		let annotatedType = try syntax.typeAnnotation.flatMap {
 			for typeParam in $0.genericParams {
-				print("we need to bind stuff here.")
+				print("we need to bind stuff here. This happens in instanceTypeFrom() in InferenceVisitor")
 			}
 
 			return try visit($0, context)
