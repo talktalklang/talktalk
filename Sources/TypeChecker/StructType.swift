@@ -22,11 +22,15 @@ public final class StructType: MemberOwner, Instantiatable, Equatable {
 	}
 
 	static func extract(from type: InferenceType) -> StructType? {
-		guard case let .struct(type) = type else {
-			return nil
+		if case let .struct(type) = type {
+			return type
 		}
 
-		return type
+		if case let .self(type as StructType) = type {
+			return type
+		}
+
+		return nil
 	}
 
 	public func instantiate(with substitutions: [TypeVariable: InferenceResult]) -> Instance<StructType> {

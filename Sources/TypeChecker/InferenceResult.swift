@@ -23,7 +23,11 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 		case .scheme(let scheme):
 			context.instantiate(scheme, with: substitutions, file: file, line: line)
 		case .type(let inferenceType):
-			(context.applySubstitutions(to: inferenceType, with: substitutions), substitutions)
+			if case let .typeVar(typeVar) = inferenceType, case let .type(type) = substitutions[typeVar] {
+				(type, substitutions)
+			} else {
+				(inferenceType, substitutions)
+			}
 		}
 
 		return InstantiatedResult(type: type, variables: variables)

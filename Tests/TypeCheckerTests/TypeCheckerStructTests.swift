@@ -108,7 +108,7 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try solve(syntax)
-		let instance = Instance<StructType>.extract(from: context[syntax[1]]!)!
+		let instance = StructType.extract(from: context[syntax[1]]!)!
 
 		#expect(instance.name == "Person")
 	}

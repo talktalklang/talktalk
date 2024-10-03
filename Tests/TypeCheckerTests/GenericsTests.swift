@@ -27,7 +27,7 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 
 		#expect(context[syntax[1]] == .base(.int))
 		#expect(context[syntax[2]] == .base(.string))
