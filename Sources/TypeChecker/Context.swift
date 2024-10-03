@@ -271,7 +271,7 @@ class Context {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
-			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? type
+			return findParentSubstitution(for: typeVariable)?.instantiate(in: self, with: substitutions).type ?? type
 		case .function(let params, let returns):
 			return .function(
 				params.map {

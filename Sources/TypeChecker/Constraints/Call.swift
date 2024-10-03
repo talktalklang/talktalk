@@ -5,6 +5,7 @@
 //  Created by Pat Nakajima on 10/1/24.
 //
 
+import OrderedCollections
 import TalkTalkCore
 
 extension Constraints {
@@ -66,11 +67,11 @@ extension Constraints {
 			let instance = Instance(type: type, substitutions: freeVars)
 
 			// Check to see if we have an initializer. If we do, unify params/args
-			if let initializer = type.member(named: "init")?.instantiate(in: context),
-				 case let .function(params, _) = initializer.type {
+			let initializer = initializer(for: type, freeVars: freeVars)
+			if case let .function(params, _) = initializer.type {
 				for (arg, var param) in zip(args, params) {
-					if case let .typeVar(variable) = context.applySubstitutions(to: param) {
-						param = instance.substitutions[variable] ?? param
+					if case let .typeVar(variable) = context.applySubstitutions(to: param, with: freeVars) {
+						param = freeVars[variable] ?? instance.substitutions[variable] ?? param
 					}
 
 					try context.unify(param, arg, location)
@@ -86,6 +87,30 @@ extension Constraints {
 			} else {
 				return typeVariable
 			}
+		}
+
+		private func initializer(for type: StructType, freeVars: [TypeVariable: InferenceResult]) -> InstantiatedResult {
+			if let initializer = type.member(named: "init")?.instantiate(in: context, with: freeVars) {
+				// We've got an init defined, just use that
+				return initializer
+			}
+
+			// Need to synthesize an init
+			let params: [InferenceResult] = type.members.values.compactMap {
+				switch $0 {
+				case .scheme:
+					return nil // do nothing
+				case .type(let type):
+					if case .function = type {
+						return nil // do nothing
+					}
+
+					return $0
+				}
+			}
+
+			let instance = type.instantiate(with: freeVars)
+			return .init(type: .function(params, .type(.instance(instance.wrapped))), variables: freeVars)
 		}
 	}
 }
