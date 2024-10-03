@@ -9,7 +9,7 @@ import OrderedCollections
 
 public indirect enum InferenceType {
 	public static func optional(_ type: InferenceType) -> InferenceType {
-		let enumType = EnumType.extract(from: .type(Inferencer.stdlib.type(named: "Optional")!))!
+		let enumType = EnumTypeV1.extract(from: .type(Inferencer.stdlib.type(named: "Optional")!))!
 		let wrapped = enumType.typeContext.typeParameters.first!
 		let instance = enumType.instantiate(with: [wrapped: type], in: .init(moduleName: "Standard", parent: nil, environment: .init(), constraints: .init()))
 		return .instanceV1(instance)

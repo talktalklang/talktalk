@@ -92,7 +92,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.patternSyntax! // .bar(let b)
 			.cast(CallExprSyntax.self)
 
-		let enumType = try EnumType.extract(from: context.get(syntax[0]))!
+		let enumType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
 
 		let foo = context.lookup(syntax: call1)
 		#expect(foo == .pattern(Pattern(
@@ -153,7 +153,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.patternSyntax! // .bar(let b)
 			.cast(CallExprSyntax.self)
 
-		let enumType = try EnumType.extract(from: context.get(syntax[0]))!
+		let enumType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
 
 		let foo = context.lookup(syntax: case1)
 
@@ -202,8 +202,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let call1 = syntax[2].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
 
-		let topType = try EnumType.extract(from: context.get(syntax[0]))!
-		let bottomType = try EnumType.extract(from: context.get(syntax[1]))!
+		let topType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
+		let bottomType = try EnumTypeV1.extract(from: context.get(syntax[1]))!
 
 		// Let's just make sure we're testing the right thing
 		#expect(call1.description == ".bottom(.top(let a))")
@@ -218,7 +218,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 					attachedTypes: [
 						.instanceV1(
 							.enumType(
-								InstanceV1<EnumType>(
+								InstanceV1<EnumTypeV1>(
 									id: 0,
 									type: topType,
 									substitutions: [:]
@@ -279,7 +279,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.cast(CallExprSyntax.self).args[1].value
 
 		let match = try context.get(kaseArg)
-		let kase = try #require(EnumType.extract(from: match))
+		let kase = try #require(EnumTypeV1.extract(from: match))
 
 		#expect(kase.name == "B")
 	}

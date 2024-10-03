@@ -9,8 +9,8 @@ import Foundation
 import OrderedCollections
 import TalkTalkCore
 
-public class EnumType: Equatable, Hashable, CustomStringConvertible, InstantiatableV1 {
-	public static func == (lhs: EnumType, rhs: EnumType) -> Bool {
+public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, InstantiatableV1 {
+	public static func == (lhs: EnumTypeV1, rhs: EnumTypeV1) -> Bool {
 		lhs.name == rhs.name && lhs.cases.map(\.name) == rhs.cases.map(\.name)
 	}
 
@@ -27,13 +27,13 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 		self.typeContext = typeContext
 	}
 
-	public static func extract(from type: InferenceResult) -> EnumType? {
+	public static func extract(from type: InferenceResult) -> EnumTypeV1? {
 		if case let .type(.instantiatable(.enumType(enumType))) = type {
 			return enumType
 		}
 
 		if case let .type(.instanceV1(instance)) = type {
-			return instance.type as? EnumType
+			return instance.type as? EnumTypeV1
 		}
 
 		return nil
@@ -44,7 +44,7 @@ public class EnumType: Equatable, Hashable, CustomStringConvertible, Instantiata
 	}
 
 	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
-		.instantiatable(.enumType(EnumType(
+		.instantiatable(.enumType(EnumTypeV1(
 			name: name,
 			cases: cases.map {
 				// swiftlint:disable force_unwrapping

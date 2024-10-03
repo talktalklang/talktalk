@@ -23,7 +23,7 @@ struct EnumTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let enumResult = try context.get(syntax[0])
-		let enumType = try #require(EnumType.extract(from: enumResult))
+		let enumType = try #require(EnumTypeV1.extract(from: enumResult))
 
 		#expect(enumType.name == "Thing")
 		#expect(enumType.cases.count == 2)
@@ -56,7 +56,7 @@ struct EnumTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let enumResult = try context.get(syntax[0])
-		let enumType = try #require(EnumType.extract(from: enumResult))
+		let enumType = try #require(EnumTypeV1.extract(from: enumResult))
 
 		#expect(enumType.name == "Thing")
 		#expect(enumType.cases.count == 1)
@@ -96,7 +96,7 @@ struct EnumTests: TypeCheckerTest {
 		let context = try infer(syntax)
 
 		let enumResult = try context.get(syntax[1])
-		let enumType = try #require(EnumType.extract(from: enumResult))
+		let enumType = try #require(EnumTypeV1.extract(from: enumResult))
 		#expect(enumType.name == "Thing")
 	}
 
@@ -117,10 +117,10 @@ struct EnumTests: TypeCheckerTest {
 		#expect(context.errors == [])
 
 		let enumResult = try context.get(syntax[0])
-		let enumType = try #require(EnumType.extract(from: enumResult))
+		let enumType = try #require(EnumTypeV1.extract(from: enumResult))
 		#expect(enumType.name == "A")
 
-		let b = try #require(EnumType.extract(from: .type(context.applySubstitutions(to: enumType.cases[0].attachedTypes[0]))))
+		let b = try #require(EnumTypeV1.extract(from: .type(context.applySubstitutions(to: enumType.cases[0].attachedTypes[0]))))
 		#expect(b.name == "B")
 	}
 
@@ -143,13 +143,13 @@ struct EnumTests: TypeCheckerTest {
 		let context = try infer(syntax)
 
 		let result = try context.get(syntax[2])
-		let enumType = InstanceV1<EnumType>.extract(from: result.asType(in: context))!.type
+		let enumType = InstanceV1<EnumTypeV1>.extract(from: result.asType(in: context))!.type
 		#expect(enumType.name == "Thing")
 
 		let arg = syntax[2].cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0].value
 
-		let instance = try #require(InstanceV1<EnumType>.extract(from: context[arg]!.asType(in: context)))
+		let instance = try #require(InstanceV1<EnumTypeV1>.extract(from: context[arg]!.asType(in: context)))
 		#expect(enumType == instance.type)
 
 		#expect(context[arg] == .type(.instanceV1(.enumType(instance))))
@@ -177,7 +177,7 @@ struct EnumTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let enumType = syntax[0].cast(EnumDeclSyntax.self)
-		let enumInferenceType = try EnumType.extract(from: context.get(enumType))!
+		let enumInferenceType = try EnumTypeV1.extract(from: context.get(enumType))!
 		let fn = enumType.body.decls[2].cast(FuncExprSyntax.self)
 		let binaryExpr = fn.body.stmts[0]
 			.cast(ExprStmtSyntax.self)

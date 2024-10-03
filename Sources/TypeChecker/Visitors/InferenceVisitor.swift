@@ -594,9 +594,9 @@ struct InferenceVisitor: Visitor {
 			returns = member
 		case let .type(.enumCase(enumCase)):
 			returns = .type(.enumCase(enumCase))
-		case let .type(.instanceV1(instance)) where instance.type is EnumType:
+		case let .type(.instanceV1(instance)) where instance.type is EnumTypeV1:
 			// swiftlint:disable force_unwrapping force_cast
-			if let enumType = instance.type as? EnumType, let member = enumType.member(named: expr.property, in: context) {
+			if let enumType = instance.type as? EnumTypeV1, let member = enumType.member(named: expr.property, in: context) {
 				returns = .type(member.asType(in: context))
 			} else {
 				Log.error("could not get enum type: \(instance.type.name)")
@@ -997,7 +997,7 @@ struct InferenceVisitor: Visitor {
 			try visit(typeParameter, enumContext)
 		}
 
-		let enumType = EnumType(name: expr.nameToken.lexeme, cases: [], context: enumContext, typeContext: typeContext)
+		let enumType = EnumTypeV1(name: expr.nameToken.lexeme, cases: [], context: enumContext, typeContext: typeContext)
 
 		enumContext.defineVariable(named: "self", as: .type(.selfVar(.instantiatable(.enumType(enumType)))), at: expr.location)
 

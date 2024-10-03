@@ -22,7 +22,7 @@ public enum InstanceType {
 
 	case `struct`(InstanceV1<StructTypeV1>)
 	case `protocol`(InstanceV1<ProtocolType>)
-	case enumType(InstanceV1<EnumType>)
+	case enumType(InstanceV1<EnumTypeV1>)
 
 	public static func synthesized(_ type: some InstantiatableV1) -> InstanceType {
 		// swiftlint:disable force_cast
@@ -31,8 +31,8 @@ public enum InstanceType {
 			.struct(.synthesized(type as! StructTypeV1))
 		case is ProtocolType:
 			.protocol(.synthesized(type as! ProtocolType))
-		case is EnumType:
-			.enumType(.synthesized(type as! EnumType))
+		case is EnumTypeV1:
+			.enumType(.synthesized(type as! EnumTypeV1))
 		default:
 			// swiftlint:disable fatal_error
 			fatalError("unable to synthesize instance type: \(type)")

@@ -700,7 +700,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			}
 		case let (.instantiatable(.enumType(type)), .instanceV1(instance)),
 		     let (.instanceV1(instance), .instantiatable(.enumType(type))):
-			if case let enumType = instance.type as? EnumType, enumType == type {
+			if case let enumType = instance.type as? EnumTypeV1, enumType == type {
 				break
 			}
 

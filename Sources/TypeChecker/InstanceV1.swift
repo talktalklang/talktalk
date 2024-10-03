@@ -38,8 +38,8 @@ public extension InstantiatableV1 {
 		return switch self {
 		case is StructTypeV1:
 			.struct(instance as! InstanceV1<StructTypeV1>)
-		case is EnumType:
-			.enumType(instance as! InstanceV1<EnumType>)
+		case is EnumTypeV1:
+			.enumType(instance as! InstanceV1<EnumTypeV1>)
 		case is ProtocolType:
 			.protocol(instance as! InstanceV1<ProtocolType>)
 		default:
