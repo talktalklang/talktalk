@@ -8,6 +8,29 @@
 public enum InstanceWrapper {
 	case `struct`(Instance<StructType>)
 
+	var substitutions: [TypeVariable: InferenceResult] {
+		get {
+			switch self {
+			case .struct(let instance):
+				instance.substitutions
+			}
+		}
+
+		set {
+			switch self {
+			case .struct(let instance):
+				instance.substitutions = newValue
+			}
+		}
+	}
+
+	func member(named name: String) -> InferenceResult? {
+		switch self {
+		case .struct(let instance):
+			instance.member(named: name)
+		}
+	}
+
 	func instance<T: Instantiatable & MemberOwner>(ofType: T.Type) -> Instance<T>? {
 		switch self {
 		case .struct(let instance):
@@ -27,10 +50,15 @@ public enum InstanceWrapper {
 	}
 }
 
-public struct Instance<Kind: Instantiatable & MemberOwner>: MemberOwner {
+public class Instance<Kind: Instantiatable & MemberOwner> {
 	public var type: Kind
 	public var substitutions: [TypeVariable: InferenceResult]
 	public var name: String { type.name }
+
+	init(type: Kind, substitutions: [TypeVariable : InferenceResult] = [:]) {
+		self.type = type
+		self.substitutions = substitutions
+	}
 
 	static func extract(from type: InferenceType) -> Instance<Kind>? {
 		guard case let .instance(wrapper) = type else {

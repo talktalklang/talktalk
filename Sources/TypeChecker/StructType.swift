@@ -9,6 +9,7 @@ public final class StructType: MemberOwner, Instantiatable, Equatable {
 	public let name: String
 	public var members: [String: InferenceResult]
 	public var staticMembers: [String: InferenceResult]
+	public var typeParameters: [String: TypeVariable] = [:]
 
 	public static func ==(lhs: StructType, rhs: StructType) -> Bool {
 		(lhs.name, lhs.members) == (rhs.name, rhs.members)

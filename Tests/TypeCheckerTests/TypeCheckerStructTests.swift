@@ -108,9 +108,9 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 		)
 
 		let context = try solve(syntax)
-		let structType = StructType.extract(from: context[syntax[0]]!)!
+		let instance = Instance<StructType>.extract(from: context[syntax[1]]!)!
 
-		#expect(context[syntax[1]] == .self(structType))
+		#expect(instance.name == "Person")
 	}
 
 	@Test("Types instance methods") func instanceMethod() throws {

@@ -17,7 +17,7 @@ extension Constraints {
 		var context: Context
 		var location: SourceLocation
 
-		func solve() {
+		func solve() throws {
 			guard let receiver = receiver?.instantiate(in: context) else {
 				return
 			}
@@ -28,25 +28,38 @@ extension Constraints {
 				let instantiated = member?.instantiate(in: context, with: variables)
 
 				if let instantiated {
-					context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
+					try context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
+				}
+			case let (.instance(wrapper), variables):
+				let member = wrapper.type.member(named: memberName)
+				let instantiated = member?.instantiate(in: context, with: variables.merging(wrapper.substitutions) { $1 })
+
+				if let instantiated {
+					try context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
 				}
 			case let (.self(type), variables):
 				let member = type.member(named: memberName)
 				let instantiated = member?.instantiate(in: context, with: variables)
 
 				if let instantiated {
-					context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
+					try context.unify(asInstance(instantiated), .type(.typeVar(result)), location)
 				}
-			case let (.typeVar(typeVar), _):
-				let type = context.applySubstitutions(to: .type(.typeVar(typeVar)))
+			case let (.typeVar(typeVar), variables):
+				let receiver = context.applySubstitutions(to: .type(.typeVar(typeVar)))
 
-				if let memberResult = type.member(named: memberName)?.instantiate(in: context, with: receiver.variables) {
-					context.unify(asInstance(memberResult), .type(.typeVar(result)), location)
+				let variables = if case let .instance(wrapper) = receiver {
+					variables.merging(wrapper.substitutions) { $1 }
+				} else {
+					variables
+				}
+
+				if let memberResult = receiver.member(named: memberName)?.instantiate(in: context, with: variables) {
+					try context.unify(.type(.typeVar(result)), asInstance(memberResult), location)
 				} else {
 					print()
 				}
 			default:
-				context.error("TODO", at: location)
+				try context.error("TODO", at: location)
 			}
 		}
 		

@@ -27,14 +27,10 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let expected1 = InferenceResult.type(.base(.int))
-		let result1 = context[syntax[1]]
-		let expected2 = InferenceResult.type(.base(.string))
-		let result2 = context[syntax[2]]
+		let context = try solve(syntax, verbose: true)
 
-		#expect(expected1 == result1)
-		#expect(expected2 == result2)
+		#expect(context[syntax[1]] == .base(.int))
+		#expect(context[syntax[2]] == .base(.string))
 	}
 
 	@Test("Can infer from synthesized init") func synthesizedInit() throws {

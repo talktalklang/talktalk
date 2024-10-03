@@ -5,10 +5,20 @@
 //  Created by Pat Nakajima on 10/1/24.
 //
 import TalkTalkCore
+import Foundation
 
-enum TypeError: Error {
+enum TypeError: Error, LocalizedError {
 	case undefinedVariable(String)
 	case typeError(String)
+
+	var errorDescription: String? {
+		switch self {
+		case .undefinedVariable(let name):
+			return "Undefined variable: \(name)"
+		case .typeError(let message):
+			return message
+		}
+	}
 }
 
 struct ContextVisitor: Visitor {
@@ -365,7 +375,17 @@ struct ContextVisitor: Visitor {
 		let structType = StructType(name: syntax.name)
 		let structContext = context.addChild(lexicalScope: structType)
 
-		structContext.define("self", as: .type(.self(structType)))
+		let variables = syntax.typeParameters.map {
+			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
+			structContext.define($0.identifier.lexeme, as: .type(.typeVar(typeVar)))
+			structType.typeParameters[$0.identifier.lexeme] = typeVar
+			return typeVar
+		}
+
+//		structContext.define("self", as: .type(.self(structType)))
+		structContext.define("self", as: .scheme(
+			Scheme(name: "self", variables: variables, type: .self(structType)))
+		)
 
 		for decl in syntax.body.decls {
 			_ = try decl.accept(self, structContext)
@@ -373,7 +393,7 @@ struct ContextVisitor: Visitor {
 
 		// We use a Scheme for structs because they can contain generic type variables
 		let result = InferenceResult.scheme(
-			Scheme(name: syntax.name, variables: [], type: .struct(structType))
+			Scheme(name: syntax.name, variables: variables, type: .struct(structType))
 		)
 
 		// Define the struct by name

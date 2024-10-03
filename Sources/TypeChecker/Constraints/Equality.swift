@@ -26,8 +26,8 @@ extension Constraints {
 			return "Equality(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription))"
 		}
 
-		func solve() {
-			context.unify(lhs, rhs, location)
+		func solve() throws {
+			try context.unify(lhs, rhs, location)
 		}
 	}
 }

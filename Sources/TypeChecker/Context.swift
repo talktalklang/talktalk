@@ -81,7 +81,11 @@ class Context {
 		while !constraints.isEmpty {
 			let constraint = constraints.removeFirst()
 			log("\(constraint.before)", prefix: "-> ")
-			constraint.solve()
+			do {
+				try constraint.solve()
+			} catch {
+				self.error(error.localizedDescription, at: constraint.location)
+			}
 			log("\(constraint.after)", prefix: "<- ")
 		}
 
@@ -117,11 +121,11 @@ class Context {
 		return nextID
 	}
 
-	func freshTypeVariable(_ name: String, file: String = #file, line: UInt32 = #line) -> TypeVariable {
+	func freshTypeVariable(_ name: String, isGeneric: Bool = false, file: String = #file, line: UInt32 = #line) -> TypeVariable {
 		let id = freshID()
 		variables.insert(id)
 		log("Fresh type variable T(\(id), \(name)) \(file):\(line)", prefix: " + ")
-		return TypeVariable(name, id)
+		return TypeVariable(name, id, isGeneric)
 	}
 
 	func type(named name: String, includeParents: Bool = true, includeBuiltins: Bool = true) -> InferenceResult? {
@@ -148,6 +152,10 @@ class Context {
 		// See if we have it in this context
 		if let result = names[name] {
 			return result
+		}
+
+		if let type = lexicalScope as? StructType, let typeParam = type.typeParameters[name] {
+			return .type(.typeVar(typeParam))
 		}
 
 		if includeParents {
@@ -186,7 +194,7 @@ class Context {
 		environment[syntax.id] = result
 	}
 
-	func unify(_ lhs: InferenceResult, _ rhs: InferenceResult, _ location: SourceLocation) {
+	func unify(_ lhs: InferenceResult, _ rhs: InferenceResult, _ location: SourceLocation, file: String = #file, line: UInt32 = #line) throws {
 		let lhs = applySubstitutions(to: lhs)
 		let rhs = applySubstitutions(to: rhs)
 
@@ -194,14 +202,14 @@ class Context {
 			return
 		}
 
-		log("Unifying \(lhs) & \(rhs)", prefix: " & ")
+		log("Unifying \(lhs) & \(rhs) \(file):\(line)", prefix: " & ")
 
 		switch (lhs, rhs) {
 		case let (.typeVar(lhs), .typeVar(rhs)):
-			bind(lhs, to: .typeVar(rhs))
-			bind(rhs, to: .typeVar(lhs))
+			try bind(lhs, to: .typeVar(rhs))
+			try bind(rhs, to: .typeVar(lhs))
 		case let (.typeVar(typeVar), type), let (type, .typeVar(typeVar)):
-			bind(typeVar, to: type)
+			try bind(typeVar, to: type)
 		case let (.placeholder(typeVar), type), let (type, .placeholder(typeVar)):
 			substitutions[typeVar] = .type(type)
 		case let (.base(lhs), .base(rhs)) where lhs != rhs:
@@ -211,8 +219,13 @@ class Context {
 		}
 	}
 
-	func bind(_ typeVariable: TypeVariable, to type: InferenceType) {
-		parent?.bind(typeVariable, to: type)
+	func bind(_ typeVariable: TypeVariable, to type: InferenceType) throws {
+		if typeVariable.isGeneric {
+			return
+		}
+
+		// TODO: Do we need this?
+		try parent?.bind(typeVariable, to: type)
 
 		substitutions[typeVariable] = .type(type)
 	}
@@ -222,7 +235,7 @@ class Context {
 			return substitution
 		}
 
-		return parent?.findChildSubstitution(for: typeVariable)
+		return parent?.findParentSubstitution(for: typeVariable)
 	}
 
 	func findChildSubstitution(for typeVariable: TypeVariable) -> InferenceResult? {
@@ -247,14 +260,18 @@ class Context {
 		let type: InferenceResult = (parent?.applySubstitutions(to: type)).flatMap { .type($0) } ?? type
 		let result = type.instantiate(in: self, file: file, line: line)
 
-		switch result.type {
+		return applySubstitutions(to: result.type, with: substitutions, count: count, file: file, line: line)
+	}
+
+	func applySubstitutions(to type: InferenceType, with substitutions: [TypeVariable: InferenceResult], count: Int = 0, file: String = #file, line: UInt32 = #line) -> InferenceType {
+		switch type {
 		case .typeVar(let typeVariable), .placeholder(let typeVariable):
 			// Reach down recursively as long as we can to try to find the result
-			if count < 100, case let .type(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
+			if count < 10, case let .type(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
-			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? result.type
+			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? type
 		case .function(let params, let returns):
 			return .function(
 				params.map {
@@ -262,6 +279,16 @@ class Context {
 				},
 				.type(applySubstitutions(to: returns, with: substitutions))
 			)
+		case .instance(var instance):
+			for case let (variable, .type(.typeVar(replacement))) in instance.substitutions {
+				instance.substitutions[variable] = substitutions[replacement]
+			}
+
+			return .instance(instance)
+		case .self(let type):
+			()
+		case .struct(_):
+			() // Structs are meant to be blueprints so they should not get replacements. Instances should.
 		case .instanceV1(_):
 			()
 		case .instantiatable(_):
@@ -276,25 +303,31 @@ class Context {
 			()
 		case .pattern(_):
 			()
+		case .void, .any, .base:
+			()
 		default:
-			return result.type
+			log("Unhandled substitution: \(type.debugDescription)", prefix: " ! ")
 		}
 
-		return result.type
+		return type
 	}
 
 	func instantiate(_ scheme: Scheme, with substitutions: [TypeVariable: InferenceResult] = [:], file: String = #file, line: UInt32 = #line) -> (InferenceType, [TypeVariable: InferenceResult]) {
 		var substitutions: [TypeVariable: InferenceResult] = substitutions
-		var replacements: [TypeVariable: InferenceResult] = [:]
+
+//		if case let .struct(type) = scheme.type {
+//			for typeParameter in type.typeParameters.values {
+//				substitutions[typeParameter] = .type(.typeVar(freshTypeVariable(typeParameter.name ?? "<unnamed>", file: file, line: line)))
+//			}
+//		}
 
 		// Replace the scheme's variables with fresh type variables
 		for case let variable in scheme.variables {
-			if let type = self.substitutions[variable] {
+			if let type = substitutions[variable] ?? self.substitutions[variable] {
 				substitutions[variable] = type
 			} else {
 				let newVar = freshTypeVariable(variable.name ?? "<unnamed>", file: file, line: line)
 
-				replacements[variable] = .type(.typeVar(newVar))
 				substitutions[variable] = .type(
 					.typeVar(
 						newVar
@@ -304,8 +337,8 @@ class Context {
 		}
 
 		return (
-			applySubstitutions(to: .type(scheme.type), with: substitutions),
-			replacements
+			applySubstitutions(to: scheme.type, with: substitutions),
+			substitutions
 		)
 	}
 
