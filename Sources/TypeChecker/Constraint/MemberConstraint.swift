@@ -71,9 +71,9 @@ struct MemberConstraint: InferenceConstraint {
 				context.applySubstitutions(to: resolvedType),
 				location
 			)
-		case let .enumCase(enumCase):
+		case let .enumCaseV1(enumCase):
 			context.unify(
-				context.applySubstitutions(to: .enumCase(enumCase)),
+				context.applySubstitutions(to: .enumCaseV1(enumCase)),
 				resolvedType,
 				location
 			)

@@ -37,7 +37,7 @@ struct CallConstraint: InferenceConstraint {
 			return solveFunction(params: params, fnReturns: fnReturns, in: context)
 		case let .instantiatable(.struct(structType)):
 			return solveStruct(structType: structType, in: context)
-		case let .enumCase(enumCase):
+		case let .enumCaseV1(enumCase):
 			return solveEnumCase(enumCase: enumCase, in: context)
 		case let .placeholder(typeVar):
 			// If it's a type var that we haven't solved yet, try deferring
@@ -231,7 +231,7 @@ struct CallConstraint: InferenceConstraint {
 //			context.unify(type, arg.asType(in: context), location)
 //		}
 
-		context.unify(returns.asType(in: context), .enumCase(enumCase), location)
+		context.unify(returns.asType(in: context), .enumCaseV1(enumCase), location)
 		return .ok
 	}
 }

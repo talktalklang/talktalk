@@ -10,6 +10,7 @@ import TalkTalkCore
 extension Constraints {
 	struct Member: Constraint {
 		let receiver: InferenceResult?
+		let expectedType: InferenceResult?
 		let memberName: String
 		let result: TypeVariable
 
@@ -18,7 +19,7 @@ extension Constraints {
 		var location: SourceLocation
 
 		func solve() throws {
-			guard let receiver = receiver?.instantiate(in: context) else {
+			guard let receiver = (receiver ?? expectedType)?.instantiate(in: context) else {
 				return
 			}
 
@@ -27,7 +28,7 @@ extension Constraints {
 
 		func solve(receiver: InferenceType, variables: Substitutions, depth: Int = 0) throws {
 			switch (receiver, variables) {
-			case let (.struct(type), variables):
+			case let (.type(type), variables):
 				let member = type.staticMember(named: memberName)
 				let instantiated = member?.instantiate(in: context, with: variables)
 
@@ -59,19 +60,8 @@ extension Constraints {
 					context.retry(self)
 				}
 
-//				let variables = if case let .instance(wrapper) = receiver {
-//					wrapper.substitutions.merging(variables) { $1 }
-//				} else {
-//					variables
-//				}
-
-//				if let memberResult = receiver.member(named: memberName)?.instantiate(in: context, with: variables) {
-//					try context.unify(asInstance(memberResult, with: variables), .typeVar(result), location)
-//				} else {
-//					print()
-//				}
 			default:
-				try context.error("TODO", at: location)
+				try context.error("TODO Member.solve", at: location)
 			}
 		}
 
@@ -85,7 +75,7 @@ extension Constraints {
 		}
 
 		func asInstance(_ result: InstantiatedResult, with variables: [TypeVariable: InferenceType]) -> InferenceType {
-			if case let .struct(structType) = result.type {
+			if case let .type(.struct(structType)) = result.type {
 				let instance = structType.instantiate(with: result.variables.merging(variables) { $1 })
 				return .instance(instance.wrapped)
 			} else {

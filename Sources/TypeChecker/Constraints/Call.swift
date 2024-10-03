@@ -36,8 +36,10 @@ extension Constraints {
 			switch callee {
 			case .function(let params, let returns):
 				try solveFunction(callee: callee, freeVars: result.variables, params: params, returns: returns)
-			case .struct(let type):
+			case .type(.struct(let type)):
 				try solveStruct(type: type, freeVars: result.variables)
+			case .type(.enumCase(let enumCase)):
+				try solveEnumCase(enumCase, freeVars: result.variables)
 			default:
 				if retries > 1 {
 					context.error("\(callee) not callable", at: location)
@@ -63,6 +65,27 @@ extension Constraints {
 
 			try context.unify(
 				replacingFreeVariable(returns.type, from: freeVars),
+				result,
+				location
+			)
+		}
+
+		private func solveEnumCase(_ enumCase: Enum.Case, freeVars: Substitutions) throws {
+			let instance = enumCase.instantiate(with: freeVars)
+
+			for (arg, param) in zip(args, enumCase.attachedTypes) {
+				let arg = arg.instantiate(in: context, with: freeVars)
+				let param = param.instantiate(in: context, with: freeVars)
+
+				try context.unify(
+					replacingFreeVariable(param.type, from: freeVars),
+					arg.type,
+					location
+				)
+			}
+
+			try context.unify(
+				.instance(.enumCase(instance)),
 				result,
 				location
 			)

@@ -32,7 +32,7 @@ extension InferenceType: CustomDebugStringConvertible {
 			"K(\(inferenceType.mangled)"
 		case .selfVar:
 			"self"
-		case let .enumCase(enumCase):
+		case let .enumCaseV1(enumCase):
 			enumCase.name
 		case let .pattern(pattern):
 			pattern.type.mangled
@@ -40,8 +40,8 @@ extension InferenceType: CustomDebugStringConvertible {
 			"any"
 		case .void:
 			"void"
-		case let .struct(type):
-			"\(type.name)"
+		case let .type(type):
+			"\(type)"
 		}
 	}
 
@@ -73,14 +73,14 @@ extension InferenceType: CustomDebugStringConvertible {
 			"\(type) (self)"
 		case let .placeholder(variable):
 			"\(variable.debugDescription) (placeholder)"
-		case let .enumCase(kase):
+		case let .enumCaseV1(kase):
 			kase.description
 		case let .pattern(pattern):
 			"pattern: \(pattern)"
 		case .void:
 			"void"
-		case let .struct(type):
-			"\(type.name)"
+		case let .type(type):
+			"\(type)"
 		}
 	}
 
@@ -112,14 +112,14 @@ extension InferenceType: CustomDebugStringConvertible {
 			"\(type) (self)"
 		case let .placeholder(variable):
 			"\(variable) (placeholder)"
-		case let .enumCase(kase):
+		case let .enumCaseV1(kase):
 			kase.description
 		case let .pattern(pattern):
 			"pattern: \(pattern)"
 		case .void:
 			"void"
-		case let .struct(type):
-			"\(type.name)"
+		case let .type(type):
+			"\(type)"
 		}
 	}
 }

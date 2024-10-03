@@ -700,7 +700,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		let type = context.type(for: expr)
 
-		guard case let .enumCase(enumCase) = type else {
+		guard case let .enumCaseV1(enumCase) = type else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
@@ -749,7 +749,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 					return nil
 				}
 
-				guard case let .enumCase(kase) = pattern.type else {
+				guard case let .enumCaseV1(kase) = pattern.type else {
 					return nil
 				}
 

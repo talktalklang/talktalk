@@ -49,7 +49,7 @@ public extension InferenceType {
 			return rhs.type.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.instanceV1(lhs), .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
-		case let (.enumCase(lhs), .instantiatable(.protocol(protocolType))):
+		case let (.enumCaseV1(lhs), .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.typeVar, rhs):
 			context.addConstraint(.equality(rhs, self, at: [.synthetic(.less)]))

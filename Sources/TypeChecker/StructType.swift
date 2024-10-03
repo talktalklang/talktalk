@@ -22,7 +22,7 @@ public final class StructType: MemberOwner, Instantiatable, Equatable {
 	}
 
 	static func extract(from type: InferenceType) -> StructType? {
-		if case let .struct(type) = type {
+		if case let .type(.struct(type)) = type {
 			return type
 		}
 

@@ -6,12 +6,16 @@
 //
 
 public enum InstanceWrapper {
-	case `struct`(Instance<StructType>)
+	case `struct`(Instance<StructType>), enumCase(Instance<Enum.Case>), `enum`(Instance<Enum>)
 
 	var substitutions: [TypeVariable: InferenceType] {
 		get {
 			switch self {
 			case .struct(let instance):
+				instance.substitutions
+			case .enum(let instance):
+				instance.substitutions
+			case .enumCase(let instance):
 				instance.substitutions
 			}
 		}
@@ -19,6 +23,10 @@ public enum InstanceWrapper {
 		set {
 			switch self {
 			case .struct(let instance):
+				instance.substitutions = newValue
+			case .enum(let instance):
+				instance.substitutions = newValue
+			case .enumCase(let instance):
 				instance.substitutions = newValue
 			}
 		}
@@ -28,12 +36,24 @@ public enum InstanceWrapper {
 		switch self {
 		case .struct(let instance):
 			instance.member(named: name)
+		case .enum(let instance):
+			instance.member(named: name)
+		case .enumCase(let instance):
+			instance.member(named: name)
 		}
 	}
 
 	func instance<T: Instantiatable & MemberOwner>(ofType: T.Type) -> Instance<T>? {
 		switch self {
 		case .struct(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
+		case .enum(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
+		case .enumCase(let instance):
 			if let instance = instance as? Instance<T> {
 				return instance
 			}
@@ -45,6 +65,10 @@ public enum InstanceWrapper {
 	var type: any Instantiatable {
 		switch self {
 		case .struct(let instance):
+			return instance.type
+		case .enum(let instance):
+			return instance.type
+		case .enumCase(let instance):
 			return instance.type
 		}
 	}

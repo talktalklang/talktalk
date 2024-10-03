@@ -781,7 +781,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {
-		guard case let .enumCase(enumCase) = expr.inferenceType else {
+		guard case let .enumCaseV1(enumCase) = expr.inferenceType else {
 			throw CompilerError.unknownIdentifier("\(expr.description)")
 		}
 

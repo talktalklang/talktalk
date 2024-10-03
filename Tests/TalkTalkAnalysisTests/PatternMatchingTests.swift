@@ -118,7 +118,7 @@ struct PatternMatchingTests: AnalysisTest {
 		let foo = stmt.casesAnalyzed[0].patternAnalyzed!
 		#expect(foo.inferenceType == .pattern(
 			Pattern(
-				type: .enumCase(EnumCase(
+				type: .enumCaseV1(EnumCase(
 					type: enumType,
 					name: "foo",
 					attachedTypes: [.base(.string)]
@@ -130,7 +130,7 @@ struct PatternMatchingTests: AnalysisTest {
 		let bar = stmt.casesAnalyzed[1].patternAnalyzed!
 		#expect(bar.inferenceType == .pattern(
 			Pattern(
-				type: .enumCase(EnumCase(
+				type: .enumCaseV1(EnumCase(
 					type: enumType,
 					name: "bar",
 					attachedTypes: [.base(.int)]

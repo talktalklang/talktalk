@@ -10,7 +10,7 @@ extension InferenceType: Equatable {
 		switch (lhs, rhs) {
 		case let (.self(lhs), .self(rhs)):
 			lhs.equals(rhs)
-		case let (.struct(lhs), .struct(rhs)):
+		case let (.type(.struct(lhs)), .type(.struct(rhs))):
 			lhs == rhs
 		case let (.instance(lhs), .instance(rhs)):
 			lhs.type.name == rhs.type.name
@@ -32,7 +32,7 @@ extension InferenceType: Equatable {
 			lhs == rhs
 		case let (.selfVar(lhs), .selfVar(rhs)):
 			lhs == rhs
-		case let (.enumCase(lhs), .enumCase(rhs)):
+		case let (.enumCaseV1(lhs), .enumCaseV1(rhs)):
 			lhs == rhs
 		case let (.pattern(lhs), .pattern(rhs)):
 			lhs == rhs

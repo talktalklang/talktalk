@@ -581,8 +581,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			return .instanceV1(instance)
 		case let .instantiatable(type):
 			return type.apply(substitutions: substitutions, in: self)
-		case let .enumCase(kase):
-			return .enumCase(
+		case let .enumCaseV1(kase):
+			return .enumCaseV1(
 				EnumCase(
 					type: kase.type,
 					name: kase.name,
@@ -679,17 +679,17 @@ public class InferenceContext: CustomDebugStringConvertible {
 			}
 
 		// MARK: Enum special cases
-		case let (.selfVar(.instantiatable(.enumType(a))), .enumCase(b)),
-		     let (.enumCase(b), .selfVar(.instantiatable(.enumType(a)))):
+		case let (.selfVar(.instantiatable(.enumType(a))), .enumCaseV1(b)),
+		     let (.enumCaseV1(b), .selfVar(.instantiatable(.enumType(a)))):
 			if a == b.type {
 				break
 			}
-		case let (.enumCase(a), .enumCase(b)):
+		case let (.enumCaseV1(a), .enumCaseV1(b)):
 			for (lhs, rhs) in zip(a.attachedTypes, b.attachedTypes) {
 				unify(lhs, rhs, location)
 			}
-		case let (.instantiatable(.enumType(type)), .enumCase(kase)),
-		     let (.enumCase(kase), .instantiatable(.enumType(type))):
+		case let (.instantiatable(.enumType(type)), .enumCaseV1(kase)),
+		     let (.enumCaseV1(kase), .instantiatable(.enumType(type))):
 			if kase.type != type {
 				addError(
 					.init(
@@ -711,8 +711,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			)
 		// Handle case where we're trying to unify an enum case with a protocol
-		case let (.instanceV1(instance), .enumCase(kase)),
-		     let (.enumCase(kase), .instanceV1(instance)):
+		case let (.instanceV1(instance), .enumCaseV1(kase)),
+		     let (.enumCaseV1(kase), .instanceV1(instance)):
 			if let type = instance.type as? ProtocolType {
 				deferConstraint(
 					TypeConformanceConstraint(

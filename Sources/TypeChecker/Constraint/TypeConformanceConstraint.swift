@@ -54,7 +54,7 @@ struct TypeConformanceConstraint: InferenceConstraint {
 			return checkConformance(of: type.extract(), to: protocolType, in: type.context)
 		case let .instanceV1(instance):
 			return checkConformance(of: instance.type, to: protocolType, in: instance.type.context)
-		case let .enumCase(enumCase):
+		case let .enumCaseV1(enumCase):
 			return checkConformance(of: enumCase.type, to: protocolType, in: context)
 		default:
 			()

@@ -29,7 +29,7 @@ struct ParamsConstraint: InferenceConstraint {
 		let callee = context.applySubstitutions(to: callee)
 
 		switch callee {
-		case .enumCase(let enumCase):
+		case .enumCaseV1(let enumCase):
 			for (param, arg) in zip(enumCase.attachedTypes, args) {
 				context.unify(param, arg.asType(in: context), location)
 			}

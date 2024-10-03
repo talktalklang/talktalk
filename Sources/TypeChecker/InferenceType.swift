@@ -7,6 +7,21 @@
 import Foundation
 import OrderedCollections
 
+public enum TypeWrapper {
+	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case)
+
+	func staticMember(named name: String) -> InferenceResult? {
+		switch self {
+		case .struct(let structType):
+			structType.staticMember(named: name)
+		case .enum(let enumType):
+			enumType.staticMember(named: name)
+		case .enumCase(let enumCase):
+			enumCase.staticMember(named: name)
+		}
+	}
+}
+
 public indirect enum InferenceType {
 	public static func optional(_ type: InferenceType) -> InferenceType {
 		let enumType = EnumTypeV1.extract(from: .type(Inferencer.stdlib.type(named: "Optional")!))!
@@ -28,7 +43,7 @@ public indirect enum InferenceType {
 	case instance(InstanceWrapper)
 
 	// Structs
-	case `struct`(StructType)
+	case type(TypeWrapper)
 
 	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceResult], InferenceResult)
@@ -67,9 +82,9 @@ public indirect enum InferenceType {
 
 	// Enum types
 	@available(*, deprecated, message: "I think we don't want this anymore.")
-	case enumCase(EnumCase)
+	case enumCaseV1(EnumCase)
 
-	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
-		InferenceType.typeVar(TypeVariable(name, id))
+	static func typeVar(_ name: String, _ id: VariableID, isGeneric: Bool = false) -> InferenceType {
+		InferenceType.typeVar(TypeVariable(name, id, isGeneric))
 	}
 }

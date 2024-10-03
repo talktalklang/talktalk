@@ -118,7 +118,7 @@ struct ContextVisitor: Visitor {
 		return result
 	}
 
-	func handleVarLet(_ syntax: VarLetDecl, context: Context) throws -> InferenceResult {
+	func handleVarLetDecl(_ syntax: VarLetDecl, context: Context) throws -> InferenceResult {
 		if let existing = context.type(named: syntax.name, includeParents: false, includeBuiltins: false) {
 			context.error("Variable \(syntax.name) is already defined as \(existing)", at: syntax.location)
 		}
@@ -293,15 +293,19 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: DeclBlockSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		for decl in syntax.decls {
+			_ = try decl.accept(self, context)
+		}
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: VarDeclSyntax, _ context: Context) throws -> InferenceResult {
-		try handleVarLet(syntax, context: context)
+		try handleVarLetDecl(syntax, context: context)
 	}
 
 	func visit(_ syntax: LetDeclSyntax, _ context: Context) throws -> InferenceResult {
-		try handleVarLet(syntax, context: context)
+		try handleVarLetDecl(syntax, context: context)
 	}
 
 	func visit(_ syntax: ParseErrorSyntax, _ context: Context) throws -> InferenceResult {
@@ -315,6 +319,7 @@ struct ContextVisitor: Visitor {
 		context.addConstraint(
 			Constraints.Member(
 				receiver: receiver,
+				expectedType: context.expectedType,
 				memberName: syntax.property,
 				result: result,
 				context: context,
@@ -411,7 +416,7 @@ struct ContextVisitor: Visitor {
 
 		// We use a Scheme for structs because they can contain generic type variables
 		let result = InferenceResult.scheme(
-			Scheme(name: syntax.name, variables: variables, type: .struct(structType))
+			Scheme(name: syntax.name, variables: variables, type: .type(.struct(structType)))
 		)
 
 		// Define the struct by name
@@ -450,19 +455,76 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: EnumDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let name = syntax.nameToken.lexeme
+		let enumType = Enum(name: name, cases: [:])
+		let enumContext = context.addChild(lexicalScope: enumType)
+
+		let variables = syntax.typeParams.map {
+			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
+			enumContext.define($0.identifier.lexeme, as: .type(.typeVar(typeVar)))
+			enumType.typeParameters[$0.identifier.lexeme] = typeVar
+			return typeVar
+		}
+
+		_ = try visit(syntax.body, enumContext)
+
+		// Enums can have generic types so we give them a scheme
+		let result = InferenceResult.scheme(
+			Scheme(
+				name: name,
+				variables: variables,
+				type: .type(.enum(enumType))
+			)
+		)
+
+		// Define the name
+		context.define(name, as: result)
+		enumContext.define(name, as: result)
+
+		// Define the node
+		context.define(syntax, as: result)
+
+		return result
 	}
 
 	func visit(_ syntax: EnumCaseDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		guard let enumType = context.lexicalScope as? Enum else {
+			throw TypeError.typeError("Did not get enum for case \(syntax.description)")
+		}
+
+		let name = syntax.nameToken.lexeme
+
+		enumType.cases[name] = try Enum.Case(
+			type: enumType,
+			name: name,
+			attachedTypes: syntax.attachedTypes.map { try $0.accept(self, context) }
+		)
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: MatchStatementSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let target = try syntax.target.accept(self, context)
+
+		try context.expecting(target) {
+			for kase in syntax.cases {
+				let result = try kase.accept(self, context)
+				context.define(kase, as: result)
+			}
+		}
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: CaseStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let pattern = try syntax.patternSyntax?.accept(self, context)
+
+		for stmt in syntax.body {
+			_ = try stmt.accept(self, context)
+		}
+
+		context.define(syntax, as: .type(.void))
+		return .type(.void)
 	}
 
 	func visit(_ syntax: EnumMemberExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -524,18 +586,13 @@ struct ContextVisitor: Visitor {
 			if case let .scheme(scheme) = type {
 				for (schemeVariable, paramSyntax) in zip(scheme.variables, $0.genericParams) {
 					let typeArgument = try visit(paramSyntax, context)
-
-//					context.addConstraint(
-//						Constraints.Equality(context: context, lhs: .type(.typeVar(schemeVariable)), rhs: typeArgument, location: paramSyntax.location)
-//					)
-
 					subsitutions[schemeVariable] = typeArgument.instantiate(in: context).type
 				}
 			}
 
 			// If it's an instance, we want to make the member be an instance
 			var result = type.instantiate(in: context, with: subsitutions).type
-			if case let .struct(type) = result {
+			if case let .type(.struct(type)) = result {
 				result = .instance(.struct(type.instantiate(with: subsitutions)))
 			}
 

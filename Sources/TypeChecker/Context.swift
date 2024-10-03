@@ -42,7 +42,7 @@ class Context {
 	// Any time a `return` statement happens in this context, we store its result in here
 	var explicitReturns: [InferenceResult] = []
 
-	// Diagnostics
+	// Diagnostics that are accumulated during checking
 	var diagnostics: [Diagnostic] = []
 
 	// Should we log everything?
@@ -51,7 +51,17 @@ class Context {
 	// A set of type variables introduced in this context
 	var variables: Set<VariableID> = []
 
+	// Does this context belong to a type? Like a struct or enum or something? If so it's a
+	// lexical scope.
 	let lexicalScope: (any MemberOwner)?
+
+	// If we're expecting a certain type while checking, it goes here. It acts as a stack.
+	var expectedTypes: [InferenceResult] = []
+
+	// A helper
+	var expectedType: InferenceResult? {
+		expectedTypes.last
+	}
 
 	init(parent: Context? = nil, lexicalScope: (any MemberOwner)?, imports: [Context] = [], verbose: Bool = false) {
 		self.parent = parent
@@ -109,6 +119,12 @@ class Context {
 		} else {
 			return nil
 		}
+	}
+
+	func expecting(_ type: InferenceResult, perform: () throws -> Void) rethrows {
+		expectedTypes.append(type)
+		try perform()
+		_ = expectedTypes.popLast()
 	}
 
 	func freshID() -> VariableID {
@@ -291,10 +307,10 @@ class Context {
 			}
 
 			return .instance(instance)
-		case .self(let type):
+		case .self:
 			()
-		case .struct(_):
-			() // Structs are meant to be blueprints so they should not get replacements. Instances should.
+		case .type(_):
+			() // Types are meant to be blueprints so they should not get replacements. Instances should.
 		case .instanceV1(_):
 			()
 		case .instantiatable(_):
@@ -305,7 +321,7 @@ class Context {
 			()
 		case .selfVar(_):
 			()
-		case .enumCase(_):
+		case .enumCaseV1(_):
 			()
 		case .pattern(_):
 			()

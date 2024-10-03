@@ -123,7 +123,7 @@ struct InferenceVisitor: Visitor {
 		switch type {
 		case let .function(params, _):
 			return params
-		case let .enumCase(enumCase):
+		case let .enumCaseV1(enumCase):
 			return enumCase.instantiate(in: context, with: substitutions).attachedTypes.map { .type($0) }
 		default:
 			return []
@@ -365,7 +365,7 @@ struct InferenceVisitor: Visitor {
 				return .instanceV1(instantiatable.instantiate(with: [:], in: context))
 			case let .function(_, returns):
 				return context.applySubstitutions(to: returns)
-			case let .enumCase(enumCase):
+			case let .enumCaseV1(enumCase):
 				// If we determine the callee to be an enum case, then its type is actually the enum type. We instantiate the
 				// enum type with substitutions coming from the args
 				return .instanceV1(enumCase.type.instantiate(with: zip(enumCase.attachedTypes, args).reduce(into: [:]) { res, pair in
@@ -592,8 +592,8 @@ struct InferenceVisitor: Visitor {
 			}
 
 			returns = member
-		case let .type(.enumCase(enumCase)):
-			returns = .type(.enumCase(enumCase))
+		case let .type(.enumCaseV1(enumCase)):
+			returns = .type(.enumCaseV1(enumCase))
 		case let .type(.instanceV1(instance)) where instance.type is EnumTypeV1:
 			// swiftlint:disable force_unwrapping force_cast
 			if let enumType = instance.type as? EnumTypeV1, let member = enumType.member(named: expr.property, in: context) {
@@ -1016,7 +1016,7 @@ struct InferenceVisitor: Visitor {
 				)
 
 				enumType.cases.append(enumCase)
-				context.extend(kase, with: .type(.enumCase(enumCase)))
+				context.extend(kase, with: .type(.enumCaseV1(enumCase)))
 			} else {
 				try decl.accept(self, enumContext)
 
@@ -1156,7 +1156,7 @@ struct InferenceVisitor: Visitor {
 			return structType.context.lookupVariable(named: name)?.asType(in: context)
 		case let .instanceV1(instance):
 			return instance.relatedType(named: name) ?? instance.type.context.lookupVariable(named: name)?.asType(in: context)
-		case let .enumCase(enumCase):
+		case let .enumCaseV1(enumCase):
 			if let typeVar = enumCase.type.typeContext.typeParameters.first(where: { $0.name == name }) {
 				return .typeVar(typeVar)
 			}

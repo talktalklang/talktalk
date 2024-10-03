@@ -48,7 +48,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 			name: name,
 			cases: cases.map {
 				// swiftlint:disable force_unwrapping
-				EnumCase.extract(from: .type(context.applySubstitutions(to: .enumCase($0), with: substitutions)))!
+				EnumCase.extract(from: .type(context.applySubstitutions(to: .enumCaseV1($0), with: substitutions)))!
 				// swiftlint:enable force_unwrapping
 			},
 			context: context,
@@ -58,7 +58,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 
 	func staticMember(named name: String) -> InferenceResult? {
 		if let kase = cases.first(where: { $0.name == name }) {
-			return .type(.enumCase(kase))
+			return .type(.enumCaseV1(kase))
 		}
 
 		if let member = typeContext.staticMethods[name] ?? typeContext.staticProperties[name] {
@@ -74,7 +74,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 		}
 
 		if let kase = cases.first(where: { $0.name == name }) {
-			return .type(.enumCase(kase))
+			return .type(.enumCaseV1(kase))
 		}
 
 		return nil

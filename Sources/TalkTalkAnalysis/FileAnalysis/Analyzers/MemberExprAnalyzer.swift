@@ -18,7 +18,7 @@ struct MemberExprAnalyzer: Analyzer {
 		let type = context.inferenceContext.lookup(syntax: expr)
 
 		// If it's an enum case we want to return a different syntax expression...
-		if case let .enumCase(enumCase) = type,
+		if case let .enumCaseV1(enumCase) = type,
 		   let kase = enumCase.type.cases.enumerated().first(where: { $0.element.name == expr.property })
 		{
 			guard let expr = expr as? MemberExprSyntax else {
@@ -29,7 +29,7 @@ struct MemberExprAnalyzer: Analyzer {
 				wrapped: expr,
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.element.attachedTypes,
-				inferenceType: .enumCase(kase.element),
+				inferenceType: .enumCaseV1(kase.element),
 				environment: context
 			)
 		}
@@ -45,7 +45,7 @@ struct MemberExprAnalyzer: Analyzer {
 				wrapped: expr,
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.attachedTypes,
-				inferenceType: .enumCase(kase),
+				inferenceType: .enumCaseV1(kase),
 				environment: context
 			)
 		}
@@ -130,7 +130,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if memberSymbol == nil,
-		   case let .enumCase(enumCase) = receiver.typeAnalyzed,
+		   case let .enumCaseV1(enumCase) = receiver.typeAnalyzed,
 		   let member = enumCase.type.member(named: expr.property, in: context.inferenceContext)
 		{
 			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
