@@ -498,7 +498,11 @@ struct ContextVisitor: Visitor {
 		let name = syntax.name.lexeme
 
 		let annotatedType = try syntax.typeAnnotation.flatMap {
-			try $0.accept(self, context)
+			for typeParam in $0.genericParams {
+				print("we need to bind stuff here.")
+			}
+
+			return try visit($0, context)
 		}
 
 		let valueType = try syntax.defaultValue.flatMap {
