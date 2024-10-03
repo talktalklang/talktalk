@@ -33,7 +33,7 @@ public final class StructType: MemberOwner, Instantiatable, Equatable {
 		return nil
 	}
 
-	public func instantiate(with substitutions: [TypeVariable: InferenceResult]) -> Instance<StructType> {
+	public func instantiate(with substitutions: [TypeVariable: InferenceType]) -> Instance<StructType> {
 		Instance(type: self, substitutions: substitutions)
 	}
 

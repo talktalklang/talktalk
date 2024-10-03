@@ -8,5 +8,5 @@
 public protocol Instantiatable: MemberOwner {
 	var name: String { get }
 
-	func instantiate(with substitutions: [TypeVariable: InferenceResult]) -> Instance<Self>
+	func instantiate(with substitutions: [TypeVariable: InferenceType]) -> Instance<Self>
 }

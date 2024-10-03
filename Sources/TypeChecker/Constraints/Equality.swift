@@ -27,7 +27,11 @@ extension Constraints {
 		}
 
 		func solve() throws {
-			try context.unify(lhs, rhs, location)
+			try context.unify(
+				lhs.instantiate(in: context).type,
+				rhs.instantiate(in: context).type,
+				location
+			)
 		}
 	}
 }

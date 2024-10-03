@@ -38,13 +38,13 @@ extension Constraints {
 			case (.base(.pointer), .base(.int), .plus),
 				(.base(.pointer), .base(.int), .minus):
 
-				try context.unify(.type(.typeVar(result)), .type(.base(.pointer)), location)
+				try context.unify(.typeVar(result), .base(.pointer), location)
 			case (.base(.int), .base(.int), .plus),
 					 (.base(.int), .base(.int), .minus),
 					 (.base(.int), .base(.int), .star),
 					 (.base(.int), .base(.int), .slash):
 
-				try context.unify(.type(.typeVar(result)), .type(.base(.int)), location)
+				try context.unify(.typeVar(result), .base(.int), location)
 			case let (.base(.int), .typeVar(variable), .plus),
 				let (.base(.int), .typeVar(variable), .minus),
 				let (.base(.int), .typeVar(variable), .star),
@@ -62,17 +62,17 @@ extension Constraints {
 				let (.typeVar(variable), .base(.int), .greater),
 				let (.typeVar(variable), .base(.int), .greaterEqual):
 
-				try context.unify(.type(.typeVar(variable)), .type(.base(.int)), location)
-				try context.unify(.type(.typeVar(result)), .type(.base(.int)), location)
+				try context.unify(.typeVar(variable), .base(.int), location)
+				try context.unify(.typeVar(result), .base(.int), location)
 			case (.base(.string), (.base(.string)), .plus):
-				try context.unify(.type(.typeVar(result)), .type(.base(.string)), location)
+				try context.unify(.typeVar(result), .base(.string), location)
 			case let (.typeVar(lhs), .typeVar(rhs), _):
 				// Just say that it's the same as the result and hope for the best
-				try context.unify(.type(.typeVar(lhs)), .type(.typeVar(result)), location)
-				try context.unify(.type(.typeVar(rhs)), .type(.typeVar(result)), location)
+				try context.unify(.typeVar(lhs), .typeVar(result), location)
+				try context.unify(.typeVar(rhs), .typeVar(result), location)
 			default:
 				context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
-				try context.unify(.type(.any), .type(.typeVar(result)), location)
+				try context.unify(.any, .typeVar(result), location)
 			}
 		}
 	}

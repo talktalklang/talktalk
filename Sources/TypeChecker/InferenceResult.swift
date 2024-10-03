@@ -7,7 +7,15 @@
 
 public struct InstantiatedResult {
 	let type: InferenceType
-	let variables: [TypeVariable: InferenceResult]
+	let variables: [TypeVariable: InferenceType]
+}
+
+extension Dictionary<TypeVariable, InferenceType> {
+	var asResults: [TypeVariable: InferenceResult] {
+		reduce(into: [:]) {
+			$0[$1.key] = .type($1.value)
+		}
+	}
 }
 
 public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
@@ -15,18 +23,19 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 
 	func instantiate(
 		in context: Context,
-		with substitutions: [TypeVariable: InferenceResult] = [:],
+		with substitutions: [TypeVariable: InferenceType] = [:],
 		file: String = #file,
 		line: UInt32 = #line
 	) -> InstantiatedResult {
-		let (type, variables) = switch self {
+		let (type, variables): (InferenceType, [TypeVariable: InferenceType])
+		switch self {
 		case .scheme(let scheme):
-			context.instantiate(scheme, with: substitutions, file: file, line: line)
+			(type, variables) = context.instantiate(scheme, with: substitutions, file: file, line: line)
 		case .type(let inferenceType):
-			if case let .typeVar(typeVar) = inferenceType, case let .type(type) = substitutions[typeVar] {
-				(type, substitutions)
+			if case let .typeVar(typeVar) = inferenceType, let substitution = substitutions[typeVar] {
+				(type, variables) = (substitution, substitutions)
 			} else {
-				(inferenceType, substitutions)
+				(type, variables) = (inferenceType, substitutions)
 			}
 		}
 

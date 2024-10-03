@@ -157,15 +157,15 @@ struct ContextVisitor: Visitor {
 	func visit(_ syntax: CallExprSyntax, _ context: Context) throws -> InferenceResult {
 		let callee = try syntax.callee.accept(self, context)
 		let args = try syntax.args.map { try $0.accept(self, context) }
-		let returns: InferenceResult = .type(.typeVar(context.freshTypeVariable(syntax.description)))
+		let returns: InferenceType = .typeVar(context.freshTypeVariable(syntax.description))
 
 		context.addConstraint(
 			Constraints.Call(context: context, callee: callee, args: args, result: returns, location: syntax.location)
 		)
 
-		context.define(syntax, as: returns)
+		context.define(syntax, as: .type(returns))
 
-		return returns
+		return .type(returns)
 	}
 
 	func visit(_ syntax: DefExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -382,7 +382,6 @@ struct ContextVisitor: Visitor {
 			return typeVar
 		}
 
-//		structContext.define("self", as: .type(.self(structType)))
 		structContext.define("self", as: .scheme(
 			Scheme(name: "self", variables: variables, type: .self(structType)))
 		)

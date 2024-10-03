@@ -13,7 +13,7 @@ extension Constraints {
 		let context: Context
 		let callee: InferenceResult
 		let args: [InferenceResult]
-		let result: InferenceResult
+		let result: InferenceType
 		let location: SourceLocation
 		var retries: Int = 0
 
@@ -31,7 +31,7 @@ extension Constraints {
 
 		func solve() throws {
 			let result = callee.instantiate(in: context)
-			let callee = context.applySubstitutions(to: .type(result.type), with: result.variables)
+			let callee = context.applySubstitutions(to: result.type, with: result.variables.asResults)
 
 			switch callee {
 			case .function(let params, let returns):
@@ -47,30 +47,38 @@ extension Constraints {
 			}
 		}
 
-		private func solveFunction(callee: InferenceType, freeVars: [TypeVariable: InferenceResult], params: [InferenceResult], returns: InferenceResult) throws {
+		private func solveFunction(callee: InferenceType, freeVars: [TypeVariable: InferenceType], params: [InferenceResult], returns: InferenceResult) throws {
+			let returns = returns.instantiate(in: context)
+
 			for (arg, param) in zip(args, params) {
-				if case let .type(.typeVar(typeVar)) = param {
-					try context.unify(freeVars[typeVar] ?? param, arg, location)
-				} else {
-					try context.unify(param, arg, location)
-				}
+				let arg = arg.instantiate(in: context, with: freeVars)
+				let param = param.instantiate(in: context, with: freeVars)
+
+				try context.unify(
+					replacingFreeVariable(param.type, from: freeVars),
+					arg.type,
+					location
+				)
 			}
 
-			if case let .type(.typeVar(typeVar)) = returns {
-				try context.unify(freeVars[typeVar] ?? returns, result, location)
-			} else {
-				try context.unify(returns, result, location)
-			}
+			try context.unify(
+				replacingFreeVariable(returns.type, from: freeVars),
+				result,
+				location
+			)
 		}
 
-		private func solveStruct(type: StructType, freeVars: [TypeVariable: InferenceResult]) throws {
+		private func solveStruct(type: StructType, freeVars: [TypeVariable: InferenceType]) throws {
 			let instance = Instance(type: type, substitutions: freeVars)
 
 			// Check to see if we have an initializer. If we do, unify params/args
 			let initializer = initializer(for: type, freeVars: freeVars)
 			if case let .function(params, _) = initializer.type {
-				for (arg, var param) in zip(args, params) {
-					if case let .typeVar(variable) = context.applySubstitutions(to: param, with: freeVars) {
+				for (arg, param) in zip(args, params) {
+					let arg = arg.instantiate(in: context, with: freeVars).type
+					var param = param.instantiate(in: context, with: freeVars).type
+
+					if case let .typeVar(variable) = param {
 						param = freeVars[variable] ?? instance.substitutions[variable] ?? param
 					}
 
@@ -78,18 +86,18 @@ extension Constraints {
 				}
 			}
 
-			try context.unify(.type(.instance(.struct(instance))), result, location)
+			try context.unify(.instance(.struct(instance)), result, location)
 		}
 
-		private func replacingFreeVariable(_ typeVariable: InferenceResult, from variables: [TypeVariable: InferenceResult]) -> InferenceResult {
-			if case let .type(.typeVar(typeVar)) = typeVariable {
+		private func replacingFreeVariable(_ typeVariable: InferenceType, from variables: [TypeVariable: InferenceType]) -> InferenceType {
+			if case let .typeVar(typeVar) = typeVariable {
 				return variables[typeVar] ?? typeVariable
 			} else {
 				return typeVariable
 			}
 		}
 
-		private func initializer(for type: StructType, freeVars: [TypeVariable: InferenceResult]) -> InstantiatedResult {
+		private func initializer(for type: StructType, freeVars: [TypeVariable: InferenceType]) -> InstantiatedResult {
 			if let initializer = type.member(named: "init")?.instantiate(in: context, with: freeVars) {
 				// We've got an init defined, just use that
 				return initializer

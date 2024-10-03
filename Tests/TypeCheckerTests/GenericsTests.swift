@@ -90,6 +90,7 @@ struct GenericsTests: TypeCheckerTest {
 		)
 
 		let context = try solve(syntax, verbose: true)
+		print()
 		#expect(context[syntax[4]] == .base(.int))
 	}
 

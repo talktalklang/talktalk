@@ -8,7 +8,7 @@
 public enum InstanceWrapper {
 	case `struct`(Instance<StructType>)
 
-	var substitutions: [TypeVariable: InferenceResult] {
+	var substitutions: [TypeVariable: InferenceType] {
 		get {
 			switch self {
 			case .struct(let instance):
@@ -52,10 +52,10 @@ public enum InstanceWrapper {
 
 public class Instance<Kind: Instantiatable & MemberOwner> {
 	public var type: Kind
-	public var substitutions: [TypeVariable: InferenceResult]
+	public var substitutions: [TypeVariable: InferenceType]
 	public var name: String { type.name }
 
-	init(type: Kind, substitutions: [TypeVariable : InferenceResult] = [:]) {
+	init(type: Kind, substitutions: [TypeVariable : InferenceType] = [:]) {
 		self.type = type
 		self.substitutions = substitutions
 	}
