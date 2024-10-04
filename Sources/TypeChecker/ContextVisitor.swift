@@ -327,6 +327,8 @@ struct ContextVisitor: Visitor {
 			)
 		)
 
+		context.define(syntax, as: .type(.typeVar(result)))
+
 		return .type(.typeVar(result))
 	}
 
@@ -533,10 +535,10 @@ struct ContextVisitor: Visitor {
 				let pattern = try patternSyntax.accept(patternVisitor, childContext)
 				context.define(patternSyntax, as: .type(.pattern(pattern)))
 			}
+		}
 
-			for stmt in syntax.body {
-				_ = try stmt.accept(self, childContext)
-			}
+		for stmt in syntax.body {
+			_ = try stmt.accept(self, childContext)
 		}
 
 		context.define(syntax, as: .type(.void))

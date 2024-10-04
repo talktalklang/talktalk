@@ -33,6 +33,11 @@ extension Constraints {
 				)
 			}
 
+			// If we don't have a resolved receiver still, see if we can use a static member
+			if resolvedReceiver == nil, let lexicalScope = context.lookupLexicalScope() {
+				resolvedReceiver = .init(type: .type(lexicalScope.wrapped), variables: [:])
+			}
+
 			guard let resolvedReceiver else {
 				context.error("Could not determine receiver for `\(memberName)`", at: location)
 				return

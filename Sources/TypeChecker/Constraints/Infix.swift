@@ -73,6 +73,10 @@ extension Constraints {
 			case let (.typeVar(typeVar), type, .equalEqual), let (type, .typeVar(typeVar), .equalEqual),
 					let (.typeVar(typeVar), type, .bangEqual), let (type, .typeVar(typeVar), .bangEqual):
 				try context.unify(.typeVar(typeVar), type, location)
+			case let (.self(lhs), .instance(rhs), .equalEqual), let (.instance(rhs), .self(lhs), .equalEqual),
+				let (.self(lhs), .instance(rhs), .bangEqual), let (.instance(rhs), .self(lhs), .bangEqual):
+				try context.unify(.type(lhs.wrapped), .type(rhs.type.wrapped), location)
+				try context.unify(.typeVar(result), .base(.bool), location)
 			default:
 				context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
 				try context.unify(.any, .typeVar(result), location)

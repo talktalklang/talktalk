@@ -18,4 +18,17 @@ extension MemberOwner {
 	func equals(_ rhs: any MemberOwner) -> Bool {
 		name == rhs.name
 	}
+
+	var wrapped: TypeWrapper {
+		switch self {
+		case let type as StructType:
+			return .struct(type)
+		case let type as Enum:
+			return .enum(type)
+		case let type as Enum.Case:
+			return .enumCase(type)
+		default:
+			fatalError("Unexpected type: \(self)")
+		}
+	}
 }

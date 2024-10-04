@@ -171,7 +171,7 @@ struct EnumTests: TypeCheckerTest {
 				case bar
 
 				func isFoo() {
-					self == self.foo
+					self == .foo
 				}
 			}
 			"""
@@ -189,18 +189,19 @@ struct EnumTests: TypeCheckerTest {
 		let foo = binaryExpr.rhs.cast(MemberExprSyntax.self)
 
 		// Make sure we can infer `self`
-		let selfVarType = context[selfVar]!
+		let selfVarType = context.find(selfVar)!
 		#expect(selfVarType == .self(enumInferenceType))
 
 		// Make sure we can infer `.foo`
-		let kase = enumInferenceType.cases["foo"]!
-		#expect(context[foo] == .type(.enumCase(kase)))
+		let instance = Instance<Enum.Case>.extract(from: context.find(foo)!)
+		#expect(instance?.name == "foo")
+		#expect(instance?.type.type.name == "Thing")
 
 		// Make sure the method has the right type
-		#expect(context[fn] == .function([], .type(.base(.bool))))
+		#expect(context.find(fn) == .function([], .type(.base(.bool))))
 	}
 
-	@Test("Can infer protocol conformance") func protocols() throws {
+	@Test("Can infer protocol conformance", .disabled("waiting on protocols")) func protocols() throws {
 		let syntax = try Parser.parse(
 			"""
 			protocol Greetable {

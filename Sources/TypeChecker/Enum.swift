@@ -27,8 +27,16 @@ public final class Enum: MemberOwner, Instantiatable {
 			return member
 		}
 
-		public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {
+		static func extract(from type: InferenceType) -> Enum.Case? {
+			if case let .type(.enumCase(type)) = type {
+				return type
+			}
 
+			return nil
+		}
+
+		public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {
+			()
 		}
 
 		public func instantiate(with substitutions: [TypeVariable : InferenceType]) -> Instance<Enum.Case> {

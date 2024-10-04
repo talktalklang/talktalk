@@ -187,10 +187,32 @@ class Context {
 		return nil
 	}
 
+	func lookupLexicalScope() -> (any MemberOwner)? {
+		if let lexicalScope {
+			return lexicalScope
+		}
+
+		return parent?.lexicalScope
+	}
+
 	func addChild(lexicalScope: (any MemberOwner)? = nil) -> Context {
 		let child = Context(parent: self, lexicalScope: lexicalScope)
 		children.append(child)
 		return child
+	}
+
+	func find(_ syntax: any Syntax) -> InferenceType? {
+		if let result = environment[syntax.id] {
+			return applySubstitutions(to: result)
+		}
+
+		for child in children {
+			if let result = child.find(syntax) {
+				return result
+			}
+		}
+
+		return nil
 	}
 
 	func variable(named name: String) -> InferenceResult? {
@@ -244,11 +266,6 @@ class Context {
 	}
 
 	func bind(_ typeVariable: TypeVariable, to type: InferenceType) throws {
-//		if typeVariable.isGeneric {
-//			return
-//		}
-
-		// TODO: Do we need this?
 		try parent?.bind(typeVariable, to: type)
 
 		substitutions[typeVariable] = .type(type)
