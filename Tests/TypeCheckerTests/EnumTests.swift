@@ -117,14 +117,12 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context.errors == [])
+		let context = try solve(syntax)
 
-		let enumResult = try context.get(syntax[0])
-		let enumType = try #require(EnumTypeV1.extract(from: enumResult))
+		let enumType = try #require(Enum.extract(from: context[syntax[0]]!))
 		#expect(enumType.name == "A")
 
-		let b = try #require(EnumTypeV1.extract(from: .type(context.applySubstitutions(to: enumType.cases[0].attachedTypes[0]))))
+		let b = try #require(Enum.extract(from: context.applySubstitutions(to: enumType.cases["foo"]!.attachedTypes[0])))
 		#expect(b.name == "B")
 	}
 
