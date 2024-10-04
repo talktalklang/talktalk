@@ -530,9 +530,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
-		case let .pattern(pattern):
-			return .pattern(
-				Pattern(
+		case let .patternV1(pattern):
+			return .patternV1(
+				PatternV1(
 					type: applySubstitutions(to: pattern.type, with: substitutions),
 					arguments: pattern.arguments.map {
 						switch $0 {
@@ -726,9 +726,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 			if lhs.type is ProtocolType || rhs.type is ProtocolType {
 				break
 			}
-		case let (.pattern(pattern), rhs):
+		case let (.patternV1(pattern), rhs):
 			unify(pattern.type, rhs, location)
-		case let (lhs, .pattern(pattern)):
+		case let (lhs, .patternV1(pattern)):
 			unify(lhs, pattern.type, location)
 		case (.void, .void):
 			() // This is chill

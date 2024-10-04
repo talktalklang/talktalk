@@ -8,7 +8,7 @@
 import Foundation
 import TalkTalkCore
 
-public struct Pattern: Equatable, Hashable, CustomStringConvertible {
+public struct PatternV1: Equatable, Hashable, CustomStringConvertible {
 	public enum Argument: Equatable, Hashable {
 		case value(InferenceType), variable(String, InferenceResult)
 	}
@@ -48,13 +48,13 @@ public enum PatternError: Error, CustomStringConvertible, LocalizedError {
 	}
 }
 
-struct PatternVisitor: Visitor {
+struct PatternV1Visitor: Visitor {
 	let inferenceVisitor: InferenceVisitor
 
 	typealias Context = InferenceContext
-	typealias Value = Pattern.Argument
+	typealias Value = PatternV1.Argument
 
-	func unresolvedReceiver(_ expr: MemberExprSyntax, context: InferenceContext) throws -> Pattern.Argument {
+	func unresolvedReceiver(_ expr: MemberExprSyntax, context: InferenceContext) throws -> PatternV1.Argument {
 		switch context.expectation {
 		case let .type(.instanceV1(instance)):
 			if let member = instance.member(named: expr.property, in: context) {
@@ -82,14 +82,14 @@ struct PatternVisitor: Visitor {
 		throw InferencerError.cannotInfer("could not resolve receiver of \(expr.description)")
 	}
 
-	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: CallExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		guard case let .value(type) = try expr.callee.accept(self, context) else {
 			throw PatternError.invalid("variable cannot be callee")
 		}
 
 		let params = try inferenceVisitor.parameters(of: context.get(expr.callee).asType(in: context), in: context)
 
-		var args: [Pattern.Argument] = []
+		var args: [PatternV1.Argument] = []
 		for (param, arg) in zip(params, expr.args) {
 			try context.expecting(param.asType(in: context)) {
 				try arg.accept(inferenceVisitor, context)
@@ -110,8 +110,8 @@ struct PatternVisitor: Visitor {
 		}, location: expr.location, isRetry: false))
 
 		return .value(
-			InferenceType.pattern(
-				Pattern(
+			InferenceType.patternV1(
+				PatternV1(
 					type: type,
 					arguments: args
 				)
@@ -183,16 +183,16 @@ struct PatternVisitor: Visitor {
 //		)
 	}
 
-	func visit(_ expr: Argument, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: Argument, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: LiteralExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: LiteralExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try inferenceVisitor.visit(expr, context)
 		return try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: VarExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		let type = try context.expectation ?? context.get(expr)
 
 		context.extend(expr, with: type)
@@ -200,27 +200,27 @@ struct PatternVisitor: Visitor {
 		return .variable(expr.name, type)
 	}
 
-	func visit(_ expr: BinaryExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: BinaryExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: StructExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: StructExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: VarDeclSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 //		try context.defineVariable(named: expr.name, as: context.get(expr).asType(in: context), at: expr.location)
 
 		try .variable(expr.name, context.get(expr))
 	}
 
-	func visit(_ expr: LetDeclSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: LetDeclSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 //		try context.defineVariable(named: expr.name, as: context.get(expr).asType(in: context), at: expr.location)
 
 		try .variable(expr.name, context.get(expr))
 	}
 
-	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: MemberExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		if expr.receiver == nil {
 			return try unresolvedReceiver(expr, context: context)
 		}
@@ -230,155 +230,155 @@ struct PatternVisitor: Visitor {
 		return try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: TypeExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ArrayLiteralExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: SubscriptExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: SubscriptExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: DictionaryLiteralExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: DictionaryElementExprSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: DictionaryElementExprSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try .value(context.get(expr).asType(in: context))
 	}
 
-	func visit(_ expr: DefExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: DefExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: IdentifierExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: IdentifierExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: UnaryExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: UnaryExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: IfExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: IfExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: WhileStmtSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: WhileStmtSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: BlockStmtSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: BlockStmtSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: FuncExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: FuncExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ParamsExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ParamsExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ParamSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ParamSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: GenericParamsSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: GenericParamsSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: DeclBlockSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: DeclBlockSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ParseErrorSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ParseErrorSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ReturnStmtSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ReturnStmtSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: InitDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: InitDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ImportStmtSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ImportStmtSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ExprStmtSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ExprStmtSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		try expr.expr.accept(self, context)
 	}
 
-	func visit(_ expr: IfStmtSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: IfStmtSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: StructDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: StructDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ProtocolDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ProtocolDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ProtocolBodyDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: ProtocolBodyDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: FuncSignatureDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: FuncSignatureDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: EnumDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: EnumDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: EnumCaseDeclSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: EnumCaseDeclSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: MatchStatementSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: MatchStatementSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: CaseStmtSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: CaseStmtSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: EnumMemberExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: EnumMemberExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: InterpolatedStringExprSyntax, _: InferenceContext) throws -> Pattern.Argument {
+	func visit(_ expr: InterpolatedStringExprSyntax, _: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	func visit(_ expr: ForStmtSyntax, _: Context) throws -> Pattern.Argument {
+	func visit(_ expr: ForStmtSyntax, _: Context) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	public func visit(_ expr: LogicalExprSyntax, _: Context) throws -> Pattern.Argument {
+	public func visit(_ expr: LogicalExprSyntax, _: Context) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> Pattern.Argument {
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	public func visit(_ expr: LetPatternSyntax, _ context: InferenceContext) throws -> Pattern.Argument {
+	public func visit(_ expr: LetPatternSyntax, _ context: InferenceContext) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	public func visit(_ expr: PropertyDeclSyntax, _ context: Context) throws -> Pattern.Argument {
+	public func visit(_ expr: PropertyDeclSyntax, _ context: Context) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 
-	public func visit(_ expr: MethodDeclSyntax, _ context: Context) throws -> Pattern.Argument {
+	public func visit(_ expr: MethodDeclSyntax, _ context: Context) throws -> PatternV1.Argument {
 		throw PatternError.invalid(expr.description)
 	}
 

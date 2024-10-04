@@ -95,7 +95,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let enumType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
 
 		let foo = context.lookup(syntax: call1)
-		#expect(foo == .pattern(Pattern(
+		#expect(foo == .patternV1(PatternV1(
 			type: .enumCaseV1(
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
@@ -105,7 +105,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)))
 
 		let bar = context.lookup(syntax: call2)
-		#expect(bar == .pattern(Pattern(
+		#expect(bar == .patternV1(PatternV1(
 			type: .enumCaseV1(
 				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
@@ -157,7 +157,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 
 		let foo = context.lookup(syntax: case1)
 
-		#expect(foo == .pattern(Pattern(
+		#expect(foo == .patternV1(PatternV1(
 			type: .enumCaseV1(
 				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
 			),
@@ -165,7 +165,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		)))
 
 		let bar = context.lookup(syntax: case2)
-		#expect(bar == .pattern(Pattern(
+		#expect(bar == .patternV1(PatternV1(
 			type: .enumCaseV1(
 				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
 			),
@@ -210,7 +210,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 		#expect(context.errors.isEmpty)
 
 		let actual = context.lookup(syntax: call1)!
-		let expected = InferenceType.pattern(Pattern(
+		let expected = InferenceType.patternV1(PatternV1(
 			type: .enumCaseV1(
 				EnumCase(
 					type: bottomType,
@@ -230,8 +230,8 @@ struct PatternMatchingTests: TypeCheckerTest {
 			),
 			arguments: [
 				.value(
-					.pattern(
-						Pattern(
+					.patternV1(
+						PatternV1(
 							type: .enumCaseV1(
 								EnumCase(type: topType, name: "top", attachedTypes: [.base(.string)])
 							),

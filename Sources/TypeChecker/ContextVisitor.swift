@@ -517,10 +517,22 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: CaseStmtSyntax, _ context: Context) throws -> InferenceResult {
-		let pattern = try syntax.patternSyntax?.accept(self, context)
+		let childContext = context.addChild(lexicalScope: context.lexicalScope)
 
-		for stmt in syntax.body {
-			_ = try stmt.accept(self, context)
+		guard let expectedType = context.expectedType else {
+			throw TypeError.typeError("Expected type for case \(syntax.description)")
+		}
+
+		try childContext.expecting(expectedType) {
+			if let patternSyntax = syntax.patternSyntax {
+				let patternVisitor = PatternVisitor(visitor: self)
+				let pattern = try patternSyntax.accept(patternVisitor, childContext)
+				context.define(patternSyntax, as: .type(.pattern(pattern)))
+			}
+
+			for stmt in syntax.body {
+				_ = try stmt.accept(self, childContext)
+			}
 		}
 
 		context.define(syntax, as: .type(.void))

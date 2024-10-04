@@ -47,7 +47,7 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax)
+		let context = try solve(syntax, verbose: true)
 		let instance = Instance<Enum.Case>.extract(from: context[syntax[1]]!)!
 		#expect(instance.type.type.name == "Thing")
 		#expect(instance.type.name == "foo")
@@ -59,6 +59,9 @@ struct EnumTests: TypeCheckerTest {
 			enum Thing<Wrapped> {
 				case foo(Wrapped)
 			}
+
+			Thing.foo(123)
+			Thing.foo("123")
 
 			match Thing.foo(123) {
 			case .foo(let wrapped):
@@ -72,7 +75,7 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax)
+		let context = try solve(syntax, verbose: true)
 		let enumType = try #require(Enum.extract(from: context[syntax[0]]!))
 
 		#expect(enumType.name == "Thing")
@@ -81,21 +84,24 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases["foo"]!.attachedTypes.count == 1)
 		#expect(enumType.cases["foo"]!.attachedTypes[0] == .type(.typeVar("Wrapped", 1, isGeneric: true))) // Make sure int doesn't leak to outer generic
 
-		let wrappedIntVar = syntax[1].cast(MatchStatementSyntax.self)
+		let wrappedInt = Instance<Enum.Case>.extract(from: context[syntax[1]]!)
+		#expect(wrappedInt?.substitutions[.new("Wrapped", 1, isGeneric: true)] == .base(.int))
+
+		let wrappedString = Instance<Enum.Case>.extract(from: context[syntax[2]]!)
+		#expect(wrappedString?.substitutions[.new("Wrapped", 1, isGeneric: true)] == .base(.string))
+
+
+		let wrappedIntVar = syntax[3].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
 
-		#expect(context[wrappedIntVar] == .base(.int))
+		#expect(context.children[1][wrappedIntVar] == .base(.int))
 
-//		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 1)) // Make sure we're still good here
-//
-//		let wrappedStringVar = syntax[2].cast(MatchStatementSyntax.self)
-//			.cases[0].body[0]
-//			.cast(ExprStmtSyntax.self).expr
-//
-//		#expect(context[wrappedStringVar] == .type(.base(.string)))
-//
-//		#expect(enumType.cases[0].attachedTypes[0] == .typeVar("Wrapped", 1)) // Make sure we're still good here
+		let wrappedStringVar = syntax[4].cast(MatchStatementSyntax.self)
+			.cases[0].body[0]
+			.cast(ExprStmtSyntax.self).expr
+
+		#expect(context.children[2][wrappedStringVar] == .base(.string))
 	}
 
 	@Test("Can infer out of order decls") func outOfOrder() throws {

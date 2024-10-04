@@ -10,6 +10,17 @@ import OrderedCollections
 public enum TypeWrapper {
 	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case)
 
+	func instantiate(with variables: Substitutions) -> InstanceWrapper {
+		switch self {
+		case .struct(let type):
+			return .struct(type.instantiate(with: variables))
+		case .enum(let type):
+			return .enum(type.instantiate(with: variables))
+		case .enumCase(let type):
+			return .enumCase(type.instantiate(with: variables))
+		}
+	}
+
 	func staticMember(named name: String) -> InferenceResult? {
 		switch self {
 		case .struct(let structType):
@@ -45,6 +56,9 @@ public indirect enum InferenceType {
 	// Structs
 	case type(TypeWrapper)
 
+	// Pattern matching
+	case pattern(Pattern)
+
 	// Function type. Also used for methods. The first type is args, the second is return type.
 	case function([InferenceResult], InferenceResult)
 
@@ -64,7 +78,7 @@ public indirect enum InferenceType {
 	case selfVar(InferenceType)
 
 	// Pattern matching (type, associated values)
-	case pattern(Pattern)
+	case patternV1(PatternV1)
 
 	// When we can't figure it out or don't care
 	case any

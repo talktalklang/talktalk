@@ -60,8 +60,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 			return
 		}
 
-		#expect(params == [.type(.typeVar("x", 0))])
-		#expect(returns == .type(.typeVar("x", 0)))
+		#expect(params == [.type(.typeVar("x", 1))])
+		#expect(returns == .type(.typeVar("x", 1)))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {

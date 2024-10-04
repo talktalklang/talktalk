@@ -12,8 +12,8 @@ public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, Custom
 	// If a type variable is generic then it is an error to try to unify it directly
 	var isGeneric: Bool = false
 
-	public static func new(_ named: String, _ id: Int? = nil) -> TypeVariable {
-		TypeVariable(named, id ?? named.hashValue)
+	public static func new(_ named: String, _ id: Int? = nil, isGeneric: Bool = false) -> TypeVariable {
+		TypeVariable(named, id ?? named.hashValue, isGeneric)
 	}
 
 	public static func extract(from type: InferenceType) -> TypeVariable? {

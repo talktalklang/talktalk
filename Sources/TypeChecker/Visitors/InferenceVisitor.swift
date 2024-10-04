@@ -331,8 +331,8 @@ struct InferenceVisitor: Visitor {
 		return type
 	}
 
-	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws -> Pattern.Argument {
-		let patternVisitor = PatternVisitor(inferenceVisitor: self)
+	func inferPattern(from syntax: any Syntax, in context: InferenceContext) throws -> PatternV1.Argument {
+		let patternVisitor = PatternV1Visitor(inferenceVisitor: self)
 		let patternArg = try syntax.accept(patternVisitor, context)
 
 		switch patternArg {
@@ -1135,7 +1135,7 @@ struct InferenceVisitor: Visitor {
 		context.defineVariable(named: expr.name.lexeme, as: .type(.typeVar(typeVar)), at: expr.location)
 		context.addConstraint(UnwrapConstraint(typeVar: .typeVar(typeVar), wrapped: variable, location: expr.location))
 
-		context.extend(expr, with: .type(.pattern(.init(type: .void, arguments: [
+		context.extend(expr, with: .type(.patternV1(.init(type: .void, arguments: [
 			.variable(expr.name.lexeme, .type(.typeVar(typeVar)))
 		]))))
 	}

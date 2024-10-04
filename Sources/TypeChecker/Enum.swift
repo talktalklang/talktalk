@@ -9,7 +9,7 @@ import OrderedCollections
 
 public final class Enum: MemberOwner, Instantiatable {
 	public struct Case: Instantiatable, MemberOwner {
-		public var typeParameters: [String : TypeVariable] { [:] }
+		public var typeParameters: [String : TypeVariable] { type.typeParameters }
 
 		public let type: Enum
 		public let name: String
@@ -61,7 +61,8 @@ public final class Enum: MemberOwner, Instantiatable {
 
 	public func staticMember(named name: String) -> InferenceResult? {
 		if let kase = cases[name] {
-			return .type(.type(.enumCase(kase)))
+			let scheme = Scheme(name: name, variables: Array(typeParameters.values), type: .type(.enumCase(kase)))
+			return .scheme(scheme)
 		}
 
 		return staticMembers[name]

@@ -745,7 +745,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 			// Check that all enum cases are specified
 			let specifiedCases: [String] = casesAnalyzed.compactMap {
-				guard case let .pattern(pattern) = $0.patternAnalyzed?.inferenceType else {
+				guard case let .patternV1(pattern) = $0.patternAnalyzed?.inferenceType else {
 					return nil
 				}
 

@@ -40,6 +40,8 @@ extension Constraints {
 				try solveStruct(type: type, freeVars: result.variables)
 			case .type(.enumCase(let enumCase)):
 				try solveEnumCase(enumCase, freeVars: result.variables)
+			case .instance(.enumCase(let instance)):
+				try solveEnumCase(instance.type, freeVars: instance.substitutions)
 			default:
 				if retries > 1 {
 					context.error("\(callee) not callable", at: location)

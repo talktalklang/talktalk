@@ -84,7 +84,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
-		if case let .pattern(pattern) = expr.inferenceType {
+		if case let .patternV1(pattern) = expr.inferenceType {
 			for (i, arg) in expr.argsAnalyzed.enumerated() {
 				switch pattern.arguments[i] {
 				case .value:

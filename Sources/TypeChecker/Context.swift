@@ -13,6 +13,10 @@
 import TalkTalkCore
 
 class Context {
+	enum ContextKind {
+		case normal, pattern
+	}
+
 	// If this context isn't top level we can use its parent to look stuff up
 	let parent: Context?
 
@@ -62,6 +66,8 @@ class Context {
 	var expectedType: InferenceResult? {
 		expectedTypes.last
 	}
+
+	var kind: ContextKind = .normal
 
 	init(parent: Context? = nil, lexicalScope: (any MemberOwner)?, imports: [Context] = [], verbose: Bool = false) {
 		self.parent = parent
@@ -279,7 +285,7 @@ class Context {
 	}
 
 	func applySubstitutions(to type: InferenceResult, with substitutions: [TypeVariable: InferenceResult], count: Int = 0, file: String = #file, line: UInt32 = #line) -> InferenceType {
-		let type: InferenceResult = (parent?.applySubstitutions(to: type)).flatMap { .type($0) } ?? type
+//		let type: InferenceResult = (parent?.applySubstitutions(to: type, with: substitutions)).flatMap { .type($0) } ?? type
 		let result = type.instantiate(in: self, file: file, line: line)
 
 		return applySubstitutions(to: result.type, with: substitutions, count: count, file: file, line: line)
@@ -293,7 +299,7 @@ class Context {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
-			return findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? type
+			return substitutions[typeVariable]?.instantiate(in: self).type ?? findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? type
 		case .function(let params, let returns):
 			return .function(
 				params.map {
@@ -303,7 +309,9 @@ class Context {
 			)
 		case .instance(var instance):
 			for case let (variable, .typeVar(replacement)) in instance.substitutions {
-				instance.substitutions[variable] = substitutions[replacement]?.instantiate(in: self).type
+				if let replacement = substitutions[replacement]?.instantiate(in: self).type {
+					instance.substitutions[variable] = replacement
+				}
 			}
 
 			return .instance(instance)

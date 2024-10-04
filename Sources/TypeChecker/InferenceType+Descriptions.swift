@@ -35,6 +35,8 @@ extension InferenceType: CustomDebugStringConvertible {
 		case let .enumCaseV1(enumCase):
 			enumCase.name
 		case let .pattern(pattern):
+			"\(pattern)"
+		case let .patternV1(pattern):
 			pattern.type.mangled
 		case .any:
 			"any"
@@ -76,6 +78,8 @@ extension InferenceType: CustomDebugStringConvertible {
 		case let .enumCaseV1(kase):
 			kase.description
 		case let .pattern(pattern):
+			"\(pattern)"
+		case let .patternV1(pattern):
 			"pattern: \(pattern)"
 		case .void:
 			"void"
@@ -115,6 +119,8 @@ extension InferenceType: CustomDebugStringConvertible {
 		case let .enumCaseV1(kase):
 			kase.description
 		case let .pattern(pattern):
+			"\(pattern)"
+		case let .patternV1(pattern):
 			"pattern: \(pattern)"
 		case .void:
 			"void"
