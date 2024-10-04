@@ -171,16 +171,17 @@ struct EnumTests: TypeCheckerTest {
 				case bar
 
 				func isFoo() {
-					self == .foo
+					self == self.foo
 				}
 			}
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax, verbose: true)
 		let enumType = syntax[0].cast(EnumDeclSyntax.self)
-		let enumInferenceType = try EnumTypeV1.extract(from: context.get(enumType))!
-		let fn = enumType.body.decls[2].cast(FuncExprSyntax.self)
+		let enumInferenceType = Enum.extract(from: context[enumType]!)!
+
+		let fn = enumType.body.decls[2].cast(MethodDeclSyntax.self)
 		let binaryExpr = fn.body.stmts[0]
 			.cast(ExprStmtSyntax.self)
 			.expr.cast(BinaryExprSyntax.self)
@@ -188,16 +189,15 @@ struct EnumTests: TypeCheckerTest {
 		let foo = binaryExpr.rhs.cast(MemberExprSyntax.self)
 
 		// Make sure we can infer `self`
-		let selfVarType = try context.get(selfVar)
-		#expect(selfVarType == InferenceResult.type(.selfVar(.instantiatable(.enumType(enumInferenceType)))))
+		let selfVarType = context[selfVar]!
+		#expect(selfVarType == .self(enumInferenceType))
 
 		// Make sure we can infer `.foo`
-		let fooType = try context.get(foo)
-		#expect(fooType == .type(.instantiatable(.enumType(enumInferenceType))))
+		let kase = enumInferenceType.cases["foo"]!
+		#expect(context[foo] == .type(.enumCase(kase)))
 
 		// Make sure the method has the right type
-		let fnType = try context.applySubstitutions(to: context.get(fn))
-		#expect(fnType == .function([], .type(.base(.bool))))
+		#expect(context[fn] == .function([], .type(.base(.bool))))
 	}
 
 	@Test("Can infer protocol conformance") func protocols() throws {

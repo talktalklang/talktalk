@@ -466,6 +466,10 @@ struct ContextVisitor: Visitor {
 			return typeVar
 		}
 
+		enumContext.define("self", as: .scheme(
+			Scheme(name: "self", variables: variables, type: .self(enumType)))
+		)
+
 		_ = try visit(syntax.body, enumContext)
 
 		// Enums can have generic types so we give them a scheme

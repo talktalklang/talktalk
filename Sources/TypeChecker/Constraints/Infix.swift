@@ -70,6 +70,9 @@ extension Constraints {
 				// Just say that it's the same as the result and hope for the best
 				try context.unify(.typeVar(lhs), .typeVar(result), location)
 				try context.unify(.typeVar(rhs), .typeVar(result), location)
+			case let (.typeVar(typeVar), type, .equalEqual), let (type, .typeVar(typeVar), .equalEqual),
+					let (.typeVar(typeVar), type, .bangEqual), let (type, .typeVar(typeVar), .bangEqual):
+				try context.unify(.typeVar(typeVar), type, location)
 			default:
 				context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
 				try context.unify(.any, .typeVar(result), location)
