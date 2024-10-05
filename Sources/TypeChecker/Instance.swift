@@ -5,8 +5,19 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
-public enum InstanceWrapper {
+public enum InstanceWrapper: CustomDebugStringConvertible {
 	case `struct`(Instance<StructType>), enumCase(Instance<Enum.Case>), `enum`(Instance<Enum>)
+
+	public var debugDescription: String {
+		switch self {
+		case .struct(let instance):
+			instance.debugDescription
+		case .enumCase(let instance):
+			instance.debugDescription
+		case .enum(let instance):
+			instance.debugDescription
+		}
+	}
 
 	var substitutions: [TypeVariable: InferenceType] {
 		get {
@@ -74,7 +85,7 @@ public enum InstanceWrapper {
 	}
 }
 
-public class Instance<Kind: Instantiatable & MemberOwner> {
+public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConvertible {
 	public var type: Kind
 	public var substitutions: [TypeVariable: InferenceType]
 	public var name: String { type.name }
@@ -110,4 +121,8 @@ public class Instance<Kind: Instantiatable & MemberOwner> {
 	}
 
 	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {}
+
+	public var debugDescription: String {
+		"Instance<\(type.name) \(substitutions.debugDescription)>"
+	}
 }

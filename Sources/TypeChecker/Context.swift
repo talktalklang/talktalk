@@ -69,7 +69,12 @@ class Context {
 
 	var kind: ContextKind = .normal
 
-	init(parent: Context? = nil, lexicalScope: (any MemberOwner)?, imports: [Context] = [], verbose: Bool = false) {
+	init(
+		parent: Context? = nil,
+		lexicalScope: (any MemberOwner)?,
+		imports: [Context] = [],
+		verbose: Bool = false
+	) {
 		self.parent = parent
 		self.children = []
 		self.imports = imports
@@ -77,11 +82,11 @@ class Context {
 		self.lexicalScope = lexicalScope
 	}
 
-	func error(_ message: String, at location: SourceLocation) {
+	func error(_ message: String, at location: SourceLocation, file: String = #file, line: UInt32 = #line) {
 		if let parent {
 			parent.error(message, at: location)
 		} else {
-			log(message, prefix: " ! ")
+			log(message + " \(file):\(line)", prefix: " ! ")
 
 			diagnostics.append(
 				Diagnostic(message: message, severity: .error, location: location)
@@ -90,6 +95,8 @@ class Context {
 	}
 
 	func solve() -> Context {
+		log("Solving has begun", prefix: "---")
+
 		for child in children {
 			_ = child.solve()
 		}
@@ -127,10 +134,11 @@ class Context {
 		}
 	}
 
-	func expecting(_ type: InferenceResult, perform: () throws -> Void) rethrows {
+	@discardableResult func expecting<T>(_ type: InferenceResult, perform: () throws -> T) rethrows -> T {
 		expectedTypes.append(type)
-		try perform()
+		let result = try perform()
 		_ = expectedTypes.popLast()
+		return result
 	}
 
 	func freshID() -> VariableID {
@@ -259,7 +267,7 @@ class Context {
 		case let (.placeholder(typeVar), type), let (type, .placeholder(typeVar)):
 			substitutions[typeVar] = .type(type)
 		case let (.base(lhs), .base(rhs)) where lhs != rhs:
-			self.error("Cannot unify \(lhs) and \(rhs)", at: location)
+			error("Cannot unify \(lhs) and \(rhs)", at: location)
 		default:
 			()
 		}
@@ -310,21 +318,21 @@ class Context {
 
 	func applySubstitutions(to type: InferenceType, with substitutions: [TypeVariable: InferenceResult], count: Int = 0, file: String = #file, line: UInt32 = #line) -> InferenceType {
 		switch type {
-		case .typeVar(let typeVariable), .placeholder(let typeVariable):
+		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
 			if count < 10, case let .type(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
 				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
 			return substitutions[typeVariable]?.instantiate(in: self).type ?? findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? type
-		case .function(let params, let returns):
+		case let .function(params, returns):
 			return .function(
 				params.map {
 					.type(applySubstitutions(to: $0, with: substitutions))
 				},
 				.type(applySubstitutions(to: returns, with: substitutions))
 			)
-		case .instance(var instance):
+		case var .instance(instance):
 			for case let (variable, .typeVar(replacement)) in instance.substitutions {
 				if let replacement = substitutions[replacement]?.instantiate(in: self).type {
 					instance.substitutions[variable] = replacement
@@ -332,23 +340,23 @@ class Context {
 			}
 
 			return .instance(instance)
+		case let .pattern(pattern):
+			return .pattern(applySubstitutions(to: pattern, with: substitutions))
 		case .self:
 			()
-		case .type(_):
+		case .type:
 			() // Types are meant to be blueprints so they should not get replacements. Instances should.
-		case .instanceV1(_):
+		case .instanceV1:
 			()
-		case .instantiatable(_):
+		case .instantiatable:
 			()
-		case .instancePlaceholder(_):
+		case .instancePlaceholder:
 			()
-		case .kind(_):
+		case .kind:
 			()
-		case .selfVar(_):
+		case .selfVar:
 			()
-		case .enumCaseV1(_):
-			()
-		case .pattern(_):
+		case .enumCaseV1:
 			()
 		case .void, .any, .base:
 			()
@@ -357,6 +365,22 @@ class Context {
 		}
 
 		return type
+	}
+
+	func applySubstitutions(to pattern: Pattern, with substitutions: [TypeVariable: InferenceResult]) -> Pattern {
+		switch pattern {
+		case let .call(type, args):
+			return .call(
+				.type(applySubstitutions(to: type, with: substitutions)),
+				args.map {
+					applySubstitutions(to: $0, with: substitutions)
+				}
+			)
+		case let .value(type):
+			return .value(applySubstitutions(to: type, with: substitutions))
+		case let .variable(name, result):
+			return .variable(name, .type(applySubstitutions(to: result, with: substitutions)))
+		}
 	}
 
 	func instantiate(_ scheme: Scheme, with substitutions: [TypeVariable: InferenceType] = [:], file: String = #file, line: UInt32 = #line) -> (InferenceType, [TypeVariable: InferenceType]) {
@@ -381,7 +405,7 @@ class Context {
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 		if isVerbose() {
 			var depth = 0
-			var nextParent = self.parent
+			var nextParent = parent
 			while let parent = nextParent {
 				depth += 1
 				nextParent = parent.parent

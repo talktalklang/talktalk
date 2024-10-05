@@ -13,7 +13,7 @@ extension Constraints {
 		let context: Context
 		let callee: InferenceResult
 		let args: [InferenceResult]
-		let result: InferenceType
+		let result: InferenceResult
 		let location: SourceLocation
 		var retries: Int = 0
 
@@ -43,7 +43,7 @@ extension Constraints {
 			case .instance(.enumCase(let instance)):
 				try solveEnumCase(instance.type, freeVars: instance.substitutions)
 			default:
-				if retries > 1 {
+				if retries > 3 {
 					context.error("\(callee) not callable", at: location)
 				} else {
 					context.retry(self)
@@ -67,7 +67,7 @@ extension Constraints {
 
 			try context.unify(
 				replacingFreeVariable(returns.type, from: freeVars),
-				result,
+				result.instantiate(in: context, with: freeVars).type,
 				location
 			)
 		}
@@ -88,7 +88,7 @@ extension Constraints {
 
 			try context.unify(
 				.instance(.enumCase(instance)),
-				result,
+				result.instantiate(in: context, with: freeVars).type,
 				location
 			)
 		}
@@ -111,7 +111,11 @@ extension Constraints {
 				}
 			}
 
-			try context.unify(.instance(.struct(instance)), result, location)
+			try context.unify(
+				.instance(.struct(instance)),
+				result.instantiate(in: context, with: freeVars).type,
+				location
+			)
 		}
 
 		private func replacingFreeVariable(_ typeVariable: InferenceType, from variables: [TypeVariable: InferenceType]) -> InferenceType {

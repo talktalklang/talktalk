@@ -35,7 +35,7 @@ extension InferenceType: Equatable {
 		case let (.enumCaseV1(lhs), .enumCaseV1(rhs)):
 			lhs == rhs
 		case let (.pattern(lhs), .pattern(rhs)):
-			lhs == rhs
+			lhs.debugDescription == rhs.debugDescription
 		case (.any, .any):
 			true
 		case (.void, .void):

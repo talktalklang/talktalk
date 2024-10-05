@@ -13,24 +13,37 @@ struct PatternVisitor: Visitor {
 
 	let visitor: ContextVisitor
 
+	// MARK: Visits
+
 	func visit(_ syntax: CallExprSyntax, _ context: Context) throws -> Pattern {
 		guard let expectedType = context.expectedType else {
 			throw TypeError.typeError("No target found for pattern: \(syntax.description)")
 		}
 
 		let callee = try syntax.callee.accept(visitor, context)
-		let params = try syntax.args.map { try $0.accept(self, context) }
+
+		let args = if let parameters = visitor.parameters(for: callee) {
+			try zip(syntax.args, parameters).map { (arg, param) in
+				try context.expecting(param) {
+					try arg.accept(self, context)
+				}
+			}
+		} else {
+			try syntax.args.map { try $0.value.accept(self, context) }
+		}
 
 		context.addConstraint(
 			Constraints.Bind(
 				context: context,
 				target: expectedType,
-				pattern: .call(callee, params),
+				pattern: .call(callee, args),
 				location: syntax.location
 			)
 		)
 
-		return .call(callee, params)
+		context.define(syntax, as: .type(.pattern(.call(callee, args))))
+
+		return .call(callee, args)
 	}
 
 	func visit(_ syntax: DefExprSyntax, _ context: Context) throws -> Pattern {
@@ -42,7 +55,8 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ syntax: LiteralExprSyntax, _ context: Context) throws -> Pattern {
-		fatalError("TODO")
+		let type = try visitor.visit(syntax, context).instantiate(in: context).type
+		return .value(type)
 	}
 
 	func visit(_ syntax: VarExprSyntax, _ context: Context) throws -> Pattern {
@@ -100,12 +114,14 @@ struct PatternVisitor: Visitor {
 	func visit(_ syntax: VarDeclSyntax, _ context: Context) throws -> Pattern {
 		let typeVar = context.freshTypeVariable(syntax.name)
 		context.define(syntax.name, as: .type(.typeVar(typeVar)))
+		context.define(syntax, as: .type(.typeVar(typeVar)))
 		return .variable(syntax.name, .type(.typeVar(typeVar)))
 	}
 
 	func visit(_ syntax: LetDeclSyntax, _ context: Context) throws -> Pattern {
 		let typeVar = context.freshTypeVariable(syntax.name)
 		context.define(syntax.name, as: .type(.typeVar(typeVar)))
+		context.define(syntax, as: .type(.typeVar(typeVar)))
 		return .variable(syntax.name, .type(.typeVar(typeVar)))
 	}
 
@@ -114,7 +130,19 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ syntax: MemberExprSyntax, _ context: Context) throws -> Pattern {
-		fatalError("TODO")
+		let receiver = try syntax.receiver?.accept(self, context)
+
+		guard let expectedType = context.expectedType else {
+			throw TypeError.typeError("Could not determine receiver: \(syntax.description)")
+		}
+
+		if let member = visitor.member(from: expectedType, named: syntax.property) {
+			// FIXME: Bad. We don't want to instantiate in the visitor
+			context.define(syntax, as: .type(.pattern(.value(member.instantiate(in: context).type))))
+			return .value(member.instantiate(in: context).type)
+		}
+
+		return .value(.void)
 	}
 
 	func visit(_ syntax: ReturnStmtSyntax, _ context: Context) throws -> Pattern {

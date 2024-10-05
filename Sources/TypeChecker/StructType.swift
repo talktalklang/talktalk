@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
-public final class StructType: MemberOwner, Instantiatable, Equatable {
+public final class StructType: MemberOwner, Instantiatable, Equatable, CustomDebugStringConvertible {
 	public let name: String
 	public var members: [String: InferenceResult]
 	public var staticMembers: [String: InferenceResult]
@@ -31,6 +31,10 @@ public final class StructType: MemberOwner, Instantiatable, Equatable {
 		}
 
 		return nil
+	}
+
+	public var debugDescription: String {
+		"struct \(name)"
 	}
 
 	public func instantiate(with substitutions: [TypeVariable: InferenceType]) -> Instance<StructType> {

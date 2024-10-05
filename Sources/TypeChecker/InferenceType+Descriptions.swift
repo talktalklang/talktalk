@@ -50,9 +50,9 @@ extension InferenceType: CustomDebugStringConvertible {
 	public var debugDescription: String {
 		switch self {
 		case .self(let type):
-			"self (\(type))"
+			"self (\(type.debugDescription))"
 		case .instance(let instance):
-			"Instance \(instance.type.name)"
+			instance.debugDescription
 		case let .instancePlaceholder(typeVar):
 			"instance placeholder \(typeVar.debugDescription)"
 		case let .instanceV1(instance):

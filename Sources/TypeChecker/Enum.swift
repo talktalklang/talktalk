@@ -7,8 +7,8 @@
 
 import OrderedCollections
 
-public final class Enum: MemberOwner, Instantiatable {
-	public struct Case: Instantiatable, MemberOwner {
+public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertible {
+	public struct Case: Instantiatable, MemberOwner, CustomDebugStringConvertible {
 		public var typeParameters: [String : TypeVariable] { type.typeParameters }
 
 		public let type: Enum
@@ -41,6 +41,10 @@ public final class Enum: MemberOwner, Instantiatable {
 
 		public func instantiate(with substitutions: [TypeVariable : InferenceType]) -> Instance<Enum.Case> {
 			Instance<Enum.Case>(type: self, substitutions: substitutions)
+		}
+
+		public var debugDescription: String {
+			"\(type.name).\(name)(\(attachedTypes))"
 		}
 	}
 
@@ -82,5 +86,9 @@ public final class Enum: MemberOwner, Instantiatable {
 
 	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {
 		members[name] = member
+	}
+
+	public var debugDescription: String {
+		"enum \(name)"
 	}
 }

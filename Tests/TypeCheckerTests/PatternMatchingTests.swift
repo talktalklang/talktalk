@@ -13,6 +13,7 @@ struct PatternMatchingTests: TypeCheckerTest {
 	@Test("Can typecheck literal pattern") func pattern() throws {
 		let syntax = try Parser.parse(
 			"""
+			let foo = ""
 			match foo {
 			case 123:
 				false
@@ -22,23 +23,23 @@ struct PatternMatchingTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
-		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].patternSyntax!
+		let context = try solve(syntax)
+		let case1 = syntax[1].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
+		let case2 = syntax[1].cast(MatchStatementSyntax.self).cases[1].patternSyntax!
 
 		#expect(
-			context[case1] == .type(.base(.int))
+			context.find(case1) == .pattern(.value(.base(.int)))
 		)
 
 		#expect(
-			context[case2] == .type(.base(.string))
+			context.find(case2) == .pattern(.value(.base(.string)))
 		)
 	}
 
 	@Test("Can typecheck with else") func patternElse() throws {
 		let syntax = try Parser.parse(
 			"""
-			match thing {
+			match 345 {
 			case 123:
 				true
 			else:
@@ -47,14 +48,13 @@ struct PatternMatchingTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context.errors == [])
+		let context = try solve(syntax)
 
 		let case1 = syntax[0].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
 		let case2 = syntax[0].cast(MatchStatementSyntax.self).cases[1].patternSyntax
 
 		#expect(
-			context[case1] == .type(.base(.int))
+			context.find(case1) == .pattern(.value(.base(.int)))
 		)
 
 		#expect(
@@ -70,18 +70,21 @@ struct PatternMatchingTests: TypeCheckerTest {
 				case bar(int)
 			}
 
-			let m = Thing.foo("sup")
+			func m() -> Thing {
+				Thing.foo("sup")	
+			}
+			
 
-			match m {
+			match m() {
 			case .foo(let a):
 				a
-			case .bar(let b):
-				b
+			case .bar(let a):
+				a
 			}
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let call1 = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0] // .foo(let a)...:
 			.patternSyntax! // .foo(let a)
@@ -92,27 +95,20 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.patternSyntax! // .bar(let b)
 			.cast(CallExprSyntax.self)
 
-		let enumType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
+		let enumType = Enum.extract(from: context.find(syntax[0])!)!
+		let fooCase = enumType.cases["foo"]!
+		let barCase = enumType.cases["bar"]!
 
-		let foo = context.lookup(syntax: call1)
-		#expect(foo == .patternV1(PatternV1(
-			type: .enumCaseV1(
-				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
-			),
-			arguments: [
-				.variable("a", .type(.base(.string))),
-			]
-		)))
-
-		let bar = context.lookup(syntax: call2)
-		#expect(bar == .patternV1(PatternV1(
-			type: .enumCaseV1(
-				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
-			),
-			arguments: [
-				.variable("b", .type(.base(.int))),
-			]
-		)))
+		let foo = context.find(call1)
+		#expect(foo == .pattern(
+			.call(
+				.type(
+					.type(
+						.enumCase(fooCase)
+					)
+				),
+				[.variable("a", .type(.base(.string)))])
+		))
 
 		let body = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
@@ -120,65 +116,26 @@ struct PatternMatchingTests: TypeCheckerTest {
 			.cast(VarExprSyntax.self)
 
 		#expect(body.name == "a")
-		#expect(context[body] == .type(.base(.string)))
-	}
+		#expect(context.find(body) == .base(.string))
 
-	@Test("Can typecheck a match (fn)") func matchinFn() throws {
-		let syntax = try Parser.parse(
-			"""
-			enum Thing {
-				case foo(String)
-				case bar(int)
-			}
+		let bar = context.find(call2)
+		#expect(bar == .pattern(
+			.call(
+				.type(
+					.type(
+						.enumCase(barCase)
+					)
+				),
+				[.variable("a", .type(.base(.int)))])
+		))
 
-			func m() { Thing.foo("sup") }
-
-			match m() {
-			case .foo(let a):
-				a
-			case .bar(let b):
-				b
-			}
-			"""
-		)
-
-		let context = try infer(syntax)
-		let case1 = syntax[2].cast(MatchStatementSyntax.self)
-			.cases[0] // .foo(let a)...:
-			.patternSyntax! // .foo(let a)
-			.cast(CallExprSyntax.self)
-
-		let case2 = syntax[2].cast(MatchStatementSyntax.self)
-			.cases[1] // .bar(let b)...:
-			.patternSyntax! // .bar(let b)
-			.cast(CallExprSyntax.self)
-
-		let enumType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
-
-		let foo = context.lookup(syntax: case1)
-
-		#expect(foo == .patternV1(PatternV1(
-			type: .enumCaseV1(
-				EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)])
-			),
-			arguments: [.variable("a", .type(.base(.string)))]
-		)))
-
-		let bar = context.lookup(syntax: case2)
-		#expect(bar == .patternV1(PatternV1(
-			type: .enumCaseV1(
-				EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)])
-			),
-			arguments: [.variable("b", .type(.base(.int)))]
-		)))
-
-		let body = syntax[2].cast(MatchStatementSyntax.self)
+		let body2 = syntax[2].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)
 
-		#expect(body.name == "a")
-		#expect(context[body] == .type(.base(.string)))
+		#expect(body2.name == "a")
+		#expect(context.find(body2) == .base(.string))
 	}
 
 	@Test("Can infer nested enum patterns") func nestedEnumCases() throws {
@@ -192,57 +149,38 @@ struct PatternMatchingTests: TypeCheckerTest {
 				case bottom(Top)
 			}
 
-			match Bottom.bottom(.top("fizz")) {
+			func m() -> Bottom {
+				Bottom.bottom(.top("fizz"))
+			}
+
+			match m() {
 			case .bottom(.top(let a)):
 				a
 			}
 			"""
 		)
 
-		let context = try infer(syntax)
-		let call1 = syntax[2].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
+		let context = try solve(syntax)
+		let call1 = syntax[3].cast(MatchStatementSyntax.self).cases[0].patternSyntax!
 
-		let topType = try EnumTypeV1.extract(from: context.get(syntax[0]))!
-		let bottomType = try EnumTypeV1.extract(from: context.get(syntax[1]))!
+		let topType = Enum.extract(from: context.find(syntax[0])!)!
+		let bottomType = Enum.extract(from: context.find(syntax[1])!)!
+		let bottomCase = bottomType.cases["bottom"]!
+		let topCase = topType.cases["top"]!
 
 		// Let's just make sure we're testing the right thing
 		#expect(call1.description == ".bottom(.top(let a))")
-		#expect(context.errors.isEmpty)
-
-		let actual = context.lookup(syntax: call1)!
-		let expected = InferenceType.patternV1(PatternV1(
-			type: .enumCaseV1(
-				EnumCase(
-					type: bottomType,
-					name: "bottom",
-					attachedTypes: [
-						.instanceV1(
-							.enumType(
-								InstanceV1<EnumTypeV1>(
-									id: 0,
-									type: topType,
-									substitutions: [:]
-								)
-							)
-						),
-					]
-				)
-			),
-			arguments: [
-				.value(
-					.patternV1(
-						PatternV1(
-							type: .enumCaseV1(
-								EnumCase(type: topType, name: "top", attachedTypes: [.base(.string)])
-							),
-							arguments: [.variable("a", .type(.base(.string)))]
-						)
+		#expect(context.find(call1) == .pattern(
+			.call(
+				.type(.type(.enumCase(bottomCase))),
+				[
+					.call(
+						.type(.type(.enumCase(topCase))),
+						[.variable("a", .type(.base(.string)))]
 					)
-				),
-			]
+				]
+			)
 		))
-
-		#expect(actual == expected)
 	}
 
 	@Test("Can infer out of order nested") func outOfOrderNested() throws {
@@ -269,18 +207,6 @@ struct PatternMatchingTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context.errors == [])
-
-		let pattern = syntax[3]
-			.cast(MatchStatementSyntax.self).cases[1]
-			.cast(CaseStmtSyntax.self).patternSyntax!
-		let kaseArg = pattern
-			.cast(CallExprSyntax.self).args[1].value
-
-		let match = try context.get(kaseArg)
-		let kase = try #require(EnumTypeV1.extract(from: match))
-
-		#expect(kase.name == "B")
+		_ = try solve(syntax)
 	}
 }

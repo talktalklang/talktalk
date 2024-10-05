@@ -19,14 +19,18 @@ extension Constraints {
 		var location: SourceLocation
 
 		func solve() throws {
+			try solve(receiver: receiver, depth: 0)
+		}
+
+		func resolveReceiver(receiver: InferenceResult?) throws -> InstantiatedResult? {
 			var resolvedReceiver: InstantiatedResult? = nil
 
 			if let receiver {
 				resolvedReceiver = receiver.instantiate(in: context)
 			}
 
-			if let expectedType = expectedType {
-				let result = expectedType.instantiate(in: context.parent!)
+			if let expectedType {
+				let result = expectedType.instantiate(in: context.parent ?? context)
 				resolvedReceiver = .init(
 					type: context.applySubstitutions(to: result.type, with: result.variables.asResults),
 					variables: result.variables
@@ -38,24 +42,20 @@ extension Constraints {
 				resolvedReceiver = .init(type: .type(lexicalScope.wrapped), variables: [:])
 			}
 
-			guard let resolvedReceiver else {
-				context.error("Could not determine receiver for `\(memberName)`", at: location)
-				return
-			}
-
-			try solve(receiver: resolvedReceiver.type, variables: resolvedReceiver.variables)
+			return resolvedReceiver
 		}
 
-		func solve(receiver: InferenceType, variables: Substitutions, depth: Int = 0) throws {
-			var resolvedReceiver: InstantiatedResult = InstantiatedResult(type: receiver, variables: variables)
+		func solve(receiver: InferenceResult?, depth: Int = 0) throws {
+			let resolvedReceiver = try resolveReceiver(receiver: receiver)
 
-			if let expectedType = expectedType {
-				let result = context.applySubstitutions(to: expectedType)
+			guard let resolvedReceiver else {
+				if retries > 1 {
+					context.error("Could not resolve receiver of member \(memberName)", at: location)
+				} else {
+					context.retry(self)
+				}
 
-				resolvedReceiver = .init(
-					type: result,
-					variables: variables
-				)
+				return
 			}
 
 			switch (resolvedReceiver.type, resolvedReceiver.variables) {
@@ -84,7 +84,7 @@ extension Constraints {
 				let receiver = context.applySubstitutions(to: .typeVar(typeVar), with: variables.asResults)
 
 				if depth < 1 {
-					try solve(receiver: receiver, variables: variables, depth: depth + 1)
+					try solve(receiver: .type(receiver), depth: depth + 1)
 				}
 
 				if retries < 1 {

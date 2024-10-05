@@ -152,20 +152,91 @@ struct ContextVisitor: Visitor {
 		return .type(.void)
 	}
 
+	// Try to look up a member from an inference result. If we can find one, we can avoid going through the typevar/constraint
+	// dance. Important to know that we don't want to do any instantiation here, since that should only happen in constraints,
+	// otherwise we can end up with redundant type variables.
+	func member(from receiver: InferenceResult, named name: String) -> InferenceResult? {
+		switch receiver {
+		case .scheme(let scheme):
+			return member(from: .type(scheme.type), named: name)
+		case .type(let type):
+			switch type {
+			case let .type(.enum(enumType)):
+				return enumType.staticMember(named: name)
+			case let .type(.enumCase(kase)) where kase.name == name:
+				return receiver
+			case let .instance(wrapper):
+				return wrapper.member(named: name)
+			default:
+				return nil
+			}
+		}
+	}
+
+	func parameters(for callee: InferenceResult) -> [InferenceResult]? {
+		switch callee {
+		case .scheme(let scheme):
+			return parameters(for: .type(scheme.type))
+		case .type(let type):
+			switch type {
+			case .function(let params, _):
+				return params
+			case .type(.enumCase(let kase)):
+				return kase.attachedTypes
+			default:
+				return nil
+			}
+		}
+	}
+
+	func returnResult(for result: InferenceResult) -> InferenceResult? {
+		switch result {
+		case .scheme(let scheme):
+			return returnResult(for: .type(scheme.type))
+			case .type(let type):
+			switch type {
+			case .function(_, let returns):
+				return returns
+			case .type(.enumCase(let kase)):
+				return .type(.type(.enumCase(kase)))
+			default:
+				return nil
+			}
+		}
+	}
+
 	// MARK: Visits
 
 	func visit(_ syntax: CallExprSyntax, _ context: Context) throws -> InferenceResult {
 		let callee = try syntax.callee.accept(self, context)
-		let args = try syntax.args.map { try $0.accept(self, context) }
-		let returns: InferenceType = .typeVar(context.freshTypeVariable(syntax.description))
+
+		let args = if let parameters = parameters(for: callee) {
+			try zip(syntax.args, parameters).map { (arg, param) in
+				try context.expecting(param) {
+					try visit(arg, context)
+				}
+			}
+		} else {
+			try syntax.args.map {
+				try visit($0, context)
+			}
+		}
+
+		let returns: InferenceResult = returnResult(for: callee) ?? .type(.typeVar(context.freshTypeVariable(syntax.description)))
 
 		context.addConstraint(
-			Constraints.Call(context: context, callee: callee, args: args, result: returns, location: syntax.location)
+			Constraints.Call(
+				context: context,
+				callee: callee,
+				args: args,
+				result: returns,
+				location: syntax.location
+			)
 		)
 
-		context.define(syntax, as: .type(returns))
+		context.define(syntax, as: returns)
 
-		return .type(returns)
+		return returns
 	}
 
 	func visit(_ syntax: DefExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -313,23 +384,32 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: MemberExprSyntax, _ context: Context) throws -> InferenceResult {
-		let receiver = try syntax.receiver?.accept(self, context)
-		let result = context.freshTypeVariable("\(syntax.receiver?.description ?? "").\(syntax.property)")
+		let receiver = try syntax.receiver?.accept(self, context) ?? context.expectedType
 
-		context.addConstraint(
-			Constraints.Member(
-				receiver: receiver,
-				expectedType: context.expectedType,
-				memberName: syntax.property,
-				result: result,
-				context: context,
-				location: syntax.location
+		// If we have enough information to get the member here, we should so we don't need to go through
+		// the typevar/contraint process.
+		if let receiver, let member = member(from: receiver, named: syntax.property) {
+			context.define(syntax, as: member)
+
+			return member
+		} else {
+			let result = context.freshTypeVariable("\(syntax.receiver?.description ?? "").\(syntax.property)")
+
+			context.addConstraint(
+				Constraints.Member(
+					receiver: receiver,
+					expectedType: context.expectedType,
+					memberName: syntax.property,
+					result: result,
+					context: context,
+					location: syntax.location
+				)
 			)
-		)
 
-		context.define(syntax, as: .type(.typeVar(result)))
+			context.define(syntax, as: .type(.typeVar(result)))
 
-		return .type(.typeVar(result))
+			return .type(.typeVar(result))
+		}
 	}
 
 	func visit(_ syntax: ReturnStmtSyntax, _ context: Context) throws -> InferenceResult {

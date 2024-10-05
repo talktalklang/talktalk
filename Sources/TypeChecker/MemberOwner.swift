@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
-public protocol MemberOwner {
+public protocol MemberOwner: CustomDebugStringConvertible {
 	var name: String { get }
 	var typeParameters: [String: TypeVariable] { get }
 
