@@ -5,8 +5,10 @@
 //  Created by Pat Nakajima on 10/5/24.
 //
 
+import OrderedCollections
+
 public final class ProtocolType: MemberOwner, Instantiatable {
-	public var typeParameters: [String : TypeVariable] = [:]
+	public var typeParameters: OrderedDictionary<String, TypeVariable> = [:]
 	public var members: [String: InferenceResult] = [:]
 
 	public let name: String

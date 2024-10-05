@@ -5,10 +5,37 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 import Foundation
+import TalkTalkCore
 import OrderedCollections
 
 public enum TypeWrapper {
 	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case), `protocol`(ProtocolType)
+
+	var name: String {
+		switch self {
+		case .struct(let type):
+			type.name
+		case .enum(let type):
+			type.name
+		case .enumCase(let type):
+			type.name
+		case .protocol(let type):
+			type.name
+		}
+	}
+
+	var typeParameters: OrderedDictionary<String, TypeVariable> {
+		switch self {
+		case .struct(let type):
+			type.typeParameters
+		case .enum(let type):
+			type.typeParameters
+		case .enumCase(let type):
+			type.typeParameters
+		case .protocol(let type):
+			type.typeParameters
+		}
+	}
 
 	func instantiate(with variables: Substitutions) -> InstanceWrapper {
 		switch self {
@@ -39,9 +66,13 @@ public enum TypeWrapper {
 
 public indirect enum InferenceType {
 	public static func optional(_ type: InferenceType) -> InferenceType {
-		let enumType = Enum.extract(from: Inferencer.stdlib.type(named: "Optional")!.instantiate(in: Inferencer.stdlib).type)!
+		let optionalType = Library.standard.files.first(where: { $0.path.contains("Optional.talk") })!
+		let context = try! ContextVisitor.visit(Parser.parse(optionalType), module: "Standard")
+
+		let enumType = Enum.extract(from: context.type(named: "Optional")!.instantiate(in: context).type)!
 		let wrapped = enumType.typeParameters["Wrapped"]!
 		let instance = enumType.instantiate(with: [wrapped: type])
+
 		return .instance(.enum(instance))
 	}
 

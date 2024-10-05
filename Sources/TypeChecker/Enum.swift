@@ -9,7 +9,7 @@ import OrderedCollections
 
 public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertible {
 	public struct Case: Instantiatable, MemberOwner, CustomDebugStringConvertible {
-		public var typeParameters: [String : TypeVariable] { type.typeParameters }
+		public var typeParameters: OrderedDictionary<String, TypeVariable> { type.typeParameters }
 
 		public let type: Enum
 		public let name: String
@@ -52,7 +52,7 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 	public var cases: OrderedDictionary<String, Case> = [:]
 	public var members: [String: InferenceResult] = [:]
 	public var staticMembers: [String: InferenceResult] = [:]
-	public var typeParameters: [String: TypeVariable] = [:]
+	public var typeParameters: OrderedDictionary<String, TypeVariable> = [:]
 
 	init(name: String, cases: OrderedDictionary<String, Case>) {
 		self.name = name

@@ -72,13 +72,13 @@ struct OptionalsTest: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let valSyntax = syntax[2]
 			.cast(MatchStatementSyntax.self).cases[0].body[0]
 			.cast(ReturnStmtSyntax.self).value!
 			.cast(VarExprSyntax.self)
 
-		#expect(context[valSyntax] == .resolved(.base(.string)))
+		#expect(context.find(valSyntax) == .base(.string))
 	}
 
 	@Test("Can let unwrap") func letUnwrap() throws {

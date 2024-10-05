@@ -9,22 +9,23 @@ import TalkTalkCore
 import Testing
 @testable import TypeChecker
 
+@MainActor
 struct StandardLibraryTests: TypeCheckerTest {
 	@Test("Knows about array") func array() throws {
 		let expr = try Parser.parse("[1, 2, 3]")
-		let context = try infer(expr)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 
-		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: result.asType(in: context)))
+		let instance = try #require(Instance<StructType>.extract(from: result))
 		#expect(instance.type.name == "Array")
 	}
 
 	@Test("Knows about array subscript") func arraySubscript() throws {
 		let expr = try Parser.parse("[1, 2, 3][0]")
-		let context = try infer(expr)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 
-		#expect(result == .resolved(.base(.int)))
+		#expect(result == .base(.int))
 	}
 
 	@Test("Knows about array as a property subscript") func arrayPropertySubscript() throws {
@@ -37,14 +38,14 @@ struct StandardLibraryTests: TypeCheckerTest {
 			Wrapper(store: ["1"]).store[0]
 			"""
 		)
-		let context = try infer(expr)
-		let result = try #require(context[expr[1]])
+		let context = try solve(expr)
+		let result = context.find(expr[1])!
 
-		#expect(result == .resolved(.base(.string)))
+		#expect(result == .base(.string))
 	}
 
 	@Test("Knows about array as a property subscript with instance element") func arrayPropertySubscriptInstanceElement() throws {
-		let expr = try Parser.parse(
+		let syntax = try Parser.parse(
 			"""
 			struct Inner {}
 			struct Wrapper {
@@ -54,10 +55,10 @@ struct StandardLibraryTests: TypeCheckerTest {
 			Wrapper(store: []).store[0]
 			"""
 		)
-		let context = try infer(expr)
-		let result = try #require(context[expr[2]])
+		let context = try solve(syntax)
+		let result = try #require(context[syntax[2]])
 
-		let instance = InstanceV1<StructTypeV1>.extract(from: result.asType(in: context))
+		let instance = Instance<StructType>.extract(from: result)
 		#expect(instance?.type.name == "Inner", "didn't get instance type, got \(result)")
 
 //		#expect(result == .type(.base(.string)))

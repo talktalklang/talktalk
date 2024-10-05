@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
+import TalkTalkCore
+
 public typealias Substitutions = [TypeVariable: InferenceType]
 
 public struct InstantiatedResult {
@@ -24,9 +26,12 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 	case scheme(Scheme), resolved(InferenceType)
 
 	public static func optional(_ type: InferenceResult) -> InferenceResult {
-		let enumType = Enum.extract(from: Inferencer.stdlib.type(named: "Optional")!.instantiate(in: Inferencer.stdlib).type)!
+		let optionalType = Library.standard.files.first(where: { $0.path.contains("Optional.talk") })!
+		let context = try! ContextVisitor.visit(Parser.parse(optionalType), module: "Standard")
+
+		let enumType = Enum.extract(from: context.type(named: "Optional")!.instantiate(in: context).type)!
 		let wrapped = enumType.typeParameters["Wrapped"]!
-		let instance = enumType.instantiate(with: [wrapped: type.instantiate(in: Inferencer.stdlib).type])
+		let instance = enumType.instantiate(with: [wrapped: type.instantiate(in: context).type])
 		return .resolved(.instance(.enum(instance)))
 	}
 
@@ -49,6 +54,15 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 		}
 
 		return InstantiatedResult(type: type, variables: variables)
+	}
+
+	func asInstance(in context: Context, with substitutions: [TypeVariable: InferenceType], file: String = #file, line: UInt32 = #line) -> InferenceType {
+		let instantiated = instantiate(in: context, with: substitutions).type
+		if case let .type(type) = instantiated {
+			return .instance(type.instantiate(with: substitutions))
+		} else {
+			return instantiated
+		}
 	}
 
 	var isResolved: Bool {

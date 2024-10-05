@@ -13,18 +13,6 @@ public struct Inferencer {
 	let imports: [InferenceContext]
 	public let context: InferenceContext
 
-	nonisolated(unsafe) static let stdlib: Context = {
-		// swiftlint:disable force_try
-		let stdlib = try! Library.standard.files
-			.filter { $0.path.contains("Optional") }
-			.flatMap {
-			try Parser.parse($0)
-		}
-
-		return try! ContextVisitor.visit(stdlib).solve()
-		// swiftlint:enable force_try
-	}()
-
 	public nonisolated(unsafe) static let stdlibV1: InferenceContext = {
 		// swiftlint:disable force_try
 		let stdlib = try! Library.standard.files.flatMap {

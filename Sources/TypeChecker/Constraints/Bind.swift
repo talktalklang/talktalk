@@ -61,7 +61,7 @@ extension Constraints {
 			case .value(let value):
 				try context.unify(value, .base(type), location)
 			case .call(_, _):
-				()
+				print()
 			}
 		}
 
@@ -104,7 +104,7 @@ extension Constraints {
 			case .value(let value):
 				try context.unify(value, .pattern(pattern), location)
 			case .call(.resolved(.type(.enumCase(let kase))), _):
-				let instance = kase.instantiate(with: instance.substitutions)
+				let instance = kase.instantiate(with: substitutions)
 				try solveEnumCase(instance, pattern: pattern)
 			default:
 				print()

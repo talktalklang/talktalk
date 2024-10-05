@@ -17,6 +17,8 @@ class Context {
 		case normal, pattern
 	}
 
+	let module: String
+
 	// If this context isn't top level we can use its parent to look stuff up
 	let parent: Context?
 
@@ -70,11 +72,13 @@ class Context {
 	var kind: ContextKind = .normal
 
 	init(
+		module: String,
 		parent: Context? = nil,
 		lexicalScope: (any MemberOwner)?,
 		imports: [Context] = [],
 		verbose: Bool = false
 	) {
+		self.module = module
 		self.parent = parent
 		self.children = []
 		self.imports = imports
@@ -84,7 +88,7 @@ class Context {
 
 	func error(_ message: String, at location: SourceLocation, file: String = #file, line: UInt32 = #line) {
 		if let parent {
-			parent.error(message, at: location)
+			parent.error(message, at: location, file: file, line: line)
 		} else {
 			log(message + " \(file):\(line)", prefix: " ! ")
 
@@ -193,7 +197,7 @@ class Context {
 		}
 
 		for imported in lookupImports() {
-			if let result = imported.type(named: name) {
+			if let result = imported.type(named: name, includeParents: includeParents, includeBuiltins: includeBuiltins) {
 				return result
 			}
 		}
@@ -214,7 +218,7 @@ class Context {
 	}
 
 	func addChild(lexicalScope: (any MemberOwner)? = nil) -> Context {
-		let child = Context(parent: self, lexicalScope: lexicalScope)
+		let child = Context(module: module, parent: self, lexicalScope: lexicalScope)
 		children.append(child)
 		return child
 	}
@@ -279,6 +283,10 @@ class Context {
 		case let (.base(lhs), .base(rhs)) where lhs != rhs:
 			error("Cannot unify \(lhs) and \(rhs)", at: location)
 		case var (.instance(lhs), .instance(rhs)):
+			for (lhsVar, rhsVar) in zip(lhs.substitutions.values, rhs.substitutions.values) {
+				try unify(lhsVar, rhsVar, location)
+			}
+
 			let substitutions = lhs.substitutions.merging(rhs.substitutions) { $1 }
 			lhs.substitutions = substitutions
 			rhs.substitutions = substitutions

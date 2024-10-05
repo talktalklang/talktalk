@@ -5,9 +5,11 @@
 //  Created by Pat Nakajima on 10/2/24.
 //
 
+import OrderedCollections
+
 public protocol MemberOwner: CustomDebugStringConvertible {
 	var name: String { get }
-	var typeParameters: [String: TypeVariable] { get }
+	var typeParameters: OrderedDictionary<String, TypeVariable> { get }
 
 	func staticMember(named name: String) -> InferenceResult?
 	func member(named name: String) -> InferenceResult?

@@ -100,20 +100,25 @@ extension Constraints {
 			let initializer = initializer(for: type, freeVars: freeVars)
 			if case let .function(params, _) = initializer.type {
 				for (arg, param) in zip(args, params) {
-					let arg = arg.instantiate(in: context, with: freeVars).type
-					var param = param.instantiate(in: context, with: freeVars).type
+					let argResult = arg.instantiate(in: context, with: freeVars)
+					let paramResult = param.instantiate(in: context, with: freeVars)
+
+					let arg = argResult.type
+					var param = paramResult.type
 
 					if case let .typeVar(variable) = param {
 						param = freeVars[variable] ?? instance.substitutions[variable] ?? param
 
 						try context.bind(variable, to: arg)
+					} else {
+						try context.unify(arg, param, location)
 					}
 				}
 			}
 
 			try context.unify(
 				.instance(.struct(instance)),
-				result.instantiate(in: context, with: freeVars).type,
+				result.instantiate(in: context, with: instance.substitutions.merging(freeVars) { $1 }).type,
 				location
 			)
 		}

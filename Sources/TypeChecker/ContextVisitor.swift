@@ -21,12 +21,53 @@ enum TypeError: Error, LocalizedError {
 	}
 }
 
+public struct Typer {
+	let visitor = InferenceVisitor()
+	let imports: [Context]
+	let context: Context
+
+	static func compileStandardLibrary(verbose: Bool = false) -> Context {
+		let files = Library.standard.files.flatMap { try! Parser.parse($0) }
+		let context = try! ContextVisitor.visit(files, module: "Standard", verbose: verbose)
+		return context
+	}
+
+	init(module: String, imports: [Context], verbose: Bool = false) {
+		// Prepend the standard library
+		var imports = imports
+
+		if module != "Standard" {
+			imports = [Self.compileStandardLibrary()] + imports
+		}
+
+		self.imports = imports
+		self.context = Context(
+			module: module,
+			parent: nil,
+			lexicalScope: nil,
+			imports: imports,
+			verbose: verbose
+		)
+	}
+
+	func solve(_ syntax: [any Syntax]) throws -> Context {
+		let visitor = ContextVisitor()
+		visitor.findNames(syntax: syntax, context: context)
+
+		for syntax in syntax {
+			_ = try syntax.accept(visitor, context)
+		}
+
+		return context.solve()
+	}
+}
+
 struct ContextVisitor: Visitor {
 	typealias Context = TypeChecker.Context
 	typealias Value = InferenceResult
 
-	static func visit(_ syntax: [any Syntax], imports: [Context] = [], verbose: Bool = false) throws -> Context {
-		let context = Context(lexicalScope: nil, imports: imports, verbose: verbose)
+	static func visit(_ syntax: [any Syntax], module: String, imports: [Context] = [], verbose: Bool = false) throws -> Context {
+		let context = Context(module: module, lexicalScope: nil, imports: imports, verbose: verbose)
 		let visitor = ContextVisitor()
 
 		// Do a breadth first traversal to find names
@@ -123,9 +164,17 @@ struct ContextVisitor: Visitor {
 			context.error("Variable \(syntax.name) is already defined as \(existing)", at: syntax.location)
 		}
 
-		let typeExpr = try syntax.typeExpr.flatMap { try $0.accept(self, context) }
-		let value = try syntax.value.flatMap { try $0.accept(self, context) }
+		let typeExpr = try syntax.typeExpr.flatMap {
+			var result = try visit($0, context)
 
+			if case let .resolved(.type(type)) = result {
+				result = .resolved(.instance(type.instantiate(with: [:])))
+			}
+
+			return result
+		}
+
+		let value = try syntax.value.flatMap { try $0.accept(self, context) }
 		let type: InferenceResult
 
 		switch (typeExpr, value) {
@@ -139,9 +188,7 @@ struct ContextVisitor: Visitor {
 			context.addConstraint(Constraints.Equality(context: context, lhs: typeExpr, rhs: .resolved(.typeVar(typeVariable)), location: syntax.location))
 			type = typeExpr
 		case let (.some(typeExpr), .some(value)):
-			if typeExpr != value {
-				context.error("\(value) cannot be assigned to \(typeExpr)", at: syntax.location)
-			}
+			context.addConstraint(Constraints.Equality(context: context, lhs: value, rhs: typeExpr, location: syntax.location))
 
 			type = typeExpr
 		}
@@ -306,7 +353,16 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: UnaryExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		// TODO: Validate here
+		switch syntax.op.kind {
+		case .bang:
+			return .resolved(.base(.bool))
+		case .minus:
+			return .resolved(.base(.int))
+		default:
+			context.error("Invalid unary operator: \(syntax.op.kind)", at: syntax.location)
+			return .resolved(.void)
+		}
 	}
 
 	func visit(_ syntax: BinaryExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -328,7 +384,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: WhileStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.void)
 	}
 
 	func visit(_ syntax: BlockStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -482,7 +538,12 @@ struct ContextVisitor: Visitor {
 				substitutions[typeParam] = paramType.instantiate(in: context).type
 			}
 
-			return .resolved(context.instantiate(scheme, with: substitutions).0)
+			if syntax.isOptional {
+				return .resolved(.optional(type.asInstance(in: context, with: substitutions)))
+			} else {
+				return .resolved(type.asInstance(in: context, with: substitutions))
+			}
+
 		} else {
 			context.error("Type not found: \(syntax.identifier.lexeme)", at: syntax.location)
 			return .resolved(.any)
@@ -553,11 +614,47 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: ArrayLiteralExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		guard case let .scheme(arrayScheme) = context.type(named: "Array"),
+					case let .type(.struct(arrayType)) = arrayScheme.type else {
+			context.error("Could not load builtin Array type", at: syntax.location)
+			return .resolved(.error(.init(kind: .typeError("Could not load builtin array type"), location: syntax.location)))
+		}
+
+		let elements: [InferenceResult] = try syntax.exprs.map { try $0.accept(self, context) }
+		let elementType = elements.first ?? .resolved(.typeVar((context.freshTypeVariable("Array<Element>"))))
+		let elementTypeVar = arrayScheme.variables[0]
+		let arrayInstance = Instance(
+			type: arrayType,
+			substitutions: [
+				elementTypeVar: elementType.instantiate(in: context).type
+			]
+		)
+
+		return .resolved(.instance(.struct(arrayInstance)))
 	}
 
 	func visit(_ syntax: SubscriptExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let receiver = try syntax.receiver.accept(self, context)
+
+		if case let .resolved(.instance(receiver)) = receiver {
+			guard let getMethod = receiver.member(named: "get"),
+						case let .function(_, returns) = getMethod.instantiate(in: context, with: receiver.substitutions).type else {
+				context.error("No `get` method found for subscript receiver \(syntax.receiver.description)", at: syntax.receiver.location)
+				return .resolved(.void)
+			}
+
+			context.define(syntax, as: returns)
+			return returns
+		} else {
+			let args = try syntax.args.map { try $0.accept(self, context) }
+			let result = context.freshTypeVariable(syntax.description)
+			context.addConstraint(
+				Constraints.Subscript(context: context, receiver: receiver, args: args, result: result, location: syntax.location)
+			)
+
+			context.define(syntax, as: .resolved(.typeVar(result)))
+			return .resolved(.typeVar(result))
+		}
 	}
 
 	func visit(_ syntax: DictionaryLiteralExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -738,7 +835,9 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: GroupedExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let result = try syntax.expr.accept(self, context)
+		context.define(syntax, as: result)
+		return result
 	}
 
 	func visit(_ syntax: LetPatternSyntax, _ context: Context) throws -> InferenceResult {
@@ -775,16 +874,26 @@ struct ContextVisitor: Visitor {
 		}
 
 		let name = syntax.name.lexeme
-
 		let annotatedType: InferenceResult? = try syntax.typeAnnotation.flatMap {
 			// Get the type of the property, this needs to be recursive.
 			let type = try visit($0, context)
 
 			var subsitutions: Substitutions = [:]
+
 			if case let .scheme(scheme) = type {
 				for (schemeVariable, paramSyntax) in zip(scheme.variables, $0.genericParams) {
 					let typeArgument = try visit(paramSyntax, context)
 					subsitutions[schemeVariable] = typeArgument.instantiate(in: context).type
+				}
+			} else if case let .resolved(.type(type)) = type {
+				for ((_, typeVar), paramSyntax) in zip(type.typeParameters, $0.genericParams) {
+					let typeArgument = try visit(paramSyntax, context)
+
+					context.addConstraint(
+						Constraints.Equality(context: context, lhs: .resolved(.typeVar(typeVar)), rhs: typeArgument, location: paramSyntax.location)
+					)
+
+					subsitutions[typeVar] = typeArgument.asInstance(in: context, with: subsitutions)
 				}
 			}
 

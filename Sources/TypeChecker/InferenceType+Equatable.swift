@@ -14,6 +14,8 @@ extension InferenceType: Equatable {
 			lhs == rhs
 		case let (.instance(lhs), .instance(rhs)):
 			lhs.type.name == rhs.type.name && lhs.substitutions == rhs.substitutions
+		case let (.type(lhs), .type(rhs)):
+			lhs.name == rhs.name
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
 			lhsParams == rhsParams && lhsReturns == rhsReturns
 		case let (.typeVar(lhs), .typeVar(rhs)):

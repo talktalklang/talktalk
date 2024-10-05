@@ -121,7 +121,8 @@ struct EnumTests: TypeCheckerTest {
 		let enumType = try #require(Enum.extract(from: context[syntax[0]]!))
 		#expect(enumType.name == "A")
 
-		let b = try #require(Enum.extract(from: context.applySubstitutions(to: enumType.cases["foo"]!.attachedTypes[0])))
+		let foo = context.applySubstitutions(to: enumType.cases["foo"]!.attachedTypes[0])
+		let b = try #require(Enum.extract(from: foo))
 		#expect(b.name == "B")
 	}
 
@@ -141,25 +142,19 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
-		let result = try context.get(syntax[2])
-		let enumType = InstanceV1<EnumTypeV1>.extract(from: result.asType(in: context))!.type
+		let result = context.find(syntax[0])!
+		let enumType = Enum.extract(from: result)!
 		#expect(enumType.name == "Thing")
 
 		let arg = syntax[2].cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0].value
 
-		let instance = try #require(InstanceV1<EnumTypeV1>.extract(from: context[arg]!.asType(in: context)))
-		#expect(enumType == instance.type)
 
-		#expect(context[arg] == .resolved(.instanceV1(.enumType(instance))))
-
-		#expect(enumType.cases == [
-			EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)]),
-			EnumCase(type: enumType, name: "bar", attachedTypes: [.base(.int)]),
-		]
-		)
+		let instance = try #require(Instance<Enum.Case>.extract(from: context.find(arg)!))
+		#expect(instance.type.type.name == "Thing")
+		#expect(context.find(arg) == .instance(.enumCase(instance)))
 	}
 
 	@Test("Can infer self") func enumSelf() throws {

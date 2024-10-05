@@ -30,28 +30,28 @@ struct AnyTypeVar {
 struct TypeCheckerTests: TypeCheckerTest {
 	@Test("Infers int literal") func intLiteral() throws {
 		let expr = try Parser.parse("123")
-		let context = try ContextVisitor.visit(expr)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 		#expect(result == .base(.int))
 	}
 
 	@Test("Infers string literal") func stringLiteral() throws {
 		let expr = try Parser.parse(#""hello world""#)
-		let context = try ContextVisitor.visit(expr)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 		#expect(result == .base(.string))
 	}
 
 	@Test("Infers bool literal") func boolLiteral() throws {
 		let expr = try Parser.parse("true")
-		let context = try ContextVisitor.visit(expr)
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 		#expect(result == .base(.bool))
 	}
 
 	@Test("Infers identity function") func identityFunction() throws {
 		let expr = try Parser.parse("func(x) { x }")
-		let context = try ContextVisitor.visit(expr)
+		let context = try solve(expr)
 
 		let result = try #require(context[expr[0]])
 
@@ -87,7 +87,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 
 	@Test("Infers binary expr with strings") func binaryStrings() throws {
 		let expr = try Parser.parse(#""hello " + "world""#)
-		let context = try ContextVisitor.visit(expr).solve()
+		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 		#expect(result == .base(.string))
 	}
