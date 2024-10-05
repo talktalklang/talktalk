@@ -31,25 +31,18 @@ extension Constraints {
 		}
 
 		private func solve(result: InferenceResult, pattern: Pattern) throws {
+			let result = context.applySubstitutions(to: result)
 			let pattern = context.applySubstitutions(to: pattern, with: [:])
 
-			switch context.applySubstitutions(to: result) {
+			switch result {
 			case .instance(.enumCase(let instance)):
 				try solveEnumCase(instance, pattern: pattern)
+			case .type(.enumCase(let kase)):
+				try solveEnumCase(kase, pattern: pattern)
 			case .base(let type):
 				try solveBase(type, pattern: pattern)
 			case .type(let type):
 				try solveType(type, pattern: pattern)
-			case .pattern(let subpattern):
-				switch subpattern {
-				case .variable(let string, let inferenceResult):
-					print()
-				case .call(let inferenceResult, let array):
-					print()
-				case .value(let inferenceType):
-					print()
-					print()
-				}
 			default:
 				if retries < 10 {
 					context.retry(self)
@@ -106,9 +99,7 @@ extension Constraints {
 				try solveEnumCase(kase, pattern: pattern)
 			case let .call(.type(.type(.enumCase(kase))), _):
 				try solveEnumCase(kase, pattern: pattern)
-			case let .call(.type(type), args):
-//				try solve(result: type, pattern: .call(type, args))
-				print("\(type) \(args)")
+			case let .call(.type(wrapper), args):
 				print()
 			default:
 				try context.unify(.type(type), .pattern(pattern), location)

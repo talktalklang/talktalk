@@ -268,6 +268,10 @@ class Context {
 			substitutions[typeVar] = .type(type)
 		case let (.base(lhs), .base(rhs)) where lhs != rhs:
 			error("Cannot unify \(lhs) and \(rhs)", at: location)
+		case var (.instance(lhs), .instance(rhs)):
+			let substitutions = lhs.substitutions.merging(rhs.substitutions) { $1 }
+			lhs.substitutions = substitutions
+			rhs.substitutions = substitutions
 		default:
 			()
 		}

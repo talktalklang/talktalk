@@ -13,7 +13,7 @@ extension InferenceType: Equatable {
 		case let (.type(.struct(lhs)), .type(.struct(rhs))):
 			lhs == rhs
 		case let (.instance(lhs), .instance(rhs)):
-			lhs.type.name == rhs.type.name
+			lhs.type.name == rhs.type.name && lhs.substitutions == rhs.substitutions
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
 			lhsParams == rhsParams && lhsReturns == rhsReturns
 		case let (.typeVar(lhs), .typeVar(rhs)):

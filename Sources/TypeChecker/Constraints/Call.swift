@@ -87,8 +87,8 @@ extension Constraints {
 			}
 
 			try context.unify(
-				.instance(.enumCase(instance)),
 				result.instantiate(in: context, with: freeVars).type,
+				.instance(.enumCase(instance)),
 				location
 			)
 		}

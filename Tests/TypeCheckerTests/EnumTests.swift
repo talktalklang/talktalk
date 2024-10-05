@@ -47,7 +47,7 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		let instance = Instance<Enum.Case>.extract(from: context[syntax[1]]!)!
 		#expect(instance.type.type.name == "Thing")
 		#expect(instance.type.name == "foo")
@@ -75,7 +75,7 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		let enumType = try #require(Enum.extract(from: context[syntax[0]]!))
 
 		#expect(enumType.name == "Thing")
@@ -89,7 +89,6 @@ struct EnumTests: TypeCheckerTest {
 
 		let wrappedString = Instance<Enum.Case>.extract(from: context[syntax[2]]!)
 		#expect(wrappedString?.substitutions[.new("Wrapped", 1, isGeneric: true)] == .base(.string))
-
 
 		let wrappedIntVar = syntax[3].cast(MatchStatementSyntax.self)
 			.cases[0].body[0]
@@ -177,7 +176,7 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		let enumType = syntax[0].cast(EnumDeclSyntax.self)
 		let enumInferenceType = Enum.extract(from: context[enumType]!)!
 

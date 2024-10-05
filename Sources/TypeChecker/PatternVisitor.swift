@@ -21,7 +21,6 @@ struct PatternVisitor: Visitor {
 		}
 
 		let callee = try syntax.callee.accept(visitor, context)
-
 		let args = if let parameters = visitor.parameters(for: callee) {
 			try zip(syntax.args, parameters).map { (arg, param) in
 				try context.expecting(param) {
@@ -130,16 +129,20 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ syntax: MemberExprSyntax, _ context: Context) throws -> Pattern {
-		let receiver = try syntax.receiver?.accept(self, context)
+		let receiver = try syntax.receiver?.accept(visitor, context)
 
 		guard let expectedType = context.expectedType else {
 			throw TypeError.typeError("Could not determine receiver: \(syntax.description)")
 		}
 
-		if let member = visitor.member(from: expectedType, named: syntax.property) {
+		if let member = visitor.member(from: receiver ?? expectedType, named: syntax.property) {
 			// FIXME: Bad. We don't want to instantiate in the visitor
 			context.define(syntax, as: .type(.pattern(.value(member.instantiate(in: context).type))))
 			return .value(member.instantiate(in: context).type)
+		} else {
+			let memberTypeVar = context.freshTypeVariable(syntax.description)
+			context.define(syntax, as: .type(.pattern(.value(.typeVar(memberTypeVar)))))
+			return .value(.typeVar(memberTypeVar))
 		}
 
 		return .value(.void)

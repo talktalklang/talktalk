@@ -163,8 +163,8 @@ struct ContextVisitor: Visitor {
 			switch type {
 			case let .type(.enum(enumType)):
 				return enumType.staticMember(named: name)
-			case let .type(.enumCase(kase)) where kase.name == name:
-				return receiver
+			case let .type(.enumCase(kase)):
+				return kase.type.staticMember(named: name)
 			case let .instance(wrapper):
 				return wrapper.member(named: name)
 			default:
@@ -191,14 +191,14 @@ struct ContextVisitor: Visitor {
 
 	func returnResult(for result: InferenceResult) -> InferenceResult? {
 		switch result {
-		case .scheme(let scheme):
-			return returnResult(for: .type(scheme.type))
-			case .type(let type):
+		case .scheme(_):
+			return nil
+		case .type(let type):
 			switch type {
 			case .function(_, let returns):
 				return returns
 			case .type(.enumCase(let kase)):
-				return .type(.type(.enumCase(kase)))
+				return .type(.instance(.enumCase(Instance(type: kase))))
 			default:
 				return nil
 			}
