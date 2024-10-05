@@ -81,7 +81,12 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 	}
 
 	public func member(named name: String) -> InferenceResult? {
-		members[name]
+		if let kase = cases[name] {
+			let scheme = Scheme(name: name, variables: Array(typeParameters.values), type: .type(.enumCase(kase)))
+			return .scheme(scheme)
+		}
+
+		return members[name]
 	}
 
 	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {

@@ -37,6 +37,8 @@ extension Constraints {
 			switch result {
 			case .instance(.enumCase(let instance)):
 				try solveEnumCase(instance, pattern: pattern)
+			case .instance(let instance):
+				try solveInstance(instance, pattern: pattern)
 			case .type(.enumCase(let kase)):
 				try solveEnumCase(kase, pattern: pattern)
 			case .base(let type):
@@ -90,6 +92,22 @@ extension Constraints {
 
 					try solve(result: .type(param), pattern: pattern)
 				}
+			}
+		}
+
+		private func solveInstance(_ instance: InstanceWrapper, pattern: Pattern) throws {
+			let substitutions = instance.substitutions
+
+			switch pattern {
+			case .variable(_, _):
+				print()
+			case .value(let value):
+				try context.unify(value, .pattern(pattern), location)
+			case .call(.type(.type(.enumCase(let kase))), _):
+				let instance = kase.instantiate(with: instance.substitutions)
+				try solveEnumCase(instance, pattern: pattern)
+			default:
+				print()
 			}
 		}
 

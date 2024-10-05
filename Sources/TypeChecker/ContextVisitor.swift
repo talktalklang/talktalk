@@ -205,6 +205,22 @@ struct ContextVisitor: Visitor {
 		}
 	}
 
+	func unwrapped(_ result: InferenceResult, in context: Context, location: SourceLocation) -> InferenceResult {
+		switch result {
+		case .scheme(_):
+			return result
+		case .type(let type):
+			switch type {
+			case .instance(.enum(let instance)):
+				let wrapped = instance.type.typeParameters["Wrapped"]!
+				return .type(instance.substitutions[wrapped]!)
+			default:
+				context.error("result not optional: \(result)", at: location)
+				return result
+			}
+		}
+	}
+
 	// MARK: Visits
 
 	func visit(_ syntax: CallExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -473,8 +489,10 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: IfStmtSyntax, _ context: Context) throws -> InferenceResult {
-		_ = try syntax.condition.accept(self, context)
-		_ = try syntax.consequence.accept(self, context)
+		let consequenceContext = context.addChild()
+
+		_ = try syntax.condition.accept(self, consequenceContext)
+		_ = try syntax.consequence.accept(self, consequenceContext)
 		_ = try syntax.alternative?.accept(self, context)
 
 		return .type(.void)
@@ -655,7 +673,17 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: LetPatternSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		if let value = try syntax.value?.accept(self, context) {
+			context.define(syntax.name.lexeme, as: value)
+		} else {
+			if let variable = context.type(named: syntax.name.lexeme) {
+				context.define(syntax.name.lexeme, as: unwrapped(variable, in: context, location: syntax.location))
+			} else {
+				context.error("Undefined variable: \(syntax.name.lexeme)", at: syntax.location)
+			}
+		}
+
+		return .type(.void)
 	}
 
 	func visit(_ syntax: MethodDeclSyntax, _ context: Context) throws -> InferenceResult {

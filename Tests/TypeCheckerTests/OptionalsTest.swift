@@ -25,7 +25,7 @@ struct OptionalsTest: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true)
+		let context = try solve(syntax)
 		let optionalType = context[syntax[1]]!
 		#expect(optionalType == .optional(.base(.int)))
 
@@ -34,7 +34,7 @@ struct OptionalsTest: TypeCheckerTest {
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)
 
-		#expect(context[unwrapped] == .base(.int))
+		#expect(context.find(unwrapped) == .base(.int))
 	}
 
 	@Test("Returning value") func returningValue() throws {
@@ -44,7 +44,7 @@ struct OptionalsTest: TypeCheckerTest {
 				if on {
 					return 123
 				} else {
-					return none
+					return nil
 				}
 			}
 
@@ -52,8 +52,9 @@ struct OptionalsTest: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let optionalType = context[syntax[1]]!
+		let context = try solve(syntax)
+		let optionalType = context.find(syntax[1])!
+		#expect(optionalType == .optional(.base(.int)))
 	}
 
 	@Test("Can match subscripts") func subs() throws {
@@ -83,9 +84,8 @@ struct OptionalsTest: TypeCheckerTest {
 	@Test("Can let unwrap") func letUnwrap() throws {
 		let syntax = try Parser.parse(
 			"""
-			var foo: Array<int?> = []
-			var bar = foo[1]
-
+			func foo() -> int? { 123 }
+			let bar = foo()
 			bar
 
 			if let bar {
@@ -94,24 +94,22 @@ struct OptionalsTest: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax, verbose: true)
-
-		#expect(context[syntax[2]] == .type(.optionalV1(.base(.int))))
+		let context = try solve(syntax)
+		#expect(context.find(syntax[2]) == .optional(.base(.int)))
 
 		let varExpr = syntax[3]
 			.cast(IfStmtSyntax.self).consequence.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)
-
-		#expect(context[varExpr] == .type(.base(.int)))
+		print()
+		#expect(context.find(varExpr) == .base(.int))
 	}
 
 	@Test("let unwrap does not leak into else scope") func letUnwrapDoesNotLeak() throws {
 		let syntax = try Parser.parse(
 			"""
-			var foo: Array<int?> = []
-			var bar = foo[1]
-
+			func foo() -> int? { 123 }
+			let bar = foo()
 			bar
 
 			if let bar {
@@ -122,17 +120,15 @@ struct OptionalsTest: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax,verbose: true)
+		let context = try solve(syntax)
 
-		#expect(context[syntax[2]] == .type(.optionalV1(.base(.int))))
+		#expect(context.find(syntax[2]) == .optional(.base(.int)))
 
 		let varExpr = syntax[3]
 			.cast(IfStmtSyntax.self).alternative!.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)
 
-		print()
-
-		#expect(context[varExpr] == .type(.optionalV1(.base(.int))))
+		#expect(context.find(varExpr) == .optional(.base(.int)))
 	}
 }
