@@ -61,9 +61,9 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let result1 = context[syntax[1]]
-		#expect(result1 == .type(.base(.int)))
+		#expect(result1 == .base(.int))
 	}
 
 	@Test("Can typecheck nested generic types") func nestedGenerics() throws {
