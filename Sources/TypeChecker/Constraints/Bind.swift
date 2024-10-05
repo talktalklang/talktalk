@@ -22,7 +22,7 @@ extension Constraints {
 
 		var after: String {
 			let target = context.applySubstitutions(to: target)
-			let pattern = context.applySubstitutions(to: .type(.pattern(pattern)))
+			let pattern = context.applySubstitutions(to: .resolved(.pattern(pattern)))
 			return "Bind(target: \(target.debugDescription), pattern: \(pattern.debugDescription), location: \(location))"
 		}
 
@@ -75,7 +75,7 @@ extension Constraints {
 				for (param, pattern) in zip(instance.type.attachedTypes, args) {
 					let param = context.applySubstitutions(to: param, with: instance.substitutions.asResults)
 
-					try solve(result: .type(param), pattern: pattern)
+					try solve(result: .resolved(param), pattern: pattern)
 				}
 			}
 		}
@@ -90,7 +90,7 @@ extension Constraints {
 				for (param, pattern) in zip(kase.attachedTypes, args) {
 					let param = context.applySubstitutions(to: param)
 
-					try solve(result: .type(param), pattern: pattern)
+					try solve(result: .resolved(param), pattern: pattern)
 				}
 			}
 		}
@@ -103,7 +103,7 @@ extension Constraints {
 				print()
 			case .value(let value):
 				try context.unify(value, .pattern(pattern), location)
-			case .call(.type(.type(.enumCase(let kase))), _):
+			case .call(.resolved(.type(.enumCase(let kase))), _):
 				let instance = kase.instantiate(with: instance.substitutions)
 				try solveEnumCase(instance, pattern: pattern)
 			default:
@@ -113,9 +113,9 @@ extension Constraints {
 
 		private func solveType(_ type: TypeWrapper, pattern: Pattern) throws {
 			switch pattern {
-			case let .call(.type(.instance(.enumCase(kase))), _):
+			case let .call(.resolved(.instance(.enumCase(kase))), _):
 				try solveEnumCase(kase, pattern: pattern)
-			case let .call(.type(.type(.enumCase(kase))), _):
+			case let .call(.resolved(.type(.enumCase(kase))), _):
 				try solveEnumCase(kase, pattern: pattern)
 			default:
 				try context.unify(.type(type), .pattern(pattern), location)

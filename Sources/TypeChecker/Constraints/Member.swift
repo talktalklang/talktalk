@@ -84,7 +84,7 @@ extension Constraints {
 				let receiver = context.applySubstitutions(to: .typeVar(typeVar), with: variables.asResults)
 
 				if depth < 1 {
-					try solve(receiver: .type(receiver), depth: depth + 1)
+					try solve(receiver: .resolved(receiver), depth: depth + 1)
 				}
 
 				if retries < 1 {

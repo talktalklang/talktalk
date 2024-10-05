@@ -44,9 +44,9 @@ public struct BuiltinFunction {
 			name: "print",
 			type: .function(
 				[
-					.type(.any),
+					.resolved(.any),
 				],
-				.type(.void)
+				.resolved(.void)
 			)
 		)
 	}
@@ -55,8 +55,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_allocate",
 			type: .function(
-				[.type(.base(.int))],
-				.type(.base(.pointer))
+				[.resolved(.base(.int))],
+				.resolved(.base(.pointer))
 			)
 		)
 	}
@@ -65,8 +65,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_free",
 			type: .function(
-				[.type(.base(.pointer))],
-				.type(.void)
+				[.resolved(.base(.pointer))],
+				.resolved(.void)
 			)
 		)
 	}
@@ -77,8 +77,8 @@ public struct BuiltinFunction {
 		return BuiltinFunction(
 			name: "_deref",
 			type: .function(
-				[.type(.base(.pointer))],
-				.type(.typeVar(returns))
+				[.resolved(.base(.pointer))],
+				.resolved(.typeVar(returns))
 			)
 		)
 	}
@@ -88,10 +88,10 @@ public struct BuiltinFunction {
 			name: "_storePtr",
 			type: .function(
 				[
-					.type(.base(.pointer)),
-					.type(.any),
+					.resolved(.base(.pointer)),
+					.resolved(.any),
 				],
-				.type(.void)
+				.resolved(.void)
 			)
 		)
 	}
@@ -100,8 +100,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_hash",
 			type: .function(
-				[.type(.any)],
-				.type(.base(.int))
+				[.resolved(.any)],
+				.resolved(.base(.int))
 			)
 		)
 	}
@@ -111,9 +111,9 @@ public struct BuiltinFunction {
 			name: "_crash",
 			type: .function(
 				[
-					.type(.base(.string)),
+					.resolved(.base(.string)),
 				],
-				.type(.void)
+				.resolved(.void)
 			)
 		)
 	}

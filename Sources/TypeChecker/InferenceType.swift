@@ -8,7 +8,7 @@ import Foundation
 import OrderedCollections
 
 public enum TypeWrapper {
-	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case)
+	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case), `protocol`(ProtocolType)
 
 	func instantiate(with variables: Substitutions) -> InstanceWrapper {
 		switch self {
@@ -18,17 +18,21 @@ public enum TypeWrapper {
 			return .enum(type.instantiate(with: variables))
 		case .enumCase(let type):
 			return .enumCase(type.instantiate(with: variables))
+		case .protocol(let type):
+			return .protocol(type.instantiate(with: variables))
 		}
 	}
 
 	func staticMember(named name: String) -> InferenceResult? {
 		switch self {
-		case .struct(let structType):
-			structType.staticMember(named: name)
-		case .enum(let enumType):
-			enumType.staticMember(named: name)
-		case .enumCase(let enumCase):
-			enumCase.staticMember(named: name)
+		case .struct(let type):
+			type.staticMember(named: name)
+		case .enum(let type):
+			type.staticMember(named: name)
+		case .enumCase(let type):
+			type.staticMember(named: name)
+		case .protocol(let type):
+			type.staticMember(named: name)
 		}
 	}
 }
@@ -42,7 +46,7 @@ public indirect enum InferenceType {
 	}
 
 	public static func optionalV1(_ type: InferenceType) -> InferenceType {
-		let enumType = EnumTypeV1.extract(from: .type(Inferencer.stdlibV1.type(named: "Optional")!))!
+		let enumType = EnumTypeV1.extract(from: .resolved(Inferencer.stdlibV1.type(named: "Optional")!))!
 		let wrapped = enumType.typeContext.typeParameters.first!
 		let instance = enumType.instantiate(with: [wrapped: type], in: .init(moduleName: "Standard", parent: nil, environment: .init(), constraints: .init()))
 		return .instanceV1(instance)

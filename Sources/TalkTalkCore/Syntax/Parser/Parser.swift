@@ -145,11 +145,15 @@ public struct Parser {
 
 		if let staticKeyword = match(.static), context.allowed.contains(.static) {
 			if check(.func), didConsume(.func) {
-				return methodDecl(isStatic: true, modifiers: [staticKeyword])
+				if context == .protocol {
+					return funcSignatureDecl(isStatic: true, modifiers: [staticKeyword])
+				} else {
+					return methodDecl(isStatic: true, modifiers: [staticKeyword])
+				}
 			}
 
 			if check(.var), didConsume(.var) {
-				if context == .struct {
+				if context.hasProperties {
 					return propertyDecl(previous, isStatic: true, modifiers: [staticKeyword])
 				} else {
 					return letVarDecl(.var, isStatic: true, modifiers: [staticKeyword])
@@ -157,7 +161,7 @@ public struct Parser {
 			}
 
 			if check(.let), didConsume(.let) {
-				if context == .struct {
+				if context.hasProperties {
 					return propertyDecl(previous, isStatic: true, modifiers: [staticKeyword])
 				} else {
 					return letVarDecl(.let, isStatic: true, modifiers: [staticKeyword])
@@ -166,6 +170,10 @@ public struct Parser {
 		}
 
 		if didMatch(.func), context.allowed.contains(.func) {
+			if context == .protocol {
+				return funcSignatureDecl(isStatic: false, modifiers: [])
+			}
+
 			if context.isLexicalScopeBody {
 				return methodDecl(isStatic: false)
 			} else {
@@ -182,7 +190,7 @@ public struct Parser {
 		}
 
 		if didMatch(.var), context.allowed.contains(.var) {
-			if context == .struct {
+			if context.hasProperties {
 				return propertyDecl(previous, isStatic: false, modifiers: [])
 			} else {
 				return letVarDecl(.var, isStatic: false)
@@ -190,7 +198,7 @@ public struct Parser {
 		}
 
 		if didMatch(.let), context.allowed.contains(.let) {
-			if context == .struct {
+			if context.hasProperties {
 				return propertyDecl(previous, isStatic: false, modifiers: [])
 			} else {
 				return letVarDecl(.let, isStatic: false)

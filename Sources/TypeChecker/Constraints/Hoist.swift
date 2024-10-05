@@ -21,12 +21,12 @@ extension Constraints {
 		}
 
 		var after: String {
-			"Hoist(variables: \(variables.map { context.applySubstitutions(to: .type(.typeVar($0))).debugDescription })"
+			"Hoist(variables: \(variables.map { context.applySubstitutions(to: .resolved(.typeVar($0))).debugDescription })"
 		}
 
 		func solve() {
 			for typeVariable in variables {
-				context.log("Hoisting \(typeVariable.debugDescription) -> \(context.applySubstitutions(to: .type(.typeVar(typeVariable))))", prefix: " ^ ")
+				context.log("Hoisting \(typeVariable.debugDescription) -> \(context.applySubstitutions(to: .resolved(.typeVar(typeVariable))))", prefix: " ^ ")
 				parent.substitutions[typeVariable] = context.substitutions[typeVariable]
 			}
 		}

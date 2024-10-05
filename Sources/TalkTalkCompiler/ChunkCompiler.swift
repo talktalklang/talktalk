@@ -347,7 +347,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// is void then we just emit returnVoid. Otherwise we emit returnValue which will grab the return
 		// value from the top of the stack.
 		let opcode: Opcode = switch expr.inferenceType {
-		case .function(_, .type(.void)):
+		case .function(_, .resolved(.void)):
 			.returnVoid
 		default:
 			.returnValue
@@ -958,7 +958,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		let opcode: Opcode = switch decl.inferenceType {
-		case .function(_, .type(.void)):
+		case .function(_, .resolved(.void)):
 			.returnVoid
 		default:
 			.returnValue

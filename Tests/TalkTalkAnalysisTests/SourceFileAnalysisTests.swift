@@ -78,7 +78,7 @@ struct AnalysisTests {
 			""")
 
 		#expect(
-			fn.typeAnalyzed == .function([.type(.base(.int))], .type(.base(.int)))
+			fn.typeAnalyzed == .function([.resolved(.base(.int))], .resolved(.base(.int)))
 		)
 	}
 
@@ -117,7 +117,7 @@ struct AnalysisTests {
 			"""
 		).cast(AnalyzedExprStmt.self).exprAnalyzed
 
-		#expect(fn.typeAnalyzed == .function([.type(.base(.int))], .type(.base(.int))))
+		#expect(fn.typeAnalyzed == .function([.resolved(.base(.int))], .resolved(.base(.int))))
 	}
 
 	@Test("Types simple calls") func funcSimpleCalls() {
@@ -206,11 +206,11 @@ struct AnalysisTests {
 		#expect(param.typeAnalyzed == .base(.int))
 		#expect(
 			fn.typeAnalyzed == .function(
-				[.type(.base(.int))],
-				.type(
+				[.resolved(.base(.int))],
+				.resolved(
 					.function(
-						[.type(.base(.int))],
-						.type(.base(.int))
+						[.resolved(.base(.int))],
+						.resolved(.base(.int))
 					)
 				)
 			)
@@ -220,7 +220,7 @@ struct AnalysisTests {
 		let nestedFn = fn.bodyAnalyzed.stmtsAnalyzed[0]
 			.cast(AnalyzedExprStmt.self).exprAnalyzed
 			.cast(AnalyzedFuncExpr.self)
-		#expect(nestedFn.typeAnalyzed == .function([.type(.base(.int))], .type(.base(.int))))
+		#expect(nestedFn.typeAnalyzed == .function([.resolved(.base(.int))], .resolved(.base(.int))))
 
 		#expect(nestedFn.environment.captures.count == 1)
 		let capture = try #require(nestedFn.environment.captures.first)
@@ -247,14 +247,14 @@ struct AnalysisTests {
 		let def = try #require(main[0].cast(AnalyzedLetDecl.self))
 		let makeCounter = try #require(def.valueAnalyzed!.cast(AnalyzedFuncExpr.self))
 		#expect(makeCounter.environment.captures.count == 0)
-		#expect(makeCounter.typeAnalyzed == .function([], .type(.function([], .type(.base(.int))))))
-		#expect(makeCounter.returnType == .function([], .type(.base(.int))))
+		#expect(makeCounter.typeAnalyzed == .function([], .resolved(.function([], .resolved(.base(.int))))))
+		#expect(makeCounter.returnType == .function([], .resolved(.base(.int))))
 
 		let increment = try #require(makeCounter.bodyAnalyzed.stmtsAnalyzed.last)
 			.cast(AnalyzedReturnStmt.self).valueAnalyzed!
 			.cast(AnalyzedFuncExpr.self)
 
-		#expect(increment.typeAnalyzed == .function([], .type(.base(.int))))
+		#expect(increment.typeAnalyzed == .function([], .resolved(.base(.int))))
 		#expect(increment.environment.captures.count == 1)
 		#expect(increment.environment.captures[0].name == "count")
 	}
@@ -291,7 +291,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		let structType = TypeChecker.StructTypeV1.extractType(from: .type(s.typeAnalyzed))
+		let structType = TypeChecker.StructTypeV1.extractType(from: .resolved(s.typeAnalyzed))
 		#expect(structType?.name == "Person")
 
 		let stype = try s.environment.type(named: "Person")
@@ -300,7 +300,7 @@ struct AnalysisTests {
 		#expect(type.methods["init"] != nil)
 
 		#expect(type.properties["age"]!.inferenceType == .base(.int))
-		#expect(type.methods["sup"]!.inferenceType == .function([], .type(.base(.int))))
+		#expect(type.methods["sup"]!.inferenceType == .function([], .resolved(.base(.int))))
 	}
 
 	@Test("Types calling struct methods on self") func selfMethodCalls() throws {
@@ -326,7 +326,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		let structType = try #require(TypeChecker.StructTypeV1.extractType(from: .type(s.typeAnalyzed)))
+		let structType = try #require(TypeChecker.StructTypeV1.extractType(from: .resolved(s.typeAnalyzed)))
 
 		#expect(structType.name == "Person")
 
@@ -371,7 +371,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		let type = try #require(try! s.environment.type(named: "Person"))
 
-		let structType = TypeChecker.StructTypeV1.extractType(from: .type(s.typeAnalyzed))!
+		let structType = TypeChecker.StructTypeV1.extractType(from: .resolved(s.typeAnalyzed))!
 		let sup = type.methods["sup"]!.returnTypeID
 
 		#expect(sup == .selfVar(.instantiatable(.struct(structType))))

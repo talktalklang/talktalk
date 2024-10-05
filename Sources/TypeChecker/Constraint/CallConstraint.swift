@@ -49,7 +49,7 @@ struct CallConstraint: InferenceConstraint {
 			} else {
 				// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
 				context.log("Deferring call constraint on \(typeVar)", prefix: " ? ")
-				context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
+				context.deferConstraint(.call(.resolved(callee), args, returns: returns, at: location, isRetry: true))
 				return .ok
 			}
 		case let .error(error):
@@ -62,7 +62,7 @@ struct CallConstraint: InferenceConstraint {
 				} else {
 					// If we can't find the callee, then add a constraint to the end of the list to see if we end up finding it later
 					context.log("Deferring call constraint on \(name)", prefix: " ? ")
-					context.deferConstraint(.call(.type(callee), args, returns: returns, at: location, isRetry: true))
+					context.deferConstraint(.call(.resolved(callee), args, returns: returns, at: location, isRetry: true))
 				}
 				return .ok
 			}
@@ -134,7 +134,7 @@ struct CallConstraint: InferenceConstraint {
 				default:
 					params = []
 				}
-			case let .type(.function(fnParams, _)):
+			case let .resolved(.function(fnParams, _)):
 				params = fnParams
 			default:
 				params = []
@@ -142,12 +142,12 @@ struct CallConstraint: InferenceConstraint {
 		} else {
 			// We don't have an init so we need to synthesize one from the struct's properties
 			params = structType.properties.map { name, type in
-				if case let .type(.typeVar(typeVar)) = type,
+				if case let .resolved(.typeVar(typeVar)) = type,
 				   structType.typeContext.typeParameters.contains(typeVar)
 				{
 					let fresh: InferenceType = context.freshTypeVariable(name, file: #file, line: #line)
 					substitutions[typeVar] = fresh
-					return .type(fresh)
+					return .resolved(fresh)
 				}
 
 				return type

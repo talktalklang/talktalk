@@ -336,7 +336,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		try [make(.keyword, from: expr.funcToken), make(.function, from: expr.name)] + expr.params.accept(self, context) + expr.returnDecl.accept(self, context)
+		try [make(.keyword, from: expr.funcToken), make(.function, from: expr.nameToken)] + expr.params.accept(self, context) + expr.returnDecl.accept(self, context)
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {

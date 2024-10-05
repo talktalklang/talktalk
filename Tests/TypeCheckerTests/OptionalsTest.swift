@@ -78,7 +78,7 @@ struct OptionalsTest: TypeCheckerTest {
 			.cast(ReturnStmtSyntax.self).value!
 			.cast(VarExprSyntax.self)
 
-		#expect(context[valSyntax] == .type(.base(.string)))
+		#expect(context[valSyntax] == .resolved(.base(.string)))
 	}
 
 	@Test("Can let unwrap") func letUnwrap() throws {

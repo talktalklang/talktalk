@@ -17,6 +17,6 @@ struct ImportTests: TypeCheckerTest {
 		let syntaxB = try Parser.parse("i")
 		let contextB = try infer(syntaxB, imports: [contextA])
 
-		#expect(contextB[syntaxB[0]] == .type(.base(.int)))
+		#expect(contextB[syntaxB[0]] == .resolved(.base(.int)))
 	}
 }

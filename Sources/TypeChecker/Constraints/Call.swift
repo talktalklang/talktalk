@@ -137,7 +137,7 @@ extension Constraints {
 				switch $0 {
 				case .scheme:
 					return nil // do nothing
-				case .type(let type):
+				case .resolved(let type):
 					if case .function = type {
 						return nil // do nothing
 					}
@@ -147,7 +147,7 @@ extension Constraints {
 			}
 
 			let instance = type.instantiate(with: freeVars)
-			let initializer = InstantiatedResult(type: .function(params, .type(.instance(instance.wrapped))), variables: freeVars)
+			let initializer = InstantiatedResult(type: .function(params, .resolved(.instance(instance.wrapped))), variables: freeVars)
 
 			return initializer
 		}

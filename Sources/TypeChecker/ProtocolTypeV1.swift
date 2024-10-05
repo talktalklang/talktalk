@@ -23,8 +23,8 @@ public struct ProtocolTypeV1: Equatable, Hashable, InstantiatableV1 {
 		hasher.combine(typeContext.methods)
 	}
 
-	public func missingConformanceRequirements(for type: any InstantiatableV1, in context: InferenceContext) -> Set<ConformanceRequirement> {
-		var missingRequirements: Set<ConformanceRequirement> = []
+	public func missingConformanceRequirements(for type: any InstantiatableV1, in context: InferenceContext) -> Set<ConformanceRequirementV1> {
+		var missingRequirements: Set<ConformanceRequirementV1> = []
 
 		for requirement in requirements(in: context) {
 			if !requirement.satisfied(by: type, in: context) {
@@ -39,8 +39,8 @@ public struct ProtocolTypeV1: Equatable, Hashable, InstantiatableV1 {
 		.instantiatable(.protocol(self))
 	}
 
-	public func requirements(in _: InferenceContext) -> Set<ConformanceRequirement> {
-		var result: Set<ConformanceRequirement> = []
+	public func requirements(in _: InferenceContext) -> Set<ConformanceRequirementV1> {
+		var result: Set<ConformanceRequirementV1> = []
 
 		for (name, type) in typeContext.methods {
 			result.insert(.init(name: name, type: type))
@@ -68,7 +68,7 @@ public struct ProtocolTypeV1: Equatable, Hashable, InstantiatableV1 {
 		}
 
 		if let typeParam = typeContext.typeParameters.first(where: { $0.name == name }) {
-			return .type(.typeVar(typeParam))
+			return .resolved(.typeVar(typeParam))
 		}
 
 		return nil
@@ -76,7 +76,7 @@ public struct ProtocolTypeV1: Equatable, Hashable, InstantiatableV1 {
 
 	func method(named name: String, in context: InferenceContext) -> InferenceResult? {
 		if let member = methods[name] {
-			return .type(context.applySubstitutions(to: member.asType(in: context)))
+			return .resolved(context.applySubstitutions(to: member.asType(in: context)))
 		}
 
 		return nil

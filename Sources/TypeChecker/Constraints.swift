@@ -21,7 +21,7 @@ class Constraints {
 		for constraint in constraints {
 			switch constraint {
 			case let constraint as EqualityConstraint:
-				if constraint.lhs == .type(.typeVar(typeVar)) || constraint.rhs == .type(.typeVar(typeVar)) {
+				if constraint.lhs == .resolved(.typeVar(typeVar)) || constraint.rhs == .resolved(.typeVar(typeVar)) {
 					return true
 				}
 			case let constraint as InfixOperatorConstraint:

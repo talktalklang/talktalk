@@ -20,7 +20,7 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 		public func member(named name: String) -> InferenceResult? {
 			let member = type.member(named: name)
 			
-			if case .type(.instance(.enumCase)) = member {
+			if case .resolved(.instance(.enumCase)) = member {
 				return nil
 			}
 

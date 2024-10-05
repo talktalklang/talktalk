@@ -112,7 +112,7 @@ public enum InstanceType {
 		guard let result else { return nil }
 
 		switch result {
-		case let .type(type):
+		case let .resolved(type):
 			return type
 		case let .scheme(scheme):
 			return scheme.type

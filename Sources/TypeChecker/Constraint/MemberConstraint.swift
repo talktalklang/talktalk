@@ -35,7 +35,7 @@ struct MemberConstraint: InferenceConstraint {
 			return receiver
 		}
 
-		return .type(.any)
+		return .resolved(.any)
 	}
 
 	var description: String {
@@ -102,7 +102,7 @@ struct MemberConstraint: InferenceConstraint {
 			}
 
 			if case let .instantiatable(structType) = context.applySubstitutions(to: member) {
-				member = .type(.instanceV1(structType.instantiate(with: [:], in: context)))
+				member = .resolved(.instanceV1(structType.instantiate(with: [:], in: context)))
 			}
 
 			context.unify(

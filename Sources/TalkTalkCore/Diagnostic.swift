@@ -13,10 +13,12 @@ public struct Diagnostic: Equatable, Hashable {
 	public let message: String
 	public let severity: Severity
 	public let location: SourceLocation
+	public let subdiagnostics: [Diagnostic]
 
-	public init(message: String, severity: Severity, location: SourceLocation) {
+	public init(message: String, severity: Severity, subdiagnostics: [Diagnostic] = [], location: SourceLocation) {
 		self.message = message
 		self.severity = severity
 		self.location = location
+		self.subdiagnostics = subdiagnostics
 	}
 }

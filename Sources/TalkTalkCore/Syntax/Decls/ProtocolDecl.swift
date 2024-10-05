@@ -4,7 +4,7 @@ public protocol ProtocolDecl: Decl {
 	// Insert ProtocolDefinition specific fields here
 	var keywordToken: Token { get }
 	var name: Token { get }
-	var body: ProtocolBodyDeclSyntax { get }
+	var body: DeclBlockSyntax { get }
 	var typeParameters: [TypeExprSyntax] { get }
 }
 
@@ -14,7 +14,7 @@ public struct ProtocolDeclSyntax: ProtocolDecl {
 
 	public var keywordToken: Token
 	public var name: Token
-	public var body: ProtocolBodyDeclSyntax
+	public var body: DeclBlockSyntax
 	public var typeParameters: [TypeExprSyntax]
 
 	// Where does this syntax live

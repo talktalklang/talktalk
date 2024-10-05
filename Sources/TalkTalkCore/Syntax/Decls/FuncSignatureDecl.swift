@@ -6,9 +6,11 @@ public protocol FuncSignatureDecl: Decl {
 
 public struct FuncSignatureDeclSyntax: FuncSignatureDecl {
 	public var funcToken: Token
-	public var name: Token
+	public var nameToken: Token
 	public var params: ParamsExprSyntax
-	public var returnDecl: TypeExpr
+	public var returnDecl: TypeExprSyntax
+	public var isStatic: Bool
+	public var modifiers: [Token]
 
 	// A unique identifier
 	public var id: SyntaxID

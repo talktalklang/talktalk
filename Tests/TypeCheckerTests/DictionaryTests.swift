@@ -36,7 +36,7 @@ struct DictionaryTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		let result = try context.get(syntax[0])
 
-		#expect(result == .type(.optionalV1(.base(.int))))
+		#expect(result == .resolved(.optionalV1(.base(.int))))
 	}
 
 	@Test("Types a subscript set") func typesSubscriptSet() throws {
@@ -49,6 +49,6 @@ struct DictionaryTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let result = try context.get(syntax[1])
-		#expect(result == .type(.void))
+		#expect(result == .resolved(.void))
 	}
 }

@@ -47,17 +47,17 @@ struct ContextVisitor: Visitor {
 			switch decl {
 			case let decl as EnumDecl:
 				let typeVar = context.freshTypeVariable(decl.nameToken.lexeme)
-				context.define(decl.nameToken.lexeme, as: .type(.placeholder(typeVar)))
+				context.define(decl.nameToken.lexeme, as: .resolved(.placeholder(typeVar)))
 			case let decl as StructDecl:
 				let typeVar = context.freshTypeVariable(decl.name)
-				context.define(decl.nameToken.lexeme, as: .type(.placeholder(typeVar)))
+				context.define(decl.nameToken.lexeme, as: .resolved(.placeholder(typeVar)))
 			case let decl as ProtocolDecl:
 				let typeVar = context.freshTypeVariable(decl.name.lexeme)
-				context.define(decl.name.lexeme, as: .type(.placeholder(typeVar)))
+				context.define(decl.name.lexeme, as: .resolved(.placeholder(typeVar)))
 			case let funcDecl as FuncExprSyntax:
 				if let name = funcDecl.name?.lexeme {
 					let typeVar = context.freshTypeVariable(name)
-					context.define(name, as: .type(.placeholder(typeVar)))
+					context.define(name, as: .resolved(.placeholder(typeVar)))
 				}
 			default:
 				()
@@ -93,15 +93,15 @@ struct ContextVisitor: Visitor {
 		}
 
 		// If the return type is a type variable, hoist it into the context so we can use it for the definition
-		if case let .type(.typeVar(returns)) = returns {
+		if case let .resolved(.typeVar(returns)) = returns {
 			typeVariables.append(returns)
 		}
 
 		let result: InferenceResult
 		if typeVariables.isEmpty {
-			result = .type(.function(params.map { .type($0) }, returns))
+			result = .resolved(.function(params.map { .resolved($0) }, returns))
 		} else {
-			result = .scheme(Scheme(name: syntax.name?.lexeme, variables: typeVariables, type: .function(params.map { .type($0) }, returns)))
+			result = .scheme(Scheme(name: syntax.name?.lexeme, variables: typeVariables, type: .function(params.map { .resolved($0) }, returns)))
 		}
 
 		// Hoist unknown params into this context for the function definition
@@ -130,13 +130,13 @@ struct ContextVisitor: Visitor {
 
 		switch (typeExpr, value) {
 		case (.none, .none):
-			type = .type(.typeVar(context.freshTypeVariable(syntax.name)))
+			type = .resolved(.typeVar(context.freshTypeVariable(syntax.name)))
 		case let (nil, .some(value)):
 			type = value
 		case let (.some(typeExpr), nil):
 			type = typeExpr
-		case let (.some(typeExpr), .some(.type(.typeVar(typeVariable)))):
-			context.addConstraint(Constraints.Equality(context: context, lhs: typeExpr, rhs: .type(.typeVar(typeVariable)), location: syntax.location))
+		case let (.some(typeExpr), .some(.resolved(.typeVar(typeVariable)))):
+			context.addConstraint(Constraints.Equality(context: context, lhs: typeExpr, rhs: .resolved(.typeVar(typeVariable)), location: syntax.location))
 			type = typeExpr
 		case let (.some(typeExpr), .some(value)):
 			if typeExpr != value {
@@ -149,7 +149,7 @@ struct ContextVisitor: Visitor {
 		context.define(syntax.name, as: type)
 
 		// Decls return void
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	// Try to look up a member from an inference result. If we can find one, we can avoid going through the typevar/constraint
@@ -158,8 +158,8 @@ struct ContextVisitor: Visitor {
 	func member(from receiver: InferenceResult, named name: String) -> InferenceResult? {
 		switch receiver {
 		case .scheme(let scheme):
-			return member(from: .type(scheme.type), named: name)
-		case .type(let type):
+			return member(from: .resolved(scheme.type), named: name)
+		case .resolved(let type):
 			switch type {
 			case let .type(.enum(enumType)):
 				return enumType.staticMember(named: name)
@@ -167,6 +167,8 @@ struct ContextVisitor: Visitor {
 				return kase.type.staticMember(named: name)
 			case let .instance(wrapper):
 				return wrapper.member(named: name)
+			case let .type(.protocol(type)):
+				return type.member(named: name)
 			default:
 				return nil
 			}
@@ -176,8 +178,8 @@ struct ContextVisitor: Visitor {
 	func parameters(for callee: InferenceResult) -> [InferenceResult]? {
 		switch callee {
 		case .scheme(let scheme):
-			return parameters(for: .type(scheme.type))
-		case .type(let type):
+			return parameters(for: .resolved(scheme.type))
+		case .resolved(let type):
 			switch type {
 			case .function(let params, _):
 				return params
@@ -193,12 +195,12 @@ struct ContextVisitor: Visitor {
 		switch result {
 		case .scheme(_):
 			return nil
-		case .type(let type):
+		case .resolved(let type):
 			switch type {
 			case .function(_, let returns):
 				return returns
 			case .type(.enumCase(let kase)):
-				return .type(.instance(.enumCase(Instance(type: kase))))
+				return .resolved(.instance(.enumCase(Instance(type: kase))))
 			default:
 				return nil
 			}
@@ -209,11 +211,11 @@ struct ContextVisitor: Visitor {
 		switch result {
 		case .scheme(_):
 			return result
-		case .type(let type):
+		case .resolved(let type):
 			switch type {
 			case .instance(.enum(let instance)):
 				let wrapped = instance.type.typeParameters["Wrapped"]!
-				return .type(instance.substitutions[wrapped]!)
+				return .resolved(instance.substitutions[wrapped]!)
 			default:
 				context.error("result not optional: \(result)", at: location)
 				return result
@@ -238,7 +240,7 @@ struct ContextVisitor: Visitor {
 			}
 		}
 
-		let returns: InferenceResult = returnResult(for: callee) ?? .type(.typeVar(context.freshTypeVariable(syntax.description)))
+		let returns: InferenceResult = returnResult(for: callee) ?? .resolved(.typeVar(context.freshTypeVariable(syntax.description)))
 
 		context.addConstraint(
 			Constraints.Call(
@@ -267,7 +269,7 @@ struct ContextVisitor: Visitor {
 			)
 		)
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: IdentifierExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -279,13 +281,13 @@ struct ContextVisitor: Visitor {
 
 		switch syntax.value {
 		case .int:
-			result = .type(.base(.int))
+			result = .resolved(.base(.int))
 		case .bool:
-			result = .type(.base(.bool))
+			result = .resolved(.base(.bool))
 		case .string:
-			result = .type(.base(.string))
+			result = .resolved(.base(.string))
 		case .nil:
-			result = .type(.base(.none))
+			result = .resolved(.base(.none))
 		}
 
 		context.define(syntax, as: result)
@@ -300,7 +302,7 @@ struct ContextVisitor: Visitor {
 		}
 
 		context.error("Undefined variable: `\(syntax.name)`", at: syntax.location)
-		return .type(.any)
+		return .resolved(.any)
 	}
 
 	func visit(_ syntax: UnaryExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -312,13 +314,13 @@ struct ContextVisitor: Visitor {
 		let rhs = try syntax.rhs.accept(self, context)
 
 		let type = context.freshTypeVariable(syntax.description)
-		context.define(syntax, as: .type(.typeVar(type)))
+		context.define(syntax, as: .resolved(.typeVar(type)))
 
 		context.addConstraint(
 			Constraints.Infix(context: context, lhs: lhs, rhs: rhs, op: syntax.op, result: type, location: syntax.location)
 		)
 
-		return .type(.typeVar(type))
+		return .resolved(.typeVar(type))
 	}
 
 	func visit(_ syntax: IfExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -336,7 +338,7 @@ struct ContextVisitor: Visitor {
 			try stmts.append(stmt.accept(self, context))
 		}
 
-		return stmts.last ?? .type(.void)
+		return stmts.last ?? .resolved(.void)
 	}
 
 	func visit(_ syntax: FuncExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -348,17 +350,22 @@ struct ContextVisitor: Visitor {
 			_ = try visit(param, context)
 		}
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: ParamSyntax, _ context: Context) throws -> InferenceResult {
-		let result: InferenceResult
+		var result: InferenceResult
 
 		if let type = syntax.type {
 			result = try visit(type, context)
 		} else {
 			let typeVar = context.freshTypeVariable(syntax.name)
-			result = .type(.typeVar(typeVar))
+			result = .resolved(.typeVar(typeVar))
+		}
+
+		if case let .resolved(.type(type)) = result {
+			// If the result type can be instantiated, it should be an instance
+			result = .resolved(.instance(type.instantiate(with: [:])))
 		}
 
 		context.define(syntax.name, as: result)
@@ -384,7 +391,7 @@ struct ContextVisitor: Visitor {
 			_ = try decl.accept(self, context)
 		}
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: VarDeclSyntax, _ context: Context) throws -> InferenceResult {
@@ -422,9 +429,9 @@ struct ContextVisitor: Visitor {
 				)
 			)
 
-			context.define(syntax, as: .type(.typeVar(result)))
+			context.define(syntax, as: .resolved(.typeVar(result)))
 
-			return .type(.typeVar(result))
+			return .resolved(.typeVar(result))
 		}
 	}
 
@@ -434,23 +441,23 @@ struct ContextVisitor: Visitor {
 			context.define(syntax, as: returns)
 			return returns
 		} else {
-			context.define(syntax, as: .type(.void))
-			return .type(.void)
+			context.define(syntax, as: .resolved(.void))
+			return .resolved(.void)
 		}
 	}
 
 	func visit(_ syntax: InitDeclSyntax, _ context: Context) throws -> InferenceResult {
 		guard let lexicalScope = context.lexicalScope else {
 			context.error("Initializer must be a function", at: syntax.location)
-			return .type(.any)
+			return .resolved(.any)
 		}
 
 		let result = try handleFuncLike(syntax, context: context)
 		try lexicalScope.add(member: result, named: "init", isStatic: false)
 
-		context.define(syntax, as: .type(.void))
+		context.define(syntax, as: .resolved(.void))
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: ImportStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -475,10 +482,10 @@ struct ContextVisitor: Visitor {
 				substitutions[typeParam] = paramType.instantiate(in: context).type
 			}
 
-			return .type(context.instantiate(scheme, with: substitutions).0)
+			return .resolved(context.instantiate(scheme, with: substitutions).0)
 		} else {
 			context.error("Type not found: \(syntax.identifier.lexeme)", at: syntax.location)
-			return .type(.any)
+			return .resolved(.any)
 		}
 	}
 
@@ -495,16 +502,32 @@ struct ContextVisitor: Visitor {
 		_ = try syntax.consequence.accept(self, consequenceContext)
 		_ = try syntax.alternative?.accept(self, context)
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let structType = StructType(name: syntax.name)
 		let structContext = context.addChild(lexicalScope: structType)
 
+		for conformance in syntax.conformances {
+			guard let conformsTo = context.type(named: conformance.identifier.lexeme) else {
+				context.error("Could not find protocol `\(conformance.identifier.lexeme)`", at: conformance.location)
+				continue
+			}
+
+			context.addConstraint(
+				Constraints.Conformance(
+					context: context,
+					type: structType,
+					conformsTo: conformsTo,
+					location: conformance.location
+				)
+			)
+		}
+
 		let variables = syntax.typeParameters.map {
 			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
-			structContext.define($0.identifier.lexeme, as: .type(.typeVar(typeVar)))
+			structContext.define($0.identifier.lexeme, as: .resolved(.typeVar(typeVar)))
 			structType.typeParameters[$0.identifier.lexeme] = typeVar
 			return typeVar
 		}
@@ -546,15 +569,61 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: ProtocolDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let name = syntax.name.lexeme
+		let protocolType = ProtocolType(name: name)
+		let protocolContext = context.addChild(lexicalScope: protocolType)
+
+		let variables = syntax.typeParameters.map {
+			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
+			protocolContext.define($0.identifier.lexeme, as: .resolved(.typeVar(typeVar)))
+			protocolType.typeParameters[$0.identifier.lexeme] = typeVar
+			return typeVar
+		}
+
+		protocolContext.define("self", as: .scheme(
+			Scheme(name: "self", variables: variables, type: .self(protocolType)))
+		)
+
+		_ = try visit(syntax.body, protocolContext)
+
+		// Protocols can have generic types so we give them a scheme
+		let result = InferenceResult.scheme(
+			Scheme(
+				name: name,
+				variables: variables,
+				type: .type(.protocol(protocolType))
+			)
+		)
+
+		// Define the name
+		context.define(name, as: result)
+		protocolContext.define(name, as: result)
+
+		// Define the node
+		context.define(syntax, as: result)
+
+		return result
 	}
 
 	func visit(_ syntax: ProtocolBodyDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		for decl in syntax.decls {
+			_ = try decl.accept(self, context)
+		}
+
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: FuncSignatureDeclSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		guard let lexicalScope = context.lexicalScope else {
+			context.error("Could not find lexical scope for method: `\(syntax.nameToken.lexeme)`", at: syntax.location)
+			return .resolved(.any)
+		}
+
+		let result = try handleFuncLike(syntax, context: context)
+		let name = syntax.nameToken.lexeme
+		try lexicalScope.add(member: result, named: name, isStatic: false)
+
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: EnumDeclSyntax, _ context: Context) throws -> InferenceResult {
@@ -564,7 +633,7 @@ struct ContextVisitor: Visitor {
 
 		let variables = syntax.typeParams.map {
 			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
-			enumContext.define($0.identifier.lexeme, as: .type(.typeVar(typeVar)))
+			enumContext.define($0.identifier.lexeme, as: .resolved(.typeVar(typeVar)))
 			enumType.typeParameters[$0.identifier.lexeme] = typeVar
 			return typeVar
 		}
@@ -607,7 +676,7 @@ struct ContextVisitor: Visitor {
 			attachedTypes: syntax.attachedTypes.map { try $0.accept(self, context) }
 		)
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: MatchStatementSyntax, _ context: Context) throws -> InferenceResult {
@@ -620,7 +689,7 @@ struct ContextVisitor: Visitor {
 			}
 		}
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: CaseStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -634,7 +703,7 @@ struct ContextVisitor: Visitor {
 			if let patternSyntax = syntax.patternSyntax {
 				let patternVisitor = PatternVisitor(visitor: self)
 				let pattern = try patternSyntax.accept(patternVisitor, childContext)
-				context.define(patternSyntax, as: .type(.pattern(pattern)))
+				context.define(patternSyntax, as: .resolved(.pattern(pattern)))
 			}
 		}
 
@@ -642,8 +711,8 @@ struct ContextVisitor: Visitor {
 			_ = try stmt.accept(self, childContext)
 		}
 
-		context.define(syntax, as: .type(.void))
-		return .type(.void)
+		context.define(syntax, as: .resolved(.void))
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: EnumMemberExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -664,8 +733,8 @@ struct ContextVisitor: Visitor {
 
 		context.addConstraint(Constraints.Equality(context: context, lhs: lhs, rhs: rhs, location: syntax.location))
 
-		context.define(syntax, as: .type(.base(.bool)))
-		return .type(.base(.bool))
+		context.define(syntax, as: .resolved(.base(.bool)))
+		return .resolved(.base(.bool))
 	}
 
 	func visit(_ syntax: GroupedExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -683,26 +752,26 @@ struct ContextVisitor: Visitor {
 			}
 		}
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: MethodDeclSyntax, _ context: Context) throws -> InferenceResult {
 		guard let lexicalScope = context.lexicalScope else {
 			context.error("Could not find lexical scope for method: `\(syntax.nameToken.lexeme)`", at: syntax.location)
-			return .type(.any)
+			return .resolved(.any)
 		}
 
 		let result = try handleFuncLike(syntax, context: context)
 		let name = syntax.nameToken.lexeme
 		try lexicalScope.add(member: result, named: name, isStatic: syntax.isStatic)
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: PropertyDeclSyntax, _ context: Context) throws -> InferenceResult {
 		guard let lexicalScope = context.lexicalScope else {
 			context.error("Could not find lexical scope for property: `\(syntax.name)`", at: syntax.location)
-			return .type(.any)
+			return .resolved(.any)
 		}
 
 		let name = syntax.name.lexeme
@@ -725,7 +794,7 @@ struct ContextVisitor: Visitor {
 				result = .instance(.struct(type.instantiate(with: subsitutions)))
 			}
 
-			return .type(result)
+			return .resolved(result)
 		}
 
 		let valueType = try syntax.defaultValue.flatMap {
@@ -737,9 +806,9 @@ struct ContextVisitor: Visitor {
 			context.addConstraint(Constraints.Equality(context: context, lhs: annotatedType, rhs: valueType, location: syntax.location))
 		}
 
-		let result = annotatedType ?? valueType ?? .type(.typeVar(context.freshTypeVariable("\(lexicalScope.name).\(syntax.name)")))
+		let result = annotatedType ?? valueType ?? .resolved(.typeVar(context.freshTypeVariable("\(lexicalScope.name).\(syntax.name)")))
 		try lexicalScope.add(member: result, named: name, isStatic: syntax.isStatic)
 
-		return .type(.void)
+		return .resolved(.void)
 	}
 }

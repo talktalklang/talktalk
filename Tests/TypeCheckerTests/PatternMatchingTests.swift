@@ -102,12 +102,12 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let foo = context.find(call1)
 		#expect(foo == .pattern(
 			.call(
-				.type(
+				.resolved(
 					.type(
 						.enumCase(fooCase)
 					)
 				),
-				[.variable("a", .type(.base(.string)))])
+				[.variable("a", .resolved(.base(.string)))])
 		))
 
 		let body = syntax[2].cast(MatchStatementSyntax.self)
@@ -121,12 +121,12 @@ struct PatternMatchingTests: TypeCheckerTest {
 		let bar = context.find(call2)
 		#expect(bar == .pattern(
 			.call(
-				.type(
+				.resolved(
 					.type(
 						.enumCase(barCase)
 					)
 				),
-				[.variable("a", .type(.base(.int)))])
+				[.variable("a", .resolved(.base(.int)))])
 		))
 
 		let body2 = syntax[2].cast(MatchStatementSyntax.self)
@@ -172,11 +172,11 @@ struct PatternMatchingTests: TypeCheckerTest {
 		#expect(call1.description == ".bottom(.top(let a))")
 		#expect(context.find(call1) == .pattern(
 			.call(
-				.type(.type(.enumCase(bottomCase))),
+				.resolved(.type(.enumCase(bottomCase))),
 				[
 					.call(
-						.type(.type(.enumCase(topCase))),
-						[.variable("a", .type(.base(.string)))]
+						.resolved(.type(.enumCase(topCase))),
+						[.variable("a", .resolved(.base(.string)))]
 					)
 				]
 			)

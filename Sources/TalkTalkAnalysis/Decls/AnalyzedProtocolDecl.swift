@@ -15,7 +15,7 @@ public struct AnalyzedProtocolDecl: ProtocolDecl, AnalyzedDecl {
 	public var children: [any Syntax] { wrapped.children }
 	public var keywordToken: Token { wrapped.keywordToken }
 	public var name: Token { wrapped.name }
-	public var body: ProtocolBodyDeclSyntax { wrapped.body }
+	public var body: DeclBlockSyntax { wrapped.body }
 	public var typeParameters: [TypeExprSyntax] { wrapped.typeParameters }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {

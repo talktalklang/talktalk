@@ -29,10 +29,10 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 2)
 
 		#expect(enumType.cases["foo"]!.attachedTypes.count == 1)
-		#expect(enumType.cases["foo"]!.attachedTypes[0] == .type(.base(.string)))
+		#expect(enumType.cases["foo"]!.attachedTypes[0] == .resolved(.base(.string)))
 
 		#expect(enumType.cases["bar"]!.attachedTypes.count == 1)
-		#expect(enumType.cases["bar"]!.attachedTypes[0] == .type(.base(.int)))
+		#expect(enumType.cases["bar"]!.attachedTypes[0] == .resolved(.base(.int)))
 	}
 
 	@Test("Can infer a case") func cases() throws {
@@ -82,7 +82,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(enumType.cases.count == 1)
 
 		#expect(enumType.cases["foo"]!.attachedTypes.count == 1)
-		#expect(enumType.cases["foo"]!.attachedTypes[0] == .type(.typeVar("Wrapped", 1, isGeneric: true))) // Make sure int doesn't leak to outer generic
+		#expect(enumType.cases["foo"]!.attachedTypes[0] == .resolved(.typeVar("Wrapped", 1, isGeneric: true))) // Make sure int doesn't leak to outer generic
 
 		let wrappedInt = Instance<Enum.Case>.extract(from: context[syntax[1]]!)
 		#expect(wrappedInt?.substitutions[.new("Wrapped", 1, isGeneric: true)] == .base(.int))
@@ -153,7 +153,7 @@ struct EnumTests: TypeCheckerTest {
 		let instance = try #require(InstanceV1<EnumTypeV1>.extract(from: context[arg]!.asType(in: context)))
 		#expect(enumType == instance.type)
 
-		#expect(context[arg] == .type(.instanceV1(.enumType(instance))))
+		#expect(context[arg] == .resolved(.instanceV1(.enumType(instance))))
 
 		#expect(enumType.cases == [
 			EnumCase(type: enumType, name: "foo", attachedTypes: [.base(.string)]),
@@ -197,7 +197,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(instance?.type.type.name == "Thing")
 
 		// Make sure the method has the right type
-		#expect(context.find(fn) == .function([], .type(.base(.bool))))
+		#expect(context.find(fn) == .function([], .resolved(.base(.bool))))
 	}
 
 	@Test("Can infer protocol conformance", .disabled("waiting on protocols")) func protocols() throws {

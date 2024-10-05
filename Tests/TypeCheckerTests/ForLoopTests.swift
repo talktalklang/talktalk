@@ -22,14 +22,14 @@ struct ForLoopTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 		let forLoop = syntax[0]
-		try #expect(context.get(forLoop) == .type(.void))
+		try #expect(context.get(forLoop) == .resolved(.void))
 
 		let i = forLoop
 			.cast(ForStmtSyntax.self).body.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0]
 
-		#expect(context[i]?.debugDescription == InferenceResult.type(.base(.int)).debugDescription)
+		#expect(context[i]?.debugDescription == InferenceResult.resolved(.base(.int)).debugDescription)
 	}
 
 	@Test("Errors when sequence isn't iterable") func notIterable() throws {

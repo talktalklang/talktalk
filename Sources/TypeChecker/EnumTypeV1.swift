@@ -28,11 +28,11 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 	}
 
 	public static func extract(from type: InferenceResult) -> EnumTypeV1? {
-		if case let .type(.instantiatable(.enumType(enumType))) = type {
+		if case let .resolved(.instantiatable(.enumType(enumType))) = type {
 			return enumType
 		}
 
-		if case let .type(.instanceV1(instance)) = type {
+		if case let .resolved(.instanceV1(instance)) = type {
 			return instance.type as? EnumTypeV1
 		}
 
@@ -48,7 +48,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 			name: name,
 			cases: cases.map {
 				// swiftlint:disable force_unwrapping
-				EnumCase.extract(from: .type(context.applySubstitutions(to: .enumCaseV1($0), with: substitutions)))!
+				EnumCase.extract(from: .resolved(context.applySubstitutions(to: .enumCaseV1($0), with: substitutions)))!
 				// swiftlint:enable force_unwrapping
 			},
 			context: context,
@@ -58,7 +58,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 
 	func staticMember(named name: String) -> InferenceResult? {
 		if let kase = cases.first(where: { $0.name == name }) {
-			return .type(.enumCaseV1(kase))
+			return .resolved(.enumCaseV1(kase))
 		}
 
 		if let member = typeContext.staticMethods[name] ?? typeContext.staticProperties[name] {
@@ -74,7 +74,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 		}
 
 		if let kase = cases.first(where: { $0.name == name }) {
-			return .type(.enumCaseV1(kase))
+			return .resolved(.enumCaseV1(kase))
 		}
 
 		return nil

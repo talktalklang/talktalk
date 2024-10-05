@@ -19,7 +19,7 @@ public struct StructTypeV1: Equatable, Hashable, CustomStringConvertible, Instan
 	public var conformances: [ProtocolTypeV1] { typeContext.conformances }
 
 	public static func extractType(from result: InferenceResult?) -> StructTypeV1? {
-		if case let .type(.instantiatable(.struct(structType))) = result {
+		if case let .resolved(.instantiatable(.struct(structType))) = result {
 			return structType
 		}
 
@@ -27,7 +27,7 @@ public struct StructTypeV1: Equatable, Hashable, CustomStringConvertible, Instan
 	}
 
 	public static func extractInstance(from result: InferenceResult?) -> StructTypeV1? {
-		if case let .type(.instanceV1(instance)) = result {
+		if case let .resolved(.instanceV1(instance)) = result {
 			return instance.type as? StructTypeV1
 		}
 
@@ -73,7 +73,7 @@ public struct StructTypeV1: Equatable, Hashable, CustomStringConvertible, Instan
 		}
 
 		if let typeParam = typeContext.typeParameters.first(where: { $0.name == name }) {
-			return .type(.typeVar(typeParam))
+			return .resolved(.typeVar(typeParam))
 		}
 
 		return nil

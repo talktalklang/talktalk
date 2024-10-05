@@ -40,7 +40,7 @@ struct PatternVisitor: Visitor {
 			)
 		)
 
-		context.define(syntax, as: .type(.pattern(.call(callee, args))))
+		context.define(syntax, as: .resolved(.pattern(.call(callee, args))))
 
 		return .call(callee, args)
 	}
@@ -112,16 +112,16 @@ struct PatternVisitor: Visitor {
 
 	func visit(_ syntax: VarDeclSyntax, _ context: Context) throws -> Pattern {
 		let typeVar = context.freshTypeVariable(syntax.name)
-		context.define(syntax.name, as: .type(.typeVar(typeVar)))
-		context.define(syntax, as: .type(.typeVar(typeVar)))
-		return .variable(syntax.name, .type(.typeVar(typeVar)))
+		context.define(syntax.name, as: .resolved(.typeVar(typeVar)))
+		context.define(syntax, as: .resolved(.typeVar(typeVar)))
+		return .variable(syntax.name, .resolved(.typeVar(typeVar)))
 	}
 
 	func visit(_ syntax: LetDeclSyntax, _ context: Context) throws -> Pattern {
 		let typeVar = context.freshTypeVariable(syntax.name)
-		context.define(syntax.name, as: .type(.typeVar(typeVar)))
-		context.define(syntax, as: .type(.typeVar(typeVar)))
-		return .variable(syntax.name, .type(.typeVar(typeVar)))
+		context.define(syntax.name, as: .resolved(.typeVar(typeVar)))
+		context.define(syntax, as: .resolved(.typeVar(typeVar)))
+		return .variable(syntax.name, .resolved(.typeVar(typeVar)))
 	}
 
 	func visit(_ syntax: ParseErrorSyntax, _ context: Context) throws -> Pattern {
@@ -137,11 +137,11 @@ struct PatternVisitor: Visitor {
 
 		if let member = visitor.member(from: receiver ?? expectedType, named: syntax.property) {
 			// FIXME: Bad. We don't want to instantiate in the visitor
-			context.define(syntax, as: .type(.pattern(.value(member.instantiate(in: context).type))))
+			context.define(syntax, as: .resolved(.pattern(.value(member.instantiate(in: context).type))))
 			return .value(member.instantiate(in: context).type)
 		} else {
 			let memberTypeVar = context.freshTypeVariable(syntax.description)
-			context.define(syntax, as: .type(.pattern(.value(.typeVar(memberTypeVar)))))
+			context.define(syntax, as: .resolved(.pattern(.value(.typeVar(memberTypeVar)))))
 			return .value(.typeVar(memberTypeVar))
 		}
 

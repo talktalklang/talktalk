@@ -113,7 +113,7 @@ public class InstanceV1<T: InstantiatableV1>: Equatable, Hashable, CustomStringC
 			// It's a method
 			let type = context.instantiate(scheme: scheme)
 			instanceMember = context.applySubstitutions(to: type, with: substitutions)
-		case let .type(inferenceType):
+		case let .resolved(inferenceType):
 			// It's a property
 			instanceMember = context.applySubstitutions(to: inferenceType, with: substitutions)
 		}

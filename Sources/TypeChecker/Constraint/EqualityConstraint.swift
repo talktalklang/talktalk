@@ -30,14 +30,14 @@ struct EqualityConstraint: InferenceConstraint {
 		let lhs = switch lhs {
 		case let .scheme(scheme):
 			context.applySubstitutions(to: context.instantiate(scheme: scheme))
-		case let .type(type):
+		case let .resolved(type):
 			context.applySubstitutions(to: type)
 		}
 
 		let rhs = switch rhs {
 		case let .scheme(scheme):
 			context.applySubstitutions(to: context.instantiate(scheme: scheme))
-		case let .type(type):
+		case let .resolved(type):
 			context.applySubstitutions(to: type)
 		}
 
@@ -69,6 +69,6 @@ extension InferenceConstraint where Self == EqualityConstraint {
 		file: String = #file,
 		line: UInt32 = #line
 	) -> EqualityConstraint {
-		EqualityConstraint(lhs: .type(lhs), rhs: .type(rhs), location: location, file: file, line: line)
+		EqualityConstraint(lhs: .resolved(lhs), rhs: .resolved(rhs), location: location, file: file, line: line)
 	}
 }

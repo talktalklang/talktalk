@@ -7,7 +7,7 @@
 
 import TalkTalkCore
 
-public struct ConformanceRequirement: Hashable {
+public struct ConformanceRequirementV1: Hashable {
 	public let name: String
 	public let type: InferenceResult
 
@@ -17,11 +17,11 @@ public struct ConformanceRequirement: Hashable {
 		}
 
 		// If we have a known base type, we can add a constraint on it so it gets resolved later
-		if case let .type(.base(base)) = self.type {
-			context.addConstraint(.equality(member, .type(.base(base)), at: [.synthetic(.less)]))
+		if case let .resolved(.base(base)) = self.type {
+			context.addConstraint(.equality(member, .resolved(.base(base)), at: [.synthetic(.less)]))
 		}
 
-		return member.covariant(with: self.type, in: context)
+		return member.covariantV1(with: self.type, in: context)
 	}
 }
 
@@ -76,7 +76,7 @@ struct TypeConformanceConstraint: InferenceConstraint {
 		}
 
 		// TODO: We could probably cache this on the struct type instead of calculating it all the time
-		var missingRequirements: Set<ConformanceRequirement> = []
+		var missingRequirements: Set<ConformanceRequirementV1> = []
 		for requirement in protocolType.requirements(in: context) {
 			if !requirement.satisfied(by: type, in: context) {
 				missingRequirements.insert(requirement)

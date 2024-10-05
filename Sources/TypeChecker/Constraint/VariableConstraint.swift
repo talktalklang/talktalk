@@ -24,7 +24,7 @@ struct VariableConstraint: InferenceConstraint {
 
 	func solve(in context: InferenceContext) -> ConstraintCheckResult {
 		switch value {
-		case let .type(type):
+		case let .resolved(type):
 			context.unify(typeVar, type, location)
 		case let .scheme(scheme):
 			let type = context.instantiate(scheme: scheme)

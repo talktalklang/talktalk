@@ -34,3 +34,17 @@ extension InitDeclSyntax: FuncLike {
 		nil
 	}
 }
+
+extension FuncSignatureDeclSyntax: FuncLike {
+	var body: TalkTalkCore.BlockStmtSyntax {
+		.init(id: -1, stmts: [], location: [.synthetic(.dot)])
+	}
+	
+	var typeDecl: TypeExprSyntax? {
+		returnDecl
+	}
+	
+	var name: Token? {
+		nameToken
+	}
+}

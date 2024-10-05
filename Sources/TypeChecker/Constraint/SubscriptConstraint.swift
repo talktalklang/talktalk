@@ -35,11 +35,11 @@ struct SubscriptConstraint: InferenceConstraint {
 					context.unify(arg.asType(in: context), param.asType(in: context), location)
 				}
 
-				if case let .type(.instantiatable(instantiatableType)) = fnReturns {
-					fnReturns = .type(.instanceV1(instantiatableType.instantiate(with: instance.substitutions, in: context)))
+				if case let .resolved(.instantiatable(instantiatableType)) = fnReturns {
+					fnReturns = .resolved(.instanceV1(instantiatableType.instantiate(with: instance.substitutions, in: context)))
 				}
 
-				if case let .type(.instantiatable(structType)) = fnReturns {
+				if case let .resolved(.instantiatable(structType)) = fnReturns {
 					context.unify(
 						returns,
 						.instanceV1(structType.instantiate(with: instance.substitutions, in: context)),

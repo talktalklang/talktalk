@@ -202,16 +202,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		if let placeholder = namedPlaceholders[name] {
-			return .type(placeholder)
+			return .resolved(placeholder)
 		}
 
 		return nil
 	}
 
 	func defineVariable(named name: String, as type: InferenceResult, at location: SourceLocation) {
-		if case let .type(.placeholder(typeVar)) = lookupPlaceholder(named: name) {
+		if case let .resolved(.placeholder(typeVar)) = lookupPlaceholder(named: name) {
 			log("Adding equality constraint for placeholder \(name)", prefix: " = ")
-			addConstraint(.equality(type, .type(.placeholder(typeVar)), at: location))
+			addConstraint(.equality(type, .resolved(.placeholder(typeVar)), at: location))
 		}
 
 		namedVariables[name] = type
@@ -219,7 +219,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	public func type(named name: String) -> InferenceType? {
 		switch lookupVariable(named: name) {
-		case let .type(.instantiatable(type)):
+		case let .resolved(.instantiatable(type)):
 			.instantiatable(type)
 		default:
 			nil
@@ -236,7 +236,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
-			return .type(builtin.type)
+			return .resolved(builtin.type)
 		}
 
 		for imported in imports {
@@ -354,7 +354,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	var expectation: InferenceResult? {
 		if let expectation = expectations.last {
-			return .type(expectation)
+			return .resolved(expectation)
 		}
 
 		return nil
@@ -419,7 +419,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		let error = InferenceError(kind: inferrenceError, location: expr.location)
 		errors.append(error)
-		environment.extend(expr, with: .type(.error(error)))
+		environment.extend(expr, with: .resolved(.error(error)))
 		return .error(error)
 	}
 
@@ -465,7 +465,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		get {
 			switch environment[syntax] ?? parent?[syntax] {
 			case let .scheme(scheme): .scheme(scheme)
-			case let .type(type): .type(applySubstitutions(to: type))
+			case let .resolved(type): .resolved(applySubstitutions(to: type))
 			default:
 				nil
 			}
@@ -539,7 +539,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 						case let .value(type):
 							.value(applySubstitutions(to: type, with: substitutions))
 						case let .variable(name, type):
-							.variable(name, .type(applySubstitutions(to: type, with: substitutions)))
+							.variable(name, .resolved(applySubstitutions(to: type, with: substitutions)))
 						}
 					}
 				)
@@ -570,12 +570,12 @@ public class InferenceContext: CustomDebugStringConvertible {
 					let applied = applySubstitutions(to: $0, with: substitutions)
 
 					if case let .instantiatable(instantiatableType) = applied {
-						return .type(.instanceV1(instantiatableType.instantiate(with: substitutions, in: self)))
+						return .resolved(.instanceV1(instantiatableType.instantiate(with: substitutions, in: self)))
 					}
 
-					return .type(applied)
+					return .resolved(applied)
 				},
-				.type(applySubstitutions(to: returning, with: substitutions))
+				.resolved(applySubstitutions(to: returning, with: substitutions))
 			)
 		case let .instanceV1(instance):
 			return .instanceV1(instance)
@@ -716,8 +716,8 @@ public class InferenceContext: CustomDebugStringConvertible {
 			if let type = instance.type as? ProtocolTypeV1 {
 				deferConstraint(
 					TypeConformanceConstraint(
-						type: .type(.instantiatable(.enumType(kase.type))),
-						conformsTo: .type(.instantiatable(.protocol(type))),
+						type: .resolved(.instantiatable(.enumType(kase.type))),
+						conformsTo: .resolved(.instantiatable(.protocol(type))),
 						location: location
 					)
 				)
@@ -737,7 +737,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			let wrappedTypeVar = instance.substitutions.keys.first!
 			instance.substitutions[wrappedTypeVar] = wrapped
 		default:
-			if !a.covariant(with: b, in: self), a != .any, b != .any, a != .base(.none), b != .base(.none) {
+			if !a.covariantV1(with: b, in: self), a != .any, b != .any, a != .base(.none), b != .base(.none) {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),

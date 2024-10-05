@@ -111,7 +111,7 @@ extension Parser {
 		)
 	}
 
-	mutating func funcSignatureDecl() -> FuncSignatureDeclSyntax {
+	mutating func funcSignatureDecl(isStatic: Bool, modifiers: [Token]) -> FuncSignatureDeclSyntax {
 		let funcToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
@@ -145,9 +145,11 @@ extension Parser {
 
 		return FuncSignatureDeclSyntax(
 			funcToken: funcToken,
-			name: name,
+			nameToken: name,
 			params: params,
 			returnDecl: typeDecl,
+			isStatic: isStatic,
+			modifiers: modifiers,
 			id: nextID(),
 			location: endLocation(i)
 		)

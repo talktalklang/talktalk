@@ -24,7 +24,7 @@ extension Constraints {
 		var after: String {
 			let lhs = context.applySubstitutions(to: lhs)
 			let rhs = context.applySubstitutions(to: rhs)
-			let result = context.applySubstitutions(to: .type(.typeVar(result)))
+			let result = context.applySubstitutions(to: .resolved(.typeVar(result)))
 
 			return "Infix(lhs: \(lhs.debugDescription), rhs: \(rhs.debugDescription), op: \(op), result: \(result.debugDescription))"
 		}
@@ -78,8 +78,12 @@ extension Constraints {
 				try context.unify(.type(lhs.wrapped), .type(rhs.type.wrapped), location)
 				try context.unify(.typeVar(result), .base(.bool), location)
 			default:
-				context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
-				try context.unify(.any, .typeVar(result), location)
+				if retries < 2 {
+					context.retry(self)
+				} else {
+					context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
+					try context.unify(.any, .typeVar(result), location)
+				}
 			}
 		}
 	}

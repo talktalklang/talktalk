@@ -6,7 +6,7 @@
 //
 
 public enum InstanceWrapper: CustomDebugStringConvertible {
-	case `struct`(Instance<StructType>), enumCase(Instance<Enum.Case>), `enum`(Instance<Enum>)
+	case `struct`(Instance<StructType>), enumCase(Instance<Enum.Case>), `enum`(Instance<Enum>), `protocol`(Instance<ProtocolType>)
 
 	public var debugDescription: String {
 		switch self {
@@ -15,6 +15,8 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 		case .enumCase(let instance):
 			instance.debugDescription
 		case .enum(let instance):
+			instance.debugDescription
+		case .protocol(let instance):
 			instance.debugDescription
 		}
 	}
@@ -28,6 +30,8 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 				instance.substitutions
 			case .enumCase(let instance):
 				instance.substitutions
+			case .protocol(let instance):
+				instance.substitutions
 			}
 		}
 
@@ -38,6 +42,8 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 			case .enum(let instance):
 				instance.substitutions = newValue
 			case .enumCase(let instance):
+				instance.substitutions = newValue
+			case .protocol(let instance):
 				instance.substitutions = newValue
 			}
 		}
@@ -50,6 +56,8 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 		case .enum(let instance):
 			instance.member(named: name)
 		case .enumCase(let instance):
+			instance.member(named: name)
+		case .protocol(let instance):
 			instance.member(named: name)
 		}
 	}
@@ -68,6 +76,10 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 			if let instance = instance as? Instance<T> {
 				return instance
 			}
+		case .protocol(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
 		}
 
 		return nil
@@ -80,6 +92,8 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 		case .enum(let instance):
 			return instance.type
 		case .enumCase(let instance):
+			return instance.type
+		case .protocol(let instance):
 			return instance.type
 		}
 	}

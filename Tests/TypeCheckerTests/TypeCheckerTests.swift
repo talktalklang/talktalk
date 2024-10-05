@@ -60,8 +60,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 			return
 		}
 
-		#expect(params == [.type(.typeVar("x", 1))])
-		#expect(returns == .type(.typeVar("x", 1)))
+		#expect(params == [.resolved(.typeVar("x", 1))])
+		#expect(returns == .resolved(.typeVar("x", 1)))
 	}
 
 	@Test("Infers binary expr with ints") func binaryInts() throws {
@@ -102,14 +102,14 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let context = try solve(expr)
 		let result = try #require(context[expr[0]])
 
-		#expect(result == .function([.type(.base(.int))], .type(.base(.int))))
+		#expect(result == .function([.resolved(.base(.int))], .resolved(.base(.int))))
 	}
 
 	@Test("Infers var with base type") func varWithBase() throws {
 		let syntax = try Parser.parse("var i = 123 ; i")
 		let context = try solve(syntax)
 
-		#expect(context.type(named: "i") == .type(.base(.int)))
+		#expect(context.type(named: "i") == .resolved(.base(.int)))
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[1]] == .base(.int))
@@ -155,7 +155,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let syntax = try Parser.parse("let i = 123 ; i")
 		let context = try solve(syntax)
 
-		#expect(context.type(named: "i") == .type(.base(.int)))
+		#expect(context.type(named: "i") == .resolved(.base(.int)))
 
 		// Ensure substitutions are applied on lookup
 		#expect(context[syntax[1]] == .base(.int))
@@ -172,8 +172,8 @@ struct TypeCheckerTests: TypeCheckerTest {
 		let context = try solve(syntax)
 		let result = try #require(context[syntax[1]])
 		#expect(result == .function(
-			[.type(.base(.int))],
-			.type(.base(.int))
+			[.resolved(.base(.int))],
+			.resolved(.base(.int))
 		))
 	}
 
@@ -238,7 +238,7 @@ struct TypeCheckerTests: TypeCheckerTest {
 
 		// Make sure we've got the function typed properly
 		#expect(
-			context[syntax[0]] == .function([.type(.base(.int))], .type(.base(.int)))
+			context[syntax[0]] == .function([.resolved(.base(.int))], .resolved(.base(.int)))
 		)
 
 		// Make sure we know what the call return type is

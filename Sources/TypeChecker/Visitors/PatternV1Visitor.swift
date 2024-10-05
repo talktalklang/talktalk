@@ -56,12 +56,12 @@ struct PatternV1Visitor: Visitor {
 
 	func unresolvedReceiver(_ expr: MemberExprSyntax, context: InferenceContext) throws -> PatternV1.Argument {
 		switch context.expectation {
-		case let .type(.instanceV1(instance)):
+		case let .resolved(.instanceV1(instance)):
 			if let member = instance.member(named: expr.property, in: context) {
-				context.extend(expr, with: .type(member))
+				context.extend(expr, with: .resolved(member))
 				return .value(member)
 			}
-		case let .type(.instantiatable(type)):
+		case let .resolved(.instantiatable(type)):
 			if let member = type.member(named: expr.property, in: context) {
 				context.extend(expr, with: member)
 				return .value(member.asType(in: context))
@@ -70,10 +70,10 @@ struct PatternV1Visitor: Visitor {
 			if let expectation = context.expectation {
 				let typeVar = context.freshTypeVariable(".\(expr.property)")
 				context.addConstraint(
-					MemberConstraint(receiver: expectation, name: expr.property, type: .type(.typeVar(typeVar)), isRetry: false, location: expr.location)
+					MemberConstraint(receiver: expectation, name: expr.property, type: .resolved(.typeVar(typeVar)), isRetry: false, location: expr.location)
 				)
 
-				context.extend(expr, with: .type(.typeVar(typeVar)))
+				context.extend(expr, with: .resolved(.typeVar(typeVar)))
 
 				return .value(.typeVar(typeVar))
 			}

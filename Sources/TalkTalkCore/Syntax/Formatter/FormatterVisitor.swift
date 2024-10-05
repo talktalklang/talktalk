@@ -434,7 +434,7 @@ struct FormatterVisitor: Visitor {
 	func visit(_ decl: FuncSignatureDeclSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: decl, context: context)
 
-		let start = comments.leading <> text("func") <+> text(decl.name.lexeme)
+		let start = comments.leading <> text("func") <+> text(decl.nameToken.lexeme)
 		let params = try decl.params.accept(self, context)
 		let returns = try text(" ->") <+> decl.returnDecl.accept(self, context)
 

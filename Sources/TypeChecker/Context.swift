@@ -163,20 +163,20 @@ class Context {
 			// Handle builtin types
 			switch name {
 			case "int":
-				return .type(.base(.int))
+				return .resolved(.base(.int))
 			case "String":
-				return .type(.base(.string))
+				return .resolved(.base(.string))
 			case "bool":
-				return .type(.base(.bool))
+				return .resolved(.base(.bool))
 			case "pointer":
-				return .type(.base(.pointer))
+				return .resolved(.base(.pointer))
 			default:
 				()
 			}
 		}
 
 		if let builtin = BuiltinFunction.map[name] {
-			return .type(builtin.type)
+			return .resolved(builtin.type)
 		}
 
 		// See if we have it in this context
@@ -185,7 +185,7 @@ class Context {
 		}
 
 		if let type = lexicalScope as? StructType, let typeParam = type.typeParameters[name] {
-			return .type(.typeVar(typeParam))
+			return .resolved(.typeVar(typeParam))
 		}
 
 		if includeParents {
@@ -234,7 +234,7 @@ class Context {
 	}
 
 	func define(_ name: String, as result: InferenceResult) {
-		if case let .type(.placeholder(typeVar)) = names[name] {
+		if case let .resolved(.placeholder(typeVar)) = names[name] {
 			log("Defining placeholder `\(name)` as \(result.debugDescription)", prefix: " “ ")
 			substitutions[typeVar] = result
 		} else {
@@ -265,7 +265,7 @@ class Context {
 		case let (.typeVar(typeVar), type), let (type, .typeVar(typeVar)):
 			try bind(typeVar, to: type)
 		case let (.placeholder(typeVar), type), let (type, .placeholder(typeVar)):
-			substitutions[typeVar] = .type(type)
+			substitutions[typeVar] = .resolved(type)
 		case let (.base(lhs), .base(rhs)) where lhs != rhs:
 			error("Cannot unify \(lhs) and \(rhs)", at: location)
 		case var (.instance(lhs), .instance(rhs)):
@@ -280,7 +280,7 @@ class Context {
 	func bind(_ typeVariable: TypeVariable, to type: InferenceType) throws {
 		try parent?.bind(typeVariable, to: type)
 
-		substitutions[typeVariable] = .type(type)
+		substitutions[typeVariable] = .resolved(type)
 	}
 
 	func findParentSubstitution(for typeVariable: TypeVariable) -> InferenceResult? {
@@ -324,17 +324,17 @@ class Context {
 		switch type {
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
-			if count < 10, case let .type(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
-				return applySubstitutions(to: .type(.typeVar(child)), with: substitutions, count: count + 1)
+			if count < 10, case let .resolved(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
+				return applySubstitutions(to: .resolved(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
 			return substitutions[typeVariable]?.instantiate(in: self).type ?? findParentSubstitution(for: typeVariable)?.instantiate(in: self).type ?? type
 		case let .function(params, returns):
 			return .function(
 				params.map {
-					.type(applySubstitutions(to: $0, with: substitutions))
+					.resolved(applySubstitutions(to: $0, with: substitutions))
 				},
-				.type(applySubstitutions(to: returns, with: substitutions))
+				.resolved(applySubstitutions(to: returns, with: substitutions))
 			)
 		case var .instance(instance):
 			for case let (variable, .typeVar(replacement)) in instance.substitutions {
@@ -375,7 +375,7 @@ class Context {
 		switch pattern {
 		case let .call(type, args):
 			return .call(
-				.type(applySubstitutions(to: type, with: substitutions)),
+				.resolved(applySubstitutions(to: type, with: substitutions)),
 				args.map {
 					applySubstitutions(to: $0, with: substitutions)
 				}
@@ -383,7 +383,7 @@ class Context {
 		case let .value(type):
 			return .value(applySubstitutions(to: type, with: substitutions))
 		case let .variable(name, result):
-			return .variable(name, .type(applySubstitutions(to: result, with: substitutions)))
+			return .variable(name, .resolved(applySubstitutions(to: result, with: substitutions)))
 		}
 	}
 
@@ -406,16 +406,20 @@ class Context {
 		)
 	}
 
+	func depth() -> Int {
+		var depth = 0
+		var nextParent = parent
+		while let parent = nextParent {
+			depth += 1
+			nextParent = parent.parent
+		}
+
+		return depth
+	}
+
 	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
 		if isVerbose() {
-			var depth = 0
-			var nextParent = parent
-			while let parent = nextParent {
-				depth += 1
-				nextParent = parent.parent
-			}
-
-			print("\(depth) \(String(repeating: "\t", count: max(0, depth - 1)))" + prefix + msg)
+			print("\(depth()) \(String(repeating: "\t", count: max(0, depth() - 1)))" + prefix + msg)
 		}
 	}
 

@@ -24,7 +24,7 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[0]])
 
-		#expect(result == .type(.base(.int)))
+		#expect(result == .resolved(.base(.int)))
 	}
 
 	@Test("Knows about array as a property subscript") func arrayPropertySubscript() throws {
@@ -40,7 +40,7 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[1]])
 
-		#expect(result == .type(.base(.string)))
+		#expect(result == .resolved(.base(.string)))
 	}
 
 	@Test("Knows about array as a property subscript with instance element") func arrayPropertySubscriptInstanceElement() throws {
@@ -82,6 +82,6 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let context = try infer(expr)
 		let result = try #require(context[expr[1]])
 
-		#expect(result == .type(.optionalV1(.base(.int))))
+		#expect(result == .resolved(.optionalV1(.base(.int))))
 	}
 }

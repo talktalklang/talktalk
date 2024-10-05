@@ -6,7 +6,7 @@
 //
 
 public enum DeclContext {
-	case `struct`, `enum`, topLevel, argument
+	case `struct`, `enum`, topLevel, argument, `protocol`
 
 	var allowed: Set<Token.Kind> {
 		switch self {
@@ -18,11 +18,17 @@ public enum DeclContext {
 			[.enum, .struct, .protocol, .func, .var, .let]
 		case .argument:
 			[.var, .func, .let]
+		case .protocol:
+			[.func, .var, .let]
 		}
 	}
 
+	var hasProperties: Bool {
+		[.struct, .protocol].contains(self)
+	}
+
 	var isLexicalScopeBody: Bool {
-		[.enum, .struct].contains(self)
+		[.enum, .struct, .protocol].contains(self)
 	}
 }
 
@@ -308,7 +314,7 @@ public extension Parser {
 			typeParameters = self.typeParameters()
 		}
 
-		let body = protocolDeclBlock()
+		let body = declBlock(context: .protocol)
 
 		return ProtocolDeclSyntax(
 			id: nextID(),
@@ -318,48 +324,5 @@ public extension Parser {
 			typeParameters: typeParameters,
 			location: endLocation(i)
 		)
-	}
-
-	mutating func protocolDeclBlock() -> ProtocolBodyDeclSyntax {
-		consume(.leftBrace)
-		skip(.newline)
-
-		let i = startLocation(at: previous)
-
-		var decls: [any Decl] = []
-
-		while !check(.eof), !check(.rightBrace) {
-			skip(.newline)
-			if didMatch(.func) {
-				decls.append(funcSignatureDecl())
-				skip(.newline)
-				if check(.leftBrace) {
-					_ = error(at: current, .syntaxError("func decls in protocol bodies cannot have bodies"), expectation: .none)
-				}
-
-				skip(.newline)
-			}
-
-			if didMatch(.initialize) {
-				decls.append(_init())
-				skip(.newline)
-			}
-
-			if didMatch(.var) {
-				decls.append(letVarDecl(.var, isStatic: false))
-				skip(.newline)
-			}
-
-			if didMatch(.let) {
-				decls.append(letVarDecl(.let, isStatic: false))
-			}
-
-			skip(.newline)
-		}
-
-		consume(.rightBrace)
-		skip(.newline)
-
-		return ProtocolBodyDeclSyntax(decls: decls, id: nextID(), location: endLocation(i))
 	}
 }

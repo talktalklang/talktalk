@@ -48,8 +48,8 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		let context = try solve(syntax)
 		let structType = try #require(StructType.extract(from: context[syntax[0]]!))
-		#expect(structType.member(named: "name") == .type(.base(.string)))
-		#expect(structType.member(named: "age") == .type(.base(.int)))
+		#expect(structType.member(named: "name") == .resolved(.base(.string)))
+		#expect(structType.member(named: "age") == .resolved(.base(.int)))
 	}
 
 	@Test("Types custom init") func customInit() throws {
@@ -131,10 +131,10 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		let context = try solve(syntax)
 		let structType = try #require(StructType.extract(from: context[syntax[0]]!))
-		#expect(structType.member(named: "greet")?.instantiate(in: context).type == .function([], .type(.base(.string))))
+		#expect(structType.member(named: "greet")?.instantiate(in: context).type == .function([], .resolved(.base(.string))))
 
 		let result1 = context[syntax[1]]
-		#expect(result1 == .function([], .type(.base(.string))))
+		#expect(result1 == .function([], .resolved(.base(.string))))
 
 		let result2 = context[syntax[2]]
 		#expect(result2 == .base(.string))
@@ -215,6 +215,6 @@ struct TypeCheckerStructTests: TypeCheckerTest {
 
 		let context = try solve(syntax)
 
-		#expect(context[syntax[1]] == .function([], .type(.base(.int))))
+		#expect(context[syntax[1]] == .function([], .resolved(.base(.int))))
 	}
 }
