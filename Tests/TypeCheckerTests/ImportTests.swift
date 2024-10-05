@@ -12,11 +12,11 @@ import Testing
 struct ImportTests: TypeCheckerTest {
 	@Test("Can import other contexts") func testImport() throws {
 		let syntaxA = try Parser.parse("var i = 123")
-		let contextA = try infer(syntaxA)
+		let contextA = try solve(syntaxA)
 
 		let syntaxB = try Parser.parse("i")
-		let contextB = try infer(syntaxB, imports: [contextA])
+		let contextB = try solve(syntaxB, imports: [contextA])
 
-		#expect(contextB[syntaxB[0]] == .resolved(.base(.int)))
+		#expect(contextB[syntaxB[0]] == .base(.int))
 	}
 }

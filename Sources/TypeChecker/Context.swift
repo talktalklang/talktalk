@@ -188,11 +188,21 @@ class Context {
 			return .resolved(.typeVar(typeParam))
 		}
 
-		if includeParents {
-			return parent?.type(named: name)
+		if includeParents, let type = parent?.type(named: name) {
+			return type
+		}
+
+		for imported in lookupImports() {
+			if let result = imported.type(named: name) {
+				return result
+			}
 		}
 
 		return nil
+	}
+
+	func lookupImports() -> [Context] {
+		imports + (parent?.lookupImports() ?? [])
 	}
 
 	func lookupLexicalScope() -> (any MemberOwner)? {
