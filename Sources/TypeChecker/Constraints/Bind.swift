@@ -44,7 +44,7 @@ extension Constraints {
 			case .type(let type):
 				try solveType(type, pattern: pattern)
 			default:
-				if retries < 10 {
+				if retries < 3 {
 					context.retry(self)
 				} else {
 					context.error("Could not resolve pattern binding", at: location)

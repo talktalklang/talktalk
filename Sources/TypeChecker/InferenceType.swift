@@ -35,7 +35,14 @@ public enum TypeWrapper {
 
 public indirect enum InferenceType {
 	public static func optional(_ type: InferenceType) -> InferenceType {
-		let enumType = EnumTypeV1.extract(from: .type(Inferencer.stdlib.type(named: "Optional")!))!
+		let enumType = Enum.extract(from: Inferencer.stdlib.type(named: "Optional")!.instantiate(in: Inferencer.stdlib).type)!
+		let wrapped = enumType.typeParameters["Wrapped"]!
+		let instance = enumType.instantiate(with: [wrapped: type])
+		return .instance(.enum(instance))
+	}
+
+	public static func optionalV1(_ type: InferenceType) -> InferenceType {
+		let enumType = EnumTypeV1.extract(from: .type(Inferencer.stdlibV1.type(named: "Optional")!))!
 		let wrapped = enumType.typeContext.typeParameters.first!
 		let instance = enumType.instantiate(with: [wrapped: type], in: .init(moduleName: "Standard", parent: nil, environment: .init(), constraints: .init()))
 		return .instanceV1(instance)

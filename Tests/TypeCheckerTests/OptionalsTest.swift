@@ -25,16 +25,16 @@ struct OptionalsTest: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax, verbose: true)
 		let optionalType = context[syntax[1]]!
-		#expect(optionalType == .type(.optional(.base(.int))))
+		#expect(optionalType == .optional(.base(.int)))
 
 		let unwrapped = syntax[2]
 			.cast(MatchStatementSyntax.self).cases[0].body[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)
 
-		#expect(context[unwrapped] == .type(.base(.int)))
+		#expect(context[unwrapped] == .base(.int))
 	}
 
 	@Test("Returning value") func returningValue() throws {
@@ -96,7 +96,7 @@ struct OptionalsTest: TypeCheckerTest {
 
 		let context = try infer(syntax, verbose: true)
 
-		#expect(context[syntax[2]] == .type(.optional(.base(.int))))
+		#expect(context[syntax[2]] == .type(.optionalV1(.base(.int))))
 
 		let varExpr = syntax[3]
 			.cast(IfStmtSyntax.self).consequence.stmts[0]
@@ -124,7 +124,7 @@ struct OptionalsTest: TypeCheckerTest {
 
 		let context = try infer(syntax,verbose: true)
 
-		#expect(context[syntax[2]] == .type(.optional(.base(.int))))
+		#expect(context[syntax[2]] == .type(.optionalV1(.base(.int))))
 
 		let varExpr = syntax[3]
 			.cast(IfStmtSyntax.self).alternative!.stmts[0]
@@ -133,6 +133,6 @@ struct OptionalsTest: TypeCheckerTest {
 
 		print()
 
-		#expect(context[varExpr] == .type(.optional(.base(.int))))
+		#expect(context[varExpr] == .type(.optionalV1(.base(.int))))
 	}
 }

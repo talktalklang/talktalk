@@ -444,16 +444,19 @@ struct ContextVisitor: Visitor {
 	func visit(_ syntax: TypeExprSyntax, _ context: Context) throws -> InferenceResult {
 		if let type = context.type(named: syntax.identifier.lexeme) {
 			guard case let .scheme(scheme) = type else {
-				return type
+				if syntax.isOptional {
+					context.define(syntax, as: .optional(type))
+					return .optional(type)
+				} else {
+					context.define(syntax, as: type)
+					return type
+				}
 			}
 
 			var substitutions: Substitutions = [:]
 			for (typeParam, param) in zip(scheme.variables, syntax.genericParams) {
 				let paramType = try param.accept(self, context)
 				substitutions[typeParam] = paramType.instantiate(in: context).type
-//				context.addConstraint(
-//					Constraints.Equality(context: context, lhs: .type(.typeVar(typeParam)), rhs: paramType, location: param.location)
-//				)
 			}
 
 			return .type(context.instantiate(scheme, with: substitutions).0)

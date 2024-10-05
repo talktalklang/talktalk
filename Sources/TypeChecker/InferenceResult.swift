@@ -23,6 +23,13 @@ extension Dictionary<TypeVariable, InferenceType> {
 public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
 	case scheme(Scheme), type(InferenceType)
 
+	public static func optional(_ type: InferenceResult) -> InferenceResult {
+		let enumType = Enum.extract(from: Inferencer.stdlib.type(named: "Optional")!.instantiate(in: Inferencer.stdlib).type)!
+		let wrapped = enumType.typeParameters["Wrapped"]!
+		let instance = enumType.instantiate(with: [wrapped: type.instantiate(in: Inferencer.stdlib).type])
+		return .type(.instance(.enum(instance)))
+	}
+
 	func instantiate(
 		in context: Context,
 		with substitutions: [TypeVariable: InferenceType] = [:],

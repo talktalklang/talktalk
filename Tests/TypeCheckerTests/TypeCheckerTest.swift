@@ -23,6 +23,7 @@ extension TypeCheckerTest {
 		return context
 	}
 
+	@available(*, deprecated, renamed: "solve", message: "This uses the old one")
 	func infer(
 		_ expr: [any Syntax],
 		imports: [InferenceContext] = [],

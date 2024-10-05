@@ -37,6 +37,6 @@ import TypeChecker
 		.cast(AnalyzedExprStmt.self).exprAnalyzed
 		.cast(AnalyzedSubscriptExpr.self)
 
-		#expect(result.typeAnalyzed == .optional(.base(.int)))
+		#expect(result.typeAnalyzed == .optionalV1(.base(.int)))
 	}
 }
