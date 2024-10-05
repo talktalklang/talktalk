@@ -658,7 +658,35 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: DictionaryLiteralExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		guard case let .scheme(dictScheme) = context.type(named: "Dictionary"),
+					case let .type(.struct(dictType)) = dictScheme.type else {
+			context.error("Could not load builtin Dictionary type", at: syntax.location)
+			return .resolved(.error(.init(kind: .typeError("Could not load builtin Dictionary type"), location: syntax.location)))
+		}
+
+		let elementKeyType: InferenceResult
+		let elementKeyValue: InferenceResult
+
+		if let element = syntax.elements.first {
+			elementKeyType = try element.key.accept(self, context)
+			elementKeyValue = try element.value.accept(self, context)
+		} else {
+			elementKeyType = .resolved(.typeVar((context.freshTypeVariable("Dictionary<Key>"))))
+			elementKeyValue = .resolved(.typeVar((context.freshTypeVariable("Dictionary<Value>"))))
+		}
+
+		let elementKeyVar = dictScheme.variables[0]
+		let elementValueVar = dictScheme.variables[1]
+
+		let instance = Instance(
+			type: dictType,
+			substitutions: [
+				elementKeyVar: elementKeyType.asInstance(in: context, with: [:]),
+				elementValueVar: elementKeyValue.asInstance(in: context, with: [:])
+			]
+		)
+
+		return .resolved(.instance(.struct(instance)))
 	}
 
 	func visit(_ syntax: DictionaryElementExprSyntax, _ context: Context) throws -> InferenceResult {

@@ -68,10 +68,10 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let expr = try Parser.parse("""
 		["a": 123, "b": 456]
 		""")
-		let context = try infer(expr)
-		let result = try #require(context[expr[0]])
+		let context = try solve(expr)
+		let result = try #require(context.find(expr[0]))
 
-		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: result.asType(in: context)))
+		let instance = try #require(Instance<StructType>.extract(from: result))
 		#expect(instance.type.name == "Dictionary")
 	}
 
@@ -80,9 +80,9 @@ struct StandardLibraryTests: TypeCheckerTest {
 		let dict = ["a": 123, "b": 456]
 		dict["a"]
 		""")
-		let context = try infer(expr)
-		let result = try #require(context[expr[1]])
+		let context = try solve(expr)
+		let result = try #require(context.find(expr[1]))
 
-		#expect(result == .resolved(.optionalV1(.base(.int))))
+		#expect(result == .optional(.base(.int)))
 	}
 }
