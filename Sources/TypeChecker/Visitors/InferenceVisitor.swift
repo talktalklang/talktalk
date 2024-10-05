@@ -890,7 +890,7 @@ struct InferenceVisitor: Visitor {
 		let typeContext = childContext.typeContext!
 		// swiftlint:enable force_unwrapping
 
-		let protocolType = ProtocolType(name: expr.name.lexeme, context: childContext, typeContext: typeContext)
+		let protocolType = ProtocolTypeV1(name: expr.name.lexeme, context: childContext, typeContext: typeContext)
 		context.defineVariable(named: expr.name.lexeme, as: .type(.instantiatable(.protocol(protocolType))), at: expr.location)
 
 		// swiftlint:disable force_unwrapping

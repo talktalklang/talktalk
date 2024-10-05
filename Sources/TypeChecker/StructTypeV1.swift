@@ -16,7 +16,7 @@ public struct StructTypeV1: Equatable, Hashable, CustomStringConvertible, Instan
 	public let name: String
 	public private(set) var context: InferenceContext
 	public let typeContext: TypeContext
-	public var conformances: [ProtocolType] { typeContext.conformances }
+	public var conformances: [ProtocolTypeV1] { typeContext.conformances }
 
 	public static func extractType(from result: InferenceResult?) -> StructTypeV1? {
 		if case let .type(.instantiatable(.struct(structType))) = result {

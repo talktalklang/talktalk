@@ -59,7 +59,7 @@ struct MemberExprAnalyzer: Analyzer {
 		var analysisDefinition: Definition? = nil
 
 		// If it's boxed, we create members
-		if case let .instanceV1(instance) = receiver.typeAnalyzed, instance.type is ProtocolType {
+		if case let .instanceV1(instance) = receiver.typeAnalyzed, instance.type is ProtocolTypeV1 {
 			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
 				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
 			}

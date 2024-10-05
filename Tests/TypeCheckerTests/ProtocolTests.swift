@@ -23,7 +23,7 @@ struct ProtocolTests: TypeCheckerTest {
 
 		let context = try infer(syntax)
 
-		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
+		let protocolType = ProtocolTypeV1.extract(from: context[syntax[0]]!.asType(in: context))!
 		#expect(protocolType.name == "Greetable")
 		#expect(protocolType.properties["name"] == .type(.base(.string)))
 		#expect(protocolType.methods["greet"] == .scheme(Scheme(name: "greet", variables: [], type: .function([], .type(.base(.string))))))
@@ -45,7 +45,7 @@ struct ProtocolTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		#expect(context.errors.isEmpty)
 
-		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
+		let protocolType = ProtocolTypeV1.extract(from: context[syntax[0]]!.asType(in: context))!
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([
@@ -118,7 +118,7 @@ struct ProtocolTests: TypeCheckerTest {
 		let context = try infer(syntax)
 		#expect(context.errors.isEmpty)
 
-		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
+		let protocolType = ProtocolTypeV1.extract(from: context[syntax[0]]!.asType(in: context))!
 		let fn = context[syntax[1]]!.asType(in: context)
 
 		#expect(fn == .function([

@@ -24,7 +24,7 @@ public class TypeContext: Equatable, Hashable {
 	var initializers: OrderedDictionary<String, InferenceResult>
 	var properties: OrderedDictionary<String, InferenceResult>
 	var typeParameters: [TypeVariable]
-	var conformances: [ProtocolType] = []
+	var conformances: [ProtocolTypeV1] = []
 
 	init(
 		name: String,
@@ -713,7 +713,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		// Handle case where we're trying to unify an enum case with a protocol
 		case let (.instanceV1(instance), .enumCaseV1(kase)),
 		     let (.enumCaseV1(kase), .instanceV1(instance)):
-			if let type = instance.type as? ProtocolType {
+			if let type = instance.type as? ProtocolTypeV1 {
 				deferConstraint(
 					TypeConformanceConstraint(
 						type: .type(.instantiatable(.enumType(kase.type))),
@@ -723,7 +723,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			}
 		case let (.instanceV1(lhs), .instanceV1(rhs)):
-			if lhs.type is ProtocolType || rhs.type is ProtocolType {
+			if lhs.type is ProtocolTypeV1 || rhs.type is ProtocolTypeV1 {
 				break
 			}
 		case let (.patternV1(pattern), rhs):

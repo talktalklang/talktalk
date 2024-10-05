@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/27/24.
 //
 
+import TalkTalkCore
+
 struct Solver {
 	let context: InferenceContext
 	var diagnostics: [Diagnostic] = []

@@ -9,7 +9,7 @@ import OrderedCollections
 public enum InstantiatableType: Hashable {
 	case `struct`(StructTypeV1)
 	case enumType(EnumTypeV1)
-	case `protocol`(ProtocolType)
+	case `protocol`(ProtocolTypeV1)
 
 	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
 		switch self {

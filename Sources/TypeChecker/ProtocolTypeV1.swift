@@ -7,7 +7,7 @@
 
 import OrderedCollections
 
-public struct ProtocolType: Equatable, Hashable, InstantiatableV1 {
+public struct ProtocolTypeV1: Equatable, Hashable, InstantiatableV1 {
 	public static func == (lhs: Self, rhs: Self) -> Bool {
 		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
 	}
@@ -15,7 +15,7 @@ public struct ProtocolType: Equatable, Hashable, InstantiatableV1 {
 	public let name: String
 	public let context: InferenceContext
 	public let typeContext: TypeContext
-	public var conformances: [ProtocolType] { typeContext.conformances }
+	public var conformances: [ProtocolTypeV1] { typeContext.conformances }
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(name)
@@ -53,7 +53,7 @@ public struct ProtocolType: Equatable, Hashable, InstantiatableV1 {
 		return result
 	}
 
-	public static func extract(from type: InferenceType) -> ProtocolType? {
+	public static func extract(from type: InferenceType) -> ProtocolTypeV1? {
 		if case let .instantiatable(.protocol(type)) = type {
 			return type
 		}

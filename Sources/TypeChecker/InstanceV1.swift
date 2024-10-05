@@ -11,7 +11,7 @@ public protocol InstantiatableV1: Equatable, Hashable {
 	var name: String { get }
 	var context: InferenceContext { get }
 	var typeContext: TypeContext { get }
-	var conformances: [ProtocolType] { get }
+	var conformances: [ProtocolTypeV1] { get }
 	func member(named name: String, in context: InferenceContext) -> InferenceResult?
 	func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType
 }
@@ -40,8 +40,8 @@ public extension InstantiatableV1 {
 			.struct(instance as! InstanceV1<StructTypeV1>)
 		case is EnumTypeV1:
 			.enumType(instance as! InstanceV1<EnumTypeV1>)
-		case is ProtocolType:
-			.protocol(instance as! InstanceV1<ProtocolType>)
+		case is ProtocolTypeV1:
+			.protocol(instance as! InstanceV1<ProtocolTypeV1>)
 		default:
 			fatalError("Unhandled type: \(self)")
 		}

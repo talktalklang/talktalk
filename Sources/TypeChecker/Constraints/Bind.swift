@@ -99,8 +99,6 @@ extension Constraints {
 				try solveEnumCase(kase, pattern: pattern)
 			case let .call(.type(.type(.enumCase(kase))), _):
 				try solveEnumCase(kase, pattern: pattern)
-			case let .call(.type(wrapper), args):
-				print()
 			default:
 				try context.unify(.type(type), .pattern(pattern), location)
 			}

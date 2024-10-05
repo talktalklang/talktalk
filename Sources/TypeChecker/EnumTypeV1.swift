@@ -16,7 +16,7 @@ public class EnumTypeV1: Equatable, Hashable, CustomStringConvertible, Instantia
 
 	public var name: String
 	public var cases: [EnumCase]
-	public var conformances: [ProtocolType] { typeContext.conformances }
+	public var conformances: [ProtocolTypeV1] { typeContext.conformances }
 	public let context: InferenceContext
 	public let typeContext: TypeContext
 

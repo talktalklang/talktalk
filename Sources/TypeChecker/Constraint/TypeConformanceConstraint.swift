@@ -65,7 +65,7 @@ struct TypeConformanceConstraint: InferenceConstraint {
 		])
 	}
 
-	func checkConformance(of type: any InstantiatableV1, to protocolType: ProtocolType, in context: InferenceContext) -> ConstraintCheckResult {
+	func checkConformance(of type: any InstantiatableV1, to protocolType: ProtocolTypeV1, in context: InferenceContext) -> ConstraintCheckResult {
 		for typeRequirement in protocolType.typeContext.typeParameters {
 			// Unify struct's generic types with protocol type requirements
 			if let typeParam = type.typeParameters.first(where: {

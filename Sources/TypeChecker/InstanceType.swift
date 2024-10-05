@@ -21,7 +21,7 @@ public enum InstanceType {
 	}
 
 	case `struct`(InstanceV1<StructTypeV1>)
-	case `protocol`(InstanceV1<ProtocolType>)
+	case `protocol`(InstanceV1<ProtocolTypeV1>)
 	case enumType(InstanceV1<EnumTypeV1>)
 
 	public static func synthesized(_ type: some InstantiatableV1) -> InstanceType {
@@ -29,8 +29,8 @@ public enum InstanceType {
 		switch type {
 		case is StructTypeV1:
 			.struct(.synthesized(type as! StructTypeV1))
-		case is ProtocolType:
-			.protocol(.synthesized(type as! ProtocolType))
+		case is ProtocolTypeV1:
+			.protocol(.synthesized(type as! ProtocolTypeV1))
 		case is EnumTypeV1:
 			.enumType(.synthesized(type as! EnumTypeV1))
 		default:
