@@ -371,9 +371,8 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		let type = try #require(try! s.environment.type(named: "Person"))
 
-		_ = StructType.extract(from: s.typeAnalyzed)!
-		let sup = Instance<StructType>.extract(from: type.methods["sup"]!.returnTypeID)!
-		#expect(sup.type.name == "Person")
+		let stype = StructType.extract(from: s.typeAnalyzed)!
+		#expect(type.methods["sup"]!.returnTypeID == .self(stype))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {

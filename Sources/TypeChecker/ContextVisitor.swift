@@ -420,7 +420,17 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: IfExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let consequenceContext = context.addChild()
+
+		_ = try syntax.condition.accept(self, consequenceContext)
+		let consequence = try syntax.consequence.accept(self, consequenceContext)
+		let alternative = try syntax.alternative.accept(self, context)
+
+		context.addConstraint(
+			Constraints.Equality(context: context, lhs: consequence, rhs: alternative, location: syntax.location)
+		)
+
+		return consequence
 	}
 
 	func visit(_ syntax: WhileStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -553,7 +563,7 @@ struct ContextVisitor: Visitor {
 		let result = try handleFuncLike(syntax, context: context)
 		try lexicalScope.add(member: result, named: "init", isStatic: false)
 
-		context.define(syntax, as: .resolved(.void))
+		context.define(syntax, as: result)
 
 		return .resolved(.void)
 	}
@@ -866,7 +876,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: InterpolatedStringExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.base(.string))
 	}
 
 	func visit(_ syntax: ForStmtSyntax, _ context: Context) throws -> InferenceResult {

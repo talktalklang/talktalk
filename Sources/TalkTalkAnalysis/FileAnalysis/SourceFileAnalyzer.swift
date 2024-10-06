@@ -278,7 +278,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let symbol: Symbol = switch try context.inferenceContext.get(expr) {
+		let symbol: Symbol = switch context.inferenceContext[expr] {
 		case .typeVar:
 			context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case let .base(type):

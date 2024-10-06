@@ -123,11 +123,11 @@ public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConv
 	}
 
 	public static func extract(from type: InferenceType) -> Instance<Kind>? {
-		guard case let .instance(wrapper) = type else {
-			return nil
+		if case let .instance(wrapper) = type {
+			return wrapper.instance(ofType: Kind.self)
 		}
 
-		return wrapper.instance(ofType: Kind.self)
+		return nil
 	}
 
 	func relatedType(named name: String) -> InferenceType? {

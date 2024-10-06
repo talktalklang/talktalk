@@ -14,6 +14,8 @@ public struct AnalyzedMethodDecl: MethodDecl, AnalyzedDecl {
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var nameToken: Token { wrapped.nameToken }
+	public var isStatic: Bool { wrapped.isStatic }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

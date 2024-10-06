@@ -33,33 +33,34 @@ struct StructDeclAnalyzer: Analyzer {
 
 		for decl in decl.body.decls {
 			switch decl {
-			case let decl as VarLetDecl:
+			case let decl as PropertyDecl:
 				structType.add(
 					property: Property(
-						symbol: .property(context.moduleName, structType.name, decl.name),
-						name: decl.name,
+						symbol: .property(context.moduleName, structType.name, decl.name.lexeme),
+						name: decl.name.lexeme,
 						inferenceType: context.type(for: decl),
 						location: decl.semanticLocation ?? decl.location,
 						isMutable: false,
 						isStatic: decl.isStatic
 					)
 				)
-			case let decl as FuncExpr:
+			case let decl as MethodDecl:
 				let method = context.type(for: decl)
-				guard case let .function(params, returns) = method, let name = decl.name?.lexeme else {
+				guard case let .function(params, returns) = method else {
+					let name = decl.nameToken.lexeme
 					return error(at: decl, "invalid method", environment: context, expectation: .none)
 				}
 
 				let symbol = context.symbolGenerator.method(
 					structType.name,
-					name,
+					decl.nameToken.lexeme,
 					parameters: params.map(\.mangled),
 					source: .internal
 				)
 
 				structType.add(
 					method: Method(
-						name: name,
+						name: decl.nameToken.lexeme,
 						symbol: symbol,
 						params: params.map { context.inferenceContext.apply($0) },
 						inferenceType: method,

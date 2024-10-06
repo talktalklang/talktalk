@@ -91,7 +91,11 @@ public class Context {
 	}
 
 	public func get(_ syntax: any Syntax) throws -> InferenceType {
-		self[syntax]!
+		if let result = self.find(syntax) {
+			return result
+		}
+
+		throw TypeError.typeError("Type not found for \(syntax)")
 	}
 
 	public func apply(_ result: InferenceResult) -> InferenceType {
@@ -259,7 +263,7 @@ public class Context {
 		return child
 	}
 
-	func find(_ syntax: any Syntax) -> InferenceType? {
+	public func find(_ syntax: any Syntax) -> InferenceType? {
 		if let result = environment[syntax.id] {
 			return applySubstitutions(to: result)
 		}

@@ -2,6 +2,8 @@
 
 public protocol PropertyDecl: Decl {
 	// Insert PropertyDecl specific fields here
+	var name: Token { get }
+	var isStatic: Bool { get }
 }
 
 public struct PropertyDeclSyntax: PropertyDecl {

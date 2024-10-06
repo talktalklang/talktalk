@@ -64,7 +64,7 @@ public class Environment {
 	}
 
 	public func type(for syntax: any Syntax, default type: InferenceType = .any) -> InferenceType {
-		inferenceContext[syntax] ?? type
+		inferenceContext.find(syntax) ?? type
 	}
 
 	public var moduleName: String {
