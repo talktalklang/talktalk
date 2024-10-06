@@ -20,16 +20,16 @@ struct ForLoopTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let forLoop = syntax[0]
-		try #expect(context.get(forLoop) == .type(.void))
+		#expect(context.find(forLoop) == .void)
 
 		let i = forLoop
 			.cast(ForStmtSyntax.self).body.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(CallExprSyntax.self).args[0]
 
-		#expect(context[i]?.debugDescription == InferenceResult.type(.base(.int)).debugDescription)
+		#expect(context.find(i) == .base(.int))
 	}
 
 	@Test("Errors when sequence isn't iterable") func notIterable() throws {
@@ -41,6 +41,6 @@ struct ForLoopTests: TypeCheckerTest {
 			"""
 		)
 
-		_ = try infer(syntax, expectedErrors: 2) // Expect a conformance error and could not determine Element
+		_ = try solve(syntax, expectedDiagnostics: 1) // Expect a conformance error and could not determine Element
 	}
 }

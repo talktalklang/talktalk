@@ -16,9 +16,9 @@ struct StructDeclAnalyzer: Analyzer {
 
 	func analyze() throws -> any AnalyzedSyntax {
 		let inferenceType = context.type(for: decl)
-		guard let type = TypeChecker.StructType.extractType(from: .type(inferenceType))
+		guard let type = TypeChecker.StructTypeV1.extractType(from: .resolved(inferenceType))
 		else {
-			return error(at: decl, "did not find struct type from \(decl.name)", environment: context, expectation: .none)
+			return error(at: decl, "did not find struct type from \(decl.name), got \(inferenceType)", environment: context, expectation: .none)
 		}
 
 		let structType = AnalysisStructType(
@@ -108,9 +108,9 @@ struct StructDeclAnalyzer: Analyzer {
 						source: .internal
 					),
 					params: structType.properties.values.map(\.inferenceType),
-					inferenceType: .function(structType.properties.values.map { .type($0.inferenceType) }, .type(.instantiatable(.struct(type)))),
+					inferenceType: .function(structType.properties.values.map { .resolved($0.inferenceType) }, .resolved(.instantiatable(.struct(type)))),
 					location: decl.location,
-					returnTypeID: .instance(.synthesized(type)),
+					returnTypeID: .instanceV1(.synthesized(type)),
 					isSynthetic: true
 				)
 			)
@@ -121,7 +121,7 @@ struct StructDeclAnalyzer: Analyzer {
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				inferenceType: .instance(.synthesized(type)),
+				inferenceType: .instanceV1(.synthesized(type)),
 				wrapped: VarExprSyntax(
 					id: -8,
 					token: .synthetic(.self),
@@ -132,7 +132,7 @@ struct StructDeclAnalyzer: Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-			type: .instance(.synthesized(type)),
+			type: .instanceV1(.synthesized(type)),
 			isMutable: false
 		)
 
@@ -140,7 +140,12 @@ struct StructDeclAnalyzer: Analyzer {
 			// Go through and actually analyze the type params
 			let environment = bodyContext.add(namespace: nil)
 			environment.isInTypeParameters = true
-			structType.typeParameters[i].type = try cast(param.type.accept(visitor, environment), to: AnalyzedTypeExpr.self)
+
+			guard let expr = try param.type.accept(visitor, environment) as? AnalyzedTypeExpr else {
+				return error(at: param.type, "Could not cast \(param.type) to AnalyzedTypeExpr", environment: context)
+			}
+
+			structType.typeParameters[i].type = expr
 		}
 
 		context.define(type: decl.name, as: structType)
@@ -158,10 +163,18 @@ struct StructDeclAnalyzer: Analyzer {
 			)
 		}
 
-		let analyzed = try AnalyzedStructDecl(
+		guard let decl = decl as? StructDeclSyntax else {
+			return error(at: decl, "Could not cast \(decl) to StructDeclSyntax", environment: context)
+		}
+
+		guard let bodyAnalyzed = bodyAnalyzed as? AnalyzedDeclBlock else {
+			return error(at: decl, "Could not cast \(bodyAnalyzed) to AnalyzedDeclBlock", environment: context)
+		}
+
+		let analyzed = AnalyzedStructDecl(
 			symbol: symbol,
-			wrapped: cast(decl, to: StructDeclSyntax.self),
-			bodyAnalyzed: cast(bodyAnalyzed, to: AnalyzedDeclBlock.self),
+			wrapped: decl,
+			bodyAnalyzed: bodyAnalyzed,
 			structType: structType,
 			inferenceType: inferenceType,
 			analysisErrors: errors,

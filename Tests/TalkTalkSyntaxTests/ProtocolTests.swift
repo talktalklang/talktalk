@@ -34,7 +34,7 @@ struct ProtocolTests {
 		#expect(protocolDef.body.decls.count == 1)
 
 		let funcSigDef = try #require(protocolDef.body.decls[0] as? FuncSignatureDeclSyntax)
-		#expect(funcSigDef.name.lexeme == "someMethod")
+		#expect(funcSigDef.nameToken.lexeme == "someMethod")
 		#expect(funcSigDef.params.params.map(\.name) == ["name"])
 		#expect(funcSigDef.params.params.map(\.type?.identifier.lexeme) == ["String"])
 		#expect(funcSigDef.returnDecl.identifier.lexeme == "int")

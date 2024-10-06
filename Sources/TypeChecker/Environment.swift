@@ -53,11 +53,11 @@ class Environment {
 
 	func lookupVariable(named name: String) -> InferenceType? {
 		for (_, type) in types {
-			if case let .type(.typeVar(variable)) = type, variable.name == name {
+			if case let .resolved(.typeVar(variable)) = type, variable.name == name {
 				return .typeVar(variable)
 			}
 
-			if case let .type(.instantiatable(type)) = type, type.name == name {
+			if case let .resolved(.instantiatable(type)) = type, type.name == name {
 				return .instantiatable(type)
 			}
 

@@ -3,6 +3,7 @@
 
 import Foundation
 import PackageDescription
+import CompilerPluginSupport
 
 let package = Package(
 	name: "TalkTalk",
@@ -50,7 +51,6 @@ let package = Package(
 				"TalkTalkLSP",
 				"TalkTalkAnalysis",
 				"TalkTalkDriver",
-				"TalkTalkInterpreter",
 				"TalkTalkVM",
 				"TypeChecker",
 				.product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -121,14 +121,6 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "TalkTalkInterpreter",
-			dependencies: [
-				"TalkTalkAnalysis",
-				"TalkTalkBytecode",
-				"TypeChecker",
-			]
-		),
-		.target(
 			name: "TalkTalkBytecode",
 			dependencies: [
 				"TalkTalkCore",
@@ -179,12 +171,6 @@ let package = Package(
 			]
 		),
 		.testTarget(
-			name: "TalkTalkInterpreterTests",
-			dependencies: [
-				"TalkTalkInterpreter",
-			]
-		),
-		.testTarget(
 			name: "TalkTalkAnalysisTests",
 			dependencies: ["TalkTalkAnalysis", "TalkTalkCore"]
 		),
@@ -204,9 +190,11 @@ let package = Package(
 
 #if !WASM
 	for target in package.targets {
-		target.resources = [
-			.copy("../../Library/Standard"),
-		]
+		if target.name == "TalkTalkCore" {
+			target.resources = [
+				.copy("../../Library/Standard"),
+			]
+		}
 	}
 #endif
 

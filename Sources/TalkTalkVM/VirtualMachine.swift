@@ -159,7 +159,7 @@ public struct VirtualMachine {
 						}
 					}
 
-					return .ok(.none, Date().timeIntervalSince(start))
+					return .ok(.`nil`, Date().timeIntervalSince(start))
 				}
 
 				try transferCaptures(in: calledFrame)
@@ -181,7 +181,7 @@ public struct VirtualMachine {
 						}
 					}
 
-					let retVal = stack.size == 0 ? .none : try stack.pop()
+					let retVal = stack.size == 0 ? .`nil` : try stack.pop()
 
 					return .ok(retVal, Date().timeIntervalSince(start))
 				}
@@ -213,7 +213,7 @@ public struct VirtualMachine {
 			case .false:
 				try stack.push(.bool(false))
 			case .none:
-				try stack.push(.none)
+				try stack.push(.`nil`)
 			case .primitive:
 				let byte = try readByte()
 
@@ -318,6 +318,16 @@ public struct VirtualMachine {
 					return runtimeError("Cannot subtract \(lhs) & \(rhs) operands")
 				}
 				try stack.push(.int(lhs - rhs))
+			case .modulo:
+				let lhs = try stack.pop()
+				let rhs = try stack.pop()
+
+				guard let lhs = lhs.intValue,
+							let rhs = rhs.intValue
+				else {
+					return runtimeError("Cannot modulo \(lhs) & \(rhs) operands")
+				}
+				try stack.push(.int(lhs % rhs))
 			case .divide:
 				let lhs = try stack.pop()
 				let rhs = try stack.pop()
@@ -580,8 +590,8 @@ public struct VirtualMachine {
 
 					try stack.push(value)
 				case let .enum(value):
-					if symbol.params != nil {
-						symbol = .property(symbol.module, value.name, symbol.name!)
+					if symbol.params != nil, let name = symbol.name {
+						symbol = .property(symbol.module, value.name, name)
 					}
 
 					guard let value = value.cases[symbol] else {
@@ -648,11 +658,46 @@ public struct VirtualMachine {
 
 				try stack.push(.instance(instance))
 			case .initDict:
+				guard let arrayType = module.structs[Symbol.struct("Standard", "Array").asStatic()] else {
+					throw VirtualMachineError.valueMissing("No Array type found")
+				}
+
 				guard let dictType = module.structs[Symbol.struct("Standard", "Dictionary").asStatic()] else {
 					throw VirtualMachineError.valueMissing("No Dictionary type found")
 				}
 
-				try call(structValue: dictType)
+				guard let entryType = module.structs[Symbol.struct("Standard", "DictionaryEntry").asStatic()] else {
+					throw VirtualMachineError.valueMissing("No DictionaryEntry type found")
+				}
+
+				let count = try readByte()
+				let capacity = max(count, 1) * 2
+				let entriesArrayPointer = heap.allocate(count: Int(capacity))
+
+				for i in 0 ..< Int(count) {
+					let value = try stack.pop()
+					let key = try stack.pop()
+					let instance = Instance(type: entryType, fields: [
+						Symbol.property("Standard", "DictionaryEntry", "key").asStatic(): key,
+						Symbol.property("Standard", "DictionaryEntry", "value").asStatic(): value,
+					])
+
+					heap.store(pointer: entriesArrayPointer + i, value: .instance(instance))
+				}
+
+				let entriesArray = Instance(type: arrayType, fields: [
+					Symbol.property("Standard", "Array", "_storage").asStatic(): .pointer(entriesArrayPointer),
+					Symbol.property("Standard", "Array", "count").asStatic(): .int(.init(count)),
+					Symbol.property("Standard", "Array", "capacity").asStatic(): .int(.init(capacity)),
+				])
+
+				let dictInstance = Instance(type: dictType, fields: [
+					Symbol.property("Standard", "Dictionary", "storage").asStatic(): .instance(entriesArray),
+					Symbol.property("Standard", "Dictionary", "count").asStatic(): .int(Int(count)),
+					Symbol.property("Standard", "Dictionary", "capacity").asStatic(): .int(Int(capacity)),
+				])
+
+				try stack.push(.instance(dictInstance))
 			case .binding:
 				let sym = try readSymbol()
 				if let binding = currentFrame.patternBindings[sym] {
@@ -899,7 +944,8 @@ public struct VirtualMachine {
 			}
 
 			guard let value = heap.dereference(pointer: pointer) else {
-				throw VirtualMachineError.valueMissing("no value found for pointer \(pointer)")
+				try stack.push(.nil)
+				return
 			}
 
 			try stack.push(value)
@@ -907,8 +953,8 @@ public struct VirtualMachine {
 			try stack.pop()
 			() // TODO:
 		case "_storePtr":
-			let value = try stack.pop()
 			let pointer = try stack.pop()
+			let value = try stack.pop()
 			if case let .pointer(pointer) = pointer {
 				heap.store(pointer: pointer, value: value)
 			} else {
@@ -917,8 +963,6 @@ public struct VirtualMachine {
 		case "_hash":
 			let value = try stack.pop()
 			try stack.push(.int(.init(value.hashValue)))
-		case "_cast":
-			() // This is just for the analyzer
 		default:
 			throw VirtualMachineError.valueMissing("unknown builtin: \(builtin)")
 		}

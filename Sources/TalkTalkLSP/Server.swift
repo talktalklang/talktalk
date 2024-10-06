@@ -10,10 +10,10 @@ import TalkTalkAnalysis
 import TalkTalkBytecode
 import TalkTalkCompiler
 import TalkTalkCore
-import TalkTalkCore
 import TypeChecker
 
-public struct Server {
+@MainActor
+public class Server {
 	// We read json, we write json
 	let decoder = JSONDecoder()
 	let encoder = JSONEncoder()
@@ -27,72 +27,38 @@ public struct Server {
 	// Keep track of our files
 	var sources: [String: SourceDocument] = [:]
 
-	var analyzer: ModuleAnalyzer
-	var analysis: AnalysisModule
+	// Saved diagnostics
+	var diagnostics: [Diagnostic] = []
 
 	init() throws {
-		Log.info("Compiled stdlib")
-
-		self.analyzer = try ModuleAnalyzer(
-			name: "LSP",
-			files: [],
-			moduleEnvironment: [:],
-			importedModules: []
-		)
-
-		self.analysis = try analyzer.analyze()
+		Log.info("Server initialized")
 	}
 
 	var analyzedFilePaths: [String] {
-		analysis.analyzedFiles.map(\.path)
+		sources.keys.sorted()
 	}
 
-	func getSource(_ uri: String) -> SourceDocument? {
-		sources[uri]
-	}
-
-	mutating func setSource(uri: String, to document: SourceDocument) {
+	func setSource(uri: String, to document: SourceDocument) throws {
 		sources[uri] = document
 
-		do {
-			analysis = try analyzer.addFile(
-				ParsedSourceFile(
-					path: document.uri,
-					syntax: Parser.parse(
-						SourceFile(path: document.uri, text: document.text),
-						allowErrors: true
-					)
-				)
-			)
-		} catch {
-			Log.error("error adding file to analyzer: \(error)")
-		}
+		let analysis = analyze()
+
+		self.diagnostics = try analysis.collectErrors(for: uri).file.map { $0.diagnostic() }
 	}
 
-	mutating func enqueue(_ request: Request) {
+	func enqueue(_ request: Request) throws {
 		if let id = request.id, cancelled.contains(id) {
 			Log.info("skipping canceled job (\(id))", color: .default)
 			cancelled.remove(id)
 			return
 		}
 
-		perform(request)
+		try perform(request)
 	}
 
-	mutating func diagnostics(for uri: String? = nil) throws -> [Diagnostic] {
-		analyze()
-
-		let errorResult = try analysis.collectErrors(for: uri)
-
-		Log.info("error result, \(errorResult.count) total, \(errorResult.file.count) file")
-
-		return errorResult.file.map {
-			$0.diagnostic()
-		}
-	}
-
-	mutating func perform(_ request: Request) {
+	func perform(_ request: Request) throws {
 		Log.info("-> \(request.method)", color: .magenta)
+
 		switch request.method {
 		case .initialize:
 			respond(to: request.id, with: InitializeResult())
@@ -135,7 +101,7 @@ public struct Server {
 				return
 			}
 
-			setSource(uri: params.textDocument.uri, to: .init(textDocument: params.textDocument))
+			try setSource(uri: params.textDocument.uri, to: .init(textDocument: params.textDocument))
 		case .textDocumentDidChange:
 			guard let params = request.params as? TextDocumentDidChangeRequest else {
 				Log.error("Could not parse TextDocumentDidChangeRequest params")
@@ -153,10 +119,12 @@ public struct Server {
 			}
 
 			source.update(text: params.contentChanges[0].text)
-			setSource(uri: params.textDocument.uri, to: source)
-			analyze()
+			try setSource(uri: params.textDocument.uri, to: source)
 
 			sources[params.textDocument.uri] = source
+
+			Log.info("textDocumentDidChange", color: .magenta)
+			Log.info(source.text, color: .magenta)
 		case .textDocumentCompletion:
 			guard let params = request.params as? TextDocumentCompletionRequest else {
 				Log.error("Could not parse text document completion request params")
@@ -180,7 +148,7 @@ public struct Server {
 
 			Log.info("completion request: \(completionRequest)", color: .magenta)
 
-			let completions = analysis.completions(for: completionRequest) // .sorted()
+			let completions = analyze().completions(for: completionRequest) // .sorted()
 
 			Log.info("! got completions: \(completions)", color: .magenta)
 
@@ -208,18 +176,11 @@ public struct Server {
 				return
 			}
 
-			Log.info("requesting diagnostics for \(params.textDocument.uri)")
-
-			do {
-				let diagnostics = try diagnostics(for: params.textDocument.uri)
-				Log.info("Diagnostic count: \(diagnostics.count)")
-				let report = FullDocumentDiagnosticReport(items: diagnostics)
-				respond(to: request.id, with: report)
-			} catch {
-				Log.error("Error generating diagnostics: \(error)")
-			}
+			Log.info("Diagnostic count: \(diagnostics.count)")
+			let report = FullDocumentDiagnosticReport(items: diagnostics)
+			respond(to: request.id, with: report)
 		case .textDocumentSemanticTokensFull:
-			respond(to: request.id, with: TextDocumentSemanticTokensFull(request: request).handle(sources))
+			try respond(to: request.id, with: TextDocumentSemanticTokensFull(request: request).handle(sources))
 		case .workspaceSemanticTokensRefresh:
 			()
 		case .textDocumentPublishDiagnostics:
@@ -230,30 +191,26 @@ public struct Server {
 		}
 	}
 
-	mutating func analyze() {
+	func analyze() -> AnalysisModule {
 		do {
-			Log.info("Compiled stdlib")
+			Log.info("Analyzing LSP module...")
 
-			analyzer = try ModuleAnalyzer(
+			let analyzer = try ModuleAnalyzer(
 				name: "LSP",
-				files: analyzer.files,
+				files: sources.values.map { try Parser.parseFile(.init(path: $0.uri, text: $0.text), allowErrors: true) },
 				moduleEnvironment: [:],
 				importedModules: []
 			)
 
-			analysis = try analyzer.analyze()
+			return try analyzer.analyze()
 		} catch {
 			Log.error("Error analyzing: \(error)")
+			return AnalysisModule.empty("LSP")
 		}
 	}
 
-	mutating func findDefinition(from position: Position, path: String) -> Definition? {
-		do {
-			analysis = try analyzer.analyze()
-		} catch {
-			Log.error("Error finding definition: \(error)")
-			return nil
-		}
+	func findDefinition(from position: Position, path: String) -> Definition? {
+		let analysis = analyze()
 
 		Log.info("findDefinition: path: \(path) position: \(position)")
 

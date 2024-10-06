@@ -107,6 +107,7 @@ public enum Opcode: Byte, Codable, Sendable, CaseIterable {
 	     subtract,
 	     divide,
 	     multiply,
+			 modulo,
 
 	     // Debuggy
 	     debugPrint

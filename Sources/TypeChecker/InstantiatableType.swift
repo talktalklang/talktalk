@@ -7,9 +7,9 @@
 import OrderedCollections
 
 public enum InstantiatableType: Hashable {
-	case `struct`(StructType)
-	case enumType(EnumType)
-	case `protocol`(ProtocolType)
+	case `struct`(StructTypeV1)
+	case enumType(EnumTypeV1)
+	case `protocol`(ProtocolTypeV1)
 
 	public func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType {
 		switch self {
@@ -44,7 +44,7 @@ public enum InstantiatableType: Hashable {
 		}
 	}
 
-	public func extract() -> any Instantiatable {
+	public func extract() -> any InstantiatableV1 {
 		switch self {
 		case let .struct(structType):
 			structType

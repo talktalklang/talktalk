@@ -180,6 +180,24 @@ public extension InstructionMetadata where Self == InitArrayMetadata {
 	}
 }
 
+public struct InitDictionaryMetadata: InstructionMetadata {
+	public var elementCount: Int
+
+	public var length: Int {
+		(elementCount * 2) + 2
+	}
+
+	public var description: String {
+		"Array (\(elementCount))"
+	}
+}
+
+public extension InstructionMetadata where Self == InitDictionaryMetadata {
+	static func dictionary(count: Int) -> InitDictionaryMetadata {
+		InitDictionaryMetadata(elementCount: count)
+	}
+}
+
 public struct ObjectMetadata: InstructionMetadata {
 	public var value: StaticData
 

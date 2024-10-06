@@ -12,7 +12,7 @@ import Testing
 struct StandardLibraryBootstrapTests: StandardLibraryTest {
 	@Test("Don't need to it") func basic() async throws {
 		let result = try await run("""
-		let a = Array()
+		let a = []
 		return a.count
 		""").get()
 

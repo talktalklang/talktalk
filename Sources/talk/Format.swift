@@ -6,6 +6,7 @@
 //
 import ArgumentParser
 import TalkTalkCore
+import Foundation
 
 struct Format: TalkTalkCommand {
 	static let configuration = CommandConfiguration(
@@ -16,6 +17,7 @@ struct Format: TalkTalkCommand {
 	var input: String
 
 	func run() async throws {
+		print(URL.currentDirectory())
 		let source = try get(input: input)
 		let formatted = try Formatter(input: source).format()
 		print(formatted)

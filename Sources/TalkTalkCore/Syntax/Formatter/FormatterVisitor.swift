@@ -55,8 +55,8 @@ struct FormatterVisitor: Visitor {
 			.text("\(bool)")
 		case let .string(string):
 			.text(#"""# + StringParser.escape(string) + #"""#)
-		case .none:
-			.text("none")
+		case .nil:
+			.text("nil")
 		}
 
 		return comments.leading <> value <> comments.dangling <> comments.trailing
@@ -71,7 +71,7 @@ struct FormatterVisitor: Visitor {
 	func visit(_ expr: UnaryExprSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: expr, context: context)
 
-		let op = text("\(expr.op)")
+		let op = text("\(expr.op.lexeme)")
 		let expr = try expr.expr.accept(self, context)
 
 		return comments.leading <> group(op <> expr) <> comments.dangling <> comments.trailing
@@ -178,7 +178,7 @@ struct FormatterVisitor: Visitor {
 		let comments = commentsStore.get(for: expr, context: context)
 
 		return try comments.leading
-			<> .group(join(expr.params.map { try $0.accept(self, context) }, with: text(",")))
+			<> .group(join(expr.params.map { try $0.accept(self, context) }, with: text(", ")))
 			<> comments.dangling
 			<> comments.trailing
 	}
@@ -200,7 +200,7 @@ struct FormatterVisitor: Visitor {
 
 		return try comments.leading <> .group(
 			text("<")
-				<> join(expr.params.map { try $0.type.accept(self, context) }, with: text(","))
+				<> join(expr.params.map { try $0.type.accept(self, context) }, with: text(", "))
 				<> text(">")
 				<> comments.dangling <> comments.trailing
 		)
@@ -312,15 +312,25 @@ struct FormatterVisitor: Visitor {
 		let comments = commentsStore.get(for: expr, context: context)
 
 		if expr.genericParams.isEmpty {
-			return text(expr.identifier.lexeme)
+			var result = text(expr.identifier.lexeme)
+
+			if expr.isOptional {
+				result = result <> text("?")
+			}
+
+			return result
 		}
 
-		let result = try text(expr.identifier.lexeme)
+		var result = try text(expr.identifier.lexeme)
 			<> group(
 				text("<")
 					<> join(expr.genericParams.map { try $0.accept(self, context) }, with: text(","))
 					<> text(">")
 			)
+
+		if expr.isOptional {
+			result = result <> text("?")
+		}
 
 		return comments.leading <> result <> comments.dangling <> comments.trailing
 	}
@@ -353,6 +363,10 @@ struct FormatterVisitor: Visitor {
 		let comments = commentsStore.get(for: expr, context: context)
 
 		var result = text("struct") <+> text(expr.name)
+
+		if !expr.conformances.isEmpty {
+			result = try result <> text(":") <+> join(expr.conformances.map({ try $0.accept(self, context) }), with: text(", "))
+		}
 
 		if !expr.typeParameters.isEmpty {
 			result = try result
@@ -420,7 +434,7 @@ struct FormatterVisitor: Visitor {
 	func visit(_ decl: FuncSignatureDeclSyntax, _ context: Context) throws -> Doc {
 		let comments = commentsStore.get(for: decl, context: context)
 
-		let start = comments.leading <> text("func") <+> text(decl.name.lexeme)
+		let start = comments.leading <> text("func") <+> text(decl.nameToken.lexeme)
 		let params = try decl.params.accept(self, context)
 		let returns = try text(" ->") <+> decl.returnDecl.accept(self, context)
 
@@ -529,6 +543,54 @@ struct FormatterVisitor: Visitor {
 					<+> expr.rhs.accept(self, context)
 					<> comments.dangling <> comments.trailing
 			)
+	}
+
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: expr, context: context)
+
+		return try comments.leading <> group(text("(") <> expr.expr.accept(self, context) <> text(")")) <> comments.dangling <> comments.trailing
+	}
+
+	public func visit(_ expr: LetPatternSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: expr, context: context)
+		return comments.leading <> text("let") <+> text(expr.name.lexeme) <> comments.dangling <> comments.trailing
+	}
+
+	public func visit(_ expr: PropertyDeclSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: expr, context: context)
+
+		let type = if let type = expr.typeAnnotation {
+			try text(":") <+> type.accept(self, context)
+		} else {
+			Doc.empty
+		}
+
+		return comments.leading <> text(expr.introducer.lexeme) <+> text(expr.name.lexeme) <> type <> comments.dangling <> comments.trailing
+	}
+
+	public func visit(_ expr: MethodDeclSyntax, _ context: Context) throws -> Doc {
+		let comments = commentsStore.get(for: expr, context: context)
+
+		let start = comments.leading <> text("func") <+> text(expr.nameToken.lexeme)
+		let params = try expr.params.accept(self, context)
+		let body = try expr.body.accept(self, context)
+
+		context.childTraits.add(.hasFunc)
+
+		let type: Doc = if let type = expr.returns {
+			try text(" ->") <+> type.accept(self, context)
+		} else {
+			.empty
+		}
+
+		return start
+			<> text("(")
+			<> params
+			<> text(")")
+			<> type
+			<+> body
+			<> comments.dangling
+			<> comments.trailing
 	}
 
 	// GENERATOR_INSERTION

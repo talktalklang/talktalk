@@ -11,6 +11,18 @@ public struct BuiltinFunction {
 	public let name: String
 	public let type: InferenceType
 
+	public static var map: [String: BuiltinFunction] {
+		[
+			"print": .print,
+			"_allocate": ._allocate,
+			"_free": ._free,
+			"_deref": ._deref,
+			"_storePtr": ._storePtr,
+			"_hash": ._hash,
+			"_crash": ._crash
+		]
+	}
+
 	public static var list: [BuiltinFunction] {
 		[
 			.print,
@@ -19,7 +31,7 @@ public struct BuiltinFunction {
 			._deref,
 			._storePtr,
 			._hash,
-			._cast,
+			._crash
 		]
 	}
 
@@ -32,9 +44,9 @@ public struct BuiltinFunction {
 			name: "print",
 			type: .function(
 				[
-					.type(.any),
+					.resolved(.any),
 				],
-				.type(.void)
+				.resolved(.void)
 			)
 		)
 	}
@@ -43,8 +55,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_allocate",
 			type: .function(
-				[.type(.base(.int))],
-				.type(.base(.pointer))
+				[.resolved(.base(.int))],
+				.resolved(.base(.pointer))
 			)
 		)
 	}
@@ -53,8 +65,8 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_free",
 			type: .function(
-				[.type(.base(.pointer))],
-				.type(.void)
+				[.resolved(.base(.pointer))],
+				.resolved(.void)
 			)
 		)
 	}
@@ -65,8 +77,8 @@ public struct BuiltinFunction {
 		return BuiltinFunction(
 			name: "_deref",
 			type: .function(
-				[.type(.base(.pointer))],
-				.type(.typeVar(returns))
+				[.resolved(.base(.pointer))],
+				.resolved(.typeVar(returns))
 			)
 		)
 	}
@@ -76,10 +88,10 @@ public struct BuiltinFunction {
 			name: "_storePtr",
 			type: .function(
 				[
-					.type(.base(.pointer)),
-					.type(.any),
+					.resolved(.base(.pointer)),
+					.resolved(.any),
 				],
-				.type(.void)
+				.resolved(.void)
 			)
 		)
 	}
@@ -88,23 +100,20 @@ public struct BuiltinFunction {
 		BuiltinFunction(
 			name: "_hash",
 			type: .function(
-				[.type(.any)],
-				.type(.base(.int))
+				[.resolved(.any)],
+				.resolved(.base(.int))
 			)
 		)
 	}
 
-	public static var _cast: BuiltinFunction {
-		let typeVar = TypeVariable.new("_cast")
-
+	public static var _crash: BuiltinFunction {
 		return BuiltinFunction(
-			name: "_cast",
+			name: "_crash",
 			type: .function(
 				[
-					.type(.any),
-					.type(.kind(.typeVar(typeVar))),
+					.resolved(.base(.string)),
 				],
-				.type(.typeVar(typeVar))
+				.resolved(.void)
 			)
 		)
 	}

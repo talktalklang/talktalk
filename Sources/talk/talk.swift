@@ -53,7 +53,6 @@ struct TalkCommand: TalkTalkCommand {
 			Run.self,
 			Format.self,
 			REPL.self,
-			Interpret.self,
 			LSP.self,
 			Compile.self,
 			HTML.self,

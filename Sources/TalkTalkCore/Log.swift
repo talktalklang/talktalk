@@ -17,13 +17,13 @@ public enum Log {
 	}
 
 	private static func log(_ message: String) {
-		guard FileManager.default.fileExists(atPath: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log").path) else {
-			return
+		if !FileManager.default.fileExists(atPath: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log").path) {
+			FileManager.default.createFile(atPath: URL.homeDirectory.appending(path: "apps/talktalk/lsp.log").path, contents: nil)
 		}
 
 		let logfile = URL.homeDirectory.appending(path: "apps/talktalk/lsp.log")
-		try? append(data: Data(message.utf8), to: logfile)
-		try? append(data: Data("\n".utf8), to: logfile)
+		try! append(data: Data(message.utf8), to: logfile)
+		try! append(data: Data("\n".utf8), to: logfile)
 	}
 
 	static func append(data: Data, to fileURL: URL) throws {

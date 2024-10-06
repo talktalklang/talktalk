@@ -32,7 +32,7 @@ struct CompleterTests {
 			)
 		)
 
-		return module.completions(for: request)
+		return module.1.completions(for: request)
 	}
 
 	@Test("Completes locals") func locals() async throws {

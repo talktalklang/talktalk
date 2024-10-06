@@ -6,7 +6,21 @@
 //
 
 extension [InferenceResult] {
-	func covariant(with rhs: [InferenceResult], in context: InferenceContext) -> Bool {
+	func covariantV1(with rhs: [InferenceResult], in context: InferenceContext) -> Bool {
+		if count != rhs.count {
+			return false
+		}
+
+		for (lhsElement, rhsElement) in zip(self, rhs) {
+			if !(lhsElement.covariantV1(with: rhsElement, in: context)) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	func covariant(with rhs: [InferenceResult], in context: Context) -> Bool {
 		if count != rhs.count {
 			return false
 		}
@@ -28,7 +42,7 @@ extension [InferenceType] {
 		}
 
 		for (lhsElement, rhsElement) in zip(self, rhs) {
-			if !(lhsElement.covariant(with: rhsElement, in: context)) {
+			if !(lhsElement.covariantV1(with: rhsElement, in: context)) {
 				return false
 			}
 		}
@@ -38,18 +52,18 @@ extension [InferenceType] {
 }
 
 // Variance helpers
-public extension InferenceType {
-	func covariant(with rhs: InferenceType, in context: InferenceContext) -> Bool {
+extension InferenceType {
+	func covariantV1(with rhs: InferenceType, in context: InferenceContext) -> Bool {
 		switch (self, rhs) {
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
-			return lhsParams.covariant(with: rhsParams, in: context) && lhsReturns.covariant(with: rhsReturns, in: context)
-		case let (lhs as any Instantiatable, .instantiatable(.protocol(protocolType))):
+			return lhsParams.covariantV1(with: rhsParams, in: context) && lhsReturns.covariantV1(with: rhsReturns, in: context)
+		case let (lhs as any InstantiatableV1, .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
-		case let (.instance(lhs), .instance(.protocol(rhs))):
+		case let (.instanceV1(lhs), .instanceV1(.protocol(rhs))):
 			return rhs.type.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
-		case let (.instance(lhs), .instantiatable(.protocol(protocolType))):
+		case let (.instanceV1(lhs), .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
-		case let (.enumCase(lhs), .instantiatable(.protocol(protocolType))):
+		case let (.enumCaseV1(lhs), .instantiatable(.protocol(protocolType))):
 			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
 		case let (.typeVar, rhs):
 			context.addConstraint(.equality(rhs, self, at: [.synthetic(.less)]))
@@ -57,6 +71,25 @@ public extension InferenceType {
 			return true
 		case let (lhs, .typeVar):
 			context.addConstraint(.equality(lhs, self, at: [.synthetic(.less)]))
+
+			return true
+		default:
+			return self == rhs
+		}
+	}
+
+	func covariant(with rhs: InferenceType, in context: Context) -> Bool {
+		switch (self, rhs) {
+		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
+			return lhsParams.covariant(with: rhsParams, in: context) && lhsReturns.covariant(with: rhsReturns, in: context)
+		case let (lhs as any MemberOwner, .type(.protocol(protocolType))):
+			return protocolType.missingConformanceRequirements(for: lhs, in: context).isEmpty
+		case let (.instance(lhs), .instance(.protocol(rhs))):
+			return rhs.type.missingConformanceRequirements(for: lhs.type, in: context).isEmpty
+		case let (.typeVar, t), let (t, .typeVar):
+			context.addConstraint(
+				Constraints.Equality(context: context, lhs: .resolved(self), rhs: .resolved(t), location: [.synthetic(.less)])
+			)
 
 			return true
 		default:

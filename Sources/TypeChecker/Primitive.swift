@@ -6,7 +6,7 @@
 //
 
 public enum Primitive: Equatable, CustomStringConvertible, Hashable, Sendable {
-	case int, string, bool, pointer, nope
+	case int, string, bool, pointer, none
 
 	public var description: String {
 		switch self {
@@ -18,8 +18,8 @@ public enum Primitive: Equatable, CustomStringConvertible, Hashable, Sendable {
 			"bool"
 		case .pointer:
 			"pointer"
-		case .nope:
-			"nope"
+		case .none:
+			"none"
 		}
 	}
 }

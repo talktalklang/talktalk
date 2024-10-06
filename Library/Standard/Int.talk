@@ -2,4 +2,3 @@
 struct Int {
 	var raw: int
 }
-

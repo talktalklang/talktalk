@@ -6,7 +6,7 @@
 //
 
 public enum DeclContext {
-	case `struct`, `enum`, topLevel, argument
+	case `struct`, `enum`, topLevel, argument, `protocol`
 
 	var allowed: Set<Token.Kind> {
 		switch self {
@@ -18,7 +18,17 @@ public enum DeclContext {
 			[.enum, .struct, .protocol, .func, .var, .let]
 		case .argument:
 			[.var, .func, .let]
+		case .protocol:
+			[.func, .var, .let]
 		}
+	}
+
+	var hasProperties: Bool {
+		[.struct, .protocol].contains(self)
+	}
+
+	var isLexicalScopeBody: Bool {
+		[.enum, .struct, .protocol].contains(self)
 	}
 }
 
@@ -88,6 +98,47 @@ public extension Parser {
 		)
 	}
 
+	mutating func methodDecl(isStatic: Bool, modifiers: [Token] = []) -> any Decl {
+		let funcToken = previous.unsafelyUnwrapped
+		let i = startLocation(at: previous)
+
+		skip(.newline)
+
+		// Grab the name if there is one
+		guard let name = consume(.identifier) else {
+			return error(at: current, expected(.identifier))
+		}
+
+		skip(.newline)
+		consume(.leftParen)
+		skip(.newline)
+
+		// Parse parameter list
+		let params = parameterList()
+
+		skip(.newline)
+
+		let typeAnnotation: TypeExprSyntax? = if didMatch(.forwardArrow) {
+			typeExpr()
+		} else {
+			nil
+		}
+
+		let body = blockStmt(false)
+
+		return MethodDeclSyntax(
+			funcToken: funcToken,
+			modifiers: modifiers,
+			nameToken: name,
+			params: params,
+			returns: typeAnnotation,
+			body: body,
+			isStatic: isStatic,
+			id: nextID(),
+			location: endLocation(i)
+		)
+	}
+
 	mutating func letVarDecl(_ kind: Token.Kind, isStatic: Bool, modifiers: [Token] = []) -> any Decl {
 		let token = previous.unsafelyUnwrapped
 
@@ -151,6 +202,40 @@ public extension Parser {
 			initToken: initToken,
 			params: params,
 			body: body,
+			location: endLocation(i)
+		)
+	}
+
+	mutating func propertyDecl(_ keyword: Token, isStatic: Bool, modifiers: [Token]) -> any Decl {
+		let keyword = previous!
+		let i = startLocation(at: keyword)
+
+		guard let name = consume(.identifier) else {
+			return error(at: current, expected(.identifier))
+		}
+
+		let typeAnnotation: TypeExprSyntax?
+		if didMatch(.colon) {
+			typeAnnotation = typeExpr()
+		} else {
+			typeAnnotation = nil
+		}
+
+		let defaultValue: (any Expr)?
+		if didMatch(.equals) {
+			defaultValue = expr()
+		} else {
+			defaultValue = nil
+		}
+
+		return PropertyDeclSyntax(
+			introducer: keyword,
+			name: name,
+			typeAnnotation: typeAnnotation,
+			defaultValue: defaultValue,
+			modifiers: modifiers,
+			isStatic: isStatic,
+			id: nextID(),
 			location: endLocation(i)
 		)
 	}
@@ -230,7 +315,7 @@ public extension Parser {
 			typeParameters = self.typeParameters()
 		}
 
-		let body = protocolDeclBlock()
+		let body = declBlock(context: .protocol)
 
 		return ProtocolDeclSyntax(
 			id: nextID(),
@@ -240,48 +325,5 @@ public extension Parser {
 			typeParameters: typeParameters,
 			location: endLocation(i)
 		)
-	}
-
-	mutating func protocolDeclBlock() -> ProtocolBodyDeclSyntax {
-		consume(.leftBrace)
-		skip(.newline)
-
-		let i = startLocation(at: previous)
-
-		var decls: [any Decl] = []
-
-		while !check(.eof), !check(.rightBrace) {
-			skip(.newline)
-			if didMatch(.func) {
-				decls.append(funcSignatureDecl())
-				skip(.newline)
-				if check(.leftBrace) {
-					_ = error(at: current, .syntaxError("func decls in protocol bodies cannot have bodies"), expectation: .none)
-				}
-
-				skip(.newline)
-			}
-
-			if didMatch(.initialize) {
-				decls.append(_init())
-				skip(.newline)
-			}
-
-			if didMatch(.var) {
-				decls.append(letVarDecl(.var, isStatic: false))
-				skip(.newline)
-			}
-
-			if didMatch(.let) {
-				decls.append(letVarDecl(.let, isStatic: false))
-			}
-
-			skip(.newline)
-		}
-
-		consume(.rightBrace)
-		skip(.newline)
-
-		return ProtocolBodyDeclSyntax(decls: decls, id: nextID(), location: endLocation(i))
 	}
 }

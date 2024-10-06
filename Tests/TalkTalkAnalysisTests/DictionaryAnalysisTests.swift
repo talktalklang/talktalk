@@ -15,7 +15,7 @@ import TypeChecker
 		[:]
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed
 
-		let instance = Instance<StructType>.extract(from: result)
+		let instance = InstanceV1<StructTypeV1>.extract(from: result)
 		#expect(instance?.type.name == "Dictionary")
 	}
 
@@ -24,7 +24,7 @@ import TypeChecker
 		["foo": 123]
 		""").cast(AnalyzedExprStmt.self).exprAnalyzed.typeAnalyzed
 
-		let instance = Instance<StructType>.extract(from: result)
+		let instance = InstanceV1<StructTypeV1>.extract(from: result)
 		#expect(instance?.type.name == "Dictionary")
 		#expect(instance?.relatedType(named: "Key") == .base(.string))
 		#expect(instance?.relatedType(named: "Value") == .base(.int))
@@ -37,6 +37,6 @@ import TypeChecker
 		.cast(AnalyzedExprStmt.self).exprAnalyzed
 		.cast(AnalyzedSubscriptExpr.self)
 
-		#expect(result.typeAnalyzed == .base(.int))
+		#expect(result.typeAnalyzed == .optionalV1(.base(.int)))
 	}
 }

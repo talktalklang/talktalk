@@ -16,7 +16,7 @@ public struct AnalyzedUnaryExpr: AnalyzedExpr, UnaryExpr {
 	public let wrapped: UnaryExprSyntax
 
 	public var location: SourceLocation { wrapped.location }
-	public var op: Token.Kind { wrapped.op }
+	public var op: Token { wrapped.op }
 	public var expr: any Expr { wrapped.expr }
 	public var children: [any Syntax] { wrapped.children }
 

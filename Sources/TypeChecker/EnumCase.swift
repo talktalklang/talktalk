@@ -27,12 +27,12 @@ public struct EnumCaseInstance: Equatable, Hashable, CustomStringConvertible {
 }
 
 public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
-	public var type: EnumType
+	public var type: EnumTypeV1
 	public var name: String
 	public var attachedTypes: [InferenceType]
 	public var substitutions: [TypeVariable: InferenceType] = [:]
 
-	init(type: EnumType, name: String, attachedTypes: [InferenceType]) {
+	init(type: EnumTypeV1, name: String, attachedTypes: [InferenceType]) {
 		self.type = type
 		self.name = name
 		self.attachedTypes = attachedTypes
@@ -47,7 +47,7 @@ public struct EnumCase: Equatable, Hashable, CustomStringConvertible {
 	}
 
 	public static func extract(from type: InferenceResult) -> EnumCase? {
-		if case let .type(.enumCase(enumCase)) = type {
+		if case let .resolved(.enumCaseV1(enumCase)) = type {
 			return enumCase
 		}
 

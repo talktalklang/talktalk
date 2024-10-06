@@ -9,7 +9,7 @@ import TalkTalkBytecode
 import TalkTalkCore
 
 struct FuncExprAnalyzer: Analyzer {
-	var expr: any FuncExpr
+	var expr: FuncExprSyntax
 	var visitor: SourceFileAnalyzer
 	var context: Environment
 
@@ -38,8 +38,11 @@ struct FuncExprAnalyzer: Analyzer {
 		}
 
 		// Define parameters
-		let syntax = try visitor.visit(expr.params.cast(ParamsExprSyntax.self), context)
-		let params = try cast(syntax, to: AnalyzedParamsExpr.self)
+		let syntax = try expr.params.accept(visitor, context)
+		guard let params = syntax as? AnalyzedParamsExpr else {
+			return castError(at: expr.params, type: AnalyzedParamsExpr.self, in: context)
+		}
+
 		for param in params.paramsAnalyzed {
 			environment.define(parameter: param.name, as: param)
 		}
@@ -60,14 +63,16 @@ struct FuncExprAnalyzer: Analyzer {
 			)
 		}
 
-		let body = try expr.body.accept(visitor, environment)
+		guard let body = try expr.body.accept(visitor, environment) as? AnalyzedBlockStmt else {
+			return castError(at: expr.body, type: AnalyzedBlockStmt.self, in: context)
+		}
 
 		return try AnalyzedFuncExpr(
 			symbol: symbol,
 			type: type,
-			wrapped: cast(expr, to: FuncExprSyntax.self),
+			wrapped: expr,
 			analyzedParams: params,
-			bodyAnalyzed: cast(body, to: AnalyzedBlockStmt.self),
+			bodyAnalyzed: body,
 			analysisErrors: visitor.errors(for: expr, in: context.inferenceContext),
 			returnType: returns,
 			environment: environment

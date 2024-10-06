@@ -11,7 +11,7 @@ import Testing
 struct ArrayTests: StandardLibraryTest {
 	@Test("Can be created") func create() async throws {
 		let result = try await run("""
-		let a = Array()
+		let a = []
 		return a.count
 		""").get()
 
@@ -78,12 +78,13 @@ struct ArrayTests: StandardLibraryTest {
 		#expect(result == .int(6))
 	}
 
-	@Test("can set array value with subscript", .disabled("Come back to this")) func arraySubscriptSet() async throws {
-		let result = try await run("""
-			var a = [1,2,3,4,5,6]
+	@Test("can set array value with subscript") func arraySubscriptSet() async throws {
+		let source = """
+		var a = [1,2,3,4,5,6]
 			a[0] = 123
 			return a[0]
-		""").get()
+		"""
+		let result = try await run(source).get()
 
 		#expect(result == .int(123))
 	}

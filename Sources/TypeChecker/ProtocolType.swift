@@ -2,28 +2,36 @@
 //  ProtocolType.swift
 //  TalkTalk
 //
-//  Created by Pat Nakajima on 9/18/24.
+//  Created by Pat Nakajima on 10/5/24.
 //
 
 import OrderedCollections
 
-public struct ProtocolType: Equatable, Hashable, Instantiatable {
-	public static func == (lhs: Self, rhs: Self) -> Bool {
-		lhs.name == rhs.name && lhs.typeContext.properties == rhs.typeContext.properties
-	}
+public final class ProtocolType: MemberOwner, Instantiatable {
+	public var typeParameters: OrderedDictionary<String, TypeVariable> = [:]
+	public var members: [String: InferenceResult] = [:]
 
 	public let name: String
-	public let context: InferenceContext
-	public let typeContext: TypeContext
-	public var conformances: [ProtocolType] { typeContext.conformances }
 
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(name)
-		hasher.combine(typeContext.properties)
-		hasher.combine(typeContext.methods)
+	init(name: String) {
+		self.name = name
 	}
 
-	public func missingConformanceRequirements(for type: any Instantiatable, in context: InferenceContext) -> Set<ConformanceRequirement> {
+	static func extract(from type: InferenceType) -> ProtocolType? {
+		if case let .type(.protocol(type)) = type {
+			return type
+		}
+
+		return nil
+	}
+
+	public func staticMember(named name: String) -> InferenceResult? { nil }
+
+	public func instantiate(with substitutions: [TypeVariable : InferenceType]) -> Instance<ProtocolType> {
+		Instance<ProtocolType>(type: self, substitutions: substitutions)
+	}
+
+	func missingConformanceRequirements<T: MemberOwner>(for type: T, in context: Context) -> Set<ConformanceRequirement> {
 		var missingRequirements: Set<ConformanceRequirement> = []
 
 		for requirement in requirements(in: context) {
@@ -35,58 +43,21 @@ public struct ProtocolType: Equatable, Hashable, Instantiatable {
 		return missingRequirements
 	}
 
-	public func apply(substitutions _: OrderedDictionary<TypeVariable, InferenceType>, in _: InferenceContext) -> InferenceType {
-		.instantiatable(.protocol(self))
+	public func member(named name: String) -> InferenceResult? {
+		members[name]
 	}
 
-	public func requirements(in _: InferenceContext) -> Set<ConformanceRequirement> {
-		var result: Set<ConformanceRequirement> = []
-
-		for (name, type) in typeContext.methods {
-			result.insert(.init(name: name, type: type))
-		}
-
-		for (name, type) in typeContext.properties {
-			result.insert(.init(name: name, type: type))
-		}
-
-		return result
+	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {
+		members[name] = member
 	}
 
-	public static func extract(from type: InferenceType) -> ProtocolType? {
-		if case let .instantiatable(.protocol(type)) = type {
-			return type
-		}
-
-		return nil
+	public var debugDescription: String {
+		"Protocol \(name)"
 	}
 
-	public func member(named name: String, in _: InferenceContext) -> InferenceResult? {
-		if let member = properties[name] ?? methods[name] {
-//			return .type(context.applySubstitutions(to: member.asType(in: context)))
-			return member
+	func requirements(in context: Context) -> [ConformanceRequirement] {
+		members.map {
+			ConformanceRequirement(name: $0.key, type: $0.value)
 		}
-
-		if let typeParam = typeContext.typeParameters.first(where: { $0.name == name }) {
-			return .type(.typeVar(typeParam))
-		}
-
-		return nil
-	}
-
-	func method(named name: String, in context: InferenceContext) -> InferenceResult? {
-		if let member = methods[name] {
-			return .type(context.applySubstitutions(to: member.asType(in: context)))
-		}
-
-		return nil
-	}
-
-	public var properties: OrderedDictionary<String, InferenceResult> {
-		typeContext.properties
-	}
-
-	public var methods: OrderedDictionary<String, InferenceResult> {
-		typeContext.methods
 	}
 }

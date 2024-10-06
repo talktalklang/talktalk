@@ -27,14 +27,10 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let expected1 = InferenceResult.type(.base(.int))
-		let result1 = context[syntax[1]]
-		let expected2 = InferenceResult.type(.base(.string))
-		let result2 = context[syntax[2]]
+		let context = try solve(syntax)
 
-		#expect(expected1 == result1)
-		#expect(expected2 == result2)
+		#expect(context[syntax[1]] == .base(.int))
+		#expect(context[syntax[2]] == .base(.string))
 	}
 
 	@Test("Can infer from synthesized init") func synthesizedInit() throws {
@@ -49,9 +45,9 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context[syntax[1]] == .type(.base(.int)))
-		#expect(context[syntax[2]] == .type(.base(.string)))
+		let context = try solve(syntax)
+		#expect(context[syntax[1]] == .base(.int))
+		#expect(context[syntax[2]] == .base(.string))
 	}
 
 	@Test("Can typecheck type param members", .disabled("still need to figure out semantics here")) func typeParamMember() throws {
@@ -65,9 +61,9 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 		let result1 = context[syntax[1]]
-		#expect(result1 == .type(.base(.int)))
+		#expect(result1 == .base(.int))
 	}
 
 	@Test("Can typecheck nested generic types") func nestedGenerics() throws {
@@ -93,12 +89,8 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-
-		let result = context[syntax[4]]
-		let expected = InferenceResult.type(.base(.int))
-
-		#expect(result == expected)
+		let context = try solve(syntax)
+		#expect(context[syntax[4]] == .base(.int))
 	}
 
 	@Test("Can typecheck very nested generic types") func veryNestedGenerics() throws {
@@ -130,11 +122,7 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-
-		let result = context[syntax[6]]
-		let expected = InferenceResult.type(.base(.int))
-
-		#expect(result == expected)
+		let context = try solve(syntax)
+		#expect(context[syntax[6]] == .base(.int))
 	}
 }

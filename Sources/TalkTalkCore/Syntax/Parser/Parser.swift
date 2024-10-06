@@ -44,8 +44,8 @@ public struct Parser {
 
 	public var errors: [SyntaxError] = []
 
-	public static func parseFile(_ sourceFile: SourceFile) throws -> ParsedSourceFile {
-		try ParsedSourceFile(path: sourceFile.path, syntax: parse(sourceFile))
+	public static func parseFile(_ sourceFile: SourceFile, allowErrors: Bool = false) throws -> ParsedSourceFile {
+		try ParsedSourceFile(path: sourceFile.path, syntax: parse(sourceFile, allowErrors: allowErrors))
 	}
 
 	public static func parse(_ source: SourceFile, allowErrors: Bool = false, preserveComments: Bool = false) throws -> [any Syntax] {
@@ -145,20 +145,40 @@ public struct Parser {
 
 		if let staticKeyword = match(.static), context.allowed.contains(.static) {
 			if check(.func), didConsume(.func) {
-				return funcExpr(isStatic: true, modifiers: [staticKeyword])
+				if context == .protocol {
+					return funcSignatureDecl(isStatic: true, modifiers: [staticKeyword])
+				} else {
+					return methodDecl(isStatic: true, modifiers: [staticKeyword])
+				}
 			}
 
 			if check(.var), didConsume(.var) {
-				return letVarDecl(.var, isStatic: true, modifiers: [staticKeyword])
+				if context.hasProperties {
+					return propertyDecl(previous, isStatic: true, modifiers: [staticKeyword])
+				} else {
+					return letVarDecl(.var, isStatic: true, modifiers: [staticKeyword])
+				}
 			}
 
 			if check(.let), didConsume(.let) {
-				return letVarDecl(.let, isStatic: true, modifiers: [staticKeyword])
+				if context.hasProperties {
+					return propertyDecl(previous, isStatic: true, modifiers: [staticKeyword])
+				} else {
+					return letVarDecl(.let, isStatic: true, modifiers: [staticKeyword])
+				}
 			}
 		}
 
 		if didMatch(.func), context.allowed.contains(.func) {
-			return funcExpr(isStatic: false)
+			if context == .protocol {
+				return funcSignatureDecl(isStatic: false, modifiers: [])
+			}
+
+			if context.isLexicalScopeBody {
+				return methodDecl(isStatic: false)
+			} else {
+				return funcExpr(isStatic: false)
+			}
 		}
 
 		if didMatch(.case), context.allowed.contains(.case) {
@@ -170,11 +190,19 @@ public struct Parser {
 		}
 
 		if didMatch(.var), context.allowed.contains(.var) {
-			return letVarDecl(.var, isStatic: false)
+			if context.hasProperties {
+				return propertyDecl(previous, isStatic: false, modifiers: [])
+			} else {
+				return letVarDecl(.var, isStatic: false)
+			}
 		}
 
 		if didMatch(.let), context.allowed.contains(.let) {
-			return letVarDecl(.let, isStatic: false)
+			if context.hasProperties {
+				return propertyDecl(previous, isStatic: false, modifiers: [])
+			} else {
+				return letVarDecl(.let, isStatic: false)
+			}
 		}
 
 		if context == .argument {

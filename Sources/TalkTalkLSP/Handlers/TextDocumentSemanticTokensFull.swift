@@ -9,11 +9,12 @@ import TalkTalkAnalysis
 import TalkTalkCore
 import TalkTalkCore
 import TypeChecker
+import Foundation
 
 struct TextDocumentSemanticTokensFull {
 	var request: Request
 
-	func handle(_ sources: [String: SourceDocument]) -> TextDocumentSemanticTokens? {
+	func handle(_ sources: [String: SourceDocument]) throws -> TextDocumentSemanticTokens? {
 		guard let params = request.params as? TextDocumentSemanticTokensFullRequest else {
 			Log.error("Could not parse TextDocumentSemanticTokensFullRequest params")
 			return nil
@@ -23,7 +24,13 @@ struct TextDocumentSemanticTokensFull {
 		var text = params.textDocument.text
 
 		if text == nil {
-			text = sources[params.textDocument.uri]?.text ?? ""
+			// swiftlint:disable force_unwrapping
+			text = sources[params.textDocument.uri]?.text
+			// swiftlint:enable force_unwrapping
+		}
+
+		if text == nil, let url = URL(string: params.textDocument.uri) {
+			text = try String(contentsOf: url, encoding: .utf8)
 		}
 
 		guard let text else {
@@ -134,8 +141,8 @@ public struct SemanticTokensVisitor: Visitor {
 			kind = .keyword
 		case .string:
 			kind = .string
-		case .none:
-			return []
+		case .nil:
+			kind = .keyword
 		}
 
 		return [
@@ -329,7 +336,7 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: FuncSignatureDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		try [make(.keyword, from: expr.funcToken), make(.function, from: expr.name)] + expr.params.accept(self, context) + expr.returnDecl.accept(self, context)
+		try [make(.keyword, from: expr.funcToken), make(.function, from: expr.nameToken)] + expr.params.accept(self, context) + expr.returnDecl.accept(self, context)
 	}
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
@@ -407,6 +414,39 @@ public struct SemanticTokensVisitor: Visitor {
 
 	public func visit(_ expr: LogicalExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
 		try expr.lhs.accept(self, context) + expr.rhs.accept(self, context)
+	}
+
+	public func visit(_ expr: GroupedExprSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		return try expr.expr.accept(self, context)
+	}
+
+	public func visit(_ expr: LetPatternSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		[
+			make(.keyword, from: expr.letToken)
+		]
+	}
+
+	public func visit(_ expr: PropertyDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var result = [
+			make(.keyword, from: expr.introducer),
+		] + expr.modifiers.map { make(.keyword, from: $0) }
+
+		if let value = expr.defaultValue {
+			try result.append(contentsOf: value.accept(self, context))
+		}
+
+		return result
+	}
+
+	public func visit(_ expr: MethodDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
+		var results = [make(.keyword, from: expr.funcToken)] + expr.modifiers.map { make(.keyword, from: $0) }
+
+		results.append(make(.method, from: expr.nameToken))
+
+		try results.append(contentsOf: expr.params.accept(self, context))
+		try results.append(contentsOf: expr.body.accept(self, context))
+
+		return results
 	}
 
 	// GENERATOR_INSERTION

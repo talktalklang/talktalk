@@ -20,19 +20,19 @@ public enum InstanceType {
 		}
 	}
 
-	case `struct`(Instance<StructType>)
-	case `protocol`(Instance<ProtocolType>)
-	case enumType(Instance<EnumType>)
+	case `struct`(InstanceV1<StructTypeV1>)
+	case `protocol`(InstanceV1<ProtocolTypeV1>)
+	case enumType(InstanceV1<EnumTypeV1>)
 
-	public static func synthesized(_ type: some Instantiatable) -> InstanceType {
+	public static func synthesized(_ type: some InstantiatableV1) -> InstanceType {
 		// swiftlint:disable force_cast
 		switch type {
-		case is StructType:
-			.struct(.synthesized(type as! StructType))
-		case is ProtocolType:
-			.protocol(.synthesized(type as! ProtocolType))
-		case is EnumType:
-			.enumType(.synthesized(type as! EnumType))
+		case is StructTypeV1:
+			.struct(.synthesized(type as! StructTypeV1))
+		case is ProtocolTypeV1:
+			.protocol(.synthesized(type as! ProtocolTypeV1))
+		case is EnumTypeV1:
+			.enumType(.synthesized(type as! EnumTypeV1))
 		default:
 			// swiftlint:disable fatal_error
 			fatalError("unable to synthesize instance type: \(type)")
@@ -76,14 +76,14 @@ public enum InstanceType {
 		}
 	}
 
-	func extract<T: Instantiatable>(_: T.Type) -> Instance<T>? {
+	func extract<T: InstantiatableV1>(_: T.Type) -> InstanceV1<T>? {
 		switch self {
 		case let .struct(instance):
-			instance as? Instance<T>
+			instance as? InstanceV1<T>
 		case let .protocol(instance):
-			instance as? Instance<T>
+			instance as? InstanceV1<T>
 		case let .enumType(instance):
-			instance as? Instance<T>
+			instance as? InstanceV1<T>
 		}
 	}
 
@@ -98,7 +98,29 @@ public enum InstanceType {
 		}
 	}
 
-	public var type: any Instantiatable {
+	// Returns a method with no substitutions applied
+	public func genericMethod(named name: String) -> InferenceType? {
+		let result = switch self {
+		case let .struct(instance):
+			instance.type.methods[name]
+		case let .protocol(instance):
+			instance.type.methods[name]
+		case let .enumType(instance):
+			instance.type.methods[name]
+		}
+
+		guard let result else { return nil }
+
+		switch result {
+		case let .resolved(type):
+			return type
+		case let .scheme(scheme):
+			return scheme.type
+		}
+	}
+
+
+	public var type: any InstantiatableV1 {
 		switch self {
 		case let .struct(instance):
 			instance.type

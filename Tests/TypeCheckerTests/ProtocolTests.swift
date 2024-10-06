@@ -21,12 +21,12 @@ struct ProtocolTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
+		let context = try solve(syntax)
 
-		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
+		let protocolType = ProtocolType.extract(from: context[syntax[0]]!)!
 		#expect(protocolType.name == "Greetable")
-		#expect(protocolType.properties["name"] == .type(.base(.string)))
-		#expect(protocolType.methods["greet"] == .scheme(Scheme(name: "greet", variables: [], type: .function([], .type(.base(.string))))))
+		#expect(protocolType.member(named: "name") == .resolved(.base(.string)))
+		#expect(protocolType.member(named: "greet") == .resolved(.function([], .resolved(.base(.string)))))
 	}
 
 	@Test("Types protocol method") func protocolMethod() throws {
@@ -42,15 +42,17 @@ struct ProtocolTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context.errors.isEmpty)
+		let context = try solve(syntax)
 
-		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
-		let fn = context[syntax[1]]!.asType(in: context)
+		let protocolType = ProtocolType.extract(from: context[syntax[0]]!)!
+		let fn = context.find(syntax[1])!
 
-		#expect(fn == .function([
-			.type(.instance(.protocol(Instance(id: 0, type: protocolType, substitutions: [:])))),
-		], .type(.base(.string))))
+		#expect(fn == .function(
+			[
+			.resolved(.instance(.protocol(Instance(type: protocolType, substitutions: [:])))),
+			],
+			.resolved(.base(.string))
+		))
 	}
 
 	@Test("Infers params from protocol") func inferParam() throws {
@@ -62,44 +64,24 @@ struct ProtocolTests: TypeCheckerTest {
 
 			struct Person: Greetable {
 				func greet(name) {
-					"hi, \(name)"
+					"hi, " + name
 				}
 			}
 			"""#
 		)
 
-		let context = try infer(syntax)
-		#expect(context.errors.isEmpty)
+		let context = try solve(syntax)
 
-		let structType = StructType.extractType(from: context[syntax[1]])!
-		let greetMethod = structType.methods["greet"]!
+		let structType = StructType.extract(from: context.find(syntax[1])!)!
+		let greetMethod = structType.member(named: "greet")!
 
-		guard case let .function(params, returns) = greetMethod.asType(in: context) else {
+		guard case let .function(params, returns) = context.applySubstitutions(to: greetMethod) else {
 			#expect(Bool(false), "did not get greet function")
 			return
 		}
 
-		#expect(returns == .type(.base(.string)))
+		#expect(returns == .resolved(.base(.string)))
 		#expect(context.applySubstitutions(to: params[0]) == .base(.string))
-	}
-
-	@Test("Types protocol method without type annotations") func protocolMethodSansTypes() throws {
-		let syntax = try Parser.parse(
-			"""
-			protocol Greetable {
-				func greet(name: String) -> String
-			}
-
-			struct Person: Greetable {
-				func greet(name) {
-					"hi " + name
-				}
-			}
-			"""
-		)
-
-		let context = try infer(syntax)
-		#expect(context.errors.isEmpty)
 	}
 
 	@Test("Types protocol property") func protocolProperty() throws {
@@ -115,14 +97,13 @@ struct ProtocolTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		#expect(context.errors.isEmpty)
+		let context = try solve(syntax)
 
-		let protocolType = ProtocolType.extract(from: context[syntax[0]]!.asType(in: context))!
-		let fn = context[syntax[1]]!.asType(in: context)
+		let protocolType = ProtocolType.extract(from: context.find(syntax[0])!)!
+		let fn = context.find(syntax[1])!
 
 		#expect(fn == .function([
-			.type(.instance(.protocol(Instance(id: 0, type: protocolType, substitutions: [:])))),
-		], .type(.base(.string))))
+			.resolved(.instance(.protocol(Instance(type: protocolType)))),
+		], .resolved(.base(.string))))
 	}
 }

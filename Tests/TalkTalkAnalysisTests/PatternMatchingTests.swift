@@ -112,30 +112,30 @@ struct PatternMatchingTests: AnalysisTest {
 		}
 		""")
 
-		let enumType = EnumType.extract(from: .type(asts[0].typeAnalyzed))!
+		let enumType = EnumTypeV1.extract(from: .resolved(asts[0].typeAnalyzed))!
 
 		let stmt = asts[1].cast(AnalyzedMatchStatement.self)
 		let foo = stmt.casesAnalyzed[0].patternAnalyzed!
-		#expect(foo.inferenceType == .pattern(
-			Pattern(
-				type: .enumCase(EnumCase(
+		#expect(foo.inferenceType == .patternV1(
+			PatternV1(
+				type: .enumCaseV1(EnumCase(
 					type: enumType,
 					name: "foo",
 					attachedTypes: [.base(.string)]
 				)),
-				arguments: [.variable("a", .type(.base(.string)))]
+				arguments: [.variable("a", .resolved(.base(.string)))]
 			)
 		))
 
 		let bar = stmt.casesAnalyzed[1].patternAnalyzed!
-		#expect(bar.inferenceType == .pattern(
-			Pattern(
-				type: .enumCase(EnumCase(
+		#expect(bar.inferenceType == .patternV1(
+			PatternV1(
+				type: .enumCaseV1(EnumCase(
 					type: enumType,
 					name: "bar",
 					attachedTypes: [.base(.int)]
 				)),
-				arguments: [.variable("a", .type(.base(.int)))]
+				arguments: [.variable("a", .resolved(.base(.int)))]
 			)
 		))
 	}

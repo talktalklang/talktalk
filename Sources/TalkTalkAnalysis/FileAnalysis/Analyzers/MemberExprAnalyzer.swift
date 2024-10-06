@@ -18,14 +18,18 @@ struct MemberExprAnalyzer: Analyzer {
 		let type = context.inferenceContext.lookup(syntax: expr)
 
 		// If it's an enum case we want to return a different syntax expression...
-		if case let .enumCase(enumCase) = type,
+		if case let .enumCaseV1(enumCase) = type,
 		   let kase = enumCase.type.cases.enumerated().first(where: { $0.element.name == expr.property })
 		{
-			return try AnalyzedEnumMemberExpr(
-				wrapped: cast(expr, to: MemberExprSyntax.self),
+			guard let expr = expr as? MemberExprSyntax else {
+				return error(at: expr, "Could not cast \(expr) to MemberExprSyntax", environment: context)
+			}
+
+			return AnalyzedEnumMemberExpr(
+				wrapped: expr,
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.element.attachedTypes,
-				inferenceType: .enumCase(kase.element),
+				inferenceType: .enumCaseV1(kase.element),
 				environment: context
 			)
 		}
@@ -33,11 +37,15 @@ struct MemberExprAnalyzer: Analyzer {
 		if case let .instantiatable(.enumType(enumType)) = type,
 		   let kase = enumType.cases.first(where: { $0.name == expr.property })
 		{
-			return try AnalyzedEnumMemberExpr(
-				wrapped: cast(expr, to: MemberExprSyntax.self),
+			guard let expr = expr as? MemberExprSyntax else {
+				return error(at: expr, "Could not cast \(expr) to MemberExprSyntax", environment: context)
+			}
+
+			return AnalyzedEnumMemberExpr(
+				wrapped: expr,
 				propertyAnalyzed: expr.property,
 				paramsAnalyzed: kase.attachedTypes,
-				inferenceType: .enumCase(kase),
+				inferenceType: .enumCaseV1(kase),
 				environment: context
 			)
 		}
@@ -50,14 +58,8 @@ struct MemberExprAnalyzer: Analyzer {
 		var memberSymbol: Symbol? = nil
 		var analysisDefinition: Definition? = nil
 
-		// If we have an existing lexical scope, use that
-		if let scope = context.getLexicalScope(), let member: (any Member) = scope.methods[propertyName] ?? scope.properties[propertyName] {
-			memberSymbol = member.symbol
-			analysisDefinition = .init(location: member.location, type: member.inferenceType)
-		}
-
 		// If it's boxed, we create members
-		if case let .instance(instance) = receiver.typeAnalyzed, instance.type is ProtocolType {
+		if case let .instanceV1(instance) = receiver.typeAnalyzed, instance.type is ProtocolTypeV1 {
 			guard let type = instance.member(named: propertyName, in: context.inferenceContext) else {
 				return error(at: expr, "No member found for \(instance) named \(propertyName)", environment: context)
 			}
@@ -82,7 +84,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if memberSymbol == nil,
-		   case let .instance(instance) = receiver.typeAnalyzed,
+		   case let .instanceV1(instance) = receiver.typeAnalyzed,
 		   let member = instance.member(named: expr.property, in: context.inferenceContext)
 		{
 			if case let .function(params, _) = member {
@@ -128,7 +130,7 @@ struct MemberExprAnalyzer: Analyzer {
 		}
 
 		if memberSymbol == nil,
-		   case let .enumCase(enumCase) = receiver.typeAnalyzed,
+		   case let .enumCaseV1(enumCase) = receiver.typeAnalyzed,
 		   let member = enumCase.type.member(named: expr.property, in: context.inferenceContext)
 		{
 			if case let .function(params, _) = member.asType(in: context.inferenceContext) {
@@ -150,12 +152,22 @@ struct MemberExprAnalyzer: Analyzer {
 			}
 		}
 
+		// If we have an existing lexical scope, use that
+		if memberSymbol == nil, let scope = context.getLexicalScope(), let member: (any Member) = scope.methods[propertyName] ?? scope.properties[propertyName] {
+			memberSymbol = member.symbol
+			analysisDefinition = .init(location: member.location, type: member.inferenceType)
+		}
+
+		guard let memberSymbol else {
+			return error(at: expr, "Could not find member `\(expr.property)` for type `\(receiver.typeAnalyzed)", environment: context)
+		}
+
 		return try AnalyzedMemberExpr(
 			inferenceType: type ?? .any,
 			wrapped: expr.cast(MemberExprSyntax.self),
 			environment: context,
-			receiverAnalyzed: castToAnyAnalyzedExpr(receiver),
-			memberSymbol: memberSymbol ?? .primitive("could not find member"),
+			receiverAnalyzed: castToAnyAnalyzedExpr(receiver, in: context),
+			memberSymbol: memberSymbol,
 			analysisErrors: [],
 			analysisDefinition: analysisDefinition,
 			isMutable: false

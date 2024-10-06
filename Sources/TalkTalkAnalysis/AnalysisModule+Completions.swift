@@ -94,7 +94,7 @@ public extension AnalysisModule {
 		for match in matches {
 			guard let match = match as? AnalyzedExprStmt,
 			      let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
-			      case let .instance(instance) = memberExpr.receiverAnalyzed.inferenceType
+			      case let .instanceV1(instance) = memberExpr.receiverAnalyzed.inferenceType
 			else {
 				continue
 			}

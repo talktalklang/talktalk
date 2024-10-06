@@ -24,7 +24,7 @@ public class TypeContext: Equatable, Hashable {
 	var initializers: OrderedDictionary<String, InferenceResult>
 	var properties: OrderedDictionary<String, InferenceResult>
 	var typeParameters: [TypeVariable]
-	var conformances: [ProtocolType] = []
+	var conformances: [ProtocolTypeV1] = []
 
 	init(
 		name: String,
@@ -146,6 +146,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		typeContext: TypeContext? = nil,
 		instanceContext: InstanceContext? = nil,
 		expectations: [InferenceType] = [],
+		verbose: Bool = false,
 //		matchContext: MatchContext? = nil
 		file: String = #file,
 		line: UInt32 = #line
@@ -160,6 +161,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		self.typeContext = typeContext
 		self.instanceContext = instanceContext
 		self.expectations = expectations
+		self.verbose = verbose
 //		self.matchContext = matchContext
 
 		log("New context with depth \(depth) \(file):\(line)", prefix: " * ")
@@ -200,16 +202,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		if let placeholder = namedPlaceholders[name] {
-			return .type(placeholder)
+			return .resolved(placeholder)
 		}
 
 		return nil
 	}
 
 	func defineVariable(named name: String, as type: InferenceResult, at location: SourceLocation) {
-		if case let .type(.placeholder(typeVar)) = lookupPlaceholder(named: name) {
+		if case let .resolved(.placeholder(typeVar)) = lookupPlaceholder(named: name) {
 			log("Adding equality constraint for placeholder \(name)", prefix: " = ")
-			addConstraint(.equality(type, .type(.placeholder(typeVar)), at: location))
+			addConstraint(.equality(type, .resolved(.placeholder(typeVar)), at: location))
 		}
 
 		namedVariables[name] = type
@@ -217,7 +219,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	public func type(named name: String) -> InferenceType? {
 		switch lookupVariable(named: name) {
-		case let .type(.instantiatable(type)):
+		case let .resolved(.instantiatable(type)):
 			.instantiatable(type)
 		default:
 			nil
@@ -234,7 +236,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		if let builtin = BuiltinFunction.list.first(where: { $0.name == name }) {
-			return .type(builtin.type)
+			return .resolved(builtin.type)
 		}
 
 		for imported in imports {
@@ -258,7 +260,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return constraints.exists(forTypeVar: typeVar)
 	}
 
-	func constraintExists<T: Constraint>(for type: T.Type, where block: (T) -> Bool) -> Bool {
+	func constraintExists<T: InferenceConstraint>(for type: T.Type, where block: (T) -> Bool) -> Bool {
 		if let parent {
 			return parent.constraintExists(for: type, where: block)
 		}
@@ -266,7 +268,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		return constraints.exists(for: type, where: block)
 	}
 
-	func addConstraint(_ constraint: any Constraint) {
+	func addConstraint(_ constraint: any InferenceConstraint) {
 		if let parent {
 			parent.addConstraint(constraint)
 			return
@@ -275,7 +277,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		constraints.add(constraint)
 	}
 
-	func deferConstraint(_ constraint: any Constraint) {
+	func deferConstraint(_ constraint: any InferenceConstraint) {
 		if let parent {
 			parent.deferConstraint(constraint)
 			return
@@ -352,7 +354,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 	var expectation: InferenceResult? {
 		if let expectation = expectations.last {
-			return .type(expectation)
+			return .resolved(expectation)
 		}
 
 		return nil
@@ -417,7 +419,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 
 		let error = InferenceError(kind: inferrenceError, location: expr.location)
 		errors.append(error)
-		environment.extend(expr, with: .type(.error(error)))
+		environment.extend(expr, with: .resolved(.error(error)))
 		return .error(error)
 	}
 
@@ -463,7 +465,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 		get {
 			switch environment[syntax] ?? parent?[syntax] {
 			case let .scheme(scheme): .scheme(scheme)
-			case let .type(type): .type(applySubstitutions(to: type))
+			case let .resolved(type): .resolved(applySubstitutions(to: type))
 			default:
 				nil
 			}
@@ -528,18 +530,16 @@ public class InferenceContext: CustomDebugStringConvertible {
 		}
 
 		switch type {
-//		case let .placeholder(typeVar):
-//			return namedVariables[typeVar.name ?? ""] ?? .placeholder(typeVar)
-		case let .pattern(pattern):
-			return .pattern(
-				Pattern(
+		case let .patternV1(pattern):
+			return .patternV1(
+				PatternV1(
 					type: applySubstitutions(to: pattern.type, with: substitutions),
 					arguments: pattern.arguments.map {
 						switch $0 {
 						case let .value(type):
 							.value(applySubstitutions(to: type, with: substitutions))
 						case let .variable(name, type):
-							.variable(name, .type(applySubstitutions(to: type, with: substitutions)))
+							.variable(name, .resolved(applySubstitutions(to: type, with: substitutions)))
 						}
 					}
 				)
@@ -553,7 +553,7 @@ public class InferenceContext: CustomDebugStringConvertible {
 			let type = substitutions[typeVariable] ?? namedVariables[typeVariable.name ?? ""]?.asType(in: self) ?? type
 
 			if case let .instantiatable(instantiatableType) = type {
-				return .instance(instantiatableType.instantiate(with: substitutions, in: self))
+				return .instanceV1(instantiatableType.instantiate(with: substitutions, in: self))
 			}
 
 			return type
@@ -570,19 +570,19 @@ public class InferenceContext: CustomDebugStringConvertible {
 					let applied = applySubstitutions(to: $0, with: substitutions)
 
 					if case let .instantiatable(instantiatableType) = applied {
-						return .type(.instance(instantiatableType.instantiate(with: substitutions, in: self)))
+						return .resolved(.instanceV1(instantiatableType.instantiate(with: substitutions, in: self)))
 					}
 
-					return .type(applied)
+					return .resolved(applied)
 				},
-				.type(applySubstitutions(to: returning, with: substitutions))
+				.resolved(applySubstitutions(to: returning, with: substitutions))
 			)
-		case let .instance(instance):
-			return .instance(instance)
+		case let .instanceV1(instance):
+			return .instanceV1(instance)
 		case let .instantiatable(type):
 			return type.apply(substitutions: substitutions, in: self)
-		case let .enumCase(kase):
-			return .enumCase(
+		case let .enumCaseV1(kase):
+			return .enumCaseV1(
 				EnumCase(
 					type: kase.type,
 					name: kase.name,
@@ -668,28 +668,28 @@ public class InferenceContext: CustomDebugStringConvertible {
 		case let (.instantiatable(a), .instantiatable(b)) where a.name == b.name:
 			// Unify struct type parameters if needed
 			break
-		case let (.instance(a), .instance(b)) where a.type.name == b.type.name:
+		case let (.instanceV1(a), .instanceV1(b)) where a.type.name == b.type.name:
 			// Unify struct instance type parameters if needed
 			for (subA, subB) in zip(a.substitutions, b.substitutions) {
 				unify(subA.value, subB.value, location)
 			}
-		case let (.selfVar(.instantiatable(selfVar)), .instance(instance)), let (.instance(instance), .selfVar(.instantiatable(selfVar))):
+		case let (.selfVar(.instantiatable(selfVar)), .instanceV1(instance)), let (.instanceV1(instance), .selfVar(.instantiatable(selfVar))):
 			if selfVar.name == instance.type.name {
 				break
 			}
 
 		// MARK: Enum special cases
-		case let (.selfVar(.instantiatable(.enumType(a))), .enumCase(b)),
-		     let (.enumCase(b), .selfVar(.instantiatable(.enumType(a)))):
+		case let (.selfVar(.instantiatable(.enumType(a))), .enumCaseV1(b)),
+		     let (.enumCaseV1(b), .selfVar(.instantiatable(.enumType(a)))):
 			if a == b.type {
 				break
 			}
-		case let (.enumCase(a), .enumCase(b)):
+		case let (.enumCaseV1(a), .enumCaseV1(b)):
 			for (lhs, rhs) in zip(a.attachedTypes, b.attachedTypes) {
 				unify(lhs, rhs, location)
 			}
-		case let (.instantiatable(.enumType(type)), .enumCase(kase)),
-		     let (.enumCase(kase), .instantiatable(.enumType(type))):
+		case let (.instantiatable(.enumType(type)), .enumCaseV1(kase)),
+		     let (.enumCaseV1(kase), .instantiatable(.enumType(type))):
 			if kase.type != type {
 				addError(
 					.init(
@@ -698,9 +698,9 @@ public class InferenceContext: CustomDebugStringConvertible {
 					)
 				)
 			}
-		case let (.instantiatable(.enumType(type)), .instance(instance)),
-		     let (.instance(instance), .instantiatable(.enumType(type))):
-			if case let enumType = instance.type as? EnumType, enumType == type {
+		case let (.instantiatable(.enumType(type)), .instanceV1(instance)),
+		     let (.instanceV1(instance), .instantiatable(.enumType(type))):
+			if case let enumType = instance.type as? EnumTypeV1, enumType == type {
 				break
 			}
 
@@ -711,29 +711,33 @@ public class InferenceContext: CustomDebugStringConvertible {
 				)
 			)
 		// Handle case where we're trying to unify an enum case with a protocol
-		case let (.instance(instance), .enumCase(kase)),
-		     let (.enumCase(kase), .instance(instance)):
-			if let type = instance.type as? ProtocolType {
+		case let (.instanceV1(instance), .enumCaseV1(kase)),
+		     let (.enumCaseV1(kase), .instanceV1(instance)):
+			if let type = instance.type as? ProtocolTypeV1 {
 				deferConstraint(
 					TypeConformanceConstraint(
-						type: .type(.instantiatable(.enumType(kase.type))),
-						conformsTo: .type(.instantiatable(.protocol(type))),
+						type: .resolved(.instantiatable(.enumType(kase.type))),
+						conformsTo: .resolved(.instantiatable(.protocol(type))),
 						location: location
 					)
 				)
 			}
-		case let (.instance(lhs), .instance(rhs)):
-			if lhs.type is ProtocolType || rhs.type is ProtocolType {
+		case let (.instanceV1(lhs), .instanceV1(rhs)):
+			if lhs.type is ProtocolTypeV1 || rhs.type is ProtocolTypeV1 {
 				break
 			}
-		case let (.pattern(pattern), rhs):
+		case let (.patternV1(pattern), rhs):
 			unify(pattern.type, rhs, location)
-		case let (lhs, .pattern(pattern)):
+		case let (lhs, .patternV1(pattern)):
 			unify(lhs, pattern.type, location)
 		case (.void, .void):
 			() // This is chill
+		case let (.instanceV1(.enumType(instance)), wrapped) where instance.type.name == "Optional",
+				 let (wrapped, .instanceV1(.enumType(instance))) where instance.type.name == "Optional":
+			let wrappedTypeVar = instance.substitutions.keys.first!
+			instance.substitutions[wrappedTypeVar] = wrapped
 		default:
-			if !a.covariant(with: b, in: self), a != .any, b != .any {
+			if !a.covariantV1(with: b, in: self), a != .any, b != .any, a != .base(.none), b != .base(.none) {
 				addError(
 					.init(
 						kind: .unificationError(typeA, typeB),

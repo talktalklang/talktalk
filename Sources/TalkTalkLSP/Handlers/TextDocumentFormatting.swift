@@ -11,18 +11,6 @@ import TalkTalkCore
 
 struct TextDocumentFormatting {
 	var request: Request
-//
-//	func readFromDisk(uri: String) async -> SourceDocument? {
-//		guard let url = URL(string: uri) else {
-//			return nil
-//		}
-//
-//		guard let string = try? String(contentsOf: url, encoding: .utf8) else {
-//			return nil
-//		}
-//
-//		return SourceDocument(version: nil, uri: uri, text: string)
-//	}
 
 	func format(_ sources: [String: SourceDocument]) -> [TextEdit]? {
 		guard let params = request.params as? TextDocumentFormattingRequest else {
@@ -36,6 +24,7 @@ struct TextDocumentFormatting {
 		}
 
 		do {
+			Log.info("Formatting \(params.textDocument.uri)")
 			let formatted = try Formatter(input: .init(path: params.textDocument.uri, text: params.textDocument.text ?? source.text)).format()
 			let parts = formatted.components(separatedBy: .newlines)
 

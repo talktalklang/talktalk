@@ -58,11 +58,11 @@ struct ModuleAnalysisTests {
 
 		// First make sure we can get a super basic function with no dependencies
 		let bar = try #require(analysisModule.moduleFunction(named: "bar"))
-		#expect(bar.typeID == .function([], .type(.base(.int))))
+		#expect(bar.typeID == .function([], .resolved(.base(.int))))
 
 		// Next make sure we can get a function that calls another function that was defined after it
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		#expect(foo.typeID == .function([], .type(.base(.int))))
+		#expect(foo.typeID == .function([], .resolved(.base(.int))))
 	}
 
 	@Test("Analyzes module global values") func globalValues() throws {
@@ -92,7 +92,7 @@ struct ModuleAnalysisTests {
 
 		// Next make sure we can type a function that uses a module global
 		let foo = try #require(analysisModule.moduleFunction(named: "foo"))
-		#expect(foo.typeID == .function([], .type(.base(.int))))
+		#expect(foo.typeID == .function([], .resolved(.base(.int))))
 	}
 
 	@Test("Analyzes module function imports") func importing() throws {
@@ -108,10 +108,10 @@ struct ModuleAnalysisTests {
 		// Make sure we're actually loading these
 		let foo = try #require(moduleA.moduleFunction(named: "foo"))
 		#expect(foo.name == "foo")
-		#expect(foo.typeID == .function([], .type(.base(.int))))
+		#expect(foo.typeID == .function([], .resolved(.base(.int))))
 
 		let bar = try #require(moduleB.moduleFunction(named: "bar"))
-		#expect(bar.typeID == .function([], .type(.base(.int))))
+		#expect(bar.typeID == .function([], .resolved(.base(.int))))
 	}
 
 	@Test("Analyzes module structs") func structProperties() throws {
@@ -153,7 +153,7 @@ struct ModuleAnalysisTests {
 		""", "person.talk"))
 
 		let person = try #require(moduleB.values["person"])
-		let personInstance = try #require(Instance<StructType>.extract(from: person.typeID))
+		let personInstance = try #require(InstanceV1<StructTypeV1>.extract(from: person.typeID))
 		#expect(personInstance.type.name == "Person")
 	}
 
@@ -181,7 +181,7 @@ struct ModuleAnalysisTests {
 				123
 			}
 			"""
-		)
+		).1
 
 		#expect(analysisModule.name == "A")
 		#expect(analysisModule.moduleFunctions.count == 3)

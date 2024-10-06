@@ -51,6 +51,11 @@ struct VMEndToEndTests: VMTest {
 		#expect(try returning("2 >= 2") == .bool(true))
 	}
 
+	@Test("Modulo") func mod() throws {
+		#expect(try returning("5 % 2") == .int(1))
+		#expect(try returning("4 % 2") == .int(0))
+	}
+
 	@Test("Negate") func negate() throws {
 		#expect(try returning("-123") == .int(-123))
 		#expect(try returning("--123") == .int(123))

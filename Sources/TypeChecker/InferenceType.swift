@@ -5,23 +5,140 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 import Foundation
+import TalkTalkCore
 import OrderedCollections
 
+public enum TypeWrapper: MemberOwner {
+	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case), `protocol`(ProtocolType)
+
+	public var debugDescription: String {
+		switch self {
+		case .struct(let structType):
+			structType.debugDescription
+		case .enum(let `enum`):
+			`enum`.debugDescription
+		case .enumCase(let `case`):
+			`case`.debugDescription
+		case .protocol(let protocolType):
+			protocolType.debugDescription
+		}
+	}
+
+	public var name: String {
+		switch self {
+		case .struct(let type):
+			type.name
+		case .enum(let type):
+			type.name
+		case .enumCase(let type):
+			type.name
+		case .protocol(let type):
+			type.name
+		}
+	}
+
+	public var typeParameters: OrderedDictionary<String, TypeVariable> {
+		get {
+			switch self {
+			case .struct(let type):
+				type.typeParameters
+			case .enum(let type):
+				type.typeParameters
+			case .enumCase(let type):
+				type.typeParameters
+			case .protocol(let type):
+				type.typeParameters
+			}
+		}
+
+		set {
+			fatalError("Type parameters must be set on wrapped types directly")
+		}
+	}
+
+	func instantiate(with variables: Substitutions) -> InstanceWrapper {
+		switch self {
+		case .struct(let type):
+			return .struct(type.instantiate(with: variables))
+		case .enum(let type):
+			return .enum(type.instantiate(with: variables))
+		case .enumCase(let type):
+			return .enumCase(type.instantiate(with: variables))
+		case .protocol(let type):
+			return .protocol(type.instantiate(with: variables))
+		}
+	}
+
+	public func staticMember(named name: String) -> InferenceResult? {
+		switch self {
+		case .struct(let type):
+			type.staticMember(named: name)
+		case .enum(let type):
+			type.staticMember(named: name)
+		case .enumCase(let type):
+			type.staticMember(named: name)
+		case .protocol(let type):
+			type.staticMember(named: name)
+		}
+	}
+
+	public func member(named name: String) -> InferenceResult? {
+		switch self {
+		case .struct(let type):
+			type.member(named: name)
+		case .enum(let type):
+			type.member(named: name)
+		case .enumCase(let type):
+			type.member(named: name)
+		case .protocol(let type):
+			type.member(named: name)
+		}
+	}
+
+	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {
+		fatalError("Members must be added on concrete wrapped types")
+	}
+}
+
 public indirect enum InferenceType {
+	public static func optional(_ type: InferenceType) -> InferenceType {
+		let optionalType = Library.standard.files.first(where: { $0.path.contains("Optional.talk") })!
+		let context = try! ContextVisitor.visit(Parser.parse(optionalType), module: "Standard")
+
+		let enumType = Enum.extract(from: context.type(named: "Optional")!.instantiate(in: context).type)!
+		let wrapped = enumType.typeParameters["Wrapped"]!
+		let instance = enumType.instantiate(with: [wrapped: type])
+
+		return .instance(.enum(instance))
+	}
+
+	public static func optionalV1(_ type: InferenceType) -> InferenceType {
+		let enumType = EnumTypeV1.extract(from: .resolved(Inferencer.stdlibV1.type(named: "Optional")!))!
+		let wrapped = enumType.typeContext.typeParameters.first!
+		let instance = enumType.instantiate(with: [wrapped: type], in: .init(moduleName: "Standard", parent: nil, environment: .init(), constraints: .init()))
+		return .instanceV1(instance)
+	}
+
 	// Something we'll fill in later.
 	case typeVar(TypeVariable)
 
 	// Primitives, like int or string
 	case base(Primitive)
 
-	// Function type. Also used for methods. The first type is args, the second is return type.
-	case function([InferenceResult], InferenceResult)
+	// self?
+	case `self`(any MemberOwner)
 
 	// Instances
-	case instance(InstanceType)
+	case instance(InstanceWrapper)
 
-	// Struct stuff
-	case instantiatable(InstantiatableType)
+	// Structs
+	case type(TypeWrapper)
+
+	// Pattern matching
+	case pattern(Pattern)
+
+	// Function type. Also used for methods. The first type is args, the second is return type.
+	case function([InferenceResult], InferenceResult)
 
 	// When we expect a type but can't establish one yet
 	case placeholder(TypeVariable)
@@ -38,11 +155,8 @@ public indirect enum InferenceType {
 	// Used for `self` in types that support it
 	case selfVar(InferenceType)
 
-	// Enum types
-	case enumCase(EnumCase)
-
 	// Pattern matching (type, associated values)
-	case pattern(Pattern)
+	case patternV1(PatternV1)
 
 	// When we can't figure it out or don't care
 	case any
@@ -50,7 +164,19 @@ public indirect enum InferenceType {
 	// The absence of a type
 	case void
 
-	static func typeVar(_ name: String, _ id: VariableID) -> InferenceType {
-		InferenceType.typeVar(TypeVariable(name, id))
+	// Instances (Deprecated)
+	@available(*, deprecated, message: "I think we don't want this anymore.")
+	case instanceV1(InstanceType)
+
+	// Struct stuff
+	@available(*, deprecated, message: "I think we don't want this anymore.")
+	case instantiatable(InstantiatableType)
+
+	// Enum types
+	@available(*, deprecated, message: "I think we don't want this anymore.")
+	case enumCaseV1(EnumCase)
+
+	static func typeVar(_ name: String, _ id: VariableID, isGeneric: Bool = false) -> InferenceType {
+		InferenceType.typeVar(TypeVariable(name, id, isGeneric))
 	}
 }

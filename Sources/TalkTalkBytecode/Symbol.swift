@@ -31,7 +31,7 @@ public struct SymbolInfo: Equatable, Codable {
 	}
 }
 
-public struct StaticSymbol: Hashable, Codable, Equatable, Sendable {
+public struct StaticSymbol: Hashable, Codable, Equatable, Sendable, CustomStringConvertible {
 	public let id: String
 	public let module: String
 	public let name: String?
@@ -48,6 +48,10 @@ public struct StaticSymbol: Hashable, Codable, Equatable, Sendable {
 
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(hashValue)
+	}
+
+	public var description: String {
+		id
 	}
 
 	// Helpers

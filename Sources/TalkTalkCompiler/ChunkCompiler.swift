@@ -45,17 +45,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	// MARK: Visitor methods
 
-	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws {
-		// Put the element values of this array onto the stack. We reverse it because the VM
-		// builds up the array by popping values off
-		for element in expr.exprsAnalyzed.reversed() {
-			try element.accept(self, chunk)
-		}
-
-		chunk.emit(opcode: .initArray, line: expr.location.line)
-		chunk.emit(.byte(Byte(expr.exprsAnalyzed.count)), line: expr.location.line)
-	}
-
 	public func visit(_: AnalyzedIdentifierExpr, _: Chunk) throws {
 		// This gets handled by VarExpr
 	}
@@ -95,7 +84,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
-		if case let .pattern(pattern) = expr.inferenceType {
+		if case let .patternV1(pattern) = expr.inferenceType {
 			for (i, arg) in expr.argsAnalyzed.enumerated() {
 				switch pattern.arguments[i] {
 				case .value:
@@ -133,7 +122,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		// Put the function args on the stack
-		for arg in expr.argsAnalyzed {
+		for arg in expr.argsAnalyzed.reversed() {
 			try arg.expr.accept(self, chunk)
 		}
 
@@ -156,26 +145,24 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedDefExpr, _ chunk: Chunk) throws {
-		if expr.op.kind == .equals {
-			// It's a straight up assignment so just put the value onto the stack
-			try expr.valueAnalyzed.accept(self, chunk)
-		} else {
-			// It's a compound assignment, so we need to do what we need to with both sides
-			try expr.valueAnalyzed.accept(self, chunk)
-			try expr.receiverAnalyzed.accept(self, chunk)
-			switch expr.op.kind {
-			case .plusEquals:
-				chunk.emit(opcode: .add, line: expr.location.line)
-			case .minusEquals:
-				chunk.emit(opcode: .subtract, line: expr.location.line)
-			default:
-				throw CompilerError.unreachable
+		if let receiver = expr.receiverAnalyzed as? AnalyzedSubscriptExpr {
+			guard let setSymbol = receiver.setSymbol else {
+				throw CompilerError.unknownIdentifier("No method `set` for \(receiver.description)")
 			}
+
+			try emitDefValue(expr, in: chunk)
+			for arg in receiver.argsAnalyzed {
+				try arg.expr.accept(self, chunk)
+			}
+
+			try receiver.receiverAnalyzed.accept(self, chunk)
+
+			chunk.emit(.opcode(.invokeMethod), line: expr.receiver.location.line)
+			chunk.emit(.symbol(setSymbol.asStatic()), line: expr.receiver.location.line)
+			return
 		}
 
-		if expr.receiver is SubscriptExprSyntax {
-			throw CompilerError.typeError("Setting via subscripts doesn't work yet.")
-		}
+		try emitDefValue(expr, in: chunk)
 
 		let variable = try resolveVariable(
 			receiver: expr.receiverAnalyzed,
@@ -204,7 +191,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	public func visit(_ expr: AnalyzedUnaryExpr, _ chunk: Chunk) throws {
 		try expr.exprAnalyzed.accept(self, chunk)
 
-		switch expr.op {
+		switch expr.op.kind {
 		case .bang:
 			chunk.emit(opcode: .not, line: expr.location.line)
 		case .minus:
@@ -226,7 +213,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				data: StaticData(kind: .string, bytes: [UInt8](string.utf8)),
 				line: expr.location.line
 			)
-		case .none:
+		case .nil:
 			chunk.emit(opcode: .none, line: expr.location.line)
 		}
 	}
@@ -258,6 +245,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 			case .minus: .subtract
 			case .star: .multiply
 			case .slash: .divide
+			case .percent: .modulo
 			case .is: .is
 			}
 
@@ -359,7 +347,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// is void then we just emit returnVoid. Otherwise we emit returnValue which will grab the return
 		// value from the top of the stack.
 		let opcode: Opcode = switch expr.inferenceType {
-		case .function(_, .type(.void)):
+		case .function(_, .resolved(.void)):
 			.returnVoid
 		default:
 			.returnValue
@@ -453,6 +441,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 		if let symbol = resolveStruct(named: expr.symbol) {
 			chunk.emit(opcode: .getStruct, line: expr.location.line)
 			chunk.emit(.symbol(symbol.asStatic()), line: expr.location.line)
+		} else if expr.identifier.lexeme == "Optional" {
+			chunk.emit(opcode: .getEnum, line: expr.location.line)
+			chunk.emit(.symbol(.enum("Standard", "Optional")), line: expr.location.line)
 		} else {
 			throw CompilerError.unknownIdentifier("could not find struct named: \(expr.identifier.lexeme)")
 		}
@@ -629,6 +620,17 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 	public func visit(_: AnalyzedStructExpr, _: Chunk) throws {}
 
+	public func visit(_ expr: AnalyzedArrayLiteralExpr, _ chunk: Chunk) throws {
+		// Put the element values of this array onto the stack. We reverse it because the VM
+		// builds up the array by popping values off
+		for element in expr.exprsAnalyzed.reversed() {
+			try element.accept(self, chunk)
+		}
+
+		chunk.emit(opcode: .initArray, line: expr.location.line)
+		chunk.emit(.byte(Byte(expr.exprsAnalyzed.count)), line: expr.location.line)
+	}
+
 	public func visit(_ expr: AnalyzedSubscriptExpr, _ chunk: Chunk) throws {
 		// Emit the args
 		for arg in expr.argsAnalyzed {
@@ -638,22 +640,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 		// Put the receiver at the top of the stack
 		try expr.receiverAnalyzed.accept(self, chunk)
 		chunk.emit(opcode: .get, line: expr.location.line)
-		chunk.emit(.symbol(expr.getSymbol.asStatic()), line: expr.location.line)
+
+		guard let getSymbol = expr.getSymbol else {
+			throw CompilerError.unknownIdentifier("no method `get` for \(expr.receiver)")
+		}
+
+		chunk.emit(.symbol(getSymbol.asStatic()), line: expr.location.line)
 	}
 
-	public func visit(_: AnalyzedDictionaryLiteralExpr, _: Chunk) throws {
+	public func visit(_ expr: AnalyzedDictionaryLiteralExpr, _ chunk: Chunk) throws {
 		// Store the values
-//		for element in expr.elementsAnalyzed {
-//			try visit(element, chunk)
-//		}
+		for element in expr.elementsAnalyzed.reversed() {
+			try element.accept(self, chunk)
+		}
 
-//		let dictSlot = module.analysisModule.symbols[.struct("Standard", "Dictionary")]!.slot
-//		chunk.emit(opcode: .getStruct, line: expr.location.line)
-//		chunk.emit(byte: Byte(dictSlot), line: expr.location.line)
-//		chunk.emit(opcode: .call, line: expr.location.line)
-
-		// Emit the count so we can init enough storage
-//		chunk.emit(byte: Byte(expr.elements.count), line: expr.location.line)
+		chunk.emit(opcode: .initDict, line: expr.location.line)
+		chunk.emit(.byte(Byte(expr.elements.count)), line: expr.location.line)
 	}
 
 	public func visit(_ expr: AnalyzedDictionaryElementExpr, _ chunk: Chunk) throws {
@@ -779,7 +781,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {
-		guard case let .enumCase(enumCase) = expr.inferenceType else {
+		guard case let .enumCaseV1(enumCase) = expr.inferenceType else {
 			throw CompilerError.unknownIdentifier("\(expr.description)")
 		}
 
@@ -904,6 +906,22 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 	}
 
+	public func visit(_ expr: AnalyzedGroupedExpr, _ chunk: Chunk) throws {
+		try expr.exprAnalyzed.accept(self, chunk)
+	}
+
+	public func visit(_ expr: AnalyzedLetPattern, _ context: Chunk) throws -> Void {
+		fatalError()
+	}
+
+	public func visit(_ expr: AnalyzedPropertyDecl, _ context: Chunk) throws {
+		#warning("Generated by Dev/generate-type.rb")
+	}
+
+	public func visit(_ expr: AnalyzedMethodDecl, _ context: Chunk) throws {
+		#warning("Generated by Dev/generate-type.rb")
+	}
+
 	// GENERATOR_INSERTION
 
 	// MARK: Helpers
@@ -942,7 +960,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		let opcode: Opcode = switch decl.inferenceType {
-		case .function(_, .type(.void)):
+		case .function(_, .resolved(.void)):
 			.returnVoid
 		default:
 			.returnValue
@@ -951,6 +969,25 @@ public class ChunkCompiler: AnalyzedVisitor {
 		declChunk.emit(opcode: opcode, line: UInt32(decl.location.end.line))
 
 		module.compiledChunks[symbol] = declChunk
+	}
+
+	func emitDefValue(_ expr: AnalyzedDefExpr, in chunk: Chunk) throws {
+		if expr.op.kind == .equals {
+			// It's a straight up assignment so just put the value onto the stack
+			try expr.valueAnalyzed.accept(self, chunk)
+		} else {
+			// It's a compound assignment, so we need to do what we need to with both sides
+			try expr.valueAnalyzed.accept(self, chunk)
+			try expr.receiverAnalyzed.accept(self, chunk)
+			switch expr.op.kind {
+			case .plusEquals:
+				chunk.emit(opcode: .add, line: expr.location.line)
+			case .minusEquals:
+				chunk.emit(opcode: .subtract, line: expr.location.line)
+			default:
+				throw CompilerError.unreachable
+			}
+		}
 	}
 
 	// Lookup the variable by name. If we've got it in our locals, just return the slot
@@ -1085,27 +1122,6 @@ public class ChunkCompiler: AnalyzedVisitor {
 
 		return nil
 	}
-
-//	// Search parent chunks for the variable
-//	private func resolveUpvalue(named name: String, chunk: Chunk) -> Symbol? {
-//		guard let parent else { return nil }
-//
-//		// If our immediate parent has the variable, we return an upvalue.
-//		if let local = parent.resolveLocal(named: name) {
-//			// Since it's in the immediate parent, we mark the upvalue as captured.
-//			parent.captures.append(name)
-//			return addUpvalue(local, isLocal: true, name: name, chunk: chunk)
-//		}
-//
-//		// Check for upvalues in the parent. We don't need to mark the upvalue where it's found
-//		// as captured since the immediate child of the owning scope will handle that in its
-//		// resolveUpvalue call.
-//		if let local = parent.resolveUpvalue(named: name, chunk: chunk) {
-//			return addUpvalue(local, isLocal: false, name: name, chunk: chunk)
-//		}
-//
-//		return nil
-//	}
 
 	private func resolveCapture(named name: String, depth: Int = 0) throws -> Capture? {
 		guard let parent else { return nil }

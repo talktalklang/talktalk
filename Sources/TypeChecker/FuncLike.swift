@@ -9,19 +9,42 @@ import TalkTalkCore
 
 // Used for being able to handle func and init decls with the same code
 protocol FuncLike: Syntax {
-	var params: ParamsExpr { get }
+	var params: ParamsExprSyntax { get }
 	var body: BlockStmtSyntax { get }
-	var typeDecl: (any TypeExpr)? { get }
+	var typeDecl: TypeExprSyntax? { get }
 	var name: Token? { get }
 }
 
 extension FuncExprSyntax: FuncLike {}
+extension MethodDeclSyntax: FuncLike {
+	var typeDecl: TypeExprSyntax? {
+		returns
+	}
+
+	var name: Token? {
+		nameToken
+	}
+}
 extension InitDeclSyntax: FuncLike {
-	var typeDecl: (any TypeExpr)? {
+	var typeDecl: TypeExprSyntax? {
 		nil
 	}
 
 	var name: Token? {
 		nil
+	}
+}
+
+extension FuncSignatureDeclSyntax: FuncLike {
+	var body: TalkTalkCore.BlockStmtSyntax {
+		.init(id: -1, stmts: [], location: [.synthetic(.dot)])
+	}
+	
+	var typeDecl: TypeExprSyntax? {
+		returnDecl
+	}
+	
+	var name: Token? {
+		nameToken
 	}
 }

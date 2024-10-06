@@ -7,7 +7,7 @@ public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
-	public var conditionAnalyzed: any AnalyzedExpr
+	public var conditionAnalyzed: any AnalyzedSyntax
 	public var consequenceAnalyzed: any AnalyzedExpr
 	public var alternativeAnalyzed: (any AnalyzedExpr)?
 	public var analyzedChildren: [any AnalyzedSyntax] {
@@ -21,7 +21,7 @@ public struct AnalyzedIfStmt: IfStmt, AnalyzedStmt {
 	// Delegate these to the wrapped node
 	public var ifToken: Token { wrapped.ifToken }
 	public var elseToken: Token? { wrapped.elseToken }
-	public var condition: any Expr { wrapped.condition }
+	public var condition: any Syntax { wrapped.condition }
 	public var consequence: any BlockStmt { wrapped.consequence }
 	public var alternative: (any BlockStmt)? { wrapped.alternative }
 	public var location: SourceLocation { wrapped.location }

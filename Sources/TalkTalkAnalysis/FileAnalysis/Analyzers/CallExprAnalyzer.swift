@@ -25,7 +25,7 @@ struct CallExprAnalyzer: Analyzer {
 				environment: context,
 				label: $0.label,
 				wrapped: $0,
-				expr: castToAnyAnalyzedExpr($0.value.accept(visitor, context))
+				expr: castToAnyAnalyzedExpr($0.value.accept(visitor, context), in: context)
 			)
 		}
 
@@ -44,7 +44,7 @@ struct CallExprAnalyzer: Analyzer {
 		return try AnalyzedCallExpr(
 			inferenceType: type,
 			wrapped: expr.cast(CallExprSyntax.self),
-			calleeAnalyzed: castToAnyAnalyzedExpr(callee),
+			calleeAnalyzed: castToAnyAnalyzedExpr(callee, in: context),
 			argsAnalyzed: args,
 			analysisErrors: errors,
 			environment: context

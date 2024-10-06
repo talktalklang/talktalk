@@ -2,143 +2,155 @@
 //  Instance.swift
 //  TalkTalk
 //
-//  Created by Pat Nakajima on 9/15/24.
+//  Created by Pat Nakajima on 10/2/24.
 //
 
-import OrderedCollections
+public enum InstanceWrapper: CustomDebugStringConvertible {
+	case `struct`(Instance<StructType>), enumCase(Instance<Enum.Case>), `enum`(Instance<Enum>), `protocol`(Instance<ProtocolType>)
 
-public protocol Instantiatable: Equatable, Hashable {
-	var name: String { get }
-	var context: InferenceContext { get }
-	var typeContext: TypeContext { get }
-	var conformances: [ProtocolType] { get }
-	func member(named name: String, in context: InferenceContext) -> InferenceResult?
-	func apply(substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InferenceType
-}
+	public var debugDescription: String {
+		switch self {
+		case .struct(let instance):
+			instance.debugDescription
+		case .enumCase(let instance):
+			instance.debugDescription
+		case .enum(let instance):
+			instance.debugDescription
+		case .protocol(let instance):
+			instance.debugDescription
+		}
+	}
 
-public extension Instantiatable {
-	func instantiate(with substitutions: OrderedDictionary<TypeVariable, InferenceType>, in context: InferenceContext) -> InstanceType {
-		let instance = Instance(
-			id: context.nextIdentifier(named: name),
-			type: self,
-			substitutions: typeContext.typeParameters.reduce(into: [:]) {
-				if let sub = substitutions[$1] {
-					$0[$1] = sub
-				} else if context.substitutions[$1] != nil {
-					$0[$1] = context.applySubstitutions(to: .typeVar($1))
-				} else {
-					$0[$1] = .typeVar(context.freshTypeVariable($1.description, file: #file, line: #line))
-				}
+	var substitutions: [TypeVariable: InferenceType] {
+		get {
+			switch self {
+			case .struct(let instance):
+				instance.substitutions
+			case .enum(let instance):
+				instance.substitutions
+			case .enumCase(let instance):
+				instance.substitutions
+			case .protocol(let instance):
+				instance.substitutions
 			}
-		)
-
-		context.log("Instantiated \(instance), \(instance.substitutions)", prefix: "() ")
-
-		// swiftlint:disable force_cast fatal_error
-		return switch self {
-		case is StructType:
-			.struct(instance as! Instance<StructType>)
-		case is EnumType:
-			.enumType(instance as! Instance<EnumType>)
-		case is ProtocolType:
-			.protocol(instance as! Instance<ProtocolType>)
-		default:
-			fatalError("Unhandled type: \(self)")
-		}
-		// swiftlint:enable force_cast fatal_error
-	}
-
-	func staticMember(named name: String) -> InferenceResult? {
-		typeContext.staticMethods[name] ?? typeContext.staticProperties[name]
-	}
-
-	var typeParameters: [TypeVariable] {
-		typeContext.typeParameters
-	}
-
-	var methods: OrderedDictionary<String, InferenceResult> {
-		typeContext.methods
-	}
-
-	var properties: OrderedDictionary<String, InferenceResult> {
-		typeContext.properties
-	}
-}
-
-public class Instance<T: Instantiatable>: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible {
-	public static func == (lhs: Instance, rhs: Instance) -> Bool {
-		lhs.type.hashValue == rhs.type.hashValue && lhs.substitutions == rhs.substitutions
-	}
-
-	let id: Int
-	public let type: T
-	var substitutions: OrderedDictionary<TypeVariable, InferenceType>
-
-	public static func extract(from type: InferenceType) -> Instance<T>? {
-		guard case let .instance(instance) = type else {
-			return nil
 		}
 
-		return instance.extract(T.self)
+		set {
+			switch self {
+			case .struct(let instance):
+				instance.substitutions = newValue
+			case .enum(let instance):
+				instance.substitutions = newValue
+			case .enumCase(let instance):
+				instance.substitutions = newValue
+			case .protocol(let instance):
+				instance.substitutions = newValue
+			}
+		}
 	}
 
-	public static func synthesized(_ type: T) -> Instance {
-		Instance(id: -9999, type: type, substitutions: [:])
+	func member(named name: String) -> InferenceResult? {
+		switch self {
+		case .struct(let instance):
+			instance.member(named: name)
+		case .enum(let instance):
+			instance.member(named: name)
+		case .enumCase(let instance):
+			instance.member(named: name)
+		case .protocol(let instance):
+			instance.member(named: name)
+		}
 	}
 
-	init(id: Int, type: T, substitutions: OrderedDictionary<TypeVariable, InferenceType>) {
-		self.id = id
-		self.type = type
-		self.substitutions = substitutions
-	}
-
-	public func relatedType(named name: String) -> InferenceType? {
-		for substitution in substitutions.keys {
-			if substitution.name == name {
-				return substitutions[substitution]
+	func instance<T: Instantiatable & MemberOwner>(ofType: T.Type) -> Instance<T>? {
+		switch self {
+		case .struct(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
+		case .enum(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
+		case .enumCase(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
+			}
+		case .protocol(let instance):
+			if let instance = instance as? Instance<T> {
+				return instance
 			}
 		}
 
 		return nil
 	}
 
-	public func member(named name: String, in context: InferenceContext) -> InferenceType? {
-		guard let structMember = type.member(named: name, in: context) else {
+	var type: any Instantiatable {
+		switch self {
+		case .struct(let instance):
+			return instance.type
+		case .enum(let instance):
+			return instance.type
+		case .enumCase(let instance):
+			return instance.type
+		case .protocol(let instance):
+			return instance.type
+		}
+	}
+}
+
+public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConvertible {
+	public var type: Kind
+	public var substitutions: [TypeVariable: InferenceType]
+	public var name: String { type.name }
+
+	init(type: Kind, substitutions: [TypeVariable : InferenceType] = [:]) {
+		self.type = type
+		self.substitutions = substitutions
+	}
+
+	static func extract(from type: InferenceType) -> Instance<Kind>? {
+		guard case let .instance(wrapper) = type else {
 			return nil
 		}
 
-		var instanceMember: InferenceType
-		switch structMember {
-		case let .scheme(scheme):
-			// It's a method
-			let type = context.instantiate(scheme: scheme)
-			instanceMember = context.applySubstitutions(to: type, with: substitutions)
-		case let .type(inferenceType):
-			// It's a property
-			instanceMember = context.applySubstitutions(to: inferenceType, with: substitutions)
+		return wrapper.instance(ofType: Kind.self)
+	}
+
+	func relatedType(named name: String) -> InferenceType? {
+		if let param = type.typeParameters[name], let type = substitutions[param] {
+			return type
 		}
 
-		return instanceMember
+		for (typeVariable, type) in substitutions {
+			if typeVariable.name == name {
+				return type
+			}
+		}
+
+		return nil
 	}
+
+	public var wrapped: InstanceWrapper {
+		switch self {
+		case let instance as Instance<StructType>:
+			.struct(instance)
+		default:
+			fatalError("Unexpected InstanceWrapper: \(self)")
+		}
+	}
+
+	public func member(named name: String) -> InferenceResult? {
+		type.member(named: name)
+	}
+
+	public func staticMember(named name: String) -> InferenceResult? {
+		nil
+	}
+
+	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {}
 
 	public var debugDescription: String {
-		if substitutions.isEmpty {
-			"\(type.name)()#\(id)"
-		} else {
-			"\(type.name)<\(substitutions.keys.map(\.debugDescription).joined(separator: ", "))>()#\(id)"
-		}
-	}
-
-	public var description: String {
-		if substitutions.isEmpty {
-			"\(type.name)()#\(id)"
-		} else {
-			"\(type.name)<\(substitutions.keys.map(\.description).joined(separator: ", "))>()#\(id)"
-		}
-	}
-
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(type.hashValue)
-		hasher.combine(substitutions)
+		"Instance<\(type.name) \(substitutions.debugDescription)>"
 	}
 }

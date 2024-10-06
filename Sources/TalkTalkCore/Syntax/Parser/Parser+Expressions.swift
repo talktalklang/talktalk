@@ -45,17 +45,25 @@ extension Parser {
 	}
 
 	mutating func grouping(_: Bool) -> any Expr {
+		skip(.newline)
+
+		let i = startLocation()
+
 		guard consume(.leftParen) != nil else {
 			return error(at: current, .unexpectedToken(expected: .leftParen, got: current), expectation: .none)
 		}
 
+		skip(.newline)
 		let expr = parse(precedence: .assignment)
+		skip(.newline)
 
 		guard consume(.rightParen) != nil else {
 			return error(at: current, .unexpectedToken(expected: .rightParen, got: current), expectation: .none)
 		}
 
-		return expr
+		skip(.newline)
+
+		return GroupedExprSyntax(expr: expr, id: nextID(), location: endLocation(i))
 	}
 
 	// MARK: Nonary/Unary ops
@@ -67,7 +75,7 @@ extension Parser {
 		let op = previous.unsafelyUnwrapped
 		let expr = parse(precedence: .unary)
 
-		return UnaryExprSyntax(id: nextID(), op: op.kind, expr: expr, location: endLocation(i))
+		return UnaryExprSyntax(id: nextID(), op: op, expr: expr, location: endLocation(i))
 	}
 
 	mutating func ifExpr(_: Bool) -> any Expr {
@@ -103,7 +111,7 @@ extension Parser {
 		)
 	}
 
-	mutating func funcSignatureDecl() -> FuncSignatureDeclSyntax {
+	mutating func funcSignatureDecl(isStatic: Bool, modifiers: [Token]) -> FuncSignatureDeclSyntax {
 		let funcToken = previous.unsafelyUnwrapped
 		let i = startLocation(at: previous)
 
@@ -137,9 +145,11 @@ extension Parser {
 
 		return FuncSignatureDeclSyntax(
 			funcToken: funcToken,
-			name: name,
+			nameToken: name,
 			params: params,
 			returnDecl: typeDecl,
+			isStatic: isStatic,
+			modifiers: modifiers,
 			id: nextID(),
 			location: endLocation(i)
 		)
@@ -161,7 +171,7 @@ extension Parser {
 
 		skip(.newline)
 
-		let typeDecl: (any TypeExpr)? = if didMatch(.forwardArrow) {
+		let typeDecl: TypeExprSyntax? = if didMatch(.forwardArrow) {
 			// We've got a type decl
 			typeExpr()
 		} else {
@@ -257,6 +267,10 @@ extension Parser {
 
 		if didMatch(.false) {
 			return LiteralExprSyntax(id: nextID(), value: .bool(false), location: [previous])
+		}
+
+		if didMatch(.nil) {
+			return LiteralExprSyntax(id: nextID(), value: .nil, location: [previous])
 		}
 
 		if didMatch(.string) {
@@ -614,6 +628,7 @@ extension Parser {
 		case .greater: .greater
 		case .greaterEqual: .greaterEqual
 		case .is: .is
+		case .percent: .percent
 		default:
 			// swiftlint:disable fatal_error
 			fatalError("unreachable")
@@ -637,13 +652,14 @@ extension Parser {
 	mutating func typeExpr() -> TypeExprSyntax {
 		let typeID = consume(.identifier)
 		let i = startLocation(at: previous.unsafelyUnwrapped)
-		let isOptional = didMatch(.questionMark)
+		var isOptional = didMatch(.questionMark)
 
 		skip(.newline)
 		var typeParameters: [TypeExprSyntax] = []
 		if didMatch(.less) {
 			skip(.newline)
 			typeParameters = self.typeParameters()
+			isOptional = didMatch(.questionMark)
 			skip(.newline)
 		}
 

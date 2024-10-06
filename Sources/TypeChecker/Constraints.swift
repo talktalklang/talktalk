@@ -6,14 +6,14 @@
 //
 
 class Constraints {
-	var constraints: [any Constraint] = []
-	var deferredConstraints: [any Constraint] = []
+	var constraints: [any InferenceConstraint] = []
+	var deferredConstraints: [any InferenceConstraint] = []
 
-	func add(_ constraint: any Constraint) {
+	func add(_ constraint: any InferenceConstraint) {
 		constraints.append(constraint)
 	}
 
-	func `defer`(_ constraint: any Constraint) {
+	func `defer`(_ constraint: any InferenceConstraint) {
 		deferredConstraints.append(constraint)
 	}
 
@@ -21,7 +21,7 @@ class Constraints {
 		for constraint in constraints {
 			switch constraint {
 			case let constraint as EqualityConstraint:
-				if constraint.lhs == .type(.typeVar(typeVar)) || constraint.rhs == .type(.typeVar(typeVar)) {
+				if constraint.lhs == .resolved(.typeVar(typeVar)) || constraint.rhs == .resolved(.typeVar(typeVar)) {
 					return true
 				}
 			case let constraint as InfixOperatorConstraint:
@@ -36,7 +36,7 @@ class Constraints {
 		return false
 	}
 
-	func exists<T: Constraint>(for _: T.Type, where block: (T) -> Bool) -> Bool {
+	func exists<T: InferenceConstraint>(for _: T.Type, where block: (T) -> Bool) -> Bool {
 		for constraint in constraints where constraint is T {
 			if let constraint = constraint as? T, block(constraint) {
 				return true

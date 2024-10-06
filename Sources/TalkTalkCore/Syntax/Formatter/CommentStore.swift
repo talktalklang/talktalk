@@ -13,6 +13,10 @@ extension Syntax {
 	var canHaveTrailingComment: Bool {
 		self is Decl || self is Stmt
 	}
+
+	var canHaveDanglingComment: Bool {
+		self is Decl || self is Stmt
+	}
 }
 
 struct CommentSet {
@@ -101,7 +105,7 @@ class CommentStore {
 			lastChild = child
 		}
 
-		if comment.line >= syntax.location.start.line, comment.line <= syntax.location.end.line {
+		if comment.line >= syntax.location.start.line, comment.line <= syntax.location.end.line, syntax.canHaveDanglingComment {
 			// It's inside the node, make it a dangling comment
 			commentsBySyntax[syntax.id, default: .init()].danglingComments.append(comment)
 			comments.removeFirst()
@@ -112,8 +116,16 @@ class CommentStore {
 	}
 
 	func get(for syntax: any Syntax, context: FormatterVisitor.Context) -> CommentSet {
+		var lastComment: Token?
+
 		while let comment = comments.first {
-			_ = handle(comment: comment, syntax: syntax, previous: context.lastNode)
+			let didHandle = handle(comment: comment, syntax: syntax, previous: context.lastNode)
+
+			if !didHandle, lastComment == comment {
+				break
+			}
+
+			lastComment = comment
 		}
 
 		return commentsBySyntax[syntax.id, default: .init()]

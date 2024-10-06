@@ -42,6 +42,7 @@ extension Token.Kind {
 		case .equalEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .bangEqual: .init(nil, { $0.binary($1, $2) }, .equality)
 		case .plus: .init(nil, { $0.binary($1, $2) }, .term)
+		case .percent: .init(nil, { $0.binary($1, $2) }, .term)
 		case .minus: .init({ $0.unary($1) }, { $0.binary($1, $2) }, .term)
 		case .star, .slash: .init(nil, { $0.binary($1, $2) }, .factor)
 		case .lessEqual,
@@ -54,6 +55,7 @@ extension Token.Kind {
 		case .pipePipe: .init(nil, { $0.or($1, $2) }, .or)
 		// Literals
 		case .false: .init({ $0.literal($1) }, nil, .none)
+		case .nil: .init({ $0.literal($1) }, nil, .none)
 		case .struct: .init({ $0.structExpr($1) }, nil, .none)
 		case .func: .init({ $0.literal($1) }, nil, .none)
 		case .true: .init({ $0.literal($1) }, nil, .none)

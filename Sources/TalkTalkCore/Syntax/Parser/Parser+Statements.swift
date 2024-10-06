@@ -8,8 +8,17 @@
 extension Parser {
 	mutating func ifStmt() -> any Stmt {
 		let ifToken = previous.unsafelyUnwrapped
+
+		let condition: any Syntax
+
+		// Special case optional unwrapping for now
+		if didMatch(.let) {
+			condition = letPattern()
+		} else {
+			condition = expr()
+		}
+
 		let i = startLocation(at: ifToken)
-		let condition = expr()
 		let consequence = blockStmt(false)
 
 		var elseToken: Token?
@@ -29,6 +38,17 @@ extension Parser {
 			location: endLocation(i),
 			children: [condition, consequence, alternative].compactMap { $0 }
 		)
+	}
+
+	mutating func letPattern() -> any Syntax {
+		let letToken = previous!
+		let i = startLocation(at: letToken)
+
+		guard let name = consume(.identifier) else {
+			return error(at: current, expected(.identifier))
+		}
+
+		return LetPatternSyntax(letToken: letToken, name: name, value: nil, id: nextID(), location: endLocation(i))
 	}
 
 	mutating func forStmt() -> any Stmt {

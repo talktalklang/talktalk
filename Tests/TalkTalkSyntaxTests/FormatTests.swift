@@ -23,6 +23,14 @@ struct FormatTests {
 		#expect(formatted == "1 + 2")
 	}
 
+	@Test("Preserves parens") func preservesParens() throws {
+		let formatted = format("""
+		4 * ( 1 +   2)
+		""")
+
+		#expect(formatted == "4 * (1 + 2)")
+	}
+
 	@Test("Basic comment with nothing else") func basicComment() throws {
 		let formatted = format(
 			"""
@@ -50,6 +58,24 @@ struct FormatTests {
 		#expect(formatted == """
 		// hello
 		func foo() {}
+		""")
+	}
+
+	@Test("Basic leading comment on first decl") func firstDecl() throws {
+		let formatted = format(
+			"""
+				// hello
+			func foo {}
+
+				func bar{}
+			"""
+		)
+
+		#expect(formatted == """
+		// hello
+		func foo() {}
+
+		func bar() {}
 		""")
 	}
 
@@ -323,7 +349,7 @@ struct FormatTests {
 		let formatted = format(
 			"""
 			func fib(n) {
-				if (n <= 1) {
+				if n <= 1 {
 					return n
 				}
 
@@ -373,6 +399,29 @@ struct FormatTests {
 		"""#)
 	}
 
+	@Test("Formats binary expr in a method") func binaryExpr() {
+		let formatted = format(#"""
+		struct Person {
+			func foo(key: Key, value: Value) {
+				if self.count 	 >= (   self.capacity * 80 ) { // Load
+					self.resize()
+				}
+			}
+		}
+		"""#)
+
+		#expect(formatted == #"""
+		struct Person {
+			func foo(key: Key, value: Value) {
+				if self.count >= (self.capacity * 80) {
+					// Load
+					self.resize()
+				}
+			}
+		}
+		"""#)
+	}
+
 	@Test("Formats protocol") func protocols() throws {
 		let formatted = format(#"""
 		protocol  Greetable   {
@@ -391,6 +440,46 @@ struct FormatTests {
 			var name: String // sup
 
 			func foo -> int
+		}
+		"""#)
+	}
+
+	@Test("Formats optionals") func optionals() throws {
+		let formatted = format(#"""
+		struct  Greetable   {
+					// the name
+			var   name: String? 			// sup
+
+
+
+								func  foo( )  -> 			int? {
+					123
+				}
+					}
+		"""#)
+
+		#expect(formatted == #"""
+		struct Greetable {
+			// the name
+			var name: String? // sup
+
+			func foo() -> int? {
+				123
+			}
+		}
+		"""#)
+	}
+
+	@Test("Formats conformance") func conformance() throws {
+		let formatted = format(#"""
+		struct Person :  Greetable  , Helloable {
+
+					}
+		"""#)
+
+		#expect(formatted == #"""
+		struct Person: Greetable, Helloable {
+
 		}
 		"""#)
 	}
