@@ -222,6 +222,8 @@ struct ContextVisitor: Visitor {
 				return kase.type.staticMember(named: name)
 			case let .instance(wrapper):
 				return wrapper.member(named: name)
+			case let .self(wrapped):
+				return wrapped.member(named: name)
 			case let .type(.protocol(type)):
 				return type.member(named: name)
 			default:
