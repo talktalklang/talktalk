@@ -943,13 +943,25 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: PropertyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		AnalyzedPropertyDecl(wrapped: expr, inferenceType: context.type(for: expr), environment: context)
 	}
 
 	public func visit(_ expr: MethodDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let params = try expr.params.accept(self, context) as? AnalyzedParamsExpr else {
+			return error(at: expr, "Could not cast \(expr.params) to AnalyzedParamsExpr", environment: context)
+		}
+
+		guard let body = try visit(expr.body, context) as? AnalyzedBlockStmt else {
+			return error(at: expr, "Could not cast \(expr.body) to AnalyzedBlockStmt", environment: context)
+		}
+
+		return AnalyzedMethodDecl(
+			wrapped: expr,
+			paramsAnalyzed: params,
+			bodyAnalyzed: body,
+			inferenceType: context.type(for: expr),
+			environment: context
+		)
 	}
 
 	// GENERATOR_INSERTION

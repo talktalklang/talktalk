@@ -122,7 +122,7 @@ public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConv
 		self.substitutions = substitutions
 	}
 
-	static func extract(from type: InferenceType) -> Instance<Kind>? {
+	public static func extract(from type: InferenceType) -> Instance<Kind>? {
 		guard case let .instance(wrapper) = type else {
 			return nil
 		}

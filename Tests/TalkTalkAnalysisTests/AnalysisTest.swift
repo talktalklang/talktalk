@@ -12,7 +12,7 @@ import TalkTalkCore
 public protocol AnalysisTest {}
 
 public extension AnalysisTest {
-	func analyze(_ string: String) async throws -> AnalysisModule {
+	func analyze(_ string: String) throws -> AnalysisModule {
 		let analyzer = try ModuleAnalyzer(
 			name: "AnalysisTest",
 			files: [.tmp(string, "Analysis.talk")],
@@ -23,13 +23,13 @@ public extension AnalysisTest {
 		return try analyzer.analyze()
 	}
 
-	func ast(_ string: String) async throws -> any AnalyzedSyntax {
-		let syntax = try await analyze(string).analyzedFiles[0].syntax
+	func ast(_ string: String) throws -> any AnalyzedSyntax {
+		let syntax = try analyze(string).analyzedFiles[0].syntax
 		return syntax.last!
 	}
 
-	func asts(_ string: String) async throws -> [any AnalyzedSyntax] {
-		let syntax = try await analyze(string).analyzedFiles[0].syntax
+	func asts(_ string: String) throws -> [any AnalyzedSyntax] {
+		let syntax = try analyze(string).analyzedFiles[0].syntax
 		return syntax
 	}
 }

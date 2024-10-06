@@ -27,7 +27,7 @@ extension Constraints {
 		}
 
 		func solve() throws {
-			let receiver = context.applySubstitutions(to: receiver)
+			let receiver = context.applySubstitutions(to: receiver).asInstance(with: [:])
 
 			guard case let .instance(receiver) = receiver else {
 				context.error("No `get` method found for subscript receiver \(receiver.debugDescription)", at: location)

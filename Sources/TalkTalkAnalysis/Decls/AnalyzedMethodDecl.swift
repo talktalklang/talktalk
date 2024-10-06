@@ -4,13 +4,8 @@ import TalkTalkCore
 
 public struct AnalyzedMethodDecl: MethodDecl, AnalyzedDecl {
   public let wrapped: MethodDeclSyntax
-	public var funcTokenAnalyzed: Token
-	public var modifiersAnalyzed: [Token]
-	public var nameAnalyzed: Token
-	public var paramsAnalyzed: ParamsExprSyntax
-	public var returnsAnalyzed: TypeExprSyntax
-	public var bodyAnalyzed: BlockStmtSyntax
-	public var isStaticAnalyzed: Bool
+	public var paramsAnalyzed: AnalyzedParamsExpr
+	public var bodyAnalyzed: AnalyzedBlockStmt
 
 	public var inferenceType: InferenceType
 	public var environment: Environment

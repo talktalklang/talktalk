@@ -4,9 +4,6 @@ import TalkTalkCore
 
 public struct AnalyzedPropertyDecl: PropertyDecl, AnalyzedDecl {
   public let wrapped: PropertyDeclSyntax
-	public var introducerAnalyzed: Token
-	public var nameAnalyzed: Token
-	public var defaultValueAnalyzed: (any Expr)?
 
 	public var inferenceType: InferenceType
 	public var environment: Environment

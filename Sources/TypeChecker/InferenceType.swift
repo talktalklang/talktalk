@@ -20,6 +20,14 @@ public indirect enum InferenceType {
 		return .instance(.enum(instance))
 	}
 
+	func asInstance(with substitutions: [TypeVariable: InferenceType]) -> InferenceType {
+		if case let .type(type) = self {
+			return .instance(type.instantiate(with: substitutions))
+		} else {
+			return self
+		}
+	}
+
 	// Something we'll fill in later.
 	case typeVar(TypeVariable)
 

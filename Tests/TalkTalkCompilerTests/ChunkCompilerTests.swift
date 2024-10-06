@@ -91,13 +91,13 @@ class CompilerTests: CompilerTest {
 
 	@discardableResult func compile(_ string: String) throws -> Chunk {
 		let parsed = try Parser.parse(.init(path: "chunkcompilertests.talk", text: string))
-		let inferencer = try Inferencer(moduleName: "CompilerTests", imports: []).infer(parsed)
+		let typer = try Typer(module: "CompilerTests", imports: []).solve(parsed)
 		let analyzed = try! SourceFileAnalyzer.analyze(
 			parsed,
 			in: Environment(
-				inferenceContext: inferencer,
+				inferenceContext: typer,
 				isModuleScope: true,
-				symbolGenerator: .init(moduleName: inferencer.moduleName, parent: nil)
+				symbolGenerator: .init(moduleName: typer.module, parent: nil)
 			)
 		)
 

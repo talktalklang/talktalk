@@ -36,12 +36,16 @@ public struct Typer {
 		return context
 	}
 
+	nonisolated(unsafe) static let stdlib: Context = {
+		try! Self.compileStandardLibrary()
+	}()
+
 	public init(module: String, imports: [Context], verbose: Bool = false, debugStdlib: Bool = false) throws {
 		// Prepend the standard library
 		var imports = imports
 
 		if module != "Standard" {
-			imports = try [Self.compileStandardLibrary(verbose: debugStdlib)] + imports
+			imports = [Self.stdlib] + imports
 		}
 
 		self.imports = imports
