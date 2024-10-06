@@ -20,7 +20,7 @@ struct ForLoopTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax, verbose: true, debugStdlib: true)
+		let context = try solve(syntax)
 		let forLoop = syntax[0]
 		#expect(context.find(forLoop) == .void)
 
