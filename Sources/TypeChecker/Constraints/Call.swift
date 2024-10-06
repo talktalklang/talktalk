@@ -42,6 +42,9 @@ extension Constraints {
 				try solveEnumCase(enumCase, freeVars: result.variables)
 			case .instance(.enumCase(let instance)):
 				try solveEnumCase(instance.type, freeVars: instance.substitutions)
+			case .instance(let instance):
+				// FIXME: This is a hack because ContextVisitor always returns instances from TypeExprSyntax
+				try context.unify(.instance(instance), self.result.asInstance(in: context, with: instance.substitutions), location)
 			default:
 				if retries > 3 {
 					context.error("\(callee) not callable", at: location)

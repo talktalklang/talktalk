@@ -24,6 +24,14 @@ struct SubscriptExprAnalyzer: Analyzer {
 		var getSymbol: Symbol? = nil
 		var setSymbol: Symbol? = nil
 		switch receiver.inferenceType {
+		case let .type(type):
+			if let member = type.member(named: "get"), case let .function(params, _) = context.inferenceContext.apply(member) {
+				getSymbol = .method(type.module, type.name, "get", params.map(\.mangled))
+			}
+
+			if let member = type.member(named: "set"), case let .function(params, _) = context.inferenceContext.apply(member) {
+				setSymbol = .method(type.module, type.name, "set", params.map(\.mangled))
+			}
 		case let .instance(instance):
 			if let member = instance.member(named: "get"), case let .function(params, _) = context.inferenceContext.apply(member) {
 				getSymbol = .method(instance.type.module, instance.type.name, "get", params.map(\.mangled))

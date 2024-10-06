@@ -168,6 +168,6 @@ public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConv
 	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {}
 
 	public var debugDescription: String {
-		"Instance<\(type.name) \(substitutions.debugDescription)>"
+		"Instance<\(type.name) \(substitutions.keys.debugDescription)>"
 	}
 }

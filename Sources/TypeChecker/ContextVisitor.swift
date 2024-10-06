@@ -358,7 +358,7 @@ struct ContextVisitor: Visitor {
 			)
 		)
 
-		return .resolved(.void)
+		return value
 	}
 
 	func visit(_ syntax: IdentifierExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -436,7 +436,12 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: WhileStmtSyntax, _ context: Context) throws -> InferenceResult {
-		.resolved(.void)
+		_ = try syntax.condition.accept(self, context)
+		_ = try syntax.body.accept(self, context)
+
+		context.define(syntax, as: .resolved(.void))
+
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: BlockStmtSyntax, _ context: Context) throws -> InferenceResult {

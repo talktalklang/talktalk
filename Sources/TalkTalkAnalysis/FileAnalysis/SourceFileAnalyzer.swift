@@ -481,6 +481,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			errors.append(.init(kind: .typeNotFound(err.description), location: expr.location))
 		}
 
+		if typeExpr?.inferenceType ?? (expr.value != nil ? context.type(for: expr.value!, default: .void) : .void) == .void {
+			print()
+		}
+
 		let decl = try AnalyzedVarDecl(
 			symbol: symbol,
 			// swiftlint:disable force_unwrapping
