@@ -28,6 +28,15 @@ struct StandardLibraryTests: TypeCheckerTest {
 		#expect(result == .base(.int))
 	}
 
+	@Test("Can instantiate Array") func instantiateArray() throws {
+		let parsed = try Parser.parse("Array<int>(count: 0, capacity: 1)")
+		let context = try solve(parsed)
+		let result = try #require(context[parsed[0]])
+
+		let instance = try #require(Instance<StructType>.extract(from: result))
+		#expect(instance.type.name == "Array")
+	}
+
 	@Test("Knows about array as a property subscript") func arrayPropertySubscript() throws {
 		let expr = try Parser.parse(
 			"""
