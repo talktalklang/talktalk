@@ -61,14 +61,14 @@ extension Constraints {
 			case .value(let value):
 				try context.unify(value, .base(type), location)
 			case .call(_, _):
-				print()
+				print("Unhandled \(#file):\(#line)")
 			}
 		}
 
 		private func solveEnumCase(_ instance: Instance<Enum.Case>, pattern: Pattern) throws {
 			switch pattern {
 			case .variable(_, _):
-				print()
+				print("Unhandled \(#file):\(#line)")
 			case .value(let value):
 				try context.unify(value, .pattern(pattern), location)
 			case .call(_, let args):
@@ -83,9 +83,9 @@ extension Constraints {
 		private func solveEnumCase(_ kase: Enum.Case, pattern: Pattern) throws {
 			switch pattern {
 			case .variable(_, _):
-				print()
+				print("Unhandled \(#file):\(#line)")
 			case .value(_):
-				print()
+				print("Unhandled \(#file):\(#line)")
 			case .call(_, let args):
 				for (param, pattern) in zip(kase.attachedTypes, args) {
 					let param = context.applySubstitutions(to: param)
@@ -100,14 +100,14 @@ extension Constraints {
 
 			switch pattern {
 			case .variable(_, _):
-				print()
+				print("Unhandled \(#file):\(#line)")
 			case .value(let value):
 				try context.unify(value, .pattern(pattern), location)
 			case .call(.resolved(.type(.enumCase(let kase))), _):
 				let instance = kase.instantiate(with: substitutions)
 				try solveEnumCase(instance, pattern: pattern)
 			default:
-				print()
+				print("Unhandled \(#file):\(#line)")
 			}
 		}
 

@@ -72,7 +72,7 @@ struct CommentStoreTests {
 
 		let block = ast[0].cast(FuncExprSyntax.self).body
 		let set = store.get(for: block, context: .init(kind: .topLevel))
-print()
+
 		#expect(set.danglingComments == [
 			comments[0],
 		])

@@ -101,7 +101,7 @@ struct OptionalsTest: TypeCheckerTest {
 			.cast(IfStmtSyntax.self).consequence.stmts[0]
 			.cast(ExprStmtSyntax.self).expr
 			.cast(VarExprSyntax.self)
-		print()
+
 		#expect(context.find(varExpr) == .base(.int))
 	}
 

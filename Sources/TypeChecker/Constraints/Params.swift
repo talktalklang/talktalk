@@ -24,7 +24,7 @@ extension Constraints {
 		}
 
 		func solve() throws {
-			print()
+			print("Unhandled \(#file):\(#line)")
 		}
 
 		func parameters(for type: InferenceResult, in context: Context, location: SourceLocation) -> [InferenceResult] {
