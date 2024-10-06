@@ -22,9 +22,8 @@ enum TypeError: Error, LocalizedError {
 }
 
 public struct Typer {
-	let visitor = InferenceVisitor()
 	let imports: [Context]
-	let context: Context
+	public let context: Context
 
 	static func compileStandardLibrary(verbose: Bool = false) throws -> Context {
 		let files = Library.standard.files.flatMap { try! Parser.parse($0) }
@@ -37,7 +36,7 @@ public struct Typer {
 		return context
 	}
 
-	init(module: String, imports: [Context], verbose: Bool = false, debugStdlib: Bool = false) throws {
+	public init(module: String, imports: [Context], verbose: Bool = false, debugStdlib: Bool = false) throws {
 		// Prepend the standard library
 		var imports = imports
 
@@ -55,7 +54,7 @@ public struct Typer {
 		)
 	}
 
-	func solve(_ syntax: [any Syntax]) throws -> Context {
+	public func solve(_ syntax: [any Syntax]) throws -> Context {
 		let visitor = ContextVisitor()
 		visitor.findNames(syntax: syntax, context: context)
 
@@ -606,7 +605,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
-		var structType = StructType(name: syntax.name)
+		var structType = StructType(name: syntax.name, module: context.module)
 		let structContext = context.addChild(lexicalScope: structType)
 
 		ensureConformances(syntax.conformances, for: structType, in: context)
@@ -715,7 +714,7 @@ struct ContextVisitor: Visitor {
 
 	func visit(_ syntax: ProtocolDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let name = syntax.name.lexeme
-		let protocolType = ProtocolType(name: name)
+		let protocolType = ProtocolType(name: name, module: context.module)
 		let protocolContext = context.addChild(lexicalScope: protocolType)
 
 		let variables = syntax.typeParameters.map {
@@ -773,7 +772,7 @@ struct ContextVisitor: Visitor {
 
 	func visit(_ syntax: EnumDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let name = syntax.nameToken.lexeme
-		var enumType = Enum(name: name, cases: [:])
+		var enumType = Enum(name: name, module: context.module, cases: [:])
 		let enumContext = context.addChild(lexicalScope: enumType)
 
 		ensureConformances(syntax.conformances, for: enumType, in: context)
@@ -815,6 +814,7 @@ struct ContextVisitor: Visitor {
 		enumType.cases[name] = try Enum.Case(
 			type: enumType,
 			name: name,
+			module: context.module,
 			attachedTypes: syntax.attachedTypes.map { try $0.accept(self, context) }
 		)
 

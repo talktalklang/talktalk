@@ -16,7 +16,7 @@ struct StructDeclAnalyzer: Analyzer {
 
 	func analyze() throws -> any AnalyzedSyntax {
 		let inferenceType = context.type(for: decl)
-		guard let type = TypeChecker.StructTypeV1.extractType(from: .resolved(inferenceType))
+		guard let type = StructType.extract(from: inferenceType)
 		else {
 			return error(at: decl, "did not find struct type from \(decl.name), got \(inferenceType)", environment: context, expectation: .none)
 		}
@@ -108,9 +108,9 @@ struct StructDeclAnalyzer: Analyzer {
 						source: .internal
 					),
 					params: structType.properties.values.map(\.inferenceType),
-					inferenceType: .function(structType.properties.values.map { .resolved($0.inferenceType) }, .resolved(.instantiatable(.struct(type)))),
+					inferenceType: .function(structType.properties.values.map { .resolved($0.inferenceType) }, .resolved(.type(.struct(type)))),
 					location: decl.location,
-					returnTypeID: .instanceV1(.synthesized(type)),
+					returnTypeID: .instance(.struct(Instance(type: type))),
 					isSynthetic: true
 				)
 			)
@@ -121,7 +121,7 @@ struct StructDeclAnalyzer: Analyzer {
 		bodyContext.define(
 			local: "self",
 			as: AnalyzedVarExpr(
-				inferenceType: .instanceV1(.synthesized(type)),
+				inferenceType: .instance(.struct(Instance(type: type))),
 				wrapped: VarExprSyntax(
 					id: -8,
 					token: .synthetic(.self),
@@ -132,7 +132,7 @@ struct StructDeclAnalyzer: Analyzer {
 				analysisErrors: [],
 				isMutable: false
 			),
-			type: .instanceV1(.synthesized(type)),
+			type: .instance(.struct(Instance(type: type))),
 			isMutable: false
 		)
 
@@ -154,10 +154,10 @@ struct StructDeclAnalyzer: Analyzer {
 		let bodyAnalyzed = try visitor.visit(decl.body, bodyContext)
 
 		var errors: [AnalysisError] = []
-		for error in context.inferenceContext.errors {
+		for error in context.inferenceContext.diagnostics {
 			errors.append(
 				.init(
-					kind: .inferenceError(error.kind),
+					kind: .unknownError(error.message),
 					location: error.location
 				)
 			)

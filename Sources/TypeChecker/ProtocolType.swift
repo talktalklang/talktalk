@@ -7,14 +7,24 @@
 
 import OrderedCollections
 
-public final class ProtocolType: MemberOwner, Instantiatable {
+public final class ProtocolType: MemberOwner, Instantiatable, Hashable, Equatable {
+	public static func ==(lhs: ProtocolType, rhs: ProtocolType) -> Bool {
+		lhs.name == rhs.name
+	}
+
 	public var typeParameters: OrderedDictionary<String, TypeVariable> = [:]
 	public var members: [String: InferenceResult] = [:]
 
 	public let name: String
+	public let module: String
 
-	init(name: String) {
+	init(name: String, module: String) {
 		self.name = name
+		self.module = module
+	}
+
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(name)
 	}
 
 	static func extract(from type: InferenceType) -> ProtocolType? {

@@ -10,7 +10,7 @@ import TypeChecker
 
 public extension Environment {
 	struct Capture: CustomStringConvertible {
-		public static func any(_ name: String, context: InferenceContext) -> Capture {
+		public static func any(_ name: String, context: Context) -> Capture {
 			Capture(
 				name: name,
 				binding: .init(

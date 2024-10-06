@@ -5,8 +5,8 @@
 //  Created by Pat Nakajima on 8/2/24.
 //
 
-import TalkTalkAnalysis
 import TalkTalkBytecode
+import TalkTalkAnalysis
 import TalkTalkCore
 import TypeChecker
 
@@ -84,15 +84,16 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedCallExpr, _ chunk: Chunk) throws {
-		if case let .patternV1(pattern) = expr.inferenceType {
+		if case let .pattern(pattern) = expr.inferenceType {
 			for (i, arg) in expr.argsAnalyzed.enumerated() {
-				switch pattern.arguments[i] {
-				case .value:
-					try arg.accept(self, chunk)
-				case let .variable(name, _):
-					chunk.emit(.opcode(.binding), line: arg.location.line)
-					chunk.emit(.symbol(.value(module.name, name)), line: arg.location.line)
-				}
+//				switch pattern.arguments[i] {
+//				case .value:
+//					try arg.accept(self, chunk)
+//				case let .variable(name, _):
+//					chunk.emit(.opcode(.binding), line: arg.location.line)
+//					chunk.emit(.symbol(.value(module.name, name)), line: arg.location.line)
+//				}
+				fatalError()
 			}
 
 			try expr.calleeAnalyzed.accept(self, chunk)
@@ -461,7 +462,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				let symbol = Symbol.method(module.name, name, "init", decl.params.params.map {
-					module.analysisModule.inferenceContext.lookup(syntax: $0)?.mangled ?? "_"
+					module.analysisModule.inferenceContext[$0]?.mangled ?? "_"
 				})
 
 				let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)
@@ -489,9 +490,9 @@ public class ChunkCompiler: AnalyzedVisitor {
 				}
 
 				// Make sure the instance is at the top of the stack and return it
-				declChunk.emit(opcode: .getLocal, line: UInt32(decl.location.end.line))
-				declChunk.emit(.symbol(.value(module.name, "self")), line: UInt32(decl.location.end.line))
-				declChunk.emit(opcode: .returnValue, line: UInt32(decl.location.end.line))
+				declChunk.emit(opcode: Opcode.getLocal, line: UInt32(decl.location.end.line))
+				declChunk.emit(Code.symbol(.value(module.name, "self")), line: UInt32(decl.location.end.line))
+				declChunk.emit(opcode: Opcode.returnValue, line: UInt32(decl.location.end.line))
 
 				guard let analysisMethod = expr.structType.methods["init"] else {
 					throw CompilerError.typeError("No `init` found for \(expr.name)")
@@ -781,7 +782,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 	}
 
 	public func visit(_ expr: AnalyzedEnumMemberExpr, _ chunk: Chunk) throws {
-		guard case let .enumCaseV1(enumCase) = expr.inferenceType else {
+		guard case let .instance(.enumCase(enumCase)) = expr.inferenceType else {
 			throw CompilerError.unknownIdentifier("\(expr.description)")
 		}
 
@@ -932,7 +933,7 @@ public class ChunkCompiler: AnalyzedVisitor {
 		}
 
 		let symbol = Symbol.method(module.name, type, declName, decl.params.params.map {
-			module.analysisModule.inferenceContext.lookup(syntax: $0)?.mangled ?? "_"
+			module.analysisModule.inferenceContext[$0]?.mangled ?? "_"
 		})
 
 		let declCompiler = ChunkCompiler(module: module, scopeDepth: scopeDepth + 1)

@@ -37,7 +37,7 @@ public struct AnalyzedParam: Param, AnalyzedExpr, Typed {
 }
 
 public extension Param where Self == AnalyzedParam {
-	static func int(_ name: String, in context: InferenceContext) -> AnalyzedParam {
+	static func int(_ name: String, in context: Context) -> AnalyzedParam {
 		let t = InferenceType.base(.int)
 		return AnalyzedParam(
 			type: t,

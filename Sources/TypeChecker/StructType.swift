@@ -9,6 +9,7 @@ import OrderedCollections
 
 public final class StructType: MemberOwner, Instantiatable, Equatable, CustomDebugStringConvertible {
 	public let name: String
+	public let module: String
 	public var members: [String: InferenceResult]
 	public var staticMembers: [String: InferenceResult]
 	public var typeParameters: OrderedDictionary<String, TypeVariable> = [:]
@@ -17,13 +18,14 @@ public final class StructType: MemberOwner, Instantiatable, Equatable, CustomDeb
 		(lhs.name, lhs.members) == (rhs.name, rhs.members)
 	}
 
-	init(name: String, members: [String : InferenceResult] = [:], staticMembers: [String: InferenceResult] = [:]) {
+	init(name: String, module: String, members: [String : InferenceResult] = [:], staticMembers: [String: InferenceResult] = [:]) {
 		self.name = name
+		self.module = module
 		self.members = members
 		self.staticMembers = staticMembers
 	}
 
-	static func extract(from type: InferenceType) -> StructType? {
+	public static func extract(from type: InferenceType) -> StructType? {
 		if case let .type(.struct(type)) = type {
 			return type
 		}

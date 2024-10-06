@@ -32,13 +32,13 @@ extension Analyzer {
 		return []
 	}
 
-	func errors(for syntax: any Syntax, in context: InferenceContext) -> [AnalysisError] {
+	func errors(for syntax: any Syntax, in context: Context) -> [AnalysisError] {
 		var errors: [AnalysisError] = []
-		for error in context.errors {
+		for error in context.diagnostics {
 			if syntax.location.contains(error.location) {
 				errors.append(
 					.init(
-						kind: .inferenceError(error.kind),
+						kind: .unknownError(error.message),
 						location: error.location
 					)
 				)

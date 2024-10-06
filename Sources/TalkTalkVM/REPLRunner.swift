@@ -26,7 +26,7 @@ public class REPLRunner: Copyable {
 	var chunk: Chunk
 	var compiler: ChunkCompiler
 	var compilingModule: CompilingModule
-	var inferencer: Inferencer
+	var typer: Typer
 
 	public static func run() async throws {
 		let runner = try await REPLRunner()
@@ -74,8 +74,8 @@ public class REPLRunner: Copyable {
 
 		self.module = try moduleCompiler.compile(mode: .executable)
 		self.analysis = analysisModule
-		self.inferencer = try Inferencer(moduleName: "REPL", imports: [])
-		self.environment = Environment(inferenceContext: inferencer.context, symbolGenerator: .init(moduleName: "REPL", parent: nil))
+		self.typer = try Typer(module: "REPL", imports: [])
+		self.environment = Environment(inferenceContext: typer.context, symbolGenerator: .init(moduleName: "REPL", parent: nil))
 		environment.exprStmtExitBehavior = .none
 		self.compilingModule = CompilingModule(
 			name: "REPL",
@@ -92,7 +92,7 @@ public class REPLRunner: Copyable {
 		if line.isEmpty { return .error("No input") }
 		let parsed = try Parser.parse(SourceFile(path: "<repl>", text: line))
 
-		_ = inferencer.infer(parsed)
+		_ = try typer.solve(parsed)
 
 		let analyzed = try SourceFileAnalyzer.analyze(parsed, in: environment)
 		for syntax in analyzed {

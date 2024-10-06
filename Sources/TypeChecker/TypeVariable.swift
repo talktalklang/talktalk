@@ -5,6 +5,8 @@
 //  Created by Pat Nakajima on 8/25/24.
 //
 
+public typealias VariableID = Int
+
 public struct TypeVariable: Equatable, Hashable, CustomStringConvertible, CustomDebugStringConvertible, Sendable {
 	var id: VariableID
 	var name: String?

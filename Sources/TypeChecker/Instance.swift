@@ -49,7 +49,7 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 		}
 	}
 
-	func member(named name: String) -> InferenceResult? {
+	public func member(named name: String) -> InferenceResult? {
 		switch self {
 		case .struct(let instance):
 			instance.member(named: name)
@@ -59,6 +59,19 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 			instance.member(named: name)
 		case .protocol(let instance):
 			instance.member(named: name)
+		}
+	}
+
+	public var members: [String: InferenceResult] {
+		switch self {
+		case .struct(let instance):
+			instance.members
+		case .enum(let instance):
+			instance.members
+		case .enumCase(let instance):
+			instance.members
+		case .protocol(let instance):
+			instance.members
 		}
 	}
 
@@ -85,7 +98,7 @@ public enum InstanceWrapper: CustomDebugStringConvertible {
 		return nil
 	}
 
-	var type: any Instantiatable {
+	public var type: any Instantiatable {
 		switch self {
 		case .struct(let instance):
 			return instance.type
@@ -104,7 +117,7 @@ public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConv
 	public var substitutions: [TypeVariable: InferenceType]
 	public var name: String { type.name }
 
-	init(type: Kind, substitutions: [TypeVariable : InferenceType] = [:]) {
+	public init(type: Kind, substitutions: [TypeVariable : InferenceType] = [:]) {
 		self.type = type
 		self.substitutions = substitutions
 	}
@@ -138,6 +151,10 @@ public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConv
 		default:
 			fatalError("Unexpected InstanceWrapper: \(self)")
 		}
+	}
+
+	public var members: [String: InferenceResult] {
+		type.members
 	}
 
 	public func member(named name: String) -> InferenceResult? {

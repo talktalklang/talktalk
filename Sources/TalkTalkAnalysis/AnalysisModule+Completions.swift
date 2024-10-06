@@ -94,20 +94,14 @@ public extension AnalysisModule {
 		for match in matches {
 			guard let match = match as? AnalyzedExprStmt,
 			      let memberExpr = match.exprAnalyzed as? AnalyzedMemberExpr,
-			      case let .instanceV1(instance) = memberExpr.receiverAnalyzed.inferenceType
+			      case let .instance(instance) = memberExpr.receiverAnalyzed.inferenceType
 			else {
 				continue
 			}
 
-			for prop in instance.type.properties.keys {
+			for prop in instance.members.keys {
 				if prop.starts(with: memberExpr.property), !prop.starts(with: "_") {
 					result.insert(.init(value: prop, kind: .property))
-				}
-			}
-
-			for prop in instance.type.methods.keys {
-				if prop.starts(with: memberExpr.property), prop != "init", !prop.starts(with: "_") {
-					result.insert(.init(value: prop, kind: .method))
 				}
 			}
 		}
@@ -139,7 +133,7 @@ public extension AnalysisModule {
 						let kind: Completion.Kind = switch binding.type {
 						case .function:
 							.function
-						case .instantiatable:
+						case .type:
 							.type
 						default:
 							.variable
