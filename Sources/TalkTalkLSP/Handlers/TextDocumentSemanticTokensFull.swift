@@ -427,13 +427,26 @@ public struct SemanticTokensVisitor: Visitor {
 	}
 
 	public func visit(_ expr: PropertyDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		var result = [
+			make(.keyword, from: expr.introducer),
+		] + expr.modifiers.map { make(.keyword, from: $0) }
+
+		if let value = expr.defaultValue {
+			try result.append(contentsOf: value.accept(self, context))
+		}
+
+		return result
 	}
 
 	public func visit(_ expr: MethodDeclSyntax, _ context: Context) throws -> [RawSemanticToken] {
-		#warning("TODO")
-		return []
+		var results = [make(.keyword, from: expr.funcToken)] + expr.modifiers.map { make(.keyword, from: $0) }
+
+		results.append(make(.method, from: expr.nameToken))
+
+		try results.append(contentsOf: expr.params.accept(self, context))
+		try results.append(contentsOf: expr.body.accept(self, context))
+
+		return results
 	}
 
 	// GENERATOR_INSERTION

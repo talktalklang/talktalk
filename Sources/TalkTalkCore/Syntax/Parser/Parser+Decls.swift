@@ -233,6 +233,7 @@ public extension Parser {
 			name: name,
 			typeAnnotation: typeAnnotation,
 			defaultValue: defaultValue,
+			modifiers: modifiers,
 			isStatic: isStatic,
 			id: nextID(),
 			location: endLocation(i)

@@ -9,6 +9,7 @@ public struct PropertyDeclSyntax: PropertyDecl {
 	public var name: Token
 	public var typeAnnotation: TypeExprSyntax?
 	public var defaultValue: (any Expr)?
+	public var modifiers: [Token]
 	public var isStatic: Bool
 
   // A unique identifier
