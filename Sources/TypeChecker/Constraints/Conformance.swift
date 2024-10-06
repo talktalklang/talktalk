@@ -33,9 +33,9 @@ struct ConformanceRequirement: Hashable {
 }
 
 extension Constraints {
-	struct Conformance<T: MemberOwner>: Constraint {
+	struct Conformance: Constraint {
 		let context: Context
-		let type: T
+		let type: InferenceResult
 		let conformsTo: InferenceResult
 		var retries: Int = 0
 		let location: SourceLocation
@@ -49,14 +49,28 @@ extension Constraints {
 			return "Conformance(type: \(type.debugDescription), type: \(conformsTo.debugDescription), location: \(location))"
 		}
 
+		func extract(type: InferenceResult) throws -> InstanceWrapper {
+			guard case let .instance(type) = type.asInstance(in: context, with: [:]) else {
+				throw TypeError.typeError("Unable to extract type from \(type)")
+			}
+
+			return type
+		}
+
 		func solve() throws {
-			guard case let .type(.protocol(conformsTo)) = context.applySubstitutions(to: conformsTo) else {
-				context.error("Cannot conform to non protocol: \(conformsTo)", at: location)
+			let conformsTo = context.applySubstitutions(to: conformsTo.asInstance(in: context, with: [:]))
+
+			guard case let .instance(.protocol(conformsToInstance)) = conformsTo else {
+				context.error("Cannot conform to non protocol: \(conformsTo.debugDescription)", at: location)
 				return
 			}
 
+			let instance = try extract(type: type)
+			let type = instance.type
+			let conformsToType = conformsToInstance.type
+
 			var missingRequirements: Set<ConformanceRequirement> = []
-			for requirement in conformsTo.requirements(in: context) {
+			for requirement in conformsToType.requirements(in: context) {
 				if !requirement.satisfied(by: type, in: context) {
 					missingRequirements.insert(requirement)
 				}
@@ -67,11 +81,18 @@ extension Constraints {
 			}
 
 			let subdiagnostics = missingRequirements.map { requirement in
-				Diagnostic(message: "Missing \(requirement.name): \(requirement.type.description)", severity: .error, subdiagnostics: [], location: location)
-			}
-			let diagnostic = Diagnostic(message: "\(type.name) does not conform to \(conformsTo.name)", severity: .error, subdiagnostics: subdiagnostics, location: location)
+				var message = "Missing \(requirement.name): \(requirement.type.debugDescription)."
 
-			context.diagnostics.append(diagnostic)
+				if let member = type.member(named: requirement.name) {
+					message += " Did you mean \(member.debugDescription)"
+				}
+
+				return Diagnostic(message: message, severity: .error, subdiagnostics: [], location: location)
+			}
+			
+			let diagnostic = Diagnostic(message: "\(type.name) does not conform to \(conformsToType.name)", severity: .error, subdiagnostics: subdiagnostics, location: location)
+
+			context.diagnostic(diagnostic)
 		}
 	}
 }

@@ -11,7 +11,7 @@ public struct SourceLocation: Sendable, Equatable, Hashable, Codable, CustomStri
 	public let end: Token
 
 	public var description: String {
-		"\(path), ln: \(start.line), col: \(start.column)"
+		"\(path.components(separatedBy: "/").last ?? path), ln: \(start.line), col: \(start.column)"
 	}
 
 	public var line: UInt32 {

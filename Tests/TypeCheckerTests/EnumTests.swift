@@ -195,7 +195,7 @@ struct EnumTests: TypeCheckerTest {
 		#expect(context.find(fn) == .function([], .resolved(.base(.bool))))
 	}
 
-	@Test("Can infer protocol conformance", .disabled("waiting on protocols")) func protocols() throws {
+	@Test("Can infer protocol conformance") func protocols() throws {
 		let syntax = try Parser.parse(
 			"""
 			protocol Greetable {
@@ -219,9 +219,7 @@ struct EnumTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let ret = context[syntax[3]]!.asType(in: context)
-
-		#expect(ret == .base(.string))
+		let context = try solve(syntax)
+		#expect(context.find(syntax[3]) == .base(.string))
 	}
 }

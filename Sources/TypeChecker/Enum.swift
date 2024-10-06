@@ -9,8 +9,6 @@ import OrderedCollections
 
 public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertible {
 	public struct Case: Instantiatable, MemberOwner, CustomDebugStringConvertible {
-		public var typeParameters: OrderedDictionary<String, TypeVariable> { type.typeParameters }
-
 		public let type: Enum
 		public let name: String
 		public let attachedTypes: [InferenceResult]
@@ -33,6 +31,11 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 			}
 
 			return nil
+		}
+
+		public var typeParameters: OrderedDictionary<String, TypeVariable> {
+			get { type.typeParameters }
+			set { }
 		}
 
 		public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {

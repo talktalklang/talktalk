@@ -16,9 +16,10 @@ extension TypeCheckerTest {
 		imports: [Context] = [],
 		expectedDiagnostics: Int = 0,
 		verbose: Bool = false,
+		debugStdlib: Bool = false,
 		sourceLocation _: Testing.SourceLocation = #_sourceLocation
 	) throws -> Context {
-		let context = try Typer(module: "TypeCheckerTests", imports: imports, verbose: verbose).solve(syntax)
+		let context = try Typer(module: "TypeCheckerTests", imports: imports, verbose: verbose, debugStdlib: debugStdlib).solve(syntax)
 		#expect(context.diagnostics.count == expectedDiagnostics, "expected \(expectedDiagnostics) diagnostics. got \(context.diagnostics.count): \(context.diagnostics)")
 		return context
 	}

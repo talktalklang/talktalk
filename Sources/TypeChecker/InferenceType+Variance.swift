@@ -82,14 +82,10 @@ extension InferenceType {
 		switch (self, rhs) {
 		case let (.function(lhsParams, lhsReturns), .function(rhsParams, rhsReturns)):
 			return lhsParams.covariant(with: rhsParams, in: context) && lhsReturns.covariant(with: rhsReturns, in: context)
-		case let (lhs as any InstantiatableV1, .instantiatable(.protocol(protocolType))):
-			return protocolType.missingConformanceRequirements(for: lhs, in: lhs.context).isEmpty
-		case let (.instanceV1(lhs), .instanceV1(.protocol(rhs))):
-			return rhs.type.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
-		case let (.instanceV1(lhs), .instantiatable(.protocol(protocolType))):
-			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
-		case let (.enumCaseV1(lhs), .instantiatable(.protocol(protocolType))):
-			return protocolType.missingConformanceRequirements(for: lhs.type, in: lhs.type.context).isEmpty
+		case let (lhs as any MemberOwner, .type(.protocol(protocolType))):
+			return protocolType.missingConformanceRequirements(for: lhs, in: context).isEmpty
+		case let (.instance(lhs), .instance(.protocol(rhs))):
+			return rhs.type.missingConformanceRequirements(for: lhs.type, in: context).isEmpty
 		case let (.typeVar, t), let (t, .typeVar):
 			context.addConstraint(
 				Constraints.Equality(context: context, lhs: .resolved(self), rhs: .resolved(t), location: [.synthetic(.less)])

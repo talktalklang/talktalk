@@ -11,6 +11,7 @@ extension Constraints {
 	struct Unwrap: Constraint {
 		let context: Context
 		let value: InferenceResult
+		let unwrapped: TypeVariable
 		let location: SourceLocation
 		var retries: Int = 0
 
@@ -24,7 +25,19 @@ extension Constraints {
 		}
 
 		func solve() throws {
-			
+			let type = context.applySubstitutions(to: value)
+
+			switch type {
+			case .instance(.enum(let instance)):
+				let wrapped = instance.type.typeParameters["Wrapped"]!
+				try context.bind(unwrapped, to: instance.substitutions[wrapped]!)
+			default:
+				if retries < 3 {
+					context.retry(self)
+				} else {
+					context.error("Result not optional: \(value.debugDescription)", at: location)
+				}
+			}
 		}
 	}
 }

@@ -49,7 +49,7 @@ class Context {
 	var explicitReturns: [InferenceResult] = []
 
 	// Diagnostics that are accumulated during checking
-	var diagnostics: [Diagnostic] = []
+	private(set) var diagnostics: [Diagnostic] = []
 
 	// Should we log everything?
 	var verbose: Bool = false
@@ -92,8 +92,24 @@ class Context {
 		} else {
 			log(message + " \(file):\(line)", prefix: " ! ")
 
-			diagnostics.append(
+			self.diagnostic(
 				Diagnostic(message: message, severity: .error, location: location)
+			)
+		}
+	}
+
+	func diagnostic(_ diagnostic: Diagnostic, file: String = #file, line: UInt32 = #line) {
+		if let parent {
+			parent.diagnostic(diagnostic, file: file, line: line)
+		} else {
+			log(diagnostic.message + " \(file):\(line)", prefix: " ! ")
+
+			for subdiagnostic in diagnostic.subdiagnostics {
+				log(subdiagnostic.message + " \(file):\(line)", prefix: " ! - ")
+			}
+
+			diagnostics.append(
+				diagnostic
 			)
 		}
 	}
@@ -160,6 +176,14 @@ class Context {
 		variables.insert(id)
 		log("Fresh type variable T(\(id), \(name)) \(file):\(line)", prefix: " + ")
 		return TypeVariable(name, id, isGeneric)
+	}
+
+	func builtin(named name: String) throws -> InferenceResult {
+		if let result = type(named: name) {
+			return result
+		} else {
+			throw TypeError.typeError("Could not find type named `\(name)`")
+		}
 	}
 
 	func type(named name: String, includeParents: Bool = true, includeBuiltins: Bool = true) -> InferenceResult? {

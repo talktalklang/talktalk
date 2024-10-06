@@ -117,6 +117,20 @@ public class Instance<Kind: Instantiatable & MemberOwner>: CustomDebugStringConv
 		return wrapper.instance(ofType: Kind.self)
 	}
 
+	func relatedType(named name: String) -> InferenceType? {
+		if let param = type.typeParameters[name], let type = substitutions[param] {
+			return type
+		}
+
+		for (typeVariable, type) in substitutions {
+			if typeVariable.name == name {
+				return type
+			}
+		}
+
+		return nil
+	}
+
 	public var wrapped: InstanceWrapper {
 		switch self {
 		case let instance as Instance<StructType>:

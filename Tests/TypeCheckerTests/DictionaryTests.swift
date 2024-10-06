@@ -18,9 +18,9 @@ struct DictionaryTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let dict = try context.get(syntax[0])
-		let dictInstance = InstanceV1<StructTypeV1>.extract(from: dict.asType(in: context))!
+		let context = try solve(syntax)
+		let dict = context.find(syntax[0])!
+		let dictInstance = Instance<StructType>.extract(from: dict)!
 		#expect(dictInstance.type.name == "Dictionary")
 		#expect(dictInstance.relatedType(named: "Key") == .base(.string))
 		#expect(dictInstance.relatedType(named: "Value") == .base(.int))
@@ -33,10 +33,10 @@ struct DictionaryTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let result = try context.get(syntax[0])
+		let context = try solve(syntax)
+		let result = context.find(syntax[0])
 
-		#expect(result == .resolved(.optionalV1(.base(.int))))
+		#expect(result == .optional(.base(.int)))
 	}
 
 	@Test("Types a subscript set") func typesSubscriptSet() throws {
@@ -47,8 +47,8 @@ struct DictionaryTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try infer(syntax)
-		let result = try context.get(syntax[1])
-		#expect(result == .resolved(.void))
+		let context = try solve(syntax)
+		let result = context.find(syntax[1])
+		#expect(result == .void)
 	}
 }

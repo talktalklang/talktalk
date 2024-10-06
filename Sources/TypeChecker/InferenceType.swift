@@ -8,10 +8,23 @@ import Foundation
 import TalkTalkCore
 import OrderedCollections
 
-public enum TypeWrapper {
+public enum TypeWrapper: MemberOwner {
 	case `struct`(StructType), `enum`(Enum), enumCase(Enum.Case), `protocol`(ProtocolType)
 
-	var name: String {
+	public var debugDescription: String {
+		switch self {
+		case .struct(let structType):
+			structType.debugDescription
+		case .enum(let `enum`):
+			`enum`.debugDescription
+		case .enumCase(let `case`):
+			`case`.debugDescription
+		case .protocol(let protocolType):
+			protocolType.debugDescription
+		}
+	}
+
+	public var name: String {
 		switch self {
 		case .struct(let type):
 			type.name
@@ -24,16 +37,22 @@ public enum TypeWrapper {
 		}
 	}
 
-	var typeParameters: OrderedDictionary<String, TypeVariable> {
-		switch self {
-		case .struct(let type):
-			type.typeParameters
-		case .enum(let type):
-			type.typeParameters
-		case .enumCase(let type):
-			type.typeParameters
-		case .protocol(let type):
-			type.typeParameters
+	public var typeParameters: OrderedDictionary<String, TypeVariable> {
+		get {
+			switch self {
+			case .struct(let type):
+				type.typeParameters
+			case .enum(let type):
+				type.typeParameters
+			case .enumCase(let type):
+				type.typeParameters
+			case .protocol(let type):
+				type.typeParameters
+			}
+		}
+
+		set {
+			fatalError("Type parameters must be set on wrapped types directly")
 		}
 	}
 
@@ -50,7 +69,7 @@ public enum TypeWrapper {
 		}
 	}
 
-	func staticMember(named name: String) -> InferenceResult? {
+	public func staticMember(named name: String) -> InferenceResult? {
 		switch self {
 		case .struct(let type):
 			type.staticMember(named: name)
@@ -61,6 +80,23 @@ public enum TypeWrapper {
 		case .protocol(let type):
 			type.staticMember(named: name)
 		}
+	}
+
+	public func member(named name: String) -> InferenceResult? {
+		switch self {
+		case .struct(let type):
+			type.member(named: name)
+		case .enum(let type):
+			type.member(named: name)
+		case .enumCase(let type):
+			type.member(named: name)
+		case .protocol(let type):
+			type.member(named: name)
+		}
+	}
+
+	public func add(member: InferenceResult, named name: String, isStatic: Bool) throws {
+		fatalError("Members must be added on concrete wrapped types")
 	}
 }
 

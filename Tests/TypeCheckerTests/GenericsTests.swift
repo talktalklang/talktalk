@@ -89,7 +89,7 @@ struct GenericsTests: TypeCheckerTest {
 			"""
 		)
 
-		let context = try solve(syntax)
+		let context = try solve(syntax, verbose: true)
 		#expect(context[syntax[4]] == .base(.int))
 	}
 

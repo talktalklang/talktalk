@@ -31,6 +31,18 @@ public final class ProtocolType: MemberOwner, Instantiatable {
 		Instance<ProtocolType>(type: self, substitutions: substitutions)
 	}
 
+	func missingConformanceRequirements<T: MemberOwner>(for type: T, in context: Context) -> Set<ConformanceRequirement> {
+		var missingRequirements: Set<ConformanceRequirement> = []
+
+		for requirement in requirements(in: context) {
+			if !requirement.satisfied(by: type, in: context) {
+				missingRequirements.insert(requirement)
+			}
+		}
+
+		return missingRequirements
+	}
+
 	public func member(named name: String) -> InferenceResult? {
 		members[name]
 	}

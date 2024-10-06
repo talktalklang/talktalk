@@ -9,7 +9,7 @@ import OrderedCollections
 
 public protocol MemberOwner: CustomDebugStringConvertible {
 	var name: String { get }
-	var typeParameters: OrderedDictionary<String, TypeVariable> { get }
+	var typeParameters: OrderedDictionary<String, TypeVariable> { get set }
 
 	func staticMember(named name: String) -> InferenceResult?
 	func member(named name: String) -> InferenceResult?

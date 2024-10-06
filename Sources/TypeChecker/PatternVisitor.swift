@@ -59,7 +59,7 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ syntax: VarExprSyntax, _ context: Context) throws -> Pattern {
-		fatalError("TODO")
+		return .variable(syntax.name, context.expectedType ?? .resolved(.typeVar(context.freshTypeVariable(syntax.name))))
 	}
 
 	func visit(_ syntax: UnaryExprSyntax, _ context: Context) throws -> Pattern {
@@ -140,7 +140,7 @@ struct PatternVisitor: Visitor {
 			context.define(syntax, as: .resolved(.pattern(.value(member.instantiate(in: context).type))))
 			return .value(member.instantiate(in: context).type)
 		} else {
-			let memberTypeVar = context.freshTypeVariable(syntax.description)
+			let memberTypeVar = context.freshTypeVariable("\(receiver?.description ?? "").\(syntax.property)")
 			context.define(syntax, as: .resolved(.pattern(.value(.typeVar(memberTypeVar)))))
 			return .value(.typeVar(memberTypeVar))
 		}

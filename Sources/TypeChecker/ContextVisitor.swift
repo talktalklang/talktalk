@@ -26,18 +26,23 @@ public struct Typer {
 	let imports: [Context]
 	let context: Context
 
-	static func compileStandardLibrary(verbose: Bool = false) -> Context {
+	static func compileStandardLibrary(verbose: Bool = false) throws -> Context {
 		let files = Library.standard.files.flatMap { try! Parser.parse($0) }
-		let context = try! ContextVisitor.visit(files, module: "Standard", verbose: verbose)
+		let context = try ContextVisitor.visit(files, module: "Standard", verbose: verbose)
+
+		if !context.diagnostics.isEmpty {
+			throw TypeError.typeError("Could not compile standard library: \(context.diagnostics.map(\.message))")
+		}
+
 		return context
 	}
 
-	init(module: String, imports: [Context], verbose: Bool = false) {
+	init(module: String, imports: [Context], verbose: Bool = false, debugStdlib: Bool = false) throws {
 		// Prepend the standard library
 		var imports = imports
 
 		if module != "Standard" {
-			imports = [Self.compileStandardLibrary()] + imports
+			imports = try [Self.compileStandardLibrary(verbose: debugStdlib)] + imports
 		}
 
 		self.imports = imports
@@ -264,9 +269,41 @@ struct ContextVisitor: Visitor {
 				let wrapped = instance.type.typeParameters["Wrapped"]!
 				return .resolved(instance.substitutions[wrapped]!)
 			default:
-				context.error("result not optional: \(result)", at: location)
-				return result
+				let typeVar = context.freshTypeVariable("\(result)!")
+
+				context.addConstraint(
+					Constraints.Unwrap(context: context, value: result, unwrapped: typeVar, location: location)
+				)
+
+				return .resolved(.typeVar(typeVar))
 			}
+		}
+	}
+
+	func createTypeParameters<T: MemberOwner>(_ typeExprs: [TypeExprSyntax], for type: inout T, in context: Context) -> [TypeVariable] {
+		typeExprs.map {
+			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
+			context.define($0.identifier.lexeme, as: .resolved(.typeVar(typeVar)))
+			type.typeParameters[$0.identifier.lexeme] = typeVar
+			return typeVar
+		}
+	}
+
+	func ensureConformances<T: MemberOwner>(_ conformances: [TypeExprSyntax], for type: T, in context: Context) {
+		for conformance in conformances {
+			guard let conformsTo = context.type(named: conformance.identifier.lexeme) else {
+				context.error("Could not find protocol `\(conformance.identifier.lexeme)`", at: conformance.location)
+				continue
+			}
+
+			context.addConstraint(
+				Constraints.Conformance(
+					context: context,
+					type: .resolved(.type(type.wrapped)),
+					conformsTo: conformsTo,
+					location: conformance.location
+				)
+			)
 		}
 	}
 
@@ -287,7 +324,7 @@ struct ContextVisitor: Visitor {
 			}
 		}
 
-		let returns: InferenceResult = returnResult(for: callee) ?? .resolved(.typeVar(context.freshTypeVariable(syntax.description)))
+		let returns: InferenceResult = returnResult(for: callee) ?? .resolved(.typeVar(context.freshTypeVariable(callee.description)))
 
 		context.addConstraint(
 			Constraints.Call(
@@ -435,7 +472,9 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: Argument, _ context: Context) throws -> InferenceResult {
-		try syntax.value.accept(self, context)
+		let result = try syntax.value.accept(self, context)
+		context.define(syntax, as: result)
+		return result
 	}
 
 	func visit(_ syntax: StructExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -567,31 +606,12 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
-		let structType = StructType(name: syntax.name)
+		var structType = StructType(name: syntax.name)
 		let structContext = context.addChild(lexicalScope: structType)
 
-		for conformance in syntax.conformances {
-			guard let conformsTo = context.type(named: conformance.identifier.lexeme) else {
-				context.error("Could not find protocol `\(conformance.identifier.lexeme)`", at: conformance.location)
-				continue
-			}
+		ensureConformances(syntax.conformances, for: structType, in: context)
 
-			context.addConstraint(
-				Constraints.Conformance(
-					context: context,
-					type: structType,
-					conformsTo: conformsTo,
-					location: conformance.location
-				)
-			)
-		}
-
-		let variables = syntax.typeParameters.map {
-			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
-			structContext.define($0.identifier.lexeme, as: .resolved(.typeVar(typeVar)))
-			structType.typeParameters[$0.identifier.lexeme] = typeVar
-			return typeVar
-		}
+		let variables = createTypeParameters(syntax.typeParameters, for: &structType, in: structContext)
 
 		structContext.define("self", as: .scheme(
 			Scheme(name: "self", variables: variables, type: .self(structType)))
@@ -753,15 +773,12 @@ struct ContextVisitor: Visitor {
 
 	func visit(_ syntax: EnumDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let name = syntax.nameToken.lexeme
-		let enumType = Enum(name: name, cases: [:])
+		var enumType = Enum(name: name, cases: [:])
 		let enumContext = context.addChild(lexicalScope: enumType)
 
-		let variables = syntax.typeParams.map {
-			let typeVar = context.freshTypeVariable($0.identifier.lexeme, isGeneric: true)
-			enumContext.define($0.identifier.lexeme, as: .resolved(.typeVar(typeVar)))
-			enumType.typeParameters[$0.identifier.lexeme] = typeVar
-			return typeVar
-		}
+		ensureConformances(syntax.conformances, for: enumType, in: context)
+
+		let variables = createTypeParameters(syntax.typeParams, for: &enumType, in: enumContext)
 
 		enumContext.define("self", as: .scheme(
 			Scheme(name: "self", variables: variables, type: .self(enumType)))
@@ -849,7 +866,56 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: ForStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let childContext = context.addChild()
+
+		// Visit the sequence so we can get its type
+		let sequenceType = try syntax.sequence.accept(self, childContext)
+
+		// See if we can get substitutions
+		let substitutions: Substitutions = if case let .resolved(.instance(instance)) = sequenceType {
+			instance.substitutions
+		} else {
+			[:]
+		}
+
+		// Get the builtin iterable protocol
+		let iterable = try context.builtin(named: "Iterable").asInstance(in: childContext, with: substitutions)
+		guard case let .instance(.protocol(iterableInstance)) = iterable else {
+			context.error("Could not instantiate iterablw", at: syntax.sequence.location)
+			return .resolved(.void)
+		}
+
+		guard let expectedElementType = iterableInstance.relatedType(named: "Element") else {
+			context.error("Unable to determine expected element type of \(syntax.element.description)", at: syntax.element.location)
+			return .resolved(.void)
+		}
+
+		context.addConstraint(
+			Constraints.Conformance(
+				context: childContext,
+				type: sequenceType,
+				conformsTo: .resolved(iterable),
+				location: syntax.sequence.location
+			)
+		)
+
+		let patternVisitor = PatternVisitor(visitor: self)
+		let pattern = try childContext.expecting(.resolved(expectedElementType)) {
+			try syntax.element.accept(patternVisitor, childContext)
+		}
+
+		if case let .variable(name, type) = pattern {
+			childContext.define(name, as: type)
+		}
+
+		context.addConstraint(
+			Constraints.Bind(context: childContext, target: .resolved(expectedElementType), pattern: pattern, location: syntax.element.location)
+		)
+
+		_ = try syntax.body.accept(self, childContext)
+
+		context.define(syntax, as: .resolved(.void))
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: LogicalExprSyntax, _ context: Context) throws -> InferenceResult {
