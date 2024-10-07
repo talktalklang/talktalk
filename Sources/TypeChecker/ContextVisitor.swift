@@ -576,7 +576,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: ImportStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.void)
 	}
 
 	func visit(_ syntax: TypeExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -730,7 +730,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: DictionaryElementExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.void) // Handled by DictionaryLiteralExprSyntax
 	}
 
 	func visit(_ syntax: ProtocolDeclSyntax, _ context: Context) throws -> InferenceResult {
