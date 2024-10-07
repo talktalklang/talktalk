@@ -382,7 +382,7 @@ public class Context {
 		switch type {
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
-			if count < 10, case let .resolved(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
+			if count < 10, case let .resolved(.typeVar(child)) = substitutions[typeVariable] {
 				return applySubstitutions(to: .resolved(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
