@@ -67,7 +67,7 @@ struct FuncExprAnalyzer: Analyzer {
 			return castError(at: expr.body, type: AnalyzedBlockStmt.self, in: context)
 		}
 
-		return try AnalyzedFuncExpr(
+		return AnalyzedFuncExpr(
 			symbol: symbol,
 			type: type,
 			wrapped: expr,

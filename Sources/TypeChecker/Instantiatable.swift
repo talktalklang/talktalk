@@ -7,6 +7,7 @@
 
 public protocol Instantiatable: MemberOwner {
 	var name: String { get }
+	var module: String { get }
 
 	func instantiate(with substitutions: [TypeVariable: InferenceType]) -> Instance<Self>
 }

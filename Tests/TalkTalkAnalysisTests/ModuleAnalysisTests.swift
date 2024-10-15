@@ -153,7 +153,7 @@ struct ModuleAnalysisTests {
 		""", "person.talk"))
 
 		let person = try #require(moduleB.values["person"])
-		let personInstance = try #require(InstanceV1<StructTypeV1>.extract(from: person.typeID))
+		let personInstance = try #require(Instance<StructType>.extract(from: person.typeID))
 		#expect(personInstance.type.name == "Person")
 	}
 

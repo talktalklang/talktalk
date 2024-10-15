@@ -10,21 +10,9 @@ import TalkTalkCore
 import Testing
 @testable import TypeChecker
 
-struct GenericsTests {
-	func ast(_ string: String) -> any AnalyzedSyntax {
-		let parsed = try! Parser.parse(.init(path: "genericstest.talk", text: string))
-		let context = try! Inferencer(moduleName: "GenericsTests", imports: []).infer(parsed)
-		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context)).last!
-	}
-
-	func asts(_ string: String) -> [any AnalyzedSyntax] {
-		let parsed = try! Parser.parse(.init(path: "genericstest.talk", text: string))
-		let context = try! Inferencer(moduleName: "GenericsTests", imports: []).infer(parsed)
-		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context))
-	}
-
+struct GenericsTests: AnalysisTest {
 	@Test("Gets generic types") func types() throws {
-		let decl = ast("""
+		let decl = try ast("""
 		struct Wrapper<Wrapped> {
 			let wrapped: Wrapped
 		}
@@ -32,7 +20,7 @@ struct GenericsTests {
 
 		#expect(decl.name == "Wrapper")
 
-		let structType = TypeChecker.StructTypeV1.extractType(from: .resolved(decl.typeAnalyzed))
+		let structType = StructType.extract(from: decl.typeAnalyzed)
 		#expect(structType?.name == "Wrapper")
 
 		let type = try #require(decl.environment.type(named: "Wrapper")! as? AnalysisStructType)
@@ -40,7 +28,7 @@ struct GenericsTests {
 	}
 
 	@Test("Gets bound generic types") func boundGenericTypes() throws {
-		let ast = ast("""
+		let ast = try ast("""
 		struct Wrapper<Wrapped> {
 			let wrapped: Wrapped
 		}
@@ -52,12 +40,12 @@ struct GenericsTests {
 		let variable = try #require(ast as? AnalyzedVarExpr)
 		#expect(variable.name == "wrapper")
 
-		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: variable.typeAnalyzed))
+		let instance = try #require(Instance<StructType>.extract(from: variable.typeAnalyzed))
 		#expect(instance.type.name == "Wrapper")
 	}
 
 	@Test("Infers generic member types from `self`") func inferSelfMembers() throws {
-		let ast = asts("""
+		let ast = try asts("""
 		struct Wrapper<Wrapped> {
 			var wrapped: Wrapped
 

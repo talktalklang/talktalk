@@ -99,14 +99,6 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 		}
 	}
 
-	var asType: InferenceType? {
-		if case let .resolved(inferenceType) = self {
-			return inferenceType
-		}
-
-		return nil
-	}
-
 	// Variance helpers
 	func covariant(with rhs: InferenceResult, in context: Context) -> Bool {
 		switch (self, rhs) {
@@ -118,28 +110,6 @@ public enum InferenceResult: Equatable, Hashable, CustomStringConvertible, Custo
 			lhs.covariant(with: rhs.type, in: context)
 		case let (.scheme(lhs), .resolved(rhs)):
 			lhs.type.covariant(with: rhs, in: context)
-		}
-	}
-
-	func covariantV1(with rhs: InferenceResult, in context: InferenceContext) -> Bool {
-		switch (self, rhs) {
-		case let (.scheme(lhs), .scheme(rhs)):
-			lhs.type.covariantV1(with: rhs.type, in: context)
-		case let (.resolved(lhs), .resolved(rhs)):
-			lhs.covariantV1(with: rhs, in: context)
-		case let (.resolved(lhs), .scheme(rhs)):
-			lhs.covariantV1(with: rhs.type, in: context)
-		case let (.scheme(lhs), .resolved(rhs)):
-			lhs.type.covariantV1(with: rhs, in: context)
-		}
-	}
-
-	public func asType(in context: InferenceContext) -> InferenceType {
-		switch self {
-		case let .scheme(scheme):
-			context.instantiate(scheme: scheme)
-		case let .resolved(inferenceType):
-			inferenceType
 		}
 	}
 }

@@ -4,9 +4,6 @@ import TalkTalkCore
 
 public struct AnalyzedPropertyDecl: PropertyDecl, AnalyzedDecl {
   public let wrapped: PropertyDeclSyntax
-	public var introducerAnalyzed: Token
-	public var nameAnalyzed: Token
-	public var defaultValueAnalyzed: (any Expr)?
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
@@ -15,6 +12,8 @@ public struct AnalyzedPropertyDecl: PropertyDecl, AnalyzedDecl {
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var name: Token { wrapped.name }
+	public var isStatic: Bool { wrapped.isStatic }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

@@ -32,7 +32,7 @@ public enum AnalysisErrorKind: Hashable {
 	case expressionCount(String)
 	case matchNotExhaustive(String)
 	case unexpectedType(expected: InferenceType, received: InferenceType, message: String)
-	case conformanceError(name: String, type: InferenceType, conformances: [ProtocolTypeV1])
+	case conformanceError(name: String, type: InferenceType, conformances: [ProtocolType])
 	case inferenceError(InferenceErrorKind)
 
 	public func hash(into hasher: inout Hasher) {

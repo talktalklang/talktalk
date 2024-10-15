@@ -15,7 +15,7 @@ public class Environment {
 	private var locals: [String: Binding]
 	private var types: [String: any LexicalScopeType] = [:]
 
-	let inferenceContext: InferenceContext
+	let inferenceContext: Context
 
 	public var isModuleScope: Bool
 	public var lexicalScope: LexicalScope?
@@ -31,7 +31,7 @@ public class Environment {
 	public private(set) var shouldReportErrors: Bool = true
 
 	public init(
-		inferenceContext: InferenceContext,
+		inferenceContext: Context,
 		isModuleScope: Bool = false,
 		symbolGenerator: SymbolGenerator = .init(moduleName: "None", parent: nil),
 		importedModules: [AnalysisModule] = [],
@@ -55,7 +55,7 @@ public class Environment {
 		}
 	}
 
-	public static func topLevel(_ moduleName: String, inferenceContext: InferenceContext) -> Environment {
+	public static func topLevel(_ moduleName: String, inferenceContext: Context) -> Environment {
 		Environment(
 			inferenceContext: inferenceContext,
 			isModuleScope: true,
@@ -64,7 +64,7 @@ public class Environment {
 	}
 
 	public func type(for syntax: any Syntax, default type: InferenceType = .any) -> InferenceType {
-		inferenceContext.lookup(syntax: syntax) ?? type
+		inferenceContext.find(syntax) ?? type
 	}
 
 	public var moduleName: String {
@@ -150,9 +150,9 @@ public class Environment {
 	public func allBindings() -> [Binding] {
 		var result = Array(locals.values)
 
-		result.append(contentsOf: inferenceContext.namedVariables.compactMap {
-			Binding(name: $0.key, location: [.synthetic(.identifier)], type: $0.value.asType(in: inferenceContext))
-		})
+//		result.append(contentsOf: inferenceContext.namedVariables.compactMap {
+//			Binding(name: $0.key, location: [.synthetic(.identifier)], type: $0.value.asType(in: inferenceContext))
+//		})
 
 		result.append(contentsOf: BuiltinFunction.list.map { $0.binding(in: self) })
 		return result

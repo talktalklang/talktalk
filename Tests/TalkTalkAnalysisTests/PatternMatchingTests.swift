@@ -13,7 +13,7 @@ import Testing
 
 struct PatternMatchingTests: AnalysisTest {
 	@Test("Can analyze an enum") func enumStmt() async throws {
-		let ast = try await ast("""
+		let ast = try ast("""
 		enum Thing {
 			case foo(String)
 			case bar(int)
@@ -32,7 +32,7 @@ struct PatternMatchingTests: AnalysisTest {
 	}
 
 	@Test("Errors when match is not exhaustive (enums)") func exhaustiveEnum() async throws {
-		let ast = try await ast("""
+		let ast = try ast("""
 		enum Thing {
 			case foo(String)
 			case bar(int)
@@ -50,7 +50,7 @@ struct PatternMatchingTests: AnalysisTest {
 	}
 
 	@Test("Errors when match is not exhaustive (non-enums)") func exhaustiveNonEnums() async throws {
-		let ast = try await ast("""
+		let ast = try ast("""
 		match "foo" {
 		case "sup":
 			print("hi")
@@ -63,7 +63,7 @@ struct PatternMatchingTests: AnalysisTest {
 	}
 
 	@Test("Doesnt error when match is exhaustive (bools)") func exhaustiveBools() async throws {
-		let ast = try await ast("""
+		let ast = try ast("""
 		let variable = true
 
 		match variable {
@@ -79,7 +79,7 @@ struct PatternMatchingTests: AnalysisTest {
 	}
 
 	@Test("Doesnt error when not exhaustive with else (enums)") func enumWithElse() async throws {
-		let ast = try await ast("""
+		let ast = try ast("""
 		enum Thing {
 			case foo(String)
 			case bar(int)
@@ -95,48 +95,5 @@ struct PatternMatchingTests: AnalysisTest {
 
 		let errors = ast.collectErrors()
 		#expect(errors == [])
-	}
-
-	@Test("Can analyze a match statement") func matchStatement() async throws {
-		let asts = try await asts("""
-		enum Thing {
-			case foo(String)
-			case bar(int)
-		}
-
-		match Thing.bar(123) {
-		case .foo(let a):
-			a
-		case .bar(let a):
-			a
-		}
-		""")
-
-		let enumType = EnumTypeV1.extract(from: .resolved(asts[0].typeAnalyzed))!
-
-		let stmt = asts[1].cast(AnalyzedMatchStatement.self)
-		let foo = stmt.casesAnalyzed[0].patternAnalyzed!
-		#expect(foo.inferenceType == .patternV1(
-			PatternV1(
-				type: .enumCaseV1(EnumCase(
-					type: enumType,
-					name: "foo",
-					attachedTypes: [.base(.string)]
-				)),
-				arguments: [.variable("a", .resolved(.base(.string)))]
-			)
-		))
-
-		let bar = stmt.casesAnalyzed[1].patternAnalyzed!
-		#expect(bar.inferenceType == .patternV1(
-			PatternV1(
-				type: .enumCaseV1(EnumCase(
-					type: enumType,
-					name: "bar",
-					attachedTypes: [.base(.int)]
-				)),
-				arguments: [.variable("a", .resolved(.base(.int)))]
-			)
-		))
 	}
 }

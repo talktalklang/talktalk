@@ -39,11 +39,7 @@ extension Constraints {
 				(.base(.pointer), .base(.int), .minus):
 
 				try context.unify(.typeVar(result), .base(.pointer), location)
-			case (.base(.int), .base(.int), .plus),
-					 (.base(.int), .base(.int), .minus),
-					 (.base(.int), .base(.int), .star),
-					 (.base(.int), .base(.int), .slash):
-
+			case (.base(.int), .base(.int), _):
 				try context.unify(.typeVar(result), .base(.int), location)
 			case let (.base(.int), .typeVar(variable), .plus),
 				let (.base(.int), .typeVar(variable), .minus),
@@ -77,12 +73,15 @@ extension Constraints {
 				let (.self(lhs), .instance(rhs), .bangEqual), let (.instance(rhs), .self(lhs), .bangEqual):
 				try context.unify(.type(lhs.wrapped), .type(rhs.type.wrapped), location)
 				try context.unify(.typeVar(result), .base(.bool), location)
+			case (.base(.none), _, .equalEqual), (_, .base(.none), .equalEqual),
+					 (.base(.none), _, .bangEqual), (_, .base(.none), .bangEqual):
+				try context.unify(.base(.bool), .typeVar(result), location)
 			default:
 				if retries < 2 {
 					context.retry(self)
 				} else {
-					context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
-					try context.unify(.any, .typeVar(result), location)
+//					context.error("Infix operator \(op.rawValue) can't be used with operands \(lhs.debugDescription) and \(rhs.debugDescription)", at: location)
+					try context.unify(lhs, rhs, location)
 				}
 			}
 		}

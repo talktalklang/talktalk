@@ -22,10 +22,6 @@ extension InferenceType: Equatable {
 			lhs == rhs
 		case let (.base(lhs), .base(rhs)):
 			lhs == rhs
-		case let (.instanceV1(lhs), .instanceV1(rhs)):
-			lhs.equals(rhs)
-		case let (.instantiatable(lhs), .instantiatable(rhs)):
-			lhs == rhs
 		case let (.placeholder(lhs), .placeholder(rhs)):
 			lhs == rhs
 		case let (.error(lhs), .error(rhs)):
@@ -33,8 +29,6 @@ extension InferenceType: Equatable {
 		case let (.kind(lhs), .kind(rhs)):
 			lhs == rhs
 		case let (.selfVar(lhs), .selfVar(rhs)):
-			lhs == rhs
-		case let (.enumCaseV1(lhs), .enumCaseV1(rhs)):
 			lhs == rhs
 		case let (.pattern(lhs), .pattern(rhs)):
 			lhs.debugDescription == rhs.debugDescription

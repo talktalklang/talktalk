@@ -49,6 +49,6 @@ struct DictionaryTests: TypeCheckerTest {
 
 		let context = try solve(syntax)
 		let result = context.find(syntax[1])
-		#expect(result == .void)
+		#expect(result == .base(.int))
 	}
 }

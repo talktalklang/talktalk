@@ -19,20 +19,26 @@ struct SubscriptExprAnalyzer: Analyzer {
 			return castError(at: expr, type: [AnalyzedArgument].self, in: context)
 		}
 
-		guard let inferenceType = context.inferenceContext.lookup(syntax: expr) else {
-			throw AnalyzerError.typeNotInferred("\(expr.description)")
-		}
+		let inferenceType = try context.inferenceContext.get(expr)
 
 		var getSymbol: Symbol? = nil
 		var setSymbol: Symbol? = nil
 		switch receiver.inferenceType {
-		case let .instanceV1(instance):
-			if case let .function(params, _) = instance.genericMethod(named: "get") {
-				getSymbol = .method(instance.type.context.moduleName, instance.type.name, "get", params.map(\.mangled))
+		case let .type(type):
+			if let member = type.member(named: "get"), case let .function(params, _) = context.inferenceContext.apply(member) {
+				getSymbol = .method(type.module, type.name, "get", params.map(\.mangled))
 			}
 
-			if case let .function(params, _) = instance.genericMethod(named: "set") {
-				setSymbol = .method(instance.type.context.moduleName, instance.type.name, "set", params.map(\.mangled))
+			if let member = type.member(named: "set"), case let .function(params, _) = context.inferenceContext.apply(member) {
+				setSymbol = .method(type.module, type.name, "set", params.map(\.mangled))
+			}
+		case let .instance(instance):
+			if let member = instance.member(named: "get"), case let .function(params, _) = context.inferenceContext.apply(member) {
+				getSymbol = .method(instance.type.module, instance.type.name, "get", params.map(\.mangled))
+			}
+
+			if let member = instance.member(named: "set"), case let .function(params, _) = context.inferenceContext.apply(member) {
+				setSymbol = .method(instance.type.module, instance.type.name, "set", params.map(\.mangled))
 			}
 		default:
 			return error(at: expr, "Could not determine get() method for \(receiver.inferenceType)", environment: context)

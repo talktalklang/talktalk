@@ -23,20 +23,4 @@ extension TypeCheckerTest {
 		#expect(context.diagnostics.count == expectedDiagnostics, "expected \(expectedDiagnostics) diagnostics. got \(context.diagnostics.count): \(context.diagnostics)")
 		return context
 	}
-
-	@available(*, deprecated, renamed: "solve", message: "This uses the old one")
-	func infer(
-		_ expr: [any Syntax],
-		imports: [InferenceContext] = [],
-		verbose: Bool = false,
-		expectedErrors: Int = 0,
-		sourceLocation _: Testing.SourceLocation = #_sourceLocation
-	) throws -> InferenceContext {
-		let inferencer = try Inferencer(moduleName: "TypeCheckerTests", imports: imports, verbose: verbose)
-		let context = inferencer.infer(expr).solve().solveDeferred()
-
-		#expect(context.errors.count == expectedErrors, "expected \(expectedErrors) errors. got \(context.errors.count): \(context.errors)")
-
-		return context
-	}
 }

@@ -2,6 +2,8 @@
 
 public protocol MethodDecl: Decl {
 	// Insert MethodDecl specific fields here
+	var nameToken: Token { get }
+	var isStatic: Bool { get }
 }
 
 public struct MethodDeclSyntax: MethodDecl {

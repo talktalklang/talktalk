@@ -30,7 +30,7 @@ public struct ModuleAnalyzer: Analyzer {
 	let visitor: SourceFileAnalyzer
 	public var moduleEnvironment: [String: AnalysisModule]
 	public var importedModules: [AnalysisModule]
-	let inferencer: Inferencer
+	let typer: Typer
 
 	public init(
 		name: String,
@@ -40,8 +40,8 @@ public struct ModuleAnalyzer: Analyzer {
 	) throws {
 		self.name = name
 		self.files = files
-		self.inferencer = try Inferencer(moduleName: name, imports: moduleEnvironment.values.map(\.inferenceContext))
-		self.environment = .topLevel(name, inferenceContext: inferencer.context)
+		self.typer = try Typer(module: name, imports: moduleEnvironment.values.map(\.inferenceContext), verbose: false, debugStdlib: false)
+		self.environment = .topLevel(name, inferenceContext: typer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment
 		self.importedModules = moduleEnvironment.values.map { $0 }
@@ -59,12 +59,10 @@ public struct ModuleAnalyzer: Analyzer {
 
 	public func analyze() throws -> AnalysisModule {
 		for file in files {
-			_ = inferencer.infer(file.syntax)
+			_ = try typer.solve(file.syntax)
 		}
 
-		_ = inferencer.inferDeferred()
-
-		var analysisModule = AnalysisModule(name: name, inferenceContext: inferencer.context, files: files)
+		var analysisModule = AnalysisModule(name: name, inferenceContext: typer.context, files: files)
 
 		for module in importedModules {
 			environment.importModule(module)

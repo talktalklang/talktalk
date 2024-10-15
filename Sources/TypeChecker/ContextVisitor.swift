@@ -22,9 +22,8 @@ enum TypeError: Error, LocalizedError {
 }
 
 public struct Typer {
-	let visitor = InferenceVisitor()
 	let imports: [Context]
-	let context: Context
+	public let context: Context
 
 	static func compileStandardLibrary(verbose: Bool = false) throws -> Context {
 		let files = Library.standard.files.flatMap { try! Parser.parse($0) }
@@ -37,12 +36,16 @@ public struct Typer {
 		return context
 	}
 
-	init(module: String, imports: [Context], verbose: Bool = false, debugStdlib: Bool = false) throws {
+	nonisolated(unsafe) static let stdlib: Context = {
+		try! Self.compileStandardLibrary()
+	}()
+
+	public init(module: String, imports: [Context], verbose: Bool = false, debugStdlib: Bool = false) throws {
 		// Prepend the standard library
 		var imports = imports
 
 		if module != "Standard" {
-			imports = try [Self.compileStandardLibrary(verbose: debugStdlib)] + imports
+			imports = [Self.stdlib] + imports
 		}
 
 		self.imports = imports
@@ -55,7 +58,7 @@ public struct Typer {
 		)
 	}
 
-	func solve(_ syntax: [any Syntax]) throws -> Context {
+	public func solve(_ syntax: [any Syntax]) throws -> Context {
 		let visitor = ContextVisitor()
 		visitor.findNames(syntax: syntax, context: context)
 
@@ -219,6 +222,8 @@ struct ContextVisitor: Visitor {
 				return kase.type.staticMember(named: name)
 			case let .instance(wrapper):
 				return wrapper.member(named: name)
+			case let .self(wrapped):
+				return wrapped.member(named: name)
 			case let .type(.protocol(type)):
 				return type.member(named: name)
 			default:
@@ -353,7 +358,7 @@ struct ContextVisitor: Visitor {
 			)
 		)
 
-		return .resolved(.void)
+		return value
 	}
 
 	func visit(_ syntax: IdentifierExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -417,11 +422,26 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: IfExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		let consequenceContext = context.addChild()
+
+		_ = try syntax.condition.accept(self, consequenceContext)
+		let consequence = try syntax.consequence.accept(self, consequenceContext)
+		let alternative = try syntax.alternative.accept(self, context)
+
+		context.addConstraint(
+			Constraints.Equality(context: context, lhs: consequence, rhs: alternative, location: syntax.location)
+		)
+
+		return consequence
 	}
 
 	func visit(_ syntax: WhileStmtSyntax, _ context: Context) throws -> InferenceResult {
-		.resolved(.void)
+		_ = try syntax.condition.accept(self, context)
+		_ = try syntax.body.accept(self, context)
+
+		context.define(syntax, as: .resolved(.void))
+
+		return .resolved(.void)
 	}
 
 	func visit(_ syntax: BlockStmtSyntax, _ context: Context) throws -> InferenceResult {
@@ -550,13 +570,13 @@ struct ContextVisitor: Visitor {
 		let result = try handleFuncLike(syntax, context: context)
 		try lexicalScope.add(member: result, named: "init", isStatic: false)
 
-		context.define(syntax, as: .resolved(.void))
+		context.define(syntax, as: result)
 
 		return .resolved(.void)
 	}
 
 	func visit(_ syntax: ImportStmtSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.void)
 	}
 
 	func visit(_ syntax: TypeExprSyntax, _ context: Context) throws -> InferenceResult {
@@ -606,7 +626,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> InferenceResult {
-		var structType = StructType(name: syntax.name)
+		var structType = StructType(name: syntax.name, module: context.module)
 		let structContext = context.addChild(lexicalScope: structType)
 
 		ensureConformances(syntax.conformances, for: structType, in: context)
@@ -710,12 +730,12 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: DictionaryElementExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.void) // Handled by DictionaryLiteralExprSyntax
 	}
 
 	func visit(_ syntax: ProtocolDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let name = syntax.name.lexeme
-		let protocolType = ProtocolType(name: name)
+		let protocolType = ProtocolType(name: name, module: context.module)
 		let protocolContext = context.addChild(lexicalScope: protocolType)
 
 		let variables = syntax.typeParameters.map {
@@ -773,7 +793,7 @@ struct ContextVisitor: Visitor {
 
 	func visit(_ syntax: EnumDeclSyntax, _ context: Context) throws -> InferenceResult {
 		let name = syntax.nameToken.lexeme
-		var enumType = Enum(name: name, cases: [:])
+		var enumType = Enum(name: name, module: context.module, cases: [:])
 		let enumContext = context.addChild(lexicalScope: enumType)
 
 		ensureConformances(syntax.conformances, for: enumType, in: context)
@@ -815,6 +835,7 @@ struct ContextVisitor: Visitor {
 		enumType.cases[name] = try Enum.Case(
 			type: enumType,
 			name: name,
+			module: context.module,
 			attachedTypes: syntax.attachedTypes.map { try $0.accept(self, context) }
 		)
 
@@ -862,7 +883,7 @@ struct ContextVisitor: Visitor {
 	}
 
 	func visit(_ syntax: InterpolatedStringExprSyntax, _ context: Context) throws -> InferenceResult {
-		fatalError("WIP")
+		.resolved(.base(.string))
 	}
 
 	func visit(_ syntax: ForStmtSyntax, _ context: Context) throws -> InferenceResult {
