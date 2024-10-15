@@ -7,7 +7,7 @@
 
 import ArgumentParser
 import TalkTalkAnalysis
-import TalkTalkCompiler
+import TalkTalkCompilerV1
 import TalkTalkCore
 import TalkTalkVM
 

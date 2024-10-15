@@ -40,7 +40,7 @@ public struct ModuleAnalyzer: Analyzer {
 	) throws {
 		self.name = name
 		self.files = files
-		self.typer = try Typer(module: name, imports: moduleEnvironment.values.map(\.inferenceContext), verbose: true, debugStdlib: true)
+		self.typer = try Typer(module: name, imports: moduleEnvironment.values.map(\.inferenceContext), verbose: false, debugStdlib: false)
 		self.environment = .topLevel(name, inferenceContext: typer.context)
 		self.visitor = SourceFileAnalyzer()
 		self.moduleEnvironment = moduleEnvironment

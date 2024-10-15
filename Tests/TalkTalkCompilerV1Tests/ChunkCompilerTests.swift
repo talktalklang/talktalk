@@ -7,7 +7,7 @@
 
 @testable import TalkTalkAnalysis
 import TalkTalkBytecode
-@testable import TalkTalkCompiler
+@testable import TalkTalkCompilerV1
 import TalkTalkCore
 import Testing
 import TypeChecker

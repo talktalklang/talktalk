@@ -7,7 +7,7 @@
 
 import TalkTalkAnalysis
 import TalkTalkBytecode
-import TalkTalkCompiler
+import TalkTalkCompilerV1
 import TalkTalkCore
 import TalkTalkDriver
 import TalkTalkCore
