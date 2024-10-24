@@ -13,13 +13,13 @@ import Testing
 struct AnalysisTests {
 	func ast(_ string: String) -> any AnalyzedSyntax {
 		let parsed = try! Parser.parse(.init(path: "analysistest.talk", text: string))
-		let context = try! Inferencer(moduleName: "AnalysisTests", imports: []).infer(parsed)
+		let context = try! Typer(module: "AnalysisTests", imports: []).solve(parsed)
 		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context)).last!
 	}
 
 	func asts(_ string: String) -> [any AnalyzedSyntax] {
 		let parsed = try! Parser.parse(.init(path: "analysistest.talk", text: string))
-		let context = try! Inferencer(moduleName: "AnalysisTests", imports: []).infer(parsed)
+		let context = try! Typer(module: "AnalysisTests", imports: []).solve(parsed)
 		return try! SourceFileAnalyzer.analyze(parsed, in: .init(inferenceContext: context))
 	}
 
@@ -291,7 +291,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		let structType = TypeChecker.StructTypeV1.extractType(from: .resolved(s.typeAnalyzed))
+		let structType = TypeChecker.StructType.extract(from: s.typeAnalyzed)
 		#expect(structType?.name == "Person")
 
 		let stype = try s.environment.type(named: "Person")
@@ -326,7 +326,7 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		#expect(s.name == "Person")
 
-		let structType = try #require(TypeChecker.StructTypeV1.extractType(from: .resolved(s.typeAnalyzed)))
+		let structType = try #require(TypeChecker.StructType.extract(from: s.typeAnalyzed))
 
 		#expect(structType.name == "Person")
 
@@ -371,10 +371,8 @@ struct AnalysisTests {
 		let s = try #require(ast as? AnalyzedStructDecl)
 		let type = try #require(try! s.environment.type(named: "Person"))
 
-		let structType = TypeChecker.StructTypeV1.extractType(from: .resolved(s.typeAnalyzed))!
-		let sup = type.methods["sup"]!.returnTypeID
-
-		#expect(sup == .selfVar(.instantiatable(.struct(structType))))
+		let stype = StructType.extract(from: s.typeAnalyzed)!
+		#expect(type.methods["sup"]!.returnTypeID == .self(stype))
 	}
 
 	@Test("Adds error if a decl type can't be found") func declError() throws {
@@ -386,7 +384,7 @@ struct AnalysisTests {
 			""")
 
 		let structDecl = try #require(ast as? AnalyzedStructDecl)
-		let varDecl = structDecl.bodyAnalyzed.declsAnalyzed[0].cast(AnalyzedVarDecl.self)
+		let varDecl = structDecl.bodyAnalyzed.declsAnalyzed[0].cast(AnalyzedPropertyDecl.self)
 
 		#expect(varDecl.analysisErrors.count == 1)
 	}

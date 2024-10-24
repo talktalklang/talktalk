@@ -17,11 +17,7 @@ extension InferenceType: CustomDebugStringConvertible {
 		case let .base(primitive):
 			primitive.description
 		case let .function(params, returns):
-			params.map { $0.asType?.mangled ?? "" }.joined(separator: "_") + (returns.asType?.mangled ?? "")
-		case let .instanceV1(instanceType):
-			"I" + instanceType.type.name
-		case let .instantiatable(instantiatableType):
-			instantiatableType.name + instantiatableType.typeContext.typeParameters.map { $0.name ?? "_" }.joined(separator: "_")
+			params.map { $0.mangled }.joined(separator: "_") + returns.mangled
 		case let .placeholder(typeVariable):
 			"P\(typeVariable.name ?? "")"
 		case let .instancePlaceholder(typeVariable):
@@ -32,12 +28,8 @@ extension InferenceType: CustomDebugStringConvertible {
 			"K(\(inferenceType.mangled)"
 		case .selfVar:
 			"self"
-		case let .enumCaseV1(enumCase):
-			enumCase.name
 		case let .pattern(pattern):
 			"\(pattern)"
-		case let .patternV1(pattern):
-			pattern.type.mangled
 		case .any:
 			"any"
 		case .void:
@@ -55,8 +47,6 @@ extension InferenceType: CustomDebugStringConvertible {
 			instance.debugDescription
 		case let .instancePlaceholder(typeVar):
 			"instance placeholder \(typeVar.debugDescription)"
-		case let .instanceV1(instance):
-			"\(instance.debugDescription)"
 		case let .typeVar(typeVariable):
 			typeVariable.debugDescription
 		case let .base(primitive):
@@ -65,8 +55,6 @@ extension InferenceType: CustomDebugStringConvertible {
 			"function(\(vars.map(\.debugDescription).joined(separator: ", "))), returns(\(inferenceType.debugDescription))"
 		case let .error(error):
 			"error(\(error))"
-		case let .instantiatable(type):
-			type.name + ".Type"
 		case let .kind(type):
 			"\(type.debugDescription).Kind"
 		case .any:
@@ -75,12 +63,8 @@ extension InferenceType: CustomDebugStringConvertible {
 			"\(type) (self)"
 		case let .placeholder(variable):
 			"\(variable.debugDescription) (placeholder)"
-		case let .enumCaseV1(kase):
-			kase.description
 		case let .pattern(pattern):
 			"\(pattern)"
-		case let .patternV1(pattern):
-			"pattern: \(pattern)"
 		case .void:
 			"void"
 		case let .type(type):
@@ -96,8 +80,6 @@ extension InferenceType: CustomDebugStringConvertible {
 			"Instance \(instance.type.name)"
 		case let .instancePlaceholder(typeVar):
 			"instance placeholder \(typeVar)"
-		case let .instanceV1(instance):
-			"\(instance.description)"
 		case let .typeVar(typeVariable):
 			typeVariable.description
 		case let .base(primitive):
@@ -106,8 +88,6 @@ extension InferenceType: CustomDebugStringConvertible {
 			"function(\(vars.map(\.description).joined(separator: ", "))), returns(\(inferenceType))"
 		case let .error(error):
 			"error(\(error))"
-		case let .instantiatable(type):
-			type.name + ".Type"
 		case let .kind(type):
 			"\(type).Kind"
 		case .any:
@@ -116,12 +96,8 @@ extension InferenceType: CustomDebugStringConvertible {
 			"\(type) (self)"
 		case let .placeholder(variable):
 			"\(variable) (placeholder)"
-		case let .enumCaseV1(kase):
-			kase.description
 		case let .pattern(pattern):
 			"\(pattern)"
-		case let .patternV1(pattern):
-			"pattern: \(pattern)"
 		case .void:
 			"void"
 		case let .type(type):

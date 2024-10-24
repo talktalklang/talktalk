@@ -12,18 +12,18 @@
 
 import TalkTalkCore
 
-class Context {
+public class Context {
 	enum ContextKind {
 		case normal, pattern
 	}
 
-	let module: String
+	public let module: String
 
 	// If this context isn't top level we can use its parent to look stuff up
 	let parent: Context?
 
 	// Contexts that have been imported
-	let imports: [Context]
+	var imports: [Context]
 
 	// Child contexts
 	var children: [Context]
@@ -49,7 +49,7 @@ class Context {
 	var explicitReturns: [InferenceResult] = []
 
 	// Diagnostics that are accumulated during checking
-	private(set) var diagnostics: [Diagnostic] = []
+	public private(set) var diagnostics: [Diagnostic] = []
 
 	// Should we log everything?
 	var verbose: Bool = false
@@ -84,6 +84,30 @@ class Context {
 		self.imports = imports
 		self.verbose = verbose
 		self.lexicalScope = lexicalScope
+	}
+
+	public func `import`(_ context: Context) {
+		imports.append(context)
+	}
+
+	public func get(_ syntax: any Syntax) throws -> InferenceType {
+		if let result = self.find(syntax) {
+			return result
+		}
+
+		throw TypeError.typeError("Type not found for \(syntax)")
+	}
+
+	public func apply(_ result: InferenceResult) -> InferenceType {
+		applySubstitutions(to: result)
+	}
+
+	public subscript(_ syntax: any Syntax, file: String = #file, line: UInt32 = #line) -> InferenceType? {
+		if let result = environment[syntax.id] {
+			return applySubstitutions(to: result, file: file, line: line)
+		} else {
+			return nil
+		}
 	}
 
 	func error(_ message: String, at location: SourceLocation, file: String = #file, line: UInt32 = #line) {
@@ -144,14 +168,6 @@ class Context {
 		var constraint = constraint
 		constraint.retries += 1
 		constraints.append(constraint)
-	}
-
-	subscript(_ syntax: any Syntax, file: String = #file, line: UInt32 = #line) -> InferenceType? {
-		if let result = environment[syntax.id] {
-			return applySubstitutions(to: result, file: file, line: line)
-		} else {
-			return nil
-		}
 	}
 
 	@discardableResult func expecting<T>(_ type: InferenceResult, perform: () throws -> T) rethrows -> T {
@@ -247,7 +263,7 @@ class Context {
 		return child
 	}
 
-	func find(_ syntax: any Syntax) -> InferenceType? {
+	public func find(_ syntax: any Syntax) -> InferenceType? {
 		if let result = environment[syntax.id] {
 			return applySubstitutions(to: result)
 		}
@@ -366,7 +382,7 @@ class Context {
 		switch type {
 		case let .typeVar(typeVariable), let .placeholder(typeVariable):
 			// Reach down recursively as long as we can to try to find the result
-			if count < 10, case let .resolved(.typeVar(child)) = findParentSubstitution(for: typeVariable) {
+			if count < 10, case let .resolved(.typeVar(child)) = substitutions[typeVariable] {
 				return applySubstitutions(to: .resolved(.typeVar(child)), with: substitutions, count: count + 1)
 			}
 
@@ -392,17 +408,11 @@ class Context {
 			()
 		case .type:
 			() // Types are meant to be blueprints so they should not get replacements. Instances should.
-		case .instanceV1:
-			()
-		case .instantiatable:
-			()
 		case .instancePlaceholder:
 			()
 		case .kind:
 			()
 		case .selfVar:
-			()
-		case .enumCaseV1:
 			()
 		case .void, .any, .base:
 			()
@@ -459,7 +469,7 @@ class Context {
 		return depth
 	}
 
-	func log(_ msg: String, prefix: String, context: InferenceContext? = nil) {
+	func log(_ msg: String, prefix: String) {
 		if isVerbose() {
 			print("\(depth()) \(String(repeating: "\t", count: max(0, depth() - 1)))" + prefix + msg)
 		}

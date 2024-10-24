@@ -13,7 +13,7 @@ public struct AnalyzedStructExpr: AnalyzedExpr, StructExpr {
 	public let wrapped: StructExprSyntax
 
 	public let bodyAnalyzed: AnalyzedDeclBlock
-	public let structType: StructTypeV1
+	public let structType: StructType
 	public var analyzedChildren: [any AnalyzedSyntax] { [bodyAnalyzed] }
 	public let environment: Environment
 

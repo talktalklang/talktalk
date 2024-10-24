@@ -6,7 +6,7 @@
 //
 
 import TalkTalkBytecode
-import TalkTalkCompiler
+import TalkTalkCompilerV1
 import Testing
 
 struct DictionaryCompilerTests: CompilerTest {

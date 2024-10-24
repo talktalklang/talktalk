@@ -4,13 +4,8 @@ import TalkTalkCore
 
 public struct AnalyzedMethodDecl: MethodDecl, AnalyzedDecl {
   public let wrapped: MethodDeclSyntax
-	public var funcTokenAnalyzed: Token
-	public var modifiersAnalyzed: [Token]
-	public var nameAnalyzed: Token
-	public var paramsAnalyzed: ParamsExprSyntax
-	public var returnsAnalyzed: TypeExprSyntax
-	public var bodyAnalyzed: BlockStmtSyntax
-	public var isStaticAnalyzed: Bool
+	public var paramsAnalyzed: AnalyzedParamsExpr
+	public var bodyAnalyzed: AnalyzedBlockStmt
 
 	public var inferenceType: InferenceType
 	public var environment: Environment
@@ -19,6 +14,8 @@ public struct AnalyzedMethodDecl: MethodDecl, AnalyzedDecl {
 	// Delegate these to the wrapped node
 	public var location: SourceLocation { wrapped.location }
 	public var children: [any Syntax] { wrapped.children }
+	public var nameToken: Token { wrapped.nameToken }
+	public var isStatic: Bool { wrapped.isStatic }
 
 	public func accept<V>(_ visitor: V, _ scope: V.Context) throws -> V.Value where V: AnalyzedVisitor {
 		try visitor.visit(self, scope)

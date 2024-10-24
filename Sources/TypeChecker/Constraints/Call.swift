@@ -42,6 +42,9 @@ extension Constraints {
 				try solveEnumCase(enumCase, freeVars: result.variables)
 			case .instance(.enumCase(let instance)):
 				try solveEnumCase(instance.type, freeVars: instance.substitutions)
+			case .instance(let instance):
+				// FIXME: This is a hack because ContextVisitor always returns instances from TypeExprSyntax
+				try context.unify(.instance(instance), self.result.asInstance(in: context, with: instance.substitutions), location)
 			default:
 				if retries > 3 {
 					context.error("\(callee) not callable", at: location)
@@ -53,6 +56,10 @@ extension Constraints {
 
 		private func solveFunction(callee: InferenceType, freeVars: [TypeVariable: InferenceType], params: [InferenceResult], returns: InferenceResult) throws {
 			let returns = returns.instantiate(in: context)
+
+			if args.count != params.count {
+				context.error("Expected \(params.count) arguments, got \(args.count)", at: location)
+			}
 
 			for (arg, param) in zip(args, params) {
 				let arg = arg.instantiate(in: context, with: freeVars)
@@ -74,6 +81,10 @@ extension Constraints {
 
 		private func solveEnumCase(_ enumCase: Enum.Case, freeVars: Substitutions) throws {
 			let instance = enumCase.instantiate(with: freeVars)
+
+			if args.count != enumCase.attachedTypes.count {
+				context.error("Expected \(enumCase.attachedTypes.count) arguments, got \(args.count)", at: location)
+			}
 
 			for (arg, param) in zip(args, enumCase.attachedTypes) {
 				let arg = arg.instantiate(in: context, with: freeVars)
@@ -99,6 +110,10 @@ extension Constraints {
 			// Check to see if we have an initializer. If we do, unify params/args
 			let initializer = initializer(for: type, freeVars: freeVars)
 			if case let .function(params, _) = initializer.type {
+				if args.count != params.count {
+					context.error("Expected \(params.count) arguments, got \(args.count)", at: location)
+				}
+
 				for (arg, param) in zip(args, params) {
 					let argResult = arg.instantiate(in: context, with: freeVars)
 					let paramResult = param.instantiate(in: context, with: freeVars)
@@ -132,9 +147,9 @@ extension Constraints {
 		}
 
 		private func initializer(for type: StructType, freeVars: [TypeVariable: InferenceType]) -> InstantiatedResult {
-			if case let .scheme(scheme) = type.member(named: "init") {
+			if let member = type.member(named: "init") {
 				// We've got an init defined, just use that
-				return InstantiatedResult(type: scheme.type, variables: freeVars)
+				return member.instantiate(in: context, with: freeVars)
 			}
 
 			// Need to synthesize an init

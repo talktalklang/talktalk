@@ -13,7 +13,7 @@ import TypeChecker
 public struct AnalysisModule {
 	public let name: String
 
-	public let inferenceContext: InferenceContext
+	public let inferenceContext: TypeChecker.Context
 
 	public var files: any Collection<ParsedSourceFile>
 
@@ -108,7 +108,7 @@ public struct AnalysisModule {
 public extension AnalysisModule {
 	static func empty(_ name: String) -> AnalysisModule {
 		// swiftlint:disable force_try
-		AnalysisModule(name: name, inferenceContext: try! Inferencer(moduleName: name, imports: []).infer([]), files: [])
+		AnalysisModule(name: name, inferenceContext: try! Typer(module: "", imports: []).solve([]), files: [])
 		// swiftlint:enable force_try
 	}
 }

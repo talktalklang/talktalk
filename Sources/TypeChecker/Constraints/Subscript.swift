@@ -26,22 +26,32 @@ extension Constraints {
 			return "Subscript(receiver: \(receiver.debugDescription), args: \(args.debugDescription), location: \(location))"
 		}
 
+		func getMethod(from type: InferenceType) -> InstantiatedResult? {
+			switch type {
+			case let .instance(instance):
+				return instance.member(named: "get")?.instantiate(in: context, with: instance.substitutions)
+			case let .self(type):
+				return type.member(named: "get")?.instantiate(in: context)
+			default:
+				return nil
+			}
+		}
+
 		func solve() throws {
-			let receiver = context.applySubstitutions(to: receiver)
+			let receiver = context.applySubstitutions(to: receiver).asInstance(with: [:])
 
-			guard case let .instance(receiver) = receiver else {
-				context.error("No `get` method found for subscript receiver \(receiver.debugDescription)", at: location)
+
+			guard let getMethod = getMethod(from: receiver),
+						case let .function(_, returns) = getMethod.type	else {
+				if retries < 1 {
+					context.retry(self)
+				} else {
+					context.error("No `get` method found for subscript receiver \(receiver.debugDescription)", at: location)
+				}
 				return
 			}
 
-			guard let getMethod = receiver.member(named: "get"),
-			      case let .function(_, returns) = getMethod.instantiate(in: context, with: receiver.substitutions).type
-			else {
-				context.error("No `get` method found for subscript receiver \(receiver.debugDescription)", at: location)
-				return
-			}
-
-			let returnsType = returns.instantiate(in: context, with: receiver.substitutions).type
+			let returnsType = returns.instantiate(in: context, with: getMethod.variables).type
 
 			if case .typeVar = returnsType, retries < 2 {
 				context.retry(self)

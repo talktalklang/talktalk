@@ -17,7 +17,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 		""")
 		.cast(AnalyzedExprStmt.self).exprAnalyzed
 
-		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: result.typeAnalyzed))
+		let instance = try #require(Instance<StructType>.extract(from: result.typeAnalyzed))
 		#expect(instance.type.name == "Array")
 	}
 
@@ -57,7 +57,7 @@ struct ArrayAnalysisTests: AnalysisTest {
 		let exprStmt = funcDecl.bodyAnalyzed.stmtsAnalyzed[0].cast(AnalyzedExprStmt.self).exprAnalyzed
 		let subscriptExpr = exprStmt.cast(AnalyzedSubscriptExpr.self)
 
-		let instance = try #require(InstanceV1<StructTypeV1>.extract(from: subscriptExpr.inferenceType))
+		let instance = try #require(Instance<StructType>.extract(from: subscriptExpr.inferenceType))
 		#expect(instance.type.name == "WrapperEntry")
 	}
 }

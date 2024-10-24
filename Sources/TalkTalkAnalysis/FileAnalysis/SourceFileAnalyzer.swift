@@ -146,7 +146,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		if let binding = context.lookup(expr.name) {
 			var symbol: Symbol? = nil
 
-			if case let .instantiatable(.struct(type)) = binding.type {
+			if case let .instance(.struct(type)) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.structs[type.name]?.symbol
 					guard symbol != nil else {
@@ -164,7 +164,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 				} else if binding.isGlobal {
 					symbol = context.symbolGenerator.value(expr.name, source: .internal)
 				}
-			} else if case let .instantiatable(.enumType(type)) = binding.type {
+			} else if case let .instance(.enum(type)) = binding.type {
 				if let module = binding.externalModule {
 					symbol = module.enums[type.name]?.symbol
 					guard symbol != nil else {
@@ -278,16 +278,16 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: TypeExprSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		let symbol: Symbol = switch context.type(for: expr) {
+		let symbol: Symbol = switch context.inferenceContext[expr] {
 		case .typeVar:
 			context.symbolGenerator.generic(expr.identifier.lexeme, source: .internal)
 		case let .base(type):
 			.primitive("\(type)")
-		case .instantiatable(.struct):
+		case .instance(.struct):
 			context.symbolGenerator.struct(expr.identifier.lexeme, source: .internal)
-		case .instantiatable(.enumType):
+		case .instance(.enum):
 			context.symbolGenerator.enum(expr.identifier.lexeme, source: .internal)
-		case .instantiatable(.protocol):
+		case .instance(.protocol):
 			context.symbolGenerator.protocol(expr.identifier.lexeme, source: .internal)
 		default:
 			context.symbolGenerator.generic("error", source: .internal)
@@ -481,6 +481,10 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 			errors.append(.init(kind: .typeNotFound(err.description), location: expr.location))
 		}
 
+		if typeExpr?.inferenceType ?? (expr.value != nil ? context.type(for: expr.value!, default: .void) : .void) == .void {
+			print()
+		}
+
 		let decl = try AnalyzedVarDecl(
 			symbol: symbol,
 			// swiftlint:disable force_unwrapping
@@ -628,7 +632,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 	public func visit(_ expr: EnumDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		let type = context.type(for: expr)
-		guard case let .instantiatable(.enumType(enumType)) = type
+		guard case let .instance(.enum(enumType)) = type
 		else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
@@ -700,7 +704,7 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	public func visit(_ expr: EnumCaseDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
 		let type = context.type(for: expr)
 
-		guard case let .enumCaseV1(enumCase) = type else {
+		guard case let .type(.enumCase(enumCase)) = type else {
 			return error(at: expr, "Could not determine type of \(expr)", environment: context)
 		}
 
@@ -740,27 +744,28 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 
 		var errors: [AnalysisError] = []
 
-		if case let .instanceV1(.enumType(instance)) = targetAnalyzed.inferenceType, !hasDefault {
+		if case let .instance(.enum(instance)) = targetAnalyzed.inferenceType, !hasDefault {
 			let type = instance.type
 
 			// Check that all enum cases are specified
-			let specifiedCases: [String] = casesAnalyzed.compactMap {
-				guard case let .patternV1(pattern) = $0.patternAnalyzed?.inferenceType else {
+			let specifiedCases: [String] = casesAnalyzed.compactMap { (kase) -> String? in
+				guard case let .pattern(pattern) = kase.patternAnalyzed?.inferenceType else {
 					return nil
 				}
 
-				guard case let .enumCaseV1(kase) = pattern.type else {
-					return nil
-				}
+//				guard case let .type(.enumCase(kase)) = pattern.type else {
+//					return nil
+//				}
+				fatalError()
 
-				return kase.name
+				return kase.description
 			}
 
 			var missingCases: [String] = []
 
-			for kase in type.cases {
-				if !specifiedCases.contains(kase.name) {
-					missingCases.append(kase.name)
+			for (name, kase) in type.cases {
+				if !specifiedCases.contains(name) {
+					missingCases.append(name)
 				}
 			}
 
@@ -880,13 +885,13 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 		switch context.type(for: expr.sequence) {
 		case .base:
 			return error(at: expr, "todo, need to figure out how we want to handle base types", environment: context)
-		case let .instanceV1(.struct(instance)):
+		case let .instance(.struct(instance)):
 			iteratorSymbol = try context.type(named: instance.type.name)?.methods["makeIterator"]?.symbol ??
 				context.symbolGenerator.method(instance.type.name, "makeIterator", parameters: [], source: .internal)
-		case let .instanceV1(.protocol(instance)):
+		case let .instance(.protocol(instance)):
 			iteratorSymbol = try context.type(named: instance.type.name)?.methods["makeIterator"]?.symbol ??
 				context.symbolGenerator.method(instance.type.name, "makeIterator", parameters: [], source: .internal)
-		case let .selfVar(.instantiatable(.struct(type))):
+		case let .self(type):
 			iteratorSymbol = try context.type(named: type.name)?.methods["makeIterator"]?.symbol ??
 				context.symbolGenerator.method(type.name, "makeIterator", parameters: [], source: .internal)
 		default:
@@ -942,13 +947,25 @@ public struct SourceFileAnalyzer: Visitor, Analyzer {
 	}
 
 	public func visit(_ expr: PropertyDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		AnalyzedPropertyDecl(wrapped: expr, inferenceType: context.type(for: expr), environment: context)
 	}
 
 	public func visit(_ expr: MethodDeclSyntax, _ context: Environment) throws -> any AnalyzedSyntax {
-		#warning("TODO")
-    return error(at: expr, "TODO", environment: context, expectation: .none)
+		guard let params = try expr.params.accept(self, context) as? AnalyzedParamsExpr else {
+			return error(at: expr, "Could not cast \(expr.params) to AnalyzedParamsExpr", environment: context)
+		}
+
+		guard let body = try visit(expr.body, context) as? AnalyzedBlockStmt else {
+			return error(at: expr, "Could not cast \(expr.body) to AnalyzedBlockStmt", environment: context)
+		}
+
+		return AnalyzedMethodDecl(
+			wrapped: expr,
+			paramsAnalyzed: params,
+			bodyAnalyzed: body,
+			inferenceType: context.type(for: expr),
+			environment: context
+		)
 	}
 
 	// GENERATOR_INSERTION

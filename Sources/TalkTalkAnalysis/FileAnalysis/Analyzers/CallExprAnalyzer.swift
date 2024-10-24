@@ -32,10 +32,10 @@ struct CallExprAnalyzer: Analyzer {
 		// How many arguments are expected to be passed to this call
 		let type = context.type(for: expr)
 
-		for error in context.inferenceContext.errors {
+		for error in context.inferenceContext.diagnostics {
 			errors.append(
 				.init(
-					kind: .inferenceError(error.kind),
+					kind: .unknownError(error.message),
 					location: error.location
 				)
 			)

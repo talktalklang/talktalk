@@ -1,3 +1,4 @@
 --indent tab
 --self init-only
 --disable redundanttype
+--disable consistentSwitchCaseSpacing

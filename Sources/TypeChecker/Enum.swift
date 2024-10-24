@@ -11,6 +11,7 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 	public struct Case: Instantiatable, MemberOwner, CustomDebugStringConvertible {
 		public let type: Enum
 		public let name: String
+		public let module: String
 		public let attachedTypes: [InferenceResult]
 
 		public func staticMember(named name: String) -> InferenceResult? { nil }
@@ -33,6 +34,10 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 			return nil
 		}
 
+		public var members: [String: InferenceResult] {
+			type.members
+		}
+
 		public var typeParameters: OrderedDictionary<String, TypeVariable> {
 			get { type.typeParameters }
 			set { }
@@ -52,13 +57,15 @@ public final class Enum: MemberOwner, Instantiatable, CustomDebugStringConvertib
 	}
 
 	public let name: String
+	public let module: String
 	public var cases: OrderedDictionary<String, Case> = [:]
 	public var members: [String: InferenceResult] = [:]
 	public var staticMembers: [String: InferenceResult] = [:]
 	public var typeParameters: OrderedDictionary<String, TypeVariable> = [:]
 
-	init(name: String, cases: OrderedDictionary<String, Case>) {
+	init(name: String, module: String, cases: OrderedDictionary<String, Case>) {
 		self.name = name
+		self.module = module
 		self.cases = cases
 	}
 
