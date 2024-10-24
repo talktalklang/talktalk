@@ -22,7 +22,7 @@ struct PatternVisitor: Visitor {
 
 		let callee = try syntax.callee.accept(visitor, context)
 		let args = if let parameters = visitor.parameters(for: callee) {
-			try zip(syntax.args, parameters).map { (arg, param) in
+			try zip(syntax.args, parameters).map { arg, param in
 				try context.expecting(param) {
 					try arg.accept(self, context)
 				}
@@ -45,11 +45,11 @@ struct PatternVisitor: Visitor {
 		return .call(callee, args)
 	}
 
-	func visit(_ syntax: DefExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: DefExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: IdentifierExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: IdentifierExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
@@ -59,42 +59,42 @@ struct PatternVisitor: Visitor {
 	}
 
 	func visit(_ syntax: VarExprSyntax, _ context: Context) throws -> Pattern {
-		return .variable(syntax.name, context.expectedType ?? .resolved(.typeVar(context.freshTypeVariable(syntax.name))))
+		.variable(syntax.name, context.expectedType ?? .resolved(.typeVar(context.freshTypeVariable(syntax.name))))
 	}
 
-	func visit(_ syntax: UnaryExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: UnaryExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: BinaryExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: BinaryExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: IfExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: IfExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: WhileStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: WhileStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: BlockStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: BlockStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: FuncExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: FuncExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ParamsExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ParamsExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ParamSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ParamSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: GenericParamsSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: GenericParamsSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
@@ -102,11 +102,11 @@ struct PatternVisitor: Visitor {
 		try syntax.value.accept(self, context)
 	}
 
-	func visit(_ syntax: StructExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: StructExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: DeclBlockSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: DeclBlockSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
@@ -124,7 +124,7 @@ struct PatternVisitor: Visitor {
 		return .variable(syntax.name, .resolved(.typeVar(typeVar)))
 	}
 
-	func visit(_ syntax: ParseErrorSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ParseErrorSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
@@ -148,107 +148,107 @@ struct PatternVisitor: Visitor {
 		return .value(.void)
 	}
 
-	func visit(_ syntax: ReturnStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ReturnStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: InitDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: InitDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ImportStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ImportStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: TypeExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: TypeExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ExprStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ExprStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: IfStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: IfStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: StructDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: StructDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ArrayLiteralExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ArrayLiteralExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: SubscriptExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: SubscriptExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: DictionaryLiteralExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: DictionaryLiteralExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: DictionaryElementExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: DictionaryElementExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ProtocolDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ProtocolDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ProtocolBodyDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ProtocolBodyDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: FuncSignatureDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: FuncSignatureDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: EnumDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: EnumDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: EnumCaseDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: EnumCaseDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: MatchStatementSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: MatchStatementSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: CaseStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: CaseStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: EnumMemberExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: EnumMemberExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: InterpolatedStringExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: InterpolatedStringExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: ForStmtSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: ForStmtSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: LogicalExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: LogicalExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: GroupedExprSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: GroupedExprSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: LetPatternSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: LetPatternSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: PropertyDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: PropertyDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 
-	func visit(_ syntax: MethodDeclSyntax, _ context: Context) throws -> Pattern {
+	func visit(_: MethodDeclSyntax, _: Context) throws -> Pattern {
 		fatalError("TODO")
 	}
 }

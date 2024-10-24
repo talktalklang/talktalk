@@ -48,7 +48,7 @@ public class Binding: Equatable, Hashable, Codable, CustomStringConvertible {
 	}
 }
 
-public enum Value: Equatable, Hashable, Codable {
+public enum Value: Equatable, Hashable, Codable, Sendable {
 	case int(Int)
 
 	case bool(Bool)
@@ -89,8 +89,6 @@ public enum Value: Equatable, Hashable, Codable {
 	// An enum case (bound to values) (Type, Name, Values)
 	case boundEnumCase(BoundEnumCase)
 
-	case binding(Binding)
-
 	// The type of instance, the instance ID
 	case instance(Instance)
 
@@ -106,10 +104,6 @@ public enum Value: Equatable, Hashable, Codable {
 
 	public static func == (lhs: Value, rhs: Value) -> Bool {
 		switch (lhs, rhs) {
-		case (_, .binding):
-			true
-		case (.binding, _):
-			true
 		case let (.int(lhs), .int(rhs)):
 			lhs == rhs
 		case let (.bool(lhs), .bool(rhs)):
@@ -276,8 +270,6 @@ extension Value: CustomStringConvertible {
 			"\(enumCase.type).\(enumCase.name)[arity: \(enumCase.arity)]"
 		case let .boundEnumCase(enumCase):
 			"\(enumCase.type).\(enumCase.name)(\(enumCase.values))"
-		case let .binding(i):
-			"binding#\(i)"
 		case .`nil`:
 			"none"
 		}

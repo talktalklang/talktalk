@@ -20,7 +20,11 @@ public extension FuncExpr {
 	}
 }
 
-public struct FuncExprSyntax: FuncExpr, Decl {
+public struct FuncExprSyntax: FuncExpr, Decl, Equatable {
+	public static func == (lhs: FuncExprSyntax, rhs: FuncExprSyntax) -> Bool {
+		lhs.id == rhs.id
+	}
+
 	public var id: SyntaxID
 	public let modifierTokens: [Token]
 	public let funcToken: Token
@@ -36,7 +40,6 @@ public struct FuncExprSyntax: FuncExpr, Decl {
 		} else {
 			[params, body]
 		}
-
 	}
 
 	public init(id: SyntaxID, modifierTokens: [Token], funcToken: Token, params: ParamsExprSyntax, typeDecl: TypeExprSyntax?, body: BlockStmtSyntax, isStatic: Bool, name: Token? = nil, location: SourceLocation) {

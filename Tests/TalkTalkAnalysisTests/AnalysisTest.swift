@@ -7,7 +7,6 @@
 
 import TalkTalkAnalysis
 import TalkTalkCore
-import TalkTalkCore
 
 public protocol AnalysisTest {}
 

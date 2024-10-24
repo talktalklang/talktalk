@@ -1,9 +1,9 @@
 // swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
+import CompilerPluginSupport
 import Foundation
 import PackageDescription
-import CompilerPluginSupport
 
 let package = Package(
 	name: "TalkTalk",
@@ -14,28 +14,16 @@ let package = Package(
 			targets: ["TalkTalkCore"]
 		),
 		.library(
+			name: "Interpreter",
+			targets: ["Interpreter"]
+		),
+		.library(
 			name: "TalkTalkBytecode",
 			targets: ["TalkTalkBytecode"]
 		),
 		.library(
 			name: "TypeChecker",
 			targets: ["TypeChecker"]
-		),
-		.library(
-			name: "TalkTalkAnalysis",
-			targets: ["TalkTalkAnalysis"]
-		),
-		.library(
-			name: "TalkTalkCompilerV1",
-			targets: ["TalkTalkCompilerV1"]
-		),
-		.library(
-			name: "TalkTalkVM",
-			targets: ["TalkTalkVM"]
-		),
-		.library(
-			name: "TalkTalkLSP",
-			targets: ["TalkTalkLSP"]
 		),
 	],
 	dependencies: [
@@ -44,27 +32,6 @@ let package = Package(
 		.package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.56.2"),
 	],
 	targets: [
-		.executableTarget(
-			name: "talk",
-			dependencies: [
-				"TalkTalkCore",
-				"TalkTalkLSP",
-				"TalkTalkAnalysis",
-				"TalkTalkDriver",
-				"TalkTalkVM",
-				"TypeChecker",
-				.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			]
-		),
-		.target(
-			name: "TalkTalkAnalysis",
-			dependencies: [
-				"TalkTalkCore",
-				"TalkTalkBytecode",
-				"TypeChecker",
-				.product(name: "OrderedCollections", package: "swift-collections"),
-			]
-		),
 		.target(
 			name: "TalkTalkCore",
 			dependencies: [],
@@ -80,44 +47,10 @@ let package = Package(
 			]
 		),
 		.target(
-			name: "TalkTalkLSP",
+			name: "Interpreter",
 			dependencies: [
-				"TalkTalkBytecode",
-				"TalkTalkAnalysis",
-				"TalkTalkCompilerV1",
-				"TalkTalkDriver",
 				"TalkTalkCore",
 				"TypeChecker",
-			]
-		),
-		.target(
-			name: "TalkTalkCompilerV1",
-			dependencies: [
-				"TalkTalkCore",
-				"TalkTalkAnalysis",
-				"TalkTalkBytecode",
-				.product(name: "OrderedCollections", package: "swift-collections"),
-			]
-		),
-		.target(
-			name: "TalkTalkDriver",
-			dependencies: [
-				"TalkTalkCore",
-				"TalkTalkAnalysis",
-				"TalkTalkCompilerV1",
-				"TalkTalkBytecode",
-				"TypeChecker",
-			]
-		),
-		.target(
-			name: "TalkTalkVM",
-			dependencies: [
-				"TalkTalkCompilerV1",
-				"TalkTalkAnalysis",
-				"TalkTalkBytecode",
-				"TalkTalkDriver",
-				"TalkTalkCore",
-				.product(name: "OrderedCollections", package: "swift-collections"),
 			]
 		),
 		.target(
@@ -131,48 +64,14 @@ let package = Package(
 			name: "TalkTalkCoreTests",
 			dependencies: [
 				"TalkTalkCore",
-				"TalkTalkDriver",
 				"TalkTalkBytecode",
-				"TalkTalkAnalysis",
-				"TalkTalkCompilerV1",
 			]
 		),
 		.testTarget(
 			name: "TalkTalkBytecodeTests",
 			dependencies: [
 				"TalkTalkBytecode",
-				"TalkTalkCompilerV1",
-				"TalkTalkAnalysis",
 			]
-		),
-		.testTarget(
-			name: "TalkTalkLSPTests",
-			dependencies: [
-				"TalkTalkLSP",
-				"TalkTalkBytecode",
-				"TalkTalkAnalysis",
-			]
-		),
-		.testTarget(
-			name: "TalkTalkCompilerV1Tests",
-			dependencies: [
-				"TalkTalkCompilerV1",
-				"TalkTalkAnalysis",
-			]
-		),
-		.testTarget(
-			name: "TalkTalkVMTests",
-			dependencies: [
-				"TalkTalkCore",
-				"TalkTalkDriver",
-				"TalkTalkVM",
-				"TalkTalkCompilerV1",
-				"TalkTalkAnalysis",
-			]
-		),
-		.testTarget(
-			name: "TalkTalkAnalysisTests",
-			dependencies: ["TalkTalkAnalysis", "TalkTalkCore"]
 		),
 		.testTarget(
 			name: "TalkTalkSyntaxTests",
@@ -181,6 +80,14 @@ let package = Package(
 		.testTarget(
 			name: "TypeCheckerTests",
 			dependencies: [
+				"TypeChecker",
+				"TalkTalkCore",
+			]
+		),
+		.testTarget(
+			name: "InterpreterTests",
+			dependencies: [
+				"Interpreter",
 				"TypeChecker",
 				"TalkTalkCore",
 			]

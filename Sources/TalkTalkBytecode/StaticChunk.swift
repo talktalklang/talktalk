@@ -5,7 +5,7 @@
 //  Created by Pat Nakajima on 8/18/24.
 //
 
-public final class StaticChunk: Equatable, Codable {
+public final class StaticChunk: Equatable, Codable, Sendable {
 	public static func == (lhs: StaticChunk, rhs: StaticChunk) -> Bool {
 		lhs.code == rhs.code
 	}

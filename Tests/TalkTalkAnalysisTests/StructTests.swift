@@ -24,6 +24,21 @@ struct StructTests: AnalysisTest {
 		#expect(ast.structType.methods["hello"]!.isStatic)
 	}
 
+	@Test("Init") func inits() async throws {
+		let ast = try await asts("""
+		struct Basic {
+			var foo: int
+
+			init(foo: int) {
+				self.foo = foo
+			}
+		}
+		""")[0]
+			.cast(AnalyzedStructDecl.self)
+
+		#expect(ast.structType.methods["hello"]!.isStatic)
+	}
+
 	@Test("Static var") func staticVar() async throws {
 		let ast = try await asts("""
 		struct Basic {
