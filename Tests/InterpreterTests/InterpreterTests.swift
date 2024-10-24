@@ -11,8 +11,8 @@ import Testing
 import TypeChecker
 
 struct InterpreterTests {
-	func run(_ string: String, imports: [Context] = [], verbose: Bool = false) async throws -> ReturnValue {
-		let parsed = try Parser.parse(SourceFile(path: "test.talk", text: string))
+	func run(_ strings: String..., imports: [Context] = [], verbose: Bool = false) async throws -> ReturnValue {
+		let parsed = try strings.enumerated().flatMap { try Parser.parse(SourceFile(path: "test\($0).talk", text: $1)) }
 		let context = try Typer(module: "InterpreterTests", imports: imports, verbose: verbose).solve(parsed)
 
 		return try await Interpreter(typeContext: context).run(parsed)
@@ -203,5 +203,16 @@ struct InterpreterTests {
 				return a
 				""")
 		}
+	}
+
+	@Test("Can run functions across files") func runsFunctionsAcrossFiles() async throws {
+		let result = try await run(
+			"func main() { fizz() }",
+			"func foo() { bar() }",
+			"func bar() { 123 }",
+			"func fizz() { foo() }"
+		)
+
+		#expect(result == .value(.int(123)))
 	}
 }
